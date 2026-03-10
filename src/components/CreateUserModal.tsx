@@ -2,49 +2,12 @@ import { useState } from "react";
 import { X, Check, Globe } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-
-const createUserSchema = z
-  .object({
-    firstName: z.string().min(1, "El nombre es requerido"),
-    paternalLastName: z
-      .string()
-      .min(1, "El apellido paterno es requerido"),
-    maternalLastName: z
-      .string()
-      .min(1, "El apellido materno es requerido"),
-    username: z
-      .string()
-      .min(
-        3,
-        "El nombre de usuario debe tener al menos 3 caracteres",
-      ),
-    email: z.string().email("Email inválido"),
-    roles: z
-      .array(z.string())
-      .min(1, "Debe seleccionar al menos un rol"),
-    languages: z.array(z.string()).optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.roles.includes("Traductor")) {
-        return data.languages && data.languages.length > 0;
-      }
-      return true;
-    },
-    {
-      message:
-        "Debe seleccionar al menos un idioma para el rol de Traductor",
-      path: ["languages"],
-    },
-  );
-
-type CreateUserFormData = z.infer<typeof createUserSchema>;
+import { userSchema, type UserFormData } from "@maximilian/schemas";
 
 interface CreateUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (userData: CreateUserFormData) => void;
+  onConfirm: (userData: UserFormData) => void;
 }
 
 type Tab = "info" | "roles";
@@ -63,8 +26,8 @@ export function CreateUserModal({
     watch,
     formState: { errors },
     reset,
-  } = useForm<CreateUserFormData>({
-    resolver: zodResolver(createUserSchema),
+  } = useForm<UserFormData>({
+    resolver: zodResolver(userSchema),
     defaultValues: {
       firstName: "",
       paternalLastName: "",
@@ -115,7 +78,7 @@ export function CreateUserModal({
     setValue("languages", newLanguages, { shouldValidate: true });
   };
 
-  const onSubmit = (data: CreateUserFormData) => {
+  const onSubmit = (data: UserFormData) => {
     onConfirm(data);
     reset();
     onClose();
@@ -132,9 +95,7 @@ export function CreateUserModal({
           {/* Header */}
           <div className="px-8 py-6 flex items-center justify-between border-b border-gray-100">
             <h2 className="text-xl font-bold text-brand-black">
-              {activeTab === "info"
-                ? "Agrega un Usuario"
-                : "Roles de Usuario"}
+              {activeTab === "info" ? "Agrega un Usuario" : "Roles de Usuario"}
             </h2>
             <button
               type="button"
@@ -186,9 +147,7 @@ export function CreateUserModal({
                     type="text"
                     placeholder="Nombre"
                     className={`w-full px-4 py-2 bg-brand-white border ${
-                      errors.firstName
-                        ? "border-red-500"
-                        : "border-gray-200"
+                      errors.firstName ? "border-red-500" : "border-gray-200"
                     } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
                   />
                   {errors.firstName && (
@@ -246,9 +205,7 @@ export function CreateUserModal({
                     type="text"
                     placeholder="Nombre de Usuario"
                     className={`w-full px-4 py-2 bg-brand-white border ${
-                      errors.username
-                        ? "border-red-500"
-                        : "border-gray-200"
+                      errors.username ? "border-red-500" : "border-gray-200"
                     } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
                   />
                   {errors.username && (
@@ -266,9 +223,7 @@ export function CreateUserModal({
                     type="email"
                     placeholder="Email"
                     className={`w-full px-4 py-2 bg-brand-white border ${
-                      errors.email
-                        ? "border-red-500"
-                        : "border-gray-200"
+                      errors.email ? "border-red-500" : "border-gray-200"
                     } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
                   />
                   {errors.email && (
@@ -301,10 +256,7 @@ export function CreateUserModal({
                           }`}
                         >
                           {selectedRoles?.includes(role) && (
-                            <Check
-                              size={14}
-                              className="text-brand-white"
-                            />
+                            <Check size={14} className="text-brand-white" />
                           )}
                         </div>
                         <span className="text-sm text-gray-700 font-medium">
@@ -335,22 +287,15 @@ export function CreateUserModal({
                           className="flex items-center gap-3 cursor-pointer group"
                         >
                           <div
-                            onClick={() =>
-                              handleLanguageToggle(language)
-                            }
+                            onClick={() => handleLanguageToggle(language)}
                             className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
                               selectedLanguages?.includes(language)
                                 ? "bg-brand-wine border-brand-wine"
                                 : "border-gray-300 group-hover:border-brand-wine"
                             }`}
                           >
-                            {selectedLanguages?.includes(
-                              language,
-                            ) && (
-                              <Check
-                                size={14}
-                                className="text-brand-white"
-                              />
+                            {selectedLanguages?.includes(language) && (
+                              <Check size={14} className="text-brand-white" />
                             )}
                           </div>
                           <span className="text-sm text-gray-700 font-medium">

@@ -1,17 +1,10 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useNavigate, Link } from "react-router";
 import { Eye, EyeOff, Shield } from "lucide-react";
 
-const loginSchema = z.object({
-  username: z.string().min(1, "El nombre de usuario es requerido"),
-  password: z.string().min(1, "La contraseña es requerida"),
-  rememberMe: z.boolean(),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+import { loginSchema, type LoginFormData } from "@maximilian/schemas";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
