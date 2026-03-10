@@ -23,3 +23,8 @@ Para mantener la consistencia y calidad del código, todos los colaboradores deb
 - Usar **camelCase** para funciones y variables.
 - Usar **TypeScript** de forma estricta; evitar el uso de `any`.
 - Documentar funciones complejas con JSDoc.
+
+## 5. Gestión de Formularios
+- **Librerías Obligatorias:** Se debe utilizar **React Hook Form** para la gestión del estado de los formularios y **Zod** para la validación de esquemas.
+- **Validación:** Todos los campos de entrada deben tener validaciones claras y mensajes de error descriptivos en español.
+- **Tipado:** Utilizar el inferido de Zod para los tipos de datos del formulario (ej. `z.infer<typeof schema>`).
