@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Search, Plus, Filter, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, Filter, MoreHorizontal, ChevronLeft, ChevronRight, Edit2, Trash2 } from "lucide-react";
 import { CreateUserModal } from "@maximilian/components/CreateUserModal";
+import { EditUserModal } from "@maximilian/components/EditUserModal";
 
-const users = [
+const initialUsers = [
   { id: 1, name: "Juan", paternal: "Alarcon", maternal: "Concha", username: "jconcha", role: "Coordinador", email: "juan.alarcon@safetyreport.com.pe", status: "Activo" },
   { id: 2, name: "María Fernanda", paternal: "Ríos", maternal: "Zapallar", username: "mfrios", role: "Analista", email: "mrios@safetyreport.com.pe", status: "Activo" },
   { id: 3, name: "Carlos", paternal: "Mendoza", maternal: "Gonzales", username: "cmendoza", role: "Traductor", email: "carlos.mendoza@safetyreport.com.pe", status: "Activo" },
@@ -11,11 +12,32 @@ const users = [
 ];
 
 export default function UserManagement() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
 
   const handleCreateUser = (userData: any) => {
     console.log("Creating user:", userData);
-    // Here we would typically call a service to save the user
+  };
+
+  const handleEditUser = (userData: any) => {
+    console.log("Updating user:", userData);
+  };
+
+  const openEditModal = (user: any) => {
+    const editData = {
+      firstName: user.name,
+      paternalLastName: user.paternal,
+      maternalLastName: user.maternal,
+      username: user.username,
+      email: user.email,
+      roles: user.role.split(", "),
+      languages: user.role.includes("Traductor") ? ["Español"] : [], // Mocked languages
+    };
+    setSelectedUser(editData);
+    setIsEditModalOpen(true);
+    setActiveMenuId(null);
   };
 
   return (
@@ -36,7 +58,7 @@ export default function UserManagement() {
             <span>Estado</span>
           </button>
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20"
           >
             <Plus size={16} />
@@ -46,9 +68,16 @@ export default function UserManagement() {
       </div>
 
       <CreateUserModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
         onConfirm={handleCreateUser} 
+      />
+
+      <EditUserModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        onConfirm={handleEditUser}
+        initialData={selectedUser}
       />
 
       <div className="bg-brand-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
@@ -67,7 +96,7 @@ export default function UserManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {users.map((user) => (
+              {initialUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4 text-brand-black font-medium">{user.name}</td>
                   <td className="px-6 py-4 text-gray-600">{user.paternal}</td>
@@ -80,10 +109,35 @@ export default function UserManagement() {
                       {user.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-gray-400 hover:text-brand-black transition-colors">
+                  <td className="px-6 py-4 text-right relative">
+                    <button 
+                      onClick={() => setActiveMenuId(activeMenuId === user.id ? null : user.id)}
+                      className="text-gray-400 hover:text-brand-black transition-colors p-1"
+                    >
                       <MoreHorizontal size={20} />
                     </button>
+                    
+                    {activeMenuId === user.id && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-10" 
+                          onClick={() => setActiveMenuId(null)}
+                        />
+                        <div className="absolute right-6 top-10 w-48 bg-brand-white rounded-lg shadow-xl border border-gray-100 py-1 z-20 animate-in fade-in zoom-in-95 duration-100">
+                          <button 
+                            onClick={() => openEditModal(user)}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          >
+                            <Edit2 size={14} />
+                            <span>Editar usuario</span>
+                          </button>
+                          <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                            <Trash2 size={14} />
+                            <span>Eliminar usuario</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
