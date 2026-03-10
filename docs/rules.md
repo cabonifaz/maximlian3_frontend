@@ -28,3 +28,7 @@ Para mantener la consistencia y calidad del código, todos los colaboradores deb
 - **Librerías Obligatorias:** Se debe utilizar **React Hook Form** para la gestión del estado de los formularios y **Zod** para la validación de esquemas.
 - **Validación:** Todos los campos de entrada deben tener validaciones claras y mensajes de error descriptivos en español.
 - **Tipado:** Utilizar el inferido de Zod para los tipos de datos del formulario (ej. `z.infer<typeof schema>`).
+
+## 6. Interacción con Agentes IA
+- **Validación de Cambios:** Antes de realizar un commit, el agente debe mostrar un resumen de los cambios realizados y los resultados de las pruebas de validación al usuario.
+- **Confirmación de Commit:** El agente debe proponer un mensaje de commit descriptivo y solicitar la aprobación o edición del mismo por parte del usuario antes de ejecutar el comando `git commit`.
