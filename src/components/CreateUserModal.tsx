@@ -7,13 +7,22 @@ import * as z from "zod";
 const createUserSchema = z
   .object({
     firstName: z.string().min(1, "El nombre es requerido"),
-    paternalLastName: z.string().min(1, "El apellido paterno es requerido"),
-    maternalLastName: z.string().min(1, "El apellido materno es requerido"),
+    paternalLastName: z
+      .string()
+      .min(1, "El apellido paterno es requerido"),
+    maternalLastName: z
+      .string()
+      .min(1, "El apellido materno es requerido"),
     username: z
       .string()
-      .min(3, "El nombre de usuario debe tener al menos 3 caracteres"),
+      .min(
+        3,
+        "El nombre de usuario debe tener al menos 3 caracteres",
+      ),
     email: z.string().email("Email inválido"),
-    roles: z.array(z.string()).min(1, "Debe seleccionar al menos un rol"),
+    roles: z
+      .array(z.string())
+      .min(1, "Debe seleccionar al menos un rol"),
     languages: z.array(z.string()).optional(),
   })
   .refine(
@@ -24,9 +33,10 @@ const createUserSchema = z
       return true;
     },
     {
-      message: "Debe seleccionar al menos un idioma para el rol de Traductor",
+      message:
+        "Debe seleccionar al menos un idioma para el rol de Traductor",
       path: ["languages"],
-    }
+    },
   );
 
 type CreateUserFormData = z.infer<typeof createUserSchema>;
@@ -71,19 +81,30 @@ export function CreateUserModal({
 
   if (!isOpen) return null;
 
-  const rolesOptions = ["Analista", "Traductor", "Coordinador", "Administrador"];
-  const languagesOptions = ["Inglés", "Español", "Portugués", "Francés", "Alemán"];
+  const rolesOptions = [
+    "Analista",
+    "Traductor",
+    "Coordinador",
+    "Administrador",
+  ];
+  const languagesOptions = [
+    "Inglés",
+    "Español",
+    "Portugués",
+    "Francés",
+    "Alemán",
+  ];
 
   const handleRoleToggle = (role: string) => {
     const newRoles = selectedRoles.includes(role)
       ? selectedRoles.filter((r) => r !== role)
       : [...selectedRoles, role];
-    
+
     // Clear languages if Traductor is deselected
     if (role === "Traductor" && selectedRoles.includes("Traductor")) {
       setValue("languages", [], { shouldValidate: true });
     }
-    
+
     setValue("roles", newRoles, { shouldValidate: true });
   };
 
@@ -104,12 +125,16 @@ export function CreateUserModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className={`bg-brand-white rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 transition-all ${isTranslatorSelected && activeTab === 'roles' ? 'max-w-4xl w-full' : 'max-w-2xl w-full'}`}>
+      <div
+        className={`bg-brand-white rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 transition-all ${isTranslatorSelected && activeTab === "roles" ? "max-w-4xl w-full" : "max-w-2xl w-full"}`}
+      >
         <form onSubmit={handleSubmit(onSubmit)}>
           {/* Header */}
           <div className="px-8 py-6 flex items-center justify-between border-b border-gray-100">
             <h2 className="text-xl font-bold text-brand-black">
-              {activeTab === "info" ? "Agrega un Usuario" : "Roles de Usuario"}
+              {activeTab === "info"
+                ? "Agrega un Usuario"
+                : "Roles de Usuario"}
             </h2>
             <button
               type="button"
@@ -149,7 +174,7 @@ export function CreateUserModal({
           </div>
 
           {/* Content */}
-          <div className="p-8 min-h-[320px]">
+          <div className="p-8 min-h-80">
             {activeTab === "info" ? (
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -161,7 +186,9 @@ export function CreateUserModal({
                     type="text"
                     placeholder="Nombre"
                     className={`w-full px-4 py-2 bg-brand-white border ${
-                      errors.firstName ? "border-red-500" : "border-gray-200"
+                      errors.firstName
+                        ? "border-red-500"
+                        : "border-gray-200"
                     } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
                   />
                   {errors.firstName && (
@@ -179,7 +206,9 @@ export function CreateUserModal({
                     type="text"
                     placeholder="Apellido Paterno"
                     className={`w-full px-4 py-2 bg-brand-white border ${
-                      errors.paternalLastName ? "border-red-500" : "border-gray-200"
+                      errors.paternalLastName
+                        ? "border-red-500"
+                        : "border-gray-200"
                     } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
                   />
                   {errors.paternalLastName && (
@@ -197,7 +226,9 @@ export function CreateUserModal({
                     type="text"
                     placeholder="Apellido Materno"
                     className={`w-full px-4 py-2 bg-brand-white border ${
-                      errors.maternalLastName ? "border-red-500" : "border-gray-200"
+                      errors.maternalLastName
+                        ? "border-red-500"
+                        : "border-gray-200"
                     } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
                   />
                   {errors.maternalLastName && (
@@ -215,7 +246,9 @@ export function CreateUserModal({
                     type="text"
                     placeholder="Nombre de Usuario"
                     className={`w-full px-4 py-2 bg-brand-white border ${
-                      errors.username ? "border-red-500" : "border-gray-200"
+                      errors.username
+                        ? "border-red-500"
+                        : "border-gray-200"
                     } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
                   />
                   {errors.username && (
@@ -233,18 +266,22 @@ export function CreateUserModal({
                     type="email"
                     placeholder="Email"
                     className={`w-full px-4 py-2 bg-brand-white border ${
-                      errors.email ? "border-red-500" : "border-gray-200"
+                      errors.email
+                        ? "border-red-500"
+                        : "border-gray-200"
                     } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
                   />
                   {errors.email && (
-                    <p className="text-xs text-red-500 text-brand-wine">
+                    <p className="text-xs text-brand-wine">
                       {errors.email.message}
                     </p>
                   )}
                 </div>
               </div>
             ) : (
-              <div className={`grid ${isTranslatorSelected ? 'grid-cols-2 gap-12' : 'grid-cols-1'} transition-all duration-300`}>
+              <div
+                className={`grid ${isTranslatorSelected ? "grid-cols-2 gap-12" : "grid-cols-1"} transition-all duration-300`}
+              >
                 <div className="space-y-4">
                   <p className="text-sm font-semibold text-brand-black mb-4">
                     Seleccionar Roles
@@ -264,7 +301,10 @@ export function CreateUserModal({
                           }`}
                         >
                           {selectedRoles?.includes(role) && (
-                            <Check size={14} className="text-brand-white" />
+                            <Check
+                              size={14}
+                              className="text-brand-white"
+                            />
                           )}
                         </div>
                         <span className="text-sm text-gray-700 font-medium">
@@ -295,15 +335,22 @@ export function CreateUserModal({
                           className="flex items-center gap-3 cursor-pointer group"
                         >
                           <div
-                            onClick={() => handleLanguageToggle(language)}
+                            onClick={() =>
+                              handleLanguageToggle(language)
+                            }
                             className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
                               selectedLanguages?.includes(language)
                                 ? "bg-brand-wine border-brand-wine"
                                 : "border-gray-300 group-hover:border-brand-wine"
                             }`}
                           >
-                            {selectedLanguages?.includes(language) && (
-                              <Check size={14} className="text-brand-white" />
+                            {selectedLanguages?.includes(
+                              language,
+                            ) && (
+                              <Check
+                                size={14}
+                                className="text-brand-white"
+                              />
                             )}
                           </div>
                           <span className="text-sm text-gray-700 font-medium">

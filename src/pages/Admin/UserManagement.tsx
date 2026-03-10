@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Search, Plus, Filter, MoreHorizontal, ChevronLeft, ChevronRight, Edit2, Trash2 } from "lucide-react";
 import { CreateUserModal } from "@maximilian/components/CreateUserModal";
 import { EditUserModal } from "@maximilian/components/EditUserModal";
+import { DeleteUserModal } from "@maximilian/components/DeleteUserModal";
 
 const initialUsers = [
   { id: 1, name: "Juan", paternal: "Alarcon", maternal: "Concha", username: "jconcha", role: "Coordinador", email: "juan.alarcon@safetyreport.com.pe", status: "Activo" },
@@ -14,6 +15,7 @@ const initialUsers = [
 export default function UserManagement() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
 
@@ -25,8 +27,14 @@ export default function UserManagement() {
     console.log("Updating user:", userData);
   };
 
+  const handleDeleteUser = () => {
+    console.log("Deleting user:", selectedUser?.id);
+    setIsDeleteModalOpen(false);
+  };
+
   const openEditModal = (user: any) => {
     const editData = {
+      id: user.id,
       firstName: user.name,
       paternalLastName: user.paternal,
       maternalLastName: user.maternal,
@@ -37,6 +45,12 @@ export default function UserManagement() {
     };
     setSelectedUser(editData);
     setIsEditModalOpen(true);
+    setActiveMenuId(null);
+  };
+
+  const openDeleteModal = (user: any) => {
+    setSelectedUser(user);
+    setIsDeleteModalOpen(true);
     setActiveMenuId(null);
   };
 
@@ -78,6 +92,13 @@ export default function UserManagement() {
         onClose={() => setIsEditModalOpen(false)} 
         onConfirm={handleEditUser}
         initialData={selectedUser}
+      />
+
+      <DeleteUserModal 
+        isOpen={isDeleteModalOpen} 
+        onClose={() => setIsDeleteModalOpen(false)} 
+        onConfirm={handleDeleteUser}
+        userName={selectedUser?.name || selectedUser?.firstName}
       />
 
       <div className="bg-brand-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
@@ -131,7 +152,10 @@ export default function UserManagement() {
                             <Edit2 size={14} />
                             <span>Editar usuario</span>
                           </button>
-                          <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                          <button 
+                            onClick={() => openDeleteModal(user)}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                          >
                             <Trash2 size={14} />
                             <span>Eliminar usuario</span>
                           </button>
