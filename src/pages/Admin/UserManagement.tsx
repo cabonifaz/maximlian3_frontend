@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Search, Plus, Filter, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { CreateUserModal } from "@maximilian/components/CreateUserModal";
 
 const users = [
   { id: 1, name: "Juan", paternal: "Alarcon", maternal: "Concha", username: "jconcha", role: "Coordinador", email: "juan.alarcon@safetyreport.com.pe", status: "Activo" },
@@ -9,6 +11,13 @@ const users = [
 ];
 
 export default function UserManagement() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleCreateUser = (userData: any) => {
+    console.log("Creating user:", userData);
+    // Here we would typically call a service to save the user
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -26,12 +35,21 @@ export default function UserManagement() {
             <Filter size={16} />
             <span>Estado</span>
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20"
+          >
             <Plus size={16} />
             <span>Agregar Usuario</span>
           </button>
         </div>
       </div>
+
+      <CreateUserModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onConfirm={handleCreateUser} 
+      />
 
       <div className="bg-brand-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
