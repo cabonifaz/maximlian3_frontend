@@ -107,24 +107,34 @@ export function EditUserModal({
               <button
                 type="button"
                 onClick={() => setActiveTab("info")}
-                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all flex items-center justify-center gap-2 ${
                   activeTab === "info"
                     ? "bg-brand-white text-brand-black shadow-sm"
                     : "text-gray-500 hover:text-brand-black"
                 }`}
               >
-                Información
+                <span>Información</span>
+                {(errors.firstName ||
+                  errors.paternalLastName ||
+                  errors.maternalLastName ||
+                  errors.username ||
+                  errors.email) && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                )}
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("roles")}
-                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all flex items-center justify-center gap-2 ${
                   activeTab === "roles"
                     ? "bg-brand-white text-brand-black shadow-sm"
                     : "text-gray-500 hover:text-brand-black"
                 }`}
               >
-                Roles
+                <span>Roles</span>
+                {(errors.roles || errors.languages) && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                )}
               </button>
             </div>
           </div>

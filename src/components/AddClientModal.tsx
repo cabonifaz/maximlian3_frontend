@@ -87,11 +87,14 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
           <div className="bg-gray-50 p-1 rounded-2xl flex gap-1">
             <button
               onClick={() => setActiveTab("info")}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
                 activeTab === "info" ? "bg-brand-white text-brand-black shadow-sm" : "text-gray-400 hover:text-gray-600"
               }`}
             >
-              Información
+              <span>Información</span>
+              {Object.keys(infoErrors).length > 0 && (
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              )}
             </button>
             <button
               onClick={() => setActiveTab("rates")}
@@ -103,11 +106,14 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
             </button>
             <button
               onClick={() => setActiveTab("contacts")}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
                 activeTab === "contacts" ? "bg-brand-white text-brand-black shadow-sm" : "text-gray-400 hover:text-gray-600"
               }`}
             >
-              Contactos
+              <span>Contactos</span>
+              {Object.keys(contactErrors).length > 0 && (
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              )}
             </button>
           </div>
         </div>
