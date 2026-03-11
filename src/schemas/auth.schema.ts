@@ -19,7 +19,7 @@ export const newPasswordSchema = z.object({
 export type NewPasswordFormData = z.infer<typeof newPasswordSchema>;
 
 export const forgotPasswordSchema = z.object({
-  username: z.string().min(1, "El correo electrónico o usuario es requerido"),
+  username: z.string().min(1, "El nombre de usuario es requerido"),
 });
 
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;

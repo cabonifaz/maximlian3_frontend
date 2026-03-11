@@ -55,10 +55,18 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
     setAuthError(null);
     try {
-      await authService.resetPassword(data.username);
+      const output = await authService.resetPassword(data.username);
       setUsername(data.username);
-      setStep("RESET_PASSWORD");
-      setSuccessMessage("Hemos enviado un código de confirmación a tu correo.");
+      
+      const { nextStep } = output;
+      
+      if (nextStep.resetPasswordStep === "CONFIRM_RESET_PASSWORD_WITH_CODE") {
+        setStep("RESET_PASSWORD");
+        setSuccessMessage(`Hemos enviado un código de confirmación a ${nextStep.codeDeliveryDetails?.destination || "tu correo"}.`);
+      } else {
+        // Handle other steps if necessary (e.g. DONE)
+        console.log("Reset password next step:", nextStep);
+      }
     } catch (err: unknown) {
       console.error("Password reset request failed:", err);
       setAuthError(translateAuthError(err));
@@ -100,7 +108,7 @@ export default function ForgotPasswordPage() {
         </h1>
         <p className="text-gray-500 text-center text-sm mb-8 leading-relaxed px-4">
           {step === "REQUEST_CODE" 
-            ? "Ingresa tu correo y enviaremos un enlace para reestablecer tu contraseña" 
+            ? "Ingresa tu nombre de usuario y enviaremos un código para reestablecer tu contraseña" 
             : "Ingresa el código que recibiste y tu nueva contraseña"}
         </p>
 
@@ -120,12 +128,12 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handleRequestSubmit(onRequestCode)} className="w-full space-y-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">
-                Correo electrónico
+                Nombre de usuario
               </label>
               <input
                 {...requestRegister("username")}
                 type="text"
-                placeholder="name@safetyreport.com"
+                placeholder="Nombre de usuario"
                 disabled={isLoading}
                 className={`w-full px-4 py-3 bg-brand-white border ${
                   requestErrors.username ? "border-red-500" : "border-gray-200"
@@ -147,7 +155,7 @@ export default function ForgotPasswordPage() {
                   Enviando...
                 </>
               ) : (
-                "Enviar Enlace"
+                "Enviar Código"
               )}
             </button>
           </form>
