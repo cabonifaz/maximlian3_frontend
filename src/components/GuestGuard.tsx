@@ -24,7 +24,7 @@ export function GuestGuard({ children }: GuestGuardProps) {
             navigate("/select-role", { replace: true });
           }
         }
-      } catch (error) {
+      } catch {
         // Not authenticated, allow access to guest pages
         setIsChecking(false);
       }

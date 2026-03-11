@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ChevronRight, User, LogOut } from "lucide-react";
+import { authService } from "@maximilian/services/auth.service";
+import LoadingScreen from "@maximilian/components/LoadingScreen";
 
 const roles = [
   {
@@ -21,10 +24,31 @@ const roles = [
 
 export default function RoleSelectionPage() {
   const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleRoleSelect = (roleId: string) => {
     console.log("Role selected:", roleId);
-    navigate("/admin");
+    if (roleId === "admin") {
+      navigate("/admin");
+    } else if (roleId === "coordinator") {
+      navigate("/coordinator");
+    } else {
+      // Fallback for other roles
+      navigate("/admin");
+    }
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await authService.logout();
+      // Small artificial delay to make the transition feel smoother
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      navigate("/login");
+    } catch (error) {
+      console.error("Error al cerrar sesión", error);
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -48,7 +72,8 @@ export default function RoleSelectionPage() {
             <button
               key={role.id}
               onClick={() => handleRoleSelect(role.id)}
-              className="w-full p-5 bg-brand-white border border-gray-100 rounded-2xl flex items-center gap-4 hover:border-brand-wine/30 hover:shadow-lg hover:shadow-brand-wine/5 group transition-all text-left"
+              disabled={isLoggingOut}
+              className="w-full p-5 bg-brand-white border border-gray-100 rounded-2xl flex items-center gap-4 hover:border-brand-wine/30 hover:shadow-lg hover:shadow-brand-wine/5 group transition-all text-left disabled:opacity-50"
             >
               <div className="flex-1">
                 <h3 className="text-brand-black font-bold mb-1 group-hover:text-brand-wine transition-colors">
@@ -72,14 +97,17 @@ export default function RoleSelectionPage() {
           </div>
           
           <button 
-            onClick={() => navigate("/login")}
-            className="flex items-center gap-2 text-brand-wine font-bold text-sm hover:opacity-80 transition-opacity"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="flex items-center gap-2 text-brand-wine font-bold text-sm hover:opacity-80 transition-opacity disabled:opacity-50"
           >
             <LogOut size={18} />
             <span>Cerrar sesion</span>
           </button>
         </div>
       </div>
+
+      {isLoggingOut && <LoadingScreen message="Cerrando sesión..." />}
     </div>
   );
 }
