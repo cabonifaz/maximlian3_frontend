@@ -109,7 +109,7 @@ export function EditUserModal({
                 onClick={() => setActiveTab("info")}
                 className={`flex-1 py-2 text-sm font-medium rounded-md transition-all flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
                   activeTab === "info"
-                    ? "bg-brand-white text-brand-black shadow-sm"
+                    ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black"
                     : "text-gray-500 hover:text-brand-black"
                 }`}
               >
@@ -127,7 +127,7 @@ export function EditUserModal({
                 onClick={() => setActiveTab("roles")}
                 className={`flex-1 py-2 text-sm font-medium rounded-md transition-all flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
                   activeTab === "roles"
-                    ? "bg-brand-white text-brand-black shadow-sm"
+                    ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black"
                     : "text-gray-500 hover:text-brand-black"
                 }`}
               >

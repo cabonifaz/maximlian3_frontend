@@ -87,8 +87,8 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
           <div className="bg-gray-50 p-1 rounded-2xl flex gap-1">
             <button
               onClick={() => setActiveTab("info")}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                activeTab === "info" ? "bg-brand-white text-brand-black shadow-sm" : "text-gray-400 hover:text-gray-600"
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
+                activeTab === "info" ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black" : "text-gray-400 hover:text-gray-600"
               }`}
             >
               <span>Información</span>
@@ -98,16 +98,16 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
             </button>
             <button
               onClick={() => setActiveTab("rates")}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${
-                activeTab === "rates" ? "bg-brand-white text-brand-black shadow-sm" : "text-gray-400 hover:text-gray-600"
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
+                activeTab === "rates" ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black" : "text-gray-400 hover:text-gray-600"
               }`}
             >
               Tarifas
             </button>
             <button
               onClick={() => setActiveTab("contacts")}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                activeTab === "contacts" ? "bg-brand-white text-brand-black shadow-sm" : "text-gray-400 hover:text-gray-600"
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
+                activeTab === "contacts" ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black" : "text-gray-400 hover:text-gray-600"
               }`}
             >
               <span>Contactos</span>

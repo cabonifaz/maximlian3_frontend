@@ -73,7 +73,7 @@ export default function RoleSelectionPage() {
               key={role.id}
               onClick={() => handleRoleSelect(role.id)}
               disabled={isLoggingOut}
-              className="w-full p-5 bg-brand-white border border-gray-100 rounded-2xl flex items-center gap-4 hover:border-brand-wine/30 hover:shadow-lg hover:shadow-brand-wine/5 group transition-all text-left disabled:opacity-50"
+              className="w-full p-5 bg-brand-white border border-gray-100 rounded-2xl flex items-center gap-4 hover:border-brand-black hover:border-2 hover:scale-[1.02] active:scale-[0.98] cursor-pointer group transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex-1">
                 <h3 className="text-brand-black font-bold mb-1 group-hover:text-brand-wine transition-colors">
