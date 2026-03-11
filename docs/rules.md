@@ -17,6 +17,10 @@ Para mantener la consistencia y calidad del código, todos los colaboradores deb
 - **Colores de Marca:**
     - Primario (Botones/Acciones): `brand-wine` (#722f37)
     - Fondos/Contraste: `brand-black` y `brand-white`.
+- **Interactividad (UX):** Todos los botones de acción, pestañas y enlaces deben tener obligatoriamente:
+    - `cursor-pointer` para indicar que el elemento es interactivo.
+    - Una pequeña animación al pasar el cursor (ej. `hover:scale-[1.02]`, `hover:bg-opacity-90`) para mejorar el feedback visual.
+    - Transiciones suaves mediante `transition-all` o similares.
 
 ## 4. Convenciones de Código
 - Usar **PascalCase** para componentes de React y archivos de componentes.

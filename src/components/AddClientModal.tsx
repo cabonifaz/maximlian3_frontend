@@ -469,8 +469,9 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                       <button
                         type="submit"
                         form="contact-form"
-                        className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 transition-all shadow-lg shadow-black/10"
+                        className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
                       >
+
                         <div className="w-2 h-2 rounded-full bg-brand-white" />
                         <span>{contactView === "create" ? "Agregar Contacto" : "Guardar Cambios"}</span>
                       </button>
@@ -488,7 +489,7 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
             <button
               type="submit"
               form="client-info-form"
-              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 active:scale-[0.98] transition-all shadow-lg shadow-black/10"
+              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
             >
               <div className="w-2 h-2 rounded-full bg-brand-white" />
               <span>Confirmar</span>
@@ -500,7 +501,7 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
           <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 shrink-0">
             <button
               onClick={() => setActiveTab("contacts")}
-              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 active:scale-[0.98] transition-all shadow-lg shadow-black/10"
+              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
             >
               <div className="w-2 h-2 rounded-full bg-brand-white" />
               <span>Confirmar</span>
@@ -515,7 +516,7 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                 // Main modal confirm logic
                 onClose();
               }}
-              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 active:scale-[0.98] transition-all shadow-lg shadow-black/10"
+              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
             >
               <div className="w-2 h-2 rounded-full bg-brand-white" />
               <span>Confirmar</span>

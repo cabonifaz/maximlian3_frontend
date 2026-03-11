@@ -96,7 +96,7 @@ export function EditUserModal({
             <button
               type="button"
               onClick={onClose}
-              className="text-gray-400 hover:text-brand-black transition-colors"
+              className="text-gray-400 hover:text-brand-black transition-colors cursor-pointer"
             >
               <X size={24} />
             </button>
@@ -107,7 +107,7 @@ export function EditUserModal({
               <button
                 type="button"
                 onClick={() => setActiveTab("info")}
-                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
                   activeTab === "info"
                     ? "bg-brand-white text-brand-black shadow-sm"
                     : "text-gray-500 hover:text-brand-black"
@@ -125,7 +125,7 @@ export function EditUserModal({
               <button
                 type="button"
                 onClick={() => setActiveTab("roles")}
-                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
                   activeTab === "roles"
                     ? "bg-brand-white text-brand-black shadow-sm"
                     : "text-gray-500 hover:text-brand-black"
@@ -322,7 +322,7 @@ export function EditUserModal({
           <div className="px-8 py-6 bg-gray-50 border-t border-gray-100 flex justify-end">
             <button
               type="submit"
-              className="flex items-center gap-2 px-8 py-2.5 bg-brand-black text-brand-white rounded-lg text-sm font-bold hover:bg-brand-black/90 transition-all shadow-lg shadow-black/10"
+              className="flex items-center gap-2 px-8 py-2.5 bg-brand-black text-brand-white rounded-lg text-sm font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
             >
               <div className="w-2 h-2 rounded-full bg-brand-white" />
               <span>Guardar Cambios</span>
