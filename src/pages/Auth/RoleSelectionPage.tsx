@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { Shield, ChevronRight, User, LogOut } from "lucide-react";
+import { ChevronRight, User, LogOut } from "lucide-react";
 
 const roles = [
   {
@@ -31,11 +31,14 @@ export default function RoleSelectionPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="bg-brand-white w-full max-w-md p-10 rounded-3xl shadow-xl border border-gray-100 flex flex-col items-center animate-in fade-in zoom-in-95 duration-300">
         {/* Logo */}
-        <div className="bg-brand-black p-4 rounded-3xl rotate-45 mb-8">
-          <Shield className="text-brand-white w-10 h-10 -rotate-45" />
+        <div className="mb-8">
+          <img 
+            src="/safety-logo.jpg" 
+            alt="Safety Report Logo" 
+            className="h-24 object-contain"
+          />
         </div>
 
-        <h1 className="text-4xl font-extrabold text-brand-black mb-2">Safety Report</h1>
         <p className="text-gray-400 text-center text-sm mb-10 leading-relaxed px-6">
           Credenciales validadas correctamente. Seleccione su rol para ingresar al sistema
         </p>

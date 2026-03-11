@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, Link } from "react-router";
-import { Eye, EyeOff, Shield, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 import { 
   forgotPasswordSchema, 
@@ -87,8 +87,12 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="bg-brand-white w-full max-w-md p-10 rounded-3xl shadow-xl border border-gray-100 flex flex-col items-center animate-in fade-in zoom-in-95 duration-300">
         {/* Logo */}
-        <div className="bg-brand-black p-4 rounded-3xl rotate-45 mb-8 mt-2">
-          <Shield className="text-brand-white w-8 h-8 -rotate-45" />
+        <div className="mb-8">
+          <img 
+            src="/safety-logo.jpg" 
+            alt="Safety Report Logo" 
+            className="h-24 object-contain"
+          />
         </div>
 
         <h1 className="text-2xl font-bold text-brand-black mb-2 text-center">
