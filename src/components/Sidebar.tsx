@@ -1,10 +1,20 @@
-import { useState } from "react";
 import { NavLink, useNavigate } from "react-router";
-import { Users, Settings, LogOut, Shield } from "lucide-react";
+import { LogOut, Shield, type LucideIcon } from "lucide-react";
 import { authService } from "@maximilian/services/auth.service";
 import LoadingScreen from "./LoadingScreen";
+import { useState } from "react";
 
-export function Sidebar() {
+interface SidebarItem {
+  name: string;
+  icon: LucideIcon;
+  path: string;
+}
+
+interface SidebarProps {
+  items: SidebarItem[];
+}
+
+export function Sidebar({ items }: SidebarProps) {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -12,7 +22,6 @@ export function Sidebar() {
     setIsLoggingOut(true);
     try {
       await authService.logout();
-      // Small artificial delay to make the transition feel smoother and deliberate
       await new Promise((resolve) => setTimeout(resolve, 800));
       navigate("/login");
     } catch (error) {
@@ -21,13 +30,8 @@ export function Sidebar() {
     }
   };
 
-  const menuItems = [
-    { name: "Gestión de Usuarios", icon: Users, path: "/admin/users" },
-    { name: "Configuración", icon: Settings, path: "/admin/config" },
-  ];
-
   return (
-    <aside className="w-64 bg-brand-white border-r border-gray-200 flex flex-col h-full">
+    <aside className="w-64 bg-brand-white border-r border-gray-200 flex flex-col h-full shrink-0">
       <div className="p-6 flex items-center gap-3">
         <div className="bg-brand-black p-2 rounded-lg">
           <Shield className="text-brand-white w-6 h-6" />
@@ -37,8 +41,8 @@ export function Sidebar() {
         </span>
       </div>
 
-      <nav className="mt-6 flex-1 px-4 space-y-2">
-        {menuItems.map((item) => (
+      <nav className="mt-6 flex-1 px-4 space-y-2 overflow-y-auto">
+        {items.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}

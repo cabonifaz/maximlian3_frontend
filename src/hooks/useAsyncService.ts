@@ -75,10 +75,11 @@ export const useAsyncService = <T, Args extends unknown[]>(
           setState(successState);
         }
         return successState;
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Ignore the error if it was manually canceled
+        const error = err as Error;
         if (
-          err.name === "CanceledError" ||
+          error.name === "CanceledError" ||
           controller.signal.aborted
         ) {
           return { result: null, error: null, loading: false };
@@ -104,6 +105,7 @@ export const useAsyncService = <T, Args extends unknown[]>(
 
     hasExecuted.current = true;
     const args = (options.immediateArgs ?? []) as Args;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     execute(...args);
 
     // Cleanup: abort the request if the component unmounts

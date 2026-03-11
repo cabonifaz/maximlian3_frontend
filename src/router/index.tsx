@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import { adminRoutes } from "@maximilian/router/admin.routes";
 import { authRoutes } from "@maximilian/router/auth.routes";
+import { coordinatorRoutes } from "@maximilian/router/coordinator.routes";
 
 export const router = createBrowserRouter([
   {
@@ -9,6 +10,7 @@ export const router = createBrowserRouter([
   },
   ...authRoutes,
   ...adminRoutes,
+  ...coordinatorRoutes,
   {
     path: "*",
     element: (

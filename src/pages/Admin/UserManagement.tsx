@@ -3,8 +3,20 @@ import { Search, Plus, Filter, MoreHorizontal, ChevronLeft, ChevronRight, Edit2,
 import { CreateUserModal } from "@maximilian/components/CreateUserModal";
 import { EditUserModal } from "@maximilian/components/EditUserModal";
 import { DeleteUserModal } from "@maximilian/components/DeleteUserModal";
+import { type UserFormData } from "@maximilian/schemas";
 
-const initialUsers = [
+interface User {
+  id: number;
+  name: string;
+  paternal: string;
+  maternal: string;
+  username: string;
+  role: string;
+  email: string;
+  status: string;
+}
+
+const initialUsers: User[] = [
   { id: 1, name: "Juan", paternal: "Alarcon", maternal: "Concha", username: "jconcha", role: "Coordinador", email: "juan.alarcon@safetyreport.com.pe", status: "Activo" },
   { id: 2, name: "María Fernanda", paternal: "Ríos", maternal: "Zapallar", username: "mfrios", role: "Analista", email: "mrios@safetyreport.com.pe", status: "Activo" },
   { id: 3, name: "Carlos", paternal: "Mendoza", maternal: "Gonzales", username: "cmendoza", role: "Traductor", email: "carlos.mendoza@safetyreport.com.pe", status: "Activo" },
@@ -16,25 +28,24 @@ export default function UserManagement() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<UserFormData | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
 
-  const handleCreateUser = (userData: any) => {
+  const handleCreateUser = (userData: UserFormData) => {
     console.log("Creating user:", userData);
   };
 
-  const handleEditUser = (userData: any) => {
+  const handleEditUser = (userData: UserFormData) => {
     console.log("Updating user:", userData);
   };
 
   const handleDeleteUser = () => {
-    console.log("Deleting user:", selectedUser?.id);
+    console.log("Deleting user");
     setIsDeleteModalOpen(false);
   };
 
-  const openEditModal = (user: any) => {
-    const editData = {
-      id: user.id,
+  const openEditModal = (user: User) => {
+    const editData: UserFormData = {
       firstName: user.name,
       paternalLastName: user.paternal,
       maternalLastName: user.maternal,
@@ -48,8 +59,15 @@ export default function UserManagement() {
     setActiveMenuId(null);
   };
 
-  const openDeleteModal = (user: any) => {
-    setSelectedUser(user);
+  const openDeleteModal = (user: User) => {
+    setSelectedUser({
+      firstName: user.name,
+      paternalLastName: user.paternal,
+      maternalLastName: user.maternal,
+      username: user.username,
+      email: user.email,
+      roles: user.role.split(", "),
+    });
     setIsDeleteModalOpen(true);
     setActiveMenuId(null);
   };
@@ -98,7 +116,7 @@ export default function UserManagement() {
         isOpen={isDeleteModalOpen} 
         onClose={() => setIsDeleteModalOpen(false)} 
         onConfirm={handleDeleteUser}
-        userName={selectedUser?.name || selectedUser?.firstName}
+        userName={selectedUser?.firstName}
       />
 
       <div className="bg-brand-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
