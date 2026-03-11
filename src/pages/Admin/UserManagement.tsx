@@ -85,13 +85,13 @@ export default function UserManagement() {
               className="pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-lg text-sm w-72 focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all"
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+          <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
             <Filter size={16} />
             <span>Estado</span>
           </button>
           <button 
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus size={16} />
             <span>Agregar Usuario</span>
@@ -151,7 +151,7 @@ export default function UserManagement() {
                   <td className="px-6 py-4 text-right relative">
                     <button 
                       onClick={() => setActiveMenuId(activeMenuId === user.id ? null : user.id)}
-                      className="text-gray-400 hover:text-brand-black transition-colors p-1"
+                      className="text-gray-400 hover:text-brand-black transition-colors p-1 cursor-pointer hover:scale-110 active:scale-90"
                     >
                       <MoreHorizontal size={20} />
                     </button>
@@ -165,14 +165,14 @@ export default function UserManagement() {
                         <div className={`absolute right-6 ${initialUsers.indexOf(user) >= initialUsers.length - 2 ? "bottom-10" : "top-10"} w-48 bg-brand-white rounded-lg shadow-xl border border-gray-100 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}>
                           <button 
                             onClick={() => openEditModal(user)}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
                           >
                             <Edit2 size={14} />
                             <span>Editar usuario</span>
                           </button>
                           <button 
                             onClick={() => openDeleteModal(user)}
-                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
                           >
                             <Trash2 size={14} />
                             <span>Eliminar usuario</span>
@@ -190,16 +190,16 @@ export default function UserManagement() {
         <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-gray-500 text-xs">
           <span>Mostrando 5 de 32 pedidos</span>
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-1 hover:text-brand-black disabled:opacity-30" disabled>
+            <button className="flex items-center gap-1 hover:text-brand-black disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-not-allowed" disabled>
               <ChevronLeft size={16} /> Anterior
             </button>
             <div className="flex items-center gap-2">
-              <button className="w-6 h-6 flex items-center justify-center rounded bg-brand-black text-brand-white font-medium">1</button>
-              <button className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100">2</button>
-              <button className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100">3</button>
+              <button className="w-6 h-6 flex items-center justify-center rounded bg-brand-black text-brand-white font-medium cursor-pointer hover:scale-110 transition-transform">1</button>
+              <button className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 cursor-pointer hover:scale-110 transition-transform">2</button>
+              <button className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 cursor-pointer hover:scale-110 transition-transform">3</button>
               <span>...</span>
             </div>
-            <button className="flex items-center gap-1 hover:text-brand-black">
+            <button className="flex items-center gap-1 hover:text-brand-black cursor-pointer transition-colors">
               Siguiente <ChevronRight size={16} />
             </button>
           </div>

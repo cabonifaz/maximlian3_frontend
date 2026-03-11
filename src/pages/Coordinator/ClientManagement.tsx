@@ -33,19 +33,19 @@ export default function ClientManagement() {
             />
           </div>
           
-          <button className="flex items-center gap-2 px-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+          <button className="flex items-center gap-2 px-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
             <Filter className="w-4 h-4" />
             <span>País</span>
           </button>
 
-          <button className="flex items-center gap-2 px-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+          <button className="flex items-center gap-2 px-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
             <div className="w-2 h-2 rounded-full bg-brand-wine" />
             <span>Estado</span>
           </button>
 
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-sm font-bold hover:bg-brand-black/90 transition-all shadow-lg shadow-black/10"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-sm font-bold hover:bg-brand-black/90 transition-all shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
             <span>Agregar Cliente</span>
@@ -99,7 +99,7 @@ export default function ClientManagement() {
                   <td className="px-6 py-4 text-right relative">
                     <button 
                       onClick={() => setActiveMenuId(activeMenuId === client.id ? null : client.id)}
-                      className="p-2 text-gray-400 hover:text-brand-black hover:bg-gray-100 rounded-lg transition-all"
+                      className="p-2 text-gray-400 hover:text-brand-black hover:bg-gray-100 rounded-lg transition-all cursor-pointer hover:scale-110 active:scale-90"
                     >
                       <MoreHorizontal size={18} />
                     </button>
@@ -113,14 +113,14 @@ export default function ClientManagement() {
                         <div className={`absolute right-6 ${index >= mockClients.length - 2 ? "bottom-10" : "top-10"} w-48 bg-brand-white rounded-lg shadow-xl border border-gray-100 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}>
                           <button 
                             onClick={() => setActiveMenuId(null)}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
                           >
                             <Eye size={14} />
                             <span>Ver detalle</span>
                           </button>
                           <button 
                             onClick={() => setActiveMenuId(null)}
-                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
                           >
                             <UserMinus size={14} />
                             <span>Desactivar cliente</span>
@@ -141,14 +141,14 @@ export default function ClientManagement() {
           </p>
           
           <div className="flex items-center gap-2">
-            <button className="p-2 text-gray-400 hover:text-brand-black transition-colors">
+            <button className="p-2 text-gray-400 hover:text-brand-black transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
               <ChevronLeft size={18} />
             </button>
             <div className="flex gap-1">
               {[1, 2, 3].map((page) => (
                 <button
                   key={page}
-                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer hover:scale-110 ${
                     page === 2 
                       ? "bg-brand-black text-brand-white shadow-lg shadow-black/10" 
                       : "text-gray-400 hover:bg-gray-100 hover:text-brand-black"
@@ -159,7 +159,7 @@ export default function ClientManagement() {
               ))}
               <span className="px-2 text-gray-300">...</span>
             </div>
-            <button className="p-2 text-gray-400 hover:text-brand-black transition-colors">
+            <button className="p-2 text-gray-400 hover:text-brand-black transition-colors cursor-pointer">
               <ChevronRight size={18} />
             </button>
           </div>
