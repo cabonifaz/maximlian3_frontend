@@ -11,6 +11,7 @@ import {
   type NewPasswordFormData 
 } from "@maximilian/schemas";
 import { authService } from "@maximilian/services/auth.service";
+import { translateAuthError } from "@maximilian/shared/utils/auth-errors";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -61,8 +62,7 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       console.error("Login failed:", err);
-      const errorMessage = err instanceof Error ? err.message : "Credenciales inválidas o error de conexión.";
-      setAuthError(errorMessage);
+      setAuthError(translateAuthError(err));
     } finally {
       setIsLoading(false);
     }
@@ -80,8 +80,7 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       console.error("Confirm new password failed:", err);
-      const errorMessage = err instanceof Error ? err.message : "Error al actualizar la contraseña.";
-      setAuthError(errorMessage);
+      setAuthError(translateAuthError(err));
     } finally {
       setIsLoading(false);
     }
