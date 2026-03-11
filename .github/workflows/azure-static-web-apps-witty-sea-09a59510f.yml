@@ -32,7 +32,10 @@ jobs:
           api_location: "" # Api source code path - optional
           output_location: "dist" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
-
+          env:
+            VITE_AWS_REGION: ${{secrets.VITE_AWS_REGION}}
+            VITE_COGNITO_USER_POOL_ID: ${{secrets.VITE_COGNITO_USER_POOL_ID}}
+            VITE_COGNITO_CLIENT_ID: ${{secrets.VITE_COGNITO_CLIENT_ID}}
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
