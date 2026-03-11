@@ -9,6 +9,13 @@ export const authRoutes: RouteObject[] = [
       })),
   },
   {
+    path: "forgot-password",
+    lazy: () =>
+      import("@maximilian/pages/Auth/ForgotPasswordPage").then((m) => ({
+        Component: m.default,
+      })),
+  },
+  {
     path: "select-role",
     lazy: () =>
       import("@maximilian/pages/Auth/RoleSelectionPage").then((m) => ({

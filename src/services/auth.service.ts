@@ -1,6 +1,8 @@
 import {
   signIn,
   confirmSignIn,
+  resetPassword,
+  confirmResetPassword,
   signOut,
   getCurrentUser,
   fetchAuthSession,
@@ -31,6 +33,23 @@ export const authService = {
       return { isSignedIn, nextStep };
     } catch (error) {
       console.error("Error confirming new password", error);
+      throw error;
+    }
+  },
+  resetPassword: async (username: string) => {
+    try {
+      const output = await resetPassword({ username });
+      return output;
+    } catch (error) {
+      console.error("Error requesting password reset", error);
+      throw error;
+    }
+  },
+  confirmPasswordReset: async (username: string, confirmationCode: string, newPassword: string) => {
+    try {
+      await confirmResetPassword({ username, confirmationCode, newPassword });
+    } catch (error) {
+      console.error("Error confirming password reset", error);
       throw error;
     }
   },
