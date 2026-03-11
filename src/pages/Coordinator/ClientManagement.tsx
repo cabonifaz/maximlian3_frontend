@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, Plus, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Filter, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Eye, UserMinus } from "lucide-react";
 import { AddClientModal } from "@maximilian/components/AddClientModal";
 
 const mockClients = [
@@ -13,6 +13,7 @@ const mockClients = [
 export default function ClientManagement() {
   const [searchTerm, setSearchBar] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
 
   return (
     <div className="space-y-6">
@@ -70,7 +71,7 @@ export default function ClientManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {mockClients.map((client) => (
+              {mockClients.map((client, index) => (
                 <tr key={client.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <input type="checkbox" className="rounded border-gray-300 text-brand-wine focus:ring-brand-wine" />
@@ -95,10 +96,38 @@ export default function ClientManagement() {
                       {client.estado}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="p-2 text-gray-400 hover:text-brand-black hover:bg-gray-100 rounded-lg transition-all">
+                  <td className="px-6 py-4 text-right relative">
+                    <button 
+                      onClick={() => setActiveMenuId(activeMenuId === client.id ? null : client.id)}
+                      className="p-2 text-gray-400 hover:text-brand-black hover:bg-gray-100 rounded-lg transition-all"
+                    >
                       <MoreHorizontal size={18} />
                     </button>
+
+                    {activeMenuId === client.id && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-10" 
+                          onClick={() => setActiveMenuId(null)}
+                        />
+                        <div className={`absolute right-6 ${index >= mockClients.length - 2 ? "bottom-10" : "top-10"} w-48 bg-brand-white rounded-lg shadow-xl border border-gray-100 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}>
+                          <button 
+                            onClick={() => setActiveMenuId(null)}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          >
+                            <Eye size={14} />
+                            <span>Ver detalle</span>
+                          </button>
+                          <button 
+                            onClick={() => setActiveMenuId(null)}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                          >
+                            <UserMinus size={14} />
+                            <span>Desactivar cliente</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

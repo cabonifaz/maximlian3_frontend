@@ -162,7 +162,7 @@ export default function UserManagement() {
                           className="fixed inset-0 z-10" 
                           onClick={() => setActiveMenuId(null)}
                         />
-                        <div className="absolute right-6 top-10 w-48 bg-brand-white rounded-lg shadow-xl border border-gray-100 py-1 z-20 animate-in fade-in zoom-in-95 duration-100">
+                        <div className={`absolute right-6 ${initialUsers.indexOf(user) >= initialUsers.length - 2 ? "bottom-10" : "top-10"} w-48 bg-brand-white rounded-lg shadow-xl border border-gray-100 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}>
                           <button 
                             onClick={() => openEditModal(user)}
                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
