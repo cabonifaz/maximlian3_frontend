@@ -1,14 +1,18 @@
 import { type RouteObject } from "react-router";
-import LoginPage from "@maximilian/pages/Auth/LoginPage";
-import RoleSelectionPage from "@maximilian/pages/Auth/RoleSelectionPage";
 
 export const authRoutes: RouteObject[] = [
   {
     path: "login",
-    element: <LoginPage />,
+    lazy: () =>
+      import("@maximilian/pages/Auth/LoginPage").then((m) => ({
+        Component: m.default,
+      })),
   },
   {
     path: "select-role",
-    element: <RoleSelectionPage />,
+    lazy: () =>
+      import("@maximilian/pages/Auth/RoleSelectionPage").then((m) => ({
+        Component: m.default,
+      })),
   },
 ];
