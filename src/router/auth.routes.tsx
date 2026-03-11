@@ -1,18 +1,27 @@
 import { type RouteObject } from "react-router";
+import { GuestGuard } from "@maximilian/components/GuestGuard";
 
 export const authRoutes: RouteObject[] = [
   {
     path: "login",
     lazy: () =>
       import("@maximilian/pages/Auth/LoginPage").then((m) => ({
-        Component: m.default,
+        Component: () => (
+          <GuestGuard>
+            <m.default />
+          </GuestGuard>
+        ),
       })),
   },
   {
     path: "forgot-password",
     lazy: () =>
       import("@maximilian/pages/Auth/ForgotPasswordPage").then((m) => ({
-        Component: m.default,
+        Component: () => (
+          <GuestGuard>
+            <m.default />
+          </GuestGuard>
+        ),
       })),
   },
   {
