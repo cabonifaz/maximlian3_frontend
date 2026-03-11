@@ -148,7 +148,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-black transition-colors disabled:opacity-50"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-black transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -175,7 +175,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-4 bg-brand-black text-brand-white rounded-xl text-lg font-bold hover:bg-brand-black/90 active:scale-[0.98] transition-all shadow-lg shadow-black/10 mt-4 disabled:opacity-70 flex justify-center items-center gap-2"
+              className="w-full py-4 bg-brand-black text-brand-white rounded-xl text-lg font-bold hover:bg-brand-black/90 active:scale-[0.98] hover:scale-[1.02] transition-all shadow-lg shadow-black/10 mt-4 disabled:opacity-70 flex justify-center items-center gap-2 cursor-pointer"
             >
               {isLoading ? (
                 <>
@@ -207,7 +207,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-black transition-colors disabled:opacity-50"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-black transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -235,7 +235,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   disabled={isLoading}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-black transition-colors disabled:opacity-50"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-black transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -248,7 +248,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-4 bg-brand-wine text-brand-white rounded-xl text-lg font-bold hover:bg-brand-wine/90 active:scale-[0.98] transition-all shadow-lg shadow-black/10 mt-4 disabled:opacity-70 flex justify-center items-center gap-2"
+              className="w-full py-4 bg-brand-wine text-brand-white rounded-xl text-lg font-bold hover:bg-brand-wine/90 active:scale-[0.98] hover:scale-[1.02] transition-all shadow-lg shadow-black/10 mt-4 disabled:opacity-70 flex justify-center items-center gap-2 cursor-pointer"
             >
               {isLoading ? (
                 <>
@@ -263,7 +263,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => setIsNewPasswordRequired(false)}
               disabled={isLoading}
-              className="w-full py-4 bg-transparent text-gray-500 hover:text-brand-black rounded-xl text-sm font-bold transition-all disabled:opacity-70"
+              className="w-full py-4 bg-transparent text-gray-500 hover:text-brand-black rounded-xl text-sm font-bold transition-all disabled:opacity-70 cursor-pointer hover:scale-[1.02]"
             >
                Volver a iniciar sesión
             </button>
@@ -276,7 +276,7 @@ export default function LoginPage() {
               Olvidaste tu contraseña?{" "}
               <Link
                 to="/forgot-password"
-                className="font-bold text-brand-black hover:text-brand-wine transition-colors"
+                className="font-bold text-brand-black hover:text-brand-wine transition-colors cursor-pointer hover:underline"
               >
                 Obten un enlace al correo
               </Link>

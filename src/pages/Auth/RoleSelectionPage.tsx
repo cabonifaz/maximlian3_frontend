@@ -99,7 +99,7 @@ export default function RoleSelectionPage() {
           <button 
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="flex items-center gap-2 text-brand-wine font-bold text-sm hover:opacity-80 transition-opacity disabled:opacity-50"
+            className="flex items-center gap-2 text-brand-wine font-bold text-sm hover:opacity-80 hover:scale-[1.05] active:scale-95 cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <LogOut size={18} />
             <span>Cerrar sesion</span>

@@ -2,11 +2,11 @@ import { useState } from "react";
 import { X, Plus, MoreHorizontal, ArrowLeft } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { 
-  clientInfoSchema, 
+import {
+  clientInfoSchema,
   type ClientInfoFormData,
   contactSchema,
-  type ContactFormData
+  type ContactFormData,
 } from "@maximilian/schemas";
 import { AddRateModal } from "./AddRateModal";
 
@@ -19,7 +19,11 @@ interface AddClientModalProps {
 type Tab = "info" | "rates" | "contacts";
 type ContactView = "list" | "create" | "edit" | "detail";
 
-export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalProps) {
+export function AddClientModal({
+  isOpen,
+  onClose,
+  onConfirm,
+}: AddClientModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("info");
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
   const [contactView, setContactView] = useState<ContactView>("list");
@@ -59,14 +63,20 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
 
   const openEditContact = (contact: ContactFormData) => {
     Object.keys(contact).forEach((key) => {
-      setContactValue(key as keyof ContactFormData, contact[key as keyof ContactFormData]);
+      setContactValue(
+        key as keyof ContactFormData,
+        contact[key as keyof ContactFormData],
+      );
     });
     setContactView("edit");
   };
 
   const openDetailContact = (contact: ContactFormData) => {
     Object.keys(contact).forEach((key) => {
-      setContactValue(key as keyof ContactFormData, contact[key as keyof ContactFormData]);
+      setContactValue(
+        key as keyof ContactFormData,
+        contact[key as keyof ContactFormData],
+      );
     });
     setContactView("detail");
   };
@@ -76,8 +86,13 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
       <div className="bg-brand-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col h-[85vh]">
         {/* Header */}
         <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
-          <h2 className="text-xl font-bold text-brand-black">Agrega un Cliente</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <h2 className="text-xl font-bold text-brand-black">
+            Agrega un Cliente
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+          >
             <X size={20} className="text-gray-400" />
           </button>
         </div>
@@ -88,7 +103,9 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
             <button
               onClick={() => setActiveTab("info")}
               className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
-                activeTab === "info" ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black" : "text-gray-400 hover:text-gray-600"
+                activeTab === "info"
+                  ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black"
+                  : "text-gray-400 hover:text-gray-600"
               }`}
             >
               <span>Información</span>
@@ -99,7 +116,9 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
             <button
               onClick={() => setActiveTab("rates")}
               className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
-                activeTab === "rates" ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black" : "text-gray-400 hover:text-gray-600"
+                activeTab === "rates"
+                  ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black"
+                  : "text-gray-400 hover:text-gray-600"
               }`}
             >
               Tarifas
@@ -107,7 +126,9 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
             <button
               onClick={() => setActiveTab("contacts")}
               className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
-                activeTab === "contacts" ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black" : "text-gray-400 hover:text-gray-600"
+                activeTab === "contacts"
+                  ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black"
+                  : "text-gray-400 hover:text-gray-600"
               }`}
             >
               <span>Contactos</span>
@@ -121,10 +142,16 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
         {/* Content */}
         <div className="p-8 flex-1 overflow-y-auto min-h-0">
           {activeTab === "info" && (
-            <form id="client-info-form" onSubmit={handleInfoSubmit(handleConfirm)} className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
+            <form
+              id="client-info-form"
+              onSubmit={handleInfoSubmit(handleConfirm)}
+              className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300"
+            >
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Tipo Persona</label>
-                <select 
+                <label className="text-sm font-bold text-gray-700">
+                  Tipo Persona
+                </label>
+                <select
                   {...infoRegister("tipoPersona")}
                   className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
                 >
@@ -132,23 +159,33 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                   <option value="Natural">Persona Natural</option>
                   <option value="Jurídica">Persona Jurídica</option>
                 </select>
-                {infoErrors.tipoPersona && <p className="text-xs text-red-500">{infoErrors.tipoPersona.message}</p>}
+                {infoErrors.tipoPersona && (
+                  <p className="text-xs text-red-500">
+                    {infoErrors.tipoPersona.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Nombre</label>
-                <input 
+                <label className="text-sm font-bold text-gray-700">
+                  Nombre
+                </label>
+                <input
                   {...infoRegister("nombre")}
-                  type="text" 
-                  placeholder="Nombre" 
+                  type="text"
+                  placeholder="Nombre"
                   className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
                 />
-                {infoErrors.nombre && <p className="text-xs text-red-500">{infoErrors.nombre.message}</p>}
+                {infoErrors.nombre && (
+                  <p className="text-xs text-red-500">
+                    {infoErrors.nombre.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-700">País</label>
-                <select 
+                <select
                   {...infoRegister("pais")}
                   className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
                 >
@@ -157,56 +194,84 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                   <option value="Uruguay">Uruguay</option>
                   <option value="Colombia">Colombia</option>
                 </select>
-                {infoErrors.pais && <p className="text-xs text-red-500">{infoErrors.pais.message}</p>}
+                {infoErrors.pais && (
+                  <p className="text-xs text-red-500">
+                    {infoErrors.pais.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Dirección</label>
-                <input 
+                <label className="text-sm font-bold text-gray-700">
+                  Dirección
+                </label>
+                <input
                   {...infoRegister("direccion")}
-                  type="text" 
-                  placeholder="Dirección" 
+                  type="text"
+                  placeholder="Dirección"
                   className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
                 />
-                {infoErrors.direccion && <p className="text-xs text-red-500">{infoErrors.direccion.message}</p>}
+                {infoErrors.direccion && (
+                  <p className="text-xs text-red-500">
+                    {infoErrors.direccion.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-700">Email</label>
-                <input 
+                <input
                   {...infoRegister("email")}
-                  type="email" 
-                  placeholder="Email" 
+                  type="email"
+                  placeholder="Email"
                   className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
                 />
-                {infoErrors.email && <p className="text-xs text-red-500">{infoErrors.email.message}</p>}
+                {infoErrors.email && (
+                  <p className="text-xs text-red-500">
+                    {infoErrors.email.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Teléfono</label>
-                <input 
+                <label className="text-sm font-bold text-gray-700">
+                  Teléfono
+                </label>
+                <input
                   {...infoRegister("telefono")}
-                  type="text" 
-                  placeholder="Teléfono" 
+                  type="text"
+                  placeholder="Teléfono"
                   className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
                 />
-                {infoErrors.telefono && <p className="text-xs text-red-500">{infoErrors.telefono.message}</p>}
+                {infoErrors.telefono && (
+                  <p className="text-xs text-red-500">
+                    {infoErrors.telefono.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Sitio Web</label>
-                <input 
+                <label className="text-sm font-bold text-gray-700">
+                  Sitio Web
+                </label>
+                <input
                   {...infoRegister("sitioWeb")}
-                  type="text" 
-                  placeholder="Sitio Web" 
+                  type="text"
+                  placeholder="Sitio Web"
                   className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
                 />
-                {infoErrors.sitioWeb && <p className="text-xs text-red-500">{infoErrors.sitioWeb.message}</p>}
+                {infoErrors.sitioWeb && (
+                  <p className="text-xs text-red-500">
+                    {infoErrors.sitioWeb.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Tipo Registro Tributario</label>
-                <select 
+                <label className="text-sm font-bold text-gray-700">
+                  Tipo Registro Tributario
+                </label>
+                <select
                   {...infoRegister("tipoRegistroTributario")}
                   className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
                 >
@@ -214,23 +279,35 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                   <option value="RUC">RUC</option>
                   <option value="NIT">NIT</option>
                 </select>
-                {infoErrors.tipoRegistroTributario && <p className="text-xs text-red-500">{infoErrors.tipoRegistroTributario.message}</p>}
+                {infoErrors.tipoRegistroTributario && (
+                  <p className="text-xs text-red-500">
+                    {infoErrors.tipoRegistroTributario.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Representante Legal</label>
-                <input 
+                <label className="text-sm font-bold text-gray-700">
+                  Representante Legal
+                </label>
+                <input
                   {...infoRegister("representanteLegal")}
-                  type="text" 
-                  placeholder="Representante Legal" 
+                  type="text"
+                  placeholder="Representante Legal"
                   className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
                 />
-                {infoErrors.representanteLegal && <p className="text-xs text-red-500">{infoErrors.representanteLegal.message}</p>}
+                {infoErrors.representanteLegal && (
+                  <p className="text-xs text-red-500">
+                    {infoErrors.representanteLegal.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Formato Informe</label>
-                <select 
+                <label className="text-sm font-bold text-gray-700">
+                  Formato Informe
+                </label>
+                <select
                   {...infoRegister("formatoInforme")}
                   className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
                 >
@@ -238,7 +315,11 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                   <option value="PDF">PDF</option>
                   <option value="Word">Word</option>
                 </select>
-                {infoErrors.formatoInforme && <p className="text-xs text-red-500">{infoErrors.formatoInforme.message}</p>}
+                {infoErrors.formatoInforme && (
+                  <p className="text-xs text-red-500">
+                    {infoErrors.formatoInforme.message}
+                  </p>
+                )}
               </div>
             </form>
           )}
@@ -247,24 +328,24 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1 max-w-xs">
-                  <input 
-                    type="text" 
-                    placeholder="Search:" 
+                  <input
+                    type="text"
+                    placeholder="Buscar..."
                     className="w-full px-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm outline-none"
                   />
                 </div>
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     onClick={() => setIsRateModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10"
+                    className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all"
                   >
                     <Plus size={14} />
                     <span>Nuevo</span>
                   </button>
-                  <button className="px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10">
+                  <button className="px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all">
                     Editar
                   </button>
-                  <button className="px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10">
+                  <button className="px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all">
                     Eliminar
                   </button>
                 </div>
@@ -278,21 +359,39 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                       <th className="px-4 py-3 font-bold">País</th>
                       <th className="px-4 py-3 font-bold">Moneda</th>
                       <th className="px-4 py-3 font-bold">Trámite</th>
-                      <th className="px-4 py-3 font-bold text-center">Días Min.</th>
-                      <th className="px-4 py-3 font-bold text-center">Precio</th>
-                      <th className="px-4 py-3 font-bold text-center">Tarifario</th>
+                      <th className="px-4 py-3 font-bold text-center">
+                        Días Min.
+                      </th>
+                      <th className="px-4 py-3 font-bold text-center">
+                        Precio
+                      </th>
+                      <th className="px-4 py-3 font-bold text-center">
+                        Tarifario
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {[1, 2, 3, 4, 5, 6].map((i) => (
                       <tr key={i} className="hover:bg-gray-50/50">
-                        <td className="px-4 py-3 text-gray-600">Informe confidencial</td>
-                        <td className="px-4 py-3 text-gray-600">República Dominicana</td>
+                        <td className="px-4 py-3 text-gray-600">
+                          Informe confidencial
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">
+                          República Dominicana
+                        </td>
                         <td className="px-4 py-3 text-gray-600">Euro</td>
-                        <td className="px-4 py-3 text-gray-600 text-center">XP</td>
-                        <td className="px-4 py-3 text-gray-600 text-center">3</td>
-                        <td className="px-4 py-3 text-brand-black font-bold text-center">45.0</td>
-                        <td className="px-4 py-3 text-gray-600 text-center">P</td>
+                        <td className="px-4 py-3 text-gray-600 text-center">
+                          XP
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 text-center">
+                          3
+                        </td>
+                        <td className="px-4 py-3 text-brand-black font-bold text-center">
+                          45.0
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 text-center">
+                          P
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -306,12 +405,12 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
               {contactView === "list" && (
                 <div className="space-y-6">
                   <div className="flex justify-end">
-                    <button 
+                    <button
                       onClick={() => {
                         contactReset();
                         setContactView("create");
                       }}
-                      className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10"
+                      className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all"
                     >
                       <Plus size={14} />
                       <span>Agregar Contacto</span>
@@ -319,20 +418,47 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                   </div>
                   <div className="divide-y divide-gray-50">
                     {[
-                      { nombre: "Jorge Ramirez", email: "jramirez@gmail.com", tipoPersona: "Persona Natural", tipoContacto: "Facturación", codigoContacto: "CF001", telefono: "+51 987 654 441", areaTrabajo: "Contabilidad" },
-                      { nombre: "Juan Luna", email: "jluna@gmail.com", tipoPersona: "Persona Natural", tipoContacto: "Administrativo", codigoContacto: "CF002", telefono: "+51 987 654 441", areaTrabajo: "Administración" },
+                      {
+                        nombre: "Jorge Ramirez",
+                        email: "jramirez@gmail.com",
+                        tipoPersona: "Persona Natural",
+                        tipoContacto: "Facturación",
+                        codigoContacto: "CF001",
+                        telefono: "+51 987 654 441",
+                        areaTrabajo: "Contabilidad",
+                      },
+                      {
+                        nombre: "Juan Luna",
+                        email: "jluna@gmail.com",
+                        tipoPersona: "Persona Natural",
+                        tipoContacto: "Administrativo",
+                        codigoContacto: "CF002",
+                        telefono: "+51 987 654 441",
+                        areaTrabajo: "Administración",
+                      },
                     ].map((contact, i) => (
-                      <div key={i} className="py-4 flex items-center justify-between group">
+                      <div
+                        key={i}
+                        className="py-4 flex items-center justify-between group"
+                      >
                         <div className="grid grid-cols-3 flex-1 gap-4">
                           <div>
-                            <p className="text-sm font-bold text-brand-black">{contact.nombre}</p>
-                            <p className="text-xs text-gray-400">{contact.email}</p>
+                            <p className="text-sm font-bold text-brand-black">
+                              {contact.nombre}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {contact.email}
+                            </p>
                           </div>
                           <div className="flex items-center">
-                            <span className="text-sm font-medium text-gray-600">{contact.tipoContacto}</span>
+                            <span className="text-sm font-medium text-gray-600">
+                              {contact.tipoContacto}
+                            </span>
                           </div>
                           <div className="flex items-center">
-                            <span className="text-sm font-medium text-gray-600">{contact.telefono}</span>
+                            <span className="text-sm font-medium text-gray-600">
+                              {contact.telefono}
+                            </span>
                           </div>
                         </div>
                         <div className="relative group/menu">
@@ -340,9 +466,21 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                             <MoreHorizontal size={18} />
                           </button>
                           <div className="absolute right-0 top-full mt-1 w-40 bg-brand-white border border-gray-100 rounded-xl shadow-xl z-10 hidden group-hover/menu:block py-1">
-                            <button onClick={() => openDetailContact(contact)} className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-gray-600">Ver Detalles</button>
-                            <button onClick={() => openEditContact(contact)} className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-gray-600">Modificar Contacto</button>
-                            <button className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-red-500">Eliminar Contacto</button>
+                            <button
+                              onClick={() => openDetailContact(contact)}
+                              className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-gray-600"
+                            >
+                              Ver Detalles
+                            </button>
+                            <button
+                              onClick={() => openEditContact(contact)}
+                              className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-gray-600"
+                            >
+                              Modificar Contacto
+                            </button>
+                            <button className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-red-500">
+                              Eliminar Contacto
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -351,10 +489,15 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                 </div>
               )}
 
-              {(contactView === "create" || contactView === "edit" || contactView === "detail") && (
+              {(contactView === "create" ||
+                contactView === "edit" ||
+                contactView === "detail") && (
                 <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
                   <div className="flex items-center gap-4">
-                    <button onClick={() => setContactView("list")} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <button
+                      onClick={() => setContactView("list")}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer hover:scale-110 active:scale-90"
+                    >
                       <ArrowLeft size={20} className="text-brand-black" />
                     </button>
                     <h3 className="font-bold text-lg text-brand-black">
@@ -364,24 +507,38 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                     </h3>
                   </div>
 
-                  <form id="contact-form" onSubmit={handleContactSubmit(handleAddContact)} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <form
+                    id="contact-form"
+                    onSubmit={handleContactSubmit(handleAddContact)}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                  >
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">Tipo Persona</label>
-                      <select 
+                      <label className="text-sm font-bold text-gray-700">
+                        Tipo Persona
+                      </label>
+                      <select
                         {...contactRegister("tipoPersona")}
                         disabled={contactView === "detail"}
                         className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none disabled:bg-gray-50"
                       >
                         <option value="">Seleccione</option>
                         <option value="Persona Natural">Persona Natural</option>
-                        <option value="Persona Jurídica">Persona Jurídica</option>
+                        <option value="Persona Jurídica">
+                          Persona Jurídica
+                        </option>
                       </select>
-                      {contactErrors.tipoPersona && <p className="text-xs text-red-500">{contactErrors.tipoPersona.message}</p>}
+                      {contactErrors.tipoPersona && (
+                        <p className="text-xs text-red-500">
+                          {contactErrors.tipoPersona.message}
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">Tipo de Contacto</label>
-                      <select 
+                      <label className="text-sm font-bold text-gray-700">
+                        Tipo de Contacto
+                      </label>
+                      <select
                         {...contactRegister("tipoContacto")}
                         disabled={contactView === "detail"}
                         className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none disabled:bg-gray-50"
@@ -391,60 +548,90 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                         <option value="Administrativo">Administrativo</option>
                         <option value="Legal">Legal</option>
                       </select>
-                      {contactErrors.tipoContacto && <p className="text-xs text-red-500">{contactErrors.tipoContacto.message}</p>}
+                      {contactErrors.tipoContacto && (
+                        <p className="text-xs text-red-500">
+                          {contactErrors.tipoContacto.message}
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">Código de Contacto</label>
-                      <input 
+                      <label className="text-sm font-bold text-gray-700">
+                        Código de Contacto
+                      </label>
+                      <input
                         {...contactRegister("codigoContacto")}
                         disabled={contactView === "detail"}
-                        type="text" 
-                        placeholder="Código" 
+                        type="text"
+                        placeholder="Código"
                         className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
                       />
-                      {contactErrors.codigoContacto && <p className="text-xs text-red-500">{contactErrors.codigoContacto.message}</p>}
+                      {contactErrors.codigoContacto && (
+                        <p className="text-xs text-red-500">
+                          {contactErrors.codigoContacto.message}
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">Nombre</label>
-                      <input 
+                      <label className="text-sm font-bold text-gray-700">
+                        Nombre
+                      </label>
+                      <input
                         {...contactRegister("nombre")}
                         disabled={contactView === "detail"}
-                        type="text" 
-                        placeholder="Nombre" 
+                        type="text"
+                        placeholder="Nombre"
                         className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
                       />
-                      {contactErrors.nombre && <p className="text-xs text-red-500">{contactErrors.nombre.message}</p>}
+                      {contactErrors.nombre && (
+                        <p className="text-xs text-red-500">
+                          {contactErrors.nombre.message}
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">Email</label>
-                      <input 
+                      <label className="text-sm font-bold text-gray-700">
+                        Email
+                      </label>
+                      <input
                         {...contactRegister("email")}
                         disabled={contactView === "detail"}
-                        type="email" 
-                        placeholder="Email" 
+                        type="email"
+                        placeholder="Email"
                         className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
                       />
-                      {contactErrors.email && <p className="text-xs text-red-500">{contactErrors.email.message}</p>}
+                      {contactErrors.email && (
+                        <p className="text-xs text-red-500">
+                          {contactErrors.email.message}
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">Teléfono</label>
-                      <input 
+                      <label className="text-sm font-bold text-gray-700">
+                        Teléfono
+                      </label>
+                      <input
                         {...contactRegister("telefono")}
                         disabled={contactView === "detail"}
-                        type="text" 
-                        placeholder="Teléfono" 
+                        type="text"
+                        placeholder="Teléfono"
                         className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
                       />
-                      {contactErrors.telefono && <p className="text-xs text-red-500">{contactErrors.telefono.message}</p>}
+                      {contactErrors.telefono && (
+                        <p className="text-xs text-red-500">
+                          {contactErrors.telefono.message}
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">Área de Trabajo</label>
-                      <select 
+                      <label className="text-sm font-bold text-gray-700">
+                        Área de Trabajo
+                      </label>
+                      <select
                         {...contactRegister("areaTrabajo")}
                         disabled={contactView === "detail"}
                         className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none disabled:bg-gray-50"
@@ -453,7 +640,11 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                         <option value="Contabilidad">Contabilidad</option>
                         <option value="Administración">Administración</option>
                       </select>
-                      {contactErrors.areaTrabajo && <p className="text-xs text-red-500">{contactErrors.areaTrabajo.message}</p>}
+                      {contactErrors.areaTrabajo && (
+                        <p className="text-xs text-red-500">
+                          {contactErrors.areaTrabajo.message}
+                        </p>
+                      )}
                     </div>
                   </form>
 
@@ -461,7 +652,7 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                     {contactView === "detail" ? (
                       <button
                         onClick={() => setContactView("list")}
-                        className="px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 transition-all shadow-lg"
+                        className="px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 transition-all shadow-lg cursor-pointer hover:scale-[1.05] active:scale-95"
                       >
                         Salir
                       </button>
@@ -471,9 +662,12 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
                         form="contact-form"
                         className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
                       >
-
                         <div className="w-2 h-2 rounded-full bg-brand-white" />
-                        <span>{contactView === "create" ? "Agregar Contacto" : "Guardar Cambios"}</span>
+                        <span>
+                          {contactView === "create"
+                            ? "Agregar Contacto"
+                            : "Guardar Cambios"}
+                        </span>
                       </button>
                     )}
                   </div>
@@ -525,9 +719,9 @@ export function AddClientModal({ isOpen, onClose, onConfirm }: AddClientModalPro
         )}
       </div>
 
-      <AddRateModal 
-        isOpen={isRateModalOpen} 
-        onClose={() => setIsRateModalOpen(false)} 
+      <AddRateModal
+        isOpen={isRateModalOpen}
+        onClose={() => setIsRateModalOpen(false)}
         onConfirm={(data) => console.log("Rate added:", data)}
       />
     </div>
