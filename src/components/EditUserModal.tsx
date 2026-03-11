@@ -250,9 +250,9 @@ export function EditUserModal({
                       <label
                         key={role}
                         className="flex items-center gap-3 cursor-pointer group"
+                        onClick={() => handleRoleToggle(role)}
                       >
                         <div
-                          onClick={() => handleRoleToggle(role)}
                           className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
                             selectedRoles?.includes(role)
                               ? "bg-brand-black border-brand-black"
@@ -289,9 +289,9 @@ export function EditUserModal({
                         <label
                           key={language}
                           className="flex items-center gap-3 cursor-pointer group"
+                          onClick={() => handleLanguageToggle(language)}
                         >
                           <div
-                            onClick={() => handleLanguageToggle(language)}
                             className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
                               selectedLanguages?.includes(language)
                                 ? "bg-brand-wine border-brand-wine"
