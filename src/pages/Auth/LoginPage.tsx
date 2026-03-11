@@ -42,7 +42,6 @@ export default function LoginPage() {
   } = useForm<NewPasswordFormData>({
     resolver: zodResolver(newPasswordSchema),
     defaultValues: {
-      email: "",
       newPassword: "",
       confirmPassword: "",
     },
@@ -73,7 +72,7 @@ export default function LoginPage() {
     setIsLoading(true);
     setAuthError(null);
     try {
-      const response = await authService.confirmNewPassword(data.newPassword, data.email);
+      const response = await authService.confirmNewPassword(data.newPassword);
       if (response.isSignedIn) {
         navigate("/select-role");
       } else {
@@ -190,24 +189,6 @@ export default function LoginPage() {
           </form>
         ) : (
           <form onSubmit={handleNewPasswordSubmit(onNewPassword)} className="w-full space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">
-                Email
-              </label>
-              <input
-                {...newPasswordRegister("email")}
-                type="email"
-                placeholder="tu@email.com"
-                disabled={isLoading}
-                className={`w-full px-5 py-3 bg-brand-white border ${
-                  newPasswordErrors.email ? "border-red-500" : "border-gray-200"
-                } rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all disabled:opacity-50`}
-              />
-              {newPasswordErrors.email && (
-                <p className="text-xs text-red-500">{newPasswordErrors.email.message}</p>
-              )}
-            </div>
-
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">
                 Nueva Contraseña

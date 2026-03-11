@@ -1,7 +1,19 @@
-import { NavLink } from "react-router";
+import { NavLink, useNavigate } from "react-router";
 import { Users, Settings, LogOut, Shield } from "lucide-react";
+import { authService } from "@maximilian/services/auth.service";
 
 export function Sidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Error al cerrar sesión", error);
+    }
+  };
+
   const menuItems = [
     { name: "Gestión de Usuarios", icon: Users, path: "/admin/users" },
     { name: "Configuración", icon: Settings, path: "/admin/config" },
@@ -36,7 +48,10 @@ export function Sidebar() {
       </nav>
 
       <div className="p-4 mt-auto border-t border-gray-100">
-        <button className="flex items-center gap-3 px-4 py-3 w-full text-gray-500 hover:text-brand-wine hover:bg-red-50 rounded-lg transition-all">
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 w-full text-gray-500 hover:text-brand-wine hover:bg-red-50 rounded-lg transition-all"
+        >
           <LogOut size={20} />
           <span>Cerrar Sesión</span>
         </button>

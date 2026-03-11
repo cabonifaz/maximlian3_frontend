@@ -9,7 +9,6 @@ export const loginSchema = z.object({
 export type LoginFormData = z.infer<typeof loginSchema>;
 
 export const newPasswordSchema = z.object({
-  email: z.string().email("Email inválido"),
   newPassword: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
   confirmPassword: z.string()
 }).refine((data) => data.newPassword === data.confirmPassword, {

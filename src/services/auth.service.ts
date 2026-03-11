@@ -23,15 +23,10 @@ export const authService = {
       throw error;
     }
   },
-  confirmNewPassword: async (newPassword: string, email: string) => {
+  confirmNewPassword: async (newPassword: string) => {
     try {
       const { isSignedIn, nextStep } = await confirmSignIn({
         challengeResponse: newPassword,
-        options: {
-          userAttributes: {
-            email: email,
-          },
-        },
       });
       return { isSignedIn, nextStep };
     } catch (error) {
