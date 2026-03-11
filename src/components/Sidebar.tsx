@@ -1,16 +1,23 @@
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router";
 import { Users, Settings, LogOut, Shield } from "lucide-react";
 import { authService } from "@maximilian/services/auth.service";
+import LoadingScreen from "./LoadingScreen";
 
 export function Sidebar() {
   const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await authService.logout();
+      // Small artificial delay to make the transition feel smoother and deliberate
+      await new Promise((resolve) => setTimeout(resolve, 800));
       navigate("/login");
     } catch (error) {
       console.error("Error al cerrar sesión", error);
+      setIsLoggingOut(false);
     }
   };
 
@@ -25,7 +32,9 @@ export function Sidebar() {
         <div className="bg-brand-black p-2 rounded-lg">
           <Shield className="text-brand-white w-6 h-6" />
         </div>
-        <span className="font-bold text-xl tracking-tight text-brand-black">Safety Report</span>
+        <span className="font-bold text-xl tracking-tight text-brand-black">
+          Safety Report
+        </span>
       </div>
 
       <nav className="mt-6 flex-1 px-4 space-y-2">
@@ -48,14 +57,17 @@ export function Sidebar() {
       </nav>
 
       <div className="p-4 mt-auto border-t border-gray-100">
-        <button 
+        <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 w-full text-gray-500 hover:text-brand-wine hover:bg-red-50 rounded-lg transition-all"
+          disabled={isLoggingOut}
+          className="flex items-center gap-3 px-4 py-3 w-full text-gray-500 hover:text-brand-wine hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
         >
           <LogOut size={20} />
           <span>Cerrar Sesión</span>
         </button>
       </div>
+
+      {isLoggingOut && <LoadingScreen message="Cerrando sesión..." />}
     </aside>
   );
 }

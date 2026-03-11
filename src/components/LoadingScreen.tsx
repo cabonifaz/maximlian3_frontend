@@ -1,8 +1,14 @@
 import React from "react";
 
-export const LoadingScreen: React.FC = () => {
+interface LoadingScreenProps {
+  message?: string;
+}
+
+export const LoadingScreen: React.FC<LoadingScreenProps> = ({ 
+  message = "Cargando Maximilian" 
+}) => {
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-brand-white z-[9999]">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-brand-white/80 backdrop-blur-sm z-[9999] animate-in fade-in duration-300">
       <div className="relative">
         {/* Outer pulse */}
         <div className="absolute inset-0 rounded-full bg-brand-wine/10 animate-ping scale-150" />
@@ -16,7 +22,7 @@ export const LoadingScreen: React.FC = () => {
 
       <div className="mt-8 flex flex-col items-center gap-2">
         <h2 className="text-xl font-bold text-brand-black tracking-tight">
-          Cargando Maximilian
+          {message}
         </h2>
         <div className="flex gap-1">
           <div className="w-1.5 h-1.5 bg-brand-wine rounded-full animate-bounce [animation-delay:-0.3s]" />
