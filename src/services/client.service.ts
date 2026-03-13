@@ -5,9 +5,33 @@ import type {
   CreateClientRequest,
   CreateClientResponse,
   ClientDetail,
+  ClientListRequest,
+  ClientListResponse,
 } from "@maximilian/shared/types/client.type";
 
 export const clientService = {
+  /**
+   * List clients with pagination and filters.
+   * @param params Pagination and filter parameters.
+   */
+  list: async (params: ClientListRequest): Promise<ClientListResponse> => {
+    try {
+      const { data } = await maximilianService.get<ApiResponse<ClientListResponse>>(
+        "/api/Cliente/listar",
+        { params }
+      );
+
+      if (data.idTipoMensaje !== MessageType.SUCCESS) {
+        throw new Error(data.mensaje || "Error al listar los clientes");
+      }
+
+      return data.result;
+    } catch (error) {
+      console.error("Error listing clients:", error);
+      throw error;
+    }
+  },
+
   /**
    * Create a new client in the system.
    * @param clientData Data for the new client.

@@ -8,8 +8,11 @@ import {
   ChevronRight,
   Eye,
   UserMinus,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AddClientModal } from "@maximilian/components/AddClientModal";
 import { ClientDetailModal } from "@maximilian/components/ClientDetailModal";
@@ -20,54 +23,6 @@ import {
 } from "@maximilian/schemas";
 import { type CreateClientRequest } from "@maximilian/shared/types/client.type";
 
-const mockClients = [
-  {
-    id: 1,
-    nombre: "Juan Espinoza",
-    pais: "Perú",
-    tipoPersona: "Natural",
-    telefono: "+51 987 654 321",
-    email: "juan.espinoza@softwarefactorylatam.com",
-    estado: "Activo",
-  },
-  {
-    id: 2,
-    nombre: "Maria Fernanda Rios",
-    pais: "Uruguay",
-    tipoPersona: "Jurídica",
-    telefono: "+598 98 123 456",
-    email: "mrios@andinasoluciones.com",
-    estado: "Activo",
-  },
-  {
-    id: 3,
-    nombre: "Carlos Mendoza",
-    pais: "Colombia",
-    tipoPersona: "Natural",
-    telefono: "+57 301 555 0192",
-    email: "carlos.mendoza@grupomh.pe",
-    estado: "Activo",
-  },
-  {
-    id: 4,
-    nombre: "Lucia Torres",
-    pais: "Argentina",
-    tipoPersona: "Jurídica",
-    telefono: "+54 11 2345 6789",
-    email: "lucia.torres@nexaconsulting.com",
-    estado: "Activo",
-  },
-  {
-    id: 5,
-    nombre: "Andrés Salazar",
-    pais: "Chile",
-    tipoPersona: "Natural",
-    telefono: "+56 9 8765 4321",
-    email: "andres.salazar@innovacorp.cl",
-    estado: "Activo",
-  },
-];
-
 interface ClientMutationParams {
   data: ClientInfoFormData;
   contacts: ContactFormData[];
@@ -76,12 +31,27 @@ interface ClientMutationParams {
 
 export default function ClientManagement() {
   const [searchTerm, setSearchBar] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
 
   const queryClient = useQueryClient();
+
+  const {
+    data: clientsData,
+    isLoading: isLoadingClients,
+    isError: isErrorClients,
+    refetch: refetchClients,
+  } = useQuery({
+    queryKey: ["clients", currentPage, searchTerm],
+    queryFn: () =>
+      clientService.list({
+        numPag: currentPage,
+        Filtro: searchTerm || undefined,
+      }),
+  });
 
   const createClientMutation = useMutation({
     mutationFn: ({ data, contacts }: ClientMutationParams) => {
@@ -91,7 +61,7 @@ export default function ClientManagement() {
         nombreCorto: data.nombre.substring(0, 20), // Fallback
         idPais: data.pais as number,
         idRegistroTributario: data.tipoRegistroTributario as number,
-        numRegistroTributario: data.representanteLegal, // Placeholder, usually a separate field
+        numRegistroTributario: data.representanteLegal, // Placeholder
         correo: data.email,
         webSite: data.sitioWeb || "",
         telefono: data.telefono,
@@ -128,14 +98,6 @@ export default function ClientManagement() {
     },
   });
 
-  const handleConfirmCreate = (
-    data: ClientInfoFormData,
-    contacts: ContactFormData[],
-    reset: () => void,
-  ) => {
-    createClientMutation.mutate({ data, contacts, reset });
-  };
-
   const updateClientMutation = useMutation({
     mutationFn: (updateData: any) => {
       return clientService.update(updateData);
@@ -152,8 +114,27 @@ export default function ClientManagement() {
     },
   });
 
+  const handleConfirmCreate = (
+    data: ClientInfoFormData,
+    contacts: ContactFormData[],
+    reset: () => void,
+  ) => {
+    createClientMutation.mutate({ data, contacts, reset });
+  };
+
   const handleUpdateClient = (data: any, contacts: any[]) => {
     updateClientMutation.mutate({ ...data, contactos: contacts });
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchBar(e.target.value);
+    setCurrentPage(1); // Reset to first page on search
+  };
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= (clientsData?.totalPaginas || 1)) {
+      setCurrentPage(page);
+    }
   };
 
   return (
@@ -170,7 +151,7 @@ export default function ClientManagement() {
               placeholder="Busca por nombre o nro. de registro tributario"
               className="w-full pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
               value={searchTerm}
-              onChange={(e) => setSearchBar(e.target.value)}
+              onChange={handleSearchChange}
             />
           </div>
 
@@ -223,103 +204,160 @@ export default function ClientManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {mockClients.map((client, index) => (
-                <tr
-                  key={client.id}
-                  className="hover:bg-gray-50/50 transition-colors group"
-                >
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-bold text-brand-black">
-                      {client.nombre}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-600">{client.pais}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-600">
-                      {client.tipoPersona}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-600 font-medium">
-                      {client.telefono}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-500">
-                      {client.email}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-600">
-                      {client.estado}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right relative">
-                    <button
-                      onClick={() =>
-                        setActiveMenuId(
-                          activeMenuId === client.id ? null : client.id,
-                        )
-                      }
-                      className="p-2 text-gray-400 hover:text-brand-black hover:bg-gray-100 rounded-lg transition-all cursor-pointer hover:scale-110 active:scale-90"
-                    >
-                      <MoreHorizontal size={18} />
-                    </button>
-
-                    {activeMenuId === client.id && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          onClick={() => setActiveMenuId(null)}
-                        />
-                        <div
-                          className={`absolute right-6 ${index >= mockClients.length - 2 ? "bottom-10" : "top-10"} w-48 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}
-                        >
-                          <button
-                            onClick={() => {
-                              setSelectedClientId(client.id);
-                              setIsDetailModalOpen(true);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
-                          >
-                            <Eye size={14} />
-                            <span>Ver detalle</span>
-                          </button>
-                          <button
-                            onClick={() => setActiveMenuId(null)}
-                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
-                          >
-                            <UserMinus size={14} />
-                            <span>Desactivar cliente</span>
-                          </button>
-                        </div>
-                      </>
-                    )}
+              {isLoadingClients ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="w-10 h-10 text-brand-wine animate-spin" />
+                      <p className="text-sm font-medium text-gray-500">
+                        Cargando clientes...
+                      </p>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : isErrorClients ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <AlertCircle className="w-10 h-10 text-red-500" />
+                      <p className="text-sm font-bold text-brand-black">
+                        Error al cargar los clientes
+                      </p>
+                      <button
+                        onClick={() => refetchClients()}
+                        className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-xs font-bold hover:bg-brand-wine/90 transition-all cursor-pointer"
+                      >
+                        <RefreshCw size={14} />
+                        <span>REINTENTAR</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : clientsData?.lstClientes.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-6 py-20 text-center text-gray-400 text-sm italic"
+                  >
+                    No se encontraron clientes
+                  </td>
+                </tr>
+              ) : (
+                clientsData?.lstClientes.map((client, index) => (
+                  <tr
+                    key={client.idCliente}
+                    className="hover:bg-gray-50/50 transition-colors group"
+                  >
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-bold text-brand-black">
+                        {client.nombre}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-600">
+                        {client.pais}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-600 capitalize">
+                        {client.tipoPersona.toLowerCase()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-600 font-medium">
+                        {client.telefono}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-500">
+                        {client.correo}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600">
+                        Activo
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right relative">
+                      <button
+                        onClick={() =>
+                          setActiveMenuId(
+                            activeMenuId === client.idCliente
+                              ? null
+                              : client.idCliente,
+                          )
+                        }
+                        className="p-2 text-gray-400 hover:text-brand-black hover:bg-gray-100 rounded-lg transition-all cursor-pointer hover:scale-110 active:scale-90"
+                      >
+                        <MoreHorizontal size={18} />
+                      </button>
+
+                      {activeMenuId === client.idCliente && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setActiveMenuId(null)}
+                          />
+                          <div
+                            className={`absolute right-6 ${
+                              index >= clientsData.lstClientes.length - 2
+                                ? "bottom-10"
+                                : "top-10"
+                            } w-48 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}
+                          >
+                            <button
+                              onClick={() => {
+                                setSelectedClientId(client.idCliente);
+                                setIsDetailModalOpen(true);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+                            >
+                              <Eye size={14} />
+                              <span>Ver detalle</span>
+                            </button>
+                            <button
+                              onClick={() => setActiveMenuId(null)}
+                              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
+                            >
+                              <UserMinus size={14} />
+                              <span>Desactivar cliente</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
         <div className="px-6 py-4 border-t border-gray-50 flex items-center justify-between">
           <p className="text-xs text-gray-400 font-medium">
-            Mostrando 5 de 32 clientes
+            Mostrando {clientsData?.lstClientes.length || 0} de{" "}
+            {clientsData?.totalRegistros || 0} clientes
           </p>
 
           <div className="flex items-center gap-2">
-            <button className="p-2 text-gray-400 hover:text-brand-black transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1 || isLoadingClients}
+              className="p-2 text-gray-400 hover:text-brand-black transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            >
               <ChevronLeft size={18} />
             </button>
             <div className="flex gap-1">
-              {[1, 2, 3].map((page) => (
+              {Array.from(
+                { length: clientsData?.totalPaginas || 1 },
+                (_, i) => i + 1,
+              ).map((page) => (
                 <button
                   key={page}
+                  onClick={() => handlePageChange(page)}
                   className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer hover:scale-110 ${
-                    page === 2
+                    page === currentPage
                       ? "bg-brand-black text-brand-white shadow-lg shadow-black/10"
                       : "text-gray-400 hover:bg-gray-100 hover:text-brand-black"
                   }`}
@@ -327,9 +365,15 @@ export default function ClientManagement() {
                   {page}
                 </button>
               ))}
-              <span className="px-2 text-gray-300">...</span>
             </div>
-            <button className="p-2 text-gray-400 hover:text-brand-black transition-colors cursor-pointer">
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={
+                currentPage === (clientsData?.totalPaginas || 1) ||
+                isLoadingClients
+              }
+              className="p-2 text-gray-400 hover:text-brand-black transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            >
               <ChevronRight size={18} />
             </button>
           </div>

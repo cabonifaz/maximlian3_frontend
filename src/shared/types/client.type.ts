@@ -60,3 +60,23 @@ export type ClientDetail = {
   estado: string;
   contactos: ClientDetailContact[];
 };
+
+export type ClientListRequest = {
+  numPag: number;
+  Filtro?: string;
+};
+
+export type ClientListEntry = {
+  idCliente: number;
+  nombre: string;
+  pais: string;
+  tipoPersona: string;
+  correo: string;
+  telefono: string;
+};
+
+export type ClientListResponse = {
+  lstClientes: ClientListEntry[];
+  totalRegistros: number;
+  totalPaginas: number;
+};
