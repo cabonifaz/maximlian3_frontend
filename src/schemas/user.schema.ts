@@ -3,9 +3,7 @@ import { z } from "zod";
 export const userSchema = z
   .object({
     firstName: z.string().min(1, "El nombre es requerido"),
-    paternalLastName: z
-      .string()
-      .min(1, "El apellido paterno es requerido"),
+    paternalLastName: z.string().min(1, "El apellido paterno es requerido"),
     maternalLastName: z.string().optional(),
     username: z
       .string()

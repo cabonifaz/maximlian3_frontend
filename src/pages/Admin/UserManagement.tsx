@@ -179,7 +179,7 @@ export default function UserManagement() {
     setSelectedUser({
       firstName: user.nombres,
       paternalLastName: user.apellidoPaterno,
-      maternalLastName: user.apellidoMaterno,
+      maternalLastName: user.apellidoMaterno ?? undefined,
       username: user.username,
       email: user.email,
       roles: user.roles ? user.roles.split(", ") : [],
@@ -277,7 +277,9 @@ export default function UserManagement() {
               <p className="text-sm font-bold text-brand-black">
                 Error al cargar usuarios
               </p>
-              <p className="text-xs text-gray-500">{(error as Error).message}</p>
+              <p className="text-xs text-gray-500">
+                {(error as Error).message}
+              </p>
             </div>
             <button
               onClick={() => refetch()}
@@ -305,7 +307,7 @@ export default function UserManagement() {
                     Nombre de Usuario
                   </th>
                   <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
-                    Rol
+                    Rol(es)
                   </th>
                   <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
                     Email
@@ -469,7 +471,9 @@ export default function UserManagement() {
         </div>
       </div>
 
-      {isLoadingUser && <LoadingScreen message="Cargando datos del usuario..." />}
+      {isLoadingUser && (
+        <LoadingScreen message="Cargando datos del usuario..." />
+      )}
     </div>
   );
 }
