@@ -71,7 +71,8 @@ export default function UserManagement() {
       const apiRequest: CreateUserRequest = {
         nombres: userData.firstName,
         apellidoPaterno: userData.paternalLastName,
-        apellidoMaterno: userData.maternalLastName,
+        apellidoMaterno: userData.maternalLastName || null,
+        username: userData.username,
         email: userData.email,
         roles: userData.roles as number[],
         idiomas: (userData.languages || []) as number[],
@@ -99,7 +100,7 @@ export default function UserManagement() {
         idUsuario: editingUserId,
         nombres: userData.firstName,
         apellidoPaterno: userData.paternalLastName,
-        apellidoMaterno: userData.maternalLastName,
+        apellidoMaterno: userData.maternalLastName || null,
         roles: userData.roles as number[],
         idiomas: (userData.languages || []) as number[],
       };
