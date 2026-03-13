@@ -177,7 +177,7 @@ export function CreateUserModal({
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-brand-black">
-                    Nombre
+                    Nombre <span className="text-red-500">*</span>
                   </label>
                   <input
                     {...register("firstName")}
@@ -195,7 +195,7 @@ export function CreateUserModal({
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-brand-black">
-                    Apellido Paterno
+                    Apellido Paterno <span className="text-red-500">*</span>
                   </label>
                   <input
                     {...register("paternalLastName")}
@@ -235,7 +235,7 @@ export function CreateUserModal({
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-brand-black">
-                    Nombre de Usuario
+                    Nombre de Usuario <span className="text-red-500">*</span>
                   </label>
                   <input
                     {...register("username")}
@@ -253,7 +253,7 @@ export function CreateUserModal({
                 </div>
                 <div className="space-y-2 col-span-2">
                   <label className="text-sm font-semibold text-brand-black">
-                    Email
+                    Email <span className="text-red-500">*</span>
                   </label>
                   <input
                     {...register("email")}
@@ -276,7 +276,7 @@ export function CreateUserModal({
               >
                 <div className="space-y-4">
                   <p className="text-sm font-semibold text-brand-black mb-4">
-                    Seleccionar Roles
+                    Seleccionar Roles <span className="text-red-500">*</span>
                   </p>
                   {isLoadingRoles ? (
                     <div className="flex items-center gap-2 text-gray-400 py-4">
@@ -342,7 +342,7 @@ export function CreateUserModal({
                     <div className="flex items-center gap-2 mb-4">
                       <Globe size={18} className="text-brand-wine" />
                       <p className="text-sm font-semibold text-brand-black">
-                        Idiomas del Traductor
+                        Idiomas del Traductor <span className="text-red-500">*</span>
                       </p>
                     </div>
                     {isLoadingLanguages ? (
