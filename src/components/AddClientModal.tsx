@@ -20,12 +20,20 @@ import {
 } from "@maximilian/schemas";
 import { AddRateModal } from "./AddRateModal";
 import { masterTableService } from "@maximilian/services/masterTable.service";
-import { MasterTableId, type MasterTableEntry } from "@maximilian/shared/types/master-table.type";
+import {
+  MasterTableId,
+  type MasterTableEntry,
+} from "@maximilian/shared/types/master-table.type";
 
 interface AddClientModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (data: ClientInfoFormData) => void;
+  onConfirm: (
+    data: ClientInfoFormData,
+    contacts: ContactFormData[],
+    reset: () => void,
+  ) => void;
+  isSubmitting?: boolean;
 }
 
 type Tab = "info" | "rates" | "contacts";
@@ -40,26 +48,33 @@ interface SearchableSelectProps {
   placeholder?: string;
 }
 
-function SearchableSelect({ label, options, value, onChange, error, placeholder = "Seleccione..." }: SearchableSelectProps) {
+function SearchableSelect({
+  label,
+  options,
+  value,
+  onChange,
+  error,
+  placeholder = "Seleccione...",
+}: SearchableSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
   const filteredOptions = useMemo(() => {
     if (!options) return [];
     return options
-      .filter((opt) => 
-        opt.string1?.toLowerCase().includes(searchTerm.toLowerCase())
+      .filter((opt) =>
+        opt.string1?.toLowerCase().includes(searchTerm.toLowerCase()),
       )
       .sort((a, b) => (a.string1 || "").localeCompare(b.string1 || ""));
   }, [options, searchTerm]);
 
-  const selectedOption = options?.find(opt => opt.num1 === value);
+  const selectedOption = options?.find((opt) => opt.num1 === value);
 
   return (
     <div className="relative space-y-2">
       <label className="text-sm font-bold text-gray-700">{label}</label>
-      <div 
-        className={`w-full px-4 py-2.5 bg-brand-white border ${error ? 'border-red-500' : 'border-gray-200'} rounded-xl text-sm flex items-center justify-between cursor-pointer hover:border-brand-wine/30 transition-all`}
+      <div
+        className={`w-full px-4 py-2.5 bg-brand-white border ${error ? "border-red-500" : "border-gray-200"} rounded-xl text-sm flex items-center justify-between cursor-pointer hover:border-brand-wine/30 transition-all`}
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className={selectedOption ? "text-brand-black" : "text-gray-400"}>
@@ -88,7 +103,7 @@ function SearchableSelect({ label, options, value, onChange, error, placeholder 
                 filteredOptions.map((opt) => (
                   <div
                     key={opt.num1}
-                    className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${value === opt.num1 ? 'bg-brand-wine/10 text-brand-wine font-bold' : 'text-gray-600'}`}
+                    className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${value === opt.num1 ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-600"}`}
                     onClick={() => {
                       onChange(opt.num1!);
                       setIsOpen(false);
@@ -99,7 +114,9 @@ function SearchableSelect({ label, options, value, onChange, error, placeholder 
                   </div>
                 ))
               ) : (
-                <div className="px-4 py-3 text-xs text-gray-400 italic text-center">No se encontraron resultados</div>
+                <div className="px-4 py-3 text-xs text-gray-400 italic text-center">
+                  No se encontraron resultados
+                </div>
               )}
             </div>
           </div>
@@ -114,10 +131,12 @@ export function AddClientModal({
   isOpen,
   onClose,
   onConfirm,
+  isSubmitting = false,
 }: AddClientModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("info");
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
   const [contactView, setContactView] = useState<ContactView>("list");
+  const [addedContacts, setAddedContacts] = useState<ContactFormData[]>([]);
 
   const {
     register: infoRegister,
@@ -126,6 +145,7 @@ export function AddClientModal({
     reset: infoReset,
     setValue: setInfoValue,
     watch: infoWatch,
+    getValues: getInfoValues,
   } = useForm<ClientInfoFormData>({
     resolver: zodResolver(clientInfoSchema),
   });
@@ -142,37 +162,67 @@ export function AddClientModal({
   });
 
   // Queries for MasterTable parameters
-  const { data: tipoPersonaData, isLoading: isLoadingTipoPersona, isError: isErrorTipoPersona, refetch: refetchTipoPersona } = useQuery({
+  const {
+    data: tipoPersonaData,
+    isLoading: isLoadingTipoPersona,
+    isError: isErrorTipoPersona,
+    refetch: refetchTipoPersona,
+  } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_PERSONA],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_PERSONA),
     enabled: isOpen,
   });
 
-  const { data: paisData, isLoading: isLoadingPais, isError: isErrorPais, refetch: refetchPais } = useQuery({
+  const {
+    data: paisData,
+    isLoading: isLoadingPais,
+    isError: isErrorPais,
+    refetch: refetchPais,
+  } = useQuery({
     queryKey: ["masterTable", MasterTableId.PAIS],
     queryFn: () => masterTableService.list(MasterTableId.PAIS),
     enabled: isOpen,
   });
 
-  const { data: tipoRegTributarioData, isLoading: isLoadingTipoRegTributario, isError: isErrorTipoRegTributario, refetch: refetchTipoRegTributario } = useQuery({
+  const {
+    data: tipoRegTributarioData,
+    isLoading: isLoadingTipoRegTributario,
+    isError: isErrorTipoRegTributario,
+    refetch: refetchTipoRegTributario,
+  } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_REG_TRIBUTARIO],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_REG_TRIBUTARIO),
     enabled: isOpen,
   });
 
-  const { data: formatoInformeData, isLoading: isLoadingFormatoInforme, isError: isErrorFormatoInforme, refetch: refetchFormatoInforme } = useQuery({
+  const {
+    data: formatoInformeData,
+    isLoading: isLoadingFormatoInforme,
+    isError: isErrorFormatoInforme,
+    refetch: refetchFormatoInforme,
+  } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_FORMATO_INFORME],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_FORMATO_INFORME),
     enabled: isOpen,
   });
 
-  const { data: tipoContactoData, isLoading: isLoadingTipoContacto, isError: isErrorTipoContacto, refetch: refetchTipoContacto } = useQuery({
+  const {
+    data: tipoContactoData,
+    isLoading: isLoadingTipoContacto,
+    isError: isErrorTipoContacto,
+    refetch: refetchTipoContacto,
+  } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_CONTACTO],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_CONTACTO),
     enabled: isOpen && activeTab === "contacts",
   });
 
-  const { data: areaTrabajoData, isLoading: isLoadingAreaTrabajo, isError: isErrorAreaTrabajo, refetch: refetchAreaTrabajo } = useQuery({
+  const {
+    data: areaTrabajoData,
+    isLoading: isLoadingAreaTrabajo,
+    isError: isErrorAreaTrabajo,
+    refetch: refetchAreaTrabajo,
+  } = useQuery({
     queryKey: ["masterTable", MasterTableId.AREA_TRABAJO],
     queryFn: () => masterTableService.list(MasterTableId.AREA_TRABAJO),
     enabled: isOpen && activeTab === "contacts",
@@ -180,26 +230,22 @@ export function AddClientModal({
 
   if (!isOpen) return null;
 
-  const handleConfirm = (data: ClientInfoFormData) => {
-    onConfirm(data);
+  const handleGlobalReset = () => {
     infoReset();
-    onClose();
+    contactReset();
+    setAddedContacts([]);
+    setActiveTab("info");
+  };
+
+  const handleConfirm = () => {
+    const infoData = getInfoValues();
+    onConfirm(infoData, addedContacts, handleGlobalReset);
   };
 
   const handleAddContact = (data: ContactFormData) => {
-    console.log("Contact added:", data);
+    setAddedContacts((prev) => [...prev, data]);
     setContactView("list");
     contactReset();
-  };
-
-  const openEditContact = (contact: ContactFormData) => {
-    Object.keys(contact).forEach((key) => {
-      setContactValue(
-        key as keyof ContactFormData,
-        contact[key as keyof ContactFormData],
-      );
-    });
-    setContactView("edit");
   };
 
   const openDetailContact = (contact: ContactFormData) => {
@@ -212,8 +258,16 @@ export function AddClientModal({
     setContactView("detail");
   };
 
-  const isLoadingInfo = isLoadingTipoPersona || isLoadingPais || isLoadingTipoRegTributario || isLoadingFormatoInforme;
-  const isErrorInfo = isErrorTipoPersona || isErrorPais || isErrorTipoRegTributario || isErrorFormatoInforme;
+  const isLoadingInfo =
+    isLoadingTipoPersona ||
+    isLoadingPais ||
+    isLoadingTipoRegTributario ||
+    isLoadingFormatoInforme;
+  const isErrorInfo =
+    isErrorTipoPersona ||
+    isErrorPais ||
+    isErrorTipoRegTributario ||
+    isErrorFormatoInforme;
 
   const watchedPais = infoWatch("pais");
   const watchedTipoRegTributario = infoWatch("tipoRegistroTributario");
@@ -231,7 +285,8 @@ export function AddClientModal({
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+            disabled={isSubmitting}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer disabled:opacity-30"
           >
             <X size={20} className="text-gray-400" />
           </button>
@@ -286,12 +341,16 @@ export function AddClientModal({
               {isLoadingInfo ? (
                 <div className="h-full flex flex-col items-center justify-center gap-3 py-20">
                   <Loader2 size={40} className="text-brand-wine animate-spin" />
-                  <p className="text-sm font-medium text-gray-500">Cargando parámetros...</p>
+                  <p className="text-sm font-medium text-gray-500">
+                    Cargando parámetros...
+                  </p>
                 </div>
               ) : isErrorInfo ? (
                 <div className="h-full flex flex-col items-center justify-center gap-4 py-20 text-center">
                   <AlertCircle size={40} className="text-red-500" />
-                  <p className="text-sm font-bold text-brand-black">Error al cargar parámetros</p>
+                  <p className="text-sm font-bold text-brand-black">
+                    Error al cargar parámetros
+                  </p>
                   <button
                     onClick={() => {
                       refetchTipoPersona();
@@ -308,7 +367,7 @@ export function AddClientModal({
               ) : (
                 <form
                   id="client-info-form"
-                  onSubmit={handleInfoSubmit(handleConfirm)}
+                  onSubmit={handleInfoSubmit(() => setActiveTab("rates"))}
                   className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300"
                 >
                   <div className="space-y-2">
@@ -354,7 +413,9 @@ export function AddClientModal({
                     label="País"
                     options={paisData}
                     value={watchedPais}
-                    onChange={(val) => setInfoValue("pais", val, { shouldValidate: true })}
+                    onChange={(val) =>
+                      setInfoValue("pais", val, { shouldValidate: true })
+                    }
                     error={infoErrors.pais?.message}
                   />
 
@@ -376,7 +437,9 @@ export function AddClientModal({
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Email</label>
+                    <label className="text-sm font-bold text-gray-700">
+                      Email
+                    </label>
                     <input
                       {...infoRegister("email")}
                       type="email"
@@ -428,7 +491,11 @@ export function AddClientModal({
                     label="Tipo Registro Tributario"
                     options={tipoRegTributarioData}
                     value={watchedTipoRegTributario}
-                    onChange={(val) => setInfoValue("tipoRegistroTributario", val, { shouldValidate: true })}
+                    onChange={(val) =>
+                      setInfoValue("tipoRegistroTributario", val, {
+                        shouldValidate: true,
+                      })
+                    }
                     error={infoErrors.tipoRegistroTributario?.message}
                   />
 
@@ -552,7 +619,7 @@ export function AddClientModal({
           )}
 
           {activeTab === "contacts" && (
-            <div className="animate-in fade-in duration-300">
+            <div className="animate-in fade-in duration-300 h-full">
               {contactView === "list" && (
                 <div className="space-y-6">
                   <div className="flex justify-end">
@@ -567,76 +634,66 @@ export function AddClientModal({
                       <span>Agregar Contacto</span>
                     </button>
                   </div>
-                  <div className="divide-y divide-gray-50">
-                    {[
-                      {
-                        nombre: "Jorge Ramirez",
-                        email: "jramirez@gmail.com",
-                        tipoPersona: "Persona Natural",
-                        tipoContacto: "Facturación",
-                        codigoContacto: "CF001",
-                        telefono: "+51 987 654 441",
-                        areaTrabajo: "Contabilidad",
-                      },
-                      {
-                        nombre: "Juan Luna",
-                        email: "jluna@gmail.com",
-                        tipoPersona: "Persona Natural",
-                        tipoContacto: "Administrativo",
-                        codigoContacto: "CF002",
-                        telefono: "+51 987 654 441",
-                        areaTrabajo: "Administración",
-                      },
-                    ].map((contact, i) => (
-                      <div
-                        key={i}
-                        className="py-4 flex items-center justify-between group"
-                      >
-                        <div className="grid grid-cols-3 flex-1 gap-4">
-                          <div>
-                            <p className="text-sm font-bold text-brand-black">
-                              {contact.nombre}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {contact.email}
-                            </p>
+                  {addedContacts.length === 0 ? (
+                    <div className="py-20 text-center text-gray-400 text-sm italic">
+                      No hay contactos agregados.
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-50">
+                      {addedContacts.map((contact, i) => (
+                        <div
+                          key={i}
+                          className="py-4 flex items-center justify-between group"
+                        >
+                          <div className="grid grid-cols-3 flex-1 gap-4">
+                            <div>
+                              <p className="text-sm font-bold text-brand-black">
+                                {contact.nombre}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {contact.email}
+                              </p>
+                            </div>
+                            <div className="flex items-center">
+                              <span className="text-sm font-medium text-gray-600">
+                                {tipoContactoData?.find(
+                                  (t) => t.num1 === (contact.tipoContacto as number),
+                                )?.string1 || contact.tipoContacto}
+                              </span>
+                            </div>
+                            <div className="flex items-center">
+                              <span className="text-sm font-medium text-gray-600">
+                                {contact.telefono}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center">
-                            <span className="text-sm font-medium text-gray-600">
-                              {contact.tipoContacto}
-                            </span>
-                          </div>
-                          <div className="flex items-center">
-                            <span className="text-sm font-medium text-gray-600">
-                              {contact.telefono}
-                            </span>
+                          <div className="relative group/menu">
+                            <button className="p-2 text-gray-400 hover:text-brand-black rounded-lg transition-all cursor-pointer">
+                              <MoreHorizontal size={18} />
+                            </button>
+                            <div className="absolute right-0 top-full mt-1 w-40 bg-brand-white border border-gray-100 rounded-xl shadow-xl z-10 hidden group-hover/menu:block py-1">
+                              <button
+                                onClick={() => openDetailContact(contact)}
+                                className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-gray-600 cursor-pointer"
+                              >
+                                Ver Detalles
+                              </button>
+                              <button
+                                onClick={() =>
+                                  setAddedContacts((prev) =>
+                                    prev.filter((_, idx) => idx !== i),
+                                  )
+                                }
+                                className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-red-500 cursor-pointer"
+                              >
+                                Eliminar Contacto
+                              </button>
+                            </div>
                           </div>
                         </div>
-                        <div className="relative group/menu">
-                          <button className="p-2 text-gray-400 hover:text-brand-black rounded-lg transition-all">
-                            <MoreHorizontal size={18} />
-                          </button>
-                          <div className="absolute right-0 top-full mt-1 w-40 bg-brand-white border border-gray-100 rounded-xl shadow-xl z-10 hidden group-hover/menu:block py-1">
-                            <button
-                              onClick={() => openDetailContact(contact)}
-                              className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-gray-600"
-                            >
-                              Ver Detalles
-                            </button>
-                            <button
-                              onClick={() => openEditContact(contact)}
-                              className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-gray-600"
-                            >
-                              Modificar Contacto
-                            </button>
-                            <button className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-red-500">
-                              Eliminar Contacto
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -658,15 +715,22 @@ export function AddClientModal({
                     </h3>
                   </div>
 
-                  {(isLoadingTipoContacto || isLoadingAreaTrabajo) ? (
+                  {isLoadingTipoContacto || isLoadingAreaTrabajo ? (
                     <div className="flex flex-col items-center justify-center gap-3 py-20">
-                      <Loader2 size={40} className="text-brand-wine animate-spin" />
-                      <p className="text-sm font-medium text-gray-500">Cargando parámetros...</p>
+                      <Loader2
+                        size={40}
+                        className="text-brand-wine animate-spin"
+                      />
+                      <p className="text-sm font-medium text-gray-500">
+                        Cargando parámetros...
+                      </p>
                     </div>
-                  ) : (isErrorTipoContacto || isErrorAreaTrabajo) ? (
+                  ) : isErrorTipoContacto || isErrorAreaTrabajo ? (
                     <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
                       <AlertCircle size={40} className="text-red-500" />
-                      <p className="text-sm font-bold text-brand-black">Error al cargar parámetros</p>
+                      <p className="text-sm font-bold text-brand-black">
+                        Error al cargar parámetros
+                      </p>
                       <button
                         onClick={() => {
                           refetchTipoContacto();
@@ -688,7 +752,11 @@ export function AddClientModal({
                         label="Tipo Persona"
                         options={tipoPersonaData}
                         value={watchedContactTipoPersona}
-                        onChange={(val) => setContactValue("tipoPersona", val, { shouldValidate: true })}
+                        onChange={(val) =>
+                          setContactValue("tipoPersona", val, {
+                            shouldValidate: true,
+                          })
+                        }
                         error={contactErrors.tipoPersona?.message}
                       />
 
@@ -696,7 +764,11 @@ export function AddClientModal({
                         label="Tipo de Contacto"
                         options={tipoContactoData}
                         value={watchedContactTipoContacto}
-                        onChange={(val) => setContactValue("tipoContacto", val, { shouldValidate: true })}
+                        onChange={(val) =>
+                          setContactValue("tipoContacto", val, {
+                            shouldValidate: true,
+                          })
+                        }
                         error={contactErrors.tipoContacto?.message}
                       />
 
@@ -776,7 +848,11 @@ export function AddClientModal({
                         label="Área de Trabajo"
                         options={areaTrabajoData}
                         value={watchedContactAreaTrabajo}
-                        onChange={(val) => setContactValue("areaTrabajo", val, { shouldValidate: true })}
+                        onChange={(val) =>
+                          setContactValue("areaTrabajo", val, {
+                            shouldValidate: true,
+                          })
+                        }
                         error={contactErrors.areaTrabajo?.message}
                       />
                     </form>
@@ -816,13 +892,10 @@ export function AddClientModal({
         {activeTab === "info" && (
           <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 shrink-0">
             <button
-              type="submit"
-              form="client-info-form"
-              disabled={isLoadingInfo}
-              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10 disabled:opacity-50"
+              onClick={() => setActiveTab("rates")}
+              className="px-8 py-3 border border-gray-200 text-brand-black rounded-xl font-bold hover:bg-gray-100 transition-all cursor-pointer"
             >
-              <div className="w-2 h-2 rounded-full bg-brand-white" />
-              <span>Confirmar</span>
+              Siguiente
             </button>
           </div>
         )}
@@ -830,11 +903,16 @@ export function AddClientModal({
         {activeTab === "rates" && (
           <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 shrink-0">
             <button
-              onClick={() => setActiveTab("contacts")}
-              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
+              onClick={() => setActiveTab("info")}
+              className="px-8 py-3 border border-gray-200 text-brand-black rounded-xl font-bold hover:bg-gray-100 transition-all cursor-pointer"
             >
-              <div className="w-2 h-2 rounded-full bg-brand-white" />
-              <span>Confirmar</span>
+              Anterior
+            </button>
+            <button
+              onClick={() => setActiveTab("contacts")}
+              className="px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 transition-all shadow-lg cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Siguiente
             </button>
           </div>
         )}
@@ -842,14 +920,27 @@ export function AddClientModal({
         {activeTab === "contacts" && contactView === "list" && (
           <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 shrink-0">
             <button
-              onClick={() => {
-                // Main modal confirm logic
-                onClose();
-              }}
-              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
+              onClick={() => setActiveTab("rates")}
+              className="px-8 py-3 border border-gray-200 text-brand-black rounded-xl font-bold hover:bg-gray-100 transition-all cursor-pointer"
             >
-              <div className="w-2 h-2 rounded-full bg-brand-white" />
-              <span>Confirmar</span>
+              Anterior
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={isSubmitting || isLoadingInfo}
+              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10 disabled:opacity-50 min-w-[140px] justify-center"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  <span>Creando...</span>
+                </>
+              ) : (
+                <>
+                  <div className="w-2 h-2 rounded-full bg-brand-white" />
+                  <span>Confirmar</span>
+                </>
+              )}
             </button>
           </div>
         )}
