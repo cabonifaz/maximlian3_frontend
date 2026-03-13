@@ -42,6 +42,15 @@ export function EditUserModal({
     reset,
   } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
+    defaultValues: {
+      firstName: "",
+      paternalLastName: "",
+      maternalLastName: "",
+      username: "",
+      email: "",
+      roles: [],
+      languages: [],
+    },
   });
 
   useEffect(() => {
@@ -257,9 +266,8 @@ export function EditUserModal({
                     {...register("email")}
                     type="email"
                     placeholder="Email"
-                    className={`w-full px-4 py-2 bg-brand-white border ${
-                      errors.email ? "border-red-500" : "border-gray-200"
-                    } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
+                    disabled
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500 outline-none transition-all cursor-not-allowed"
                   />
                   {errors.email && (
                     <p className="text-xs text-brand-wine">

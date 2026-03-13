@@ -5,6 +5,7 @@ import type {
   CreateUserRequest,
   CreateUserResponse,
   UpdateUserRequest,
+  UserDetails,
   UserListRequest,
   UserListResponse,
 } from "@maximilian/shared/types/user.type";
@@ -33,6 +34,32 @@ export const userService = {
       return data.result;
     } catch (error) {
       console.error("Error listing users:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get user details by ID.
+   * @param idUsuario The ID of the user to fetch.
+   */
+  getById: async (idUsuario: number) => {
+    try {
+      // In many of our project endpoints, 'result' is an array even for single objects
+      const { data } = await maximilianService.get<ApiResponse<UserDetails | UserDetails[]>>(
+        "/api/Usuario/obtener",
+        {
+          params: { IdUsuario: idUsuario },
+        }
+      );
+
+      if (data.idTipoMensaje !== MessageType.SUCCESS) {
+        throw new Error(data.mensaje || "Error al obtener detalles del usuario");
+      }
+
+      // Handle both object and array response patterns
+      return Array.isArray(data.result) ? data.result[0] : data.result;
+    } catch (error) {
+      console.error(`Error fetching user ${idUsuario}:`, error);
       throw error;
     }
   },

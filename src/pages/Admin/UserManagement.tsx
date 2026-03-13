@@ -24,6 +24,7 @@ import type {
   UpdateUserRequest,
   UserListEntry,
 } from "@maximilian/shared/types/user.type";
+import LoadingScreen from "@maximilian/components/LoadingScreen";
 
 interface CreateUserMutationParams {
   userData: UserFormData;
@@ -42,6 +43,7 @@ export default function UserManagement() {
   const [selectedUser, setSelectedUser] = useState<UserFormData | null>(null);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(false);
 
   // Pagination and Filtering state
   const [currentPage, setCurrentPage] = useState(1);
@@ -88,7 +90,8 @@ export default function UserManagement() {
   // Update User Mutation
   const updateUserMutation = useMutation({
     mutationFn: ({ userData }: UpdateUserMutationParams) => {
-      if (editingUserId === null) throw new Error("No user selected for editing");
+      if (editingUserId === null)
+        throw new Error("No user selected for editing");
 
       const apiRequest: UpdateUserRequest = {
         idUsuario: editingUserId,
@@ -128,20 +131,29 @@ export default function UserManagement() {
     setIsDeleteModalOpen(false);
   };
 
-  const openEditModal = (user: UserListEntry) => {
-    const editData: UserFormData = {
-      firstName: user.nombres,
-      paternalLastName: user.apellidoPaterno,
-      maternalLastName: user.apellidoMaterno,
-      username: user.username,
-      email: user.email,
-      roles: user.roles ? user.roles.split(", ") : [],
-      languages: [], // In a real scenario, languages should be part of the entry or fetched
-    };
-    setEditingUserId(user.idUsuario);
-    setSelectedUser(editData);
-    setIsEditModalOpen(true);
+  const openEditModal = async (user: UserListEntry) => {
+    setIsLoadingUser(true);
     setActiveMenuId(null);
+    try {
+      const details = await userService.getById(user.idUsuario);
+      
+      const editData: UserFormData = {
+        firstName: details.nombres || "",
+        paternalLastName: details.apellidoPaterno || "",
+        maternalLastName: details.apellidoMaterno || "",
+        username: user.username || "", 
+        email: details.email || "",
+        roles: details.roles || [],
+        languages: details.idiomas || [],
+      };
+      setEditingUserId(user.idUsuario);
+      setSelectedUser(editData);
+      setIsEditModalOpen(true);
+    } catch (error) {
+      console.error("Error loading user details", error);
+    } finally {
+      setIsLoadingUser(false);
+    }
   };
 
   const openDeleteModal = (user: UserListEntry) => {
@@ -433,6 +445,8 @@ export default function UserManagement() {
           </div>
         </div>
       </div>
+
+      {isLoadingUser && <LoadingScreen message="Cargando datos del usuario..." />}
     </div>
   );
 }
