@@ -33,8 +33,12 @@ export function Header({ role: initialRole }: HeaderProps) {
   };
 
   const handleRoleChange = (roleName: string) => {
-    sessionStorage.setItem("selected_role", roleName);
-    setSelectedRole(roleName);
+    const role = userSession?.roles.find((r) => r.rol === roleName);
+    if (role) {
+      sessionStorage.setItem("selected_role", role.rol);
+      sessionStorage.setItem("selected_role_id", role.idRol.toString());
+      setSelectedRole(roleName);
+    }
     setIsOpen(false);
 
     const roleNormalized = roleName.toUpperCase();

@@ -26,6 +26,7 @@ export default function RoleSelectionPage() {
     
     // Save selection and available roles to sessionStorage
     sessionStorage.setItem("selected_role", role.rol);
+    sessionStorage.setItem("selected_role_id", role.idRol.toString());
     sessionStorage.setItem("user_session", JSON.stringify(userData));
 
     if (roleNormalized === "ADMINISTRADOR") {

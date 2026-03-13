@@ -14,9 +14,14 @@ maximilianService.interceptors.request.use(
     try {
       const { tokens } = await fetchAuthSession();
       const idToken = tokens?.idToken?.toString();
+      const selectedRoleId = sessionStorage.getItem("selected_role_id");
 
       if (idToken) {
         config.headers.Authorization = `Bearer ${idToken}`;
+      }
+
+      if (selectedRoleId) {
+        config.headers.idRol = selectedRoleId;
       }
     } catch (error) {
       console.error("Error fetching Cognito token:", error);
