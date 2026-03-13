@@ -98,7 +98,7 @@ export default function UserManagement() {
       maternalLastName: user.apellidoMaterno,
       username: user.username,
       email: user.email,
-      roles: user.roles.split(", "),
+      roles: user.roles ? user.roles.split(", ") : [],
       languages: [], // Should be fetched or stored
     };
     setSelectedUser(editData);
@@ -113,7 +113,7 @@ export default function UserManagement() {
       maternalLastName: user.apellidoMaterno,
       username: user.username,
       email: user.email,
-      roles: user.roles.split(", "),
+      roles: user.roles ? user.roles.split(", ") : [],
     });
     setIsDeleteModalOpen(true);
     setActiveMenuId(null);
@@ -259,16 +259,18 @@ export default function UserManagement() {
                     <td className="px-6 py-4 text-gray-600">{user.username}</td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {user.roles.split(", ").map((role, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium capitalize"
-                          >
-                            {role.toLowerCase()}
-                          </span>
-                        ))}
+                        {user.roles ? (
+                          user.roles.split(", ").map((role, idx) => (
+                            <span key={idx} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium capitalize">
+                              {role.toLowerCase()}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-gray-400 italic text-[10px]">Sin roles</span>
+                        )}
                       </div>
                     </td>
+
                     <td className="px-6 py-4 text-gray-600">{user.email}</td>
                     <td className="px-6 py-4">
                       <span
