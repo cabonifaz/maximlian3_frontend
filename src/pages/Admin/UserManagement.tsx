@@ -1,9 +1,22 @@
 import { useState } from "react";
-import { Search, Plus, Filter, MoreHorizontal, ChevronLeft, ChevronRight, Edit2, Trash2 } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Filter,
+  MoreHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  Edit2,
+  Trash2,
+} from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { CreateUserModal } from "@maximilian/components/CreateUserModal";
 import { EditUserModal } from "@maximilian/components/EditUserModal";
 import { DeleteUserModal } from "@maximilian/components/DeleteUserModal";
 import { type UserFormData } from "@maximilian/schemas";
+import { userService } from "@maximilian/services/user.service";
+import type { CreateUserRequest } from "@maximilian/shared/types/user.type";
 
 interface User {
   id: number;
@@ -17,12 +30,62 @@ interface User {
 }
 
 const initialUsers: User[] = [
-  { id: 1, name: "Juan", paternal: "Alarcon", maternal: "Concha", username: "jconcha", role: "Coordinador", email: "juan.alarcon@safetyreport.com.pe", status: "Activo" },
-  { id: 2, name: "María Fernanda", paternal: "Ríos", maternal: "Zapallar", username: "mfrios", role: "Analista", email: "mrios@safetyreport.com.pe", status: "Activo" },
-  { id: 3, name: "Carlos", paternal: "Mendoza", maternal: "Gonzales", username: "cmendoza", role: "Traductor", email: "carlos.mendoza@safetyreport.com.pe", status: "Activo" },
-  { id: 4, name: "Lucía", paternal: "Torres", maternal: "Torres", username: "lutorres", role: "Administrador", email: "lucia.torres@safetyreport.com.pe", status: "Activo" },
-  { id: 5, name: "Andrés", paternal: "Salazar", maternal: "Perez", username: "aperez", role: "Coordinador, Analista", email: "andres.salazar@safetyreport.com.pe", status: "Activo" },
+  {
+    id: 1,
+    name: "Juan",
+    paternal: "Alarcon",
+    maternal: "Concha",
+    username: "jconcha",
+    role: "Coordinador",
+    email: "juan.alarcon@safetyreport.com.pe",
+    status: "Activo",
+  },
+  {
+    id: 2,
+    name: "María Fernanda",
+    paternal: "Ríos",
+    maternal: "Zapallar",
+    username: "mfrios",
+    role: "Analista",
+    email: "mrios@safetyreport.com.pe",
+    status: "Activo",
+  },
+  {
+    id: 3,
+    name: "Carlos",
+    paternal: "Mendoza",
+    maternal: "Gonzales",
+    username: "cmendoza",
+    role: "Traductor",
+    email: "carlos.mendoza@safetyreport.com.pe",
+    status: "Activo",
+  },
+  {
+    id: 4,
+    name: "Lucía",
+    paternal: "Torres",
+    maternal: "Torres",
+    username: "lutorres",
+    role: "Administrador",
+    email: "lucia.torres@safetyreport.com.pe",
+    status: "Activo",
+  },
+  {
+    id: 5,
+    name: "Andrés",
+    paternal: "Salazar",
+    maternal: "Perez",
+    username: "aperez",
+    role: "Coordinador, Analista",
+    email: "andres.salazar@safetyreport.com.pe",
+    status: "Activo",
+  },
 ];
+
+interface CreateUserMutationParams {
+  userData: UserFormData;
+  resetForm: () => void;
+}
 
 export default function UserManagement() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -31,8 +94,39 @@ export default function UserManagement() {
   const [selectedUser, setSelectedUser] = useState<UserFormData | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
 
-  const handleCreateUser = (userData: UserFormData) => {
-    console.log("Creating user:", userData);
+  const queryClient = useQueryClient();
+
+  // Create User Mutation
+  const createUserMutation = useMutation({
+    mutationFn: ({ userData }: CreateUserMutationParams) => {
+      // Map UserFormData to the requested body structure
+      const apiRequest: CreateUserRequest = {
+        nombres: userData.firstName,
+        apellidoPaterno: userData.paternalLastName,
+        apellidoMaterno: userData.maternalLastName,
+        email: userData.email,
+        roles: userData.roles as number[], // Roles are num1 (number)
+        idiomas: (userData.languages || []) as number[], // Languages are num1 (number)
+      };
+      return userService.create(apiRequest);
+    },
+    onSuccess: (_, { resetForm }) => {
+      // Invalidate and refetch users query (to be implemented later)
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Usuario creado exitosamente");
+
+      // CLOSE MODAL AND RESET FORM ONLY ON SUCCESS
+      setIsCreateModalOpen(false);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      console.error("Error al crear usuario:", error.message);
+      // Global interceptor already shows the error message from API
+    },
+  });
+
+  const handleCreateUser = (userData: UserFormData, resetForm: () => void) => {
+    createUserMutation.mutate({ userData, resetForm });
   };
 
   const handleEditUser = (userData: UserFormData) => {
@@ -78,10 +172,13 @@ export default function UserManagement() {
         <h1 className="text-2xl font-bold text-brand-black">Usuarios</h1>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Buscar usuario" 
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={18}
+            />
+            <input
+              type="text"
+              placeholder="Buscar usuario"
               className="pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-lg text-sm w-72 focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all"
             />
           </div>
@@ -89,7 +186,7 @@ export default function UserManagement() {
             <Filter size={16} />
             <span>Estado</span>
           </button>
-          <button 
+          <button
             onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
           >
@@ -99,22 +196,23 @@ export default function UserManagement() {
         </div>
       </div>
 
-      <CreateUserModal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
-        onConfirm={handleCreateUser} 
+      <CreateUserModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onConfirm={handleCreateUser}
+        isSubmitting={createUserMutation.isPending}
       />
 
-      <EditUserModal 
-        isOpen={isEditModalOpen} 
-        onClose={() => setIsEditModalOpen(false)} 
+      <EditUserModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
         onConfirm={handleEditUser}
         initialData={selectedUser}
       />
 
-      <DeleteUserModal 
-        isOpen={isDeleteModalOpen} 
-        onClose={() => setIsDeleteModalOpen(false)} 
+      <DeleteUserModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteUser}
         userName={selectedUser?.firstName}
       />
@@ -124,20 +222,39 @@ export default function UserManagement() {
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50 border-b border-gray-100 text-gray-600 font-medium">
               <tr>
-                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Nombre</th>
-                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Apellido Paterno</th>
-                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Apellido Materno</th>
-                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Nombre de Usuario</th>
-                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Rol</th>
-                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Email</th>
-                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Estado</th>
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
+                  Nombre
+                </th>
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
+                  Apellido Paterno
+                </th>
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
+                  Apellido Materno
+                </th>
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
+                  Nombre de Usuario
+                </th>
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
+                  Rol
+                </th>
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
+                  Estado
+                </th>
                 <th className="px-6 py-4"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {initialUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-6 py-4 text-brand-black font-medium">{user.name}</td>
+                <tr
+                  key={user.id}
+                  className="hover:bg-gray-50/50 transition-colors"
+                >
+                  <td className="px-6 py-4 text-brand-black font-medium">
+                    {user.name}
+                  </td>
                   <td className="px-6 py-4 text-gray-600">{user.paternal}</td>
                   <td className="px-6 py-4 text-gray-600">{user.maternal}</td>
                   <td className="px-6 py-4 text-gray-600">{user.username}</td>
@@ -149,28 +266,34 @@ export default function UserManagement() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right relative">
-                    <button 
-                      onClick={() => setActiveMenuId(activeMenuId === user.id ? null : user.id)}
+                    <button
+                      onClick={() =>
+                        setActiveMenuId(
+                          activeMenuId === user.id ? null : user.id,
+                        )
+                      }
                       className="text-gray-400 hover:text-brand-black transition-colors p-1 cursor-pointer hover:scale-110 active:scale-90"
                     >
                       <MoreHorizontal size={20} />
                     </button>
-                    
+
                     {activeMenuId === user.id && (
                       <>
-                        <div 
-                          className="fixed inset-0 z-10" 
+                        <div
+                          className="fixed inset-0 z-10"
                           onClick={() => setActiveMenuId(null)}
                         />
-                        <div className={`absolute right-6 ${initialUsers.indexOf(user) >= initialUsers.length - 2 ? "bottom-10" : "top-10"} w-48 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}>
-                          <button 
+                        <div
+                          className={`absolute right-6 ${initialUsers.indexOf(user) >= initialUsers.length - 2 ? "bottom-10" : "top-10"} w-48 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}
+                        >
+                          <button
                             onClick={() => openEditModal(user)}
                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
                           >
                             <Edit2 size={14} />
                             <span>Editar usuario</span>
                           </button>
-                          <button 
+                          <button
                             onClick={() => openDeleteModal(user)}
                             className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
                           >
@@ -186,17 +309,26 @@ export default function UserManagement() {
             </tbody>
           </table>
         </div>
-        
+
         <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-gray-500 text-xs">
           <span>Mostrando 5 de 32 pedidos</span>
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-1 hover:text-brand-black disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-not-allowed" disabled>
+            <button
+              className="flex items-center gap-1 hover:text-brand-black disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-not-allowed"
+              disabled
+            >
               <ChevronLeft size={16} /> Anterior
             </button>
             <div className="flex items-center gap-2">
-              <button className="w-6 h-6 flex items-center justify-center rounded bg-brand-black text-brand-white font-medium cursor-pointer hover:scale-110 transition-transform">1</button>
-              <button className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 cursor-pointer hover:scale-110 transition-transform">2</button>
-              <button className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 cursor-pointer hover:scale-110 transition-transform">3</button>
+              <button className="w-6 h-6 flex items-center justify-center rounded bg-brand-black text-brand-white font-medium cursor-pointer hover:scale-110 transition-transform">
+                1
+              </button>
+              <button className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 cursor-pointer hover:scale-110 transition-transform">
+                2
+              </button>
+              <button className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 cursor-pointer hover:scale-110 transition-transform">
+                3
+              </button>
               <span>...</span>
             </div>
             <button className="flex items-center gap-1 hover:text-brand-black cursor-pointer transition-colors">
