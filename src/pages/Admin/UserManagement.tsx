@@ -21,10 +21,16 @@ import { type UserFormData } from "@maximilian/schemas";
 import { userService } from "@maximilian/services/user.service";
 import type {
   CreateUserRequest,
+  UpdateUserRequest,
   UserListEntry,
 } from "@maximilian/shared/types/user.type";
 
 interface CreateUserMutationParams {
+  userData: UserFormData;
+  resetForm: () => void;
+}
+
+interface UpdateUserMutationParams {
   userData: UserFormData;
   resetForm: () => void;
 }
@@ -34,6 +40,7 @@ export default function UserManagement() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserFormData | null>(null);
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
 
   // Pagination and Filtering state
@@ -78,12 +85,42 @@ export default function UserManagement() {
     },
   });
 
+  // Update User Mutation
+  const updateUserMutation = useMutation({
+    mutationFn: ({ userData }: UpdateUserMutationParams) => {
+      if (editingUserId === null) throw new Error("No user selected for editing");
+
+      const apiRequest: UpdateUserRequest = {
+        idUsuario: editingUserId,
+        infoUsuario: {
+          nombres: userData.firstName,
+          apellidoPaterno: userData.paternalLastName,
+          apellidoMaterno: userData.maternalLastName,
+          email: userData.email,
+          roles: userData.roles as number[],
+          idiomas: (userData.languages || []) as number[],
+        },
+      };
+      return userService.update(apiRequest);
+    },
+    onSuccess: (_, { resetForm }) => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Usuario actualizado exitosamente");
+      setIsEditModalOpen(false);
+      setEditingUserId(null);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      console.error("Error al actualizar usuario:", error.message);
+    },
+  });
+
   const handleCreateUser = (userData: UserFormData, resetForm: () => void) => {
     createUserMutation.mutate({ userData, resetForm });
   };
 
-  const handleEditUser = (userData: UserFormData) => {
-    console.log("Updating user:", userData);
+  const handleEditUser = (userData: UserFormData, resetForm: () => void) => {
+    updateUserMutation.mutate({ userData, resetForm });
   };
 
   const handleDeleteUser = () => {
@@ -99,8 +136,9 @@ export default function UserManagement() {
       username: user.username,
       email: user.email,
       roles: user.roles ? user.roles.split(", ") : [],
-      languages: [], // Should be fetched or stored
+      languages: [], // In a real scenario, languages should be part of the entry or fetched
     };
+    setEditingUserId(user.idUsuario);
     setSelectedUser(editData);
     setIsEditModalOpen(true);
     setActiveMenuId(null);
@@ -171,9 +209,13 @@ export default function UserManagement() {
 
       <EditUserModal
         isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingUserId(null);
+        }}
         onConfirm={handleEditUser}
         initialData={selectedUser}
+        isSubmitting={updateUserMutation.isPending}
       />
 
       <DeleteUserModal
@@ -200,9 +242,7 @@ export default function UserManagement() {
               <p className="text-sm font-bold text-brand-black">
                 Error al cargar usuarios
               </p>
-              <p className="text-xs text-gray-500">
-                {(error as Error).message}
-              </p>
+              <p className="text-xs text-gray-500">{(error as Error).message}</p>
             </div>
             <button
               onClick={() => refetch()}
@@ -230,7 +270,7 @@ export default function UserManagement() {
                     Nombre de Usuario
                   </th>
                   <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
-                    Rol(es)
+                    Rol
                   </th>
                   <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
                     Email
@@ -261,16 +301,20 @@ export default function UserManagement() {
                       <div className="flex flex-wrap gap-1">
                         {user.roles ? (
                           user.roles.split(", ").map((role, idx) => (
-                            <span key={idx} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium capitalize">
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium capitalize"
+                            >
                               {role.toLowerCase()}
                             </span>
                           ))
                         ) : (
-                          <span className="text-gray-400 italic text-[10px]">Sin roles</span>
+                          <span className="text-gray-400 italic text-[10px]">
+                            Sin roles
+                          </span>
                         )}
                       </div>
                     </td>
-
                     <td className="px-6 py-4 text-gray-600">{user.email}</td>
                     <td className="px-6 py-4">
                       <span

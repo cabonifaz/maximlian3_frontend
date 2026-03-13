@@ -4,6 +4,7 @@ import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   CreateUserRequest,
   CreateUserResponse,
+  UpdateUserRequest,
   UserListRequest,
   UserListResponse,
 } from "@maximilian/shared/types/user.type";
@@ -54,6 +55,28 @@ export const userService = {
       return data.result;
     } catch (error) {
       console.error("Error creating user:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing user in the system.
+   * @param updateData Data for the user update.
+   */
+  update: async (updateData: UpdateUserRequest) => {
+    try {
+      const { data } = await maximilianService.post<ApiResponse<unknown>>(
+        "/api/Usuario/editar",
+        updateData
+      );
+
+      if (data.idTipoMensaje !== MessageType.SUCCESS) {
+        throw new Error(data.mensaje || "Error al actualizar el usuario");
+      }
+
+      return data.result;
+    } catch (error) {
+      console.error("Error updating user:", error);
       throw error;
     }
   },

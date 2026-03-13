@@ -11,6 +11,18 @@ export type CreateUserResponse = {
   idUsuario: number;
 };
 
+export type UpdateUserRequest = {
+  idUsuario: number;
+  infoUsuario: {
+    nombres: string;
+    apellidoPaterno: string;
+    apellidoMaterno: string;
+    email: string;
+    roles: number[];
+    idiomas: number[];
+  };
+};
+
 export type UserListRequest = {
   numPag: number;
   filtro?: string;
