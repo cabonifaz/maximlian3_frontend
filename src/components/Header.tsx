@@ -13,6 +13,7 @@ export function Header({ role: initialRole }: HeaderProps) {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isChangingRole, setIsChangingRole] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Initialize state from sessionStorage to avoid useEffect setState
   const [userSession] = useState<UserSession | null>(() => {
@@ -25,12 +26,16 @@ export function Header({ role: initialRole }: HeaderProps) {
   });
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await authService.logout();
       sessionStorage.clear();
+      // Small artificial delay to make the transition feel smoother
+      await new Promise((resolve) => setTimeout(resolve, 800));
       navigate("/login");
     } catch (error) {
       console.error("Error al cerrar sesión", error);
+      setIsLoggingOut(false);
     }
   };
 
@@ -160,6 +165,7 @@ export function Header({ role: initialRole }: HeaderProps) {
       </header>
 
       {isChangingRole && <LoadingScreen message="Cambiando de rol..." />}
+      {isLoggingOut && <LoadingScreen message="Cerrando sesión..." />}
     </>
   );
 }
