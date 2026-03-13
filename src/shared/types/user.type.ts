@@ -22,13 +22,11 @@ export type UserDetails = {
 
 export type UpdateUserRequest = {
   idUsuario: number;
-  infoUsuario: {
-    nombres: string;
-    apellidoPaterno: string;
-    apellidoMaterno: string;
-    roles: number[];
-    idiomas: number[];
-  };
+  nombres: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  roles: number[];
+  idiomas: number[];
 };
 
 export type UserListRequest = {

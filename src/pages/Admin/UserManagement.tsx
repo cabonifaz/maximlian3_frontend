@@ -95,13 +95,11 @@ export default function UserManagement() {
 
       const apiRequest: UpdateUserRequest = {
         idUsuario: editingUserId,
-        infoUsuario: {
-          nombres: userData.firstName,
-          apellidoPaterno: userData.paternalLastName,
-          apellidoMaterno: userData.maternalLastName,
-          roles: userData.roles as number[],
-          idiomas: (userData.languages || []) as number[],
-        },
+        nombres: userData.firstName,
+        apellidoPaterno: userData.paternalLastName,
+        apellidoMaterno: userData.maternalLastName,
+        roles: userData.roles as number[],
+        idiomas: (userData.languages || []) as number[],
       };
       return userService.update(apiRequest);
     },
