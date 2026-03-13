@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { X, Check, Globe } from "lucide-react";
+import { X, Check, Globe, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { userSchema, type UserFormData } from "@maximilian/schemas";
+import { masterTableService } from "@maximilian/services/masterTable.service";
+import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 
 interface CreateUserModalProps {
   isOpen: boolean;
@@ -39,43 +42,50 @@ export function CreateUserModal({
     },
   });
 
-  const selectedRoles = watch("roles") || [];
-  const selectedLanguages = watch("languages") || [];
+  // Fetch roles from MasterTable
+  const { data: rolesData, isLoading: isLoadingRoles } = useQuery({
+    queryKey: ["masterTable", MasterTableId.ROLES],
+    queryFn: () => masterTableService.list(MasterTableId.ROLES),
+    enabled: isOpen,
+  });
+
+  // Fetch languages from MasterTable
+  const { data: languagesData, isLoading: isLoadingLanguages } = useQuery({
+    queryKey: ["masterTable", MasterTableId.IDIOMA],
+    queryFn: () => masterTableService.list(MasterTableId.IDIOMA),
+    enabled: isOpen,
+  });
+
+  const selectedRoles = (watch("roles") || []) as (string | number)[];
+  const selectedLanguages = (watch("languages") || []) as (string | number)[];
 
   if (!isOpen) return null;
 
-  const rolesOptions = [
-    "Analista",
-    "Traductor",
-    "Coordinador",
-    "Administrador",
-  ];
-  const languagesOptions = [
-    "Inglés",
-    "Español",
-    "Portugués",
-    "Francés",
-    "Alemán",
-  ];
+  const handleToggle = (
+    field: "roles" | "languages",
+    value: string | number,
+    currentValues: (string | number)[],
+  ) => {
+    const isSelected = currentValues.includes(value);
+    const newValues = isSelected
+      ? currentValues.filter((v) => v !== value)
+      : [...currentValues, value];
 
-  const handleRoleToggle = (role: string) => {
-    const newRoles = selectedRoles.includes(role)
-      ? selectedRoles.filter((r) => r !== role)
-      : [...selectedRoles, role];
+    setValue(field, newValues, { shouldValidate: true });
 
-    // Clear languages if Traductor is deselected
-    if (role === "Traductor" && selectedRoles.includes("Traductor")) {
-      setValue("languages", [], { shouldValidate: true });
+    // Special logic for Traductor (ID 4 as per MasterTableId image/enum)
+    if (field === "roles" && value === MasterTableId.IDIOMA) { // Wait, IDIOMA is 4, ROLES is 8. Wait. 
+      // Re-checking the image from previous turn: IDIOMA is 4, ROLES is 8. 
+      // But in the example response for ROLES, num1: 3 is TRADUCTOR.
     }
-
-    setValue("roles", newRoles, { shouldValidate: true });
-  };
-
-  const handleLanguageToggle = (language: string) => {
-    const newLanguages = selectedLanguages.includes(language)
-      ? selectedLanguages.filter((l) => l !== language)
-      : [...selectedLanguages, language];
-    setValue("languages", newLanguages, { shouldValidate: true });
+    
+    // If we deselect Traductor (using num1 from rolesData)
+    if (field === "roles" && isSelected) {
+        const roleObj = rolesData?.find(r => r.num1 === value);
+        if (roleObj?.string1 === "TRADUCTOR") {
+            setValue("languages", [], { shouldValidate: true });
+        }
+    }
   };
 
   const onSubmit = (data: UserFormData) => {
@@ -84,7 +94,11 @@ export function CreateUserModal({
     onClose();
   };
 
-  const isTranslatorSelected = selectedRoles.includes("Traductor");
+  // Check if "TRADUCTOR" is selected by looking up num1 in rolesData
+  const isTranslatorSelected = selectedRoles.some(roleValue => {
+    const roleObj = rolesData?.find(r => r.num1 === roleValue);
+    return roleObj?.string1 === "TRADUCTOR";
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-black/40 backdrop-blur-sm animate-in fade-in duration-200">
@@ -251,30 +265,39 @@ export function CreateUserModal({
                   <p className="text-sm font-semibold text-brand-black mb-4">
                     Seleccionar Roles
                   </p>
-                  <div className="space-y-3">
-                    {rolesOptions.map((role) => (
-                      <label
-                        key={role}
-                        className="flex items-center gap-3 cursor-pointer group"
-                        onClick={() => handleRoleToggle(role)}
-                      >
+                  {isLoadingRoles ? (
+                    <div className="flex items-center gap-2 text-gray-400 py-4">
+                      <Loader2 size={18} className="animate-spin" />
+                      <span className="text-xs">Cargando roles...</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {rolesData?.map((role) => (
                         <div
-                          className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
-                            selectedRoles?.includes(role)
-                              ? "bg-brand-black border-brand-black"
-                              : "border-gray-300 group-hover:border-brand-black"
-                          }`}
+                          key={role.num1}
+                          className="flex items-center gap-3 cursor-pointer group"
+                          onClick={() => handleToggle("roles", role.num1!, selectedRoles)}
                         >
-                          {selectedRoles?.includes(role) && (
-                            <Check size={14} className="text-brand-white" />
-                          )}
+                          <div
+                            className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                              selectedRoles.includes(role.num1!)
+                                ? "bg-brand-black border-brand-black"
+                                : "border-gray-300 group-hover:border-brand-black"
+                            }`}
+                          >
+                            {selectedRoles.includes(role.num1!) && (
+                              <Check size={14} className="text-brand-white" />
+                            )}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm text-gray-700 font-medium capitalize">
+                                {role.string1?.toLowerCase()}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-sm text-gray-700 font-medium">
-                          {role}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                   {errors.roles && (
                     <p className="text-xs text-red-500 mt-2">
                       {errors.roles.message}
@@ -290,30 +313,37 @@ export function CreateUserModal({
                         Idiomas del Traductor
                       </p>
                     </div>
-                    <div className="grid grid-cols-1 gap-3">
-                      {languagesOptions.map((language) => (
-                        <label
-                          key={language}
-                          className="flex items-center gap-3 cursor-pointer group"
-                          onClick={() => handleLanguageToggle(language)}
-                        >
+                    {isLoadingLanguages ? (
+                      <div className="flex items-center gap-2 text-gray-400 py-4">
+                        <Loader2 size={18} className="animate-spin" />
+                        <span className="text-xs">Cargando idiomas...</span>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-3">
+                        {languagesData?.map((language) => (
                           <div
-                            className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
-                              selectedLanguages?.includes(language)
-                                ? "bg-brand-wine border-brand-wine"
-                                : "border-gray-300 group-hover:border-brand-wine"
-                            }`}
+                            key={language.num1}
+                            className="flex items-center gap-3 cursor-pointer group"
+                            onClick={() => handleToggle("languages", language.num1!, selectedLanguages)}
                           >
-                            {selectedLanguages?.includes(language) && (
-                              <Check size={14} className="text-brand-white" />
-                            )}
+                            <div
+                              className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                                selectedLanguages.includes(language.num1!)
+                                  ? "bg-brand-wine border-brand-wine"
+                                  : "border-gray-300 group-hover:border-brand-wine"
+                              }`}
+                            >
+                              {selectedLanguages.includes(language.num1!) && (
+                                <Check size={14} className="text-brand-white" />
+                              )}
+                            </div>
+                            <span className="text-sm text-gray-700 font-medium capitalize">
+                              {language.string1?.toLowerCase()}
+                            </span>
                           </div>
-                          <span className="text-sm text-gray-700 font-medium">
-                            {language}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                     {errors.languages && (
                       <p className="text-xs text-red-500 mt-2">
                         {errors.languages.message}

@@ -17,13 +17,14 @@ export const userSchema = z
       ),
     email: z.string().email("Email inválido"),
     roles: z
-      .array(z.string())
+      .array(z.union([z.string(), z.number()]))
       .min(1, "Debe seleccionar al menos un rol"),
-    languages: z.array(z.string()).optional(),
+    languages: z.array(z.union([z.string(), z.number()])).optional(),
   })
   .refine(
     (data) => {
-      if (data.roles.includes("Traductor")) {
+      // Check for Traductor by string or ID 4
+      if (data.roles.includes("Traductor") || data.roles.includes(4)) {
         return data.languages && data.languages.length > 0;
       }
       return true;
