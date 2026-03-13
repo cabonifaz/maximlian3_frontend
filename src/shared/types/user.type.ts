@@ -29,6 +29,10 @@ export type UpdateUserRequest = {
   idiomas: number[];
 };
 
+export type DeleteUserRequest = {
+  idUsuarioEliminar: number;
+};
+
 export type UserListRequest = {
   numPag: number;
   filtro?: string;

@@ -4,6 +4,7 @@ import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   CreateUserRequest,
   CreateUserResponse,
+  DeleteUserRequest,
   UpdateUserRequest,
   UserDetails,
   UserListRequest,
@@ -104,6 +105,28 @@ export const userService = {
       return data.result;
     } catch (error) {
       console.error("Error updating user:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete an existing user in the system.
+   * @param deleteData Data for the user deletion.
+   */
+  delete: async (deleteData: DeleteUserRequest) => {
+    try {
+      const { data } = await maximilianService.post<ApiResponse<unknown>>(
+        "/api/Usuario/eliminar",
+        deleteData
+      );
+
+      if (data.idTipoMensaje !== MessageType.SUCCESS) {
+        throw new Error(data.mensaje || "Error al eliminar el usuario");
+      }
+
+      return data.result;
+    } catch (error) {
+      console.error("Error deleting user:", error);
       throw error;
     }
   },

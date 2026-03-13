@@ -21,6 +21,7 @@ import { type UserFormData } from "@maximilian/schemas";
 import { userService } from "@maximilian/services/user.service";
 import type {
   CreateUserRequest,
+  DeleteUserRequest,
   UpdateUserRequest,
   UserListEntry,
 } from "@maximilian/shared/types/user.type";
@@ -42,6 +43,7 @@ export default function UserManagement() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserFormData | null>(null);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(false);
 
@@ -115,6 +117,23 @@ export default function UserManagement() {
     },
   });
 
+  // Delete User Mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: (idUsuario: number) => {
+      const apiRequest: DeleteUserRequest = { idUsuarioEliminar: idUsuario };
+      return userService.delete(apiRequest);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Usuario eliminado exitosamente");
+      setIsDeleteModalOpen(false);
+      setDeletingUserId(null);
+    },
+    onError: (error: Error) => {
+      console.error("Error al eliminar usuario:", error.message);
+    },
+  });
+
   const handleCreateUser = (userData: UserFormData, resetForm: () => void) => {
     createUserMutation.mutate({ userData, resetForm });
   };
@@ -124,8 +143,9 @@ export default function UserManagement() {
   };
 
   const handleDeleteUser = () => {
-    console.log("Deleting user");
-    setIsDeleteModalOpen(false);
+    if (deletingUserId !== null) {
+      deleteUserMutation.mutate(deletingUserId);
+    }
   };
 
   const openEditModal = async (user: UserListEntry) => {
@@ -133,12 +153,12 @@ export default function UserManagement() {
     setActiveMenuId(null);
     try {
       const details = await userService.getById(user.idUsuario);
-      
+
       const editData: UserFormData = {
         firstName: details.nombres || "",
         paternalLastName: details.apellidoPaterno || "",
         maternalLastName: details.apellidoMaterno || "",
-        username: user.username || "", 
+        username: user.username || "",
         email: details.email || "",
         roles: details.roles || [],
         languages: details.idiomas || [],
@@ -154,6 +174,7 @@ export default function UserManagement() {
   };
 
   const openDeleteModal = (user: UserListEntry) => {
+    setDeletingUserId(user.idUsuario);
     setSelectedUser({
       firstName: user.nombres,
       paternalLastName: user.apellidoPaterno,
@@ -229,9 +250,13 @@ export default function UserManagement() {
 
       <DeleteUserModal
         isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeletingUserId(null);
+        }}
         onConfirm={handleDeleteUser}
         userName={selectedUser?.firstName}
+        isSubmitting={deleteUserMutation.isPending}
       />
 
       <div className="bg-brand-white border border-gray-200 rounded-xl overflow-hidden shadow-sm relative min-h-[400px] flex flex-col">
