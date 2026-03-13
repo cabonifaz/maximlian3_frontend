@@ -34,3 +34,29 @@ export type CreateClientRequest = {
 export type CreateClientResponse = {
   idCliente: number;
 };
+
+export type ClientDetailContact = {
+  idContacto: number;
+  nombres: string;
+  idTipoContacto: number;
+  areaTrabajo: number;
+  telefono: string;
+  email: string;
+};
+
+export type ClientDetail = {
+  idCliente: number;
+  idTipoPersona: number;
+  nombre: string;
+  nombreCorto: string;
+  idPais: number;
+  idRegistroTributario: number;
+  numRegistroTributario: string;
+  correo: string;
+  webSite: string;
+  telefono: string;
+  direccion: string;
+  idFormatoDocumento: number;
+  estado: string;
+  contactos: ClientDetailContact[];
+};
