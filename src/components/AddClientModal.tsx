@@ -1,7 +1,16 @@
 import { useState } from "react";
-import { X, Plus, MoreHorizontal, ArrowLeft } from "lucide-react";
+import {
+  X,
+  Plus,
+  MoreHorizontal,
+  ArrowLeft,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+} from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import {
   clientInfoSchema,
   type ClientInfoFormData,
@@ -9,6 +18,8 @@ import {
   type ContactFormData,
 } from "@maximilian/schemas";
 import { AddRateModal } from "./AddRateModal";
+import { masterTableService } from "@maximilian/services/masterTable.service";
+import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -47,6 +58,43 @@ export function AddClientModal({
     resolver: zodResolver(contactSchema),
   });
 
+  // Queries for MasterTable parameters
+  const { data: tipoPersonaData, isLoading: isLoadingTipoPersona, isError: isErrorTipoPersona, refetch: refetchTipoPersona } = useQuery({
+    queryKey: ["masterTable", MasterTableId.TIPO_PERSONA],
+    queryFn: () => masterTableService.list(MasterTableId.TIPO_PERSONA),
+    enabled: isOpen,
+  });
+
+  const { data: paisData, isLoading: isLoadingPais, isError: isErrorPais, refetch: refetchPais } = useQuery({
+    queryKey: ["masterTable", MasterTableId.PAIS],
+    queryFn: () => masterTableService.list(MasterTableId.PAIS),
+    enabled: isOpen,
+  });
+
+  const { data: tipoRegTributarioData, isLoading: isLoadingTipoRegTributario, isError: isErrorTipoRegTributario, refetch: refetchTipoRegTributario } = useQuery({
+    queryKey: ["masterTable", MasterTableId.TIPO_REG_TRIBUTARIO],
+    queryFn: () => masterTableService.list(MasterTableId.TIPO_REG_TRIBUTARIO),
+    enabled: isOpen,
+  });
+
+  const { data: formatoInformeData, isLoading: isLoadingFormatoInforme, isError: isErrorFormatoInforme, refetch: refetchFormatoInforme } = useQuery({
+    queryKey: ["masterTable", MasterTableId.TIPO_FORMATO_INFORME],
+    queryFn: () => masterTableService.list(MasterTableId.TIPO_FORMATO_INFORME),
+    enabled: isOpen,
+  });
+
+  const { data: tipoContactoData, isLoading: isLoadingTipoContacto, isError: isErrorTipoContacto, refetch: refetchTipoContacto } = useQuery({
+    queryKey: ["masterTable", MasterTableId.TIPO_CONTACTO],
+    queryFn: () => masterTableService.list(MasterTableId.TIPO_CONTACTO),
+    enabled: isOpen && activeTab === "contacts",
+  });
+
+  const { data: areaTrabajoData, isLoading: isLoadingAreaTrabajo, isError: isErrorAreaTrabajo, refetch: refetchAreaTrabajo } = useQuery({
+    queryKey: ["masterTable", MasterTableId.AREA_TRABAJO],
+    queryFn: () => masterTableService.list(MasterTableId.AREA_TRABAJO),
+    enabled: isOpen && activeTab === "contacts",
+  });
+
   if (!isOpen) return null;
 
   const handleConfirm = (data: ClientInfoFormData) => {
@@ -80,6 +128,9 @@ export function AddClientModal({
     });
     setContactView("detail");
   };
+
+  const isLoadingInfo = isLoadingTipoPersona || isLoadingPais || isLoadingTipoRegTributario || isLoadingFormatoInforme;
+  const isErrorInfo = isErrorTipoPersona || isErrorPais || isErrorTipoRegTributario || isErrorFormatoInforme;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -142,186 +193,223 @@ export function AddClientModal({
         {/* Content */}
         <div className="p-8 flex-1 overflow-y-auto min-h-0">
           {activeTab === "info" && (
-            <form
-              id="client-info-form"
-              onSubmit={handleInfoSubmit(handleConfirm)}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300"
-            >
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">
-                  Tipo Persona
-                </label>
-                <select
-                  {...infoRegister("tipoPersona")}
-                  className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
+            <>
+              {isLoadingInfo ? (
+                <div className="h-full flex flex-col items-center justify-center gap-3 py-20">
+                  <Loader2 size={40} className="text-brand-wine animate-spin" />
+                  <p className="text-sm font-medium text-gray-500">Cargando parámetros...</p>
+                </div>
+              ) : isErrorInfo ? (
+                <div className="h-full flex flex-col items-center justify-center gap-4 py-20 text-center">
+                  <AlertCircle size={40} className="text-red-500" />
+                  <p className="text-sm font-bold text-brand-black">Error al cargar parámetros</p>
+                  <button
+                    onClick={() => {
+                      refetchTipoPersona();
+                      refetchPais();
+                      refetchTipoRegTributario();
+                      refetchFormatoInforme();
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-xs font-bold hover:bg-brand-wine/90 transition-all cursor-pointer"
+                  >
+                    <RefreshCw size={14} />
+                    <span>REINTENTAR</span>
+                  </button>
+                </div>
+              ) : (
+                <form
+                  id="client-info-form"
+                  onSubmit={handleInfoSubmit(handleConfirm)}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300"
                 >
-                  <option value="">Seleccione</option>
-                  <option value="Natural">Persona Natural</option>
-                  <option value="Jurídica">Persona Jurídica</option>
-                </select>
-                {infoErrors.tipoPersona && (
-                  <p className="text-xs text-red-500">
-                    {infoErrors.tipoPersona.message}
-                  </p>
-                )}
-              </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">
+                      Tipo Persona
+                    </label>
+                    <select
+                      {...infoRegister("tipoPersona", { valueAsNumber: true })}
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
+                    >
+                      <option value="">Seleccione</option>
+                      {tipoPersonaData?.map((item) => (
+                        <option key={item.num1} value={item.num1 ?? ""}>
+                          {item.string1}
+                        </option>
+                      ))}
+                    </select>
+                    {infoErrors.tipoPersona && (
+                      <p className="text-xs text-red-500">
+                        {infoErrors.tipoPersona.message}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">
-                  Nombre
-                </label>
-                <input
-                  {...infoRegister("nombre")}
-                  type="text"
-                  placeholder="Nombre"
-                  className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
-                />
-                {infoErrors.nombre && (
-                  <p className="text-xs text-red-500">
-                    {infoErrors.nombre.message}
-                  </p>
-                )}
-              </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">
+                      Nombre
+                    </label>
+                    <input
+                      {...infoRegister("nombre")}
+                      type="text"
+                      placeholder="Nombre"
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
+                    />
+                    {infoErrors.nombre && (
+                      <p className="text-xs text-red-500">
+                        {infoErrors.nombre.message}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">País</label>
-                <select
-                  {...infoRegister("pais")}
-                  className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-                >
-                  <option value="">Seleccione</option>
-                  <option value="Perú">Perú</option>
-                  <option value="Uruguay">Uruguay</option>
-                  <option value="Colombia">Colombia</option>
-                </select>
-                {infoErrors.pais && (
-                  <p className="text-xs text-red-500">
-                    {infoErrors.pais.message}
-                  </p>
-                )}
-              </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">País</label>
+                    <select
+                      {...infoRegister("pais", { valueAsNumber: true })}
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
+                    >
+                      <option value="">Seleccione</option>
+                      {paisData?.map((item) => (
+                        <option key={item.num1} value={item.num1 ?? ""}>
+                          {item.string1}
+                        </option>
+                      ))}
+                    </select>
+                    {infoErrors.pais && (
+                      <p className="text-xs text-red-500">
+                        {infoErrors.pais.message}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">
-                  Dirección
-                </label>
-                <input
-                  {...infoRegister("direccion")}
-                  type="text"
-                  placeholder="Dirección"
-                  className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
-                />
-                {infoErrors.direccion && (
-                  <p className="text-xs text-red-500">
-                    {infoErrors.direccion.message}
-                  </p>
-                )}
-              </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">
+                      Dirección
+                    </label>
+                    <input
+                      {...infoRegister("direccion")}
+                      type="text"
+                      placeholder="Dirección"
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
+                    />
+                    {infoErrors.direccion && (
+                      <p className="text-xs text-red-500">
+                        {infoErrors.direccion.message}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Email</label>
-                <input
-                  {...infoRegister("email")}
-                  type="email"
-                  placeholder="Email"
-                  className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
-                />
-                {infoErrors.email && (
-                  <p className="text-xs text-red-500">
-                    {infoErrors.email.message}
-                  </p>
-                )}
-              </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Email</label>
+                    <input
+                      {...infoRegister("email")}
+                      type="email"
+                      placeholder="Email"
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
+                    />
+                    {infoErrors.email && (
+                      <p className="text-xs text-red-500">
+                        {infoErrors.email.message}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">
-                  Teléfono
-                </label>
-                <input
-                  {...infoRegister("telefono")}
-                  type="text"
-                  placeholder="Teléfono"
-                  className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
-                />
-                {infoErrors.telefono && (
-                  <p className="text-xs text-red-500">
-                    {infoErrors.telefono.message}
-                  </p>
-                )}
-              </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">
+                      Teléfono
+                    </label>
+                    <input
+                      {...infoRegister("telefono")}
+                      type="text"
+                      placeholder="Teléfono"
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
+                    />
+                    {infoErrors.telefono && (
+                      <p className="text-xs text-red-500">
+                        {infoErrors.telefono.message}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">
-                  Sitio Web
-                </label>
-                <input
-                  {...infoRegister("sitioWeb")}
-                  type="text"
-                  placeholder="Sitio Web"
-                  className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
-                />
-                {infoErrors.sitioWeb && (
-                  <p className="text-xs text-red-500">
-                    {infoErrors.sitioWeb.message}
-                  </p>
-                )}
-              </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">
+                      Sitio Web
+                    </label>
+                    <input
+                      {...infoRegister("sitioWeb")}
+                      type="text"
+                      placeholder="Sitio Web"
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
+                    />
+                    {infoErrors.sitioWeb && (
+                      <p className="text-xs text-red-500">
+                        {infoErrors.sitioWeb.message}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">
-                  Tipo Registro Tributario
-                </label>
-                <select
-                  {...infoRegister("tipoRegistroTributario")}
-                  className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-                >
-                  <option value="">Seleccione</option>
-                  <option value="RUC">RUC</option>
-                  <option value="NIT">NIT</option>
-                </select>
-                {infoErrors.tipoRegistroTributario && (
-                  <p className="text-xs text-red-500">
-                    {infoErrors.tipoRegistroTributario.message}
-                  </p>
-                )}
-              </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">
+                      Tipo Registro Tributario
+                    </label>
+                    <select
+                      {...infoRegister("tipoRegistroTributario", { valueAsNumber: true })}
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
+                    >
+                      <option value="">Seleccione</option>
+                      {tipoRegTributarioData?.map((item) => (
+                        <option key={item.num1} value={item.num1 ?? ""}>
+                          {item.string1}
+                        </option>
+                      ))}
+                    </select>
+                    {infoErrors.tipoRegistroTributario && (
+                      <p className="text-xs text-red-500">
+                        {infoErrors.tipoRegistroTributario.message}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">
-                  Representante Legal
-                </label>
-                <input
-                  {...infoRegister("representanteLegal")}
-                  type="text"
-                  placeholder="Representante Legal"
-                  className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
-                />
-                {infoErrors.representanteLegal && (
-                  <p className="text-xs text-red-500">
-                    {infoErrors.representanteLegal.message}
-                  </p>
-                )}
-              </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">
+                      Representante Legal
+                    </label>
+                    <input
+                      {...infoRegister("representanteLegal")}
+                      type="text"
+                      placeholder="Representante Legal"
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
+                    />
+                    {infoErrors.representanteLegal && (
+                      <p className="text-xs text-red-500">
+                        {infoErrors.representanteLegal.message}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">
-                  Formato Informe
-                </label>
-                <select
-                  {...infoRegister("formatoInforme")}
-                  className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-                >
-                  <option value="">Seleccione</option>
-                  <option value="PDF">PDF</option>
-                  <option value="Word">Word</option>
-                </select>
-                {infoErrors.formatoInforme && (
-                  <p className="text-xs text-red-500">
-                    {infoErrors.formatoInforme.message}
-                  </p>
-                )}
-              </div>
-            </form>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">
+                      Formato Informe
+                    </label>
+                    <select
+                      {...infoRegister("formatoInforme", { valueAsNumber: true })}
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
+                    >
+                      <option value="">Seleccione</option>
+                      {formatoInformeData?.map((item) => (
+                        <option key={item.num1} value={item.num1 ?? ""}>
+                          {item.string1}
+                        </option>
+                      ))}
+                    </select>
+                    {infoErrors.formatoInforme && (
+                      <p className="text-xs text-red-500">
+                        {infoErrors.formatoInforme.message}
+                      </p>
+                    )}
+                  </div>
+                </form>
+              )}
+            </>
           )}
 
           {activeTab === "rates" && (
@@ -507,146 +595,174 @@ export function AddClientModal({
                     </h3>
                   </div>
 
-                  <form
-                    id="contact-form"
-                    onSubmit={handleContactSubmit(handleAddContact)}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                  >
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">
-                        Tipo Persona
-                      </label>
-                      <select
-                        {...contactRegister("tipoPersona")}
-                        disabled={contactView === "detail"}
-                        className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none disabled:bg-gray-50"
+                  {(isLoadingTipoContacto || isLoadingAreaTrabajo) ? (
+                    <div className="flex flex-col items-center justify-center gap-3 py-20">
+                      <Loader2 size={40} className="text-brand-wine animate-spin" />
+                      <p className="text-sm font-medium text-gray-500">Cargando parámetros...</p>
+                    </div>
+                  ) : (isErrorTipoContacto || isErrorAreaTrabajo) ? (
+                    <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
+                      <AlertCircle size={40} className="text-red-500" />
+                      <p className="text-sm font-bold text-brand-black">Error al cargar parámetros</p>
+                      <button
+                        onClick={() => {
+                          refetchTipoContacto();
+                          refetchAreaTrabajo();
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-xs font-bold hover:bg-brand-wine/90 transition-all cursor-pointer"
                       >
-                        <option value="">Seleccione</option>
-                        <option value="Persona Natural">Persona Natural</option>
-                        <option value="Persona Jurídica">
-                          Persona Jurídica
-                        </option>
-                      </select>
-                      {contactErrors.tipoPersona && (
-                        <p className="text-xs text-red-500">
-                          {contactErrors.tipoPersona.message}
-                        </p>
-                      )}
+                        <RefreshCw size={14} />
+                        <span>REINTENTAR</span>
+                      </button>
                     </div>
+                  ) : (
+                    <form
+                      id="contact-form"
+                      onSubmit={handleContactSubmit(handleAddContact)}
+                      className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                    >
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-700">
+                          Tipo Persona
+                        </label>
+                        <select
+                          {...contactRegister("tipoPersona", { valueAsNumber: true })}
+                          disabled={contactView === "detail"}
+                          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none disabled:bg-gray-50"
+                        >
+                          <option value="">Seleccione</option>
+                          {tipoPersonaData?.map((item) => (
+                            <option key={item.num1} value={item.num1 ?? ""}>
+                              {item.string1}
+                            </option>
+                          ))}
+                        </select>
+                        {contactErrors.tipoPersona && (
+                          <p className="text-xs text-red-500">
+                            {contactErrors.tipoPersona.message}
+                          </p>
+                        )}
+                      </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">
-                        Tipo de Contacto
-                      </label>
-                      <select
-                        {...contactRegister("tipoContacto")}
-                        disabled={contactView === "detail"}
-                        className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none disabled:bg-gray-50"
-                      >
-                        <option value="">Seleccione</option>
-                        <option value="Facturación">Facturación</option>
-                        <option value="Administrativo">Administrativo</option>
-                        <option value="Legal">Legal</option>
-                      </select>
-                      {contactErrors.tipoContacto && (
-                        <p className="text-xs text-red-500">
-                          {contactErrors.tipoContacto.message}
-                        </p>
-                      )}
-                    </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-700">
+                          Tipo de Contacto
+                        </label>
+                        <select
+                          {...contactRegister("tipoContacto", { valueAsNumber: true })}
+                          disabled={contactView === "detail"}
+                          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none disabled:bg-gray-50"
+                        >
+                          <option value="">Seleccione</option>
+                          {tipoContactoData?.map((item) => (
+                            <option key={item.num1} value={item.num1 ?? ""}>
+                              {item.string1}
+                            </option>
+                          ))}
+                        </select>
+                        {contactErrors.tipoContacto && (
+                          <p className="text-xs text-red-500">
+                            {contactErrors.tipoContacto.message}
+                          </p>
+                        )}
+                      </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">
-                        Código de Contacto
-                      </label>
-                      <input
-                        {...contactRegister("codigoContacto")}
-                        disabled={contactView === "detail"}
-                        type="text"
-                        placeholder="Código"
-                        className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
-                      />
-                      {contactErrors.codigoContacto && (
-                        <p className="text-xs text-red-500">
-                          {contactErrors.codigoContacto.message}
-                        </p>
-                      )}
-                    </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-700">
+                          Código de Contacto
+                        </label>
+                        <input
+                          {...contactRegister("codigoContacto")}
+                          disabled={contactView === "detail"}
+                          type="text"
+                          placeholder="Código"
+                          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
+                        />
+                        {contactErrors.codigoContacto && (
+                          <p className="text-xs text-red-500">
+                            {contactErrors.codigoContacto.message}
+                          </p>
+                        )}
+                      </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">
-                        Nombre
-                      </label>
-                      <input
-                        {...contactRegister("nombre")}
-                        disabled={contactView === "detail"}
-                        type="text"
-                        placeholder="Nombre"
-                        className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
-                      />
-                      {contactErrors.nombre && (
-                        <p className="text-xs text-red-500">
-                          {contactErrors.nombre.message}
-                        </p>
-                      )}
-                    </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-700">
+                          Nombre
+                        </label>
+                        <input
+                          {...contactRegister("nombre")}
+                          disabled={contactView === "detail"}
+                          type="text"
+                          placeholder="Nombre"
+                          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
+                        />
+                        {contactErrors.nombre && (
+                          <p className="text-xs text-red-500">
+                            {contactErrors.nombre.message}
+                          </p>
+                        )}
+                      </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">
-                        Email
-                      </label>
-                      <input
-                        {...contactRegister("email")}
-                        disabled={contactView === "detail"}
-                        type="email"
-                        placeholder="Email"
-                        className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
-                      />
-                      {contactErrors.email && (
-                        <p className="text-xs text-red-500">
-                          {contactErrors.email.message}
-                        </p>
-                      )}
-                    </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-700">
+                          Email
+                        </label>
+                        <input
+                          {...contactRegister("email")}
+                          disabled={contactView === "detail"}
+                          type="email"
+                          placeholder="Email"
+                          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
+                        />
+                        {contactErrors.email && (
+                          <p className="text-xs text-red-500">
+                            {contactErrors.email.message}
+                          </p>
+                        )}
+                      </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">
-                        Teléfono
-                      </label>
-                      <input
-                        {...contactRegister("telefono")}
-                        disabled={contactView === "detail"}
-                        type="text"
-                        placeholder="Teléfono"
-                        className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
-                      />
-                      {contactErrors.telefono && (
-                        <p className="text-xs text-red-500">
-                          {contactErrors.telefono.message}
-                        </p>
-                      )}
-                    </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-700">
+                          Teléfono
+                        </label>
+                        <input
+                          {...contactRegister("telefono")}
+                          disabled={contactView === "detail"}
+                          type="text"
+                          placeholder="Teléfono"
+                          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
+                        />
+                        {contactErrors.telefono && (
+                          <p className="text-xs text-red-500">
+                            {contactErrors.telefono.message}
+                          </p>
+                        )}
+                      </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">
-                        Área de Trabajo
-                      </label>
-                      <select
-                        {...contactRegister("areaTrabajo")}
-                        disabled={contactView === "detail"}
-                        className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none disabled:bg-gray-50"
-                      >
-                        <option value="">Seleccione</option>
-                        <option value="Contabilidad">Contabilidad</option>
-                        <option value="Administración">Administración</option>
-                      </select>
-                      {contactErrors.areaTrabajo && (
-                        <p className="text-xs text-red-500">
-                          {contactErrors.areaTrabajo.message}
-                        </p>
-                      )}
-                    </div>
-                  </form>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-700">
+                          Área de Trabajo
+                        </label>
+                        <select
+                          {...contactRegister("areaTrabajo", { valueAsNumber: true })}
+                          disabled={contactView === "detail"}
+                          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none disabled:bg-gray-50"
+                        >
+                          <option value="">Seleccione</option>
+                          {areaTrabajoData?.map((item) => (
+                            <option key={item.num1} value={item.num1 ?? ""}>
+                              {item.string1}
+                            </option>
+                          ))}
+                        </select>
+                        {contactErrors.areaTrabajo && (
+                          <p className="text-xs text-red-500">
+                            {contactErrors.areaTrabajo.message}
+                          </p>
+                        )}
+                      </div>
+                    </form>
+                  )}
 
                   <div className="flex justify-end gap-3 pt-4">
                     {contactView === "detail" ? (
@@ -660,7 +776,8 @@ export function AddClientModal({
                       <button
                         type="submit"
                         form="contact-form"
-                        className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
+                        disabled={isLoadingTipoContacto || isLoadingAreaTrabajo}
+                        className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10 disabled:opacity-50"
                       >
                         <div className="w-2 h-2 rounded-full bg-brand-white" />
                         <span>
@@ -683,7 +800,8 @@ export function AddClientModal({
             <button
               type="submit"
               form="client-info-form"
-              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
+              disabled={isLoadingInfo}
+              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10 disabled:opacity-50"
             >
               <div className="w-2 h-2 rounded-full bg-brand-white" />
               <span>Confirmar</span>

@@ -3,6 +3,12 @@ export const MasterTableId = {
   PAIS: 2,
   IDIOMA: 4,
   ROLES: 8,
+  TIPO_REG_TRIBUTARIO: 9,
+  TIPO_FORMATO_INFORME: 11,
+  MONEDA: 12,
+  TIPO_CONTACTO: 14,
+  AREA_TRABAJO: 35,
+  PAGINACION_FRACTAL: 99,
 } as const;
 
 export type MasterTableId = (typeof MasterTableId)[keyof typeof MasterTableId];

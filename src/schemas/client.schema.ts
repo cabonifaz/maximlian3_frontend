@@ -1,16 +1,16 @@
 import { z } from "zod";
 
 export const clientInfoSchema = z.object({
-  tipoPersona: z.string().min(1, "El tipo de persona es requerido"),
+  tipoPersona: z.union([z.string(), z.number()]).refine(val => val !== "", "El tipo de persona es requerido"),
   nombre: z.string().min(1, "El nombre es requerido"),
-  pais: z.string().min(1, "El país es requerido"),
+  pais: z.union([z.string(), z.number()]).refine(val => val !== "", "El país es requerido"),
   direccion: z.string().min(1, "La dirección es requerida"),
   email: z.string().email("Email inválido"),
   telefono: z.string().min(1, "El teléfono es requerido"),
   sitioWeb: z.string().url("URL inválida").optional().or(z.literal("")),
-  tipoRegistroTributario: z.string().min(1, "El tipo de registro tributario es requerido"),
+  tipoRegistroTributario: z.union([z.string(), z.number()]).refine(val => val !== "", "El tipo de registro tributario es requerido"),
   representanteLegal: z.string().min(1, "El representante legal es requerido"),
-  formatoInforme: z.string().min(1, "El formato de informe es requerido"),
+  formatoInforme: z.union([z.string(), z.number()]).refine(val => val !== "", "El formato de informe es requerido"),
 });
 
 export const rateSchema = z.object({
@@ -26,13 +26,13 @@ export const rateSchema = z.object({
 });
 
 export const contactSchema = z.object({
-  tipoPersona: z.string().min(1, "El tipo de persona es requerido"),
-  tipoContacto: z.string().min(1, "El tipo de contacto es requerido"),
+  tipoPersona: z.union([z.string(), z.number()]).refine(val => val !== "", "El tipo de persona es requerido"),
+  tipoContacto: z.union([z.string(), z.number()]).refine(val => val !== "", "El tipo de contacto es requerido"),
   codigoContacto: z.string().min(1, "El código de contacto es requerido"),
   nombre: z.string().min(1, "El nombre es requerido"),
   email: z.string().email("Email inválido"),
   telefono: z.string().min(1, "El teléfono es requerido"),
-  areaTrabajo: z.string().min(1, "El área de trabajo es requerida"),
+  areaTrabajo: z.union([z.string(), z.number()]).refine(val => val !== "", "El área de trabajo es requerida"),
 });
 
 export type ClientInfoFormData = z.infer<typeof clientInfoSchema>;
