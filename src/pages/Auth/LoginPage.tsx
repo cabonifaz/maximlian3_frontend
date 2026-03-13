@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate, Link } from "react-router";
+import { useNavigate } from "react-router";
 import { Eye, EyeOff } from "lucide-react";
 import Cookies from "js-cookie";
 
@@ -29,6 +29,7 @@ export default function LoginPage() {
   const {
     register: loginRegister,
     handleSubmit: handleLoginSubmit,
+    watch,
     formState: { errors: loginErrors },
     setValue: setLoginValue,
   } = useForm<LoginFormData>({
@@ -332,13 +333,14 @@ export default function LoginPage() {
         {!isNewPasswordRequired && (
           <div className="mt-10 text-center">
             <p className="text-xs text-gray-500">
-              Olvidaste tu contraseña?{" "}
-              <Link
-                to="/forgot-password"
-                className="font-bold text-brand-black hover:text-brand-wine transition-colors cursor-pointer hover:underline"
+              ¿Olvidaste tu contraseña?{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/forgot-password", { state: { username: watch("username") } })}
+                className="font-bold text-brand-black hover:text-brand-wine transition-colors cursor-pointer hover:underline bg-transparent border-none p-0"
               >
-                Obten un enlace al correo
-              </Link>
+                Obtén un enlace al correo
+              </button>
             </p>
           </div>
         )}
