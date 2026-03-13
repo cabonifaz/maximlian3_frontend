@@ -386,8 +386,9 @@ export default function UserManagement() {
                           />
                           <div
                             className={`absolute right-6 ${
+                              (usersData?.lstUsuarios.indexOf(user) ?? 0) > 0 &&
                               (usersData?.lstUsuarios.indexOf(user) ?? 0) >=
-                              (usersData?.lstUsuarios.length ?? 0) - 2
+                                (usersData?.lstUsuarios.length ?? 0) - 2
                                 ? "bottom-10"
                                 : "top-10"
                             } w-48 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}
