@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate, Link } from "react-router";
+import { useNavigate, Link, useLocation } from "react-router";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 import { 
@@ -26,10 +26,12 @@ export default function ForgotPasswordPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     register: requestRegister,
     handleSubmit: handleRequestSubmit,
+    setValue: setRequestValue,
     formState: { errors: requestErrors },
   } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -37,6 +39,12 @@ export default function ForgotPasswordPage() {
       username: "",
     },
   });
+
+  useEffect(() => {
+    if (location.state?.username) {
+      setRequestValue("username", location.state.username, { shouldValidate: true });
+    }
+  }, [location.state, setRequestValue]);
 
   const {
     register: resetRegister,
