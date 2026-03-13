@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Check, Globe, Loader2 } from "lucide-react";
+import { X, Check, Globe, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
@@ -43,17 +43,29 @@ export function CreateUserModal({
   });
 
   // Fetch roles from MasterTable
-  const { data: rolesData, isLoading: isLoadingRoles } = useQuery({
+  const { 
+    data: rolesData, 
+    isLoading: isLoadingRoles, 
+    isError: isErrorRoles, 
+    refetch: refetchRoles 
+  } = useQuery({
     queryKey: ["masterTable", MasterTableId.ROLES],
     queryFn: () => masterTableService.list(MasterTableId.ROLES),
     enabled: isOpen,
+    retry: 1,
   });
 
   // Fetch languages from MasterTable
-  const { data: languagesData, isLoading: isLoadingLanguages } = useQuery({
+  const { 
+    data: languagesData, 
+    isLoading: isLoadingLanguages, 
+    isError: isErrorLanguages, 
+    refetch: refetchLanguages 
+  } = useQuery({
     queryKey: ["masterTable", MasterTableId.IDIOMA],
     queryFn: () => masterTableService.list(MasterTableId.IDIOMA),
     enabled: isOpen,
+    retry: 1,
   });
 
   const selectedRoles = (watch("roles") || []) as (string | number)[];
@@ -73,12 +85,6 @@ export function CreateUserModal({
 
     setValue(field, newValues, { shouldValidate: true });
 
-    // Special logic for Traductor (ID 4 as per MasterTableId image/enum)
-    if (field === "roles" && value === MasterTableId.IDIOMA) { // Wait, IDIOMA is 4, ROLES is 8. Wait. 
-      // Re-checking the image from previous turn: IDIOMA is 4, ROLES is 8. 
-      // But in the example response for ROLES, num1: 3 is TRADUCTOR.
-    }
-    
     // If we deselect Traductor (using num1 from rolesData)
     if (field === "roles" && isSelected) {
         const roleObj = rolesData?.find(r => r.num1 === value);
@@ -94,7 +100,7 @@ export function CreateUserModal({
     onClose();
   };
 
-  // Check if "TRADUCTOR" is selected by looking up num1 in rolesData
+  // Check if "TRADUCTOR" is selected
   const isTranslatorSelected = selectedRoles.some(roleValue => {
     const roleObj = rolesData?.find(r => r.num1 === roleValue);
     return roleObj?.string1 === "TRADUCTOR";
@@ -268,7 +274,20 @@ export function CreateUserModal({
                   {isLoadingRoles ? (
                     <div className="flex items-center gap-2 text-gray-400 py-4">
                       <Loader2 size={18} className="animate-spin" />
-                      <span className="text-xs">Cargando roles...</span>
+                      <span className="text-xs font-medium">Cargando roles...</span>
+                    </div>
+                  ) : isErrorRoles ? (
+                    <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex flex-col items-center gap-2 text-center">
+                      <AlertCircle className="text-red-500" size={20} />
+                      <p className="text-xs text-red-700 font-medium">No se pudieron cargar los roles</p>
+                      <button 
+                        type="button"
+                        onClick={() => refetchRoles()}
+                        className="flex items-center gap-1.5 text-[10px] font-bold text-red-600 hover:underline cursor-pointer"
+                      >
+                        <RefreshCw size={10} />
+                        <span>REINTENTAR</span>
+                      </button>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -316,7 +335,20 @@ export function CreateUserModal({
                     {isLoadingLanguages ? (
                       <div className="flex items-center gap-2 text-gray-400 py-4">
                         <Loader2 size={18} className="animate-spin" />
-                        <span className="text-xs">Cargando idiomas...</span>
+                        <span className="text-xs font-medium">Cargando idiomas...</span>
+                      </div>
+                    ) : isErrorLanguages ? (
+                      <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex flex-col items-center gap-2 text-center">
+                        <AlertCircle className="text-red-500" size={20} />
+                        <p className="text-xs text-red-700 font-medium">No se pudieron cargar los idiomas</p>
+                        <button 
+                          type="button"
+                          onClick={() => refetchLanguages()}
+                          className="flex items-center gap-1.5 text-[10px] font-bold text-red-600 hover:underline cursor-pointer"
+                        >
+                          <RefreshCw size={10} />
+                          <span>REINTENTAR</span>
+                        </button>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 gap-3">
@@ -359,7 +391,8 @@ export function CreateUserModal({
           <div className="px-8 py-6 bg-gray-50 border-t border-gray-100 flex justify-end">
             <button
               type="submit"
-              className="flex items-center gap-2 px-8 py-2.5 bg-brand-black text-brand-white rounded-lg text-sm font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
+              className="flex items-center gap-2 px-8 py-2.5 bg-brand-black text-brand-white rounded-lg text-sm font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoadingRoles || isLoadingLanguages}
             >
               <div className="w-2 h-2 rounded-full bg-brand-white" />
               <span>Confirmar</span>
