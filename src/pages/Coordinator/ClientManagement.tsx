@@ -17,9 +17,7 @@ import {
   type ClientInfoFormData,
   type ContactFormData,
 } from "@maximilian/schemas";
-import {
-  type CreateClientRequest,
-} from "@maximilian/shared/types/client.type";
+import { type CreateClientRequest } from "@maximilian/shared/types/client.type";
 
 const mockClients = [
   {
@@ -178,9 +176,6 @@ export default function ClientManagement() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-gray-50">
-                <th className="px-6 py-4">
-                  <input type="checkbox" className="rounded border-gray-300" />
-                </th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
                   Nombre
                 </th>
@@ -211,12 +206,6 @@ export default function ClientManagement() {
                   className="hover:bg-gray-50/50 transition-colors group"
                 >
                   <td className="px-6 py-4">
-                    <input
-                      type="checkbox"
-                      className="rounded border-gray-300 text-brand-wine focus:ring-brand-wine"
-                    />
-                  </td>
-                  <td className="px-6 py-4">
                     <span className="text-sm font-bold text-brand-black">
                       {client.nombre}
                     </span>
@@ -235,7 +224,9 @@ export default function ClientManagement() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-gray-500">{client.email}</span>
+                    <span className="text-sm text-gray-500">
+                      {client.email}
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-600">
