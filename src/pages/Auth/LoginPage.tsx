@@ -1,32 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, Link } from "react-router";
 import { Eye, EyeOff } from "lucide-react";
+import Cookies from "js-cookie";
 
-import { 
-  loginSchema, 
+import {
+  loginSchema,
   type LoginFormData,
   newPasswordSchema,
-  type NewPasswordFormData 
+  type NewPasswordFormData,
 } from "@maximilian/schemas";
 import { authService } from "@maximilian/services/auth.service";
 import { translateAuthError } from "@maximilian/shared/utils/auth-errors";
 
+const REMEMBER_ME_COOKIE = "maximilian_remember_me";
+
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isNewPasswordRequired, setIsNewPasswordRequired] = useState(false);
-  
+
   const navigate = useNavigate();
 
   const {
     register: loginRegister,
     handleSubmit: handleLoginSubmit,
     formState: { errors: loginErrors },
+    setValue: setLoginValue,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -35,6 +39,21 @@ export default function LoginPage() {
       rememberMe: false,
     },
   });
+
+  // Load saved credentials on mount
+  useEffect(() => {
+    const savedData = Cookies.get(REMEMBER_ME_COOKIE);
+    if (savedData) {
+      try {
+        const { username, password } = JSON.parse(savedData);
+        if (username) setLoginValue("username", username);
+        if (password) setLoginValue("password", password);
+        setLoginValue("rememberMe", true);
+      } catch (e) {
+        console.error("Error parsing remember me cookie", e);
+      }
+    }
+  }, [setLoginValue]);
 
   const {
     register: newPasswordRegister,
@@ -53,9 +72,27 @@ export default function LoginPage() {
     setAuthError(null);
     try {
       const response = await authService.login(data);
+
+      // Handle remember me logic
+      if (data.rememberMe) {
+        Cookies.set(
+          REMEMBER_ME_COOKIE,
+          JSON.stringify({
+            username: data.username,
+            password: data.password,
+          }),
+          { expires: 7, secure: true, sameSite: "strict" },
+        );
+      } else {
+        Cookies.remove(REMEMBER_ME_COOKIE);
+      }
+
       if (response.isSignedIn) {
         navigate("/select-role");
-      } else if (response.nextStep?.signInStep === "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED") {
+      } else if (
+        response.nextStep?.signInStep ===
+        "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED"
+      ) {
         setIsNewPasswordRequired(true);
       } else {
         console.log("Next step required:", response.nextStep);
@@ -91,16 +128,16 @@ export default function LoginPage() {
       <div className="bg-brand-white w-full max-w-md p-10 rounded-3xl shadow-xl border border-gray-100 flex flex-col items-center animate-in fade-in zoom-in-95 duration-300">
         {/* Logo */}
         <div className="mb-8">
-          <img 
-            src="/safety-logo.jpg" 
-            alt="Safety Report Logo" 
+          <img
+            src="/safety-logo.jpg"
+            alt="Safety Report Logo"
             className="h-24 object-contain"
           />
         </div>
 
         <p className="text-gray-400 text-center text-sm mb-10 leading-relaxed px-4">
-          {isNewPasswordRequired 
-            ? "Por seguridad, debes actualizar tu contraseña temporal." 
+          {isNewPasswordRequired
+            ? "Por seguridad, debes actualizar tu contraseña temporal."
             : "Ingresa tus credenciales para acceder a tu cuenta"}
         </p>
 
@@ -111,7 +148,10 @@ export default function LoginPage() {
         )}
 
         {!isNewPasswordRequired ? (
-          <form onSubmit={handleLoginSubmit(onLogin)} className="w-full space-y-6">
+          <form
+            onSubmit={handleLoginSubmit(onLogin)}
+            className="w-full space-y-6"
+          >
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">
                 Nombre de usuario
@@ -126,7 +166,9 @@ export default function LoginPage() {
                 } rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all disabled:opacity-50`}
               />
               {loginErrors.username && (
-                <p className="text-xs text-red-500">{loginErrors.username.message}</p>
+                <p className="text-xs text-red-500">
+                  {loginErrors.username.message}
+                </p>
               )}
             </div>
 
@@ -154,7 +196,9 @@ export default function LoginPage() {
                 </button>
               </div>
               {loginErrors.password && (
-                <p className="text-xs text-red-500">{loginErrors.password.message}</p>
+                <p className="text-xs text-red-500">
+                  {loginErrors.password.message}
+                </p>
               )}
             </div>
 
@@ -188,7 +232,10 @@ export default function LoginPage() {
             </button>
           </form>
         ) : (
-          <form onSubmit={handleNewPasswordSubmit(onNewPassword)} className="w-full space-y-6">
+          <form
+            onSubmit={handleNewPasswordSubmit(onNewPassword)}
+            className="w-full space-y-6"
+          >
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">
                 Nueva Contraseña
@@ -200,7 +247,9 @@ export default function LoginPage() {
                   placeholder="Nueva contraseña"
                   disabled={isLoading}
                   className={`w-full px-5 py-3 bg-brand-white border ${
-                    newPasswordErrors.newPassword ? "border-red-500" : "border-gray-200"
+                    newPasswordErrors.newPassword
+                      ? "border-red-500"
+                      : "border-gray-200"
                   } rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all pr-12 disabled:opacity-50`}
                 />
                 <button
@@ -213,7 +262,9 @@ export default function LoginPage() {
                 </button>
               </div>
               {newPasswordErrors.newPassword && (
-                <p className="text-xs text-red-500">{newPasswordErrors.newPassword.message}</p>
+                <p className="text-xs text-red-500">
+                  {newPasswordErrors.newPassword.message}
+                </p>
               )}
             </div>
 
@@ -228,7 +279,9 @@ export default function LoginPage() {
                   placeholder="Confirma la contraseña"
                   disabled={isLoading}
                   className={`w-full px-5 py-3 bg-brand-white border ${
-                    newPasswordErrors.confirmPassword ? "border-red-500" : "border-gray-200"
+                    newPasswordErrors.confirmPassword
+                      ? "border-red-500"
+                      : "border-gray-200"
                   } rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all pr-12 disabled:opacity-50`}
                 />
                 <button
@@ -237,11 +290,17 @@ export default function LoginPage() {
                   disabled={isLoading}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-black transition-colors disabled:opacity-50 cursor-pointer"
                 >
-                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showConfirmPassword ? (
+                    <EyeOff size={20} />
+                  ) : (
+                    <Eye size={20} />
+                  )}
                 </button>
               </div>
               {newPasswordErrors.confirmPassword && (
-                <p className="text-xs text-red-500">{newPasswordErrors.confirmPassword.message}</p>
+                <p className="text-xs text-red-500">
+                  {newPasswordErrors.confirmPassword.message}
+                </p>
               )}
             </div>
 
@@ -265,7 +324,7 @@ export default function LoginPage() {
               disabled={isLoading}
               className="w-full py-4 bg-transparent text-gray-500 hover:text-brand-black rounded-xl text-sm font-bold transition-all disabled:opacity-70 cursor-pointer hover:scale-[1.02]"
             >
-               Volver a iniciar sesión
+              Volver a iniciar sesión
             </button>
           </form>
         )}
