@@ -4,6 +4,7 @@ import { ChevronRight, User, LogOut, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { authService } from "@maximilian/services/auth.service";
 import LoadingScreen from "@maximilian/components/LoadingScreen";
+import type { Role } from "@maximilian/shared/types/auth.type";
 
 export default function RoleSelectionPage() {
   const navigate = useNavigate();
@@ -17,10 +18,16 @@ export default function RoleSelectionPage() {
   } = useQuery({
     queryKey: ["userRoles"],
     queryFn: () => authService.getUserRoles(),
+    retry: 1,
   });
 
-  const handleRoleSelect = (roleName: string) => {
-    const roleNormalized = roleName.toUpperCase();
+  const handleRoleSelect = (role: Role) => {
+    const roleNormalized = role.rol.toUpperCase();
+    
+    // Save selection and available roles to sessionStorage
+    sessionStorage.setItem("selected_role", role.rol);
+    sessionStorage.setItem("user_session", JSON.stringify(userData));
+
     if (roleNormalized === "ADMINISTRADOR") {
       navigate("/admin");
     } else if (roleNormalized === "COORDINADOR") {
@@ -83,7 +90,7 @@ export default function RoleSelectionPage() {
           {userData?.roles.map((role) => (
             <button
               key={role.idRol}
-              onClick={() => handleRoleSelect(role.rol)}
+              onClick={() => handleRoleSelect(role)}
               disabled={isLoggingOut}
               className="w-full p-5 bg-brand-white border border-gray-100 rounded-2xl flex items-center gap-4 hover:border-brand-black hover:border-2 hover:scale-[1.02] active:scale-[0.98] cursor-pointer group transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
             >
