@@ -1,3 +1,12 @@
+export const MasterTableId = {
+  TIPO_PERSONA: 1,
+  PAIS: 2,
+  IDIOMA: 4,
+  ROLES: 8,
+} as const;
+
+export type MasterTableId = (typeof MasterTableId)[keyof typeof MasterTableId];
+
 export type MasterTableEntry = {
   idEmpresa: number;
   idMasterTable: number | null;
