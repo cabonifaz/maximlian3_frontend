@@ -8,6 +8,10 @@ import {
   fetchAuthSession,
 } from "aws-amplify/auth";
 import type { LoginFormData } from "@maximilian/schemas";
+import maximilianService from "./maximilianService";
+import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { MessageType } from "@maximilian/shared/types/api.type";
+import type { LoginValidatorResponse } from "@maximilian/shared/types/auth.type";
 
 export const authService = {
   login: async (credentials: LoginFormData) => {
@@ -22,6 +26,22 @@ export const authService = {
       return { isSignedIn, nextStep };
     } catch (error) {
       console.error("Error signing in", error);
+      throw error;
+    }
+  },
+  getUserRoles: async () => {
+    try {
+      const { data } = await maximilianService.get<ApiResponse<LoginValidatorResponse>>(
+        "/api/Login/validator"
+      );
+
+      if (data.idTipoMensaje !== MessageType.SUCCESS) {
+        throw new Error(data.mensaje || "Error al obtener roles");
+      }
+
+      return data.result[0];
+    } catch (error) {
+      console.error("Error fetching user roles", error);
       throw error;
     }
   },

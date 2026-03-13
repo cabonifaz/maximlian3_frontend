@@ -1,0 +1,16 @@
+export type Role = {
+  idRol: number;
+  rol: string;
+  descripcion: string;
+};
+
+export type UserSession = {
+  idUsuario: number;
+  idEmpresa: number;
+  nombres: string;
+  email: string;
+  username: string;
+  roles: Role[];
+};
+
+export type LoginValidatorResponse = UserSession[];
