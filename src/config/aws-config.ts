@@ -8,8 +8,10 @@ import { cognitoUserPoolsTokenProvider } from "aws-amplify/auth/cognito";
 
 const authConfig: ResourcesConfig["Auth"] = {
   Cognito: {
-    userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID,
-    userPoolClientId: import.meta.env.VITE_COGNITO_CLIENT_ID,
+    userPoolId:
+      import.meta.env.VITE_COGNITO_USER_POOL_ID || "us-east-1_hR8C7G9CB",
+    userPoolClientId:
+      import.meta.env.VITE_COGNITO_CLIENT_ID || "ufqmc89156vpufa76asc4md3g",
   },
 };
 
