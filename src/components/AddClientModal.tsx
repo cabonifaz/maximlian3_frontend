@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   X,
   Plus,
@@ -7,6 +7,7 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
+  Search,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +20,7 @@ import {
 } from "@maximilian/schemas";
 import { AddRateModal } from "./AddRateModal";
 import { masterTableService } from "@maximilian/services/masterTable.service";
-import { MasterTableId } from "@maximilian/shared/types/master-table.type";
+import { MasterTableId, type MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -29,6 +30,85 @@ interface AddClientModalProps {
 
 type Tab = "info" | "rates" | "contacts";
 type ContactView = "list" | "create" | "edit" | "detail";
+
+interface SearchableSelectProps {
+  label: string;
+  options: MasterTableEntry[] | undefined;
+  value: string | number;
+  onChange: (val: number) => void;
+  error?: string;
+  placeholder?: string;
+}
+
+function SearchableSelect({ label, options, value, onChange, error, placeholder = "Seleccione..." }: SearchableSelectProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+
+  const filteredOptions = useMemo(() => {
+    if (!options) return [];
+    return options
+      .filter((opt) => 
+        opt.string1?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .sort((a, b) => (a.string1 || "").localeCompare(b.string1 || ""));
+  }, [options, searchTerm]);
+
+  const selectedOption = options?.find(opt => opt.num1 === value);
+
+  return (
+    <div className="relative space-y-2">
+      <label className="text-sm font-bold text-gray-700">{label}</label>
+      <div 
+        className={`w-full px-4 py-2.5 bg-brand-white border ${error ? 'border-red-500' : 'border-gray-200'} rounded-xl text-sm flex items-center justify-between cursor-pointer hover:border-brand-wine/30 transition-all`}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className={selectedOption ? "text-brand-black" : "text-gray-400"}>
+          {selectedOption ? selectedOption.string1 : placeholder}
+        </span>
+        <Search size={16} className="text-gray-400" />
+      </div>
+
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-full left-0 right-0 mt-2 bg-brand-white border border-gray-100 rounded-xl shadow-2xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+            <div className="p-2 border-b border-gray-50">
+              <input
+                type="text"
+                className="w-full px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-xs outline-none focus:ring-2 focus:ring-brand-wine/10"
+                placeholder="Buscar..."
+                autoFocus
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+            <div className="max-h-48 overflow-y-auto">
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((opt) => (
+                  <div
+                    key={opt.num1}
+                    className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${value === opt.num1 ? 'bg-brand-wine/10 text-brand-wine font-bold' : 'text-gray-600'}`}
+                    onClick={() => {
+                      onChange(opt.num1!);
+                      setIsOpen(false);
+                      setSearchTerm("");
+                    }}
+                  >
+                    {opt.string1}
+                  </div>
+                ))
+              ) : (
+                <div className="px-4 py-3 text-xs text-gray-400 italic text-center">No se encontraron resultados</div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+      {error && <p className="text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
 
 export function AddClientModal({
   isOpen,
@@ -44,6 +124,8 @@ export function AddClientModal({
     handleSubmit: handleInfoSubmit,
     formState: { errors: infoErrors },
     reset: infoReset,
+    setValue: setInfoValue,
+    watch: infoWatch,
   } = useForm<ClientInfoFormData>({
     resolver: zodResolver(clientInfoSchema),
   });
@@ -54,6 +136,7 @@ export function AddClientModal({
     formState: { errors: contactErrors },
     reset: contactReset,
     setValue: setContactValue,
+    watch: contactWatch,
   } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
   });
@@ -131,6 +214,12 @@ export function AddClientModal({
 
   const isLoadingInfo = isLoadingTipoPersona || isLoadingPais || isLoadingTipoRegTributario || isLoadingFormatoInforme;
   const isErrorInfo = isErrorTipoPersona || isErrorPais || isErrorTipoRegTributario || isErrorFormatoInforme;
+
+  const watchedPais = infoWatch("pais");
+  const watchedTipoRegTributario = infoWatch("tipoRegistroTributario");
+  const watchedContactTipoPersona = contactWatch("tipoPersona");
+  const watchedContactAreaTrabajo = contactWatch("areaTrabajo");
+  const watchedContactTipoContacto = contactWatch("tipoContacto");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -261,25 +350,13 @@ export function AddClientModal({
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">País</label>
-                    <select
-                      {...infoRegister("pais", { valueAsNumber: true })}
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-                    >
-                      <option value="">Seleccione</option>
-                      {paisData?.map((item) => (
-                        <option key={item.num1} value={item.num1 ?? ""}>
-                          {item.string1}
-                        </option>
-                      ))}
-                    </select>
-                    {infoErrors.pais && (
-                      <p className="text-xs text-red-500">
-                        {infoErrors.pais.message}
-                      </p>
-                    )}
-                  </div>
+                  <SearchableSelect
+                    label="País"
+                    options={paisData}
+                    value={watchedPais}
+                    onChange={(val) => setInfoValue("pais", val, { shouldValidate: true })}
+                    error={infoErrors.pais?.message}
+                  />
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
@@ -347,27 +424,13 @@ export function AddClientModal({
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Tipo Registro Tributario
-                    </label>
-                    <select
-                      {...infoRegister("tipoRegistroTributario", { valueAsNumber: true })}
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-                    >
-                      <option value="">Seleccione</option>
-                      {tipoRegTributarioData?.map((item) => (
-                        <option key={item.num1} value={item.num1 ?? ""}>
-                          {item.string1}
-                        </option>
-                      ))}
-                    </select>
-                    {infoErrors.tipoRegistroTributario && (
-                      <p className="text-xs text-red-500">
-                        {infoErrors.tipoRegistroTributario.message}
-                      </p>
-                    )}
-                  </div>
+                  <SearchableSelect
+                    label="Tipo Registro Tributario"
+                    options={tipoRegTributarioData}
+                    value={watchedTipoRegTributario}
+                    onChange={(val) => setInfoValue("tipoRegistroTributario", val, { shouldValidate: true })}
+                    error={infoErrors.tipoRegistroTributario?.message}
+                  />
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
@@ -621,51 +684,21 @@ export function AddClientModal({
                       onSubmit={handleContactSubmit(handleAddContact)}
                       className="grid grid-cols-1 md:grid-cols-2 gap-6"
                     >
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">
-                          Tipo Persona
-                        </label>
-                        <select
-                          {...contactRegister("tipoPersona", { valueAsNumber: true })}
-                          disabled={contactView === "detail"}
-                          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none disabled:bg-gray-50"
-                        >
-                          <option value="">Seleccione</option>
-                          {tipoPersonaData?.map((item) => (
-                            <option key={item.num1} value={item.num1 ?? ""}>
-                              {item.string1}
-                            </option>
-                          ))}
-                        </select>
-                        {contactErrors.tipoPersona && (
-                          <p className="text-xs text-red-500">
-                            {contactErrors.tipoPersona.message}
-                          </p>
-                        )}
-                      </div>
+                      <SearchableSelect
+                        label="Tipo Persona"
+                        options={tipoPersonaData}
+                        value={watchedContactTipoPersona}
+                        onChange={(val) => setContactValue("tipoPersona", val, { shouldValidate: true })}
+                        error={contactErrors.tipoPersona?.message}
+                      />
 
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">
-                          Tipo de Contacto
-                        </label>
-                        <select
-                          {...contactRegister("tipoContacto", { valueAsNumber: true })}
-                          disabled={contactView === "detail"}
-                          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none disabled:bg-gray-50"
-                        >
-                          <option value="">Seleccione</option>
-                          {tipoContactoData?.map((item) => (
-                            <option key={item.num1} value={item.num1 ?? ""}>
-                              {item.string1}
-                            </option>
-                          ))}
-                        </select>
-                        {contactErrors.tipoContacto && (
-                          <p className="text-xs text-red-500">
-                            {contactErrors.tipoContacto.message}
-                          </p>
-                        )}
-                      </div>
+                      <SearchableSelect
+                        label="Tipo de Contacto"
+                        options={tipoContactoData}
+                        value={watchedContactTipoContacto}
+                        onChange={(val) => setContactValue("tipoContacto", val, { shouldValidate: true })}
+                        error={contactErrors.tipoContacto?.message}
+                      />
 
                       <div className="space-y-2">
                         <label className="text-sm font-bold text-gray-700">
@@ -739,28 +772,13 @@ export function AddClientModal({
                         )}
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">
-                          Área de Trabajo
-                        </label>
-                        <select
-                          {...contactRegister("areaTrabajo", { valueAsNumber: true })}
-                          disabled={contactView === "detail"}
-                          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none disabled:bg-gray-50"
-                        >
-                          <option value="">Seleccione</option>
-                          {areaTrabajoData?.map((item) => (
-                            <option key={item.num1} value={item.num1 ?? ""}>
-                              {item.string1}
-                            </option>
-                          ))}
-                        </select>
-                        {contactErrors.areaTrabajo && (
-                          <p className="text-xs text-red-500">
-                            {contactErrors.areaTrabajo.message}
-                          </p>
-                        )}
-                      </div>
+                      <SearchableSelect
+                        label="Área de Trabajo"
+                        options={areaTrabajoData}
+                        value={watchedContactAreaTrabajo}
+                        onChange={(val) => setContactValue("areaTrabajo", val, { shouldValidate: true })}
+                        error={contactErrors.areaTrabajo?.message}
+                      />
                     </form>
                   )}
 
