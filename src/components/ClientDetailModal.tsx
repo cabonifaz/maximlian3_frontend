@@ -2,10 +2,11 @@ import { useState, useMemo, useEffect } from "react";
 import {
   X,
   Plus,
-  Eraser,
   Loader2,
   AlertCircle,
   RefreshCw,
+  MailCheck,
+  MailX,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -212,17 +213,6 @@ export function ClientDetailModal({
     enabled: isOpen,
   });
 
-  const { data: tipoContactoData } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_CONTACTO],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_CONTACTO),
-    enabled: isOpen,
-  });
-
-  const { data: areaTrabajoData } = useQuery({
-    queryKey: ["masterTable", MasterTableId.AREA_TRABAJO],
-    queryFn: () => masterTableService.list(MasterTableId.AREA_TRABAJO),
-    enabled: isOpen,
-  });
 
   const { data: plantillaInformeData } = useQuery({
     queryKey: ["masterTable", MasterTableId.PLANTILLA_INFORME],
@@ -230,18 +220,6 @@ export function ClientDetailModal({
     enabled: isOpen,
   });
   const plantillaOptions = plantillaInformeData ?? [];
-
-  const { data: productoData } = useQuery({
-    queryKey: ["masterTable", MasterTableId.PRODUCTO],
-    queryFn: () => masterTableService.list(MasterTableId.PRODUCTO),
-    enabled: isOpen && activeTab === "rates",
-  });
-
-  const { data: tipoTramiteData } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
-    enabled: isOpen && activeTab === "rates",
-  });
 
   const [tarifarioSearch, setTarifarioSearch] = useState("");
   const [tarifarioPag, setTarifarioPag] = useState(1);
@@ -256,17 +234,6 @@ export function ClientDetailModal({
     enabled: activeTab === "rates" && !!client?.idCliente,
   });
 
-  const productoMap = useMemo(() =>
-    Object.fromEntries((productoData ?? []).map(p => [p.num1, p.string1])), [productoData]);
-
-  const tramiteMap = useMemo(() =>
-    Object.fromEntries((tipoTramiteData ?? []).map(t => [t.num1, t.string1])), [tipoTramiteData]);
-
-  const paisMap = useMemo(() =>
-    Object.fromEntries((paisData ?? []).map(p => [p.num1, p.string1])), [paisData]);
-
-  const monedaMap = useMemo(() =>
-    Object.fromEntries((rateMonedas ?? []).map(m => [m.num1, m.string1])), [rateMonedas]);
 
   const { data: contactosData, isLoading: contactosLoading } = useQuery({
     queryKey: ["contactos", client?.idCliente, contactosPag],
@@ -277,11 +244,6 @@ export function ClientDetailModal({
     enabled: activeTab === "contacts" && !!client?.idCliente,
   });
 
-  const tipoContactoMap = useMemo(() =>
-    Object.fromEntries((tipoContactoData ?? []).map(t => [t.num1, t.string1])), [tipoContactoData]);
-
-  const areaTrabajoMap = useMemo(() =>
-    Object.fromEntries((areaTrabajoData ?? []).map(a => [a.num1, a.string1])), [areaTrabajoData]);
 
   if (!isOpen) return null;
 
@@ -646,39 +608,34 @@ export function ClientDetailModal({
                     <table className="w-full text-left border-collapse text-xs">
                       <thead className="bg-gray-50 text-gray-400 uppercase">
                         <tr>
-                          <th className="px-3 py-3 w-8">
-                            <button
-                              disabled={selectedRateIndex === null}
-                              onClick={() => setSelectedRateIndex(null)}
-                              title="Limpiar selección"
-                              className={`transition-colors ${selectedRateIndex === null ? "text-gray-300 cursor-not-allowed" : "text-gray-400 hover:text-gray-600 cursor-pointer"}`}
-                            ><Eraser size={13} /></button>
-                          </th>
+                          <th className="px-3 py-3 w-8" />
                           <th className="px-4 py-3 font-bold">Producto</th>
                           <th className="px-4 py-3 font-bold">País</th>
                           <th className="px-4 py-3 font-bold">Moneda</th>
                           <th className="px-4 py-3 font-bold">Trámite</th>
-                          <th className="px-4 py-3 font-bold text-center">Días Min.</th>
+                          <th className="px-4 py-3 font-bold text-center">Días Min. - Máx.</th>
                           <th className="px-4 py-3 font-bold text-center">Precio</th>
+                          <th className="px-4 py-3 font-bold text-center">Penalidad</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
                         {tarifarioLoading ? (
-                          <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm italic">Cargando...</td></tr>
+                          <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400 text-sm italic">Cargando...</td></tr>
                         ) : (tarifarioData?.lstTarifario ?? []).length === 0 ? (
-                          <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm italic">No hay tarifas agregadas.</td></tr>
+                          <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400 text-sm italic">No hay tarifas agregadas.</td></tr>
                         ) : (
                           (tarifarioData?.lstTarifario ?? []).map((rate, i) => (
                             <tr key={rate.idTarifario} className="hover:bg-gray-50/50">
                               <td className="px-3 py-3">
-                                <input type="radio" name="rate-selection" checked={selectedRateIndex === i} onChange={() => setSelectedRateIndex(i)} className="accent-brand-wine cursor-pointer" />
+                                <input type="checkbox" checked={selectedRateIndex === i} onChange={() => setSelectedRateIndex(selectedRateIndex === i ? null : i)} className="accent-brand-wine cursor-pointer w-4 h-4" />
                               </td>
-                              <td className="px-4 py-3 text-gray-600">{productoMap[rate.idProducto] ?? rate.idProducto}</td>
-                              <td className="px-4 py-3 text-gray-600">{paisMap[rate.idPais] ?? rate.idPais}</td>
-                              <td className="px-4 py-3 text-gray-600">{monedaMap[rate.idMoneda] ?? rate.idMoneda}</td>
-                              <td className="px-4 py-3 text-gray-600">{tramiteMap[rate.idTipoTramite] ?? rate.idTipoTramite}</td>
-                              <td className="px-4 py-3 text-gray-600 text-center">{rate.diasMin}</td>
+                              <td className="px-4 py-3 text-gray-600">{rate.producto}</td>
+                              <td className="px-4 py-3 text-gray-600">{rate.pais}</td>
+                              <td className="px-4 py-3 text-gray-600">{rate.moneda}</td>
+                              <td className="px-4 py-3 text-gray-600">{rate.tipoTramite}</td>
+                              <td className="px-4 py-3 text-gray-600 text-center">{rate.diasMinMax}</td>
                               <td className="px-4 py-3 text-brand-black font-bold text-center">{rate.precio}</td>
+                              <td className="px-4 py-3 text-gray-600 text-center">{rate.penalidad}</td>
                             </tr>
                           ))
                         )}
@@ -739,37 +696,38 @@ export function ClientDetailModal({
                     <table className="w-full text-left border-collapse text-xs">
                       <thead className="bg-gray-50 text-gray-400 uppercase">
                         <tr>
-                          <th className="px-3 py-3 w-8">
-                            <button
-                              disabled={selectedContactIndex === null}
-                              onClick={() => setSelectedContactIndex(null)}
-                              title="Limpiar selección"
-                              className={`transition-colors ${selectedContactIndex === null ? "text-gray-300 cursor-not-allowed" : "text-gray-400 hover:text-gray-600 cursor-pointer"}`}
-                            ><Eraser size={13} /></button>
-                          </th>
+                          <th className="px-3 py-3 w-8" />
                           <th className="px-4 py-3 font-bold">Nombre</th>
                           <th className="px-4 py-3 font-bold">Email</th>
                           <th className="px-4 py-3 font-bold">Teléfono</th>
                           <th className="px-4 py-3 font-bold">Tipo Contacto</th>
                           <th className="px-4 py-3 font-bold">Área Trabajo</th>
+                          <th className="px-4 py-3 font-bold text-center">
+                            <span title="Se envía correo">CC</span>
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
                         {contactosLoading ? (
-                          <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400 text-sm italic">Cargando...</td></tr>
+                          <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm italic">Cargando...</td></tr>
                         ) : (contactosData?.lstClienteContactos ?? []).length === 0 ? (
-                          <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400 text-sm italic">No hay contactos agregados.</td></tr>
+                          <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm italic">No hay contactos agregados.</td></tr>
                         ) : (
                           (contactosData?.lstClienteContactos ?? []).map((c, i) => (
                             <tr key={c.idClienteContacto} className="hover:bg-gray-50/50">
                               <td className="px-3 py-3">
-                                <input type="radio" name="contact-selection" checked={selectedContactIndex === i} onChange={() => setSelectedContactIndex(i)} className="accent-brand-wine cursor-pointer" />
+                                <input type="checkbox" checked={selectedContactIndex === i} onChange={() => setSelectedContactIndex(selectedContactIndex === i ? null : i)} className="accent-brand-wine cursor-pointer w-4 h-4" />
                               </td>
                               <td className="px-4 py-3 text-gray-600">{c.nombres}</td>
                               <td className="px-4 py-3 text-gray-600">{c.email}</td>
                               <td className="px-4 py-3 text-gray-600">{c.telefono}</td>
-                              <td className="px-4 py-3 text-gray-600">{tipoContactoMap[c.idTipoContacto] ?? c.idTipoContacto}</td>
-                              <td className="px-4 py-3 text-gray-600">{areaTrabajoMap[c.idAreaTrabajo] ?? c.idAreaTrabajo}</td>
+                              <td className="px-4 py-3 text-gray-600">{c.tipoContacto}</td>
+                              <td className="px-4 py-3 text-gray-600">{c.areaTrabajo}</td>
+                              <td className="px-4 py-3 text-center">
+                                {c.enviarCorreo
+                                  ? <MailCheck size={16} className="inline text-green-500" />
+                                  : <MailX size={16} className="inline text-gray-400" />}
+                              </td>
                             </tr>
                           ))
                         )}
@@ -943,9 +901,9 @@ export function ClientDetailModal({
         title="Eliminar Tarifa"
         isSubmitting={deleteTarifarioMutation.isPending}
       >
-        <p><span className="font-bold">Producto:</span> {productoMap[rateToDelete?.idProducto ?? 0] ?? "-"}</p>
-        <p><span className="font-bold">País:</span> {paisMap[rateToDelete?.idPais ?? 0] ?? "-"}</p>
-        <p><span className="font-bold">Moneda:</span> {monedaMap[rateToDelete?.idMoneda ?? 0] ?? "-"}</p>
+        <p><span className="font-bold">Producto:</span> {rateToDelete?.producto ?? "-"}</p>
+        <p><span className="font-bold">País:</span> {rateToDelete?.pais ?? "-"}</p>
+        <p><span className="font-bold">Moneda:</span> {rateToDelete?.moneda ?? "-"}</p>
         <p><span className="font-bold">Precio:</span> {rateToDelete?.precio ?? "-"}</p>
       </ConfirmDeleteModal>
 

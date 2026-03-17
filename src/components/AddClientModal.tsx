@@ -5,7 +5,8 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
-  Eraser,
+  MailCheck,
+  MailX,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -779,16 +780,7 @@ export function AddClientModal({
                 <table className="w-full text-left border-collapse text-xs">
                   <thead className="bg-gray-50 text-gray-400 uppercase">
                     <tr>
-                      <th className="px-3 py-3 w-8">
-                        <button
-                          disabled={selectedRateIndex === null}
-                          onClick={() => setSelectedRateIndex(null)}
-                          title="Limpiar selección"
-                          className={`transition-colors ${selectedRateIndex === null ? "text-gray-300 cursor-not-allowed" : "text-gray-400 hover:text-gray-600 cursor-pointer"}`}
-                        >
-                          <Eraser size={13} />
-                        </button>
-                      </th>
+                      <th className="px-3 py-3 w-8" />
                       <th className="px-4 py-3 font-bold">Producto</th>
                       <th className="px-4 py-3 font-bold">País</th>
                       <th className="px-4 py-3 font-bold">Moneda</th>
@@ -816,11 +808,10 @@ export function AddClientModal({
                         <tr key={i} className="hover:bg-gray-50/50">
                           <td className="px-3 py-3">
                             <input
-                              type="radio"
-                              name="rate-selection"
+                              type="checkbox"
                               checked={selectedRateIndex === i}
-                              onChange={() => setSelectedRateIndex(i)}
-                              className="accent-brand-wine cursor-pointer"
+                              onChange={() => setSelectedRateIndex(selectedRateIndex === i ? null : i)}
+                              className="accent-brand-wine cursor-pointer w-4 h-4"
                             />
                           </td>
                           <td className="px-4 py-3 text-gray-600">
@@ -894,28 +885,22 @@ export function AddClientModal({
                 <table className="w-full text-left border-collapse text-xs">
                   <thead className="bg-gray-50 text-gray-400 uppercase">
                     <tr>
-                      <th className="px-3 py-3 w-8">
-                        <button
-                          disabled={selectedContactIndex === null}
-                          onClick={() => setSelectedContactIndex(null)}
-                          title="Limpiar selección"
-                          className={`transition-colors ${selectedContactIndex === null ? "text-gray-300 cursor-not-allowed" : "text-gray-400 hover:text-gray-600 cursor-pointer"}`}
-                        >
-                          <Eraser size={13} />
-                        </button>
-                      </th>
+                      <th className="px-3 py-3 w-8" />
                       <th className="px-4 py-3 font-bold">Nombre</th>
                       <th className="px-4 py-3 font-bold">Email</th>
                       <th className="px-4 py-3 font-bold">Teléfono</th>
                       <th className="px-4 py-3 font-bold">Tipo Contacto</th>
                       <th className="px-4 py-3 font-bold">Área Trabajo</th>
+                      <th className="px-4 py-3 font-bold text-center">
+                        <span title="Se envía correo">CC</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {addedContacts.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={6}
+                          colSpan={7}
                           className="px-4 py-10 text-center text-gray-400 text-sm italic"
                         >
                           No hay contactos agregados.
@@ -926,11 +911,10 @@ export function AddClientModal({
                         <tr key={i} className="hover:bg-gray-50/50">
                           <td className="px-3 py-3">
                             <input
-                              type="radio"
-                              name="contact-selection"
+                              type="checkbox"
                               checked={selectedContactIndex === i}
-                              onChange={() => setSelectedContactIndex(i)}
-                              className="accent-brand-wine cursor-pointer"
+                              onChange={() => setSelectedContactIndex(selectedContactIndex === i ? null : i)}
+                              className="accent-brand-wine cursor-pointer w-4 h-4"
                             />
                           </td>
                           <td className="px-4 py-3 text-gray-600">{contact.nombre}</td>
@@ -938,6 +922,11 @@ export function AddClientModal({
                           <td className="px-4 py-3 text-gray-600">{contact.telefono}</td>
                           <td className="px-4 py-3 text-gray-600">{contact.tipoContactoLabel}</td>
                           <td className="px-4 py-3 text-gray-600">{contact.areaTrabajoLabel}</td>
+                          <td className="px-4 py-3 text-center">
+                            {contact.enviarCorreo
+                              ? <MailCheck size={16} className="inline text-green-500" />
+                              : <MailX size={16} className="inline text-gray-400" />}
+                          </td>
                         </tr>
                       ))
                     )}
