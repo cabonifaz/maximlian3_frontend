@@ -141,3 +141,43 @@ export type ContactoListResponse = {
   totalRegistros: number;
   totalPaginas: number;
 };
+
+export type CreateTarifarioRequest = {
+  idCliente: number;
+  idProducto: number;
+  idTipoTramite: number;
+  idPais: number;
+  idMoneda: number;
+  diasMax: number;
+  diasMin: number;
+  precio: number;
+  penalidad: number;
+};
+
+export type UpdateTarifarioRequest = CreateTarifarioRequest & { idTarifario: number };
+export type DeleteTarifarioRequest = { idTarifario: number; idCliente: number };
+
+export type CreateContactoRequest = {
+  idCliente: number;
+  codigo: string | null;
+  nombres: string;
+  idTipoPersonaContacto: number;
+  idTipoContacto: number;
+  idAreaTrabajo: number;
+  telefono: string | null;
+  email: string | null;
+};
+
+export type UpdateContactoRequest = {
+  idClienteContacto: number;
+  idCliente: number;
+  codigo: string | null;
+  nombres: string;
+  idTipoPersonaContacto: number;
+  idTipoContacto: number;
+  areaTrabajo: number;
+  telefono: string | null;
+  email: string | null;
+};
+
+export type DeleteContactoRequest = { idClienteContacto: number; idCliente: number };

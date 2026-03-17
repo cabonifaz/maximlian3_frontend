@@ -10,25 +10,28 @@ import {
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   clientDetailSchema,
   type ClientDetailFormData,
 } from "@maximilian/schemas";
 import { AddRateModal } from "./AddRateModal";
+import { AddContactModal } from "./AddContactModal";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { clientService } from "@maximilian/services/client.service";
 import {
   MasterTableId,
   type MasterTableEntry,
 } from "@maximilian/shared/types/master-table.type";
+import type {
+  TarifarioListEntry,
+  ContactoListEntry,
+} from "@maximilian/shared/types/client.type";
 
 interface ClientDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   clientId: number | null;
-  onUpdate?: (data: ClientDetailFormData) => void;
-  isUpdating?: boolean;
 }
 
 type Tab = "info" | "rates" | "contacts";
@@ -127,14 +130,17 @@ export function ClientDetailModal({
   isOpen,
   onClose,
   clientId,
-  onUpdate,
-  isUpdating = false,
 }: ClientDetailModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("info");
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
+  const [editingRate, setEditingRate] = useState<TarifarioListEntry | null>(null);
   const [selectedRateIndex, setSelectedRateIndex] = useState<number | null>(null);
   const [contactosPag, setContactosPag] = useState(1);
   const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<ContactoListEntry | null>(null);
+
+  const queryClient = useQueryClient();
 
   const {
     data: client,
@@ -152,7 +158,8 @@ export function ClientDetailModal({
     reset: infoReset,
     setValue: setInfoValue,
     watch: infoWatch,
-    getValues: getInfoValues,
+    handleSubmit: infoHandleSubmit,
+    formState,
   } = useForm<ClientDetailFormData>({
     resolver: zodResolver(clientDetailSchema),
   });
@@ -183,6 +190,68 @@ export function ClientDetailModal({
       });
     }
   }, [client, infoReset]);
+
+  const updateInfoMutation = useMutation({
+    mutationFn: clientService.update,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["client", clientId] });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    },
+  });
+
+  const createTarifarioMutation = useMutation({
+    mutationFn: clientService.createTarifario,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tarifario", client?.idCliente] });
+      setIsRateModalOpen(false);
+      setEditingRate(null);
+    },
+  });
+
+  const updateTarifarioMutation = useMutation({
+    mutationFn: clientService.updateTarifario,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tarifario", client?.idCliente] });
+      setIsRateModalOpen(false);
+      setEditingRate(null);
+      setSelectedRateIndex(null);
+    },
+  });
+
+  const deleteTarifarioMutation = useMutation({
+    mutationFn: clientService.deleteTarifario,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tarifario", client?.idCliente] });
+      setSelectedRateIndex(null);
+    },
+  });
+
+  const createContactoMutation = useMutation({
+    mutationFn: clientService.createContacto,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contactos", client?.idCliente] });
+      setIsContactModalOpen(false);
+      setEditingContact(null);
+    },
+  });
+
+  const updateContactoMutation = useMutation({
+    mutationFn: clientService.updateContacto,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contactos", client?.idCliente] });
+      setIsContactModalOpen(false);
+      setEditingContact(null);
+      setSelectedContactIndex(null);
+    },
+  });
+
+  const deleteContactoMutation = useMutation({
+    mutationFn: clientService.deleteContacto,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contactos", client?.idCliente] });
+      setSelectedContactIndex(null);
+    },
+  });
 
   // Queries for MasterTable parameters
   const { data: tipoPersonaData } = useQuery({
@@ -292,10 +361,6 @@ export function ClientDetailModal({
     Object.fromEntries((areaTrabajoData ?? []).map(a => [a.num1, a.string1])), [areaTrabajoData]);
 
   if (!isOpen) return null;
-
-  const handleUpdate = () => {
-    onUpdate?.(getInfoValues());
-  };
 
   const watchedPais = infoWatch("pais");
   const watchedTipoRegTributario = infoWatch("tipoRegistroTributario");
@@ -433,7 +498,7 @@ export function ClientDetailModal({
                     options={paisData}
                     value={watchedPais}
                     onChange={(val) =>
-                      setInfoValue("pais", val, { shouldValidate: true })
+                      setInfoValue("pais", val, { shouldValidate: true, shouldDirty: true })
                     }
                   />
 
@@ -499,6 +564,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("tipoRegistroTributario", val, {
                         shouldValidate: true,
+                        shouldDirty: true,
                       })
                     }
                   />
@@ -537,7 +603,7 @@ export function ClientDetailModal({
                     options={empresaAtencionData}
                     value={watchedAtendidoPor}
                     onChange={(val) =>
-                      setInfoValue("atendidoPor", val, { shouldValidate: true })
+                      setInfoValue("atendidoPor", val, { shouldValidate: true, shouldDirty: true })
                     }
                   />
 
@@ -546,7 +612,7 @@ export function ClientDetailModal({
                     options={idiomaData}
                     value={watchedIdioma}
                     onChange={(val) =>
-                      setInfoValue("idioma", val, { shouldValidate: true })
+                      setInfoValue("idioma", val, { shouldValidate: true, shouldDirty: true })
                     }
                   />
 
@@ -555,7 +621,7 @@ export function ClientDetailModal({
                     options={idiomaData}
                     value={watchedIdiomaFacturacion}
                     onChange={(val) =>
-                      setInfoValue("idiomaFacturacion", val, { shouldValidate: true })
+                      setInfoValue("idiomaFacturacion", val, { shouldValidate: true, shouldDirty: true })
                     }
                   />
 
@@ -628,18 +694,27 @@ export function ClientDetailModal({
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => setIsRateModalOpen(true)}
+                        onClick={() => { setEditingRate(null); setIsRateModalOpen(true); }}
                         className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all"
                       >
                         <Plus size={14} /><span>Nuevo</span>
                       </button>
                       <button
                         disabled={selectedRateIndex === null}
+                        onClick={() => {
+                          const rate = tarifarioData!.lstTarifario[selectedRateIndex!];
+                          setEditingRate(rate);
+                          setIsRateModalOpen(true);
+                        }}
                         className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                       >Editar</button>
                       <button
-                        disabled={selectedRateIndex === null}
-                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
+                        disabled={selectedRateIndex === null || deleteTarifarioMutation.isPending}
+                        onClick={() => {
+                          const rate = tarifarioData!.lstTarifario[selectedRateIndex!];
+                          deleteTarifarioMutation.mutate({ idTarifario: rate.idTarifario, idCliente: client!.idCliente });
+                        }}
+                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null || deleteTarifarioMutation.isPending ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                       >Eliminar</button>
                     </div>
                   </div>
@@ -703,16 +778,28 @@ export function ClientDetailModal({
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 max-w-xs" />
                     <div className="flex gap-2">
-                      <button className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all">
+                      <button
+                        onClick={() => { setEditingContact(null); setIsContactModalOpen(true); }}
+                        className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all"
+                      >
                         <Plus size={14} /><span>Nuevo</span>
                       </button>
                       <button
                         disabled={selectedContactIndex === null}
+                        onClick={() => {
+                          const c = contactosData!.lstClienteContactos[selectedContactIndex!];
+                          setEditingContact(c);
+                          setIsContactModalOpen(true);
+                        }}
                         className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                       >Editar</button>
                       <button
-                        disabled={selectedContactIndex === null}
-                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
+                        disabled={selectedContactIndex === null || deleteContactoMutation.isPending}
+                        onClick={() => {
+                          const c = contactosData!.lstClienteContactos[selectedContactIndex!];
+                          deleteContactoMutation.mutate({ idClienteContacto: c.idClienteContacto, idCliente: client!.idCliente });
+                        }}
+                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null || deleteContactoMutation.isPending ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                       >Eliminar</button>
                     </div>
                   </div>
@@ -781,11 +868,38 @@ export function ClientDetailModal({
             Cancelar
           </button>
           <button
-            onClick={handleUpdate}
-            disabled={isUpdating || isLoadingClient}
+            onClick={infoHandleSubmit((formData) => {
+              if (!client) return;
+              updateInfoMutation.mutate({
+                idCliente: client.idCliente,
+                idTipoPersona: formData.tipoPersona as number,
+                nombre: formData.nombre ?? "",
+                nombreCorto: client.nombreCorto ?? (formData.nombre ?? "").substring(0, 20),
+                idPais: formData.pais as number,
+                idRegistroTributario: formData.tipoRegistroTributario as number,
+                numRegistroTributario: formData.numRegistroTributario ?? "",
+                email: formData.email ?? "",
+                idEstado: client.idEstado,
+                webSite: formData.sitioWeb ?? "",
+                telefono: formData.telefono ?? "",
+                fax: formData.fax ?? "",
+                direccion: formData.direccion ?? "",
+                recomendacion: formData.recomendacion ?? "",
+                idEmpresaAtencion: formData.atendidoPor as number,
+                idIdioma: formData.idioma as number,
+                logoClienteUrl: client.logoClienteUrl ?? "",
+                imprimeLogoSafety: formData.imprimeLogoSafety ?? false,
+                idFormatoDocumento: formData.formatoInforme as number,
+                idMoneda: formData.moneda as number,
+                idIdiomaFacturacion: formData.idiomaFacturacion as number,
+                aplicaPenalidad: formData.aplicaPenalidad ?? false,
+                idPlantilla: client.idPlantilla,
+              });
+            })}
+            disabled={!formState.isDirty || updateInfoMutation.isPending}
             className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10 disabled:opacity-50 min-w-[140px] justify-center"
           >
-            {isUpdating ? (
+            {updateInfoMutation.isPending ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
                 <span>Guardando...</span>
@@ -802,8 +916,85 @@ export function ClientDetailModal({
 
       <AddRateModal
         isOpen={isRateModalOpen}
-        onClose={() => setIsRateModalOpen(false)}
-        onConfirm={(data) => console.log("Rate added:", data)}
+        onClose={() => { setIsRateModalOpen(false); setEditingRate(null); }}
+        onConfirm={(data) => {
+          if (editingRate) {
+            updateTarifarioMutation.mutate({
+              idTarifario: editingRate.idTarifario,
+              idCliente: client!.idCliente,
+              idProducto: Number(data.producto),
+              idTipoTramite: Number(data.tramite),
+              idPais: Number(data.pais),
+              idMoneda: Number(data.moneda),
+              diasMax: data.diasMax,
+              diasMin: data.diasMin,
+              precio: data.precio,
+              penalidad: data.penalidad,
+            });
+          } else {
+            createTarifarioMutation.mutate({
+              idCliente: client!.idCliente,
+              idProducto: Number(data.producto),
+              idTipoTramite: Number(data.tramite),
+              idPais: Number(data.pais),
+              idMoneda: Number(data.moneda),
+              diasMax: data.diasMax,
+              diasMin: data.diasMin,
+              precio: data.precio,
+              penalidad: data.penalidad,
+            });
+          }
+        }}
+        defaultValues={editingRate ? {
+          producto: editingRate.idProducto,
+          pais: editingRate.idPais,
+          moneda: editingRate.idMoneda,
+          tramite: editingRate.idTipoTramite,
+          diasMin: editingRate.diasMin,
+          diasMax: editingRate.diasMax,
+          precio: editingRate.precio,
+          penalidad: editingRate.penalidad,
+        } : undefined}
+      />
+
+      <AddContactModal
+        isOpen={isContactModalOpen}
+        onClose={() => { setIsContactModalOpen(false); setEditingContact(null); }}
+        onConfirm={(data) => {
+          if (editingContact) {
+            updateContactoMutation.mutate({
+              idClienteContacto: editingContact.idClienteContacto,
+              idCliente: client!.idCliente,
+              codigo: data.codigoContacto || null,
+              nombres: data.nombre,
+              idTipoPersonaContacto: Number(data.tipoPersona),
+              idTipoContacto: Number(data.tipoContacto),
+              areaTrabajo: Number(data.areaTrabajo),
+              telefono: data.telefono || null,
+              email: data.email || null,
+            });
+          } else {
+            createContactoMutation.mutate({
+              idCliente: client!.idCliente,
+              codigo: data.codigoContacto || null,
+              nombres: data.nombre,
+              idTipoPersonaContacto: Number(data.tipoPersona),
+              idTipoContacto: Number(data.tipoContacto),
+              idAreaTrabajo: Number(data.areaTrabajo),
+              telefono: data.telefono || null,
+              email: data.email || null,
+            });
+          }
+        }}
+        defaultValues={editingContact ? {
+          tipoPersona: "",
+          tipoContacto: editingContact.idTipoContacto,
+          codigoContacto: editingContact.codigo,
+          nombre: editingContact.nombres,
+          email: editingContact.email,
+          telefono: editingContact.telefono,
+          areaTrabajo: editingContact.idAreaTrabajo,
+        } : undefined}
       />
     </div>
   );

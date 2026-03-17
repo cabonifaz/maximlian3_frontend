@@ -20,11 +20,10 @@ import { clientService } from "@maximilian/services/client.service";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import {
   type ClientInfoFormData,
-  type ClientDetailFormData,
   type ContactFormData,
   type RateFormData,
 } from "@maximilian/schemas";
-import { type CreateClientRequest, type UpdateClientRequest } from "@maximilian/shared/types/client.type";
+import { type CreateClientRequest } from "@maximilian/shared/types/client.type";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 
 interface ClientMutationParams {
@@ -147,20 +146,6 @@ export default function ClientManagement() {
     },
   });
 
-  const updateClientMutation = useMutation({
-    mutationFn: (updateData: UpdateClientRequest) => clientService.update(updateData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-      queryClient.invalidateQueries({ queryKey: ["client", selectedClientId] });
-      toast.success("Cliente actualizado exitosamente");
-      setIsDetailModalOpen(false);
-      setSelectedClientId(null);
-    },
-    onError: (error: Error) => {
-      console.error("Error al actualizar cliente:", error.message);
-    },
-  });
-
   const handleConfirmCreate = (
     data: ClientInfoFormData,
     contacts: ContactFormData[],
@@ -168,36 +153,6 @@ export default function ClientManagement() {
     reset: () => void,
   ) => {
     createClientMutation.mutate({ data, contacts, rates, reset });
-  };
-
-  const handleUpdateClient = (data: ClientDetailFormData) => {
-    if (!selectedClientId) return;
-    const apiRequest: UpdateClientRequest = {
-      idCliente: selectedClientId,
-      idTipoPersona: data.tipoPersona as number,
-      nombre: data.nombre ?? "",
-      nombreCorto: data.nombre?.substring(0, 20) ?? "",
-      idPais: data.pais as number,
-      idRegistroTributario: data.tipoRegistroTributario as number,
-      numRegistroTributario: data.numRegistroTributario ?? "",
-      email: data.email ?? "",
-      idEstado: 1,
-      webSite: data.sitioWeb ?? "",
-      telefono: data.telefono ?? "",
-      fax: data.fax ?? "",
-      direccion: data.direccion ?? "",
-      recomendacion: data.recomendacion ?? "",
-      idEmpresaAtencion: data.atendidoPor as number,
-      idIdioma: data.idioma as number,
-      logoClienteUrl: "",
-      imprimeLogoSafety: data.imprimeLogoSafety ?? false,
-      idFormatoDocumento: data.formatoInforme as number,
-      idMoneda: data.moneda as number,
-      idIdiomaFacturacion: data.idiomaFacturacion as number,
-      aplicaPenalidad: data.aplicaPenalidad ?? false,
-      idPlantilla: 0,
-    };
-    updateClientMutation.mutate(apiRequest);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -479,8 +434,6 @@ export default function ClientManagement() {
           setSelectedClientId(null);
         }}
         clientId={selectedClientId}
-        onUpdate={(data) => handleUpdateClient(data)}
-        isUpdating={updateClientMutation.isPending}
       />
     </div>
   );
