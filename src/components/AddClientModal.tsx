@@ -152,6 +152,7 @@ export function AddClientModal({
 }: AddClientModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("info");
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
+  const [isEditRateModalOpen, setIsEditRateModalOpen] = useState(false);
   const [contactView, setContactView] = useState<ContactView>("list");
   const [addedContacts, setAddedContacts] = useState<ContactFormData[]>([]);
   const [addedRates, setAddedRates] = useState<RateEntry[]>([]);
@@ -312,6 +313,35 @@ export function AddClientModal({
         penalidad: data.penalidad,
       },
     ]);
+    setSelectedRateIndex(null);
+  };
+
+  const handleEditRate = (data: RateFormData) => {
+    if (selectedRateIndex === null) return;
+    const productoId = Number(data.producto);
+    const paisId = Number(data.pais);
+    const monedaId = Number(data.moneda);
+    const tramiteId = Number(data.tramite);
+    setAddedRates((prev) =>
+      prev.map((rate, i) =>
+        i === selectedRateIndex
+          ? {
+              productoId,
+              productoLabel: productoMap[productoId] ?? String(productoId),
+              paisId,
+              paisLabel: paisMap[paisId] ?? String(paisId),
+              monedaId,
+              monedaLabel: monedaMap[monedaId] ?? String(monedaId),
+              tramiteId,
+              tramiteLabel: tramiteMap[tramiteId] ?? String(tramiteId),
+              diasMin: data.diasMin,
+              diasMax: data.diasMax,
+              precio: data.precio,
+              penalidad: data.penalidad,
+            }
+          : rate,
+      ),
+    );
     setSelectedRateIndex(null);
   };
 
@@ -644,6 +674,7 @@ export function AddClientModal({
                   </button>
                   <button
                     disabled={selectedRateIndex === null}
+                    onClick={() => setIsEditRateModalOpen(true)}
                     className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                   >
                     Editar
@@ -1070,6 +1101,25 @@ export function AddClientModal({
         isOpen={isRateModalOpen}
         onClose={() => setIsRateModalOpen(false)}
         onConfirm={handleAddRate}
+      />
+      <AddRateModal
+        isOpen={isEditRateModalOpen}
+        onClose={() => setIsEditRateModalOpen(false)}
+        onConfirm={handleEditRate}
+        defaultValues={
+          selectedRateIndex !== null
+            ? {
+                producto: addedRates[selectedRateIndex].productoId,
+                pais: addedRates[selectedRateIndex].paisId,
+                moneda: addedRates[selectedRateIndex].monedaId,
+                tramite: addedRates[selectedRateIndex].tramiteId,
+                diasMin: addedRates[selectedRateIndex].diasMin,
+                diasMax: addedRates[selectedRateIndex].diasMax,
+                precio: addedRates[selectedRateIndex].precio,
+                penalidad: addedRates[selectedRateIndex].penalidad,
+              }
+            : undefined
+        }
       />
     </div>
   );
