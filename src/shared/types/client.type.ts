@@ -1,3 +1,14 @@
+export type CreateClientRateRequest = {
+  idProducto: number;
+  idTipoTramite: number;
+  idPais: number;
+  idMoneda: number;
+  diasMax: number;
+  diasMin: number;
+  precio: number;
+  penalidad: number;
+};
+
 export type CreateClientContactRequest = {
   nombres: string;
   idTipoContacto: number;
@@ -31,6 +42,7 @@ export type CreateClientRequest = {
   aplicaPenalidad: boolean;
   idPlantilla: number;
   contactos: CreateClientContactRequest[];
+  tarifario: CreateClientRateRequest[];
 };
 
 export type CreateClientResponse = {

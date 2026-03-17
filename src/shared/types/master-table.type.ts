@@ -10,6 +10,7 @@ export const MasterTableId = {
   TIPO_CONTACTO: 14,
   AREA_TRABAJO: 35,
   PRODUCTO: 37,
+  EMPRESA_ATENCION: 38,
   PAGINACION_FRACTAL: 99,
 } as const;
 

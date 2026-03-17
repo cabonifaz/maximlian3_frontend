@@ -21,6 +21,7 @@ import { masterTableService } from "@maximilian/services/masterTable.service";
 import {
   type ClientInfoFormData,
   type ContactFormData,
+  type RateFormData,
 } from "@maximilian/schemas";
 import { type CreateClientRequest } from "@maximilian/shared/types/client.type";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
@@ -28,6 +29,7 @@ import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 interface ClientMutationParams {
   data: ClientInfoFormData;
   contacts: ContactFormData[];
+  rates: RateFormData[];
   reset: () => void;
 }
 
@@ -77,29 +79,29 @@ export default function ClientManagement() {
   );
 
   const createClientMutation = useMutation({
-    mutationFn: ({ data, contacts }: ClientMutationParams) => {
+    mutationFn: ({ data, contacts, rates }: ClientMutationParams) => {
       const apiRequest: CreateClientRequest = {
         idTipoPersona: data.tipoPersona as number,
         nombre: data.nombre,
-        nombreCorto: data.nombre.substring(0, 20), // Fallback
+        nombreCorto: data.nombre.substring(0, 20),
         idPais: data.pais as number,
         idRegistroTributario: data.tipoRegistroTributario as number,
-        numRegistroTributario: data.representanteLegal, // Placeholder
+        numRegistroTributario: data.numRegistroTributario ?? "",
         email: data.email,
         idEstado: 1,
         webSite: data.sitioWeb || "",
         telefono: data.telefono,
-        fax: "",
+        fax: data.fax ?? "",
         direccion: data.direccion,
-        recomendacion: "",
-        idEmpresaAtencion: 1, // Default or context-based
-        idIdioma: 1, // Default (Español)
+        recomendacion: data.recomendacion ?? "",
+        idEmpresaAtencion: data.atendidoPor as number,
+        idIdioma: data.idioma as number,
         logoClienteUrl: "",
-        imprimeLogoSafety: true,
+        imprimeLogoSafety: data.imprimeLogoSafety,
         idFormatoDocumento: data.formatoInforme as number,
-        idMoneda: 1, // Default (USD or based on context)
-        idIdiomaFacturacion: 1,
-        aplicaPenalidad: false,
+        idMoneda: data.moneda as number,
+        idIdiomaFacturacion: data.idiomaFacturacion as number,
+        aplicaPenalidad: data.aplicaPenalidad,
         idPlantilla: 1,
         contactos: contacts.map((c) => ({
           nombres: c.nombre,
@@ -108,6 +110,16 @@ export default function ClientManagement() {
           telefono: c.telefono,
           email: c.email,
           codigo: c.codigoContacto || null,
+        })),
+        tarifario: rates.map((r) => ({
+          idProducto: r.producto as number,
+          idTipoTramite: r.tramite as number,
+          idPais: r.pais as number,
+          idMoneda: r.moneda as number,
+          diasMax: r.diasMax,
+          diasMin: r.diasMin,
+          precio: r.precio,
+          penalidad: r.penalidad,
         })),
       };
       return clientService.create(apiRequest);
@@ -142,9 +154,10 @@ export default function ClientManagement() {
   const handleConfirmCreate = (
     data: ClientInfoFormData,
     contacts: ContactFormData[],
+    rates: RateFormData[],
     reset: () => void,
   ) => {
-    createClientMutation.mutate({ data, contacts, reset });
+    createClientMutation.mutate({ data, contacts, rates, reset });
   };
 
   const handleUpdateClient = (data: any, contacts: any[]) => {

@@ -7,10 +7,18 @@ export const clientInfoSchema = z.object({
   direccion: z.string().min(1, "La dirección es requerida"),
   email: z.string().email("Email inválido"),
   telefono: z.string().min(1, "El teléfono es requerido"),
-  sitioWeb: z.string().url("URL inválida").optional().or(z.literal("")),
+  sitioWeb: z.string().url("URL inválida").min(1, "El sitio web es requerido"),
+  fax: z.string().optional(),
   tipoRegistroTributario: z.union([z.string(), z.number()]).refine(val => val !== "", "El tipo de registro tributario es requerido"),
-  representanteLegal: z.string().min(1, "El representante legal es requerido"),
+  numRegistroTributario: z.string().min(1, "El registro tributario es requerido"),
+  moneda: z.union([z.string(), z.number()]).refine(val => val !== "", "La moneda es requerida"),
+  atendidoPor: z.union([z.string(), z.number()]).refine(val => val !== "", "El atendido por es requerido"),
+  idioma: z.union([z.string(), z.number()]).refine(val => val !== "", "El idioma preferido es requerido"),
+  idiomaFacturacion: z.union([z.string(), z.number()]).refine(val => val !== "", "El idioma de facturación es requerido"),
   formatoInforme: z.union([z.string(), z.number()]).refine(val => val !== "", "El formato de informe es requerido"),
+  imprimeLogoSafety: z.boolean(),
+  aplicaPenalidad: z.boolean(),
+  recomendacion: z.string().optional(),
 });
 
 export const rateSchema = z.object({

@@ -31,6 +31,7 @@ interface AddClientModalProps {
   onConfirm: (
     data: ClientInfoFormData,
     contacts: ContactFormData[],
+    rates: RateFormData[],
     reset: () => void,
   ) => void;
   isSubmitting?: boolean;
@@ -73,6 +74,7 @@ interface SearchableSelectProps {
   onChange: (val: number) => void;
   error?: string;
   placeholder?: string;
+  required?: boolean;
 }
 
 function SearchableSelect({
@@ -82,6 +84,7 @@ function SearchableSelect({
   onChange,
   error,
   placeholder = "Seleccione...",
+  required = false,
 }: SearchableSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -99,7 +102,9 @@ function SearchableSelect({
 
   return (
     <div className="relative space-y-2">
-      <label className="text-sm font-bold text-gray-700">{label}</label>
+      <label className="text-sm font-bold text-gray-700">
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
       <div
         className={`w-full px-4 py-2.5 bg-brand-white border ${error ? "border-red-500" : "border-gray-200"} rounded-xl text-sm flex items-center justify-between cursor-pointer hover:border-brand-wine/30 transition-all`}
         onClick={() => setIsOpen(!isOpen)}
@@ -173,7 +178,7 @@ export function AddClientModal({
   const {
     register: infoRegister,
     handleSubmit: handleInfoSubmit,
-    formState: { errors: infoErrors },
+    formState: { errors: infoErrors, isValid: isInfoValid },
     reset: infoReset,
     setValue: setInfoValue,
     watch: infoWatch,
@@ -181,6 +186,8 @@ export function AddClientModal({
     trigger: triggerInfo,
   } = useForm<ClientInfoFormData>({
     resolver: zodResolver(clientInfoSchema),
+    mode: "onTouched",
+    defaultValues: { imprimeLogoSafety: false, aplicaPenalidad: false },
   });
 
   // Queries for MasterTable parameters
@@ -238,6 +245,18 @@ export function AddClientModal({
     queryFn: () => masterTableService.list(MasterTableId.MONEDA),
   });
 
+  const { data: empresaAtencionData } = useQuery({
+    queryKey: ["masterTable", MasterTableId.EMPRESA_ATENCION],
+    queryFn: () => masterTableService.list(MasterTableId.EMPRESA_ATENCION),
+    enabled: isOpen,
+  });
+
+  const { data: idiomaData } = useQuery({
+    queryKey: ["masterTable", MasterTableId.IDIOMA],
+    queryFn: () => masterTableService.list(MasterTableId.IDIOMA),
+    enabled: isOpen,
+  });
+
   const { data: rateTiposTramite } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
@@ -290,8 +309,14 @@ export function AddClientModal({
     infoReset();
     setAddedContacts([]);
     setAddedRates([]);
+    setSelectedRateIndex(null);
     setSelectedContactIndex(null);
     setActiveTab("info");
+  };
+
+  const handleClose = () => {
+    handleGlobalReset();
+    onClose();
   };
 
   const handleAddRate = (data: RateFormData) => {
@@ -365,6 +390,16 @@ export function AddClientModal({
         telefono: c.telefono,
         areaTrabajo: c.areaTrabajoId,
       })),
+      addedRates.map((r) => ({
+        producto: r.productoId,
+        pais: r.paisId,
+        moneda: r.monedaId,
+        tramite: r.tramiteId,
+        diasMin: r.diasMin,
+        diasMax: r.diasMax,
+        precio: r.precio,
+        penalidad: r.penalidad,
+      })),
       handleGlobalReset,
     );
   };
@@ -430,6 +465,9 @@ export function AddClientModal({
 
   const watchedPais = infoWatch("pais");
   const watchedTipoRegTributario = infoWatch("tipoRegistroTributario");
+  const watchedAtendidoPor = infoWatch("atendidoPor");
+  const watchedIdioma = infoWatch("idioma");
+  const watchedIdiomaFacturacion = infoWatch("idiomaFacturacion");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -440,7 +478,7 @@ export function AddClientModal({
             Agrega un Cliente
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             disabled={isSubmitting}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer disabled:opacity-30"
           >
@@ -525,7 +563,7 @@ export function AddClientModal({
                 >
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Tipo Persona
+                      Tipo Persona<span className="text-red-500 ml-0.5">*</span>
                     </label>
                     <select
                       {...infoRegister("tipoPersona", { valueAsNumber: true })}
@@ -547,7 +585,7 @@ export function AddClientModal({
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Nombre
+                      Nombre<span className="text-red-500 ml-0.5">*</span>
                     </label>
                     <input
                       {...infoRegister("nombre")}
@@ -564,6 +602,7 @@ export function AddClientModal({
 
                   <SearchableSelect
                     label="País"
+                    required
                     options={paisData}
                     value={watchedPais}
                     onChange={(val) =>
@@ -574,7 +613,7 @@ export function AddClientModal({
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Dirección
+                      Dirección<span className="text-red-500 ml-0.5">*</span>
                     </label>
                     <input
                       {...infoRegister("direccion")}
@@ -591,7 +630,7 @@ export function AddClientModal({
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Email
+                      Email<span className="text-red-500 ml-0.5">*</span>
                     </label>
                     <input
                       {...infoRegister("email")}
@@ -608,7 +647,7 @@ export function AddClientModal({
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Teléfono
+                      Teléfono<span className="text-red-500 ml-0.5">*</span>
                     </label>
                     <input
                       {...infoRegister("telefono")}
@@ -625,7 +664,7 @@ export function AddClientModal({
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Sitio Web
+                      Sitio Web<span className="text-red-500 ml-0.5">*</span>
                     </label>
                     <input
                       {...infoRegister("sitioWeb")}
@@ -640,8 +679,21 @@ export function AddClientModal({
                     )}
                   </div>
 
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">
+                      Fax <span className="text-gray-400 font-normal">(opcional)</span>
+                    </label>
+                    <input
+                      {...infoRegister("fax")}
+                      type="text"
+                      placeholder="Fax"
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
+                    />
+                  </div>
+
                   <SearchableSelect
                     label="Tipo Registro Tributario"
+                    required
                     options={tipoRegTributarioData}
                     value={watchedTipoRegTributario}
                     onChange={(val) =>
@@ -654,24 +706,75 @@ export function AddClientModal({
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Representante Legal
+                      Registro Tributario<span className="text-red-500 ml-0.5">*</span>
                     </label>
                     <input
-                      {...infoRegister("representanteLegal")}
+                      {...infoRegister("numRegistroTributario")}
                       type="text"
-                      placeholder="Representante Legal"
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
+                      placeholder="Registro Tributario"
+                      disabled={!watchedTipoRegTributario}
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                     />
-                    {infoErrors.representanteLegal && (
-                      <p className="text-xs text-red-500">
-                        {infoErrors.representanteLegal.message}
-                      </p>
-                    )}
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Formato Informe
+                      Moneda<span className="text-red-500 ml-0.5">*</span>
+                    </label>
+                    <select
+                      {...infoRegister("moneda", { valueAsNumber: true })}
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
+                    >
+                      <option value="">Seleccione</option>
+                      {rateMonedas?.map((item) => (
+                        <option key={item.num1} value={item.num1 ?? ""}>
+                          {item.string1}
+                        </option>
+                      ))}
+                    </select>
+                    {infoErrors.moneda && (
+                      <p className="text-xs text-red-500">
+                        {infoErrors.moneda.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <SearchableSelect
+                    label="Atendido por"
+                    required
+                    options={empresaAtencionData}
+                    value={watchedAtendidoPor}
+                    onChange={(val) =>
+                      setInfoValue("atendidoPor", val, { shouldValidate: true })
+                    }
+                    error={infoErrors.atendidoPor?.message}
+                  />
+
+                  <SearchableSelect
+                    label="Idioma preferido"
+                    required
+                    options={idiomaData}
+                    value={watchedIdioma}
+                    onChange={(val) =>
+                      setInfoValue("idioma", val, { shouldValidate: true })
+                    }
+                    error={infoErrors.idioma?.message}
+                  />
+
+                  <SearchableSelect
+                    label="Idioma de facturación"
+                    required
+                    options={idiomaData}
+                    value={watchedIdiomaFacturacion}
+                    onChange={(val) =>
+                      setInfoValue("idiomaFacturacion", val, { shouldValidate: true })
+                    }
+                    error={infoErrors.idiomaFacturacion?.message}
+                  />
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">
+                      Formato Informe<span className="text-red-500 ml-0.5">*</span>
                     </label>
                     <select
                       {...infoRegister("formatoInforme", { valueAsNumber: true })}
@@ -689,6 +792,43 @@ export function AddClientModal({
                         {infoErrors.formatoInforme.message}
                       </p>
                     )}
+                  </div>
+
+                  <div className="md:col-span-2 flex items-center gap-6">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        {...infoRegister("imprimeLogoSafety")}
+                        id="imprimeLogoSafety"
+                        className="w-4 h-4 accent-brand-wine cursor-pointer"
+                      />
+                      <label htmlFor="imprimeLogoSafety" className="text-sm font-bold text-gray-700 cursor-pointer">
+                        Imprimir logo Safety
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        {...infoRegister("aplicaPenalidad")}
+                        id="aplicaPenalidad"
+                        className="w-4 h-4 accent-brand-wine cursor-pointer"
+                      />
+                      <label htmlFor="aplicaPenalidad" className="text-sm font-bold text-gray-700 cursor-pointer">
+                        Aplica penalidad
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-sm font-bold text-gray-700">
+                      Recomendación <span className="text-gray-400 font-normal">(opcional)</span>
+                    </label>
+                    <textarea
+                      {...infoRegister("recomendacion")}
+                      rows={3}
+                      placeholder="Recomendación"
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 resize-none"
+                    />
                   </div>
                 </form>
               )}
@@ -909,46 +1049,30 @@ export function AddClientModal({
         </div>
 
         {/* Footer */}
-        {activeTab === "info" && (
-          <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 shrink-0">
-            <button
-              onClick={() => setActiveTab("rates")}
-              className="px-8 py-3 border border-gray-200 text-brand-black rounded-xl font-bold hover:bg-gray-100 transition-all cursor-pointer"
-            >
-              Siguiente
-            </button>
+        <div className="px-8 py-6 border-t border-gray-100 flex justify-between gap-3 bg-gray-50/50 shrink-0">
+          <div>
+            {activeTab !== "info" && (
+              <button
+                onClick={() => setActiveTab(activeTab === "rates" ? "info" : "rates")}
+                className="px-8 py-3 border border-gray-200 text-brand-black rounded-xl font-bold hover:bg-gray-100 transition-all cursor-pointer"
+              >
+                Anterior
+              </button>
+            )}
           </div>
-        )}
-
-        {activeTab === "rates" && (
-          <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 shrink-0">
-            <button
-              onClick={() => setActiveTab("info")}
-              className="px-8 py-3 border border-gray-200 text-brand-black rounded-xl font-bold hover:bg-gray-100 transition-all cursor-pointer"
-            >
-              Anterior
-            </button>
-            <button
-              onClick={() => setActiveTab("contacts")}
-              className="px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 transition-all shadow-lg cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-            >
-              Siguiente
-            </button>
-          </div>
-        )}
-
-        {activeTab === "contacts" && (
-          <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 shrink-0">
-            <button
-              onClick={() => setActiveTab("rates")}
-              className="px-8 py-3 border border-gray-200 text-brand-black rounded-xl font-bold hover:bg-gray-100 transition-all cursor-pointer"
-            >
-              Anterior
-            </button>
+          <div className="flex gap-3">
+            {activeTab !== "contacts" && (
+              <button
+                onClick={() => setActiveTab(activeTab === "info" ? "rates" : "contacts")}
+                className="px-8 py-3 border border-gray-200 text-brand-black rounded-xl font-bold hover:bg-gray-100 transition-all cursor-pointer"
+              >
+                Siguiente
+              </button>
+            )}
             <button
               onClick={handleConfirm}
-              disabled={isSubmitting || isLoadingInfo}
-              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10 disabled:opacity-50 min-w-[140px] justify-center"
+              disabled={!isInfoValid || isSubmitting || isLoadingInfo}
+              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 min-w-[140px] justify-center"
             >
               {isSubmitting ? (
                 <>
@@ -963,7 +1087,7 @@ export function AddClientModal({
               )}
             </button>
           </div>
-        )}
+        </div>
       </div>
 
       <AddRateModal
