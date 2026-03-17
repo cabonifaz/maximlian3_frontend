@@ -86,6 +86,8 @@ export type UpdateClientRequest = Omit<CreateClientRequest, 'contactos' | 'tarif
 export type ClientListRequest = {
   numPag: number;
   busqueda?: string;
+  idPais?: number;
+  idEstado?: number;
 };
 
 export type ClientListEntry = {

@@ -13,7 +13,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { CreateUserModal } from "@maximilian/components/CreateUserModal";
 import { EditUserModal } from "@maximilian/components/EditUserModal";
 import { DeleteUserModal } from "@maximilian/components/DeleteUserModal";
@@ -81,7 +80,6 @@ export default function UserManagement() {
     },
     onSuccess: (_, { resetForm }) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Usuario creado exitosamente");
       setIsCreateModalOpen(false);
       resetForm();
     },
@@ -108,7 +106,6 @@ export default function UserManagement() {
     },
     onSuccess: (_, { resetForm }) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Usuario actualizado exitosamente");
       setIsEditModalOpen(false);
       setEditingUserId(null);
       resetForm();
@@ -126,7 +123,6 @@ export default function UserManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Usuario eliminado exitosamente");
       setIsDeleteModalOpen(false);
       setDeletingUserId(null);
     },
