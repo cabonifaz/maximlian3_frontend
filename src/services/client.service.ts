@@ -10,13 +10,17 @@ import type {
   DeleteClientRequest,
   UpdateClientRequest,
   TarifarioListResponse,
+  TarifarioListEntry,
   ContactoListResponse,
+  ContactoDetail,
   CreateTarifarioRequest,
   UpdateTarifarioRequest,
   DeleteTarifarioRequest,
+  GetTarifarioRequest,
   CreateContactoRequest,
   UpdateContactoRequest,
   DeleteContactoRequest,
+  GetContactoRequest,
 } from "@maximilian/shared/types/client.type";
 
 export const clientService = {
@@ -186,6 +190,22 @@ export const clientService = {
       "/api/ClienteContacto/eliminar", data
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al eliminar contacto");
+    return res.result[0];
+  },
+
+  getTarifarioById: async (data: GetTarifarioRequest): Promise<TarifarioListEntry> => {
+    const { data: res } = await maximilianService.get<ApiResponse<TarifarioListEntry[]>>(
+      "/api/Tarifario/obtener", { params: data }
+    );
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    return res.result[0];
+  },
+
+  getContactoById: async (data: GetContactoRequest): Promise<ContactoDetail> => {
+    const { data: res } = await maximilianService.get<ApiResponse<ContactoDetail[]>>(
+      "/api/ClienteContacto/obtener", { params: data }
+    );
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
     return res.result[0];
   },
 };

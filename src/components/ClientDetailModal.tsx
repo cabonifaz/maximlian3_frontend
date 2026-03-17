@@ -22,6 +22,7 @@ import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import type {
   TarifarioListEntry,
   ContactoListEntry,
+  ContactoDetail,
 } from "@maximilian/shared/types/client.type";
 import { SearchableSelect } from "@maximilian/components/SearchableSelect";
 import { MultiSearchableSelect } from "@maximilian/components/MultiSearchableSelect";
@@ -48,7 +49,9 @@ export function ClientDetailModal({
   const [contactosPag, setContactosPag] = useState(1);
   const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const [editingContact, setEditingContact] = useState<ContactoListEntry | null>(null);
+  const [editingContact, setEditingContact] = useState<ContactoDetail | null>(null);
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
+  const [isFetchingContact, setIsFetchingContact] = useState(false);
   const [rateToDelete, setRateToDelete] = useState<TarifarioListEntry | null>(null);
   const [contactToDelete, setContactToDelete] = useState<ContactoListEntry | null>(null);
 
@@ -612,13 +615,22 @@ export function ClientDetailModal({
                         <Plus size={14} /><span>Nuevo</span>
                       </button>
                       <button
-                        disabled={selectedRateIndex === null}
-                        onClick={() => {
-                          const rate = tarifarioData!.lstTarifario[selectedRateIndex!];
-                          setEditingRate(rate);
-                          setIsRateModalOpen(true);
+                        disabled={selectedRateIndex === null || isFetchingRate}
+                        onClick={async () => {
+                          const row = tarifarioData!.lstTarifario[selectedRateIndex!];
+                          setIsFetchingRate(true);
+                          try {
+                            const detail = await clientService.getTarifarioById({
+                              idTarifario: row.idTarifario,
+                              idCliente: client!.idCliente,
+                            });
+                            setEditingRate(detail);
+                            setIsRateModalOpen(true);
+                          } finally {
+                            setIsFetchingRate(false);
+                          }
                         }}
-                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
+                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null || isFetchingRate ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                       >Editar</button>
                       <button
                         disabled={selectedRateIndex === null}
@@ -696,13 +708,22 @@ export function ClientDetailModal({
                         <Plus size={14} /><span>Nuevo</span>
                       </button>
                       <button
-                        disabled={selectedContactIndex === null}
-                        onClick={() => {
-                          const c = contactosData!.lstClienteContactos[selectedContactIndex!];
-                          setEditingContact(c);
-                          setIsContactModalOpen(true);
+                        disabled={selectedContactIndex === null || isFetchingContact}
+                        onClick={async () => {
+                          const row = contactosData!.lstClienteContactos[selectedContactIndex!];
+                          setIsFetchingContact(true);
+                          try {
+                            const detail = await clientService.getContactoById({
+                              idClienteContacto: row.idClienteContacto,
+                              idCliente: client!.idCliente,
+                            });
+                            setEditingContact(detail);
+                            setIsContactModalOpen(true);
+                          } finally {
+                            setIsFetchingContact(false);
+                          }
                         }}
-                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
+                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null || isFetchingContact ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                       >Editar</button>
                       <button
                         disabled={selectedContactIndex === null}
@@ -825,6 +846,7 @@ export function ClientDetailModal({
       </div>
 
       <AddRateModal
+        key={editingRate ? `edit-rate-${editingRate.idTarifario}` : "new-rate"}
         isOpen={isRateModalOpen}
         onClose={() => { setIsRateModalOpen(false); setEditingRate(null); }}
         onConfirm={(data) => {
@@ -868,6 +890,7 @@ export function ClientDetailModal({
       />
 
       <AddContactModal
+        key={editingContact ? `edit-contact-${editingContact.idClienteContacto}` : "new-contact"}
         isOpen={isContactModalOpen}
         onClose={() => { setIsContactModalOpen(false); setEditingContact(null); }}
         onConfirm={(data) => {
@@ -879,7 +902,7 @@ export function ClientDetailModal({
               nombres: data.nombre,
               idTipoPersonaContacto: Number(data.tipoPersona),
               idTipoContacto: Number(data.tipoContacto),
-              areaTrabajo: Number(data.areaTrabajo),
+              idAreaTrabajo: Number(data.areaTrabajo),
               telefono: data.telefono || null,
               email: data.email || null,
               enviarCorreo: data.enviarCorreo ?? false,
@@ -899,12 +922,12 @@ export function ClientDetailModal({
           }
         }}
         defaultValues={editingContact ? {
-          tipoPersona: "",
+          tipoPersona: editingContact.idTipoPersonaContacto,
           tipoContacto: editingContact.idTipoContacto,
-          codigoContacto: editingContact.codigo,
+          codigoContacto: editingContact.codigo ?? "",
           nombre: editingContact.nombres,
-          email: editingContact.email,
-          telefono: editingContact.telefono,
+          email: editingContact.email ?? "",
+          telefono: editingContact.telefono ?? "",
           areaTrabajo: editingContact.idAreaTrabajo,
           enviarCorreo: editingContact.enviarCorreo,
         } : undefined}

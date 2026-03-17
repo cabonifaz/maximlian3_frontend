@@ -178,10 +178,26 @@ export type UpdateContactoRequest = {
   nombres: string;
   idTipoPersonaContacto: number;
   idTipoContacto: number;
-  areaTrabajo: number;
+  idAreaTrabajo: number;
   telefono: string | null;
   email: string | null;
   enviarCorreo: boolean;
 };
 
 export type DeleteContactoRequest = { idClienteContacto: number; idCliente: number };
+
+export type GetTarifarioRequest = { idTarifario: number; idCliente: number };
+export type GetContactoRequest = { idClienteContacto: number; idCliente: number };
+
+export type ContactoDetail = {
+  idClienteContacto: number;
+  idCliente: number;
+  codigo: string | null;
+  nombres: string;
+  idTipoPersonaContacto: number;
+  idTipoContacto: number;
+  idAreaTrabajo: number;
+  telefono: string | null;
+  email: string | null;
+  enviarCorreo: boolean;
+};
