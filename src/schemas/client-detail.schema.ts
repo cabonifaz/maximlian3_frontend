@@ -9,10 +9,17 @@ export const clientDetailSchema = z.object({
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   telefono: z.string().optional(),
   sitioWeb: z.string().url("URL inválida").optional().or(z.literal("")),
+  fax: z.string().optional(),
   tipoRegistroTributario: z.union([z.string(), z.number()]).optional(),
-  representanteLegal: z.string().optional(),
+  numRegistroTributario: z.string().optional(),
+  moneda: z.union([z.string(), z.number()]).optional(),
+  atendidoPor: z.union([z.string(), z.number()]).optional(),
+  idioma: z.union([z.string(), z.number()]).optional(),
+  idiomaFacturacion: z.union([z.string(), z.number()]).optional(),
   formatoInforme: z.union([z.string(), z.number()]).optional(),
-  estado: z.string().optional(),
+  imprimeLogoSafety: z.boolean().optional(),
+  aplicaPenalidad: z.boolean().optional(),
+  recomendacion: z.string().optional(),
 });
 
 export const clientDetailContactSchema = z.object({

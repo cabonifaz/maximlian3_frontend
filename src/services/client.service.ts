@@ -8,6 +8,9 @@ import type {
   ClientListRequest,
   ClientListResponse,
   DeleteClientRequest,
+  UpdateClientRequest,
+  TarifarioListResponse,
+  ContactoListResponse,
 } from "@maximilian/shared/types/client.type";
 
 export const clientService = {
@@ -60,42 +63,14 @@ export const clientService = {
    * @param idCliente The ID of the client to fetch.
    */
   getById: async (idCliente: number): Promise<ClientDetail> => {
-    try {
-      // Mocking for now as the endpoint might not be ready or follows similar patterns
-      // In a real scenario, this would be an API call:
-      // const { data } = await maximilianService.get<ApiResponse<ClientDetail>>(`/api/Cliente/obtener`, { params: { IdCliente: idCliente } });
-      // return data.result;
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return {
-        idCliente,
-        idTipoPersona: 1,
-        nombre: "Juan Espinoza",
-        nombreCorto: "Juan Espinoza",
-        idPais: 1,
-        idRegistroTributario: 1,
-        numRegistroTributario: "Representante Legal Name",
-        correo: "juan.espinoza@softwarefactorylatam.com",
-        webSite: "https://softwarefactorylatam.com",
-        telefono: "+51 987 654 321",
-        direccion: "Av. Siempre Viva 123",
-        idFormatoDocumento: 1,
-        estado: "Activo",
-        contactos: [
-          {
-            idContacto: 1,
-            nombres: "Contacto Principal",
-            idTipoContacto: 1,
-            areaTrabajo: 1,
-            telefono: "+51 999 888 777",
-            email: "contacto@empresa.com",
-          },
-        ],
-      };
-    } catch (error) {
-      console.error(`Error fetching client ${idCliente}:`, error);
-      throw error;
+    const { data } = await maximilianService.get<ApiResponse<ClientDetail[]>>(
+      "/api/Cliente/obtener",
+      { params: { idCliente } }
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new Error(data.mensaje || "Error al obtener el cliente");
     }
+    return data.result[0];
   },
 
   eliminate: async (data: DeleteClientRequest) => {
@@ -116,29 +91,47 @@ export const clientService = {
     }
   },
 
+  listTarifario: async (params: {
+    idCliente: number;
+    busqueda?: string;
+    numPag: number;
+  }): Promise<TarifarioListResponse> => {
+    const { data } = await maximilianService.get<ApiResponse<TarifarioListResponse>>(
+      "/api/Tarifario/listar",
+      { params }
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new Error(data.mensaje || "Error al listar el tarifario");
+    }
+    return data.result;
+  },
+
+  listContactos: async (params: {
+    idCliente: number;
+    numPag?: number;
+  }): Promise<ContactoListResponse> => {
+    const { data } = await maximilianService.get<ApiResponse<ContactoListResponse>>(
+      "/api/ClienteContacto/listar",
+      { params: { IdCliente: params.idCliente, NumPag: params.numPag } }
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new Error(data.mensaje || "Error al listar los contactos");
+    }
+    return data.result;
+  },
+
   /**
    * Update an existing client.
    * @param clientData Data to update.
    */
-  update: async (_clientData: any) => {
-    try {
-      // For now, mocking success as the endpoint might not be ready
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      return { success: true };
-
-      /* Real implementation:
-      const { data } = await maximilianService.post<ApiResponse<any>>(
-        "/api/Cliente/actualizar",
-        clientData
-      );
-      if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al actualizar el cliente");
-      }
-      return data.result;
-      */
-    } catch (error) {
-      console.error("Error updating client:", error);
-      throw error;
+  update: async (clientData: UpdateClientRequest) => {
+    const { data } = await maximilianService.post<ApiResponse<CreateClientResponse[]>>(
+      "/api/Cliente/editar",
+      clientData
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new Error(data.mensaje || "Error al actualizar el cliente");
     }
+    return data.result[0];
   },
 };

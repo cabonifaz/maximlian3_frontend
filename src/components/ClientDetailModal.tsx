@@ -2,8 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import {
   X,
   Plus,
-  MoreHorizontal,
-  ArrowLeft,
+  Eraser,
   Loader2,
   AlertCircle,
   RefreshCw,
@@ -15,8 +14,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   clientDetailSchema,
   type ClientDetailFormData,
-  clientDetailContactSchema,
-  type ClientDetailContactFormData,
 } from "@maximilian/schemas";
 import { AddRateModal } from "./AddRateModal";
 import { masterTableService } from "@maximilian/services/masterTable.service";
@@ -30,15 +27,11 @@ interface ClientDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   clientId: number | null;
-  onUpdate?: (
-    data: ClientDetailFormData,
-    contacts: ClientDetailContactFormData[],
-  ) => void;
+  onUpdate?: (data: ClientDetailFormData) => void;
   isUpdating?: boolean;
 }
 
 type Tab = "info" | "rates" | "contacts";
-type ContactView = "list" | "create" | "edit" | "detail";
 
 interface SearchableSelectProps {
   label: string;
@@ -139,8 +132,9 @@ export function ClientDetailModal({
 }: ClientDetailModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("info");
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
-  const [contactView, setContactView] = useState<ContactView>("list");
-  const [addedContacts, setAddedContacts] = useState<ClientDetailContactFormData[]>([]);
+  const [selectedRateIndex, setSelectedRateIndex] = useState<number | null>(null);
+  const [contactosPag, setContactosPag] = useState(1);
+  const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null);
 
   const {
     data: client,
@@ -163,15 +157,6 @@ export function ClientDetailModal({
     resolver: zodResolver(clientDetailSchema),
   });
 
-  const {
-    register: contactRegister,
-    reset: contactReset,
-    setValue: setContactValue,
-    watch: contactWatch,
-  } = useForm<ClientDetailContactFormData>({
-    resolver: zodResolver(clientDetailContactSchema),
-  });
-
   // Populate form when client data is loaded
   useEffect(() => {
     if (client) {
@@ -180,28 +165,22 @@ export function ClientDetailModal({
         tipoPersona: client.idTipoPersona,
         nombre: client.nombre,
         pais: client.idPais,
-        direccion: client.direccion,
-        email: client.correo,
-        telefono: client.telefono,
-        sitioWeb: client.webSite,
+        direccion: client.direccion ?? "",
+        email: client.email ?? "",
+        telefono: client.telefono ?? "",
+        sitioWeb: client.webSite ?? "",
+        fax: client.fax ?? "",
         tipoRegistroTributario: client.idRegistroTributario,
-        representanteLegal: client.numRegistroTributario,
+        numRegistroTributario: client.numRegistroTributario ?? "",
+        moneda: client.idMoneda,
+        atendidoPor: client.idEmpresaAtencion,
+        idioma: client.idIdioma,
+        idiomaFacturacion: client.idIdiomaFacturacion,
         formatoInforme: client.idFormatoDocumento,
-        estado: client.estado,
+        imprimeLogoSafety: client.imprimeLogoSafety,
+        aplicaPenalidad: client.aplicaPenalidad,
+        recomendacion: client.recomendacion ?? "",
       });
-
-      setAddedContacts(
-        client.contactos.map((c) => ({
-          id: c.idContacto,
-          tipoPersona: client.idTipoPersona, // Fallback if not in detail
-          tipoContacto: c.idTipoContacto,
-          codigoContacto: "N/A", // Fallback if not in detail
-          nombre: c.nombres,
-          email: c.email,
-          telefono: c.telefono,
-          areaTrabajo: c.areaTrabajo,
-        })),
-      );
     }
   }, [client, infoReset]);
 
@@ -230,40 +209,99 @@ export function ClientDetailModal({
     enabled: isOpen,
   });
 
+  const { data: rateMonedas } = useQuery({
+    queryKey: ["masterTable", MasterTableId.MONEDA],
+    queryFn: () => masterTableService.list(MasterTableId.MONEDA),
+    enabled: isOpen,
+  });
+
+  const { data: empresaAtencionData } = useQuery({
+    queryKey: ["masterTable", MasterTableId.EMPRESA_ATENCION],
+    queryFn: () => masterTableService.list(MasterTableId.EMPRESA_ATENCION),
+    enabled: isOpen,
+  });
+
+  const { data: idiomaData } = useQuery({
+    queryKey: ["masterTable", MasterTableId.IDIOMA],
+    queryFn: () => masterTableService.list(MasterTableId.IDIOMA),
+    enabled: isOpen,
+  });
+
   const { data: tipoContactoData } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_CONTACTO],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_CONTACTO),
-    enabled: isOpen && activeTab === "contacts",
+    enabled: isOpen,
   });
 
   const { data: areaTrabajoData } = useQuery({
     queryKey: ["masterTable", MasterTableId.AREA_TRABAJO],
     queryFn: () => masterTableService.list(MasterTableId.AREA_TRABAJO),
-    enabled: isOpen && activeTab === "contacts",
+    enabled: isOpen,
   });
+
+  const { data: productoData } = useQuery({
+    queryKey: ["masterTable", MasterTableId.PRODUCTO],
+    queryFn: () => masterTableService.list(MasterTableId.PRODUCTO),
+    enabled: isOpen && activeTab === "rates",
+  });
+
+  const { data: tipoTramiteData } = useQuery({
+    queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
+    queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
+    enabled: isOpen && activeTab === "rates",
+  });
+
+  const [tarifarioSearch, setTarifarioSearch] = useState("");
+  const [tarifarioPag, setTarifarioPag] = useState(1);
+
+  const { data: tarifarioData, isLoading: tarifarioLoading } = useQuery({
+    queryKey: ["tarifario", client?.idCliente, tarifarioSearch, tarifarioPag],
+    queryFn: () => clientService.listTarifario({
+      idCliente: client!.idCliente,
+      busqueda: tarifarioSearch || undefined,
+      numPag: tarifarioPag,
+    }),
+    enabled: activeTab === "rates" && !!client?.idCliente,
+  });
+
+  const productoMap = useMemo(() =>
+    Object.fromEntries((productoData ?? []).map(p => [p.num1, p.string1])), [productoData]);
+
+  const tramiteMap = useMemo(() =>
+    Object.fromEntries((tipoTramiteData ?? []).map(t => [t.num1, t.string1])), [tipoTramiteData]);
+
+  const paisMap = useMemo(() =>
+    Object.fromEntries((paisData ?? []).map(p => [p.num1, p.string1])), [paisData]);
+
+  const monedaMap = useMemo(() =>
+    Object.fromEntries((rateMonedas ?? []).map(m => [m.num1, m.string1])), [rateMonedas]);
+
+  const { data: contactosData, isLoading: contactosLoading } = useQuery({
+    queryKey: ["contactos", client?.idCliente, contactosPag],
+    queryFn: () => clientService.listContactos({
+      idCliente: client!.idCliente,
+      numPag: contactosPag,
+    }),
+    enabled: activeTab === "contacts" && !!client?.idCliente,
+  });
+
+  const tipoContactoMap = useMemo(() =>
+    Object.fromEntries((tipoContactoData ?? []).map(t => [t.num1, t.string1])), [tipoContactoData]);
+
+  const areaTrabajoMap = useMemo(() =>
+    Object.fromEntries((areaTrabajoData ?? []).map(a => [a.num1, a.string1])), [areaTrabajoData]);
 
   if (!isOpen) return null;
 
   const handleUpdate = () => {
-    const infoData = getInfoValues();
-    onUpdate?.(infoData, addedContacts);
-  };
-
-  const openDetailContact = (contact: ClientDetailContactFormData) => {
-    Object.keys(contact).forEach((key) => {
-      setContactValue(
-        key as keyof ClientDetailContactFormData,
-        contact[key as keyof ClientDetailContactFormData],
-      );
-    });
-    setContactView("detail");
+    onUpdate?.(getInfoValues());
   };
 
   const watchedPais = infoWatch("pais");
   const watchedTipoRegTributario = infoWatch("tipoRegistroTributario");
-  const watchedContactTipoPersona = contactWatch("tipoPersona");
-  const watchedContactAreaTrabajo = contactWatch("areaTrabajo");
-  const watchedContactTipoContacto = contactWatch("tipoContacto");
+  const watchedAtendidoPor = infoWatch("atendidoPor");
+  const watchedIdioma = infoWatch("idioma");
+  const watchedIdiomaFacturacion = infoWatch("idiomaFacturacion");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -275,9 +313,17 @@ export function ClientDetailModal({
               Detalle del Cliente
             </h2>
             {client && (
-              <p className="text-xs text-gray-400 mt-1 font-medium text-brand-wine/80">
-                Estado: {client.estado}
-              </p>
+              <div className="mt-1">
+                {client.idEstado === 1 ? (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600">
+                    Activo
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500">
+                    Inactivo
+                  </span>
+                )}
+              </div>
             )}
           </div>
           <button
@@ -435,6 +481,17 @@ export function ClientDetailModal({
                     />
                   </div>
 
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">
+                      Fax <span className="text-gray-400 font-normal">(opcional)</span>
+                    </label>
+                    <input
+                      {...infoRegister("fax")}
+                      type="text"
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+                    />
+                  </div>
+
                   <SearchableSelect
                     label="Tipo Registro Tributario"
                     options={tipoRegTributarioData}
@@ -448,14 +505,59 @@ export function ClientDetailModal({
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Representante Legal
+                      Registro Tributario
                     </label>
                     <input
-                      {...infoRegister("representanteLegal")}
+                      {...infoRegister("numRegistroTributario")}
                       type="text"
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+                      disabled={!watchedTipoRegTributario}
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">
+                      Moneda
+                    </label>
+                    <select
+                      {...infoRegister("moneda", { valueAsNumber: true })}
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
+                    >
+                      <option value="">Seleccione</option>
+                      {rateMonedas?.map((item) => (
+                        <option key={item.num1} value={item.num1 ?? ""}>
+                          {item.string1}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <SearchableSelect
+                    label="Atendido por"
+                    options={empresaAtencionData}
+                    value={watchedAtendidoPor}
+                    onChange={(val) =>
+                      setInfoValue("atendidoPor", val, { shouldValidate: true })
+                    }
+                  />
+
+                  <SearchableSelect
+                    label="Idioma preferido"
+                    options={idiomaData}
+                    value={watchedIdioma}
+                    onChange={(val) =>
+                      setInfoValue("idioma", val, { shouldValidate: true })
+                    }
+                  />
+
+                  <SearchableSelect
+                    label="Idioma de facturación"
+                    options={idiomaData}
+                    value={watchedIdiomaFacturacion}
+                    onChange={(val) =>
+                      setInfoValue("idiomaFacturacion", val, { shouldValidate: true })
+                    }
+                  />
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
@@ -473,6 +575,42 @@ export function ClientDetailModal({
                       ))}
                     </select>
                   </div>
+
+                  <div className="md:col-span-2 flex items-center gap-6">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        {...infoRegister("imprimeLogoSafety")}
+                        id="imprimeLogoSafety"
+                        className="w-4 h-4 accent-brand-wine cursor-pointer"
+                      />
+                      <label htmlFor="imprimeLogoSafety" className="text-sm font-bold text-gray-700 cursor-pointer">
+                        Imprimir logo Safety
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        {...infoRegister("aplicaPenalidad")}
+                        id="aplicaPenalidad"
+                        className="w-4 h-4 accent-brand-wine cursor-pointer"
+                      />
+                      <label htmlFor="aplicaPenalidad" className="text-sm font-bold text-gray-700 cursor-pointer">
+                        Aplica penalidad
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-sm font-bold text-gray-700">
+                      Recomendación <span className="text-gray-400 font-normal">(opcional)</span>
+                    </label>
+                    <textarea
+                      {...infoRegister("recomendacion")}
+                      rows={3}
+                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all resize-none"
+                    />
+                  </div>
                 </form>
               )}
 
@@ -483,6 +621,8 @@ export function ClientDetailModal({
                       <input
                         type="text"
                         placeholder="Buscar..."
+                        value={tarifarioSearch}
+                        onChange={(e) => { setTarifarioSearch(e.target.value); setTarifarioPag(1); setSelectedRateIndex(null); }}
                         className="w-full px-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm outline-none"
                       />
                     </div>
@@ -491,210 +631,139 @@ export function ClientDetailModal({
                         onClick={() => setIsRateModalOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all"
                       >
-                        <Plus size={14} />
-                        <span>Nuevo</span>
+                        <Plus size={14} /><span>Nuevo</span>
                       </button>
-                      <button className="px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all">
-                        Editar
-                      </button>
+                      <button
+                        disabled={selectedRateIndex === null}
+                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
+                      >Editar</button>
+                      <button
+                        disabled={selectedRateIndex === null}
+                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
+                      >Eliminar</button>
                     </div>
                   </div>
 
-                  <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="border border-gray-100 rounded-2xl overflow-hidden">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead className="bg-gray-50 text-gray-400 uppercase">
                         <tr>
+                          <th className="px-3 py-3 w-8">
+                            <button
+                              disabled={selectedRateIndex === null}
+                              onClick={() => setSelectedRateIndex(null)}
+                              title="Limpiar selección"
+                              className={`transition-colors ${selectedRateIndex === null ? "text-gray-300 cursor-not-allowed" : "text-gray-400 hover:text-gray-600 cursor-pointer"}`}
+                            ><Eraser size={13} /></button>
+                          </th>
                           <th className="px-4 py-3 font-bold">Producto</th>
                           <th className="px-4 py-3 font-bold">País</th>
                           <th className="px-4 py-3 font-bold">Moneda</th>
                           <th className="px-4 py-3 font-bold">Trámite</th>
-                          <th className="px-4 py-3 font-bold text-center">
-                            Días Min.
-                          </th>
-                          <th className="px-4 py-3 font-bold text-center">
-                            Precio
-                          </th>
+                          <th className="px-4 py-3 font-bold text-center">Días Min.</th>
+                          <th className="px-4 py-3 font-bold text-center">Precio</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        <tr className="hover:bg-gray-50/50">
-                          <td className="px-4 py-3 text-gray-600">
-                            Informe confidencial
-                          </td>
-                          <td className="px-4 py-3 text-gray-600">Perú</td>
-                          <td className="px-4 py-3 text-gray-600">Dólar</td>
-                          <td className="px-4 py-3 text-gray-600 text-center">
-                            XP
-                          </td>
-                          <td className="px-4 py-3 text-gray-600 text-center">
-                            3
-                          </td>
-                          <td className="px-4 py-3 text-brand-black font-bold text-center">
-                            45.0
-                          </td>
-                        </tr>
+                        {tarifarioLoading ? (
+                          <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm italic">Cargando...</td></tr>
+                        ) : (tarifarioData?.lstTarifario ?? []).length === 0 ? (
+                          <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm italic">No hay tarifas agregadas.</td></tr>
+                        ) : (
+                          (tarifarioData?.lstTarifario ?? []).map((rate, i) => (
+                            <tr key={rate.idTarifario} className="hover:bg-gray-50/50">
+                              <td className="px-3 py-3">
+                                <input type="radio" name="rate-selection" checked={selectedRateIndex === i} onChange={() => setSelectedRateIndex(i)} className="accent-brand-wine cursor-pointer" />
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">{productoMap[rate.idProducto] ?? rate.idProducto}</td>
+                              <td className="px-4 py-3 text-gray-600">{paisMap[rate.idPais] ?? rate.idPais}</td>
+                              <td className="px-4 py-3 text-gray-600">{monedaMap[rate.idMoneda] ?? rate.idMoneda}</td>
+                              <td className="px-4 py-3 text-gray-600">{tramiteMap[rate.idTipoTramite] ?? rate.idTipoTramite}</td>
+                              <td className="px-4 py-3 text-gray-600 text-center">{rate.diasMin}</td>
+                              <td className="px-4 py-3 text-brand-black font-bold text-center">{rate.precio}</td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
+
+                  {(tarifarioData?.totalPaginas ?? 0) > 1 && (
+                    <div className="flex items-center justify-end gap-2 mt-3">
+                      <button disabled={tarifarioPag === 1} onClick={() => setTarifarioPag(p => p - 1)} className="px-2 py-1 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors cursor-pointer">‹</button>
+                      <span className="text-sm">{tarifarioPag} / {tarifarioData?.totalPaginas}</span>
+                      <button disabled={tarifarioPag === tarifarioData?.totalPaginas} onClick={() => setTarifarioPag(p => p + 1)} className="px-2 py-1 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors cursor-pointer">›</button>
+                    </div>
+                  )}
                 </div>
               )}
 
               {activeTab === "contacts" && (
-                <div className="animate-in fade-in duration-300 h-full">
-                  {contactView === "list" && (
-                    <div className="space-y-6">
-                      <div className="flex justify-end">
-                        <button
-                          onClick={() => {
-                            contactReset();
-                            setContactView("create");
-                          }}
-                          className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all"
-                        >
-                          <Plus size={14} />
-                          <span>Agregar Contacto</span>
-                        </button>
-                      </div>
-                      {addedContacts.length === 0 ? (
-                        <div className="py-20 text-center text-gray-400 text-sm italic">
-                          No hay contactos registrados.
-                        </div>
-                      ) : (
-                        <div className="divide-y divide-gray-50">
-                          {addedContacts.map((contact, i) => (
-                            <div
-                              key={i}
-                              className="py-4 flex items-center justify-between group"
-                            >
-                              <div className="grid grid-cols-3 flex-1 gap-4">
-                                <div>
-                                  <p className="text-sm font-bold text-brand-black">
-                                    {contact.nombre}
-                                  </p>
-                                  <p className="text-xs text-gray-400">
-                                    {contact.email}
-                                  </p>
-                                </div>
-                                <div className="flex items-center">
-                                  <span className="text-sm font-medium text-gray-600">
-                                    {tipoContactoData?.find(
-                                      (t) => t.num1 === contact.tipoContacto,
-                                    )?.string1 || contact.tipoContacto}
-                                  </span>
-                                </div>
-                                <div className="flex items-center">
-                                  <span className="text-sm font-medium text-gray-600">
-                                    {contact.telefono}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="relative group/menu">
-                                <button className="p-2 text-gray-400 hover:text-brand-black rounded-lg transition-all cursor-pointer">
-                                  <MoreHorizontal size={18} />
-                                </button>
-                                <div className="absolute right-0 top-full mt-1 w-40 bg-brand-white border border-gray-100 rounded-xl shadow-xl z-10 hidden group-hover/menu:block py-1">
-                                  <button
-                                    onClick={() => openDetailContact(contact)}
-                                    className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-gray-600 cursor-pointer"
-                                  >
-                                    Ver Detalles
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                <div className="animate-in fade-in duration-300 space-y-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 max-w-xs" />
+                    <div className="flex gap-2">
+                      <button className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all">
+                        <Plus size={14} /><span>Nuevo</span>
+                      </button>
+                      <button
+                        disabled={selectedContactIndex === null}
+                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
+                      >Editar</button>
+                      <button
+                        disabled={selectedContactIndex === null}
+                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
+                      >Eliminar</button>
                     </div>
-                  )}
+                  </div>
 
-                  {contactView === "detail" && (
-                    <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-                      <div className="flex items-center gap-4">
-                        <button
-                          onClick={() => setContactView("list")}
-                          className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer hover:scale-110 active:scale-90"
-                        >
-                          <ArrowLeft size={20} className="text-brand-black" />
-                        </button>
-                        <h3 className="font-bold text-lg text-brand-black">
-                          Detalles de Contacto
-                        </h3>
-                      </div>
+                  <div className="border border-gray-100 rounded-2xl overflow-hidden">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead className="bg-gray-50 text-gray-400 uppercase">
+                        <tr>
+                          <th className="px-3 py-3 w-8">
+                            <button
+                              disabled={selectedContactIndex === null}
+                              onClick={() => setSelectedContactIndex(null)}
+                              title="Limpiar selección"
+                              className={`transition-colors ${selectedContactIndex === null ? "text-gray-300 cursor-not-allowed" : "text-gray-400 hover:text-gray-600 cursor-pointer"}`}
+                            ><Eraser size={13} /></button>
+                          </th>
+                          <th className="px-4 py-3 font-bold">Nombre</th>
+                          <th className="px-4 py-3 font-bold">Email</th>
+                          <th className="px-4 py-3 font-bold">Teléfono</th>
+                          <th className="px-4 py-3 font-bold">Tipo Contacto</th>
+                          <th className="px-4 py-3 font-bold">Área Trabajo</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {contactosLoading ? (
+                          <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400 text-sm italic">Cargando...</td></tr>
+                        ) : (contactosData?.lstClienteContactos ?? []).length === 0 ? (
+                          <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400 text-sm italic">No hay contactos agregados.</td></tr>
+                        ) : (
+                          (contactosData?.lstClienteContactos ?? []).map((c, i) => (
+                            <tr key={c.idClienteContacto} className="hover:bg-gray-50/50">
+                              <td className="px-3 py-3">
+                                <input type="radio" name="contact-selection" checked={selectedContactIndex === i} onChange={() => setSelectedContactIndex(i)} className="accent-brand-wine cursor-pointer" />
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">{c.nombres}</td>
+                              <td className="px-4 py-3 text-gray-600">{c.email}</td>
+                              <td className="px-4 py-3 text-gray-600">{c.telefono}</td>
+                              <td className="px-4 py-3 text-gray-600">{tipoContactoMap[c.idTipoContacto] ?? c.idTipoContacto}</td>
+                              <td className="px-4 py-3 text-gray-600">{areaTrabajoMap[c.idAreaTrabajo] ?? c.idAreaTrabajo}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <SearchableSelect
-                          label="Tipo Persona"
-                          options={tipoPersonaData}
-                          value={watchedContactTipoPersona}
-                          onChange={() => {}}
-                          disabled
-                        />
-
-                        <SearchableSelect
-                          label="Tipo de Contacto"
-                          options={tipoContactoData}
-                          value={watchedContactTipoContacto}
-                          onChange={() => {}}
-                          disabled
-                        />
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700">
-                            Código de Contacto
-                          </label>
-                          <input
-                            {...contactRegister("codigoContacto")}
-                            disabled
-                            type="text"
-                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500 outline-none cursor-not-allowed"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700">
-                            Nombre
-                          </label>
-                          <input
-                            {...contactRegister("nombre")}
-                            disabled
-                            type="text"
-                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500 outline-none cursor-not-allowed"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700">
-                            Email
-                          </label>
-                          <input
-                            {...contactRegister("email")}
-                            disabled
-                            type="email"
-                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500 outline-none cursor-not-allowed"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700">
-                            Teléfono
-                          </label>
-                          <input
-                            {...contactRegister("telefono")}
-                            disabled
-                            type="text"
-                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500 outline-none cursor-not-allowed"
-                          />
-                        </div>
-
-                        <SearchableSelect
-                          label="Área de Trabajo"
-                          options={areaTrabajoData}
-                          value={watchedContactAreaTrabajo}
-                          onChange={() => {}}
-                          disabled
-                        />
-                      </div>
+                  {(contactosData?.totalPaginas ?? 0) > 1 && (
+                    <div className="flex items-center justify-end gap-2 mt-3">
+                      <button disabled={contactosPag === 1} onClick={() => setContactosPag(p => p - 1)} className="px-2 py-1 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors cursor-pointer">‹</button>
+                      <span className="text-sm">{contactosPag} / {contactosData?.totalPaginas}</span>
+                      <button disabled={contactosPag === contactosData?.totalPaginas} onClick={() => setContactosPag(p => p + 1)} className="px-2 py-1 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors cursor-pointer">›</button>
                     </div>
                   )}
                 </div>

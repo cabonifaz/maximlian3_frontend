@@ -50,30 +50,36 @@ export type CreateClientResponse = {
   idCliente: number;
 };
 
-export type ClientDetailContact = {
-  idContacto: number;
-  nombres: string;
-  idTipoContacto: number;
-  areaTrabajo: number;
-  telefono: string;
-  email: string;
-};
 
 export type ClientDetail = {
   idCliente: number;
+  idEmpresa: number;
   idTipoPersona: number;
   nombre: string;
-  nombreCorto: string;
+  nombreCorto: string | null;
   idPais: number;
   idRegistroTributario: number;
-  numRegistroTributario: string;
-  correo: string;
-  webSite: string;
-  telefono: string;
-  direccion: string;
+  numRegistroTributario: string | null;
+  email: string | null;
+  webSite: string | null;
+  telefono: string | null;
+  fax: string | null;
+  direccion: string | null;
+  recomendacion: string | null;
+  idEmpresaAtencion: number;
+  idIdioma: number;
+  logoClienteUrl: string | null;
+  imprimeLogoSafety: boolean;
   idFormatoDocumento: number;
-  estado: string;
-  contactos: ClientDetailContact[];
+  idMoneda: number;
+  idIdiomaFacturacion: number;
+  aplicaPenalidad: boolean;
+  idPlantilla: number;
+  idEstado: number;
+};
+
+export type UpdateClientRequest = Omit<CreateClientRequest, 'contactos' | 'tarifario'> & {
+  idCliente: number;
 };
 
 export type ClientListRequest = {
@@ -100,3 +106,38 @@ export type ClientListResponse = {
 export interface DeleteClientRequest {
   idCliente: number;
 }
+
+export type TarifarioListEntry = {
+  idTarifario: number;
+  idCliente: number;
+  idProducto: number;
+  idTipoTramite: number;
+  idPais: number;
+  idMoneda: number;
+  diasMax: number;
+  diasMin: number;
+  precio: number;
+  penalidad: number;
+};
+
+export type TarifarioListResponse = {
+  lstTarifario: TarifarioListEntry[];
+  totalRegistros: number;
+  totalPaginas: number;
+};
+
+export type ContactoListEntry = {
+  idClienteContacto: number;
+  codigo: string;
+  nombres: string;
+  idTipoContacto: number;
+  idAreaTrabajo: number;
+  telefono: string;
+  email: string;
+};
+
+export type ContactoListResponse = {
+  lstClienteContactos: ContactoListEntry[];
+  totalRegistros: number;
+  totalPaginas: number;
+};
