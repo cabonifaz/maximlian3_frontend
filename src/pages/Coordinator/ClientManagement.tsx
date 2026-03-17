@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Search,
   Filter,
@@ -17,11 +17,13 @@ import { toast } from "sonner";
 import { AddClientModal } from "@maximilian/components/AddClientModal";
 import { ClientDetailModal } from "@maximilian/components/ClientDetailModal";
 import { clientService } from "@maximilian/services/client.service";
+import { masterTableService } from "@maximilian/services/masterTable.service";
 import {
   type ClientInfoFormData,
   type ContactFormData,
 } from "@maximilian/schemas";
 import { type CreateClientRequest } from "@maximilian/shared/types/client.type";
+import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 
 interface ClientMutationParams {
   data: ClientInfoFormData;
@@ -49,9 +51,30 @@ export default function ClientManagement() {
     queryFn: () =>
       clientService.list({
         numPag: currentPage,
-        Filtro: searchTerm || undefined,
+        busqueda: searchTerm || undefined,
       }),
   });
+
+  const { data: paises } = useQuery({
+    queryKey: ["masterTable", MasterTableId.PAIS],
+    queryFn: () => masterTableService.list(MasterTableId.PAIS),
+  });
+
+  const { data: tiposPersona } = useQuery({
+    queryKey: ["masterTable", MasterTableId.TIPO_PERSONA],
+    queryFn: () => masterTableService.list(MasterTableId.TIPO_PERSONA),
+  });
+
+  const paisMap = useMemo(
+    () => Object.fromEntries((paises ?? []).map((e) => [e.num1, e.string1])),
+    [paises],
+  );
+
+  const tipoPersonaMap = useMemo(
+    () =>
+      Object.fromEntries((tiposPersona ?? []).map((e) => [e.num1, e.string1])),
+    [tiposPersona],
+  );
 
   const createClientMutation = useMutation({
     mutationFn: ({ data, contacts }: ClientMutationParams) => {
@@ -255,12 +278,12 @@ export default function ClientManagement() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm text-gray-600">
-                        {client.pais}
+                        {paisMap[client.idPais] ?? "-"}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm text-gray-600 capitalize">
-                        {client.tipoPersona.toLowerCase()}
+                        {tipoPersonaMap[client.idTipoPersona]?.toLowerCase() ?? "-"}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -270,7 +293,7 @@ export default function ClientManagement() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm text-gray-500">
-                        {client.correo}
+                        {client.email}
                       </span>
                     </td>
                     <td className="px-6 py-4">

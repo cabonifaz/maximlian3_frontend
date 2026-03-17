@@ -63,16 +63,17 @@ export type ClientDetail = {
 
 export type ClientListRequest = {
   numPag: number;
-  Filtro?: string;
+  busqueda?: string;
 };
 
 export type ClientListEntry = {
   idCliente: number;
   nombre: string;
-  pais: string;
-  tipoPersona: string;
-  correo: string;
+  idPais: number;
+  idTipoPersona: number;
+  email: string;
   telefono: string;
+  idEstado: number;
 };
 
 export type ClientListResponse = {
