@@ -136,6 +136,16 @@ export default function ClientManagement() {
     },
   });
 
+  const deleteClientMutation = useMutation({
+    mutationFn: (idCliente: number) => clientService.eliminate({ idCliente }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    },
+    onError: (error: Error) => {
+      console.error("Error al desactivar cliente:", error.message);
+    },
+  });
+
   const updateClientMutation = useMutation({
     mutationFn: (updateData: any) => {
       return clientService.update(updateData);
@@ -313,9 +323,17 @@ export default function ClientManagement() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600">
-                        Activo
-                      </span>
+                      {client.idEstado === 1 ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600">
+                          Activo
+                        </span>
+                      ) : client.idEstado === 2 ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500">
+                          Inactivo
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-right relative">
                       <button
@@ -356,7 +374,10 @@ export default function ClientManagement() {
                               <span>Ver detalle</span>
                             </button>
                             <button
-                              onClick={() => setActiveMenuId(null)}
+                              onClick={() => {
+                                deleteClientMutation.mutate(client.idCliente);
+                                setActiveMenuId(null);
+                              }}
                               className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
                             >
                               <UserMinus size={14} />

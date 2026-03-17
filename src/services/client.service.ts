@@ -7,6 +7,7 @@ import type {
   ClientDetail,
   ClientListRequest,
   ClientListResponse,
+  DeleteClientRequest,
 } from "@maximilian/shared/types/client.type";
 
 export const clientService = {
@@ -93,6 +94,24 @@ export const clientService = {
       };
     } catch (error) {
       console.error(`Error fetching client ${idCliente}:`, error);
+      throw error;
+    }
+  },
+
+  eliminate: async (data: DeleteClientRequest) => {
+    try {
+      const { data: responseData } = await maximilianService.post<ApiResponse<{ idCliente: number }[]>>(
+        "/api/Cliente/eliminar",
+        data
+      );
+
+      if (responseData.idTipoMensaje !== MessageType.SUCCESS) {
+        throw new Error(responseData.mensaje || "Error al desactivar el cliente");
+      }
+
+      return responseData.result;
+    } catch (error) {
+      console.error("Error eliminating client:", error);
       throw error;
     }
   },

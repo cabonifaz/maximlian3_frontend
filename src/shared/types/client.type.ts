@@ -96,3 +96,7 @@ export type ClientListResponse = {
   totalRegistros: number;
   totalPaginas: number;
 };
+
+export interface DeleteClientRequest {
+  idCliente: number;
+}
