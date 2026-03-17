@@ -146,6 +146,7 @@ export function AddClientModal({
     setValue: setInfoValue,
     watch: infoWatch,
     getValues: getInfoValues,
+    trigger: triggerInfo,
   } = useForm<ClientInfoFormData>({
     resolver: zodResolver(clientInfoSchema),
   });
@@ -237,9 +238,13 @@ export function AddClientModal({
     setActiveTab("info");
   };
 
-  const handleConfirm = () => {
-    const infoData = getInfoValues();
-    onConfirm(infoData, addedContacts, handleGlobalReset);
+  const handleConfirm = async () => {
+    const valid = await triggerInfo();
+    if (!valid) {
+      setActiveTab("info");
+      return;
+    }
+    onConfirm(getInfoValues(), addedContacts, handleGlobalReset);
   };
 
   const handleAddContact = (data: ContactFormData) => {

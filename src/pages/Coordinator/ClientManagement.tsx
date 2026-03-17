@@ -85,7 +85,8 @@ export default function ClientManagement() {
         idPais: data.pais as number,
         idRegistroTributario: data.tipoRegistroTributario as number,
         numRegistroTributario: data.representanteLegal, // Placeholder
-        correo: data.email,
+        email: data.email,
+        idEstado: 1,
         webSite: data.sitioWeb || "",
         telefono: data.telefono,
         fax: "",
@@ -106,6 +107,7 @@ export default function ClientManagement() {
           areaTrabajo: c.areaTrabajo as number,
           telefono: c.telefono,
           email: c.email,
+          codigo: c.codigoContacto || null,
         })),
       };
       return clientService.create(apiRequest);

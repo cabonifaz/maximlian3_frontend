@@ -4,6 +4,7 @@ export type CreateClientContactRequest = {
   areaTrabajo: number;
   telefono: string;
   email: string;
+  codigo: string | null;
 };
 
 export type CreateClientRequest = {
@@ -13,7 +14,8 @@ export type CreateClientRequest = {
   idPais: number;
   idRegistroTributario: number;
   numRegistroTributario: string;
-  correo: string;
+  email: string;
+  idEstado: number;
   webSite: string;
   telefono: string;
   fax: string;
