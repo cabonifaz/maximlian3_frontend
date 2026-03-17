@@ -102,9 +102,10 @@ export default function ClientManagement() {
         idMoneda: data.moneda as number,
         idIdiomaFacturacion: data.idiomaFacturacion as number,
         aplicaPenalidad: data.aplicaPenalidad,
-        idPlantilla: 1,
+        idPlantilla: 0,
         contactos: contacts.map((c) => ({
           nombres: c.nombre,
+          idTipoPersonaContacto: c.tipoPersona as number,
           idTipoContacto: c.tipoContacto as number,
           areaTrabajo: c.areaTrabajo as number,
           telefono: c.telefono,

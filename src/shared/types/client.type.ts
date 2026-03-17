@@ -11,6 +11,7 @@ export type CreateClientRateRequest = {
 
 export type CreateClientContactRequest = {
   nombres: string;
+  idTipoPersonaContacto: number;
   idTipoContacto: number;
   areaTrabajo: number;
   telefono: string;
