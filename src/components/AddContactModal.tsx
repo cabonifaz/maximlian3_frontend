@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { SearchableSelect } from "@maximilian/components/SearchableSelect";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { contactSchema, type ContactFormData } from "@maximilian/schemas";
@@ -20,6 +21,8 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
+    setValue,
   } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
   });
@@ -48,6 +51,10 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
 
   if (!isOpen) return null;
 
+  const watchedTipoPersona = watch("tipoPersona");
+  const watchedTipoContacto = watch("tipoContacto");
+  const watchedAreaTrabajo = watch("areaTrabajo");
+
   const handleConfirm = (data: ContactFormData) => {
     onConfirm(data);
     reset();
@@ -66,37 +73,27 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
 
         <form onSubmit={handleSubmit(handleConfirm)} className="p-8 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Tipo Persona</label>
-              <select
-                {...register("tipoPersona")}
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-              >
-                <option value="">Selecciona tipo persona</option>
-                {(tiposPersona ?? []).map((e) => (
-                  <option key={e.num1} value={e.num1 ?? ""}>
-                    {e.string1}
-                  </option>
-                ))}
-              </select>
-              {errors.tipoPersona && <p className="text-xs text-red-500">{errors.tipoPersona.message}</p>}
-            </div>
+            <SearchableSelect
+              label="Tipo Persona"
+              required
+              options={tiposPersona}
+              value={watchedTipoPersona}
+              onChange={(val) =>
+                setValue("tipoPersona", val, { shouldValidate: true })
+              }
+              error={errors.tipoPersona?.message}
+            />
 
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Tipo de Contacto</label>
-              <select
-                {...register("tipoContacto")}
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-              >
-                <option value="">Selecciona tipo de contacto</option>
-                {(tiposContacto ?? []).map((e) => (
-                  <option key={e.num1} value={e.num1 ?? ""}>
-                    {e.string1}
-                  </option>
-                ))}
-              </select>
-              {errors.tipoContacto && <p className="text-xs text-red-500">{errors.tipoContacto.message}</p>}
-            </div>
+            <SearchableSelect
+              label="Tipo de Contacto"
+              required
+              options={tiposContacto}
+              value={watchedTipoContacto}
+              onChange={(val) =>
+                setValue("tipoContacto", val, { shouldValidate: true })
+              }
+              error={errors.tipoContacto?.message}
+            />
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">Código de Contacto</label>
@@ -142,20 +139,17 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
               {errors.telefono && <p className="text-xs text-red-500">{errors.telefono.message}</p>}
             </div>
 
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-bold text-gray-700">Área de Trabajo</label>
-              <select
-                {...register("areaTrabajo")}
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-              >
-                <option value="">Selecciona área de trabajo</option>
-                {(areasTrabajo ?? []).map((e) => (
-                  <option key={e.num1} value={e.num1 ?? ""}>
-                    {e.string1}
-                  </option>
-                ))}
-              </select>
-              {errors.areaTrabajo && <p className="text-xs text-red-500">{errors.areaTrabajo.message}</p>}
+            <div className="md:col-span-2">
+              <SearchableSelect
+                label="Área de Trabajo"
+                required
+                options={areasTrabajo}
+                value={watchedAreaTrabajo}
+                onChange={(val) =>
+                  setValue("areaTrabajo", val, { shouldValidate: true })
+                }
+                error={errors.areaTrabajo?.message}
+              />
             </div>
           </div>
 

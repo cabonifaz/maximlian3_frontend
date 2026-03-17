@@ -16,6 +16,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AddClientModal } from "@maximilian/components/AddClientModal";
 import { ClientDetailModal } from "@maximilian/components/ClientDetailModal";
+import { ConfirmDeleteModal } from "@maximilian/components/ConfirmDeleteModal";
+import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { clientService } from "@maximilian/services/client.service";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import {
@@ -23,7 +25,7 @@ import {
   type ContactFormData,
   type RateFormData,
 } from "@maximilian/schemas";
-import { type CreateClientRequest } from "@maximilian/shared/types/client.type";
+import { type CreateClientRequest, type ClientListEntry } from "@maximilian/shared/types/client.type";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 
 interface ClientMutationParams {
@@ -40,6 +42,9 @@ export default function ClientManagement() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<ClientListEntry | null>(null);
+
+  const debouncedSearch = useDebounce(searchTerm);
 
   const queryClient = useQueryClient();
 
@@ -49,11 +54,11 @@ export default function ClientManagement() {
     isError: isErrorClients,
     refetch: refetchClients,
   } = useQuery({
-    queryKey: ["clients", currentPage, searchTerm],
+    queryKey: ["clients", currentPage, debouncedSearch],
     queryFn: () =>
       clientService.list({
         numPag: currentPage,
-        busqueda: searchTerm || undefined,
+        busqueda: debouncedSearch || undefined,
       }),
   });
 
@@ -355,7 +360,7 @@ export default function ClientManagement() {
                             </button>
                             <button
                               onClick={() => {
-                                deleteClientMutation.mutate(client.idCliente);
+                                setClientToDelete(client);
                                 setActiveMenuId(null);
                               }}
                               className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
@@ -435,6 +440,20 @@ export default function ClientManagement() {
         }}
         clientId={selectedClientId}
       />
+
+      <ConfirmDeleteModal
+        isOpen={clientToDelete !== null}
+        onClose={() => setClientToDelete(null)}
+        onConfirm={() => {
+          deleteClientMutation.mutate(clientToDelete!.idCliente);
+          setClientToDelete(null);
+        }}
+        title="Desactivar cliente"
+        isSubmitting={deleteClientMutation.isPending}
+      >
+        <p><span className="font-bold">Nombre:</span> {clientToDelete?.nombre ?? "-"}</p>
+        <p><span className="font-bold">Email:</span> {clientToDelete?.email ?? "-"}</p>
+      </ConfirmDeleteModal>
     </div>
   );
 }

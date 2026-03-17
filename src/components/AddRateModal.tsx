@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { rateSchema, type RateFormData } from "@maximilian/schemas";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
+import { SearchableSelect } from "@maximilian/components/SearchableSelect";
 
 interface AddRateModalProps {
   isOpen: boolean;
@@ -20,9 +21,16 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
+    setValue,
   } = useForm<RateFormData>({
     resolver: zodResolver(rateSchema),
   });
+
+  const watchedProducto = watch("producto");
+  const watchedPais = watch("pais");
+  const watchedMoneda = watch("moneda");
+  const watchedTramite = watch("tramite");
 
   useEffect(() => {
     if (isOpen) reset(defaultValues ?? ({} as RateFormData));
@@ -72,69 +80,41 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
 
         <form onSubmit={handleSubmit(handleConfirm)} className="p-8 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Producto</label>
-              <select
-                {...register("producto")}
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-              >
-                <option value="">Selecciona un producto</option>
-                {(productos ?? []).map((e) => (
-                  <option key={e.num1} value={e.num1 ?? ""}>
-                    {e.string1}
-                  </option>
-                ))}
-              </select>
-              {errors.producto && <p className="text-xs text-red-500">{errors.producto.message}</p>}
-            </div>
+            <SearchableSelect
+              label="Producto"
+              options={productos}
+              value={watchedProducto as number | undefined}
+              onChange={(val) => setValue("producto", val, { shouldValidate: true })}
+              error={errors.producto?.message}
+              placeholder="Selecciona un producto"
+            />
 
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">País</label>
-              <select
-                {...register("pais")}
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-              >
-                <option value="">Selecciona un país</option>
-                {(paises ?? []).map((e) => (
-                  <option key={e.num1} value={e.num1 ?? ""}>
-                    {e.string1}
-                  </option>
-                ))}
-              </select>
-              {errors.pais && <p className="text-xs text-red-500">{errors.pais.message}</p>}
-            </div>
+            <SearchableSelect
+              label="País"
+              options={paises}
+              value={watchedPais as number | undefined}
+              onChange={(val) => setValue("pais", val, { shouldValidate: true })}
+              error={errors.pais?.message}
+              placeholder="Selecciona un país"
+            />
 
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Moneda</label>
-              <select
-                {...register("moneda")}
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-              >
-                <option value="">Selecciona moneda</option>
-                {(monedas ?? []).map((e) => (
-                  <option key={e.num1} value={e.num1 ?? ""}>
-                    {e.string1}
-                  </option>
-                ))}
-              </select>
-              {errors.moneda && <p className="text-xs text-red-500">{errors.moneda.message}</p>}
-            </div>
+            <SearchableSelect
+              label="Moneda"
+              options={monedas}
+              value={watchedMoneda as number | undefined}
+              onChange={(val) => setValue("moneda", val, { shouldValidate: true })}
+              error={errors.moneda?.message}
+              placeholder="Selecciona moneda"
+            />
 
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Trámite</label>
-              <select
-                {...register("tramite")}
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-              >
-                <option value="">Selecciona trámite</option>
-                {(tiposTramite ?? []).map((e) => (
-                  <option key={e.num1} value={e.num1 ?? ""}>
-                    {e.string1}
-                  </option>
-                ))}
-              </select>
-              {errors.tramite && <p className="text-xs text-red-500">{errors.tramite.message}</p>}
-            </div>
+            <SearchableSelect
+              label="Trámite"
+              options={tiposTramite}
+              value={watchedTramite as number | undefined}
+              onChange={(val) => setValue("tramite", val, { shouldValidate: true })}
+              error={errors.tramite?.message}
+              placeholder="Selecciona trámite"
+            />
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">Días Min.</label>

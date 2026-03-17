@@ -5,7 +5,6 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
-  Search,
   Eraser,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -20,10 +19,8 @@ import {
 import { AddRateModal } from "./AddRateModal";
 import { AddContactModal } from "./AddContactModal";
 import { masterTableService } from "@maximilian/services/masterTable.service";
-import {
-  MasterTableId,
-  type MasterTableEntry,
-} from "@maximilian/shared/types/master-table.type";
+import { MasterTableId } from "@maximilian/shared/types/master-table.type";
+import { SearchableSelect } from "@maximilian/components/SearchableSelect";
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -67,97 +64,6 @@ interface ContactEntry {
   areaTrabajoLabel: string;
 }
 
-interface SearchableSelectProps {
-  label: string;
-  options: MasterTableEntry[] | undefined;
-  value: string | number;
-  onChange: (val: number) => void;
-  error?: string;
-  placeholder?: string;
-  required?: boolean;
-}
-
-function SearchableSelect({
-  label,
-  options,
-  value,
-  onChange,
-  error,
-  placeholder = "Seleccione...",
-  required = false,
-}: SearchableSelectProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-
-  const filteredOptions = useMemo(() => {
-    if (!options) return [];
-    return options
-      .filter((opt) =>
-        opt.string1?.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-      .sort((a, b) => (a.string1 || "").localeCompare(b.string1 || ""));
-  }, [options, searchTerm]);
-
-  const selectedOption = options?.find((opt) => opt.num1 === value);
-
-  return (
-    <div className="relative space-y-2">
-      <label className="text-sm font-bold text-gray-700">
-        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
-      <div
-        className={`w-full px-4 py-2.5 bg-brand-white border ${error ? "border-red-500" : "border-gray-200"} rounded-xl text-sm flex items-center justify-between cursor-pointer hover:border-brand-wine/30 transition-all`}
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span className={selectedOption ? "text-brand-black" : "text-gray-400"}>
-          {selectedOption ? selectedOption.string1 : placeholder}
-        </span>
-        <Search size={16} className="text-gray-400" />
-      </div>
-
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full left-0 right-0 mt-2 bg-brand-white border border-gray-100 rounded-xl shadow-2xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-            <div className="p-2 border-b border-gray-50">
-              <input
-                type="text"
-                className="w-full px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-xs outline-none focus:ring-2 focus:ring-brand-wine/10"
-                placeholder="Buscar..."
-                autoFocus
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
-            <div className="max-h-48 overflow-y-auto">
-              {filteredOptions.length > 0 ? (
-                filteredOptions.map((opt) => (
-                  <div
-                    key={opt.num1}
-                    className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${value === opt.num1 ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-600"}`}
-                    onClick={() => {
-                      onChange(opt.num1!);
-                      setIsOpen(false);
-                      setSearchTerm("");
-                    }}
-                  >
-                    {opt.string1}
-                  </div>
-                ))
-              ) : (
-                <div className="px-4 py-3 text-xs text-gray-400 italic text-center">
-                  No se encontraron resultados
-                </div>
-              )}
-            </div>
-          </div>
-        </>
-      )}
-      {error && <p className="text-xs text-red-500">{error}</p>}
-    </div>
-  );
-}
 
 export function AddClientModal({
   isOpen,
@@ -468,6 +374,9 @@ export function AddClientModal({
   const watchedAtendidoPor = infoWatch("atendidoPor");
   const watchedIdioma = infoWatch("idioma");
   const watchedIdiomaFacturacion = infoWatch("idiomaFacturacion");
+  const watchedTipoPersona = infoWatch("tipoPersona");
+  const watchedMoneda = infoWatch("moneda");
+  const watchedFormatoInforme = infoWatch("formatoInforme");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -561,27 +470,16 @@ export function AddClientModal({
                   onSubmit={handleInfoSubmit(() => setActiveTab("rates"))}
                   className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300"
                 >
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Tipo Persona<span className="text-red-500 ml-0.5">*</span>
-                    </label>
-                    <select
-                      {...infoRegister("tipoPersona", { valueAsNumber: true })}
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-                    >
-                      <option value="">Seleccione</option>
-                      {tipoPersonaData?.map((item) => (
-                        <option key={item.num1} value={item.num1 ?? ""}>
-                          {item.string1}
-                        </option>
-                      ))}
-                    </select>
-                    {infoErrors.tipoPersona && (
-                      <p className="text-xs text-red-500">
-                        {infoErrors.tipoPersona.message}
-                      </p>
-                    )}
-                  </div>
+                  <SearchableSelect
+                    label="Tipo Persona"
+                    required
+                    options={tipoPersonaData}
+                    value={watchedTipoPersona}
+                    onChange={(val) =>
+                      setInfoValue("tipoPersona", val, { shouldValidate: true })
+                    }
+                    error={infoErrors.tipoPersona?.message}
+                  />
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
@@ -664,7 +562,7 @@ export function AddClientModal({
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Sitio Web<span className="text-red-500 ml-0.5">*</span>
+                      Sitio Web <span className="text-gray-400 font-normal">(opcional)</span>
                     </label>
                     <input
                       {...infoRegister("sitioWeb")}
@@ -717,27 +615,16 @@ export function AddClientModal({
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Moneda<span className="text-red-500 ml-0.5">*</span>
-                    </label>
-                    <select
-                      {...infoRegister("moneda", { valueAsNumber: true })}
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-                    >
-                      <option value="">Seleccione</option>
-                      {rateMonedas?.map((item) => (
-                        <option key={item.num1} value={item.num1 ?? ""}>
-                          {item.string1}
-                        </option>
-                      ))}
-                    </select>
-                    {infoErrors.moneda && (
-                      <p className="text-xs text-red-500">
-                        {infoErrors.moneda.message}
-                      </p>
-                    )}
-                  </div>
+                  <SearchableSelect
+                    label="Moneda"
+                    required
+                    options={rateMonedas}
+                    value={watchedMoneda}
+                    onChange={(val) =>
+                      setInfoValue("moneda", val, { shouldValidate: true })
+                    }
+                    error={infoErrors.moneda?.message}
+                  />
 
                   <SearchableSelect
                     label="Atendido por"
@@ -772,27 +659,16 @@ export function AddClientModal({
                     error={infoErrors.idiomaFacturacion?.message}
                   />
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Formato Informe<span className="text-red-500 ml-0.5">*</span>
-                    </label>
-                    <select
-                      {...infoRegister("formatoInforme", { valueAsNumber: true })}
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-                    >
-                      <option value="">Seleccione</option>
-                      {formatoInformeData?.map((item) => (
-                        <option key={item.num1} value={item.num1 ?? ""}>
-                          {item.string1}
-                        </option>
-                      ))}
-                    </select>
-                    {infoErrors.formatoInforme && (
-                      <p className="text-xs text-red-500">
-                        {infoErrors.formatoInforme.message}
-                      </p>
-                    )}
-                  </div>
+                  <SearchableSelect
+                    label="Formato de Informe"
+                    required
+                    options={formatoInformeData}
+                    value={watchedFormatoInforme}
+                    onChange={(val) =>
+                      setInfoValue("formatoInforme", val, { shouldValidate: true })
+                    }
+                    error={infoErrors.formatoInforme?.message}
+                  />
 
                   <div className="md:col-span-2 flex items-center gap-6">
                     <div className="flex items-center gap-3">

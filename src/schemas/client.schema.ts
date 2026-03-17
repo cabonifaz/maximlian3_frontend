@@ -7,7 +7,7 @@ export const clientInfoSchema = z.object({
   direccion: z.string().min(1, "La dirección es requerida"),
   email: z.string().email("Email inválido"),
   telefono: z.string().min(1, "El teléfono es requerido"),
-  sitioWeb: z.string().url("URL inválida").min(1, "El sitio web es requerido"),
+  sitioWeb: z.string().url("URL inválida").optional().or(z.literal("")),
   fax: z.string().optional(),
   tipoRegistroTributario: z.union([z.string(), z.number()]).refine(val => val !== "", "El tipo de registro tributario es requerido"),
   numRegistroTributario: z.string().min(1, "El registro tributario es requerido"),

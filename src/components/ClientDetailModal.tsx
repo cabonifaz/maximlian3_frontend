@@ -6,7 +6,6 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
-  Search,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,14 +18,13 @@ import { AddRateModal } from "./AddRateModal";
 import { AddContactModal } from "./AddContactModal";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { clientService } from "@maximilian/services/client.service";
-import {
-  MasterTableId,
-  type MasterTableEntry,
-} from "@maximilian/shared/types/master-table.type";
+import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import type {
   TarifarioListEntry,
   ContactoListEntry,
 } from "@maximilian/shared/types/client.type";
+import { SearchableSelect } from "@maximilian/components/SearchableSelect";
+import { ConfirmDeleteModal } from "@maximilian/components/ConfirmDeleteModal";
 
 interface ClientDetailModalProps {
   isOpen: boolean;
@@ -36,95 +34,6 @@ interface ClientDetailModalProps {
 
 type Tab = "info" | "rates" | "contacts";
 
-interface SearchableSelectProps {
-  label: string;
-  options: MasterTableEntry[] | undefined;
-  value: string | number | undefined;
-  onChange: (val: number) => void;
-  error?: string;
-  placeholder?: string;
-  disabled?: boolean;
-}
-
-function SearchableSelect({
-  label,
-  options,
-  value,
-  onChange,
-  error,
-  placeholder = "Seleccione...",
-  disabled = false,
-}: SearchableSelectProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-
-  const filteredOptions = useMemo(() => {
-    if (!options) return [];
-    return options
-      .filter((opt) =>
-        opt.string1?.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-      .sort((a, b) => (a.string1 || "").localeCompare(b.string1 || ""));
-  }, [options, searchTerm]);
-
-  const selectedOption = options?.find((opt) => opt.num1 === value);
-
-  return (
-    <div className="relative space-y-2">
-      <label className="text-sm font-bold text-gray-700">{label}</label>
-      <div
-        className={`w-full px-4 py-2.5 bg-brand-white border ${error ? "border-red-500" : "border-gray-200"} rounded-xl text-sm flex items-center justify-between transition-all ${disabled ? "bg-gray-50 cursor-not-allowed opacity-70" : "cursor-pointer hover:border-brand-wine/30"}`}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-      >
-        <span className={selectedOption ? "text-brand-black" : "text-gray-400"}>
-          {selectedOption ? selectedOption.string1 : placeholder}
-        </span>
-        <Search size={16} className="text-gray-400" />
-      </div>
-
-      {!disabled && isOpen && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full left-0 right-0 mt-2 bg-brand-white border border-gray-100 rounded-xl shadow-2xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-            <div className="p-2 border-b border-gray-50">
-              <input
-                type="text"
-                className="w-full px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-xs outline-none focus:ring-2 focus:ring-brand-wine/10"
-                placeholder="Buscar..."
-                autoFocus
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
-            <div className="max-h-48 overflow-y-auto">
-              {filteredOptions.length > 0 ? (
-                filteredOptions.map((opt) => (
-                  <div
-                    key={opt.num1}
-                    className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${value === opt.num1 ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-600"}`}
-                    onClick={() => {
-                      onChange(opt.num1!);
-                      setIsOpen(false);
-                      setSearchTerm("");
-                    }}
-                  >
-                    {opt.string1}
-                  </div>
-                ))
-              ) : (
-                <div className="px-4 py-3 text-xs text-gray-400 italic text-center">
-                  No se encontraron resultados
-                </div>
-              )}
-            </div>
-          </div>
-        </>
-      )}
-      {error && <p className="text-xs text-red-500">{error}</p>}
-    </div>
-  );
-}
 
 export function ClientDetailModal({
   isOpen,
@@ -139,6 +48,8 @@ export function ClientDetailModal({
   const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<ContactoListEntry | null>(null);
+  const [rateToDelete, setRateToDelete] = useState<TarifarioListEntry | null>(null);
+  const [contactToDelete, setContactToDelete] = useState<ContactoListEntry | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -367,6 +278,9 @@ export function ClientDetailModal({
   const watchedAtendidoPor = infoWatch("atendidoPor");
   const watchedIdioma = infoWatch("idioma");
   const watchedIdiomaFacturacion = infoWatch("idiomaFacturacion");
+  const watchedTipoPersona = infoWatch("tipoPersona");
+  const watchedMoneda = infoWatch("moneda");
+  const watchedFormatoInforme = infoWatch("formatoInforme");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -465,22 +379,15 @@ export function ClientDetailModal({
                   id="client-detail-form"
                   className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300"
                 >
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Tipo Persona
-                    </label>
-                    <select
-                      {...infoRegister("tipoPersona", { valueAsNumber: true })}
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-                    >
-                      <option value="">Seleccione</option>
-                      {tipoPersonaData?.map((item) => (
-                        <option key={item.num1} value={item.num1 ?? ""}>
-                          {item.string1}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <SearchableSelect
+                    label="Tipo Persona"
+                    required
+                    options={tipoPersonaData}
+                    value={watchedTipoPersona}
+                    onChange={(val) =>
+                      setInfoValue("tipoPersona", val, { shouldValidate: true, shouldDirty: true })
+                    }
+                  />
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
@@ -581,22 +488,15 @@ export function ClientDetailModal({
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Moneda
-                    </label>
-                    <select
-                      {...infoRegister("moneda", { valueAsNumber: true })}
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-                    >
-                      <option value="">Seleccione</option>
-                      {rateMonedas?.map((item) => (
-                        <option key={item.num1} value={item.num1 ?? ""}>
-                          {item.string1}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <SearchableSelect
+                    label="Moneda"
+                    required
+                    options={rateMonedas}
+                    value={watchedMoneda}
+                    onChange={(val) =>
+                      setInfoValue("moneda", val, { shouldValidate: true, shouldDirty: true })
+                    }
+                  />
 
                   <SearchableSelect
                     label="Atendido por"
@@ -625,22 +525,15 @@ export function ClientDetailModal({
                     }
                   />
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Formato Informe
-                    </label>
-                    <select
-                      {...infoRegister("formatoInforme", { valueAsNumber: true })}
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-                    >
-                      <option value="">Seleccione</option>
-                      {formatoInformeData?.map((item) => (
-                        <option key={item.num1} value={item.num1 ?? ""}>
-                          {item.string1}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <SearchableSelect
+                    label="Formato de Informe"
+                    required
+                    options={formatoInformeData}
+                    value={watchedFormatoInforme}
+                    onChange={(val) =>
+                      setInfoValue("formatoInforme", val, { shouldValidate: true, shouldDirty: true })
+                    }
+                  />
 
                   <div className="md:col-span-2 flex items-center gap-6">
                     <div className="flex items-center gap-3">
@@ -709,12 +602,11 @@ export function ClientDetailModal({
                         className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                       >Editar</button>
                       <button
-                        disabled={selectedRateIndex === null || deleteTarifarioMutation.isPending}
+                        disabled={selectedRateIndex === null}
                         onClick={() => {
-                          const rate = tarifarioData!.lstTarifario[selectedRateIndex!];
-                          deleteTarifarioMutation.mutate({ idTarifario: rate.idTarifario, idCliente: client!.idCliente });
+                          setRateToDelete(tarifarioData!.lstTarifario[selectedRateIndex!]);
                         }}
-                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null || deleteTarifarioMutation.isPending ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
+                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                       >Eliminar</button>
                     </div>
                   </div>
@@ -794,12 +686,11 @@ export function ClientDetailModal({
                         className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                       >Editar</button>
                       <button
-                        disabled={selectedContactIndex === null || deleteContactoMutation.isPending}
+                        disabled={selectedContactIndex === null}
                         onClick={() => {
-                          const c = contactosData!.lstClienteContactos[selectedContactIndex!];
-                          deleteContactoMutation.mutate({ idClienteContacto: c.idClienteContacto, idCliente: client!.idCliente });
+                          setContactToDelete(contactosData!.lstClienteContactos[selectedContactIndex!]);
                         }}
-                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null || deleteContactoMutation.isPending ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
+                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                       >Eliminar</button>
                     </div>
                   </div>
@@ -996,6 +887,37 @@ export function ClientDetailModal({
           areaTrabajo: editingContact.idAreaTrabajo,
         } : undefined}
       />
+
+      <ConfirmDeleteModal
+        isOpen={rateToDelete !== null}
+        onClose={() => setRateToDelete(null)}
+        onConfirm={() => {
+          deleteTarifarioMutation.mutate({ idTarifario: rateToDelete!.idTarifario, idCliente: client!.idCliente });
+          setRateToDelete(null);
+        }}
+        title="Eliminar Tarifa"
+        isSubmitting={deleteTarifarioMutation.isPending}
+      >
+        <p><span className="font-bold">Producto:</span> {productoMap[rateToDelete?.idProducto ?? 0] ?? "-"}</p>
+        <p><span className="font-bold">País:</span> {paisMap[rateToDelete?.idPais ?? 0] ?? "-"}</p>
+        <p><span className="font-bold">Moneda:</span> {monedaMap[rateToDelete?.idMoneda ?? 0] ?? "-"}</p>
+        <p><span className="font-bold">Precio:</span> {rateToDelete?.precio ?? "-"}</p>
+      </ConfirmDeleteModal>
+
+      <ConfirmDeleteModal
+        isOpen={contactToDelete !== null}
+        onClose={() => setContactToDelete(null)}
+        onConfirm={() => {
+          deleteContactoMutation.mutate({ idClienteContacto: contactToDelete!.idClienteContacto, idCliente: client!.idCliente });
+          setContactToDelete(null);
+        }}
+        title="Eliminar Contacto"
+        isSubmitting={deleteContactoMutation.isPending}
+      >
+        <p><span className="font-bold">Nombre:</span> {contactToDelete?.nombres ?? "-"}</p>
+        <p><span className="font-bold">Email:</span> {contactToDelete?.email ?? "-"}</p>
+        <p><span className="font-bold">Teléfono:</span> {contactToDelete?.telefono ?? "-"}</p>
+      </ConfirmDeleteModal>
     </div>
   );
 }
