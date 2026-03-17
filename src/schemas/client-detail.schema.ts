@@ -17,6 +17,7 @@ export const clientDetailSchema = z.object({
   idioma: z.union([z.string(), z.number()]).optional(),
   idiomaFacturacion: z.union([z.string(), z.number()]).optional(),
   formatoInforme: z.array(z.number()).optional(),
+  plantillaInforme: z.number().optional(),
   imprimeLogoSafety: z.boolean().optional(),
   aplicaPenalidad: z.boolean().optional(),
   recomendacion: z.string().optional(),
@@ -31,6 +32,7 @@ export const clientDetailContactSchema = z.object({
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   telefono: z.string().optional(),
   areaTrabajo: z.union([z.string(), z.number()]).optional(),
+  enviarCorreo: z.boolean().optional(),
 });
 
 export type ClientDetailFormData = z.infer<typeof clientDetailSchema>;

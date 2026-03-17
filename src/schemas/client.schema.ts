@@ -16,6 +16,7 @@ export const clientInfoSchema = z.object({
   idioma: z.union([z.string(), z.number()]).refine(val => val !== "", "El idioma preferido es requerido"),
   idiomaFacturacion: z.union([z.string(), z.number()]).refine(val => val !== "", "El idioma de facturación es requerido"),
   formatoInforme: z.array(z.number()).min(1, "El formato de informe es requerido"),
+  plantillaInforme: z.number({ error: 'La plantilla de informe es requerida' }),
   imprimeLogoSafety: z.boolean(),
   aplicaPenalidad: z.boolean(),
   recomendacion: z.string().optional(),
@@ -40,6 +41,7 @@ export const contactSchema = z.object({
   email: z.string().email("Email inválido"),
   telefono: z.string().min(1, "El teléfono es requerido"),
   areaTrabajo: z.union([z.string(), z.number()]).refine(val => val !== "", "El área de trabajo es requerida"),
+  enviarCorreo: z.boolean(),
 });
 
 export type ClientInfoFormData = z.infer<typeof clientInfoSchema>;

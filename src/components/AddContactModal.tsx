@@ -28,7 +28,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
   });
 
   useEffect(() => {
-    if (isOpen) reset(defaultValues ?? ({} as ContactFormData));
+    if (isOpen) reset(defaultValues ?? { enviarCorreo: false } as ContactFormData);
   }, [isOpen]);
 
   const { data: tiposPersona } = useQuery({
@@ -150,6 +150,18 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
                 }
                 error={errors.areaTrabajo?.message}
               />
+            </div>
+
+            <div className="col-span-2 flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="enviarCorreo"
+                {...register("enviarCorreo")}
+                className="w-4 h-4 accent-brand-wine cursor-pointer"
+              />
+              <label htmlFor="enviarCorreo" className="text-sm text-gray-700 cursor-pointer">
+                Enviar informe al correo
+              </label>
             </div>
           </div>
 

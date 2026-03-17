@@ -63,6 +63,7 @@ interface ContactEntry {
   telefono: string;
   areaTrabajoId: number;
   areaTrabajoLabel: string;
+  enviarCorreo: boolean;
 }
 
 
@@ -181,6 +182,13 @@ export function AddClientModal({
     enabled: isOpen,
   });
 
+  const { data: plantillaInformeData } = useQuery({
+    queryKey: ["masterTable", MasterTableId.PLANTILLA_INFORME],
+    queryFn: () => masterTableService.list(MasterTableId.PLANTILLA_INFORME),
+    enabled: isOpen,
+  });
+  const plantillaOptions = plantillaInformeData ?? [];
+
   const paisMap = useMemo(
     () => Object.fromEntries((paisData ?? []).map((e) => [e.num1, e.string1])),
     [paisData],
@@ -296,6 +304,7 @@ export function AddClientModal({
         email: c.email,
         telefono: c.telefono,
         areaTrabajo: c.areaTrabajoId,
+        enviarCorreo: c.enviarCorreo,
       })),
       addedRates.map((r) => ({
         producto: r.productoId,
@@ -328,6 +337,7 @@ export function AddClientModal({
         telefono: data.telefono,
         areaTrabajoId,
         areaTrabajoLabel: areaTrabajoMap[areaTrabajoId] ?? String(areaTrabajoId),
+        enviarCorreo: data.enviarCorreo,
       },
     ]);
     setSelectedContactIndex(null);
@@ -350,6 +360,7 @@ export function AddClientModal({
               nombre: data.nombre,
               email: data.email,
               telefono: data.telefono,
+              enviarCorreo: data.enviarCorreo,
               areaTrabajoId,
               areaTrabajoLabel: areaTrabajoMap[areaTrabajoId] ?? String(areaTrabajoId),
             }
@@ -378,6 +389,7 @@ export function AddClientModal({
   const watchedTipoPersona = infoWatch("tipoPersona");
   const watchedMoneda = infoWatch("moneda");
   const watchedFormatoInforme = infoWatch("formatoInforme");
+  const watchedPlantillaInforme = infoWatch("plantillaInforme");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -669,6 +681,17 @@ export function AddClientModal({
                       setInfoValue("formatoInforme", val, { shouldValidate: true })
                     }
                     error={infoErrors.formatoInforme?.message}
+                  />
+
+                  <SearchableSelect
+                    label="Plantilla de informe"
+                    required
+                    options={plantillaOptions}
+                    value={watchedPlantillaInforme ?? null}
+                    onChange={(val) =>
+                      setInfoValue("plantillaInforme", val, { shouldValidate: true })
+                    }
+                    error={infoErrors.plantillaInforme?.message}
                   />
 
                   <div className="md:col-span-2 flex items-center gap-6">
@@ -1010,6 +1033,7 @@ export function AddClientModal({
                 email: addedContacts[selectedContactIndex].email,
                 telefono: addedContacts[selectedContactIndex].telefono,
                 areaTrabajo: addedContacts[selectedContactIndex].areaTrabajoId,
+                enviarCorreo: addedContacts[selectedContactIndex].enviarCorreo,
               }
             : undefined
         }

@@ -96,6 +96,7 @@ export function ClientDetailModal({
         idioma: client.idIdioma,
         idiomaFacturacion: client.idIdiomaFacturacion,
         formatoInforme: client.lstIdFormatoDocumento ?? [],
+        plantillaInforme: client.idPlantilla,
         imprimeLogoSafety: client.imprimeLogoSafety,
         aplicaPenalidad: client.aplicaPenalidad,
         recomendacion: client.recomendacion ?? "",
@@ -220,6 +221,13 @@ export function ClientDetailModal({
     enabled: isOpen,
   });
 
+  const { data: plantillaInformeData } = useQuery({
+    queryKey: ["masterTable", MasterTableId.PLANTILLA_INFORME],
+    queryFn: () => masterTableService.list(MasterTableId.PLANTILLA_INFORME),
+    enabled: isOpen,
+  });
+  const plantillaOptions = plantillaInformeData ?? [];
+
   const { data: productoData } = useQuery({
     queryKey: ["masterTable", MasterTableId.PRODUCTO],
     queryFn: () => masterTableService.list(MasterTableId.PRODUCTO),
@@ -282,6 +290,7 @@ export function ClientDetailModal({
   const watchedTipoPersona = infoWatch("tipoPersona");
   const watchedMoneda = infoWatch("moneda");
   const watchedFormatoInforme = infoWatch("formatoInforme");
+  const watchedPlantillaInforme = infoWatch("plantillaInforme");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -536,6 +545,15 @@ export function ClientDetailModal({
                     }
                   />
 
+                  <SearchableSelect
+                    label="Plantilla de informe"
+                    options={plantillaOptions}
+                    value={watchedPlantillaInforme}
+                    onChange={(val) =>
+                      setInfoValue("plantillaInforme", val, { shouldValidate: true, shouldDirty: true })
+                    }
+                  />
+
                   <div className="md:col-span-2 flex items-center gap-6">
                     <div className="flex items-center gap-3">
                       <input
@@ -785,7 +803,7 @@ export function ClientDetailModal({
                 idMoneda: formData.moneda as number,
                 idIdiomaFacturacion: formData.idiomaFacturacion as number,
                 aplicaPenalidad: formData.aplicaPenalidad ?? false,
-                idPlantilla: client.idPlantilla,
+                idPlantilla: formData.plantillaInforme ?? client.idPlantilla,
               });
             })}
             disabled={!formState.isDirty || updateInfoMutation.isPending}
@@ -864,6 +882,7 @@ export function ClientDetailModal({
               areaTrabajo: Number(data.areaTrabajo),
               telefono: data.telefono || null,
               email: data.email || null,
+              enviarCorreo: data.enviarCorreo ?? false,
             });
           } else {
             createContactoMutation.mutate({
@@ -875,6 +894,7 @@ export function ClientDetailModal({
               idAreaTrabajo: Number(data.areaTrabajo),
               telefono: data.telefono || null,
               email: data.email || null,
+              enviarCorreo: data.enviarCorreo ?? false,
             });
           }
         }}
@@ -886,6 +906,7 @@ export function ClientDetailModal({
           email: editingContact.email,
           telefono: editingContact.telefono,
           areaTrabajo: editingContact.idAreaTrabajo,
+          enviarCorreo: editingContact.enviarCorreo,
         } : undefined}
       />
 

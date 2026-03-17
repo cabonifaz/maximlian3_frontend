@@ -17,6 +17,7 @@ export type CreateClientContactRequest = {
   telefono: string;
   email: string;
   codigo: string | null;
+  enviarCorreo: boolean;
 };
 
 export type CreateClientRequest = {
@@ -134,6 +135,7 @@ export type ContactoListEntry = {
   idAreaTrabajo: number;
   telefono: string;
   email: string;
+  enviarCorreo: boolean;
 };
 
 export type ContactoListResponse = {
@@ -166,6 +168,7 @@ export type CreateContactoRequest = {
   idAreaTrabajo: number;
   telefono: string | null;
   email: string | null;
+  enviarCorreo: boolean;
 };
 
 export type UpdateContactoRequest = {
@@ -178,6 +181,7 @@ export type UpdateContactoRequest = {
   areaTrabajo: number;
   telefono: string | null;
   email: string | null;
+  enviarCorreo: boolean;
 };
 
 export type DeleteContactoRequest = { idClienteContacto: number; idCliente: number };

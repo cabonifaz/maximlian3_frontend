@@ -13,7 +13,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { AddClientModal } from "@maximilian/components/AddClientModal";
 import { ClientDetailModal } from "@maximilian/components/ClientDetailModal";
 import { ConfirmDeleteModal } from "@maximilian/components/ConfirmDeleteModal";
@@ -107,7 +106,7 @@ export default function ClientManagement() {
         idMoneda: data.moneda as number,
         idIdiomaFacturacion: data.idiomaFacturacion as number,
         aplicaPenalidad: data.aplicaPenalidad,
-        idPlantilla: 0,
+        idPlantilla: data.plantillaInforme,
         contactos: contacts.map((c) => ({
           nombres: c.nombre,
           idTipoPersonaContacto: c.tipoPersona as number,
@@ -116,6 +115,7 @@ export default function ClientManagement() {
           telefono: c.telefono,
           email: c.email,
           codigo: c.codigoContacto || null,
+          enviarCorreo: c.enviarCorreo,
         })),
         tarifario: rates.map((r) => ({
           idProducto: r.producto as number,
@@ -132,7 +132,6 @@ export default function ClientManagement() {
     },
     onSuccess: (_, { reset }) => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast.success("Cliente creado exitosamente");
       setIsModalOpen(false);
       reset();
     },
