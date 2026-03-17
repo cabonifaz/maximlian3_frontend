@@ -35,6 +35,8 @@ export const translateAuthError = (error: unknown): string => {
       return "El código ha expirado. Por favor, solicita uno nuevo.";
     case "CodeMismatchException":
       return "El código ingresado es incorrecto.";
+    case "AuthUserPoolException":
+      return "El servicio de autenticación no está disponible.";
     default:
       console.warn("Unhandled auth error code:", errorCode, error.message);
       return "Error de autenticación: " + (error.message || "Credenciales inválidas.");

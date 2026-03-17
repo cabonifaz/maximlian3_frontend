@@ -72,7 +72,7 @@ export default function UserManagement() {
         nombres: userData.firstName,
         apellidoPaterno: userData.paternalLastName,
         apellidoMaterno: userData.maternalLastName || null,
-        username: userData.username,
+        usernameCreacion: userData.usernameCreacion,
         email: userData.email,
         roles: userData.roles as number[],
         idiomas: (userData.languages || []) as number[],
