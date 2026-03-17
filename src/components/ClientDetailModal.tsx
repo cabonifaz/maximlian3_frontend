@@ -24,6 +24,7 @@ import type {
   ContactoListEntry,
 } from "@maximilian/shared/types/client.type";
 import { SearchableSelect } from "@maximilian/components/SearchableSelect";
+import { MultiSearchableSelect } from "@maximilian/components/MultiSearchableSelect";
 import { ConfirmDeleteModal } from "@maximilian/components/ConfirmDeleteModal";
 
 interface ClientDetailModalProps {
@@ -94,7 +95,7 @@ export function ClientDetailModal({
         atendidoPor: client.idEmpresaAtencion,
         idioma: client.idIdioma,
         idiomaFacturacion: client.idIdiomaFacturacion,
-        formatoInforme: client.idFormatoDocumento,
+        formatoInforme: client.lstIdFormatoDocumento ?? [],
         imprimeLogoSafety: client.imprimeLogoSafety,
         aplicaPenalidad: client.aplicaPenalidad,
         recomendacion: client.recomendacion ?? "",
@@ -525,11 +526,11 @@ export function ClientDetailModal({
                     }
                   />
 
-                  <SearchableSelect
+                  <MultiSearchableSelect
                     label="Formato de Informe"
                     required
                     options={formatoInformeData}
-                    value={watchedFormatoInforme}
+                    value={watchedFormatoInforme ?? []}
                     onChange={(val) =>
                       setInfoValue("formatoInforme", val, { shouldValidate: true, shouldDirty: true })
                     }
@@ -780,7 +781,7 @@ export function ClientDetailModal({
                 idIdioma: formData.idioma as number,
                 logoClienteUrl: client.logoClienteUrl ?? "",
                 imprimeLogoSafety: formData.imprimeLogoSafety ?? false,
-                idFormatoDocumento: formData.formatoInforme as number,
+                lstIdFormatoDocumento: formData.formatoInforme as number[],
                 idMoneda: formData.moneda as number,
                 idIdiomaFacturacion: formData.idiomaFacturacion as number,
                 aplicaPenalidad: formData.aplicaPenalidad ?? false,

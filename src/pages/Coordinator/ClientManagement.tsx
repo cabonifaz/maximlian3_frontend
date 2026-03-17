@@ -103,7 +103,7 @@ export default function ClientManagement() {
         idIdioma: data.idioma as number,
         logoClienteUrl: "",
         imprimeLogoSafety: data.imprimeLogoSafety,
-        idFormatoDocumento: data.formatoInforme as number,
+        lstIdFormatoDocumento: data.formatoInforme as number[],
         idMoneda: data.moneda as number,
         idIdiomaFacturacion: data.idiomaFacturacion as number,
         aplicaPenalidad: data.aplicaPenalidad,

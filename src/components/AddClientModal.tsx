@@ -21,6 +21,7 @@ import { AddContactModal } from "./AddContactModal";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import { SearchableSelect } from "@maximilian/components/SearchableSelect";
+import { MultiSearchableSelect } from "@maximilian/components/MultiSearchableSelect";
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -659,11 +660,11 @@ export function AddClientModal({
                     error={infoErrors.idiomaFacturacion?.message}
                   />
 
-                  <SearchableSelect
+                  <MultiSearchableSelect
                     label="Formato de Informe"
                     required
                     options={formatoInformeData}
-                    value={watchedFormatoInforme}
+                    value={watchedFormatoInforme ?? []}
                     onChange={(val) =>
                       setInfoValue("formatoInforme", val, { shouldValidate: true })
                     }

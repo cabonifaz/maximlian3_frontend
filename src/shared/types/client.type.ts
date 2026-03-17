@@ -37,7 +37,7 @@ export type CreateClientRequest = {
   idIdioma: number;
   logoClienteUrl: string;
   imprimeLogoSafety: boolean;
-  idFormatoDocumento: number;
+  lstIdFormatoDocumento: number[];
   idMoneda: number;
   idIdiomaFacturacion: number;
   aplicaPenalidad: boolean;
@@ -70,7 +70,7 @@ export type ClientDetail = {
   idIdioma: number;
   logoClienteUrl: string | null;
   imprimeLogoSafety: boolean;
-  idFormatoDocumento: number;
+  lstIdFormatoDocumento: number[];
   idMoneda: number;
   idIdiomaFacturacion: number;
   aplicaPenalidad: boolean;

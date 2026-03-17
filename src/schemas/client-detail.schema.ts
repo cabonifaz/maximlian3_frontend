@@ -16,7 +16,7 @@ export const clientDetailSchema = z.object({
   atendidoPor: z.union([z.string(), z.number()]).optional(),
   idioma: z.union([z.string(), z.number()]).optional(),
   idiomaFacturacion: z.union([z.string(), z.number()]).optional(),
-  formatoInforme: z.union([z.string(), z.number()]).optional(),
+  formatoInforme: z.array(z.number()).optional(),
   imprimeLogoSafety: z.boolean().optional(),
   aplicaPenalidad: z.boolean().optional(),
   recomendacion: z.string().optional(),

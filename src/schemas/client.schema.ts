@@ -15,7 +15,7 @@ export const clientInfoSchema = z.object({
   atendidoPor: z.union([z.string(), z.number()]).refine(val => val !== "", "El atendido por es requerido"),
   idioma: z.union([z.string(), z.number()]).refine(val => val !== "", "El idioma preferido es requerido"),
   idiomaFacturacion: z.union([z.string(), z.number()]).refine(val => val !== "", "El idioma de facturación es requerido"),
-  formatoInforme: z.union([z.string(), z.number()]).refine(val => val !== "", "El formato de informe es requerido"),
+  formatoInforme: z.array(z.number()).min(1, "El formato de informe es requerido"),
   imprimeLogoSafety: z.boolean(),
   aplicaPenalidad: z.boolean(),
   recomendacion: z.string().optional(),
