@@ -1,7 +1,10 @@
 import { X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { rateSchema, type RateFormData } from "@maximilian/schemas";
+import { masterTableService } from "@maximilian/services/masterTable.service";
+import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 
 interface AddRateModalProps {
   isOpen: boolean;
@@ -17,6 +20,30 @@ export function AddRateModal({ isOpen, onClose, onConfirm }: AddRateModalProps) 
     reset,
   } = useForm<RateFormData>({
     resolver: zodResolver(rateSchema),
+  });
+
+  const { data: productos } = useQuery({
+    queryKey: ["masterTable", MasterTableId.PRODUCTO],
+    queryFn: () => masterTableService.list(MasterTableId.PRODUCTO),
+    enabled: isOpen,
+  });
+
+  const { data: paises } = useQuery({
+    queryKey: ["masterTable", MasterTableId.PAIS],
+    queryFn: () => masterTableService.list(MasterTableId.PAIS),
+    enabled: isOpen,
+  });
+
+  const { data: monedas } = useQuery({
+    queryKey: ["masterTable", MasterTableId.MONEDA],
+    queryFn: () => masterTableService.list(MasterTableId.MONEDA),
+    enabled: isOpen,
+  });
+
+  const { data: tiposTramite } = useQuery({
+    queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
+    queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
+    enabled: isOpen,
   });
 
   if (!isOpen) return null;
@@ -41,60 +68,73 @@ export function AddRateModal({ isOpen, onClose, onConfirm }: AddRateModalProps) 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">Producto</label>
-              <select 
+              <select
                 {...register("producto")}
                 className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
               >
                 <option value="">Selecciona un producto</option>
-                <option value="Informe confidencial">Informe confidencial</option>
+                {(productos ?? []).map((e) => (
+                  <option key={e.num1} value={e.num1 ?? ""}>
+                    {e.string1}
+                  </option>
+                ))}
               </select>
               {errors.producto && <p className="text-xs text-red-500">{errors.producto.message}</p>}
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">País</label>
-              <select 
+              <select
                 {...register("pais")}
                 className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
               >
                 <option value="">Selecciona un país</option>
-                <option value="Perú">Perú</option>
-                <option value="Bolivia">Bolivia</option>
+                {(paises ?? []).map((e) => (
+                  <option key={e.num1} value={e.num1 ?? ""}>
+                    {e.string1}
+                  </option>
+                ))}
               </select>
               {errors.pais && <p className="text-xs text-red-500">{errors.pais.message}</p>}
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">Moneda</label>
-              <select 
+              <select
                 {...register("moneda")}
                 className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
               >
                 <option value="">Selecciona moneda</option>
-                <option value="Dólares">Dólares</option>
-                <option value="Euros">Euros</option>
+                {(monedas ?? []).map((e) => (
+                  <option key={e.num1} value={e.num1 ?? ""}>
+                    {e.string1}
+                  </option>
+                ))}
               </select>
               {errors.moneda && <p className="text-xs text-red-500">{errors.moneda.message}</p>}
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">Trámite</label>
-              <select 
+              <select
                 {...register("tramite")}
                 className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
               >
                 <option value="">Selecciona trámite</option>
-                <option value="XP">XP</option>
-                <option value="Normal">Normal</option>
+                {(tiposTramite ?? []).map((e) => (
+                  <option key={e.num1} value={e.num1 ?? ""}>
+                    {e.string1}
+                  </option>
+                ))}
               </select>
               {errors.tramite && <p className="text-xs text-red-500">{errors.tramite.message}</p>}
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">Días Min.</label>
-              <input 
+              <input
                 {...register("diasMin", { valueAsNumber: true })}
-                type="number" 
+                type="number"
                 className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
               />
               {errors.diasMin && <p className="text-xs text-red-500">{errors.diasMin.message}</p>}
@@ -102,9 +142,9 @@ export function AddRateModal({ isOpen, onClose, onConfirm }: AddRateModalProps) 
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">Días Max.</label>
-              <input 
+              <input
                 {...register("diasMax", { valueAsNumber: true })}
-                type="number" 
+                type="number"
                 className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
               />
               {errors.diasMax && <p className="text-xs text-red-500">{errors.diasMax.message}</p>}
@@ -112,9 +152,9 @@ export function AddRateModal({ isOpen, onClose, onConfirm }: AddRateModalProps) 
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">Precio</label>
-              <input 
+              <input
                 {...register("precio", { valueAsNumber: true })}
-                type="number" 
+                type="number"
                 step="0.01"
                 className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
               />
@@ -123,27 +163,14 @@ export function AddRateModal({ isOpen, onClose, onConfirm }: AddRateModalProps) 
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">Penalidad</label>
-              <input 
+              <input
                 {...register("penalidad", { valueAsNumber: true })}
-                type="number" 
+                type="number"
                 step="0.01"
                 className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
               />
               {errors.penalidad && <p className="text-xs text-red-500">{errors.penalidad.message}</p>}
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700">Tarifario</label>
-            <select 
-              {...register("tarifario")}
-              className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all appearance-none"
-            >
-              <option value="">Selecciona tarifario</option>
-              <option value="P">P</option>
-              <option value="S">S</option>
-            </select>
-            {errors.tarifario && <p className="text-xs text-red-500">{errors.tarifario.message}</p>}
           </div>
 
           <div className="flex justify-end pt-4">

@@ -14,15 +14,14 @@ export const clientInfoSchema = z.object({
 });
 
 export const rateSchema = z.object({
-  producto: z.string().min(1, "El producto es requerido"),
-  pais: z.string().min(1, "El país es requerido"),
-  moneda: z.string().min(1, "La moneda es requerida"),
-  tramite: z.string().min(1, "El trámite es requerido"),
+  producto: z.union([z.string(), z.number()]).refine(val => val !== "", "El producto es requerido"),
+  pais: z.union([z.string(), z.number()]).refine(val => val !== "", "El país es requerido"),
+  moneda: z.union([z.string(), z.number()]).refine(val => val !== "", "La moneda es requerida"),
+  tramite: z.union([z.string(), z.number()]).refine(val => val !== "", "El trámite es requerido"),
   diasMin: z.number().min(0, "Días mínimos debe ser mayor o igual a 0"),
   diasMax: z.number().min(0, "Días máximos debe ser mayor o igual a 0"),
   precio: z.number().min(0, "El precio debe ser mayor o igual a 0"),
   penalidad: z.number().min(0, "La penalidad debe ser mayor o igual a 0"),
-  tarifario: z.string().min(1, "El tarifario es requerido"),
 });
 
 export const contactSchema = z.object({
