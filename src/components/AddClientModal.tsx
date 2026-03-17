@@ -2,8 +2,6 @@ import { useState, useMemo } from "react";
 import {
   X,
   Plus,
-  MoreHorizontal,
-  ArrowLeft,
   Loader2,
   AlertCircle,
   RefreshCw,
@@ -16,11 +14,11 @@ import { useQuery } from "@tanstack/react-query";
 import {
   clientInfoSchema,
   type ClientInfoFormData,
-  contactSchema,
   type ContactFormData,
   type RateFormData,
 } from "@maximilian/schemas";
 import { AddRateModal } from "./AddRateModal";
+import { AddContactModal } from "./AddContactModal";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import {
   MasterTableId,
@@ -39,7 +37,6 @@ interface AddClientModalProps {
 }
 
 type Tab = "info" | "rates" | "contacts";
-type ContactView = "list" | "create" | "edit" | "detail";
 
 interface RateEntry {
   productoId: number;
@@ -54,6 +51,19 @@ interface RateEntry {
   diasMax: number;
   precio: number;
   penalidad: number;
+}
+
+interface ContactEntry {
+  tipoPersonaId: number;
+  tipoPersonaLabel: string;
+  tipoContactoId: number;
+  tipoContactoLabel: string;
+  codigoContacto: string;
+  nombre: string;
+  email: string;
+  telefono: string;
+  areaTrabajoId: number;
+  areaTrabajoLabel: string;
 }
 
 interface SearchableSelectProps {
@@ -153,10 +163,12 @@ export function AddClientModal({
   const [activeTab, setActiveTab] = useState<Tab>("info");
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
   const [isEditRateModalOpen, setIsEditRateModalOpen] = useState(false);
-  const [contactView, setContactView] = useState<ContactView>("list");
-  const [addedContacts, setAddedContacts] = useState<ContactFormData[]>([]);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isEditContactModalOpen, setIsEditContactModalOpen] = useState(false);
+  const [addedContacts, setAddedContacts] = useState<ContactEntry[]>([]);
   const [addedRates, setAddedRates] = useState<RateEntry[]>([]);
   const [selectedRateIndex, setSelectedRateIndex] = useState<number | null>(null);
+  const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null);
 
   const {
     register: infoRegister,
@@ -169,17 +181,6 @@ export function AddClientModal({
     trigger: triggerInfo,
   } = useForm<ClientInfoFormData>({
     resolver: zodResolver(clientInfoSchema),
-  });
-
-  const {
-    register: contactRegister,
-    handleSubmit: handleContactSubmit,
-    formState: { errors: contactErrors },
-    reset: contactReset,
-    setValue: setContactValue,
-    watch: contactWatch,
-  } = useForm<ContactFormData>({
-    resolver: zodResolver(contactSchema),
   });
 
   // Queries for MasterTable parameters
@@ -242,26 +243,16 @@ export function AddClientModal({
     queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
   });
 
-  const {
-    data: tipoContactoData,
-    isLoading: isLoadingTipoContacto,
-    isError: isErrorTipoContacto,
-    refetch: refetchTipoContacto,
-  } = useQuery({
+  const { data: tipoContactoData } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_CONTACTO],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_CONTACTO),
-    enabled: isOpen && activeTab === "contacts",
+    enabled: isOpen,
   });
 
-  const {
-    data: areaTrabajoData,
-    isLoading: isLoadingAreaTrabajo,
-    isError: isErrorAreaTrabajo,
-    refetch: refetchAreaTrabajo,
-  } = useQuery({
+  const { data: areaTrabajoData } = useQuery({
     queryKey: ["masterTable", MasterTableId.AREA_TRABAJO],
     queryFn: () => masterTableService.list(MasterTableId.AREA_TRABAJO),
-    enabled: isOpen && activeTab === "contacts",
+    enabled: isOpen,
   });
 
   const paisMap = useMemo(
@@ -280,14 +271,26 @@ export function AddClientModal({
     () => Object.fromEntries((rateTiposTramite ?? []).map((e) => [e.num1, e.string1])),
     [rateTiposTramite],
   );
+  const tipoPersonaMap = useMemo(
+    () => Object.fromEntries((tipoPersonaData ?? []).map((e) => [e.num1, e.string1])),
+    [tipoPersonaData],
+  );
+  const tipoContactoMap = useMemo(
+    () => Object.fromEntries((tipoContactoData ?? []).map((e) => [e.num1, e.string1])),
+    [tipoContactoData],
+  );
+  const areaTrabajoMap = useMemo(
+    () => Object.fromEntries((areaTrabajoData ?? []).map((e) => [e.num1, e.string1])),
+    [areaTrabajoData],
+  );
 
   if (!isOpen) return null;
 
   const handleGlobalReset = () => {
     infoReset();
-    contactReset();
     setAddedContacts([]);
     setAddedRates([]);
+    setSelectedContactIndex(null);
     setActiveTab("info");
   };
 
@@ -351,23 +354,67 @@ export function AddClientModal({
       setActiveTab("info");
       return;
     }
-    onConfirm(getInfoValues(), addedContacts, handleGlobalReset);
+    onConfirm(
+      getInfoValues(),
+      addedContacts.map((c) => ({
+        tipoPersona: c.tipoPersonaId,
+        tipoContacto: c.tipoContactoId,
+        codigoContacto: c.codigoContacto,
+        nombre: c.nombre,
+        email: c.email,
+        telefono: c.telefono,
+        areaTrabajo: c.areaTrabajoId,
+      })),
+      handleGlobalReset,
+    );
   };
 
   const handleAddContact = (data: ContactFormData) => {
-    setAddedContacts((prev) => [...prev, data]);
-    setContactView("list");
-    contactReset();
+    const tipoPersonaId = Number(data.tipoPersona);
+    const tipoContactoId = Number(data.tipoContacto);
+    const areaTrabajoId = Number(data.areaTrabajo);
+    setAddedContacts((prev) => [
+      ...prev,
+      {
+        tipoPersonaId,
+        tipoPersonaLabel: tipoPersonaMap[tipoPersonaId] ?? String(tipoPersonaId),
+        tipoContactoId,
+        tipoContactoLabel: tipoContactoMap[tipoContactoId] ?? String(tipoContactoId),
+        codigoContacto: data.codigoContacto,
+        nombre: data.nombre,
+        email: data.email,
+        telefono: data.telefono,
+        areaTrabajoId,
+        areaTrabajoLabel: areaTrabajoMap[areaTrabajoId] ?? String(areaTrabajoId),
+      },
+    ]);
+    setSelectedContactIndex(null);
   };
 
-  const openDetailContact = (contact: ContactFormData) => {
-    Object.keys(contact).forEach((key) => {
-      setContactValue(
-        key as keyof ContactFormData,
-        contact[key as keyof ContactFormData],
-      );
-    });
-    setContactView("detail");
+  const handleEditContact = (data: ContactFormData) => {
+    if (selectedContactIndex === null) return;
+    const tipoPersonaId = Number(data.tipoPersona);
+    const tipoContactoId = Number(data.tipoContacto);
+    const areaTrabajoId = Number(data.areaTrabajo);
+    setAddedContacts((prev) =>
+      prev.map((c, i) =>
+        i === selectedContactIndex
+          ? {
+              tipoPersonaId,
+              tipoPersonaLabel: tipoPersonaMap[tipoPersonaId] ?? String(tipoPersonaId),
+              tipoContactoId,
+              tipoContactoLabel: tipoContactoMap[tipoContactoId] ?? String(tipoContactoId),
+              codigoContacto: data.codigoContacto,
+              nombre: data.nombre,
+              email: data.email,
+              telefono: data.telefono,
+              areaTrabajoId,
+              areaTrabajoLabel: areaTrabajoMap[areaTrabajoId] ?? String(areaTrabajoId),
+            }
+          : c,
+      ),
+    );
+    setSelectedContactIndex(null);
   };
 
   const isLoadingInfo =
@@ -383,9 +430,6 @@ export function AddClientModal({
 
   const watchedPais = infoWatch("pais");
   const watchedTipoRegTributario = infoWatch("tipoRegistroTributario");
-  const watchedContactTipoPersona = contactWatch("tipoPersona");
-  const watchedContactAreaTrabajo = contactWatch("areaTrabajo");
-  const watchedContactTipoContacto = contactWatch("tipoContacto");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -439,9 +483,6 @@ export function AddClientModal({
               }`}
             >
               <span>Contactos</span>
-              {Object.keys(contactErrors).length > 0 && (
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-              )}
             </button>
           </div>
         </div>
@@ -770,271 +811,99 @@ export function AddClientModal({
           )}
 
           {activeTab === "contacts" && (
-            <div className="animate-in fade-in duration-300 h-full">
-              {contactView === "list" && (
-                <div className="space-y-6">
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => {
-                        contactReset();
-                        setContactView("create");
-                      }}
-                      className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all"
-                    >
-                      <Plus size={14} />
-                      <span>Agregar Contacto</span>
-                    </button>
-                  </div>
-                  {addedContacts.length === 0 ? (
-                    <div className="py-20 text-center text-gray-400 text-sm italic">
-                      No hay contactos agregados.
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-gray-50">
-                      {addedContacts.map((contact, i) => (
-                        <div
-                          key={i}
-                          className="py-4 flex items-center justify-between group"
+            <div className="animate-in fade-in duration-300 space-y-6">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 max-w-xs">
+                  <input
+                    type="text"
+                    placeholder="Buscar..."
+                    className="w-full px-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm outline-none"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setIsContactModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all"
+                  >
+                    <Plus size={14} />
+                    <span>Nuevo</span>
+                  </button>
+                  <button
+                    disabled={selectedContactIndex === null}
+                    onClick={() => setIsEditContactModalOpen(true)}
+                    className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    disabled={selectedContactIndex === null}
+                    onClick={() => {
+                      setAddedContacts((prev) =>
+                        prev.filter((_, idx) => idx !== selectedContactIndex),
+                      );
+                      setSelectedContactIndex(null);
+                    }}
+                    className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+
+              <div className="border border-gray-100 rounded-2xl overflow-hidden">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead className="bg-gray-50 text-gray-400 uppercase">
+                    <tr>
+                      <th className="px-3 py-3 w-8">
+                        <button
+                          disabled={selectedContactIndex === null}
+                          onClick={() => setSelectedContactIndex(null)}
+                          title="Limpiar selección"
+                          className={`transition-colors ${selectedContactIndex === null ? "text-gray-300 cursor-not-allowed" : "text-gray-400 hover:text-gray-600 cursor-pointer"}`}
                         >
-                          <div className="grid grid-cols-3 flex-1 gap-4">
-                            <div>
-                              <p className="text-sm font-bold text-brand-black">
-                                {contact.nombre}
-                              </p>
-                              <p className="text-xs text-gray-400">
-                                {contact.email}
-                              </p>
-                            </div>
-                            <div className="flex items-center">
-                              <span className="text-sm font-medium text-gray-600">
-                                {tipoContactoData?.find(
-                                  (t) => t.num1 === (contact.tipoContacto as number),
-                                )?.string1 || contact.tipoContacto}
-                              </span>
-                            </div>
-                            <div className="flex items-center">
-                              <span className="text-sm font-medium text-gray-600">
-                                {contact.telefono}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="relative group/menu">
-                            <button className="p-2 text-gray-400 hover:text-brand-black rounded-lg transition-all cursor-pointer">
-                              <MoreHorizontal size={18} />
-                            </button>
-                            <div className="absolute right-0 top-full mt-1 w-40 bg-brand-white border border-gray-100 rounded-xl shadow-xl z-10 hidden group-hover/menu:block py-1">
-                              <button
-                                onClick={() => openDetailContact(contact)}
-                                className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-gray-600 cursor-pointer"
-                              >
-                                Ver Detalles
-                              </button>
-                              <button
-                                onClick={() =>
-                                  setAddedContacts((prev) =>
-                                    prev.filter((_, idx) => idx !== i),
-                                  )
-                                }
-                                className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-red-500 cursor-pointer"
-                              >
-                                Eliminar Contacto
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {(contactView === "create" ||
-                contactView === "edit" ||
-                contactView === "detail") && (
-                <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => setContactView("list")}
-                      className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer hover:scale-110 active:scale-90"
-                    >
-                      <ArrowLeft size={20} className="text-brand-black" />
-                    </button>
-                    <h3 className="font-bold text-lg text-brand-black">
-                      {contactView === "create" && "Creación de Contacto"}
-                      {contactView === "edit" && "Modificación de Contacto"}
-                      {contactView === "detail" && "Detalles de Contacto"}
-                    </h3>
-                  </div>
-
-                  {isLoadingTipoContacto || isLoadingAreaTrabajo ? (
-                    <div className="flex flex-col items-center justify-center gap-3 py-20">
-                      <Loader2
-                        size={40}
-                        className="text-brand-wine animate-spin"
-                      />
-                      <p className="text-sm font-medium text-gray-500">
-                        Cargando parámetros...
-                      </p>
-                    </div>
-                  ) : isErrorTipoContacto || isErrorAreaTrabajo ? (
-                    <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-                      <AlertCircle size={40} className="text-red-500" />
-                      <p className="text-sm font-bold text-brand-black">
-                        Error al cargar parámetros
-                      </p>
-                      <button
-                        onClick={() => {
-                          refetchTipoContacto();
-                          refetchAreaTrabajo();
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-xs font-bold hover:bg-brand-wine/90 transition-all cursor-pointer"
-                      >
-                        <RefreshCw size={14} />
-                        <span>REINTENTAR</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <form
-                      id="contact-form"
-                      onSubmit={handleContactSubmit(handleAddContact)}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                    >
-                      <SearchableSelect
-                        label="Tipo Persona"
-                        options={tipoPersonaData}
-                        value={watchedContactTipoPersona}
-                        onChange={(val) =>
-                          setContactValue("tipoPersona", val, {
-                            shouldValidate: true,
-                          })
-                        }
-                        error={contactErrors.tipoPersona?.message}
-                      />
-
-                      <SearchableSelect
-                        label="Tipo de Contacto"
-                        options={tipoContactoData}
-                        value={watchedContactTipoContacto}
-                        onChange={(val) =>
-                          setContactValue("tipoContacto", val, {
-                            shouldValidate: true,
-                          })
-                        }
-                        error={contactErrors.tipoContacto?.message}
-                      />
-
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">
-                          Código de Contacto
-                        </label>
-                        <input
-                          {...contactRegister("codigoContacto")}
-                          disabled={contactView === "detail"}
-                          type="text"
-                          placeholder="Código"
-                          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
-                        />
-                        {contactErrors.codigoContacto && (
-                          <p className="text-xs text-red-500">
-                            {contactErrors.codigoContacto.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">
-                          Nombre
-                        </label>
-                        <input
-                          {...contactRegister("nombre")}
-                          disabled={contactView === "detail"}
-                          type="text"
-                          placeholder="Nombre"
-                          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
-                        />
-                        {contactErrors.nombre && (
-                          <p className="text-xs text-red-500">
-                            {contactErrors.nombre.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">
-                          Email
-                        </label>
-                        <input
-                          {...contactRegister("email")}
-                          disabled={contactView === "detail"}
-                          type="email"
-                          placeholder="Email"
-                          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
-                        />
-                        {contactErrors.email && (
-                          <p className="text-xs text-red-500">
-                            {contactErrors.email.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">
-                          Teléfono
-                        </label>
-                        <input
-                          {...contactRegister("telefono")}
-                          disabled={contactView === "detail"}
-                          type="text"
-                          placeholder="Teléfono"
-                          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50"
-                        />
-                        {contactErrors.telefono && (
-                          <p className="text-xs text-red-500">
-                            {contactErrors.telefono.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <SearchableSelect
-                        label="Área de Trabajo"
-                        options={areaTrabajoData}
-                        value={watchedContactAreaTrabajo}
-                        onChange={(val) =>
-                          setContactValue("areaTrabajo", val, {
-                            shouldValidate: true,
-                          })
-                        }
-                        error={contactErrors.areaTrabajo?.message}
-                      />
-                    </form>
-                  )}
-
-                  <div className="flex justify-end gap-3 pt-4">
-                    {contactView === "detail" ? (
-                      <button
-                        onClick={() => setContactView("list")}
-                        className="px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 transition-all shadow-lg cursor-pointer hover:scale-[1.05] active:scale-95"
-                      >
-                        Salir
-                      </button>
+                          <Eraser size={13} />
+                        </button>
+                      </th>
+                      <th className="px-4 py-3 font-bold">Nombre</th>
+                      <th className="px-4 py-3 font-bold">Email</th>
+                      <th className="px-4 py-3 font-bold">Teléfono</th>
+                      <th className="px-4 py-3 font-bold">Tipo Contacto</th>
+                      <th className="px-4 py-3 font-bold">Área Trabajo</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {addedContacts.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="px-4 py-10 text-center text-gray-400 text-sm italic"
+                        >
+                          No hay contactos agregados.
+                        </td>
+                      </tr>
                     ) : (
-                      <button
-                        type="submit"
-                        form="contact-form"
-                        disabled={isLoadingTipoContacto || isLoadingAreaTrabajo}
-                        className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10 disabled:opacity-50"
-                      >
-                        <div className="w-2 h-2 rounded-full bg-brand-white" />
-                        <span>
-                          {contactView === "create"
-                            ? "Agregar Contacto"
-                            : "Guardar Cambios"}
-                        </span>
-                      </button>
+                      addedContacts.map((contact, i) => (
+                        <tr key={i} className="hover:bg-gray-50/50">
+                          <td className="px-3 py-3">
+                            <input
+                              type="radio"
+                              name="contact-selection"
+                              checked={selectedContactIndex === i}
+                              onChange={() => setSelectedContactIndex(i)}
+                              className="accent-brand-wine cursor-pointer"
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">{contact.nombre}</td>
+                          <td className="px-4 py-3 text-gray-600">{contact.email}</td>
+                          <td className="px-4 py-3 text-gray-600">{contact.telefono}</td>
+                          <td className="px-4 py-3 text-gray-600">{contact.tipoContactoLabel}</td>
+                          <td className="px-4 py-3 text-gray-600">{contact.areaTrabajoLabel}</td>
+                        </tr>
+                      ))
                     )}
-                  </div>
-                </div>
-              )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -1068,7 +937,7 @@ export function AddClientModal({
           </div>
         )}
 
-        {activeTab === "contacts" && contactView === "list" && (
+        {activeTab === "contacts" && (
           <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 shrink-0">
             <button
               onClick={() => setActiveTab("rates")}
@@ -1117,6 +986,29 @@ export function AddClientModal({
                 diasMax: addedRates[selectedRateIndex].diasMax,
                 precio: addedRates[selectedRateIndex].precio,
                 penalidad: addedRates[selectedRateIndex].penalidad,
+              }
+            : undefined
+        }
+      />
+      <AddContactModal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
+        onConfirm={handleAddContact}
+      />
+      <AddContactModal
+        isOpen={isEditContactModalOpen}
+        onClose={() => setIsEditContactModalOpen(false)}
+        onConfirm={handleEditContact}
+        defaultValues={
+          selectedContactIndex !== null
+            ? {
+                tipoPersona: addedContacts[selectedContactIndex].tipoPersonaId,
+                tipoContacto: addedContacts[selectedContactIndex].tipoContactoId,
+                codigoContacto: addedContacts[selectedContactIndex].codigoContacto,
+                nombre: addedContacts[selectedContactIndex].nombre,
+                email: addedContacts[selectedContactIndex].email,
+                telefono: addedContacts[selectedContactIndex].telefono,
+                areaTrabajo: addedContacts[selectedContactIndex].areaTrabajoId,
               }
             : undefined
         }
