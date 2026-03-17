@@ -8,6 +8,7 @@ import {
   AlertCircle,
   RefreshCw,
   Search,
+  Eraser,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +18,7 @@ import {
   type ClientInfoFormData,
   contactSchema,
   type ContactFormData,
+  type RateFormData,
 } from "@maximilian/schemas";
 import { AddRateModal } from "./AddRateModal";
 import { masterTableService } from "@maximilian/services/masterTable.service";
@@ -38,6 +40,21 @@ interface AddClientModalProps {
 
 type Tab = "info" | "rates" | "contacts";
 type ContactView = "list" | "create" | "edit" | "detail";
+
+interface RateEntry {
+  productoId: number;
+  productoLabel: string;
+  paisId: number;
+  paisLabel: string;
+  monedaId: number;
+  monedaLabel: string;
+  tramiteId: number;
+  tramiteLabel: string;
+  diasMin: number;
+  diasMax: number;
+  precio: number;
+  penalidad: number;
+}
 
 interface SearchableSelectProps {
   label: string;
@@ -137,6 +154,8 @@ export function AddClientModal({
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
   const [contactView, setContactView] = useState<ContactView>("list");
   const [addedContacts, setAddedContacts] = useState<ContactFormData[]>([]);
+  const [addedRates, setAddedRates] = useState<RateEntry[]>([]);
+  const [selectedRateIndex, setSelectedRateIndex] = useState<number | null>(null);
 
   const {
     register: infoRegister,
@@ -207,6 +226,21 @@ export function AddClientModal({
     enabled: isOpen,
   });
 
+  const { data: rateProductos } = useQuery({
+    queryKey: ["masterTable", MasterTableId.PRODUCTO],
+    queryFn: () => masterTableService.list(MasterTableId.PRODUCTO),
+  });
+
+  const { data: rateMonedas } = useQuery({
+    queryKey: ["masterTable", MasterTableId.MONEDA],
+    queryFn: () => masterTableService.list(MasterTableId.MONEDA),
+  });
+
+  const { data: rateTiposTramite } = useQuery({
+    queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
+    queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
+  });
+
   const {
     data: tipoContactoData,
     isLoading: isLoadingTipoContacto,
@@ -229,13 +263,56 @@ export function AddClientModal({
     enabled: isOpen && activeTab === "contacts",
   });
 
+  const paisMap = useMemo(
+    () => Object.fromEntries((paisData ?? []).map((e) => [e.num1, e.string1])),
+    [paisData],
+  );
+  const productoMap = useMemo(
+    () => Object.fromEntries((rateProductos ?? []).map((e) => [e.num1, e.string1])),
+    [rateProductos],
+  );
+  const monedaMap = useMemo(
+    () => Object.fromEntries((rateMonedas ?? []).map((e) => [e.num1, e.string1])),
+    [rateMonedas],
+  );
+  const tramiteMap = useMemo(
+    () => Object.fromEntries((rateTiposTramite ?? []).map((e) => [e.num1, e.string1])),
+    [rateTiposTramite],
+  );
+
   if (!isOpen) return null;
 
   const handleGlobalReset = () => {
     infoReset();
     contactReset();
     setAddedContacts([]);
+    setAddedRates([]);
     setActiveTab("info");
+  };
+
+  const handleAddRate = (data: RateFormData) => {
+    const productoId = Number(data.producto);
+    const paisId = Number(data.pais);
+    const monedaId = Number(data.moneda);
+    const tramiteId = Number(data.tramite);
+    setAddedRates((prev) => [
+      ...prev,
+      {
+        productoId,
+        productoLabel: productoMap[productoId] ?? String(productoId),
+        paisId,
+        paisLabel: paisMap[paisId] ?? String(paisId),
+        monedaId,
+        monedaLabel: monedaMap[monedaId] ?? String(monedaId),
+        tramiteId,
+        tramiteLabel: tramiteMap[tramiteId] ?? String(tramiteId),
+        diasMin: data.diasMin,
+        diasMax: data.diasMax,
+        precio: data.precio,
+        penalidad: data.penalidad,
+      },
+    ]);
+    setSelectedRateIndex(null);
   };
 
   const handleConfirm = async () => {
@@ -565,10 +642,22 @@ export function AddClientModal({
                     <Plus size={14} />
                     <span>Nuevo</span>
                   </button>
-                  <button className="px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all">
+                  <button
+                    disabled={selectedRateIndex === null}
+                    className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
+                  >
                     Editar
                   </button>
-                  <button className="px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all">
+                  <button
+                    disabled={selectedRateIndex === null}
+                    onClick={() => {
+                      setAddedRates((prev) =>
+                        prev.filter((_, idx) => idx !== selectedRateIndex),
+                      );
+                      setSelectedRateIndex(null);
+                    }}
+                    className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
+                  >
                     Eliminar
                   </button>
                 </div>
@@ -578,6 +667,16 @@ export function AddClientModal({
                 <table className="w-full text-left border-collapse text-xs">
                   <thead className="bg-gray-50 text-gray-400 uppercase">
                     <tr>
+                      <th className="px-3 py-3 w-8">
+                        <button
+                          disabled={selectedRateIndex === null}
+                          onClick={() => setSelectedRateIndex(null)}
+                          title="Limpiar selección"
+                          className={`transition-colors ${selectedRateIndex === null ? "text-gray-300 cursor-not-allowed" : "text-gray-400 hover:text-gray-600 cursor-pointer"}`}
+                        >
+                          <Eraser size={13} />
+                        </button>
+                      </th>
                       <th className="px-4 py-3 font-bold">Producto</th>
                       <th className="px-4 py-3 font-bold">País</th>
                       <th className="px-4 py-3 font-bold">Moneda</th>
@@ -588,35 +687,51 @@ export function AddClientModal({
                       <th className="px-4 py-3 font-bold text-center">
                         Precio
                       </th>
-                      <th className="px-4 py-3 font-bold text-center">
-                        Tarifario
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <tr key={i} className="hover:bg-gray-50/50">
-                        <td className="px-4 py-3 text-gray-600">
-                          Informe confidencial
-                        </td>
-                        <td className="px-4 py-3 text-gray-600">
-                          República Dominicana
-                        </td>
-                        <td className="px-4 py-3 text-gray-600">Euro</td>
-                        <td className="px-4 py-3 text-gray-600 text-center">
-                          XP
-                        </td>
-                        <td className="px-4 py-3 text-gray-600 text-center">
-                          3
-                        </td>
-                        <td className="px-4 py-3 text-brand-black font-bold text-center">
-                          45.0
-                        </td>
-                        <td className="px-4 py-3 text-gray-600 text-center">
-                          P
+                    {addedRates.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="px-4 py-10 text-center text-gray-400 text-sm italic"
+                        >
+                          No hay tarifas agregadas.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      addedRates.map((rate, i) => (
+                        <tr key={i} className="hover:bg-gray-50/50">
+                          <td className="px-3 py-3">
+                            <input
+                              type="radio"
+                              name="rate-selection"
+                              checked={selectedRateIndex === i}
+                              onChange={() => setSelectedRateIndex(i)}
+                              className="accent-brand-wine cursor-pointer"
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">
+                            {rate.productoLabel}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">
+                            {rate.paisLabel}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">
+                            {rate.monedaLabel}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600 text-center">
+                            {rate.tramiteLabel}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600 text-center">
+                            {rate.diasMin}
+                          </td>
+                          <td className="px-4 py-3 text-brand-black font-bold text-center">
+                            {rate.precio}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -954,7 +1069,7 @@ export function AddClientModal({
       <AddRateModal
         isOpen={isRateModalOpen}
         onClose={() => setIsRateModalOpen(false)}
-        onConfirm={(data) => console.log("Rate added:", data)}
+        onConfirm={handleAddRate}
       />
     </div>
   );
