@@ -5,8 +5,9 @@ Maximilian Web V3 is a modern web application built for a "Safety Report" system
 ## 🛠️ Technology Stack
 
 - **Frontend Framework:** [React 19](https://react.dev/)
+- **Node.js:** v24
 - **Build Tool:** [Vite 7](https://vitejs.dev/)
-- **Language:** TypeScript
+- **Language:** TypeScript (~5.9.3)
 - **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
 - **State/Data Management:** [@tanstack/react-query](https://tanstack.com/query/latest)
 - **Routing:** [React Router v7](https://reactrouter.com/)
