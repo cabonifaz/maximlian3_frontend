@@ -2,7 +2,7 @@ export type CreateUserRequest = {
   nombres: string;
   apellidoPaterno: string;
   apellidoMaterno: string | null;
-  username: string;
+  usernameCreacion: string;
   email: string;
   roles: number[];
   idiomas: number[];
