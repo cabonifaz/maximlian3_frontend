@@ -83,6 +83,10 @@ export function ClientDetailModal({
 
   // Populate form when client data is loaded
   useEffect(() => {
+    if (isOpen) setActiveTab("info");
+  }, [isOpen]);
+
+  useEffect(() => {
     if (client) {
       infoReset({
         id: client.idCliente,
