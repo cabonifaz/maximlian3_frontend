@@ -155,7 +155,7 @@ export default function UserManagement() {
         firstName: details.nombres || "",
         paternalLastName: details.apellidoPaterno || "",
         maternalLastName: details.apellidoMaterno || "",
-        username: user.username || "",
+        usernameCreacion: user.username || "",
         email: details.email || "",
         roles: details.roles || [],
         languages: details.idiomas || [],
@@ -176,7 +176,7 @@ export default function UserManagement() {
       firstName: user.nombres,
       paternalLastName: user.apellidoPaterno,
       maternalLastName: user.apellidoMaterno ?? undefined,
-      username: user.username,
+      usernameCreacion: user.username,
       email: user.email,
       roles: user.roles ? user.roles.split(", ") : [],
     });

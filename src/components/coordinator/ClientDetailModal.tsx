@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   Plus,
@@ -22,6 +22,7 @@ import { clientService } from "@maximilian/services/client.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import type {
   TarifarioListEntry,
+  TarifarioDetail,
   ContactoListEntry,
   ContactoDetail,
 } from "@maximilian/shared/types/client.type";
@@ -45,7 +46,7 @@ export function ClientDetailModal({
 }: ClientDetailModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("info");
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
-  const [editingRate, setEditingRate] = useState<TarifarioListEntry | null>(null);
+  const [editingRate, setEditingRate] = useState<TarifarioDetail | null>(null);
   const [selectedRateIndex, setSelectedRateIndex] = useState<number | null>(null);
   const [contactosPag, setContactosPag] = useState(1);
   const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null);

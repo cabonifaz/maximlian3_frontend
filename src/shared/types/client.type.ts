@@ -189,6 +189,19 @@ export type UpdateContactoRequest = {
 
 export type DeleteContactoRequest = { idClienteContacto: number; idCliente: number };
 
+export type TarifarioDetail = {
+  idTarifario: number;
+  idCliente: number;
+  idProducto: number;
+  idTipoTramite: number;
+  idPais: number;
+  idMoneda: number;
+  diasMax: number;
+  diasMin: number;
+  precio: number;
+  penalidad: number;
+};
+
 export type GetTarifarioRequest = { idTarifario: number; idCliente: number };
 export type GetContactoRequest = { idClienteContacto: number; idCliente: number };
 

@@ -10,7 +10,7 @@ import type {
   DeleteClientRequest,
   UpdateClientRequest,
   TarifarioListResponse,
-  TarifarioListEntry,
+  TarifarioDetail,
   ContactoListResponse,
   ContactoDetail,
   CreateTarifarioRequest,
@@ -193,8 +193,8 @@ export const clientService = {
     return res.result[0];
   },
 
-  getTarifarioById: async (data: GetTarifarioRequest): Promise<TarifarioListEntry> => {
-    const { data: res } = await maximilianService.get<ApiResponse<TarifarioListEntry[]>>(
+  getTarifarioById: async (data: GetTarifarioRequest): Promise<TarifarioDetail> => {
+    const { data: res } = await maximilianService.get<ApiResponse<TarifarioDetail[]>>(
       "/api/Tarifario/obtener", { params: data }
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
