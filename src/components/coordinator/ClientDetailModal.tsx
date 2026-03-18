@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  X,
   Plus,
   Loader2,
   AlertCircle,
@@ -8,6 +7,7 @@ import {
   MailCheck,
   MailX,
 } from "lucide-react";
+import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -263,96 +263,51 @@ export function ClientDetailModal({
   const watchedFormatoInforme = infoWatch("formatoInforme");
   const watchedPlantillaInforme = infoWatch("plantillaInforme");
 
+  const loadingState = (
+    <div className="h-full flex flex-col items-center justify-center gap-3 py-20">
+      <Loader2 size={40} className="text-brand-wine animate-spin" />
+      <p className="text-sm font-medium text-gray-500">Cargando información...</p>
+    </div>
+  );
+
+  const errorState = (
+    <div className="h-full flex flex-col items-center justify-center gap-4 py-20 text-center">
+      <AlertCircle size={40} className="text-red-500" />
+      <p className="text-sm font-bold text-brand-black">Error al cargar el cliente</p>
+      <button
+        onClick={() => refetchClient()}
+        className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-xs font-bold hover:bg-brand-wine/90 transition-all cursor-pointer"
+      >
+        <RefreshCw size={14} />
+        <span>REINTENTAR</span>
+      </button>
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-brand-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col h-[85vh]">
-        {/* Header */}
-        <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
-          <div>
-            <h2 className="text-xl font-bold text-brand-black">
-              Detalle del Cliente
-            </h2>
-            {client && (
-              <div className="mt-1">
-                {client.idEstado === 1 ? (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600">
-                    Activo
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500">
-                    Inactivo
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-          <CustomButton variant="ghost" size="icon" onClick={onClose}>
-            <X size={20} className="text-gray-400" />
-          </CustomButton>
-        </div>
-
-        {/* Tabs */}
-        <div className="px-8 pt-6 shrink-0">
-          <div className="bg-gray-50 p-1 rounded-2xl flex gap-1">
-            <button
-              onClick={() => setActiveTab("info")}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
-                activeTab === "info"
-                  ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              Información
-            </button>
-            <button
-              onClick={() => setActiveTab("rates")}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
-                activeTab === "rates"
-                  ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              Tarifas
-            </button>
-            <button
-              onClick={() => setActiveTab("contacts")}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
-                activeTab === "contacts"
-                  ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              Contactos
-            </button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-8 flex-1 overflow-y-auto min-h-0">
-          {isLoadingClient ? (
-            <div className="h-full flex flex-col items-center justify-center gap-3 py-20">
-              <Loader2 size={40} className="text-brand-wine animate-spin" />
-              <p className="text-sm font-medium text-gray-500">
-                Cargando información...
-              </p>
-            </div>
-          ) : isErrorClient ? (
-            <div className="h-full flex flex-col items-center justify-center gap-4 py-20 text-center">
-              <AlertCircle size={40} className="text-red-500" />
-              <p className="text-sm font-bold text-brand-black">
-                Error al cargar el cliente
-              </p>
-              <button
-                onClick={() => refetchClient()}
-                className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-xs font-bold hover:bg-brand-wine/90 transition-all cursor-pointer"
-              >
-                <RefreshCw size={14} />
-                <span>REINTENTAR</span>
-              </button>
-            </div>
+    <>
+      <CustomTabbedModal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Detalle del Cliente"
+        subtitle={client && (
+          client.idEstado === 1 ? (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600">
+              Activo
+            </span>
           ) : (
-            <>
-              {activeTab === "info" && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500">
+              Inactivo
+            </span>
+          )
+        )}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as Tab)}
+        tabs={[
+          {
+            id: "info",
+            label: "Información",
+            content: isLoadingClient ? loadingState : isErrorClient ? errorState : (
                 <form
                   id="client-detail-form"
                   className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300"
@@ -579,9 +534,12 @@ export function ClientDetailModal({
                     />
                   </div>
                 </form>
-              )}
-
-              {activeTab === "rates" && (
+            ),
+          },
+          {
+            id: "rates",
+            label: "Tarifas",
+            content: isLoadingClient ? loadingState : isErrorClient ? errorState : (
                 <div className="space-y-6 animate-in fade-in duration-300">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 max-w-xs">
@@ -677,9 +635,12 @@ export function ClientDetailModal({
                     </div>
                   )}
                 </div>
-              )}
-
-              {activeTab === "contacts" && (
+            ),
+          },
+          {
+            id: "contacts",
+            label: "Contactos",
+            content: isLoadingClient ? loadingState : isErrorClient ? errorState : (
                 <div className="animate-in fade-in duration-300 space-y-6">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 max-w-xs" />
@@ -771,21 +732,16 @@ export function ClientDetailModal({
                     </div>
                   )}
                 </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 shrink-0">
-          <CustomButton
-            variant="secondary"
-            onClick={onClose}
-          >
-            Cancelar
-          </CustomButton>
-          <CustomButton
-            onClick={infoHandleSubmit((formData) => {
+            ),
+          },
+        ]}
+        footer={
+          <div className="flex justify-end gap-3">
+            <CustomButton variant="secondary" onClick={onClose}>
+              Cancelar
+            </CustomButton>
+            <CustomButton
+              onClick={infoHandleSubmit((formData) => {
               if (!client) return;
               updateInfoMutation.mutate({
                 idCliente: client.idCliente,
@@ -820,9 +776,10 @@ export function ClientDetailModal({
           >
             <div className="w-2 h-2 rounded-full bg-brand-white" />
             <span>Guardar Cambios</span>
-          </CustomButton>
-        </div>
-      </div>
+            </CustomButton>
+          </div>
+        }
+      />
 
       <AddRateModal
         key={editingRate ? `edit-rate-${editingRate.idTarifario}` : "new-rate"}
@@ -942,6 +899,6 @@ export function ClientDetailModal({
         <p><span className="font-bold">Email:</span> {contactToDelete?.email ?? "-"}</p>
         <p><span className="font-bold">Teléfono:</span> {contactToDelete?.telefono ?? "-"}</p>
       </ConfirmDeleteModal>
-    </div>
+    </>
   );
 }

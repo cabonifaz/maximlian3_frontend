@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import {
-  X,
   Plus,
   Loader2,
   AlertCircle,
@@ -8,6 +7,7 @@ import {
   MailCheck,
   MailX,
 } from "lucide-react";
+import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
@@ -394,60 +394,21 @@ export function AddClientModal({
   const watchedPlantillaInforme = infoWatch("plantillaInforme");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-brand-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col h-[85vh]">
-        {/* Header */}
-        <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
-          <h2 className="text-xl font-bold text-brand-black">
-            Agrega un Cliente
-          </h2>
-          <CustomButton variant="ghost" size="icon" onClick={handleClose} disabled={isSubmitting}>
-            <X size={20} className="text-gray-400" />
-          </CustomButton>
-        </div>
-
-        {/* Tabs */}
-        <div className="px-8 pt-6 shrink-0">
-          <div className="bg-gray-50 p-1 rounded-2xl flex gap-1">
-            <button
-              onClick={() => setActiveTab("info")}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
-                activeTab === "info"
-                  ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              <span>Información</span>
-              {Object.keys(infoErrors).length > 0 && (
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("rates")}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
-                activeTab === "rates"
-                  ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              Tarifas
-            </button>
-            <button
-              onClick={() => setActiveTab("contacts")}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
-                activeTab === "contacts"
-                  ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              <span>Contactos</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-8 flex-1 overflow-y-auto min-h-0">
-          {activeTab === "info" && (
+    <>
+      <CustomTabbedModal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title="Agrega un Cliente"
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as Tab)}
+        tabs={[
+          {
+            id: "info",
+            label: "Información",
+            indicator: Object.keys(infoErrors).length > 0 ? (
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+            ) : undefined,
+            content: (
             <>
               {isLoadingInfo ? (
                 <div className="h-full flex flex-col items-center justify-center gap-3 py-20">
@@ -735,9 +696,12 @@ export function AddClientModal({
                 </form>
               )}
             </>
-          )}
-
-          {activeTab === "rates" && (
+            ),
+          },
+          {
+            id: "rates",
+            label: "Tarifas",
+            content: (
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1 max-w-xs">
@@ -843,9 +807,12 @@ export function AddClientModal({
                 </table>
               </div>
             </div>
-          )}
-
-          {activeTab === "contacts" && (
+            ),
+          },
+          {
+            id: "contacts",
+            label: "Contactos",
+            content: (
             <div className="animate-in fade-in duration-300 space-y-6">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1 max-w-xs">
@@ -935,43 +902,44 @@ export function AddClientModal({
                 </table>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-8 py-6 border-t border-gray-100 flex justify-between gap-3 bg-gray-50/50 shrink-0">
-          <div>
-            {activeTab !== "info" && (
+            ),
+          },
+        ]}
+        footer={
+          <div className="flex justify-between gap-3">
+            <div>
+              {activeTab !== "info" && (
+                <CustomButton
+                  variant="secondary"
+                  onClick={() => setActiveTab(activeTab === "rates" ? "info" : "rates")}
+                >
+                  Anterior
+                </CustomButton>
+              )}
+            </div>
+            <div className="flex gap-3">
+              {activeTab !== "contacts" && (
+                <CustomButton
+                  variant="secondary"
+                  onClick={() => setActiveTab(activeTab === "info" ? "rates" : "contacts")}
+                >
+                  Siguiente
+                </CustomButton>
+              )}
               <CustomButton
-                variant="secondary"
-                onClick={() => setActiveTab(activeTab === "rates" ? "info" : "rates")}
+                onClick={handleConfirm}
+                disabled={!isInfoValid || isLoadingInfo}
+                loading={isSubmitting}
+                loadingText="Creando..."
+                className="min-w-35"
               >
-                Anterior
+                <div className="w-2 h-2 rounded-full bg-brand-white" />
+                <span>Confirmar</span>
               </CustomButton>
-            )}
+            </div>
           </div>
-          <div className="flex gap-3">
-            {activeTab !== "contacts" && (
-              <CustomButton
-                variant="secondary"
-                onClick={() => setActiveTab(activeTab === "info" ? "rates" : "contacts")}
-              >
-                Siguiente
-              </CustomButton>
-            )}
-            <CustomButton
-              onClick={handleConfirm}
-              disabled={!isInfoValid || isLoadingInfo}
-              loading={isSubmitting}
-              loadingText="Creando..."
-              className="min-w-35"
-            >
-              <div className="w-2 h-2 rounded-full bg-brand-white" />
-              <span>Confirmar</span>
-            </CustomButton>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       <AddRateModal
         isOpen={isRateModalOpen}
@@ -1021,6 +989,6 @@ export function AddClientModal({
             : undefined
         }
       />
-    </div>
+    </>
   );
 }
