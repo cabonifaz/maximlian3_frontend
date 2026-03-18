@@ -13,9 +13,9 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CreateUserModal } from "@maximilian/components/CreateUserModal";
-import { EditUserModal } from "@maximilian/components/EditUserModal";
-import { DeleteUserModal } from "@maximilian/components/DeleteUserModal";
+import { CreateUserModal } from "@maximilian/components/admin/CreateUserModal";
+import { EditUserModal } from "@maximilian/components/admin/EditUserModal";
+import { DeleteUserModal } from "@maximilian/components/admin/DeleteUserModal";
 import { type UserFormData } from "@maximilian/schemas";
 import { userService } from "@maximilian/services/user.service";
 import type {
@@ -24,7 +24,7 @@ import type {
   UpdateUserRequest,
   UserListEntry,
 } from "@maximilian/shared/types/user.type";
-import LoadingScreen from "@maximilian/components/LoadingScreen";
+import LoadingScreen from "@maximilian/components/common/LoadingScreen";
 
 interface CreateUserMutationParams {
   userData: UserFormData;

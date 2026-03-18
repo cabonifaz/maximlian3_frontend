@@ -14,9 +14,9 @@ import {
   X,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AddClientModal } from "@maximilian/components/AddClientModal";
-import { ClientDetailModal } from "@maximilian/components/ClientDetailModal";
-import { ConfirmDeleteModal } from "@maximilian/components/ConfirmDeleteModal";
+import { AddClientModal } from "@maximilian/components/coordinator/AddClientModal";
+import { ClientDetailModal } from "@maximilian/components/coordinator/ClientDetailModal";
+import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { clientService } from "@maximilian/services/client.service";
 import { masterTableService } from "@maximilian/services/masterTable.service";

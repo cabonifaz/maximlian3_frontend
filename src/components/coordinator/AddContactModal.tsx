@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { SearchableSelect } from "@maximilian/components/SearchableSelect";
+import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { contactSchema, type ContactFormData } from "@maximilian/schemas";

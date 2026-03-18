@@ -21,8 +21,8 @@ import { AddRateModal } from "./AddRateModal";
 import { AddContactModal } from "./AddContactModal";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
-import { SearchableSelect } from "@maximilian/components/SearchableSelect";
-import { MultiSearchableSelect } from "@maximilian/components/MultiSearchableSelect";
+import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
+import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
 
 interface AddClientModalProps {
   isOpen: boolean;

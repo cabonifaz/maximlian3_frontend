@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { rateSchema, type RateFormData } from "@maximilian/schemas";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
-import { SearchableSelect } from "@maximilian/components/SearchableSelect";
+import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 
 interface AddRateModalProps {
   isOpen: boolean;

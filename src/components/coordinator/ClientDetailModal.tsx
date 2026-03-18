@@ -25,9 +25,9 @@ import type {
   ContactoListEntry,
   ContactoDetail,
 } from "@maximilian/shared/types/client.type";
-import { SearchableSelect } from "@maximilian/components/SearchableSelect";
-import { MultiSearchableSelect } from "@maximilian/components/MultiSearchableSelect";
-import { ConfirmDeleteModal } from "@maximilian/components/ConfirmDeleteModal";
+import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
+import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
+import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
 
 interface ClientDetailModalProps {
   isOpen: boolean;

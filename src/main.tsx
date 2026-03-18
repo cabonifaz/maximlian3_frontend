@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Toaster } from "sonner";
 import { router } from "./router";
-import LoadingScreen from "./components/LoadingScreen";
+import LoadingScreen from "./components/common/LoadingScreen";
 import "./config/aws-config";
 import "./index.css";
 

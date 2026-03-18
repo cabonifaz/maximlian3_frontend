@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronDown, LogOut, Check } from "lucide-react";
 import { useNavigate } from "react-router";
 import { authService } from "@maximilian/services/auth.service";
-import LoadingScreen from "@maximilian/components/LoadingScreen";
+import LoadingScreen from "@maximilian/components/common/LoadingScreen";
 import type { UserSession } from "@maximilian/shared/types/auth.type";
 
 interface HeaderProps {

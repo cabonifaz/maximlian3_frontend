@@ -4,7 +4,7 @@ export const coordinatorRoutes: RouteObject[] = [
   {
     path: "coordinator",
     lazy: () =>
-      import("@maximilian/components/CoordinatorLayout").then((m) => ({
+      import("@maximilian/components/coordinator/CoordinatorLayout").then((m) => ({
         Component: m.default,
       })),
     children: [
