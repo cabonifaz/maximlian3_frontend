@@ -618,7 +618,7 @@ export function AddClientModal({
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Registro Tributario<span className="text-red-500 ml-0.5">*</span>
+                      Registro Tributario{watchedTipoRegTributario && <span className="text-red-500 ml-0.5">*</span>}
                     </label>
                     <input
                       {...infoRegister("numRegistroTributario")}
@@ -627,6 +627,9 @@ export function AddClientModal({
                       disabled={!watchedTipoRegTributario}
                       className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                     />
+                    {infoErrors.numRegistroTributario && (
+                      <p className="text-xs text-red-500">{infoErrors.numRegistroTributario.message}</p>
+                    )}
                   </div>
 
                   <SearchableSelect
@@ -786,10 +789,13 @@ export function AddClientModal({
                       <th className="px-4 py-3 font-bold">Moneda</th>
                       <th className="px-4 py-3 font-bold">Trámite</th>
                       <th className="px-4 py-3 font-bold text-center">
-                        Días Min.
+                        Días Min. - Máx.
                       </th>
                       <th className="px-4 py-3 font-bold text-center">
                         Precio
+                      </th>
+                      <th className="px-4 py-3 font-bold text-center">
+                        Penalidad
                       </th>
                     </tr>
                   </thead>
@@ -797,7 +803,7 @@ export function AddClientModal({
                     {addedRates.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={7}
+                          colSpan={8}
                           className="px-4 py-10 text-center text-gray-400 text-sm italic"
                         >
                           No hay tarifas agregadas.
@@ -827,10 +833,13 @@ export function AddClientModal({
                             {rate.tramiteLabel}
                           </td>
                           <td className="px-4 py-3 text-gray-600 text-center">
-                            {rate.diasMin}
+                            {rate.diasMin} - {rate.diasMax}
                           </td>
                           <td className="px-4 py-3 text-brand-black font-bold text-center">
                             {rate.precio}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600 text-center">
+                            {rate.penalidad}
                           </td>
                         </tr>
                       ))

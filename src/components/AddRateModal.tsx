@@ -23,6 +23,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
     reset,
     watch,
     setValue,
+    trigger,
   } = useForm<RateFormData>({
     resolver: zodResolver(rateSchema),
   });
@@ -82,6 +83,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <SearchableSelect
               label="Producto"
+              required
               options={productos}
               value={watchedProducto as number | undefined}
               onChange={(val) => setValue("producto", val, { shouldValidate: true })}
@@ -91,6 +93,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
 
             <SearchableSelect
               label="País"
+              required
               options={paises}
               value={watchedPais as number | undefined}
               onChange={(val) => setValue("pais", val, { shouldValidate: true })}
@@ -100,6 +103,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
 
             <SearchableSelect
               label="Moneda"
+              required
               options={monedas}
               value={watchedMoneda as number | undefined}
               onChange={(val) => setValue("moneda", val, { shouldValidate: true })}
@@ -109,6 +113,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
 
             <SearchableSelect
               label="Trámite"
+              required
               options={tiposTramite}
               value={watchedTramite as number | undefined}
               onChange={(val) => setValue("tramite", val, { shouldValidate: true })}
@@ -117,9 +122,9 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             />
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Días Min.</label>
+              <label className="text-sm font-bold text-gray-700">Días Min. <span className="text-red-500 ml-0.5">*</span></label>
               <input
-                {...register("diasMin", { valueAsNumber: true })}
+                {...register("diasMin", { valueAsNumber: true, onChange: () => trigger("diasMax") })}
                 type="number"
                 className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
               />
@@ -127,9 +132,9 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Días Max.</label>
+              <label className="text-sm font-bold text-gray-700">Días Max. <span className="text-red-500 ml-0.5">*</span></label>
               <input
-                {...register("diasMax", { valueAsNumber: true })}
+                {...register("diasMax", { valueAsNumber: true, onChange: () => trigger("diasMin") })}
                 type="number"
                 className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
               />
@@ -137,7 +142,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Precio</label>
+              <label className="text-sm font-bold text-gray-700">Precio <span className="text-red-500 ml-0.5">*</span></label>
               <input
                 {...register("precio", { valueAsNumber: true })}
                 type="number"
@@ -148,7 +153,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Penalidad</label>
+              <label className="text-sm font-bold text-gray-700">Penalidad <span className="text-red-500 ml-0.5">*</span></label>
               <input
                 {...register("penalidad", { valueAsNumber: true })}
                 type="number"

@@ -2,25 +2,33 @@ import { z } from "zod";
 
 export const clientDetailSchema = z.object({
   id: z.number().optional(),
-  tipoPersona: z.union([z.string(), z.number()]).optional(),
-  nombre: z.string().optional(),
-  pais: z.union([z.string(), z.number()]).optional(),
-  direccion: z.string().optional(),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
-  telefono: z.string().optional(),
+  tipoPersona: z.number({ error: "Campo requerido" }),
+  nombre: z.string().min(1, "Campo requerido"),
+  pais: z.number({ error: "Campo requerido" }),
+  direccion: z.string().min(1, "Campo requerido"),
+  email: z.string().min(1, "Campo requerido").email("Email inválido"),
+  telefono: z.string().min(1, "Campo requerido"),
   sitioWeb: z.string().url("URL inválida").optional().or(z.literal("")),
   fax: z.string().optional(),
-  tipoRegistroTributario: z.union([z.string(), z.number()]).optional(),
+  tipoRegistroTributario: z.number({ error: "Campo requerido" }),
   numRegistroTributario: z.string().optional(),
-  moneda: z.union([z.string(), z.number()]).optional(),
-  atendidoPor: z.union([z.string(), z.number()]).optional(),
-  idioma: z.union([z.string(), z.number()]).optional(),
-  idiomaFacturacion: z.union([z.string(), z.number()]).optional(),
-  formatoInforme: z.array(z.number()).optional(),
-  plantillaInforme: z.number().optional(),
+  moneda: z.number({ error: "Campo requerido" }),
+  atendidoPor: z.number({ error: "Campo requerido" }),
+  idioma: z.number({ error: "Campo requerido" }),
+  idiomaFacturacion: z.number({ error: "Campo requerido" }),
+  formatoInforme: z.array(z.number()).min(1, "Selecciona al menos un formato"),
+  plantillaInforme: z.number({ error: "Campo requerido" }),
   imprimeLogoSafety: z.boolean().optional(),
   aplicaPenalidad: z.boolean().optional(),
   recomendacion: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.tipoRegistroTributario && !data.numRegistroTributario) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Campo requerido",
+      path: ["numRegistroTributario"],
+    });
+  }
 });
 
 export const clientDetailContactSchema = z.object({

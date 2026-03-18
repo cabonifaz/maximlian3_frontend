@@ -96,7 +96,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             />
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Código de Contacto</label>
+              <label className="text-sm font-bold text-gray-700">Código de Contacto <span className="text-red-500 ml-0.5">*</span></label>
               <input
                 {...register("codigoContacto")}
                 type="text"
@@ -107,7 +107,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Nombre</label>
+              <label className="text-sm font-bold text-gray-700">Nombre <span className="text-red-500 ml-0.5">*</span></label>
               <input
                 {...register("nombre")}
                 type="text"
@@ -118,7 +118,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Email</label>
+              <label className="text-sm font-bold text-gray-700">Email <span className="text-red-500 ml-0.5">*</span></label>
               <input
                 {...register("email")}
                 type="email"
@@ -129,7 +129,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Teléfono</label>
+              <label className="text-sm font-bold text-gray-700">Teléfono <span className="text-red-500 ml-0.5">*</span></label>
               <input
                 {...register("telefono")}
                 type="text"

@@ -75,7 +75,7 @@ export function ClientDetailModal({
     setValue: setInfoValue,
     watch: infoWatch,
     handleSubmit: infoHandleSubmit,
-    formState,
+    formState: { errors: infoErrors, isDirty: infoIsDirty },
   } = useForm<ClientDetailFormData>({
     resolver: zodResolver(clientDetailSchema),
   });
@@ -362,70 +362,78 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("tipoPersona", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    error={infoErrors.tipoPersona?.message}
                   />
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Nombre
+                      Nombre <span className="text-red-500 ml-0.5">*</span>
                     </label>
                     <input
                       {...infoRegister("nombre")}
                       type="text"
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+                      className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.nombre ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
                     />
+                    {infoErrors.nombre && <p className="text-xs text-red-500">{infoErrors.nombre.message}</p>}
                   </div>
 
                   <SearchableSelect
                     label="País"
+                    required
                     options={paisData}
                     value={watchedPais}
                     onChange={(val) =>
                       setInfoValue("pais", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    error={infoErrors.pais?.message}
                   />
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Dirección
+                      Dirección <span className="text-red-500 ml-0.5">*</span>
                     </label>
                     <input
                       {...infoRegister("direccion")}
                       type="text"
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+                      className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.direccion ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
                     />
+                    {infoErrors.direccion && <p className="text-xs text-red-500">{infoErrors.direccion.message}</p>}
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Email
+                      Email <span className="text-red-500 ml-0.5">*</span>
                     </label>
                     <input
                       {...infoRegister("email")}
                       type="email"
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+                      className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.email ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
                     />
+                    {infoErrors.email && <p className="text-xs text-red-500">{infoErrors.email.message}</p>}
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Teléfono
+                      Teléfono <span className="text-red-500 ml-0.5">*</span>
                     </label>
                     <input
                       {...infoRegister("telefono")}
                       type="text"
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+                      className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.telefono ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
                     />
+                    {infoErrors.telefono && <p className="text-xs text-red-500">{infoErrors.telefono.message}</p>}
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Sitio Web
+                      Sitio Web <span className="text-gray-400 font-normal">(opcional)</span>
                     </label>
                     <input
                       {...infoRegister("sitioWeb")}
                       type="text"
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+                      className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.sitioWeb ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
                     />
+                    {infoErrors.sitioWeb && <p className="text-xs text-red-500">{infoErrors.sitioWeb.message}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -441,6 +449,7 @@ export function ClientDetailModal({
 
                   <SearchableSelect
                     label="Tipo Registro Tributario"
+                    required
                     options={tipoRegTributarioData}
                     value={watchedTipoRegTributario}
                     onChange={(val) =>
@@ -449,18 +458,20 @@ export function ClientDetailModal({
                         shouldDirty: true,
                       })
                     }
+                    error={infoErrors.tipoRegistroTributario?.message}
                   />
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Registro Tributario
+                      Registro Tributario {watchedTipoRegTributario && <span className="text-red-500 ml-0.5">*</span>}
                     </label>
                     <input
                       {...infoRegister("numRegistroTributario")}
                       type="text"
                       disabled={!watchedTipoRegTributario}
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                      className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.numRegistroTributario ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`}
                     />
+                    {infoErrors.numRegistroTributario && <p className="text-xs text-red-500">{infoErrors.numRegistroTributario.message}</p>}
                   </div>
 
                   <SearchableSelect
@@ -471,33 +482,40 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("moneda", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    error={infoErrors.moneda?.message}
                   />
 
                   <SearchableSelect
                     label="Atendido por"
+                    required
                     options={empresaAtencionData}
                     value={watchedAtendidoPor}
                     onChange={(val) =>
                       setInfoValue("atendidoPor", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    error={infoErrors.atendidoPor?.message}
                   />
 
                   <SearchableSelect
                     label="Idioma preferido"
+                    required
                     options={idiomaData}
                     value={watchedIdioma}
                     onChange={(val) =>
                       setInfoValue("idioma", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    error={infoErrors.idioma?.message}
                   />
 
                   <SearchableSelect
                     label="Idioma de facturación"
+                    required
                     options={idiomaData}
                     value={watchedIdiomaFacturacion}
                     onChange={(val) =>
                       setInfoValue("idiomaFacturacion", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    error={infoErrors.idiomaFacturacion?.message}
                   />
 
                   <MultiSearchableSelect
@@ -508,15 +526,18 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("formatoInforme", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    error={infoErrors.formatoInforme?.message}
                   />
 
                   <SearchableSelect
                     label="Plantilla de informe"
+                    required
                     options={plantillaOptions}
                     value={watchedPlantillaInforme}
                     onChange={(val) =>
                       setInfoValue("plantillaInforme", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    error={infoErrors.plantillaInforme?.message}
                   />
 
                   <div className="md:col-span-2 flex items-center gap-6">
@@ -785,7 +806,7 @@ export function ClientDetailModal({
                 idPlantilla: formData.plantillaInforme ?? client.idPlantilla,
               });
             })}
-            disabled={!formState.isDirty || updateInfoMutation.isPending}
+            disabled={!infoIsDirty || updateInfoMutation.isPending}
             className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10 disabled:opacity-50 min-w-[140px] justify-center"
           >
             {updateInfoMutation.isPending ? (

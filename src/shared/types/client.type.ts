@@ -113,12 +113,13 @@ export interface DeleteClientRequest {
 export type TarifarioListEntry = {
   idTarifario: number;
   idCliente: number;
-  idProducto: number;
-  idTipoTramite: number;
-  idPais: number;
-  idMoneda: number;
+  producto: string;
+  tipoTramite: string;
+  pais: string;
+  moneda: string;
   diasMax: number;
   diasMin: number;
+  diasMinMax: string;
   precio: number;
   penalidad: number;
 };
@@ -133,8 +134,8 @@ export type ContactoListEntry = {
   idClienteContacto: number;
   codigo: string;
   nombres: string;
-  idTipoContacto: number;
-  idAreaTrabajo: number;
+  tipoContacto: string;
+  areaTrabajo: string;
   telefono: string;
   email: string;
   enviarCorreo: boolean;
