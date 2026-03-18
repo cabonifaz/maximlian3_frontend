@@ -43,6 +43,7 @@ VITE_AWS_REGION=us-east-1
 VITE_COGNITO_USER_POOL_ID=your_cognito_user_pool_id
 VITE_COGNITO_CLIENT_ID=your_cognito_client_id
 VITE_API_URL=https://your-api-url.com
+VITE_DEBOUNCE_MS=1000
 ```
 
 ## 🚀 How to Run the Project
