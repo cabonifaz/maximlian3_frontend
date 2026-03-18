@@ -28,7 +28,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
   });
 
   useEffect(() => {
-    if (isOpen) reset(defaultValues ?? { enviarCorreo: false } as ContactFormData);
+    reset(defaultValues ?? { enviarCorreo: false } as ContactFormData);
   }, [isOpen]);
 
   const { data: tiposPersona } = useQuery({

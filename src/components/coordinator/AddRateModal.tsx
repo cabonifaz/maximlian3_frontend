@@ -23,9 +23,10 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
     reset,
     watch,
     setValue,
-    trigger,
+    clearErrors,
   } = useForm<RateFormData>({
     resolver: zodResolver(rateSchema),
+    mode: "onSubmit",
   });
 
   const watchedProducto = watch("producto");
@@ -34,7 +35,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
   const watchedTramite = watch("tramite");
 
   useEffect(() => {
-    if (isOpen) reset(defaultValues ?? ({} as RateFormData));
+    reset(defaultValues ?? ({} as RateFormData));
   }, [isOpen]);
 
   const { data: productos } = useQuery({
@@ -86,7 +87,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               required
               options={productos}
               value={watchedProducto as number | undefined}
-              onChange={(val) => setValue("producto", val, { shouldValidate: true })}
+              onChange={(val) => setValue("producto", val)}
               error={errors.producto?.message}
               placeholder="Selecciona un producto"
             />
@@ -96,7 +97,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               required
               options={paises}
               value={watchedPais as number | undefined}
-              onChange={(val) => setValue("pais", val, { shouldValidate: true })}
+              onChange={(val) => setValue("pais", val)}
               error={errors.pais?.message}
               placeholder="Selecciona un país"
             />
@@ -106,7 +107,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               required
               options={monedas}
               value={watchedMoneda as number | undefined}
-              onChange={(val) => setValue("moneda", val, { shouldValidate: true })}
+              onChange={(val) => setValue("moneda", val)}
               error={errors.moneda?.message}
               placeholder="Selecciona moneda"
             />
@@ -116,7 +117,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               required
               options={tiposTramite}
               value={watchedTramite as number | undefined}
-              onChange={(val) => setValue("tramite", val, { shouldValidate: true })}
+              onChange={(val) => setValue("tramite", val)}
               error={errors.tramite?.message}
               placeholder="Selecciona trámite"
             />
@@ -124,7 +125,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">Días Min. <span className="text-red-500 ml-0.5">*</span></label>
               <input
-                {...register("diasMin", { valueAsNumber: true, onChange: () => trigger("diasMax") })}
+                {...register("diasMin", { valueAsNumber: true, onChange: () => clearErrors(["diasMin", "diasMax"]) })}
                 type="number"
                 className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
               />
@@ -134,7 +135,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">Días Max. <span className="text-red-500 ml-0.5">*</span></label>
               <input
-                {...register("diasMax", { valueAsNumber: true, onChange: () => trigger("diasMin") })}
+                {...register("diasMax", { valueAsNumber: true, onChange: () => clearErrors(["diasMin", "diasMax"]) })}
                 type="number"
                 className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
               />
