@@ -109,7 +109,7 @@ export function CreateUserModal({
     // If we deselect Traductor (using num1 from rolesData)
     if (field === "roles" && isSelected) {
       const roleObj = rolesData?.find((r) => r.num1 === value);
-      if (roleObj?.string1 === "TRADUCTOR") {
+      if (roleObj?.string1?.toUpperCase() === "TRADUCTOR") {
         setValue("languages", [], { shouldValidate: true });
       }
     }
@@ -122,7 +122,7 @@ export function CreateUserModal({
   // Check if "TRADUCTOR" is selected
   const isTranslatorSelected = selectedRoles.some((roleValue) => {
     const roleObj = rolesData?.find((r) => r.num1 === roleValue);
-    return roleObj?.string1 === "TRADUCTOR";
+    return roleObj?.string1?.toUpperCase() === "TRADUCTOR";
   });
 
   return (
