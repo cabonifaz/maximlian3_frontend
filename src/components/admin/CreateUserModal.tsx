@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   Check,
@@ -44,7 +44,7 @@ export function CreateUserModal({
       firstName: "",
       paternalLastName: "",
       maternalLastName: "",
-      username: "",
+      usernameCreacion: "",
       email: "",
       roles: [],
       languages: [],
@@ -77,8 +77,20 @@ export function CreateUserModal({
     retry: 1,
   });
 
+  const firstName = watch("firstName");
+  const paternalLastName = watch("paternalLastName");
   const selectedRoles = (watch("roles") || []) as (string | number)[];
   const selectedLanguages = (watch("languages") || []) as (string | number)[];
+
+  useEffect(() => {
+    if (firstName || paternalLastName) {
+      const firstLetter = firstName?.charAt(0) ?? "";
+      const lastName = paternalLastName?.replace(/\s+/g, "") ?? "";
+      setValue("usernameCreacion", `${firstLetter}${lastName}`.toLowerCase(), {
+        shouldValidate: true,
+      });
+    }
+  }, [firstName, paternalLastName]);
 
   if (!isOpen) return null;
 
@@ -149,7 +161,7 @@ export function CreateUserModal({
                 {(errors.firstName ||
                   errors.paternalLastName ||
                   errors.maternalLastName ||
-                  errors.username ||
+                  errors.usernameCreacion ||
                   errors.email) && (
                   <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                 )}
@@ -238,16 +250,16 @@ export function CreateUserModal({
                     Nombre de Usuario <span className="text-red-500">*</span>
                   </label>
                   <input
-                    {...register("username")}
+                    {...register("usernameCreacion")}
                     type="text"
                     placeholder="Nombre de Usuario"
                     className={`w-full px-4 py-2 bg-brand-white border ${
-                      errors.username ? "border-red-500" : "border-gray-200"
+                      errors.usernameCreacion ? "border-red-500" : "border-gray-200"
                     } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
                   />
-                  {errors.username && (
+                  {errors.usernameCreacion && (
                     <p className="text-xs text-red-500">
-                      {errors.username.message}
+                      {errors.usernameCreacion.message}
                     </p>
                   )}
                 </div>

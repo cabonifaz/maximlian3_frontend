@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { authService } from "@maximilian/services/auth.service";
-import LoadingScreen from "./LoadingScreen";
+import LoadingScreen from "@maximilian/components/common/LoadingScreen";
 
 interface GuestGuardProps {
   children: React.ReactNode;

@@ -4,7 +4,7 @@ export const adminRoutes: RouteObject[] = [
   {
     path: "admin",
     lazy: () =>
-      import("@maximilian/components/AdminLayout").then((m) => ({
+      import("@maximilian/components/admin/AdminLayout").then((m) => ({
         Component: m.default,
       })),
     children: [

@@ -1,6 +1,6 @@
 import { Outlet } from "react-router";
-import { Sidebar } from "./Sidebar";
-import { Header } from "./Header";
+import { Sidebar } from "@maximilian/components/common/Sidebar";
+import { Header } from "@maximilian/components/common/Header";
 import { Users, Settings } from "lucide-react";
 
 const adminMenuItems = [

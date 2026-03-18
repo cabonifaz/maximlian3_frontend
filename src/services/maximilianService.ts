@@ -44,17 +44,17 @@ maximilianService.interceptors.response.use(
     const data = response.data as ApiResponse<unknown>;
 
     // If it's a standard API response with idTipoMensaje
-    if (
-      data &&
-      data.idTipoMensaje !== undefined &&
-      data.idTipoMensaje !== MessageType.SUCCESS
-    ) {
-      const fallbackMessage =
-        data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION
-          ? "La operación no pudo completarse debido a una regla de negocio."
-          : "Ha ocurrido un error inesperado en el sistema.";
+    if (data && data.idTipoMensaje !== undefined) {
+      if (data.idTipoMensaje !== MessageType.SUCCESS) {
+        const fallbackMessage =
+          data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION
+            ? "La operación no pudo completarse debido a una regla de negocio."
+            : "Ha ocurrido un error inesperado en el sistema.";
 
-      toast.error(data.mensaje || fallbackMessage);
+        toast.error(data.mensaje || fallbackMessage);
+      } else if (response.config.method !== "get") {
+        toast.success(data.mensaje);
+      }
     }
 
     return response;

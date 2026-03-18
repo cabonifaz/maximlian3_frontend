@@ -1,73 +1,84 @@
-# React + TypeScript + Vite
+# Maximilian Web V3
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Maximilian Web V3 is a modern web application built for a "Safety Report" system with a specialized administrative interface. It is designed for scalability and performance.
 
-Currently, two official plugins are available:
+## 🛠️ Technology Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Frontend Framework:** [React 19](https://react.dev/)
+- **Node.js:** v24
+- **Build Tool:** [Vite 7](https://vitejs.dev/)
+- **Language:** TypeScript (~5.9.3)
+- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
+- **State/Data Management:** [@tanstack/react-query](https://tanstack.com/query/latest)
+- **Routing:** [React Router v7](https://reactrouter.com/)
+- **Authentication:** [AWS Amplify](https://docs.amplify.aws/)
+- **HTTP Client:** [Axios](https://axios-http.com/)
+- **Forms & Validation:** [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/)
+- **Icons:** [Lucide React](https://lucide.dev/)
 
-## React Compiler
+## 📂 Project Structure
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The codebase is organized in `src/` as follows:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+src/
+├── components/   # Reusable UI components (e.g., Sidebar, Header, AdminLayout)
+├── config/       # Configuration setup (e.g., AWS config)
+├── hooks/        # Custom React hooks (e.g., API calls, form handling)
+├── pages/        # Application views, organized by role/module (e.g., Admin)
+├── router/       # Routing configuration, modularized by role
+├── schemas/      # Zod validation schemas
+├── services/     # API service configurations using Axios
+└── shared/       # Shared types, utilities, and constants
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## ⚙️ Environment Configuration
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Create a `.env` file in the root of the project to set up your environment variables.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### `.env` Example
+
+```env
+VITE_AWS_REGION=us-east-1
+VITE_COGNITO_USER_POOL_ID=your_cognito_user_pool_id
+VITE_COGNITO_CLIENT_ID=your_cognito_client_id
+VITE_API_URL=https://your-api-url.com
+```
+
+## 🚀 How to Run the Project
+
+1. **Install dependencies:**
+
+   ```bash
+   npm install
+   ```
+
+2. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+   This will start the Vite dev server with Hot Module Replacement (HMR).
+
+## 🏗️ How to Build
+
+To compile the project for production, run:
+
+```bash
+npm run build
+```
+
+This command runs type-checking (`tsc -b`) and then builds the assets using Vite. The output will be inside the `dist` folder.
+
+To preview the production build locally:
+
+```bash
+npm run preview
+```
+
+## 🧪 Linting
+
+To check for code quality and style issues, run:
+
+```bash
+npm run lint
 ```

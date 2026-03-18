@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { ChevronRight, User, LogOut, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { authService } from "@maximilian/services/auth.service";
-import LoadingScreen from "@maximilian/components/LoadingScreen";
+import LoadingScreen from "@maximilian/components/common/LoadingScreen";
 import type { Role } from "@maximilian/shared/types/auth.type";
 
 export default function RoleSelectionPage() {

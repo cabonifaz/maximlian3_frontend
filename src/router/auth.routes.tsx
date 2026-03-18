@@ -1,5 +1,5 @@
 import { type RouteObject } from "react-router";
-import { GuestGuard } from "@maximilian/components/GuestGuard";
+import { GuestGuard } from "@maximilian/components/auth/GuestGuard";
 
 export const authRoutes: RouteObject[] = [
   {

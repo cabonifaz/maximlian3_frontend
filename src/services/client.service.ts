@@ -5,9 +5,47 @@ import type {
   CreateClientRequest,
   CreateClientResponse,
   ClientDetail,
+  ClientListRequest,
+  ClientListResponse,
+  DeleteClientRequest,
+  UpdateClientRequest,
+  TarifarioListResponse,
+  TarifarioDetail,
+  ContactoListResponse,
+  ContactoDetail,
+  CreateTarifarioRequest,
+  UpdateTarifarioRequest,
+  DeleteTarifarioRequest,
+  GetTarifarioRequest,
+  CreateContactoRequest,
+  UpdateContactoRequest,
+  DeleteContactoRequest,
+  GetContactoRequest,
 } from "@maximilian/shared/types/client.type";
 
 export const clientService = {
+  /**
+   * List clients with pagination and filters.
+   * @param params Pagination and filter parameters.
+   */
+  list: async (params: ClientListRequest): Promise<ClientListResponse> => {
+    try {
+      const { data } = await maximilianService.get<ApiResponse<ClientListResponse>>(
+        "/api/Cliente/listar",
+        { params }
+      );
+
+      if (data.idTipoMensaje !== MessageType.SUCCESS) {
+        throw new Error(data.mensaje || "Error al listar los clientes");
+      }
+
+      return data.result;
+    } catch (error) {
+      console.error("Error listing clients:", error);
+      throw error;
+    }
+  },
+
   /**
    * Create a new client in the system.
    * @param clientData Data for the new client.
@@ -35,67 +73,139 @@ export const clientService = {
    * @param idCliente The ID of the client to fetch.
    */
   getById: async (idCliente: number): Promise<ClientDetail> => {
-    try {
-      // Mocking for now as the endpoint might not be ready or follows similar patterns
-      // In a real scenario, this would be an API call:
-      // const { data } = await maximilianService.get<ApiResponse<ClientDetail>>(`/api/Cliente/obtener`, { params: { IdCliente: idCliente } });
-      // return data.result;
+    const { data } = await maximilianService.get<ApiResponse<ClientDetail[]>>(
+      "/api/Cliente/obtener",
+      { params: { idCliente } }
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new Error(data.mensaje || "Error al obtener el cliente");
+    }
+    return data.result[0];
+  },
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return {
-        idCliente,
-        idTipoPersona: 1,
-        nombre: "Juan Espinoza",
-        nombreCorto: "Juan Espinoza",
-        idPais: 1,
-        idRegistroTributario: 1,
-        numRegistroTributario: "Representante Legal Name",
-        correo: "juan.espinoza@softwarefactorylatam.com",
-        webSite: "https://softwarefactorylatam.com",
-        telefono: "+51 987 654 321",
-        direccion: "Av. Siempre Viva 123",
-        idFormatoDocumento: 1,
-        estado: "Activo",
-        contactos: [
-          {
-            idContacto: 1,
-            nombres: "Contacto Principal",
-            idTipoContacto: 1,
-            areaTrabajo: 1,
-            telefono: "+51 999 888 777",
-            email: "contacto@empresa.com",
-          },
-        ],
-      };
+  eliminate: async (data: DeleteClientRequest) => {
+    try {
+      const { data: responseData } = await maximilianService.post<ApiResponse<{ idCliente: number }[]>>(
+        "/api/Cliente/eliminar",
+        data
+      );
+
+      if (responseData.idTipoMensaje !== MessageType.SUCCESS) {
+        throw new Error(responseData.mensaje || "Error al desactivar el cliente");
+      }
+
+      return responseData.result;
     } catch (error) {
-      console.error(`Error fetching client ${idCliente}:`, error);
+      console.error("Error eliminating client:", error);
       throw error;
     }
+  },
+
+  listTarifario: async (params: {
+    idCliente: number;
+    busqueda?: string;
+    numPag: number;
+  }): Promise<TarifarioListResponse> => {
+    const { data } = await maximilianService.get<ApiResponse<TarifarioListResponse>>(
+      "/api/Tarifario/listar",
+      { params }
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new Error(data.mensaje || "Error al listar el tarifario");
+    }
+    return data.result;
+  },
+
+  listContactos: async (params: {
+    idCliente: number;
+    numPag?: number;
+  }): Promise<ContactoListResponse> => {
+    const { data } = await maximilianService.get<ApiResponse<ContactoListResponse>>(
+      "/api/ClienteContacto/listar",
+      { params: { IdCliente: params.idCliente, NumPag: params.numPag } }
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new Error(data.mensaje || "Error al listar los contactos");
+    }
+    return data.result;
   },
 
   /**
    * Update an existing client.
    * @param clientData Data to update.
    */
-  update: async (_clientData: any) => {
-    try {
-      // For now, mocking success as the endpoint might not be ready
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      return { success: true };
-
-      /* Real implementation:
-      const { data } = await maximilianService.post<ApiResponse<any>>(
-        "/api/Cliente/actualizar",
-        clientData
-      );
-      if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al actualizar el cliente");
-      }
-      return data.result;
-      */
-    } catch (error) {
-      console.error("Error updating client:", error);
-      throw error;
+  update: async (clientData: UpdateClientRequest) => {
+    const { data } = await maximilianService.post<ApiResponse<CreateClientResponse[]>>(
+      "/api/Cliente/editar",
+      clientData
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new Error(data.mensaje || "Error al actualizar el cliente");
     }
+    return data.result[0];
+  },
+
+  createTarifario: async (data: CreateTarifarioRequest): Promise<{ idTarifario: number }> => {
+    const { data: res } = await maximilianService.post<ApiResponse<{ idTarifario: number }[]>>(
+      "/api/Tarifario/crear", data
+    );
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al crear tarifa");
+    return res.result[0];
+  },
+
+  updateTarifario: async (data: UpdateTarifarioRequest): Promise<{ idTarifario: number }> => {
+    const { data: res } = await maximilianService.post<ApiResponse<{ idTarifario: number }[]>>(
+      "/api/Tarifario/editar", data
+    );
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al editar tarifa");
+    return res.result[0];
+  },
+
+  deleteTarifario: async (data: DeleteTarifarioRequest): Promise<{ idTarifario: number }> => {
+    const { data: res } = await maximilianService.post<ApiResponse<{ idTarifario: number }[]>>(
+      "/api/Tarifario/eliminar", data
+    );
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al eliminar tarifa");
+    return res.result[0];
+  },
+
+  createContacto: async (data: CreateContactoRequest): Promise<{ idClienteContacto: number }> => {
+    const { data: res } = await maximilianService.post<ApiResponse<{ idClienteContacto: number }[]>>(
+      "/api/ClienteContacto/crear", data
+    );
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al crear contacto");
+    return res.result[0];
+  },
+
+  updateContacto: async (data: UpdateContactoRequest): Promise<{ idClienteContacto: number }> => {
+    const { data: res } = await maximilianService.post<ApiResponse<{ idClienteContacto: number }[]>>(
+      "/api/ClienteContacto/editar", data
+    );
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al editar contacto");
+    return res.result[0];
+  },
+
+  deleteContacto: async (data: DeleteContactoRequest): Promise<{ idClienteContacto: number }> => {
+    const { data: res } = await maximilianService.post<ApiResponse<{ idClienteContacto: number }[]>>(
+      "/api/ClienteContacto/eliminar", data
+    );
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al eliminar contacto");
+    return res.result[0];
+  },
+
+  getTarifarioById: async (data: GetTarifarioRequest): Promise<TarifarioDetail> => {
+    const { data: res } = await maximilianService.get<ApiResponse<TarifarioDetail[]>>(
+      "/api/Tarifario/obtener", { params: data }
+    );
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    return res.result[0];
+  },
+
+  getContactoById: async (data: GetContactoRequest): Promise<ContactoDetail> => {
+    const { data: res } = await maximilianService.get<ApiResponse<ContactoDetail[]>>(
+      "/api/ClienteContacto/obtener", { params: data }
+    );
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    return res.result[0];
   },
 };

@@ -13,10 +13,9 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { CreateUserModal } from "@maximilian/components/CreateUserModal";
-import { EditUserModal } from "@maximilian/components/EditUserModal";
-import { DeleteUserModal } from "@maximilian/components/DeleteUserModal";
+import { CreateUserModal } from "@maximilian/components/admin/CreateUserModal";
+import { EditUserModal } from "@maximilian/components/admin/EditUserModal";
+import { DeleteUserModal } from "@maximilian/components/admin/DeleteUserModal";
 import { type UserFormData } from "@maximilian/schemas";
 import { userService } from "@maximilian/services/user.service";
 import type {
@@ -25,7 +24,7 @@ import type {
   UpdateUserRequest,
   UserListEntry,
 } from "@maximilian/shared/types/user.type";
-import LoadingScreen from "@maximilian/components/LoadingScreen";
+import LoadingScreen from "@maximilian/components/common/LoadingScreen";
 
 interface CreateUserMutationParams {
   userData: UserFormData;
@@ -72,7 +71,7 @@ export default function UserManagement() {
         nombres: userData.firstName,
         apellidoPaterno: userData.paternalLastName,
         apellidoMaterno: userData.maternalLastName || null,
-        username: userData.username,
+        usernameCreacion: userData.usernameCreacion,
         email: userData.email,
         roles: userData.roles as number[],
         idiomas: (userData.languages || []) as number[],
@@ -81,7 +80,6 @@ export default function UserManagement() {
     },
     onSuccess: (_, { resetForm }) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Usuario creado exitosamente");
       setIsCreateModalOpen(false);
       resetForm();
     },
@@ -108,7 +106,6 @@ export default function UserManagement() {
     },
     onSuccess: (_, { resetForm }) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Usuario actualizado exitosamente");
       setIsEditModalOpen(false);
       setEditingUserId(null);
       resetForm();
@@ -126,7 +123,6 @@ export default function UserManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Usuario eliminado exitosamente");
       setIsDeleteModalOpen(false);
       setDeletingUserId(null);
     },
@@ -159,7 +155,7 @@ export default function UserManagement() {
         firstName: details.nombres || "",
         paternalLastName: details.apellidoPaterno || "",
         maternalLastName: details.apellidoMaterno || "",
-        username: user.username || "",
+        usernameCreacion: user.username || "",
         email: details.email || "",
         roles: details.roles || [],
         languages: details.idiomas || [],
@@ -180,7 +176,7 @@ export default function UserManagement() {
       firstName: user.nombres,
       paternalLastName: user.apellidoPaterno,
       maternalLastName: user.apellidoMaterno ?? undefined,
-      username: user.username,
+      usernameCreacion: user.username,
       email: user.email,
       roles: user.roles ? user.roles.split(", ") : [],
     });
