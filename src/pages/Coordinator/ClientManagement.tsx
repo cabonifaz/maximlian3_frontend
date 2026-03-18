@@ -27,6 +27,7 @@ import {
 } from "@maximilian/schemas";
 import { type CreateClientRequest, type ClientListEntry } from "@maximilian/shared/types/client.type";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
 
 interface ClientMutationParams {
   data: ClientInfoFormData;
@@ -355,9 +356,9 @@ export default function ClientManagement() {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-sm font-bold hover:bg-brand-black/90 transition-all shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
           >
-            <Plus className="w-4 h-4" />
+            <Plus size={16} />
             <span>Agregar Cliente</span>
           </button>
         </div>
@@ -411,13 +412,10 @@ export default function ClientManagement() {
                       <p className="text-sm font-bold text-brand-black">
                         Error al cargar los clientes
                       </p>
-                      <button
-                        onClick={() => refetchClients()}
-                        className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-xs font-bold hover:bg-brand-wine/90 transition-all cursor-pointer"
-                      >
+                      <CustomButton variant="wine" size="sm" onClick={() => refetchClients()}>
                         <RefreshCw size={14} />
                         <span>REINTENTAR</span>
-                      </button>
+                      </CustomButton>
                     </div>
                   </td>
                 </tr>

@@ -23,6 +23,7 @@ import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -400,13 +401,9 @@ export function AddClientModal({
           <h2 className="text-xl font-bold text-brand-black">
             Agrega un Cliente
           </h2>
-          <button
-            onClick={handleClose}
-            disabled={isSubmitting}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer disabled:opacity-30"
-          >
+          <CustomButton variant="ghost" size="icon" onClick={handleClose} disabled={isSubmitting}>
             <X size={20} className="text-gray-400" />
-          </button>
+          </CustomButton>
         </div>
 
         {/* Tabs */}
@@ -465,18 +462,19 @@ export function AddClientModal({
                   <p className="text-sm font-bold text-brand-black">
                     Error al cargar parámetros
                   </p>
-                  <button
+                  <CustomButton
+                    variant="wine"
+                    size="sm"
                     onClick={() => {
                       refetchTipoPersona();
                       refetchPais();
                       refetchTipoRegTributario();
                       refetchFormatoInforme();
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-xs font-bold hover:bg-brand-wine/90 transition-all cursor-pointer"
                   >
                     <RefreshCw size={14} />
                     <span>REINTENTAR</span>
-                  </button>
+                  </CustomButton>
                 </div>
               ) : (
                 <form
@@ -750,21 +748,19 @@ export function AddClientModal({
                   />
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => setIsRateModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all"
-                  >
+                  <CustomButton size="sm" onClick={() => setIsRateModalOpen(true)}>
                     <Plus size={14} />
                     <span>Nuevo</span>
-                  </button>
-                  <button
+                  </CustomButton>
+                  <CustomButton
+                    size="sm"
                     disabled={selectedRateIndex === null}
                     onClick={() => setIsEditRateModalOpen(true)}
-                    className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                   >
                     Editar
-                  </button>
-                  <button
+                  </CustomButton>
+                  <CustomButton
+                    size="sm"
                     disabled={selectedRateIndex === null}
                     onClick={() => {
                       setAddedRates((prev) =>
@@ -772,10 +768,9 @@ export function AddClientModal({
                       );
                       setSelectedRateIndex(null);
                     }}
-                    className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                   >
                     Eliminar
-                  </button>
+                  </CustomButton>
                 </div>
               </div>
 
@@ -861,21 +856,19 @@ export function AddClientModal({
                   />
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => setIsContactModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all"
-                  >
+                  <CustomButton size="sm" onClick={() => setIsContactModalOpen(true)}>
                     <Plus size={14} />
                     <span>Nuevo</span>
-                  </button>
-                  <button
+                  </CustomButton>
+                  <CustomButton
+                    size="sm"
                     disabled={selectedContactIndex === null}
                     onClick={() => setIsEditContactModalOpen(true)}
-                    className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                   >
                     Editar
-                  </button>
-                  <button
+                  </CustomButton>
+                  <CustomButton
+                    size="sm"
                     disabled={selectedContactIndex === null}
                     onClick={() => {
                       setAddedContacts((prev) =>
@@ -883,10 +876,9 @@ export function AddClientModal({
                       );
                       setSelectedContactIndex(null);
                     }}
-                    className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
                   >
                     Eliminar
-                  </button>
+                  </CustomButton>
                 </div>
               </div>
 
@@ -950,40 +942,33 @@ export function AddClientModal({
         <div className="px-8 py-6 border-t border-gray-100 flex justify-between gap-3 bg-gray-50/50 shrink-0">
           <div>
             {activeTab !== "info" && (
-              <button
+              <CustomButton
+                variant="secondary"
                 onClick={() => setActiveTab(activeTab === "rates" ? "info" : "rates")}
-                className="px-8 py-3 border border-gray-200 text-brand-black rounded-xl font-bold hover:bg-gray-100 transition-all cursor-pointer"
               >
                 Anterior
-              </button>
+              </CustomButton>
             )}
           </div>
           <div className="flex gap-3">
             {activeTab !== "contacts" && (
-              <button
+              <CustomButton
+                variant="secondary"
                 onClick={() => setActiveTab(activeTab === "info" ? "rates" : "contacts")}
-                className="px-8 py-3 border border-gray-200 text-brand-black rounded-xl font-bold hover:bg-gray-100 transition-all cursor-pointer"
               >
                 Siguiente
-              </button>
+              </CustomButton>
             )}
-            <button
+            <CustomButton
               onClick={handleConfirm}
-              disabled={!isInfoValid || isSubmitting || isLoadingInfo}
-              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 min-w-[140px] justify-center"
+              disabled={!isInfoValid || isLoadingInfo}
+              loading={isSubmitting}
+              loadingText="Creando..."
+              className="min-w-35"
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  <span>Creando...</span>
-                </>
-              ) : (
-                <>
-                  <div className="w-2 h-2 rounded-full bg-brand-white" />
-                  <span>Confirmar</span>
-                </>
-              )}
-            </button>
+              <div className="w-2 h-2 rounded-full bg-brand-white" />
+              <span>Confirmar</span>
+            </CustomButton>
           </div>
         </div>
       </div>

@@ -29,6 +29,7 @@ import type {
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
 
 interface ClientDetailModalProps {
   isOpen: boolean;
@@ -285,12 +286,9 @@ export function ClientDetailModal({
               </div>
             )}
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
-          >
+          <CustomButton variant="ghost" size="icon" onClick={onClose}>
             <X size={20} className="text-gray-400" />
-          </button>
+          </CustomButton>
         </div>
 
         {/* Tabs */}
@@ -596,14 +594,17 @@ export function ClientDetailModal({
                       />
                     </div>
                     <div className="flex gap-2">
-                      <button
+                      <CustomButton
+                        size="sm"
                         onClick={() => { setEditingRate(null); setIsRateModalOpen(true); }}
-                        className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all"
                       >
                         <Plus size={14} /><span>Nuevo</span>
-                      </button>
-                      <button
+                      </CustomButton>
+                      <CustomButton
+                        size="sm"
                         disabled={selectedRateIndex === null || isFetchingRate}
+                        loading={isFetchingRate}
+                        loadingText="Cargando..."
                         onClick={async () => {
                           const row = tarifarioData!.lstTarifario[selectedRateIndex!];
                           setIsFetchingRate(true);
@@ -618,15 +619,14 @@ export function ClientDetailModal({
                             setIsFetchingRate(false);
                           }
                         }}
-                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null || isFetchingRate ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
-                      >Editar</button>
-                      <button
+                      >Editar</CustomButton>
+                      <CustomButton
+                        size="sm"
                         disabled={selectedRateIndex === null}
                         onClick={() => {
                           setRateToDelete(tarifarioData!.lstTarifario[selectedRateIndex!]);
                         }}
-                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedRateIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
-                      >Eliminar</button>
+                      >Eliminar</CustomButton>
                     </div>
                   </div>
 
@@ -684,14 +684,17 @@ export function ClientDetailModal({
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 max-w-xs" />
                     <div className="flex gap-2">
-                      <button
+                      <CustomButton
+                        size="sm"
                         onClick={() => { setEditingContact(null); setIsContactModalOpen(true); }}
-                        className="flex items-center gap-2 px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all"
                       >
                         <Plus size={14} /><span>Nuevo</span>
-                      </button>
-                      <button
+                      </CustomButton>
+                      <CustomButton
+                        size="sm"
                         disabled={selectedContactIndex === null || isFetchingContact}
+                        loading={isFetchingContact}
+                        loadingText="Cargando..."
                         onClick={async () => {
                           const row = contactosData!.lstClienteContactos[selectedContactIndex!];
                           setIsFetchingContact(true);
@@ -706,15 +709,14 @@ export function ClientDetailModal({
                             setIsFetchingContact(false);
                           }
                         }}
-                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null || isFetchingContact ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
-                      >Editar</button>
-                      <button
+                      >Editar</CustomButton>
+                      <CustomButton
+                        size="sm"
                         disabled={selectedContactIndex === null}
                         onClick={() => {
                           setContactToDelete(contactosData!.lstClienteContactos[selectedContactIndex!]);
                         }}
-                        className={`px-4 py-2 bg-brand-black text-brand-white rounded-xl text-xs font-bold shadow-lg shadow-black/10 transition-all ${selectedContactIndex === null ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-[1.05] active:scale-95"}`}
-                      >Eliminar</button>
+                      >Eliminar</CustomButton>
                     </div>
                   </div>
 
@@ -776,13 +778,13 @@ export function ClientDetailModal({
 
         {/* Footer */}
         <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 shrink-0">
-          <button
+          <CustomButton
+            variant="secondary"
             onClick={onClose}
-            className="px-8 py-3 border border-gray-200 text-brand-black rounded-xl font-bold hover:bg-gray-100 transition-all cursor-pointer"
           >
             Cancelar
-          </button>
-          <button
+          </CustomButton>
+          <CustomButton
             onClick={infoHandleSubmit((formData) => {
               if (!client) return;
               updateInfoMutation.mutate({
@@ -811,21 +813,14 @@ export function ClientDetailModal({
                 idPlantilla: formData.plantillaInforme ?? client.idPlantilla,
               });
             })}
-            disabled={!infoIsDirty || updateInfoMutation.isPending}
-            className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10 disabled:opacity-50 min-w-[140px] justify-center"
+            disabled={!infoIsDirty}
+            loading={updateInfoMutation.isPending}
+            loadingText="Guardando..."
+            className="min-w-35"
           >
-            {updateInfoMutation.isPending ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                <span>Guardando...</span>
-              </>
-            ) : (
-              <>
-                <div className="w-2 h-2 rounded-full bg-brand-white" />
-                <span>Guardar Cambios</span>
-              </>
-            )}
-          </button>
+            <div className="w-2 h-2 rounded-full bg-brand-white" />
+            <span>Guardar Cambios</span>
+          </CustomButton>
         </div>
       </div>
 

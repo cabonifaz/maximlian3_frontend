@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { contactSchema, type ContactFormData } from "@maximilian/schemas";
@@ -66,9 +67,9 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
       <div className="bg-brand-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-xl font-bold text-brand-black">{defaultValues ? "Editar Contacto" : "Nuevo Contacto"}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <CustomButton variant="ghost" size="icon" onClick={onClose}>
             <X size={20} className="text-gray-400" />
-          </button>
+          </CustomButton>
         </div>
 
         <form onSubmit={handleSubmit(handleConfirm)} className="p-8 space-y-6">
@@ -166,13 +167,10 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
           </div>
 
           <div className="flex justify-end pt-4">
-            <button
-              type="submit"
-              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 active:scale-[0.98] transition-all shadow-lg shadow-black/10"
-            >
+            <CustomButton type="submit">
               <div className="w-2 h-2 rounded-full bg-brand-white" />
               <span>Confirmar</span>
-            </button>
+            </CustomButton>
           </div>
         </form>
       </div>
