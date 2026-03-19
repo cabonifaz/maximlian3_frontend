@@ -1,0 +1,24 @@
+import maximilianService from "./maximilianService";
+import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { MessageType } from "@maximilian/shared/types/api.type";
+import type { PedidoListParams, PedidoListResponse } from "@maximilian/shared/types/pedido.type";
+
+export const pedidoService = {
+  list: async (params: PedidoListParams): Promise<PedidoListResponse> => {
+    try {
+      const { data } = await maximilianService.get<ApiResponse<PedidoListResponse>>(
+        "/api/Pedido/listar",
+        { params }
+      );
+
+      if (data.idTipoMensaje !== MessageType.SUCCESS) {
+        throw new Error(data.mensaje || "Error al listar los pedidos");
+      }
+
+      return data.result;
+    } catch (error) {
+      console.error("Error listing pedidos:", error);
+      throw error;
+    }
+  },
+};

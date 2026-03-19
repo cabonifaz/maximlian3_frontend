@@ -30,12 +30,10 @@ export const coordinatorRoutes: RouteObject[] = [
       },
       {
         path: "orders",
-        element: (
-          <div className="p-8">
-            <h1 className="text-2xl font-bold text-brand-black">Pedidos</h1>
-            <p className="mt-4 text-gray-600">Página en construcción...</p>
-          </div>
-        ),
+        lazy: () =>
+          import("@maximilian/pages/Coordinator/PedidoManagement").then((m) => ({
+            Component: m.default,
+          })),
       },
       {
         path: "assignments",

@@ -1,0 +1,247 @@
+import { useRef, useState } from "react";
+import { Search, Filter, MoreHorizontal, Edit, UserPlus, X, Plus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { CustomTable } from "@maximilian/components/common/CustomTable";
+import { AddPedidoModal } from "@maximilian/components/coordinator/AddPedidoModal";
+import { useDebounce } from "@maximilian/hooks/useDebounce";
+import { pedidoService } from "@maximilian/services/pedido.service";
+import { type PedidoListEntry } from "@maximilian/shared/types/pedido.type";
+
+const PEDIDO_COLUMNS = [
+  { label: "Cliente" },
+  { label: "Investigado" },
+  { label: "Idioma del Informe" },
+  { label: "Logo Imprimible" },
+  { label: "Estado" },
+  { label: "Acciones", className: "text-right" },
+];
+
+const ESTADO_OPTIONS = [
+  { id: 1, label: "Pendiente" },
+  { id: 2, label: "En revisión" },
+  { id: 3, label: "Aprobado" },
+  { id: 4, label: "Observado" },
+  { id: 5, label: "Cancelado" },
+];
+
+function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: string) {
+  return (
+    <span
+      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+      style={{ backgroundColor: colorFondo, color: colorLetra }}
+    >
+      {descripcion}
+    </span>
+  );
+}
+
+export default function PedidoManagement() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
+  const [filterEstado, setFilterEstado] = useState<number | undefined>(undefined);
+  const [isEstadoOpen, setIsEstadoOpen] = useState(false);
+  const [estadoDropdownStyle, setEstadoDropdownStyle] = useState<React.CSSProperties>({});
+  const estadoBtnRef = useRef<HTMLButtonElement>(null);
+
+  const debouncedSearch = useDebounce(searchTerm);
+
+  const {
+    data: pedidosData,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["pedidos", currentPage, debouncedSearch, filterEstado],
+    queryFn: () =>
+      pedidoService.list({
+        numPag: currentPage,
+        busqueda: debouncedSearch || undefined,
+        idEstado: filterEstado,
+      }),
+  });
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleEstadoButtonClick = () => {
+    if (!isEstadoOpen && estadoBtnRef.current) {
+      const rect = estadoBtnRef.current.getBoundingClientRect();
+      setEstadoDropdownStyle({ top: rect.bottom + 8, left: rect.left, width: Math.max(rect.width, 180) });
+    }
+    setIsEstadoOpen((v) => !v);
+  };
+
+  const handleSelectEstado = (idEstado: number | undefined) => {
+    setFilterEstado(idEstado);
+    setCurrentPage(1);
+    setIsEstadoOpen(false);
+  };
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= (pedidosData?.totalPaginas || 1)) {
+      setCurrentPage(page);
+    }
+  };
+
+  const selectedEstadoLabel = ESTADO_OPTIONS.find((e) => e.id === filterEstado)?.label;
+
+  const renderRow = (pedido: PedidoListEntry, index: number) => (
+    <>
+      <td className="px-6 py-4">
+        <span className="text-sm font-bold text-brand-black">{pedido.cliente}</span>
+      </td>
+      <td className="px-6 py-4">
+        <span className="text-sm text-gray-600">{pedido.investigado}</span>
+      </td>
+      <td className="px-6 py-4">
+        <span className="text-sm text-gray-600">{pedido.idioma}</span>
+      </td>
+      <td className="px-6 py-4">
+        <span className="text-sm text-gray-600">{pedido.logoImprimible ? "Sí" : "No"}</span>
+      </td>
+      <td className="px-6 py-4">{getEstadoBadge(pedido.descripcionEstado, pedido.colorLetra, pedido.colorFondo)}</td>
+      <td className="px-6 py-4 text-right relative">
+        <button
+          onClick={() =>
+            setActiveMenuId(activeMenuId === pedido.idPedido ? null : pedido.idPedido)
+          }
+          className="p-2 text-gray-400 hover:text-brand-black hover:bg-gray-100 rounded-lg transition-all cursor-pointer hover:scale-110 active:scale-90"
+        >
+          <MoreHorizontal size={18} />
+        </button>
+
+        {activeMenuId === pedido.idPedido && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setActiveMenuId(null)} />
+            <div
+              className={`absolute right-6 ${
+                index >= (pedidosData?.lstPedido.length ?? 0) - 2 ? "bottom-10" : "top-10"
+              } w-52 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}
+            >
+              <button
+                onClick={() => setActiveMenuId(null)}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <Edit size={14} />
+                <span>Modificar pedido</span>
+              </button>
+              <button
+                onClick={() => setActiveMenuId(null)}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <UserPlus size={14} />
+                <span>Asignar</span>
+              </button>
+              <button
+                onClick={() => setActiveMenuId(null)}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <X size={14} />
+                <span>Cancelar pedido</span>
+              </button>
+            </div>
+          </>
+        )}
+      </td>
+    </>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-brand-black">Pedidos</h1>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Busca por cliente o código"
+              className="w-full pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
+          </div>
+
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Plus size={16} />
+            <span>Agregar Pedido</span>
+          </button>
+
+          <div className="relative">
+            <button
+              ref={estadoBtnRef}
+              onClick={handleEstadoButtonClick}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-colors cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${filterEstado ? "bg-brand-wine/10 border-brand-wine/30 text-brand-wine" : "bg-brand-white border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+            >
+              <Filter className="w-4 h-4" />
+              <span>{selectedEstadoLabel ?? "Estado"}</span>
+              {filterEstado && (
+                <X
+                  className="w-3 h-3 ml-1"
+                  onClick={(e) => { e.stopPropagation(); handleSelectEstado(undefined); }}
+                />
+              )}
+            </button>
+            {isEstadoOpen && (
+              <>
+                <div className="fixed inset-0 z-100" onClick={() => setIsEstadoOpen(false)} />
+                <div
+                  className="fixed bg-brand-white border border-gray-100 rounded-xl shadow-2xl z-101 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+                  style={estadoDropdownStyle}
+                >
+                  <div className="max-h-48 overflow-y-auto">
+                    <div
+                      className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${!filterEstado ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-500 italic"}`}
+                      onClick={() => handleSelectEstado(undefined)}
+                    >
+                      Todos
+                    </div>
+                    {ESTADO_OPTIONS.map((opt) => (
+                      <div
+                        key={opt.id}
+                        className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${filterEstado === opt.id ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-600"}`}
+                        onClick={() => handleSelectEstado(opt.id)}
+                      >
+                        {opt.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <CustomTable
+        columns={PEDIDO_COLUMNS}
+        data={pedidosData?.lstPedido}
+        getId={(p) => p.idPedido}
+        renderRow={renderRow}
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={() => refetch()}
+        emptyMessage="No se encontraron pedidos."
+        errorMessage="Error al cargar los pedidos"
+        currentPage={currentPage}
+        totalPages={pedidosData?.totalPaginas ?? 1}
+        totalRecords={pedidosData?.totalRegistros ?? 0}
+        onPageChange={handlePageChange}
+        entityLabel="pedidos"
+      />
+      <AddPedidoModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+      />
+    </div>
+  );
+}
