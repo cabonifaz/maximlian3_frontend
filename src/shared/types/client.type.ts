@@ -220,7 +220,8 @@ export type ContactoDetail = {
 
 export interface ClienteCorta {
   idCliente: number;
-  nombre: string;
+  numeroDocumento: string;
+  nombreCliente: string;
   idIdioma: number;
   logoImprimible: boolean;
 }

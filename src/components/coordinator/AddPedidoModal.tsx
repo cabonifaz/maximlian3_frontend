@@ -87,6 +87,9 @@ function InformacionTab({ register, setValue, watch, errors, clientes }: Informa
   const idClaseInforme = watch("idClaseInforme");
   const logoImprimible = watch("logoImprimible");
   const idTipoTramite = watch("idTipoTramite");
+  const idTipoPersona = watch("idTipoPersona");
+  const idEmpresaAtencion = watch("idEmpresaAtencion");
+  const idPlantillaInforme = watch("idPlantillaInforme");
 
   const clienteOptions = useMemo(
     () =>
@@ -98,7 +101,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes }: Informa
         num1: c.idCliente,
         num2: null,
         num3: null,
-        string1: c.nombre,
+        string1: c.nombreCliente,
         string2: null,
         string3: null,
         date1: null,
@@ -107,6 +110,16 @@ function InformacionTab({ register, setValue, watch, errors, clientes }: Informa
       })),
     [clientes]
   );
+
+  const { data: tiposPersona } = useQuery({
+    queryKey: ["masterTable", MasterTableId.TIPO_PERSONA],
+    queryFn: () => masterTableService.list(MasterTableId.TIPO_PERSONA),
+  });
+
+  const { data: empresasAtencion } = useQuery({
+    queryKey: ["masterTable", MasterTableId.EMPRESA_ATENCION],
+    queryFn: () => masterTableService.list(MasterTableId.EMPRESA_ATENCION),
+  });
 
   const { data: paises } = useQuery({
     queryKey: ["masterTable", MasterTableId.PAIS],
@@ -128,81 +141,24 @@ function InformacionTab({ register, setValue, watch, errors, clientes }: Informa
     queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
   });
 
+  const { data: plantillasInforme } = useQuery({
+    queryKey: ["masterTable", MasterTableId.PLANTILLA_INFORME],
+    queryFn: () => masterTableService.list(MasterTableId.PLANTILLA_INFORME),
+  });
+
   const handleClienteChange = (val: number | undefined) => {
     setValue("idCliente", val as number, { shouldValidate: true });
     if (val == null) return;
     const cliente = clientes.find((c) => c.idCliente === val);
     if (!cliente) return;
+    setValue("nroDocumento", cliente.numeroDocumento, { shouldValidate: true });
     setValue("idIdioma", cliente.idIdioma, { shouldValidate: true });
     setValue("logoImprimible", cliente.logoImprimible, { shouldValidate: true });
   };
 
   return (
     <div className="flex gap-6">
-      {/* Left column: remaining fields */}
-      <div className="flex flex-col gap-5 flex-1">
-        <div className="flex flex-col gap-1.5">
-          <CustomLabel required>Investigado</CustomLabel>
-          <input
-            type="text"
-            placeholder="Investigado"
-            {...register("investigado")}
-            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.investigado ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
-          />
-          {errors.investigado && <p className="text-xs text-red-500">{errors.investigado.message}</p>}
-        </div>
-        <SearchableSelect
-          label="País del Informe"
-          optional
-          options={paises}
-          value={idPais}
-          onChange={(val) => setValue("idPais", val as number | undefined, { shouldValidate: true })}
-          placeholder="Seleccione"
-          error={errors.idPais?.message}
-        />
-        <SearchableSelect
-          label="Clases de Informe"
-          options={clasesInforme}
-          value={idClaseInforme}
-          onChange={(val) => setValue("idClaseInforme", val as number, { shouldValidate: true })}
-          placeholder="Seleccione"
-          required
-          error={errors.idClaseInforme?.message}
-        />
-        <SearchableSelect
-          label="Tipo de Trámite"
-          options={tiposTramite}
-          value={idTipoTramite}
-          onChange={(val) => setValue("idTipoTramite", val as number, { shouldValidate: true })}
-          placeholder="Seleccione"
-          required
-          error={errors.idTipoTramite?.message}
-        />
-        <div className="flex flex-col gap-1.5">
-          <CustomLabel required>Razón Social</CustomLabel>
-          <input
-            type="text"
-            placeholder="Razón Social"
-            {...register("razonSocial")}
-            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.razonSocial ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
-          />
-          {errors.razonSocial && <p className="text-xs text-red-500">{errors.razonSocial.message}</p>}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <CustomLabel optional>Nro. de Referencia</CustomLabel>
-          <input
-            type="text"
-            placeholder="Nro. de Referencia"
-            {...register("nroReferencia")}
-            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
-          />
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="w-px bg-gray-200 self-stretch" />
-
-      {/* Right column: Cliente + auto-filled fields */}
+      {/* Column 1: Cliente + auto-filled fields */}
       <div className="flex flex-col gap-5 flex-1">
         <SearchableSelect
           label="Cliente"
@@ -212,6 +168,25 @@ function InformacionTab({ register, setValue, watch, errors, clientes }: Informa
           placeholder="Seleccione"
           required
           error={errors.idCliente?.message}
+        />
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel required>Nro. Documento</CustomLabel>
+          <input
+            type="text"
+            placeholder="Nro. Documento"
+            {...register("nroDocumento")}
+            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.nroDocumento ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+          />
+          {errors.nroDocumento && <p className="text-xs text-red-500">{errors.nroDocumento.message}</p>}
+        </div>
+        <SearchableSelect
+          label="Plantilla de Informe"
+          options={plantillasInforme}
+          value={idPlantillaInforme}
+          onChange={(val) => setValue("idPlantillaInforme", val as number, { shouldValidate: true })}
+          placeholder="Seleccione"
+          required
+          error={errors.idPlantillaInforme?.message}
         />
         <SearchableSelect
           label="Idioma del Informe"
@@ -233,6 +208,116 @@ function InformacionTab({ register, setValue, watch, errors, clientes }: Informa
             />
           </CustomLabel>
         </div>
+      </div>
+
+      {/* Divider */}
+      <div className="w-px bg-gray-200 self-stretch" />
+
+      {/* Column 2 */}
+      <div className="flex flex-col gap-5 flex-1">
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel required>Código</CustomLabel>
+          <input
+            type="text"
+            placeholder="Código"
+            {...register("codigo")}
+            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.codigo ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+          />
+          {errors.codigo && <p className="text-xs text-red-500">{errors.codigo.message}</p>}
+        </div>
+        <SearchableSelect
+          label="Tipo Persona"
+          options={tiposPersona}
+          value={idTipoPersona}
+          onChange={(val) => setValue("idTipoPersona", val as number, { shouldValidate: true })}
+          placeholder="Seleccione"
+          required
+          error={errors.idTipoPersona?.message}
+        />
+        <SearchableSelect
+          label="Atendido por"
+          options={empresasAtencion}
+          value={idEmpresaAtencion}
+          onChange={(val) => setValue("idEmpresaAtencion", val as number, { shouldValidate: true })}
+          placeholder="Seleccione"
+          required
+          error={errors.idEmpresaAtencion?.message}
+        />
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel required>Investigado</CustomLabel>
+          <input
+            type="text"
+            placeholder="Investigado"
+            {...register("investigado")}
+            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.investigado ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+          />
+          {errors.investigado && <p className="text-xs text-red-500">{errors.investigado.message}</p>}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel optional>Nro. de Referencia</CustomLabel>
+          <input
+            type="text"
+            placeholder="Nro. de Referencia"
+            {...register("nroReferencia")}
+            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+          />
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="w-px bg-gray-200 self-stretch" />
+
+      {/* Column 3 */}
+      <div className="flex flex-col gap-5 flex-1">
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel optional>Monto Crédito</CustomLabel>
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="Monto Crédito"
+            {...register("montoCredito")}
+            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.montoCredito ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+          />
+          {errors.montoCredito && <p className="text-xs text-red-500">{errors.montoCredito.message}</p>}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel optional>Plazo Crédito</CustomLabel>
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="Plazo Crédito"
+            {...register("plazoCredito")}
+            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.plazoCredito ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+          />
+          {errors.plazoCredito && <p className="text-xs text-red-500">{errors.plazoCredito.message}</p>}
+        </div>
+        <SearchableSelect
+          label="País del Informe"
+          required
+          options={paises}
+          value={idPais}
+          onChange={(val) => setValue("idPais", val as number, { shouldValidate: true })}
+          placeholder="Seleccione"
+          error={errors.idPais?.message}
+        />
+        <SearchableSelect
+          label="Clases de Informe"
+          options={clasesInforme}
+          value={idClaseInforme}
+          onChange={(val) => setValue("idClaseInforme", val as number, { shouldValidate: true })}
+          placeholder="Seleccione"
+          required
+          error={errors.idClaseInforme?.message}
+        />
+        <SearchableSelect
+          label="Tipo de Trámite"
+          options={tiposTramite}
+          value={idTipoTramite}
+          onChange={(val) => setValue("idTipoTramite", val as number, { shouldValidate: true })}
+          placeholder="Seleccione"
+          required
+          error={errors.idTipoTramite?.message}
+        />
       </div>
     </div>
   );
@@ -415,7 +500,7 @@ export function AddPedidoModal({ isOpen, onClose, isSubmitting = false }: AddPed
       footer={footer}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      maxWidth="max-w-2xl"
+      maxWidth="max-w-5xl"
     />
   );
 }
