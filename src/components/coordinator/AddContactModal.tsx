@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
+import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { useForm } from "react-hook-form";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -97,7 +98,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             />
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Código de Contacto <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Código de Contacto</CustomLabel>
               <input
                 {...register("codigoContacto")}
                 type="text"
@@ -108,7 +109,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Nombre <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Nombre</CustomLabel>
               <input
                 {...register("nombre")}
                 type="text"
@@ -119,7 +120,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Email <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Email</CustomLabel>
               <input
                 {...register("email")}
                 type="email"
@@ -130,7 +131,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Teléfono <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Teléfono</CustomLabel>
               <input
                 {...register("telefono")}
                 type="text"

@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { userSchema, type UserFormData } from "@maximilian/schemas";
+import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 
@@ -184,9 +185,7 @@ export function EditUserModal({
             {activeTab === "info" ? (
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-brand-black">
-                    Nombre <span className="text-red-500">*</span>
-                  </label>
+                  <CustomLabel required className="text-sm font-semibold text-brand-black">Nombre</CustomLabel>
                   <input
                     {...register("firstName")}
                     type="text"
@@ -202,9 +201,7 @@ export function EditUserModal({
                   )}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-brand-black">
-                    Apellido Paterno <span className="text-red-500">*</span>
-                  </label>
+                  <CustomLabel required className="text-sm font-semibold text-brand-black">Apellido Paterno</CustomLabel>
                   <input
                     {...register("paternalLastName")}
                     type="text"
@@ -281,9 +278,7 @@ export function EditUserModal({
                 className={`grid ${isTranslatorSelected ? "grid-cols-2 gap-12" : "grid-cols-1"} transition-all duration-300`}
               >
                 <div className="space-y-4">
-                  <p className="text-sm font-semibold text-brand-black mb-4">
-                    Seleccionar Roles <span className="text-red-500">*</span>
-                  </p>
+                  <CustomLabel required as="p" className="text-sm font-semibold text-brand-black mb-4">Seleccionar Roles</CustomLabel>
                   {isLoadingRoles ? (
                     <div className="flex items-center gap-2 text-gray-400 py-4">
                       <Loader2 size={18} className="animate-spin" />
@@ -347,9 +342,7 @@ export function EditUserModal({
                   <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300 border-l border-gray-100 pl-12">
                     <div className="flex items-center gap-2 mb-4">
                       <Globe size={18} className="text-brand-wine" />
-                      <p className="text-sm font-semibold text-brand-black">
-                        Idiomas del Traductor <span className="text-red-500">*</span>
-                      </p>
+                      <CustomLabel required as="p" className="text-sm font-semibold text-brand-black">Idiomas del Traductor</CustomLabel>
                     </div>
                     {isLoadingLanguages ? (
                       <div className="flex items-center gap-2 text-gray-400 py-4">

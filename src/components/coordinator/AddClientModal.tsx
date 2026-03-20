@@ -8,6 +8,7 @@ import {
   MailX,
 } from "lucide-react";
 import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
+import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
@@ -455,9 +456,7 @@ export function AddClientModal({
                   />
 
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Nombre<span className="text-red-500 ml-0.5">*</span>
-                    </label>
+                    <CustomLabel required>Nombre</CustomLabel>
                     <input
                       {...infoRegister("nombre")}
                       type="text"
@@ -483,9 +482,7 @@ export function AddClientModal({
                   />
 
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Dirección<span className="text-red-500 ml-0.5">*</span>
-                    </label>
+                    <CustomLabel required>Dirección</CustomLabel>
                     <input
                       {...infoRegister("direccion")}
                       type="text"
@@ -500,9 +497,7 @@ export function AddClientModal({
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Email<span className="text-red-500 ml-0.5">*</span>
-                    </label>
+                    <CustomLabel required>Email</CustomLabel>
                     <input
                       {...infoRegister("email")}
                       type="email"
@@ -517,9 +512,7 @@ export function AddClientModal({
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Teléfono<span className="text-red-500 ml-0.5">*</span>
-                    </label>
+                    <CustomLabel required>Teléfono</CustomLabel>
                     <input
                       {...infoRegister("telefono")}
                       type="text"
@@ -534,9 +527,7 @@ export function AddClientModal({
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Sitio Web <span className="text-gray-400 font-normal">(opcional)</span>
-                    </label>
+                    <CustomLabel optional>Sitio Web</CustomLabel>
                     <input
                       {...infoRegister("sitioWeb")}
                       type="text"
@@ -551,9 +542,7 @@ export function AddClientModal({
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Fax <span className="text-gray-400 font-normal">(opcional)</span>
-                    </label>
+                    <CustomLabel optional>Fax</CustomLabel>
                     <input
                       {...infoRegister("fax")}
                       type="text"
@@ -576,9 +565,7 @@ export function AddClientModal({
                   />
 
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Registro Tributario{watchedTipoRegTributario && <span className="text-red-500 ml-0.5">*</span>}
-                    </label>
+                    <CustomLabel required={!!watchedTipoRegTributario}>Registro Tributario</CustomLabel>
                     <input
                       {...infoRegister("numRegistroTributario")}
                       type="text"
@@ -683,9 +670,7 @@ export function AddClientModal({
                   </div>
 
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
-                      Recomendación <span className="text-gray-400 font-normal">(opcional)</span>
-                    </label>
+                    <CustomLabel optional>Recomendación</CustomLabel>
                     <textarea
                       {...infoRegister("recomendacion")}
                       rows={3}

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import { Upload, Trash2, FileText } from "lucide-react";
 import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -6,6 +6,17 @@ import { SearchableSelect } from "@maximilian/components/common/SearchableSelect
 import { useQuery } from "@tanstack/react-query";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
+import { clientService } from "@maximilian/services/client.service";
+import type { ClienteCorta } from "@maximilian/shared/types/client.type";
+import {
+  useForm,
+  type UseFormRegister,
+  type UseFormSetValue,
+  type UseFormWatch,
+} from "react-hook-form";
+import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { pedidoSchema, type PedidoFormData } from "@maximilian/schemas";
 
 interface UploadedFile {
   id: string;
@@ -19,6 +30,14 @@ interface AddPedidoModalProps {
   isOpen: boolean;
   onClose: () => void;
   isSubmitting?: boolean;
+}
+
+interface InformacionTabProps {
+  register: UseFormRegister<PedidoFormData>;
+  setValue: UseFormSetValue<PedidoFormData>;
+  watch: UseFormWatch<PedidoFormData>;
+  errors: Partial<Record<keyof PedidoFormData, { message?: string }>>;
+  clientes: ClienteCorta[];
 }
 
 function formatBytes(bytes: number): string {
@@ -61,22 +80,33 @@ function FileIcon({ ext }: { ext: string }) {
   return <FileText size={18} className={colorMap[ext] ?? "text-gray-400"} />;
 }
 
-// Static options for Logo Imprimible (Sí / No)
-const LOGO_OPTIONS = [
-  { idEmpresa: 0, idMasterTable: null, idMaster: 0, descripcion: "", num1: 1, num2: null, num3: null, string1: "Sí", string2: null, string3: null, date1: null, date2: null, date3: null },
-  { idEmpresa: 0, idMasterTable: null, idMaster: 0, descripcion: "", num1: 2, num2: null, num3: null, string1: "No", string2: null, string3: null, date1: null, date2: null, date3: null },
-];
+function InformacionTab({ register, setValue, watch, errors, clientes }: InformacionTabProps) {
+  const idCliente = watch("idCliente");
+  const idPais = watch("idPais");
+  const idIdioma = watch("idIdioma");
+  const idClaseInforme = watch("idClaseInforme");
+  const logoImprimible = watch("logoImprimible");
+  const idTipoTramite = watch("idTipoTramite");
 
-function InformacionTab() {
-  const [idCliente, setIdCliente] = useState<number | undefined>();
-  const [investigado, setInvestigado] = useState("");
-  const [idPais, setIdPais] = useState<number | undefined>();
-  const [idIdioma, setIdIdioma] = useState<number | undefined>();
-  const [idClaseInforme, setIdClaseInforme] = useState<number | undefined>();
-  const [idLogoImprimible, setIdLogoImprimible] = useState<number | undefined>();
-  const [razonSocial, setRazonSocial] = useState("");
-  const [nroReferencia, setNroReferencia] = useState("");
-  const [idTipoTramite, setIdTipoTramite] = useState<number | undefined>();
+  const clienteOptions = useMemo(
+    () =>
+      clientes.map((c) => ({
+        idEmpresa: 0,
+        idMasterTable: null,
+        idMaster: 0,
+        descripcion: "",
+        num1: c.idCliente,
+        num2: null,
+        num3: null,
+        string1: c.nombre,
+        string2: null,
+        string3: null,
+        date1: null,
+        date2: null,
+        date3: null,
+      })),
+    [clientes]
+  );
 
   const { data: paises } = useQuery({
     queryKey: ["masterTable", MasterTableId.PAIS],
@@ -88,97 +118,122 @@ function InformacionTab() {
     queryFn: () => masterTableService.list(MasterTableId.IDIOMA),
   });
 
+  const { data: clasesInforme } = useQuery({
+    queryKey: ["masterTable", MasterTableId.CLASE_INFORME],
+    queryFn: () => masterTableService.list(MasterTableId.CLASE_INFORME),
+  });
+
   const { data: tiposTramite } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
   });
 
+  const handleClienteChange = (val: number | undefined) => {
+    setValue("idCliente", val as number, { shouldValidate: true });
+    if (val == null) return;
+    const cliente = clientes.find((c) => c.idCliente === val);
+    if (!cliente) return;
+    setValue("idIdioma", cliente.idIdioma, { shouldValidate: true });
+    setValue("logoImprimible", cliente.logoImprimible, { shouldValidate: true });
+  };
+
   return (
-    <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-      <SearchableSelect
-        label="Cliente"
-        options={[]}
-        value={idCliente}
-        onChange={setIdCliente}
-        placeholder="Seleccione"
-        required
-      />
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-gray-700">
-          Investigado
-        </label>
-        <input
-          type="text"
-          placeholder="Investigado"
-          value={investigado}
-          onChange={(e) => setInvestigado(e.target.value)}
-          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+    <div className="flex gap-6">
+      {/* Left column: remaining fields */}
+      <div className="flex flex-col gap-5 flex-1">
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel required>Investigado</CustomLabel>
+          <input
+            type="text"
+            placeholder="Investigado"
+            {...register("investigado")}
+            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.investigado ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+          />
+          {errors.investigado && <p className="text-xs text-red-500">{errors.investigado.message}</p>}
+        </div>
+        <SearchableSelect
+          label="País del Informe"
+          optional
+          options={paises}
+          value={idPais}
+          onChange={(val) => setValue("idPais", val as number | undefined, { shouldValidate: true })}
+          placeholder="Seleccione"
+          error={errors.idPais?.message}
         />
+        <SearchableSelect
+          label="Clases de Informe"
+          options={clasesInforme}
+          value={idClaseInforme}
+          onChange={(val) => setValue("idClaseInforme", val as number, { shouldValidate: true })}
+          placeholder="Seleccione"
+          required
+          error={errors.idClaseInforme?.message}
+        />
+        <SearchableSelect
+          label="Tipo de Trámite"
+          options={tiposTramite}
+          value={idTipoTramite}
+          onChange={(val) => setValue("idTipoTramite", val as number, { shouldValidate: true })}
+          placeholder="Seleccione"
+          required
+          error={errors.idTipoTramite?.message}
+        />
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel required>Razón Social</CustomLabel>
+          <input
+            type="text"
+            placeholder="Razón Social"
+            {...register("razonSocial")}
+            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.razonSocial ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+          />
+          {errors.razonSocial && <p className="text-xs text-red-500">{errors.razonSocial.message}</p>}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel optional>Nro. de Referencia</CustomLabel>
+          <input
+            type="text"
+            placeholder="Nro. de Referencia"
+            {...register("nroReferencia")}
+            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+          />
+        </div>
       </div>
 
-      <SearchableSelect
-        label="País del Informe"
-        options={paises}
-        value={idPais}
-        onChange={setIdPais}
-        placeholder="Seleccione"
-        required
-      />
-      <SearchableSelect
-        label="Idioma del Informe"
-        options={idiomas}
-        value={idIdioma}
-        onChange={setIdIdioma}
-        placeholder="Seleccione"
-        required
-      />
+      {/* Divider */}
+      <div className="w-px bg-gray-200 self-stretch" />
 
-      <SearchableSelect
-        label="Clases de Informe"
-        options={[]}
-        value={idClaseInforme}
-        onChange={setIdClaseInforme}
-        placeholder="Seleccione"
-        required
-      />
-      <SearchableSelect
-        label="Logo Imprimible"
-        options={LOGO_OPTIONS}
-        value={idLogoImprimible}
-        onChange={setIdLogoImprimible}
-        placeholder="Seleccione"
-        required
-      />
-
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-gray-700">Razón Social</label>
-        <input
-          type="text"
-          placeholder="Razón Social"
-          value={razonSocial}
-          onChange={(e) => setRazonSocial(e.target.value)}
-          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+      {/* Right column: Cliente + auto-filled fields */}
+      <div className="flex flex-col gap-5 flex-1">
+        <SearchableSelect
+          label="Cliente"
+          options={clienteOptions}
+          value={idCliente}
+          onChange={handleClienteChange}
+          placeholder="Seleccione"
+          required
+          error={errors.idCliente?.message}
         />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-gray-700">Nro. de Referencia</label>
-        <input
-          type="text"
-          placeholder="Nro. de Referencia"
-          value={nroReferencia}
-          onChange={(e) => setNroReferencia(e.target.value)}
-          className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+        <SearchableSelect
+          label="Idioma del Informe"
+          options={idiomas}
+          value={idIdioma}
+          onChange={(val) => setValue("idIdioma", val as number, { shouldValidate: true })}
+          placeholder="Seleccione"
+          required
+          error={errors.idIdioma?.message}
         />
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel required className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            Logo Imprimible
+            <input
+              type="checkbox"
+              {...register("logoImprimible")}
+              checked={logoImprimible ?? false}
+              className="w-4 h-4 accent-brand-wine cursor-pointer"
+            />
+          </CustomLabel>
+        </div>
       </div>
-
-      <SearchableSelect
-        label="Tipo de Trámite"
-        options={tiposTramite}
-        value={idTipoTramite}
-        onChange={setIdTipoTramite}
-        placeholder="Seleccione"
-        required
-      />
     </div>
   );
 }
@@ -212,7 +267,6 @@ function AnexosTab() {
 
   return (
     <div className="space-y-6">
-      {/* Upload zone */}
       <div
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -236,7 +290,6 @@ function AnexosTab() {
         />
       </div>
 
-      {/* File list */}
       {files.length > 0 && (
         <table className="w-full text-sm">
           <thead>
@@ -288,11 +341,49 @@ function AnexosTab() {
 export function AddPedidoModal({ isOpen, onClose, isSubmitting = false }: AddPedidoModalProps) {
   const [activeTab, setActiveTab] = useState("informacion");
 
+  const { data: clientes = [] } = useQuery({
+    queryKey: ["clientes", "listaCorta"],
+    queryFn: () => clientService.listaCorta(),
+    enabled: isOpen,
+  });
+
+  const {
+    register,
+    setValue,
+    watch,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<PedidoFormData>({
+    resolver: zodResolver(pedidoSchema),
+    mode: "onTouched",
+    defaultValues: { logoImprimible: false },
+  });
+
+  const handleClose = () => {
+    reset();
+    setActiveTab("informacion");
+    onClose();
+  };
+
+  const onSubmit = (_data: PedidoFormData) => {
+    reset();
+    // TODO: wire up service call
+  };
+
   const tabs = [
     {
       id: "informacion",
       label: "Información",
-      content: <InformacionTab />,
+      content: (
+        <InformacionTab
+          register={register}
+          setValue={setValue}
+          watch={watch}
+          errors={errors}
+          clientes={clientes}
+        />
+      ),
     },
     {
       id: "anexos",
@@ -303,7 +394,13 @@ export function AddPedidoModal({ isOpen, onClose, isSubmitting = false }: AddPed
 
   const footer = (
     <div className="flex justify-end">
-      <CustomButton variant="primary" size="md" loading={isSubmitting} loadingText="Guardando...">
+      <CustomButton
+        variant="primary"
+        size="md"
+        loading={isSubmitting}
+        loadingText="Guardando..."
+        onClick={handleSubmit(onSubmit)}
+      >
         Confirmar
       </CustomButton>
     </div>
@@ -312,7 +409,7 @@ export function AddPedidoModal({ isOpen, onClose, isSubmitting = false }: AddPed
   return (
     <CustomTabbedModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title="Registra un Pedido"
       tabs={tabs}
       footer={footer}

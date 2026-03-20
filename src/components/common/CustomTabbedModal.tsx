@@ -53,7 +53,7 @@ export function CustomTabbedModal({
 
   return (
     <div className={`fixed inset-0 ${zIndex} flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300`}>
-      <div className={`bg-brand-white w-full ${maxWidth} rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col h-[85vh]`}>
+      <div className={`bg-brand-white w-full ${maxWidth} rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[85vh]`}>
 
         {/* Header */}
         <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between shrink-0">

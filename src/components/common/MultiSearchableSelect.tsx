@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import { Search, X, Check } from "lucide-react";
 import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
+import { CustomLabel } from "./CustomLabel";
 
 export interface MultiSearchableSelectProps {
   label: string;
@@ -10,6 +11,7 @@ export interface MultiSearchableSelectProps {
   error?: string;
   placeholder?: string;
   required?: boolean;
+  optional?: boolean;
   disabled?: boolean;
 }
 
@@ -21,6 +23,7 @@ export function MultiSearchableSelect({
   error,
   placeholder = "Seleccione...",
   required = false,
+  optional = false,
   disabled = false,
 }: MultiSearchableSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -79,10 +82,7 @@ export function MultiSearchableSelect({
 
   return (
     <div className="relative space-y-2">
-      <label className="text-sm font-bold text-gray-700">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
+      <CustomLabel required={required} optional={optional}>{label}</CustomLabel>
       <div
         ref={triggerRef}
         className={`w-full px-4 py-2 bg-brand-white border ${error ? "border-red-500" : "border-gray-200"} rounded-xl text-sm flex items-center justify-between gap-2 transition-all min-h-[42px] ${isOpen ? "relative z-[102]" : ""} ${disabled ? "bg-gray-50 cursor-not-allowed opacity-70" : "cursor-pointer hover:border-brand-wine/30"}`}

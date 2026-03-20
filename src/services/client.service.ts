@@ -18,6 +18,8 @@ import type {
   DeleteTarifarioRequest,
   GetTarifarioRequest,
   CreateContactoRequest,
+  ClienteCorta,
+  ClienteListaCortaResponse,
   UpdateContactoRequest,
   DeleteContactoRequest,
   GetContactoRequest,
@@ -207,5 +209,13 @@ export const clientService = {
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
     return res.result[0];
+  },
+
+  listaCorta: async (): Promise<ClienteCorta[]> => {
+    const { data } = await maximilianService.get<ApiResponse<ClienteListaCortaResponse>>(
+      "/api/Cliente/listaCorta"
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    return data.result.lstCliente;
   },
 };

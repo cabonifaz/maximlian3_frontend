@@ -7,6 +7,7 @@ import { rateSchema, type RateFormData } from "@maximilian/schemas";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
+import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 
 interface AddRateModalProps {
@@ -124,7 +125,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             />
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Días Min. <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Días Min.</CustomLabel>
               <input
                 {...register("diasMin", { valueAsNumber: true, onChange: () => clearErrors(["diasMin", "diasMax"]) })}
                 type="number"
@@ -134,7 +135,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Días Max. <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Días Max.</CustomLabel>
               <input
                 {...register("diasMax", { valueAsNumber: true, onChange: () => clearErrors(["diasMin", "diasMax"]) })}
                 type="number"
@@ -144,7 +145,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Precio <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Precio</CustomLabel>
               <input
                 {...register("precio", { valueAsNumber: true })}
                 type="number"
@@ -155,7 +156,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Penalidad <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Penalidad</CustomLabel>
               <input
                 {...register("penalidad", { valueAsNumber: true })}
                 type="number"

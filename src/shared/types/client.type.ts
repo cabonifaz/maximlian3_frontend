@@ -217,3 +217,14 @@ export type ContactoDetail = {
   email: string | null;
   enviarCorreo: boolean;
 };
+
+export interface ClienteCorta {
+  idCliente: number;
+  nombre: string;
+  idIdioma: number;
+  logoImprimible: boolean;
+}
+
+export interface ClienteListaCortaResponse {
+  lstCliente: ClienteCorta[];
+}
