@@ -15,7 +15,7 @@
   "aliases": {
     "components": "@maximilian/components",
     "utils": "@maximilian/lib/utils",
-    "ui": "@maximilian/components/ui",
+    "ui": "@maximilian/components/common/shadcn",
     "lib": "@maximilian/lib",
     "hooks": "@maximilian/hooks"
   },
