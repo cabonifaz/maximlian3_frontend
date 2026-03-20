@@ -11,7 +11,8 @@
     /* Aliases */
     "baseUrl": ".",
     "paths": {
-      "@maximilian/*": ["src/*"]
+      "@maximilian/*": ["src/*"],
+      "@/*": ["src/*"]
     },
 
     /* Bundler mode */
