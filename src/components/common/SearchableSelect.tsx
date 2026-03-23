@@ -63,10 +63,13 @@ export function SearchableSelect({
         className={`w-full px-4 py-2.5 bg-brand-white border ${error ? "border-red-500" : "border-gray-200"} rounded-xl text-sm flex items-center justify-between transition-all ${disabled ? "bg-gray-50 cursor-not-allowed opacity-70" : "cursor-pointer hover:border-brand-wine/30"}`}
         onClick={handleToggle}
       >
-        <span className={selectedOption ? "text-brand-black" : "text-gray-400"}>
+        <span
+          className={`truncate min-w-0 ${selectedOption ? "text-brand-black" : "text-gray-400"}`}
+          title={selectedOption?.string1}
+        >
           {selectedOption ? selectedOption.string1 : placeholder}
         </span>
-        <Search size={16} className="text-gray-400" />
+        <Search size={16} className="text-gray-400 shrink-0 ml-2" />
       </div>
 
       {!disabled && isOpen && (

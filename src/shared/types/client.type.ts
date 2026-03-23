@@ -238,6 +238,9 @@ export type TarifarioCortaEntry = {
   moneda: string;
   simboloMoneda: string;
   precio: number;
+  idPais: number;
+  idProducto: number;
+  idTipoTramite: number;
 };
 
 export type TarifarioCortaResponse = {

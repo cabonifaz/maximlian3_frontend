@@ -10,7 +10,7 @@ import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import { clientService } from "@maximilian/services/client.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
-import type { ClienteCorta } from "@maximilian/shared/types/client.type";
+import type { ClienteCorta, TarifarioCortaEntry } from "@maximilian/shared/types/client.type";
 import {
   useForm,
   type Resolver,
@@ -224,7 +224,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
           error={errors.idIdioma?.message}
         />
         <div className="flex flex-col gap-1.5">
-          <CustomLabel required className="text-sm font-bold text-gray-700 flex items-center gap-2">
+          <CustomLabel className="text-sm font-bold text-gray-700 flex items-center gap-2">
             Logo Imprimible
             <input
               type="checkbox"
@@ -236,7 +236,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
         </div>
         {/* Filter row */}
         <div className="flex gap-4">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <SearchableSelect
               label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />País del Informe</span>}
               required
@@ -247,7 +247,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
               error={errors.idPais?.message}
             />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <SearchableSelect
               label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />Clases de Informe</span>}
               options={clasesInforme}
@@ -258,7 +258,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
               error={errors.idClaseInforme?.message}
             />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <SearchableSelect
               label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />Tipo de Trámite</span>}
               options={tiposTramite}
@@ -280,7 +280,14 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
               idTipoTramite={idTipoTramite}
               idPais={idPais}
               selectedIdTarifario={selectedIdTarifario}
-              onTarifarioSelect={onTarifarioSelect}
+              onTarifarioSelect={(entry: TarifarioCortaEntry | undefined) => {
+                if (entry) {
+                  if (!idPais) setValue("idPais", entry.idPais, { shouldValidate: true });
+                  if (!idClaseInforme) setValue("idClaseInforme", entry.idProducto, { shouldValidate: true });
+                  if (!idTipoTramite) setValue("idTipoTramite", entry.idTipoTramite, { shouldValidate: true });
+                }
+                onTarifarioSelect(entry?.idTarifario);
+              }}
               error={tarifarioError}
             />
           </div>

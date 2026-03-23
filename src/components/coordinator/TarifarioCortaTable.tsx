@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { clientService } from "@maximilian/services/client.service";
 import type { TarifarioCortaEntry } from "@maximilian/shared/types/client.type";
@@ -8,7 +9,7 @@ interface TarifarioCortaTableProps {
   idTipoTramite: number | undefined;
   idPais: number | undefined;
   selectedIdTarifario: number | undefined;
-  onTarifarioSelect: (id: number | undefined) => void;
+  onTarifarioSelect: (entry: TarifarioCortaEntry | undefined) => void;
   error?: string;
 }
 
@@ -50,8 +51,19 @@ export function TarifarioCortaTable({
 
   const entries: TarifarioCortaEntry[] = data ?? [];
 
-  const handleCheckbox = (id: number) => {
-    onTarifarioSelect(selectedIdTarifario === id ? undefined : id);
+  const onTarifarioSelectRef = useRef(onTarifarioSelect);
+  onTarifarioSelectRef.current = onTarifarioSelect;
+
+  // Deselect the row if it's no longer present in the current result set
+  useEffect(() => {
+    if (selectedIdTarifario != null && data != null && !data.some((e) => e.idTarifario === selectedIdTarifario)) {
+      onTarifarioSelectRef.current(undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
+  const handleCheckbox = (entry: TarifarioCortaEntry) => {
+    onTarifarioSelect(selectedIdTarifario === entry.idTarifario ? undefined : entry);
   };
 
   return (
@@ -97,7 +109,7 @@ export function TarifarioCortaTable({
                 return (
                   <tr
                     key={entry.idTarifario}
-                    onClick={() => handleCheckbox(entry.idTarifario)}
+                    onClick={() => handleCheckbox(entry)}
                     className={`cursor-pointer transition-colors ${
                       isSelected ? "bg-brand-wine/5" : "hover:bg-gray-50/50"
                     }`}
@@ -106,7 +118,7 @@ export function TarifarioCortaTable({
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => handleCheckbox(entry.idTarifario)}
+                        onChange={() => handleCheckbox(entry)}
                         onClick={(e) => e.stopPropagation()}
                         className="w-4 h-4 accent-brand-wine cursor-pointer"
                       />
