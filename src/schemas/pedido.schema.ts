@@ -32,6 +32,8 @@ export const pedidoSchema = z.object({
   idTipoTramite: z.number({ error: "El tipo de trámite es requerido" }),
   fechaDesde: z.date({ error: "La fecha desde es requerida" }),
   fechaHasta: z.date({ error: "La fecha hasta es requerida" }),
+  idTarifario: z.number({ error: "Seleccione un tarifario de la tabla" }),
+  comentario: z.string().optional(),
 });
 
 export type PedidoFormData = z.infer<typeof pedidoSchema>;

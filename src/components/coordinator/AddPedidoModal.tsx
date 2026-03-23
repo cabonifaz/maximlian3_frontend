@@ -1,13 +1,15 @@
 import { useRef, useState, useMemo } from "react";
-import { Upload, Trash2, FileText } from "lucide-react";
+import { toast } from "sonner";
+import { Upload, Trash2, FileText, Filter } from "lucide-react";
 import { CustomDatePicker } from "@maximilian/components/common/CustomDatePicker";
 import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import { clientService } from "@maximilian/services/client.service";
+import { pedidoService } from "@maximilian/services/pedido.service";
 import type { ClienteCorta } from "@maximilian/shared/types/client.type";
 import {
   useForm,
@@ -48,7 +50,6 @@ interface UploadedFile {
 interface AddPedidoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  isSubmitting?: boolean;
 }
 
 interface InformacionTabProps {
@@ -59,6 +60,7 @@ interface InformacionTabProps {
   clientes: ClienteCorta[];
   selectedIdTarifario: number | undefined;
   onTarifarioSelect: (id: number | undefined) => void;
+  tarifarioError?: string;
 }
 
 function formatBytes(bytes: number): string {
@@ -101,7 +103,7 @@ function FileIcon({ ext }: { ext: string }) {
   return <FileText size={18} className={colorMap[ext] ?? "text-gray-400"} />;
 }
 
-function InformacionTab({ register, setValue, watch, errors, clientes, selectedIdTarifario, onTarifarioSelect }: InformacionTabProps) {
+function InformacionTab({ register, setValue, watch, errors, clientes, selectedIdTarifario, onTarifarioSelect, tarifarioError }: InformacionTabProps) {
   const idCliente = watch("idCliente");
   const idPais = watch("idPais");
   const idIdioma = watch("idIdioma");
@@ -181,18 +183,9 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <TarifarioCortaTable
-        idCliente={idCliente}
-        idTipoProducto={idClaseInforme}
-        idTipoTramite={idTipoTramite}
-        idPais={idPais}
-        selectedIdTarifario={selectedIdTarifario}
-        onTarifarioSelect={onTarifarioSelect}
-      />
-      <div className="flex gap-6">
-      {/* Column 1: Cliente + auto-filled fields */}
-      <div className="flex flex-col gap-5 flex-1">
+    <div className="flex gap-6">
+      {/* Left column: client data + filters + tarifa */}
+      <div className="flex flex-col gap-5 flex-[3]">
         <SearchableSelect
           label="Cliente"
           options={clienteOptions}
@@ -241,13 +234,64 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
             />
           </CustomLabel>
         </div>
+        {/* Filter row */}
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <SearchableSelect
+              label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />País del Informe</span>}
+              required
+              options={paises}
+              value={idPais}
+              onChange={(val) => setValue("idPais", val as number, { shouldValidate: true })}
+              placeholder="Seleccione"
+              error={errors.idPais?.message}
+            />
+          </div>
+          <div className="flex-1">
+            <SearchableSelect
+              label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />Clases de Informe</span>}
+              options={clasesInforme}
+              value={idClaseInforme}
+              onChange={(val) => setValue("idClaseInforme", val as number, { shouldValidate: true })}
+              placeholder="Seleccione"
+              required
+              error={errors.idClaseInforme?.message}
+            />
+          </div>
+          <div className="flex-1">
+            <SearchableSelect
+              label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />Tipo de Trámite</span>}
+              options={tiposTramite}
+              value={idTipoTramite}
+              onChange={(val) => setValue("idTipoTramite", val as number, { shouldValidate: true })}
+              placeholder="Seleccione"
+              required
+              error={errors.idTipoTramite?.message}
+            />
+          </div>
+        </div>
+        {/* Tarifa */}
+        {idCliente && (
+          <div className="flex flex-col gap-1">
+            <CustomLabel required>Tarifa</CustomLabel>
+            <TarifarioCortaTable
+              idCliente={idCliente}
+              idTipoProducto={idClaseInforme}
+              idTipoTramite={idTipoTramite}
+              idPais={idPais}
+              selectedIdTarifario={selectedIdTarifario}
+              onTarifarioSelect={onTarifarioSelect}
+              error={tarifarioError}
+            />
+          </div>
+        )}
       </div>
 
       {/* Divider */}
       <div className="w-px bg-gray-200 self-stretch" />
 
-      {/* Column 2 */}
-      <div className="flex flex-col gap-5 flex-1">
+      {/* Right column: order fields */}
+      <div className="flex flex-col gap-5 flex-2">
         <div className="flex flex-col gap-1.5">
           <CustomLabel required>Código</CustomLabel>
           <input
@@ -309,13 +353,6 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
           onChange={(date) => setValue("fechaHasta", date as Date, { shouldValidate: true })}
           error={errors.fechaHasta?.message}
         />
-      </div>
-
-      {/* Divider */}
-      <div className="w-px bg-gray-200 self-stretch" />
-
-      {/* Column 3 */}
-      <div className="flex flex-col gap-5 flex-1">
         <div className="flex flex-col gap-1.5">
           <CustomLabel optional>Monto Crédito</CustomLabel>
           <input
@@ -338,41 +375,26 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
           />
           {errors.plazoCredito && <p className="text-xs text-red-500">{errors.plazoCredito.message}</p>}
         </div>
-        <SearchableSelect
-          label="País del Informe"
-          required
-          options={paises}
-          value={idPais}
-          onChange={(val) => setValue("idPais", val as number, { shouldValidate: true })}
-          placeholder="Seleccione"
-          error={errors.idPais?.message}
-        />
-        <SearchableSelect
-          label="Clases de Informe"
-          options={clasesInforme}
-          value={idClaseInforme}
-          onChange={(val) => setValue("idClaseInforme", val as number, { shouldValidate: true })}
-          placeholder="Seleccione"
-          required
-          error={errors.idClaseInforme?.message}
-        />
-        <SearchableSelect
-          label="Tipo de Trámite"
-          options={tiposTramite}
-          value={idTipoTramite}
-          onChange={(val) => setValue("idTipoTramite", val as number, { shouldValidate: true })}
-          placeholder="Seleccione"
-          required
-          error={errors.idTipoTramite?.message}
-        />
-      </div>
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel optional>Comentario</CustomLabel>
+          <textarea
+            placeholder="Comentario"
+            rows={3}
+            {...register("comentario")}
+            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all resize-none"
+          />
+        </div>
       </div>
     </div>
   );
 }
 
-function AnexosTab() {
-  const [files, setFiles] = useState<UploadedFile[]>([]);
+interface AnexosTabProps {
+  files: UploadedFile[];
+  onFilesChange: (files: UploadedFile[]) => void;
+}
+
+function AnexosTab({ files, onFilesChange }: AnexosTabProps) {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -385,7 +407,7 @@ function AnexosTab() {
       size: f.size,
       file: f,
     }));
-    setFiles((prev) => [...prev, ...next]);
+    onFilesChange([...files, ...next]);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -395,7 +417,7 @@ function AnexosTab() {
   };
 
   const handleRemove = (id: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== id));
+    onFilesChange(files.filter((f) => f.id !== id));
   };
 
   return (
@@ -471,9 +493,13 @@ function AnexosTab() {
   );
 }
 
-export function AddPedidoModal({ isOpen, onClose, isSubmitting = false }: AddPedidoModalProps) {
+export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
   const [activeTab, setActiveTab] = useState("informacion");
   const [selectedIdTarifario, setSelectedIdTarifario] = useState<number | undefined>(undefined);
+  const [anexosFiles, setAnexosFiles] = useState<UploadedFile[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const queryClient = useQueryClient();
 
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes", "listaCorta"],
@@ -498,12 +524,72 @@ export function AddPedidoModal({ isOpen, onClose, isSubmitting = false }: AddPed
     reset();
     setActiveTab("informacion");
     setSelectedIdTarifario(undefined);
+    setAnexosFiles([]);
+    setIsUploading(false);
     onClose();
   };
 
-  const onSubmit = (_data: PedidoFormData) => {
-    reset();
-    // TODO: wire up service call
+  const { mutate: createPedido, isPending } = useMutation({
+    mutationFn: pedidoService.create,
+    onSuccess: async (result) => {
+      if (result.archivos.length === 0) {
+        queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+        handleClose();
+        return;
+      }
+
+      const toastId = toast.loading("Subiendo archivos...");
+      setIsUploading(true);
+      try {
+        await Promise.all(
+          result.archivos.map(({ nombreDocumento, uploadUrl }) => {
+            const file = anexosFiles.find((f) => f.name === nombreDocumento)?.file;
+            if (!file) return Promise.resolve();
+            return fetch(uploadUrl, {
+              method: "PUT",
+              headers: { "Content-Type": file.type || "application/octet-stream" },
+              body: file,
+            });
+          })
+        );
+        toast.dismiss(toastId);
+        queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+        handleClose();
+      } catch {
+        toast.error("No se pudieron subir los archivos", { id: toastId });
+      } finally {
+        setIsUploading(false);
+      }
+    },
+  });
+
+  const onSubmit = (data: PedidoFormData) => {
+    const cliente = clientes.find((c) => c.idCliente === data.idCliente);
+    createPedido({
+      codigo: data.codigo,
+      idCliente: data.idCliente,
+      numeroDocumento: data.nroDocumento,
+      nombreCliente: cliente?.nombreCliente ?? "",
+      idTipoPersona: data.idTipoPersona,
+      idCompania: data.idEmpresaAtencion,
+      investigarRazonSocialNombres: data.investigado,
+      idTarifario: data.idTarifario,
+      idPlantilla: data.idPlantillaInforme,
+      idIdioma: data.idIdioma,
+      idClaseInforme: data.idClaseInforme,
+      numReferencia: data.nroReferencia,
+      montoCredito: data.montoCredito,
+      plazoCredito: data.plazoCredito,
+      fchDesde: data.fechaDesde.toISOString(),
+      fchHasta: data.fechaHasta.toISOString(),
+      comentario: data.comentario ?? "",
+      idEstado: 1,
+      archivos: anexosFiles.map((f) => ({
+        tipoArchivo: f.type,
+        nombreDocumento: f.name,
+        tamanoArchivo: f.size,
+      })),
+    });
   };
 
   const tabs = [
@@ -518,14 +604,18 @@ export function AddPedidoModal({ isOpen, onClose, isSubmitting = false }: AddPed
           errors={errors}
           clientes={clientes}
           selectedIdTarifario={selectedIdTarifario}
-          onTarifarioSelect={setSelectedIdTarifario}
+          onTarifarioSelect={(id) => {
+            setSelectedIdTarifario(id);
+            setValue("idTarifario", id as number, { shouldValidate: true });
+          }}
+          tarifarioError={errors.idTarifario?.message}
         />
       ),
     },
     {
       id: "anexos",
       label: "Anexos",
-      content: <AnexosTab />,
+      content: <AnexosTab files={anexosFiles} onFilesChange={setAnexosFiles} />,
     },
   ];
 
@@ -534,7 +624,7 @@ export function AddPedidoModal({ isOpen, onClose, isSubmitting = false }: AddPed
       <CustomButton
         variant="primary"
         size="md"
-        loading={isSubmitting}
+        loading={isPending || isUploading}
         loadingText="Guardando..."
         onClick={handleSubmit(onSubmit)}
       >

@@ -9,6 +9,7 @@ interface TarifarioCortaTableProps {
   idPais: number | undefined;
   selectedIdTarifario: number | undefined;
   onTarifarioSelect: (id: number | undefined) => void;
+  error?: string;
 }
 
 function SkeletonRow() {
@@ -31,6 +32,7 @@ export function TarifarioCortaTable({
   idPais,
   selectedIdTarifario,
   onTarifarioSelect,
+  error,
 }: TarifarioCortaTableProps) {
   const visible = !!idCliente;
 
@@ -55,13 +57,15 @@ export function TarifarioCortaTable({
   return (
     <div
       className={`overflow-hidden transition-all duration-300 ${
-        visible ? "opacity-100 max-h-80" : "opacity-0 max-h-0"
+        visible ? "opacity-100 max-h-[300px]" : "opacity-0 max-h-0"
       }`}
     >
+      {error && <p className="text-xs text-red-500 mb-1">{error}</p>}
       <div className="border border-gray-200 rounded-xl overflow-hidden">
+        <div className="overflow-y-auto max-h-[260px]">
         <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
+          <thead className="sticky top-0 bg-gray-50 z-10">
+            <tr className="border-b border-gray-200">
               <th className="py-2.5 px-3 w-10" />
               <th className="text-left py-2.5 px-4 text-xs font-bold text-gray-400 uppercase tracking-wide">
                 Tipo Trámite
@@ -116,6 +120,7 @@ export function TarifarioCortaTable({
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

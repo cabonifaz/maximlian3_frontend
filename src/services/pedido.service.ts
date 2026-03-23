@@ -1,7 +1,12 @@
 import maximilianService from "./maximilianService";
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
-import type { PedidoListParams, PedidoListResponse } from "@maximilian/shared/types/pedido.type";
+import type {
+  PedidoListParams,
+  PedidoListResponse,
+  CreatePedidoRequest,
+  CreatePedidoResponse,
+} from "@maximilian/shared/types/pedido.type";
 
 export const pedidoService = {
   list: async (params: PedidoListParams): Promise<PedidoListResponse> => {
@@ -20,5 +25,14 @@ export const pedidoService = {
       console.error("Error listing pedidos:", error);
       throw error;
     }
+  },
+
+  create: async (data: CreatePedidoRequest): Promise<CreatePedidoResponse> => {
+    const { data: res } = await maximilianService.post<ApiResponse<CreatePedidoResponse[]>>(
+      "/api/Pedido/crear",
+      data
+    );
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    return res.result[0];
   },
 };

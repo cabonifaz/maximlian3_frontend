@@ -1,10 +1,10 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, type ReactNode } from "react";
 import { Search } from "lucide-react";
 import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import { CustomLabel } from "./CustomLabel";
 
 export interface SearchableSelectProps {
-  label: string;
+  label: ReactNode;
   options: MasterTableEntry[] | undefined;
   value: string | number | undefined;
   onChange: (val: number) => void;
