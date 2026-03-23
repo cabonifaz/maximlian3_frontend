@@ -4,6 +4,7 @@ import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   PedidoListParams,
   PedidoListResponse,
+  PedidoCancelRequest,
   CreatePedidoRequest,
   CreatePedidoResponse,
 } from "@maximilian/shared/types/pedido.type";
@@ -25,6 +26,11 @@ export const pedidoService = {
       console.error("Error listing pedidos:", error);
       throw error;
     }
+  },
+
+  cancel: async (data: PedidoCancelRequest): Promise<void> => {
+    const { data: res } = await maximilianService.post<ApiResponse<null>>("/api/Pedido/eliminar", data);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
   },
 
   create: async (data: CreatePedidoRequest): Promise<CreatePedidoResponse> => {

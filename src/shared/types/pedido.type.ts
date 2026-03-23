@@ -27,6 +27,10 @@ export interface PedidoListParams {
   numPag?: number;
 }
 
+export interface PedidoCancelRequest {
+  idPedido: number;
+}
+
 export interface CreatePedidoArchivoRequest {
   tipoArchivo: string;
   nombreDocumento: string;

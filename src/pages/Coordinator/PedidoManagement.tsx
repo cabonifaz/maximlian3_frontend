@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { Search, Filter, MoreHorizontal, Edit, UserPlus, X, Plus } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
+import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
 import { AddPedidoModal } from "@maximilian/components/coordinator/AddPedidoModal";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { pedidoService } from "@maximilian/services/pedido.service";
@@ -36,10 +37,20 @@ function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: str
 }
 
 export default function PedidoManagement() {
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
+  const [pedidoToCancel, setPedidoToCancel] = useState<PedidoListEntry | null>(null);
+
+  const cancelPedidoMutation = useMutation({
+    mutationFn: (idPedido: number) => pedidoService.cancel({ idPedido }),
+    onSuccess: () => {
+      setPedidoToCancel(null);
+      queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+    },
+  });
   const [filterEstado, setFilterEstado] = useState<number | undefined>(undefined);
   const [isEstadoOpen, setIsEstadoOpen] = useState(false);
   const [estadoDropdownStyle, setEstadoDropdownStyle] = useState<React.CSSProperties>({});
@@ -137,7 +148,10 @@ export default function PedidoManagement() {
                 <span>Asignar</span>
               </button>
               <button
-                onClick={() => setActiveMenuId(null)}
+                onClick={() => {
+                  setPedidoToCancel(pedido);
+                  setActiveMenuId(null);
+                }}
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
               >
                 <X size={14} />
@@ -167,14 +181,6 @@ export default function PedidoManagement() {
               onChange={handleSearchChange}
             />
           </div>
-
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <Plus size={16} />
-            <span>Agregar Pedido</span>
-          </button>
 
           <div className="relative">
             <button
@@ -219,6 +225,14 @@ export default function PedidoManagement() {
               </>
             )}
           </div>
+
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Plus size={16} />
+            <span>Agregar Pedido</span>
+          </button>
         </div>
       </div>
 
@@ -242,6 +256,18 @@ export default function PedidoManagement() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
       />
+      <ConfirmDeleteModal
+        isOpen={pedidoToCancel !== null}
+        onClose={() => setPedidoToCancel(null)}
+        onConfirm={() => cancelPedidoMutation.mutate(pedidoToCancel!.idPedido)}
+        title="Cancelar pedido"
+        isSubmitting={cancelPedidoMutation.isPending}
+      >
+        <p className="text-sm text-gray-600">
+          Pedido de <span className="font-semibold">{pedidoToCancel?.cliente}</span> —{" "}
+          {pedidoToCancel?.investigado}
+        </p>
+      </ConfirmDeleteModal>
     </div>
   );
 }
