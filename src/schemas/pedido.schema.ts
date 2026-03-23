@@ -30,6 +30,8 @@ export const pedidoSchema = z.object({
   idPlantillaInforme: z.number({ error: "La plantilla de informe es requerida" }),
   nroReferencia: z.string().optional(),
   idTipoTramite: z.number({ error: "El tipo de trámite es requerido" }),
+  fechaDesde: z.date({ error: "La fecha desde es requerida" }),
+  fechaHasta: z.date({ error: "La fecha hasta es requerida" }),
 });
 
 export type PedidoFormData = z.infer<typeof pedidoSchema>;

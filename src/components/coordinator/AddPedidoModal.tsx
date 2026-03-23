@@ -1,5 +1,6 @@
 import { useRef, useState, useMemo } from "react";
 import { Upload, Trash2, FileText } from "lucide-react";
+import { CustomDatePicker } from "@maximilian/components/common/CustomDatePicker";
 import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
@@ -10,13 +11,31 @@ import { clientService } from "@maximilian/services/client.service";
 import type { ClienteCorta } from "@maximilian/shared/types/client.type";
 import {
   useForm,
+  type Resolver,
   type UseFormRegister,
   type UseFormSetValue,
   type UseFormWatch,
 } from "react-hook-form";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { TarifarioCortaTable } from "@maximilian/components/coordinator/TarifarioCortaTable";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { pedidoSchema, type PedidoFormData } from "@maximilian/schemas";
+
+const pedidoResolver: Resolver<PedidoFormData> = (...args) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result: any = zodResolver(pedidoSchema)(...args);
+  const { fechaDesde, fechaHasta } = args[0];
+  if (fechaDesde && fechaHasta && fechaHasta < fechaDesde) {
+    result.errors = {
+      ...result.errors,
+      fechaHasta: {
+        type: "custom",
+        message: "La fecha hasta debe ser mayor o igual a la fecha desde",
+      },
+    };
+  }
+  return result;
+};
 
 interface UploadedFile {
   id: string;
@@ -38,6 +57,8 @@ interface InformacionTabProps {
   watch: UseFormWatch<PedidoFormData>;
   errors: Partial<Record<keyof PedidoFormData, { message?: string }>>;
   clientes: ClienteCorta[];
+  selectedIdTarifario: number | undefined;
+  onTarifarioSelect: (id: number | undefined) => void;
 }
 
 function formatBytes(bytes: number): string {
@@ -80,7 +101,7 @@ function FileIcon({ ext }: { ext: string }) {
   return <FileText size={18} className={colorMap[ext] ?? "text-gray-400"} />;
 }
 
-function InformacionTab({ register, setValue, watch, errors, clientes }: InformacionTabProps) {
+function InformacionTab({ register, setValue, watch, errors, clientes, selectedIdTarifario, onTarifarioSelect }: InformacionTabProps) {
   const idCliente = watch("idCliente");
   const idPais = watch("idPais");
   const idIdioma = watch("idIdioma");
@@ -90,6 +111,8 @@ function InformacionTab({ register, setValue, watch, errors, clientes }: Informa
   const idTipoPersona = watch("idTipoPersona");
   const idEmpresaAtencion = watch("idEmpresaAtencion");
   const idPlantillaInforme = watch("idPlantillaInforme");
+  const fechaDesde = watch("fechaDesde");
+  const fechaHasta = watch("fechaHasta");
 
   const clienteOptions = useMemo(
     () =>
@@ -154,10 +177,20 @@ function InformacionTab({ register, setValue, watch, errors, clientes }: Informa
     setValue("nroDocumento", cliente.numeroDocumento, { shouldValidate: true });
     setValue("idIdioma", cliente.idIdioma, { shouldValidate: true });
     setValue("logoImprimible", cliente.logoImprimible, { shouldValidate: true });
+    setValue("idPlantillaInforme", cliente.idPlantilla, { shouldValidate: true });
   };
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col gap-6">
+      <TarifarioCortaTable
+        idCliente={idCliente}
+        idTipoProducto={idClaseInforme}
+        idTipoTramite={idTipoTramite}
+        idPais={idPais}
+        selectedIdTarifario={selectedIdTarifario}
+        onTarifarioSelect={onTarifarioSelect}
+      />
+      <div className="flex gap-6">
       {/* Column 1: Cliente + auto-filled fields */}
       <div className="flex flex-col gap-5 flex-1">
         <SearchableSelect
@@ -262,6 +295,20 @@ function InformacionTab({ register, setValue, watch, errors, clientes }: Informa
             className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
           />
         </div>
+        <CustomDatePicker
+          label="Desde"
+          required
+          value={fechaDesde}
+          onChange={(date) => setValue("fechaDesde", date as Date, { shouldValidate: true })}
+          error={errors.fechaDesde?.message}
+        />
+        <CustomDatePicker
+          label="Hasta"
+          required
+          value={fechaHasta}
+          onChange={(date) => setValue("fechaHasta", date as Date, { shouldValidate: true })}
+          error={errors.fechaHasta?.message}
+        />
       </div>
 
       {/* Divider */}
@@ -318,6 +365,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes }: Informa
           required
           error={errors.idTipoTramite?.message}
         />
+      </div>
       </div>
     </div>
   );
@@ -425,6 +473,7 @@ function AnexosTab() {
 
 export function AddPedidoModal({ isOpen, onClose, isSubmitting = false }: AddPedidoModalProps) {
   const [activeTab, setActiveTab] = useState("informacion");
+  const [selectedIdTarifario, setSelectedIdTarifario] = useState<number | undefined>(undefined);
 
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes", "listaCorta"],
@@ -440,7 +489,7 @@ export function AddPedidoModal({ isOpen, onClose, isSubmitting = false }: AddPed
     reset,
     formState: { errors },
   } = useForm<PedidoFormData>({
-    resolver: zodResolver(pedidoSchema),
+    resolver: pedidoResolver,
     mode: "onTouched",
     defaultValues: { logoImprimible: false },
   });
@@ -448,6 +497,7 @@ export function AddPedidoModal({ isOpen, onClose, isSubmitting = false }: AddPed
   const handleClose = () => {
     reset();
     setActiveTab("informacion");
+    setSelectedIdTarifario(undefined);
     onClose();
   };
 
@@ -467,6 +517,8 @@ export function AddPedidoModal({ isOpen, onClose, isSubmitting = false }: AddPed
           watch={watch}
           errors={errors}
           clientes={clientes}
+          selectedIdTarifario={selectedIdTarifario}
+          onTarifarioSelect={setSelectedIdTarifario}
         />
       ),
     },
