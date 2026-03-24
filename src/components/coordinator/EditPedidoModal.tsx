@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { toast } from "sonner";
-import { Upload, Trash2, FileText, Filter, AlertCircle, RotateCcw } from "lucide-react";
+import { Upload, Trash2, FileText, Filter, AlertCircle, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
 import { CustomDatePicker } from "@maximilian/components/common/CustomDatePicker";
 import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -432,12 +432,25 @@ interface AnexosTabProps {
 function AnexosTab({ pedidoId, newFiles, onNewFilesChange }: AnexosTabProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [archivoToDelete, setArchivoToDelete] = useState<PedidoArchivoEntry | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [numPag, setNumPag] = useState(1);
+  const [filterFormato, setFilterFormato] = useState("");
+  const [filterTipo, setFilterTipo] = useState<number | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setNumPag(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["pedidoArchivos", pedidoId],
-    queryFn: () => pedidoService.listArchivos(pedidoId!),
+    queryKey: ["pedidoArchivos", pedidoId, debouncedSearch, numPag],
+    queryFn: () => pedidoService.listArchivos({ idPedido: pedidoId!, busqueda: debouncedSearch || undefined, numPag }),
     enabled: !!pedidoId,
   });
 
@@ -454,7 +467,29 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange }: AnexosTabProps) {
     },
   });
 
-  const archivos = data?.lstPedidoArchivo ?? [];
+  const archivos = useMemo(() => data?.lstPedidoArchivo ?? [], [data]);
+  const totalPaginas = data?.totalPaginas ?? 1;
+
+  const uniqueFormatos = useMemo(
+    () => Array.from(new Set([
+      ...archivos.map((f) => getExtension(f.nombreDocumento)),
+      ...newFiles.map((f) => f.type),
+    ])).sort(),
+    [archivos, newFiles]
+  );
+
+  const filteredArchivos = useMemo(() => archivos.filter((f) => {
+    const ext = getExtension(f.nombreDocumento);
+    const matchesFormato = !filterFormato || ext === filterFormato;
+    const matchesTipo = filterTipo === undefined || f.idTipoArchivo === filterTipo;
+    return matchesFormato && matchesTipo;
+  }), [archivos, filterFormato, filterTipo]);
+
+  const filteredNewFiles = useMemo(() => newFiles.filter((f) => {
+    const matchesFormato = !filterFormato || f.type === filterFormato;
+    const matchesTipo = filterTipo === undefined || f.tipoId === filterTipo;
+    return matchesFormato && matchesTipo;
+  }), [newFiles, filterFormato, filterTipo]);
 
   const addFiles = (incoming: FileList | null) => {
     if (!incoming) return;
@@ -478,23 +513,23 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange }: AnexosTabProps) {
     addFiles(e.dataTransfer.files);
   };
 
-  const showTable = isLoading || archivos.length > 0 || newFiles.length > 0;
+  const showTable = isLoading || filteredArchivos.length > 0 || filteredNewFiles.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="flex gap-4 min-h-75">
+      {/* Left: drag & drop */}
       <div
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        className={`flex flex-col items-center justify-center gap-3 p-10 border-2 border-dashed rounded-2xl cursor-pointer transition-colors ${isDragging ? "border-brand-wine bg-brand-wine/5" : "border-gray-200 hover:border-brand-wine/40 hover:bg-gray-50"}`}
+        className={`w-44 shrink-0 flex flex-col items-center justify-center gap-3 p-4 border-2 border-dashed rounded-2xl cursor-pointer transition-colors ${isDragging ? "border-brand-wine bg-brand-wine/5" : "border-gray-200 hover:border-brand-wine/40 hover:bg-gray-50"}`}
       >
         <div className="p-3 rounded-full bg-gray-100">
-          <Upload size={24} className="text-gray-400" />
+          <Upload size={22} className="text-gray-400" />
         </div>
-        <p className="text-sm text-gray-500 text-center">
-          Haz clic o arrastra archivos aquí para subirlos{" "}
-          <span className="text-brand-wine">(PDF, Word, Excel, etc.)</span>
+        <p className="text-xs text-gray-500 text-center leading-relaxed">
+          Arrastra archivos aquí o haz clic para subir
         </p>
         <input
           ref={inputRef}
@@ -505,94 +540,166 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange }: AnexosTabProps) {
         />
       </div>
 
-      {showTable && (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">
-                Nombre del Archivo
-              </th>
-              <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">
-                Formato
-              </th>
-              <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">
-                Tamaño
-              </th>
-              <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">
-                Tipo
-              </th>
-              <th className="text-right py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {isLoading ? (
-              [1, 2, 3].map((i) => (
-                <tr key={i}>
-                  {[1, 2, 3, 4].map((j) => (
-                    <td key={j} className="py-3 px-3">
-                      <div className="h-3.5 bg-gray-200 rounded animate-pulse w-3/4" />
-                    </td>
-                  ))}
+      {/* Right: search + filters + table */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
+        {/* Search + filter row */}
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Buscar por nombre..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+          />
+          <select
+            value={filterFormato}
+            onChange={(e) => setFilterFormato(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all cursor-pointer bg-white"
+          >
+            <option value="">Formato</option>
+            {uniqueFormatos.map((fmt) => (
+              <option key={fmt} value={fmt}>{fmt}</option>
+            ))}
+          </select>
+          <select
+            value={filterTipo ?? ""}
+            onChange={(e) => setFilterTipo(e.target.value ? Number(e.target.value) : undefined)}
+            className="px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all cursor-pointer bg-white"
+          >
+            <option value="">Tipo</option>
+            {tipoOptions.map((t) => (
+              <option key={t.num1} value={t.num1 ?? ""}>{t.string1}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Table */}
+        <div className="flex-1 overflow-y-auto max-h-64 border border-gray-100 rounded-xl">
+          {!showTable ? (
+            <div className="flex items-center justify-center h-full min-h-40 text-sm text-gray-400">
+              No hay archivos adjuntos
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-white">
+                <tr className="border-b border-gray-100">
+                  <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Nombre</th>
+                  <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Formato</th>
+                  <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Tamaño</th>
+                  <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Tipo</th>
+                  <th className="py-2 px-3" />
                 </tr>
-              ))
-            ) : (
-              <>
-                {archivos.map((f) => (
-                  <tr key={f.idPedidoArchivo} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="py-3 px-3">
-                      <div className="flex items-center gap-2">
-                        <FileIcon ext={f.tipoArchivo} />
-                        <span className="text-gray-700 font-medium">{f.nombreDocumento}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-3"><FileTypeBadge ext={f.tipoArchivo} /></td>
-                    <td className="py-3 px-3 text-gray-500">{formatBytes(f.tamanoArchivo)}</td>
-                    <td className="py-3 px-3" />
-                    <td className="py-3 px-3 text-right">
-                      <button
-                        onClick={() => setArchivoToDelete(f)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {newFiles.map((f) => (
-                  <tr key={f.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="py-3 px-3">
-                      <div className="flex items-center gap-2">
-                        <FileIcon ext={f.type} />
-                        <span className="text-gray-700 font-medium">{f.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-3"><FileTypeBadge ext={f.type} /></td>
-                    <td className="py-3 px-3 text-gray-500">{formatBytes(f.size)}</td>
-                    <td className="py-3 px-3">
-                      <SearchableSelect
-                        options={tipoOptions}
-                        value={f.tipoId}
-                        onChange={(val) => handleTipoChange(f.id, val)}
-                        placeholder="— Seleccione —"
-                      />
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      <button
-                        onClick={() => onNewFilesChange(newFiles.filter((n) => n.id !== f.id))}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </>
-            )}
-          </tbody>
-        </table>
-      )}
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {isLoading ? (
+                  [1, 2, 3].map((i) => (
+                    <tr key={i}>
+                      {[1, 2, 3, 4].map((j) => (
+                        <td key={j} className="py-2.5 px-3">
+                          <div className="h-3.5 bg-gray-200 rounded animate-pulse w-3/4" />
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : (
+                  <>
+                    {filteredArchivos.map((f) => {
+                      const ext = getExtension(f.nombreDocumento);
+                      return (
+                        <tr key={f.idPedidoArchivo} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="py-2.5 px-3">
+                            <div className="flex items-center gap-2">
+                              <FileIcon ext={ext} />
+                              <span className="text-gray-700 font-medium truncate max-w-40">{f.nombreDocumento}</span>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3"><FileTypeBadge ext={ext} /></td>
+                          <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{formatBytes(f.tamanoArchivo)}</td>
+                          <td className="py-2.5 px-3">
+                            <SearchableSelect
+                              options={tipoOptions}
+                              value={f.idTipoArchivo}
+                              onChange={() => {}}
+                              placeholder="— Seleccione —"
+                              disabled
+                            />
+                          </td>
+                          <td className="py-2.5 px-3 text-right">
+                            <button
+                              onClick={() => setArchivoToDelete(f)}
+                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {filteredNewFiles.map((f) => (
+                      <tr key={f.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-2">
+                            <FileIcon ext={f.type} />
+                            <span className="text-gray-700 font-medium truncate max-w-40">{f.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3"><FileTypeBadge ext={f.type} /></td>
+                        <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{formatBytes(f.size)}</td>
+                        <td className="py-2.5 px-3">
+                          <SearchableSelect
+                            options={tipoOptions}
+                            value={f.tipoId}
+                            onChange={(val) => handleTipoChange(f.id, val)}
+                            placeholder="— Seleccione —"
+                          />
+                        </td>
+                        <td className="py-2.5 px-3 text-right">
+                          <button
+                            onClick={() => onNewFilesChange(newFiles.filter((n) => n.id !== f.id))}
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Pagination */}
+        {totalPaginas > 1 && (
+          <div className="flex items-center justify-end gap-1">
+            <button
+              onClick={() => setNumPag((p) => Math.max(1, p - 1))}
+              disabled={numPag === 1}
+              className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => setNumPag(page)}
+                className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors cursor-pointer ${page === numPag ? "bg-brand-wine text-white" : "text-gray-600 hover:bg-gray-100"}`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              onClick={() => setNumPag((p) => Math.min(totalPaginas, p + 1))}
+              disabled={numPag === totalPaginas}
+              className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
+      </div>
+
       <ConfirmDeleteModal
         isOpen={archivoToDelete !== null}
         onClose={() => setArchivoToDelete(null)}

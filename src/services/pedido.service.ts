@@ -64,10 +64,10 @@ export const pedidoService = {
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
   },
 
-  listArchivos: async (idPedido: number): Promise<PedidoArchivoListResponse> => {
+  listArchivos: async (params: { idPedido: number; busqueda?: string; numPag?: number }): Promise<PedidoArchivoListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<PedidoArchivoListResponse>>(
       "/api/PedidoArchivo/listar",
-      { params: { IdPedido: idPedido } }
+      { params: { IdPedido: params.idPedido, Busqueda: params.busqueda, NumPag: params.numPag } }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
     return data.result;

@@ -127,8 +127,9 @@ export interface PedidoArchivoEntry {
   documentoURL: string;
   nombreDocumento: string;
   tamanoArchivo: number;
-  tipoArchivo: string;
+  tipoFormato: string;
   idFormato: number;
+  idTipoArchivo: number;
   idEstado: number;
 }
 
