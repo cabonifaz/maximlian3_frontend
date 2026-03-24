@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from "react";
+import { toast } from "sonner";
 import { Upload, Trash2, FileText, Filter, AlertCircle, RotateCcw } from "lucide-react";
 import { CustomDatePicker } from "@maximilian/components/common/CustomDatePicker";
 import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
@@ -19,10 +20,11 @@ import {
   type UseFormReset,
 } from "react-hook-form";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
 import { TarifarioCortaTable } from "@maximilian/components/coordinator/TarifarioCortaTable";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { pedidoSchema, type PedidoFormData } from "@maximilian/schemas";
-import type { GetPedidoResponse } from "@maximilian/shared/types/pedido.type";
+import type { GetPedidoResponse, PedidoArchivoEntry } from "@maximilian/shared/types/pedido.type";
 
 const pedidoResolver: Resolver<PedidoFormData> = (...args) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -399,13 +401,32 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
 }
 
 interface AnexosTabProps {
-  files: UploadedFile[];
-  onFilesChange: (files: UploadedFile[]) => void;
+  pedidoId: number | null;
+  newFiles: UploadedFile[];
+  onNewFilesChange: (files: UploadedFile[]) => void;
 }
 
-function AnexosTab({ files, onFilesChange }: AnexosTabProps) {
+function AnexosTab({ pedidoId, newFiles, onNewFilesChange }: AnexosTabProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [archivoToDelete, setArchivoToDelete] = useState<PedidoArchivoEntry | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["pedidoArchivos", pedidoId],
+    queryFn: () => pedidoService.listArchivos(pedidoId!),
+    enabled: !!pedidoId,
+  });
+
+  const { mutate: deleteArchivo, isPending: isDeleting } = useMutation({
+    mutationFn: pedidoService.deleteArchivo,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pedidoArchivos", pedidoId] });
+      setArchivoToDelete(null);
+    },
+  });
+
+  const archivos = data?.lstPedidoArchivo ?? [];
 
   const addFiles = (incoming: FileList | null) => {
     if (!incoming) return;
@@ -416,7 +437,7 @@ function AnexosTab({ files, onFilesChange }: AnexosTabProps) {
       size: f.size,
       file: f,
     }));
-    onFilesChange([...files, ...next]);
+    onNewFilesChange([...newFiles, ...next]);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -425,9 +446,7 @@ function AnexosTab({ files, onFilesChange }: AnexosTabProps) {
     addFiles(e.dataTransfer.files);
   };
 
-  const handleRemove = (id: string) => {
-    onFilesChange(files.filter((f) => f.id !== id));
-  };
+  const showTable = isLoading || archivos.length > 0 || newFiles.length > 0;
 
   return (
     <div className="space-y-6">
@@ -454,7 +473,7 @@ function AnexosTab({ files, onFilesChange }: AnexosTabProps) {
         />
       </div>
 
-      {files.length > 0 && (
+      {showTable && (
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100">
@@ -473,31 +492,72 @@ function AnexosTab({ files, onFilesChange }: AnexosTabProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {files.map((f) => (
-              <tr key={f.id} className="hover:bg-gray-50/50 transition-colors">
-                <td className="py-3 px-3">
-                  <div className="flex items-center gap-2">
-                    <FileIcon ext={f.type} />
-                    <span className="text-gray-700 font-medium">{f.name}</span>
-                  </div>
-                </td>
-                <td className="py-3 px-3">
-                  <FileTypeBadge ext={f.type} />
-                </td>
-                <td className="py-3 px-3 text-gray-500">{formatBytes(f.size)}</td>
-                <td className="py-3 px-3 text-right">
-                  <button
-                    onClick={() => handleRemove(f.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {isLoading ? (
+              [1, 2, 3].map((i) => (
+                <tr key={i}>
+                  {[1, 2, 3, 4].map((j) => (
+                    <td key={j} className="py-3 px-3">
+                      <div className="h-3.5 bg-gray-200 rounded animate-pulse w-3/4" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : (
+              <>
+                {archivos.map((f) => (
+                  <tr key={f.idPedidoArchivo} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-2">
+                        <FileIcon ext={f.tipoArchivo} />
+                        <span className="text-gray-700 font-medium">{f.nombreDocumento}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3"><FileTypeBadge ext={f.tipoArchivo} /></td>
+                    <td className="py-3 px-3 text-gray-500">{formatBytes(f.tamanoArchivo)}</td>
+                    <td className="py-3 px-3 text-right">
+                      <button
+                        onClick={() => setArchivoToDelete(f)}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {newFiles.map((f) => (
+                  <tr key={f.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-2">
+                        <FileIcon ext={f.type} />
+                        <span className="text-gray-700 font-medium">{f.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3"><FileTypeBadge ext={f.type} /></td>
+                    <td className="py-3 px-3 text-gray-500">{formatBytes(f.size)}</td>
+                    <td className="py-3 px-3 text-right">
+                      <button
+                        onClick={() => onNewFilesChange(newFiles.filter((n) => n.id !== f.id))}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </>
+            )}
           </tbody>
         </table>
       )}
+      <ConfirmDeleteModal
+        isOpen={archivoToDelete !== null}
+        onClose={() => setArchivoToDelete(null)}
+        onConfirm={() => deleteArchivo({ idPedidoArchivo: archivoToDelete!.idPedidoArchivo, idPedido: archivoToDelete!.idPedido })}
+        title="Eliminar archivo"
+        isSubmitting={isDeleting}
+      >
+        <p className="text-sm font-medium">{archivoToDelete?.nombreDocumento}</p>
+      </ConfirmDeleteModal>
     </div>
   );
 }
@@ -539,7 +599,8 @@ function useFormReset(
 export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalProps) {
   const [activeTab, setActiveTab] = useState("informacion");
   const [selectedIdTarifario, setSelectedIdTarifario] = useState<number | undefined>(undefined);
-  const [anexosFiles, setAnexosFiles] = useState<UploadedFile[]>([]);
+  const [newFiles, setNewFiles] = useState<UploadedFile[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -580,15 +641,47 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
     reset();
     setActiveTab("informacion");
     setSelectedIdTarifario(undefined);
-    setAnexosFiles([]);
+    setNewFiles([]);
+    setIsUploading(false);
     onClose();
   };
 
   const { mutate: updatePedido, isPending } = useMutation({
     mutationFn: pedidoService.update,
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["pedidos"] });
       queryClient.invalidateQueries({ queryKey: ["pedido", pedidoId] });
+      if (newFiles.length > 0) {
+        const toastId = toast.loading("Subiendo archivos...");
+        setIsUploading(true);
+        try {
+          const uploadResult = await pedidoService.addArchivos({
+            idPedido: pedidoId!,
+            archivos: newFiles.map((f) => ({
+              tipoArchivo: f.file.type || "application/octet-stream",
+              nombreDocumento: f.name,
+              tamanoArchivo: f.size,
+            })),
+          });
+          await Promise.all(
+            uploadResult.map(({ nombreDocumento, uploadUrl }) => {
+              const file = newFiles.find((f) => f.name === nombreDocumento)?.file;
+              if (!file) return Promise.resolve();
+              return fetch(uploadUrl, {
+                method: "PUT",
+                headers: { "Content-Type": file.type || "application/octet-stream" },
+                body: file,
+              });
+            })
+          );
+          toast.dismiss(toastId);
+          queryClient.invalidateQueries({ queryKey: ["pedidoArchivos", pedidoId] });
+        } catch {
+          toast.error("No se pudieron subir los archivos", { id: toastId });
+        } finally {
+          setIsUploading(false);
+        }
+      }
       handleClose();
     },
   });
@@ -667,7 +760,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
     {
       id: "anexos",
       label: "Anexos",
-      content: <AnexosTab files={anexosFiles} onFilesChange={setAnexosFiles} />,
+      content: <AnexosTab pedidoId={pedidoId} newFiles={newFiles} onNewFilesChange={setNewFiles} />,
     },
   ];
 
@@ -676,7 +769,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
       <CustomButton
         variant="primary"
         size="md"
-        loading={isPending}
+        loading={isPending || isUploading}
         loadingText="Guardando..."
         onClick={handleSubmit(onSubmit)}
         disabled={isLoadingAll || isError}

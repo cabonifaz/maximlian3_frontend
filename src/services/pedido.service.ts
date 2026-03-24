@@ -9,6 +9,9 @@ import type {
   CreatePedidoResponse,
   GetPedidoResponse,
   UpdatePedidoRequest,
+  PedidoArchivoListResponse,
+  AddPedidoArchivosRequest,
+  DeletePedidoArchivoRequest,
 } from "@maximilian/shared/types/pedido.type";
 
 export const pedidoService = {
@@ -56,6 +59,32 @@ export const pedidoService = {
   update: async (data: UpdatePedidoRequest): Promise<void> => {
     const { data: res } = await maximilianService.post<ApiResponse<null>>(
       "/api/Pedido/editar",
+      data
+    );
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+  },
+
+  listArchivos: async (idPedido: number): Promise<PedidoArchivoListResponse> => {
+    const { data } = await maximilianService.get<ApiResponse<PedidoArchivoListResponse>>(
+      "/api/PedidoArchivo/listar",
+      { params: { IdPedido: idPedido } }
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    return data.result;
+  },
+
+  addArchivos: async (data: AddPedidoArchivosRequest): Promise<CreatePedidoResponse["archivos"]> => {
+    const { data: res } = await maximilianService.post<ApiResponse<CreatePedidoResponse["archivos"]>>(
+      "/api/PedidoArchivo/crear",
+      data
+    );
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    return res.result;
+  },
+
+  deleteArchivo: async (data: DeletePedidoArchivoRequest): Promise<void> => {
+    const { data: res } = await maximilianService.post<ApiResponse<null>>(
+      "/api/PedidoArchivo/eliminar",
       data
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);

@@ -113,3 +113,30 @@ export interface UpdatePedidoRequest {
   comentario: string;
   idEstado: number;
 }
+
+export interface PedidoArchivoEntry {
+  idPedidoArchivo: number;
+  idPedido: number;
+  documentoURL: string;
+  nombreDocumento: string;
+  tamanoArchivo: number;
+  tipoArchivo: string;
+  idFormato: number;
+  idEstado: number;
+}
+
+export interface PedidoArchivoListResponse {
+  lstPedidoArchivo: PedidoArchivoEntry[];
+  totalRegistros: number;
+  totalPaginas: number;
+}
+
+export interface AddPedidoArchivosRequest {
+  idPedido: number;
+  archivos: CreatePedidoArchivoRequest[];
+}
+
+export interface DeletePedidoArchivoRequest {
+  idPedidoArchivo: number;
+  idPedido: number;
+}
