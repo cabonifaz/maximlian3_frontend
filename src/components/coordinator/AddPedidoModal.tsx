@@ -592,7 +592,7 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
       comentario: data.comentario ?? "",
       idEstado: 1,
       archivos: anexosFiles.map((f) => ({
-        tipoArchivo: f.type,
+        tipoArchivo: f.file.type || "application/octet-stream",
         nombreDocumento: f.name,
         tamanoArchivo: f.size,
       })),
