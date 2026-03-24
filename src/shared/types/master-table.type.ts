@@ -15,6 +15,7 @@ export const MasterTableId = {
   EMPRESA_ATENCION: 38,
   PLANTILLA_INFORME: 39,
   TIPO_DOCUMENTO: 41,
+  TIPO_PLAZO_CREDITO: 42,
   PAGINACION_FRACTAL: 99,
 } as const;
 

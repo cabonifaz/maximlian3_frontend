@@ -104,7 +104,7 @@ export default function PedidoManagement() {
 
   const selectedEstadoLabel = ESTADO_OPTIONS.find((e) => e.id === filterEstado)?.label;
 
-  const renderRow = (pedido: PedidoListEntry, index: number) => (
+  const renderRow = (pedido: PedidoListEntry, _index: number) => (
     <>
       <td className="px-6 py-4">
         <span className="text-sm font-bold text-brand-black">{pedido.cliente}</span>

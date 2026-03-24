@@ -4,7 +4,7 @@ import type { MasterTableEntry } from "@maximilian/shared/types/master-table.typ
 import { CustomLabel } from "./CustomLabel";
 
 export interface SearchableSelectProps {
-  label: ReactNode;
+  label?: ReactNode;
   options: MasterTableEntry[] | undefined;
   value: string | number | undefined;
   onChange: (val: number) => void;
@@ -57,7 +57,7 @@ export function SearchableSelect({
 
   return (
     <div className="relative space-y-2">
-      <CustomLabel required={required} optional={optional}>{label}</CustomLabel>
+      {label != null && <CustomLabel required={required} optional={optional}>{label}</CustomLabel>}
       <div
         ref={triggerRef}
         className={`w-full px-4 py-2.5 bg-brand-white border ${error ? "border-red-500" : "border-gray-200"} rounded-xl text-sm flex items-center justify-between transition-all ${disabled ? "bg-gray-50 cursor-not-allowed opacity-70" : "cursor-pointer hover:border-brand-wine/30"}`}
@@ -65,7 +65,7 @@ export function SearchableSelect({
       >
         <span
           className={`truncate min-w-0 ${selectedOption ? "text-brand-black" : "text-gray-400"}`}
-          title={selectedOption?.string1}
+          title={selectedOption?.string1 ?? undefined}
         >
           {selectedOption ? selectedOption.string1 : placeholder}
         </span>

@@ -32,13 +32,14 @@ export interface PedidoCancelRequest {
 }
 
 export interface CreatePedidoArchivoRequest {
-  tipoArchivo: string;
+  formatoArchivo: string;
   nombreDocumento: string;
   tamanoArchivo: number;
+  idTipoArchivo: number;
 }
 
 export interface CreatePedidoRequest {
-  codigo: string;
+  codigo: string | null;
   idCliente: number;
   numeroDocumento: string;
   nombreCliente: string;
@@ -52,6 +53,8 @@ export interface CreatePedidoRequest {
   numReferencia?: string;
   montoCredito?: number;
   plazoCredito?: number;
+  idTipoPlazoCredito?: number;
+  tipoPlazoCredito?: string;
   fchDesde: string;
   fchHasta: string;
   comentario: string;
@@ -72,7 +75,7 @@ export interface CreatePedidoResponse {
 
 export interface GetPedidoResponse {
   idPedido: number;
-  codigo: string;
+  codigo: string | null;
   idCliente: number;
   numeroDocumento: string;
   nombreCliente: string;
@@ -86,6 +89,8 @@ export interface GetPedidoResponse {
   numReferencia: string | null;
   montoCredito: number | null;
   plazoCredito: number | null;
+  idTipoPlazoCredito: number | null;
+  tipoPlazoCredito: string | null;
   fchDesde: string;
   fchHasta: string;
   comentario: string;
@@ -94,7 +99,7 @@ export interface GetPedidoResponse {
 
 export interface UpdatePedidoRequest {
   idPedido: number;
-  codigo: string;
+  codigo: string | null;
   idCliente: number;
   numeroDocumento: string;
   nombreCliente: string;
@@ -108,6 +113,8 @@ export interface UpdatePedidoRequest {
   numReferencia?: string;
   montoCredito?: number;
   plazoCredito?: number;
+  idTipoPlazoCredito?: number;
+  tipoPlazoCredito?: string;
   fchDesde: string;
   fchHasta: string;
   comentario: string;

@@ -116,6 +116,8 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
   const idPlantillaInforme = watch("idPlantillaInforme");
   const fechaDesde = watch("fechaDesde");
   const fechaHasta = watch("fechaHasta");
+  const autogenerarCodigo = watch("autogenerarCodigo");
+  const idTipoPlazoCredito = watch("idTipoPlazoCredito");
 
   const clienteOptions = useMemo(
     () =>
@@ -181,6 +183,15 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
     queryFn: () => masterTableService.list(MasterTableId.PLANTILLA_INFORME),
   });
 
+  const { data: tiposPlazoCredito } = useQuery({
+    queryKey: ["masterTable", MasterTableId.TIPO_PLAZO_CREDITO],
+    queryFn: () => masterTableService.list(MasterTableId.TIPO_PLAZO_CREDITO),
+  });
+
+  useEffect(() => {
+    if (autogenerarCodigo) setValue("codigo", "", { shouldValidate: false });
+  }, [autogenerarCodigo, setValue]);
+
   const handleClienteChange = (val: number | undefined) => {
     setValue("idCliente", val as number, { shouldValidate: true });
     if (val == null) return;
@@ -244,42 +255,34 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
             />
           </CustomLabel>
         </div>
-        {/* Filter row */}
-        <div className="flex gap-4">
-          <div className="flex-1 min-w-0">
-            <SearchableSelect
-              label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />País del Informe</span>}
-              required
-              options={paises}
-              value={idPais}
-              onChange={(val) => setValue("idPais", val as number, { shouldValidate: true })}
-              placeholder="Seleccione"
-              error={errors.idPais?.message}
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <SearchableSelect
-              label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />Clases de Informe</span>}
-              options={clasesInforme}
-              value={idClaseInforme}
-              onChange={(val) => setValue("idClaseInforme", val as number, { shouldValidate: true })}
-              placeholder="Seleccione"
-              required
-              error={errors.idClaseInforme?.message}
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <SearchableSelect
-              label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />Tipo de Trámite</span>}
-              options={tiposTramite}
-              value={idTipoTramite}
-              onChange={(val) => setValue("idTipoTramite", val as number, { shouldValidate: true })}
-              placeholder="Seleccione"
-              required
-              error={errors.idTipoTramite?.message}
-            />
-          </div>
-        </div>
+        {/* Filter fields */}
+        <SearchableSelect
+          label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />País del Informe</span>}
+          required
+          options={paises}
+          value={idPais}
+          onChange={(val) => setValue("idPais", val as number, { shouldValidate: true })}
+          placeholder="Seleccione"
+          error={errors.idPais?.message}
+        />
+        <SearchableSelect
+          label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />Clases de Informe</span>}
+          options={clasesInforme}
+          value={idClaseInforme}
+          onChange={(val) => setValue("idClaseInforme", val as number, { shouldValidate: true })}
+          placeholder="Seleccione"
+          required
+          error={errors.idClaseInforme?.message}
+        />
+        <SearchableSelect
+          label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />Tipo de Trámite</span>}
+          options={tiposTramite}
+          value={idTipoTramite}
+          onChange={(val) => setValue("idTipoTramite", val as number, { shouldValidate: true })}
+          placeholder="Seleccione"
+          required
+          error={errors.idTipoTramite?.message}
+        />
         {/* Tarifa */}
         {idCliente && (
           <div className="flex flex-col gap-1">
@@ -325,7 +328,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
           {errors.investigado && <p className="text-xs text-red-500">{errors.investigado.message}</p>}
         </div>
         <SearchableSelect
-          label="Tipo Persona"
+          label="Tipo de Persona"
           options={tiposPersona}
           value={idTipoPersona}
           onChange={(val) => setValue("idTipoPersona", val as number, { shouldValidate: true })}
@@ -348,12 +351,23 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
           <div className="flex-1 h-px bg-gray-200" />
         </div>
         <div className="flex flex-col gap-1.5">
-          <CustomLabel optional>Código</CustomLabel>
+          <div className="flex items-center justify-between">
+            <CustomLabel required={!autogenerarCodigo}>Código</CustomLabel>
+            <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+              <input
+                type="checkbox"
+                {...register("autogenerarCodigo")}
+                className="w-4 h-4 accent-brand-wine cursor-pointer"
+              />
+              Autogenerar
+            </label>
+          </div>
           <input
             type="text"
-            placeholder="Código"
+            placeholder={autogenerarCodigo ? "Autogenerado" : "Código"}
+            disabled={autogenerarCodigo}
             {...register("codigo")}
-            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.codigo ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+            className={`w-full px-4 py-2.5 border ${errors.codigo ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all ${autogenerarCodigo ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-brand-white"}`}
           />
           {errors.codigo && <p className="text-xs text-red-500">{errors.codigo.message}</p>}
         </div>
@@ -393,13 +407,27 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
         </div>
         <div className="flex flex-col gap-1.5">
           <CustomLabel optional>Plazo Crédito</CustomLabel>
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="Plazo Crédito"
-            {...register("plazoCredito")}
-            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.plazoCredito ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="Plazo Crédito"
+              {...register("plazoCredito")}
+              className={`flex-1 px-4 py-2.5 bg-brand-white border ${errors.plazoCredito ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+            />
+            <div className="w-40">
+              <SearchableSelect
+                options={tiposPlazoCredito}
+                value={idTipoPlazoCredito}
+                onChange={(val) => {
+                  setValue("idTipoPlazoCredito", val as number, { shouldValidate: true });
+                  const entry = tiposPlazoCredito?.find((t) => t.num1 === val);
+                  setValue("tipoPlazoCredito", entry?.string1 ?? "", { shouldValidate: false });
+                }}
+                placeholder="Tipo"
+              />
+            </div>
+          </div>
           {errors.plazoCredito && <p className="text-xs text-red-500">{errors.plazoCredito.message}</p>}
         </div>
         <div className="flex flex-col gap-1.5">
@@ -562,16 +590,12 @@ function AnexosTab({ files, onFilesChange }: AnexosTabProps) {
                     </td>
                     <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{formatBytes(f.size)}</td>
                     <td className="py-2.5 px-3">
-                      <select
-                        value={f.tipoId ?? ""}
-                        onChange={(e) => handleTipoChange(f.id, e.target.value ? Number(e.target.value) : undefined)}
-                        className="w-full px-2 py-1 border border-gray-200 rounded-lg text-sm text-gray-600 focus:ring-2 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all cursor-pointer bg-white"
-                      >
-                        <option value="">— Seleccione —</option>
-                        {tipoOptions.map((t) => (
-                          <option key={t.num1} value={t.num1 ?? ""}>{t.string1}</option>
-                        ))}
-                      </select>
+                      <SearchableSelect
+                        options={tipoOptions}
+                        value={f.tipoId}
+                        onChange={(val) => handleTipoChange(f.id, val)}
+                        placeholder="— Seleccione —"
+                      />
                     </td>
                     <td className="py-2.5 px-3 text-right">
                       <button
@@ -665,7 +689,7 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
   const onSubmit = (data: PedidoFormData) => {
     const cliente = clientes.find((c) => c.idCliente === data.idCliente);
     createPedido({
-      codigo: data.codigo ?? "",
+      codigo: data.autogenerarCodigo ? null : (data.codigo ?? ""),
       idCliente: data.idCliente,
       numeroDocumento: data.nroDocumento,
       nombreCliente: cliente?.nombreCliente ?? "",
@@ -679,14 +703,17 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
       numReferencia: data.nroReferencia,
       montoCredito: data.montoCredito,
       plazoCredito: data.plazoCredito,
+      idTipoPlazoCredito: data.idTipoPlazoCredito,
+      tipoPlazoCredito: data.tipoPlazoCredito,
       fchDesde: data.fechaDesde.toISOString(),
       fchHasta: data.fechaHasta.toISOString(),
       comentario: data.comentario ?? "",
       idEstado: 1,
       archivos: anexosFiles.map((f) => ({
-        tipoArchivo: f.file.type || "application/octet-stream",
+        formatoArchivo: f.file.type || "application/octet-stream",
         nombreDocumento: f.name,
         tamanoArchivo: f.size,
+        idTipoArchivo: f.tipoId ?? 0,
       })),
     });
   };
