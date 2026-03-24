@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
 import { AddPedidoModal } from "@maximilian/components/coordinator/AddPedidoModal";
+import { EditPedidoModal } from "@maximilian/components/coordinator/EditPedidoModal";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { type PedidoListEntry } from "@maximilian/shared/types/pedido.type";
@@ -41,6 +42,8 @@ export default function PedidoManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedPedidoId, setSelectedPedidoId] = useState<number | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
   const [pedidoToCancel, setPedidoToCancel] = useState<PedidoListEntry | null>(null);
 
@@ -134,7 +137,11 @@ export default function PedidoManagement() {
               } w-52 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}
             >
               <button
-                onClick={() => setActiveMenuId(null)}
+                onClick={() => {
+                  setSelectedPedidoId(pedido.idPedido);
+                  setIsEditModalOpen(true);
+                  setActiveMenuId(null);
+                }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
               >
                 <Edit size={14} />
@@ -255,6 +262,11 @@ export default function PedidoManagement() {
       <AddPedidoModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+      />
+      <EditPedidoModal
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); setSelectedPedidoId(null); }}
+        pedidoId={selectedPedidoId}
       />
       <ConfirmDeleteModal
         isOpen={pedidoToCancel !== null}

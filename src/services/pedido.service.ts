@@ -7,6 +7,8 @@ import type {
   PedidoCancelRequest,
   CreatePedidoRequest,
   CreatePedidoResponse,
+  GetPedidoResponse,
+  UpdatePedidoRequest,
 } from "@maximilian/shared/types/pedido.type";
 
 export const pedidoService = {
@@ -40,5 +42,22 @@ export const pedidoService = {
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
     return res.result[0];
+  },
+
+  getById: async (idPedido: number): Promise<GetPedidoResponse> => {
+    const { data } = await maximilianService.get<ApiResponse<GetPedidoResponse[]>>(
+      "/api/Pedido/obtener",
+      { params: { idPedido } }
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    return data.result[0];
+  },
+
+  update: async (data: UpdatePedidoRequest): Promise<void> => {
+    const { data: res } = await maximilianService.post<ApiResponse<null>>(
+      "/api/Pedido/editar",
+      data
+    );
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
   },
 };

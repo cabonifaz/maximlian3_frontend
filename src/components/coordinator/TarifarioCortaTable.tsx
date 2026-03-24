@@ -54,9 +54,27 @@ export function TarifarioCortaTable({
   const onTarifarioSelectRef = useRef(onTarifarioSelect);
   onTarifarioSelectRef.current = onTarifarioSelect;
 
-  // Deselect the row if it's no longer present in the current result set
+  const initialSelectionDone = useRef(false);
+
+  // Re-arm initial selection when the client changes (new modal open or client swap)
   useEffect(() => {
-    if (selectedIdTarifario != null && data != null && !data.some((e) => e.idTarifario === selectedIdTarifario)) {
+    initialSelectionDone.current = false;
+  }, [idCliente]);
+
+  // Deselect the row if it's no longer present in the current result set.
+  // Also triggers once on initial load when selectedIdTarifario is pre-set (edit mode),
+  // so the parent can derive idPais / idTipoTramite from the matching entry.
+  useEffect(() => {
+    if (data == null) return;
+    if (!initialSelectionDone.current) {
+      initialSelectionDone.current = true;
+      if (selectedIdTarifario != null) {
+        const entry = data.find((e) => e.idTarifario === selectedIdTarifario) ?? undefined;
+        onTarifarioSelectRef.current(entry);
+      }
+      return;
+    }
+    if (selectedIdTarifario != null && !data.some((e) => e.idTarifario === selectedIdTarifario)) {
       onTarifarioSelectRef.current(undefined);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

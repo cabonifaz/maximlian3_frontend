@@ -69,3 +69,47 @@ export interface CreatePedidoResponse {
   idPedido: number;
   archivos: CreatePedidoArchivoResponse[];
 }
+
+export interface GetPedidoResponse {
+  idPedido: number;
+  codigo: string;
+  idCliente: number;
+  numeroDocumento: string;
+  nombreCliente: string;
+  idTipoPersona: number;
+  idCompania: number;
+  investigarRazonSocialNombres: string;
+  idTarifario: number;
+  idPlantilla: number;
+  idIdioma: number;
+  idClaseInforme: number;
+  numReferencia: string | null;
+  montoCredito: number | null;
+  plazoCredito: number | null;
+  fchDesde: string;
+  fchHasta: string;
+  comentario: string;
+  idEstado: number;
+}
+
+export interface UpdatePedidoRequest {
+  idPedido: number;
+  codigo: string;
+  idCliente: number;
+  numeroDocumento: string;
+  nombreCliente: string;
+  idTipoPersona: number;
+  idCompania: number;
+  investigarRazonSocialNombres: string;
+  idTarifario: number;
+  idPlantilla: number;
+  idIdioma: number;
+  idClaseInforme: number;
+  numReferencia?: string;
+  montoCredito?: number;
+  plazoCredito?: number;
+  fchDesde: string;
+  fchHasta: string;
+  comentario: string;
+  idEstado: number;
+}
