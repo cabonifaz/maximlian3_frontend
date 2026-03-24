@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { Upload, Trash2, FileText, Filter } from "lucide-react";
 import { CustomDatePicker } from "@maximilian/components/common/CustomDatePicker";
@@ -45,6 +45,7 @@ interface UploadedFile {
   type: string;
   size: number;
   file: File;
+  tipoId?: number;
 }
 
 interface AddPedidoModalProps {
@@ -145,6 +146,15 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
     queryKey: ["masterTable", MasterTableId.EMPRESA_ATENCION],
     queryFn: () => masterTableService.list(MasterTableId.EMPRESA_ATENCION),
   });
+
+  useEffect(() => {
+    if (empresasAtencion && !idEmpresaAtencion) {
+      const defaultOption = empresasAtencion.find((o) => o.num1 === 1);
+      if (defaultOption?.num1 != null) {
+        setValue("idEmpresaAtencion", defaultOption.num1, { shouldValidate: false });
+      }
+    }
+  }, [empresasAtencion, idEmpresaAtencion, setValue]);
 
   const { data: paises } = useQuery({
     queryKey: ["masterTable", MasterTableId.PAIS],
@@ -299,6 +309,44 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
 
       {/* Right column: order fields */}
       <div className="flex flex-col gap-5 flex-2">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs uppercase tracking-wide text-gray-400 whitespace-nowrap">Datos del Investigado</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel required>Investigado</CustomLabel>
+          <input
+            type="text"
+            placeholder="Investigado"
+            {...register("investigado")}
+            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.investigado ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+          />
+          {errors.investigado && <p className="text-xs text-red-500">{errors.investigado.message}</p>}
+        </div>
+        <SearchableSelect
+          label="Tipo Persona"
+          options={tiposPersona}
+          value={idTipoPersona}
+          onChange={(val) => setValue("idTipoPersona", val as number, { shouldValidate: true })}
+          placeholder="Seleccione"
+          required
+          error={errors.idTipoPersona?.message}
+        />
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel optional>Nro. de Referencia</CustomLabel>
+          <input
+            type="text"
+            placeholder="Nro. de Referencia"
+            {...register("nroReferencia")}
+            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs uppercase tracking-wide text-gray-400 whitespace-nowrap">Datos del Pedido</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
         <div className="flex flex-col gap-1.5">
           <CustomLabel optional>Código</CustomLabel>
           <input
@@ -310,15 +358,6 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
           {errors.codigo && <p className="text-xs text-red-500">{errors.codigo.message}</p>}
         </div>
         <SearchableSelect
-          label="Tipo Persona"
-          options={tiposPersona}
-          value={idTipoPersona}
-          onChange={(val) => setValue("idTipoPersona", val as number, { shouldValidate: true })}
-          placeholder="Seleccione"
-          required
-          error={errors.idTipoPersona?.message}
-        />
-        <SearchableSelect
           label="Atendido por"
           options={empresasAtencion}
           value={idEmpresaAtencion}
@@ -327,25 +366,6 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
           required
           error={errors.idEmpresaAtencion?.message}
         />
-        <div className="flex flex-col gap-1.5">
-          <CustomLabel required>Investigado</CustomLabel>
-          <input
-            type="text"
-            placeholder="Investigado"
-            {...register("investigado")}
-            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.investigado ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
-          />
-          {errors.investigado && <p className="text-xs text-red-500">{errors.investigado.message}</p>}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <CustomLabel optional>Nro. de Referencia</CustomLabel>
-          <input
-            type="text"
-            placeholder="Nro. de Referencia"
-            {...register("nroReferencia")}
-            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
-          />
-        </div>
         <CustomDatePicker
           label="Desde"
           required
@@ -403,7 +423,29 @@ interface AnexosTabProps {
 
 function AnexosTab({ files, onFilesChange }: AnexosTabProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterFormato, setFilterFormato] = useState("");
+  const [filterTipo, setFilterTipo] = useState<number | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { data: tipoOptions = [] } = useQuery({
+    queryKey: ["masterTable", MasterTableId.TIPO_DOCUMENTO],
+    queryFn: () => masterTableService.list(MasterTableId.TIPO_DOCUMENTO),
+  });
+
+  const uniqueFormatos = useMemo(
+    () => Array.from(new Set(files.map((f) => f.type))).sort(),
+    [files]
+  );
+
+  const filteredFiles = useMemo(() => {
+    return files.filter((f) => {
+      const matchesSearch = !searchQuery || f.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesFormato = !filterFormato || f.type === filterFormato;
+      const matchesTipo = filterTipo === undefined || f.tipoId === filterTipo;
+      return matchesSearch && matchesFormato && matchesTipo;
+    });
+  }, [files, searchQuery, filterFormato, filterTipo]);
 
   const addFiles = (incoming: FileList | null) => {
     if (!incoming) return;
@@ -427,21 +469,25 @@ function AnexosTab({ files, onFilesChange }: AnexosTabProps) {
     onFilesChange(files.filter((f) => f.id !== id));
   };
 
+  const handleTipoChange = (id: string, tipoId: number | undefined) => {
+    onFilesChange(files.map((f) => (f.id === id ? { ...f, tipoId } : f)));
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="flex gap-4 min-h-75">
+      {/* Left: drag & drop */}
       <div
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        className={`flex flex-col items-center justify-center gap-3 p-10 border-2 border-dashed rounded-2xl cursor-pointer transition-colors ${isDragging ? "border-brand-wine bg-brand-wine/5" : "border-gray-200 hover:border-brand-wine/40 hover:bg-gray-50"}`}
+        className={`w-44 shrink-0 flex flex-col items-center justify-center gap-3 p-4 border-2 border-dashed rounded-2xl cursor-pointer transition-colors ${isDragging ? "border-brand-wine bg-brand-wine/5" : "border-gray-200 hover:border-brand-wine/40 hover:bg-gray-50"}`}
       >
         <div className="p-3 rounded-full bg-gray-100">
-          <Upload size={24} className="text-gray-400" />
+          <Upload size={22} className="text-gray-400" />
         </div>
-        <p className="text-sm text-gray-500 text-center">
-          Haz clic o arrastra archivos aquí para subirlos{" "}
-          <span className="text-brand-wine">(PDF, Word, Excel, etc.)</span>
+        <p className="text-xs text-gray-500 text-center leading-relaxed">
+          Arrastra archivos aquí o haz clic para subir
         </p>
         <input
           ref={inputRef}
@@ -452,50 +498,96 @@ function AnexosTab({ files, onFilesChange }: AnexosTabProps) {
         />
       </div>
 
-      {files.length > 0 && (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">
-                Nombre del Archivo
-              </th>
-              <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">
-                Tipo
-              </th>
-              <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">
-                Tamaño
-              </th>
-              <th className="text-right py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {files.map((f) => (
-              <tr key={f.id} className="hover:bg-gray-50/50 transition-colors">
-                <td className="py-3 px-3">
-                  <div className="flex items-center gap-2">
-                    <FileIcon ext={f.type} />
-                    <span className="text-gray-700 font-medium">{f.name}</span>
-                  </div>
-                </td>
-                <td className="py-3 px-3">
-                  <FileTypeBadge ext={f.type} />
-                </td>
-                <td className="py-3 px-3 text-gray-500">{formatBytes(f.size)}</td>
-                <td className="py-3 px-3 text-right">
-                  <button
-                    onClick={() => handleRemove(f.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </td>
-              </tr>
+      {/* Right: search + filters + table */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
+        {/* Search + filter row */}
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Buscar por nombre..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+          />
+          <select
+            value={filterFormato}
+            onChange={(e) => setFilterFormato(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all cursor-pointer bg-white"
+          >
+            <option value="">Formato</option>
+            {uniqueFormatos.map((fmt) => (
+              <option key={fmt} value={fmt}>{fmt}</option>
             ))}
-          </tbody>
-        </table>
-      )}
+          </select>
+          <select
+            value={filterTipo ?? ""}
+            onChange={(e) => setFilterTipo(e.target.value ? Number(e.target.value) : undefined)}
+            className="px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all cursor-pointer bg-white"
+          >
+            <option value="">Tipo</option>
+            {tipoOptions.map((t) => (
+              <option key={t.num1} value={t.num1 ?? ""}>{t.string1}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Table */}
+        <div className="flex-1 overflow-y-auto max-h-64 border border-gray-100 rounded-xl">
+          {filteredFiles.length === 0 ? (
+            <div className="flex items-center justify-center h-full min-h-40 text-sm text-gray-400">
+                  {files.length === 0 ? "No hay archivos adjuntos" : "No hay resultados para los filtros aplicados"}
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-white">
+                <tr className="border-b border-gray-100">
+                  <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Nombre</th>
+                  <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Formato</th>
+                  <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Tamaño</th>
+                  <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Tipo</th>
+                  <th className="py-2 px-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filteredFiles.map((f) => (
+                  <tr key={f.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="py-2.5 px-3">
+                      <div className="flex items-center gap-2">
+                        <FileIcon ext={f.type} />
+                        <span className="text-gray-700 font-medium truncate max-w-40">{f.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <FileTypeBadge ext={f.type} />
+                    </td>
+                    <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{formatBytes(f.size)}</td>
+                    <td className="py-2.5 px-3">
+                      <select
+                        value={f.tipoId ?? ""}
+                        onChange={(e) => handleTipoChange(f.id, e.target.value ? Number(e.target.value) : undefined)}
+                        className="w-full px-2 py-1 border border-gray-200 rounded-lg text-sm text-gray-600 focus:ring-2 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all cursor-pointer bg-white"
+                      >
+                        <option value="">— Seleccione —</option>
+                        {tipoOptions.map((t) => (
+                          <option key={t.num1} value={t.num1 ?? ""}>{t.string1}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      <button
+                        onClick={() => handleRemove(f.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -573,7 +665,7 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
   const onSubmit = (data: PedidoFormData) => {
     const cliente = clientes.find((c) => c.idCliente === data.idCliente);
     createPedido({
-      codigo: data.codigo || null,
+      codigo: data.codigo ?? "",
       idCliente: data.idCliente,
       numeroDocumento: data.nroDocumento,
       nombreCliente: cliente?.nombreCliente ?? "",

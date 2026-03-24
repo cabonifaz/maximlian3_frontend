@@ -303,6 +303,44 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
 
       {/* Right column: order fields */}
       <div className="flex flex-col gap-5 flex-2">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs uppercase tracking-wide text-gray-400 whitespace-nowrap">Datos del Investigado</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel required>Investigado</CustomLabel>
+          <input
+            type="text"
+            placeholder="Investigado"
+            {...register("investigado")}
+            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.investigado ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+          />
+          {errors.investigado && <p className="text-xs text-red-500">{errors.investigado.message}</p>}
+        </div>
+        <SearchableSelect
+          label="Tipo Persona"
+          options={tiposPersona}
+          value={idTipoPersona}
+          onChange={(val) => setValue("idTipoPersona", val as number, { shouldValidate: true })}
+          placeholder="Seleccione"
+          required
+          error={errors.idTipoPersona?.message}
+        />
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel optional>Nro. de Referencia</CustomLabel>
+          <input
+            type="text"
+            placeholder="Nro. de Referencia"
+            {...register("nroReferencia")}
+            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs uppercase tracking-wide text-gray-400 whitespace-nowrap">Datos del Pedido</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
         <div className="flex flex-col gap-1.5">
           <CustomLabel required>Código</CustomLabel>
           <input
@@ -314,15 +352,6 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
           {errors.codigo && <p className="text-xs text-red-500">{errors.codigo.message}</p>}
         </div>
         <SearchableSelect
-          label="Tipo Persona"
-          options={tiposPersona}
-          value={idTipoPersona}
-          onChange={(val) => setValue("idTipoPersona", val as number, { shouldValidate: true })}
-          placeholder="Seleccione"
-          required
-          error={errors.idTipoPersona?.message}
-        />
-        <SearchableSelect
           label="Atendido por"
           options={empresasAtencion}
           value={idEmpresaAtencion}
@@ -331,25 +360,6 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
           required
           error={errors.idEmpresaAtencion?.message}
         />
-        <div className="flex flex-col gap-1.5">
-          <CustomLabel required>Investigado</CustomLabel>
-          <input
-            type="text"
-            placeholder="Investigado"
-            {...register("investigado")}
-            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.investigado ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
-          />
-          {errors.investigado && <p className="text-xs text-red-500">{errors.investigado.message}</p>}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <CustomLabel optional>Nro. de Referencia</CustomLabel>
-          <input
-            type="text"
-            placeholder="Nro. de Referencia"
-            {...register("nroReferencia")}
-            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
-          />
-        </div>
         <CustomDatePicker
           label="Desde"
           required
