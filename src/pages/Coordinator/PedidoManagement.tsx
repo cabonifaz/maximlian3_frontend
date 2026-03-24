@@ -20,13 +20,13 @@ const PEDIDO_COLUMNS = [
   { label: "Acciones", className: "text-right" },
 ];
 
-const ESTADO_OPTIONS: MasterTableEntry[] = [
+const ESTADO_OPTIONS = [
   { num1: 1, string1: "Pendiente" },
   { num1: 2, string1: "En revisión" },
   { num1: 3, string1: "Aprobado" },
   { num1: 4, string1: "Observado" },
   { num1: 5, string1: "Cancelado" },
-];
+] as MasterTableEntry[];
 
 function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: string) {
   return (
