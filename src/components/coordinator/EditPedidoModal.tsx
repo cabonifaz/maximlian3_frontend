@@ -145,41 +145,49 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
   const { data: tiposPersona } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_PERSONA],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_PERSONA),
+    staleTime: Infinity,
   });
 
   const { data: empresasAtencion } = useQuery({
     queryKey: ["masterTable", MasterTableId.EMPRESA_ATENCION],
     queryFn: () => masterTableService.list(MasterTableId.EMPRESA_ATENCION),
+    staleTime: Infinity,
   });
 
   const { data: paises } = useQuery({
     queryKey: ["masterTable", MasterTableId.PAIS],
     queryFn: () => masterTableService.list(MasterTableId.PAIS),
+    staleTime: Infinity,
   });
 
   const { data: idiomas } = useQuery({
     queryKey: ["masterTable", MasterTableId.IDIOMA],
     queryFn: () => masterTableService.list(MasterTableId.IDIOMA),
+    staleTime: Infinity,
   });
 
   const { data: clasesInforme } = useQuery({
     queryKey: ["masterTable", MasterTableId.CLASE_INFORME],
     queryFn: () => masterTableService.list(MasterTableId.CLASE_INFORME),
+    staleTime: Infinity,
   });
 
   const { data: tiposTramite } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
+    staleTime: Infinity,
   });
 
   const { data: plantillasInforme } = useQuery({
     queryKey: ["masterTable", MasterTableId.PLANTILLA_INFORME],
     queryFn: () => masterTableService.list(MasterTableId.PLANTILLA_INFORME),
+    staleTime: Infinity,
   });
 
   const { data: tiposPlazoCredito } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_PLAZO_CREDITO],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_PLAZO_CREDITO),
+    staleTime: Infinity,
   });
 
   const handleClienteChange = (val: number | undefined) => {
@@ -302,11 +310,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
 
       {/* Right column: order fields */}
       <div className="flex flex-col gap-5 flex-2">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs uppercase tracking-wide text-gray-400 whitespace-nowrap">Datos del Investigado</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
+
         <div className="flex flex-col gap-1.5">
           <CustomLabel required>Investigado</CustomLabel>
           <input
@@ -335,11 +339,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
             className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
           />
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs uppercase tracking-wide text-gray-400 whitespace-nowrap">Datos del Pedido</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
+
         <div className="flex flex-col gap-1.5">
           <CustomLabel required>Código</CustomLabel>
           <input
@@ -459,6 +459,7 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
   const { data: tipoOptions = [] } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_DOCUMENTO],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_DOCUMENTO),
+    staleTime: Infinity,
   });
 
   const { mutate: deleteArchivo, isPending: isDeleting } = useMutation({

@@ -1,17 +1,11 @@
-import { useState, useMemo } from "react";
-import {
-  Plus,
-  Loader2,
-  AlertCircle,
-  RefreshCw,
-  MailCheck,
-  MailX,
-} from "lucide-react";
+import { useState } from "react";
+import { Plus, MailCheck, MailX } from "lucide-react";
 import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import {
   clientInfoSchema,
   type ClientInfoFormData,
@@ -20,7 +14,6 @@ import {
 } from "@maximilian/schemas";
 import { AddRateModal } from "./AddRateModal";
 import { AddContactModal } from "./AddContactModal";
-import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
@@ -101,125 +94,12 @@ export function AddClientModal({
     defaultValues: { imprimeLogoSafety: false, aplicaPenalidad: false },
   });
 
-  // Queries for MasterTable parameters
-  const {
-    data: tipoPersonaData,
-    isLoading: isLoadingTipoPersona,
-    isError: isErrorTipoPersona,
-    refetch: refetchTipoPersona,
-  } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_PERSONA],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_PERSONA),
-    enabled: isOpen,
-  });
+  const queryClient = useQueryClient();
 
-  const {
-    data: paisData,
-    isLoading: isLoadingPais,
-    isError: isErrorPais,
-    refetch: refetchPais,
-  } = useQuery({
-    queryKey: ["masterTable", MasterTableId.PAIS],
-    queryFn: () => masterTableService.list(MasterTableId.PAIS),
-    enabled: isOpen,
-  });
-
-  const {
-    data: tipoRegTributarioData,
-    isLoading: isLoadingTipoRegTributario,
-    isError: isErrorTipoRegTributario,
-    refetch: refetchTipoRegTributario,
-  } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_REG_TRIBUTARIO],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_REG_TRIBUTARIO),
-    enabled: isOpen,
-  });
-
-  const {
-    data: formatoInformeData,
-    isLoading: isLoadingFormatoInforme,
-    isError: isErrorFormatoInforme,
-    refetch: refetchFormatoInforme,
-  } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_FORMATO_INFORME],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_FORMATO_INFORME),
-    enabled: isOpen,
-  });
-
-  const { data: rateProductos } = useQuery({
-    queryKey: ["masterTable", MasterTableId.PRODUCTO],
-    queryFn: () => masterTableService.list(MasterTableId.PRODUCTO),
-  });
-
-  const { data: rateMonedas } = useQuery({
-    queryKey: ["masterTable", MasterTableId.MONEDA],
-    queryFn: () => masterTableService.list(MasterTableId.MONEDA),
-  });
-
-  const { data: empresaAtencionData } = useQuery({
-    queryKey: ["masterTable", MasterTableId.EMPRESA_ATENCION],
-    queryFn: () => masterTableService.list(MasterTableId.EMPRESA_ATENCION),
-    enabled: isOpen,
-  });
-
-  const { data: idiomaData } = useQuery({
-    queryKey: ["masterTable", MasterTableId.IDIOMA],
-    queryFn: () => masterTableService.list(MasterTableId.IDIOMA),
-    enabled: isOpen,
-  });
-
-  const { data: rateTiposTramite } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
-  });
-
-  const { data: tipoContactoData } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_CONTACTO],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_CONTACTO),
-    enabled: isOpen,
-  });
-
-  const { data: areaTrabajoData } = useQuery({
-    queryKey: ["masterTable", MasterTableId.AREA_TRABAJO],
-    queryFn: () => masterTableService.list(MasterTableId.AREA_TRABAJO),
-    enabled: isOpen,
-  });
-
-  const { data: plantillaInformeData } = useQuery({
-    queryKey: ["masterTable", MasterTableId.PLANTILLA_INFORME],
-    queryFn: () => masterTableService.list(MasterTableId.PLANTILLA_INFORME),
-    enabled: isOpen,
-  });
-  const plantillaOptions = plantillaInformeData ?? [];
-
-  const paisMap = useMemo(
-    () => Object.fromEntries((paisData ?? []).map((e) => [e.num1, e.string1])),
-    [paisData],
-  );
-  const productoMap = useMemo(
-    () => Object.fromEntries((rateProductos ?? []).map((e) => [e.num1, e.string1])),
-    [rateProductos],
-  );
-  const monedaMap = useMemo(
-    () => Object.fromEntries((rateMonedas ?? []).map((e) => [e.num1, e.string1])),
-    [rateMonedas],
-  );
-  const tramiteMap = useMemo(
-    () => Object.fromEntries((rateTiposTramite ?? []).map((e) => [e.num1, e.string1])),
-    [rateTiposTramite],
-  );
-  const tipoPersonaMap = useMemo(
-    () => Object.fromEntries((tipoPersonaData ?? []).map((e) => [e.num1, e.string1])),
-    [tipoPersonaData],
-  );
-  const tipoContactoMap = useMemo(
-    () => Object.fromEntries((tipoContactoData ?? []).map((e) => [e.num1, e.string1])),
-    [tipoContactoData],
-  );
-  const areaTrabajoMap = useMemo(
-    () => Object.fromEntries((areaTrabajoData ?? []).map((e) => [e.num1, e.string1])),
-    [areaTrabajoData],
-  );
+  const getCached = (id: number) =>
+    queryClient.getQueryData<MasterTableEntry[]>(["masterTable", id]) ?? [];
+  const getLabel = (id: number, val: number) =>
+    getCached(id).find((e) => e.num1 === val)?.string1 ?? String(val);
 
   if (!isOpen) return null;
 
@@ -237,56 +117,36 @@ export function AddClientModal({
     onClose();
   };
 
-  const handleAddRate = (data: RateFormData) => {
+  const buildRate = (data: RateFormData) => {
     const productoId = Number(data.producto);
     const paisId = Number(data.pais);
     const monedaId = Number(data.moneda);
     const tramiteId = Number(data.tramite);
-    setAddedRates((prev) => [
-      ...prev,
-      {
-        productoId,
-        productoLabel: productoMap[productoId] ?? String(productoId),
-        paisId,
-        paisLabel: paisMap[paisId] ?? String(paisId),
-        monedaId,
-        monedaLabel: monedaMap[monedaId] ?? String(monedaId),
-        tramiteId,
-        tramiteLabel: tramiteMap[tramiteId] ?? String(tramiteId),
-        diasMin: data.diasMin,
-        diasMax: data.diasMax,
-        precio: data.precio,
-        penalidad: data.penalidad,
-      },
-    ]);
+    return {
+      productoId,
+      productoLabel: getLabel(MasterTableId.PRODUCTO, productoId),
+      paisId,
+      paisLabel: getLabel(MasterTableId.PAIS, paisId),
+      monedaId,
+      monedaLabel: getLabel(MasterTableId.MONEDA, monedaId),
+      tramiteId,
+      tramiteLabel: getLabel(MasterTableId.TIPO_TRAMITE, tramiteId),
+      diasMin: data.diasMin,
+      diasMax: data.diasMax,
+      precio: data.precio,
+      penalidad: data.penalidad,
+    };
+  };
+
+  const handleAddRate = (data: RateFormData) => {
+    setAddedRates((prev) => [...prev, buildRate(data)]);
     setSelectedRateIndex(null);
   };
 
   const handleEditRate = (data: RateFormData) => {
     if (selectedRateIndex === null) return;
-    const productoId = Number(data.producto);
-    const paisId = Number(data.pais);
-    const monedaId = Number(data.moneda);
-    const tramiteId = Number(data.tramite);
     setAddedRates((prev) =>
-      prev.map((rate, i) =>
-        i === selectedRateIndex
-          ? {
-              productoId,
-              productoLabel: productoMap[productoId] ?? String(productoId),
-              paisId,
-              paisLabel: paisMap[paisId] ?? String(paisId),
-              monedaId,
-              monedaLabel: monedaMap[monedaId] ?? String(monedaId),
-              tramiteId,
-              tramiteLabel: tramiteMap[tramiteId] ?? String(tramiteId),
-              diasMin: data.diasMin,
-              diasMax: data.diasMax,
-              precio: data.precio,
-              penalidad: data.penalidad,
-            }
-          : rate,
-      ),
+      prev.map((rate, i) => (i === selectedRateIndex ? buildRate(data) : rate)),
     );
     setSelectedRateIndex(null);
   };
@@ -323,66 +183,37 @@ export function AddClientModal({
     );
   };
 
-  const handleAddContact = (data: ContactFormData) => {
+  const buildContact = (data: ContactFormData) => {
     const tipoPersonaId = Number(data.tipoPersona);
     const tipoContactoId = Number(data.tipoContacto);
     const areaTrabajoId = Number(data.areaTrabajo);
-    setAddedContacts((prev) => [
-      ...prev,
-      {
-        tipoPersonaId,
-        tipoPersonaLabel: tipoPersonaMap[tipoPersonaId] ?? String(tipoPersonaId),
-        tipoContactoId,
-        tipoContactoLabel: tipoContactoMap[tipoContactoId] ?? String(tipoContactoId),
-        codigoContacto: data.codigoContacto,
-        nombre: data.nombre,
-        email: data.email,
-        telefono: data.telefono,
-        areaTrabajoId,
-        areaTrabajoLabel: areaTrabajoMap[areaTrabajoId] ?? String(areaTrabajoId),
-        enviarCorreo: data.enviarCorreo,
-      },
-    ]);
+    return {
+      tipoPersonaId,
+      tipoPersonaLabel: getLabel(MasterTableId.TIPO_PERSONA, tipoPersonaId),
+      tipoContactoId,
+      tipoContactoLabel: getLabel(MasterTableId.TIPO_CONTACTO, tipoContactoId),
+      codigoContacto: data.codigoContacto,
+      nombre: data.nombre,
+      email: data.email,
+      telefono: data.telefono,
+      areaTrabajoId,
+      areaTrabajoLabel: getLabel(MasterTableId.AREA_TRABAJO, areaTrabajoId),
+      enviarCorreo: data.enviarCorreo,
+    };
+  };
+
+  const handleAddContact = (data: ContactFormData) => {
+    setAddedContacts((prev) => [...prev, buildContact(data)]);
     setSelectedContactIndex(null);
   };
 
   const handleEditContact = (data: ContactFormData) => {
     if (selectedContactIndex === null) return;
-    const tipoPersonaId = Number(data.tipoPersona);
-    const tipoContactoId = Number(data.tipoContacto);
-    const areaTrabajoId = Number(data.areaTrabajo);
     setAddedContacts((prev) =>
-      prev.map((c, i) =>
-        i === selectedContactIndex
-          ? {
-              tipoPersonaId,
-              tipoPersonaLabel: tipoPersonaMap[tipoPersonaId] ?? String(tipoPersonaId),
-              tipoContactoId,
-              tipoContactoLabel: tipoContactoMap[tipoContactoId] ?? String(tipoContactoId),
-              codigoContacto: data.codigoContacto,
-              nombre: data.nombre,
-              email: data.email,
-              telefono: data.telefono,
-              enviarCorreo: data.enviarCorreo,
-              areaTrabajoId,
-              areaTrabajoLabel: areaTrabajoMap[areaTrabajoId] ?? String(areaTrabajoId),
-            }
-          : c,
-      ),
+      prev.map((c, i) => (i === selectedContactIndex ? buildContact(data) : c)),
     );
     setSelectedContactIndex(null);
   };
-
-  const isLoadingInfo =
-    isLoadingTipoPersona ||
-    isLoadingPais ||
-    isLoadingTipoRegTributario ||
-    isLoadingFormatoInforme;
-  const isErrorInfo =
-    isErrorTipoPersona ||
-    isErrorPais ||
-    isErrorTipoRegTributario ||
-    isErrorFormatoInforme;
 
   const watchedPais = infoWatch("pais");
   const watchedTipoRegTributario = infoWatch("tipoRegistroTributario");
@@ -411,34 +242,6 @@ export function AddClientModal({
             ) : undefined,
             content: (
             <>
-              {isLoadingInfo ? (
-                <div className="h-full flex flex-col items-center justify-center gap-3 py-20">
-                  <Loader2 size={40} className="text-brand-wine animate-spin" />
-                  <p className="text-sm font-medium text-gray-500">
-                    Cargando parámetros...
-                  </p>
-                </div>
-              ) : isErrorInfo ? (
-                <div className="h-full flex flex-col items-center justify-center gap-4 py-20 text-center">
-                  <AlertCircle size={40} className="text-red-500" />
-                  <p className="text-sm font-bold text-brand-black">
-                    Error al cargar parámetros
-                  </p>
-                  <CustomButton
-                    variant="wine"
-                    size="sm"
-                    onClick={() => {
-                      refetchTipoPersona();
-                      refetchPais();
-                      refetchTipoRegTributario();
-                      refetchFormatoInforme();
-                    }}
-                  >
-                    <RefreshCw size={14} />
-                    <span>REINTENTAR</span>
-                  </CustomButton>
-                </div>
-              ) : (
                 <form
                   id="client-info-form"
                   onSubmit={handleInfoSubmit(() => setActiveTab("rates"))}
@@ -447,7 +250,7 @@ export function AddClientModal({
                   <SearchableSelect
                     label="Tipo Persona"
                     required
-                    options={tipoPersonaData}
+                    idMaster={MasterTableId.TIPO_PERSONA}
                     value={watchedTipoPersona}
                     onChange={(val) =>
                       setInfoValue("tipoPersona", val, { shouldValidate: true })
@@ -473,7 +276,7 @@ export function AddClientModal({
                   <SearchableSelect
                     label="País"
                     required
-                    options={paisData}
+                    idMaster={MasterTableId.PAIS}
                     value={watchedPais}
                     onChange={(val) =>
                       setInfoValue("pais", val, { shouldValidate: true })
@@ -554,7 +357,7 @@ export function AddClientModal({
                   <SearchableSelect
                     label="Tipo Registro Tributario"
                     required
-                    options={tipoRegTributarioData}
+                    idMaster={MasterTableId.TIPO_REG_TRIBUTARIO}
                     value={watchedTipoRegTributario}
                     onChange={(val) =>
                       setInfoValue("tipoRegistroTributario", val, {
@@ -581,7 +384,7 @@ export function AddClientModal({
                   <SearchableSelect
                     label="Moneda"
                     required
-                    options={rateMonedas}
+                    idMaster={MasterTableId.MONEDA}
                     value={watchedMoneda}
                     onChange={(val) =>
                       setInfoValue("moneda", val, { shouldValidate: true })
@@ -592,7 +395,7 @@ export function AddClientModal({
                   <SearchableSelect
                     label="Atendido por"
                     required
-                    options={empresaAtencionData}
+                    idMaster={MasterTableId.EMPRESA_ATENCION}
                     value={watchedAtendidoPor}
                     onChange={(val) =>
                       setInfoValue("atendidoPor", val, { shouldValidate: true })
@@ -603,7 +406,7 @@ export function AddClientModal({
                   <SearchableSelect
                     label="Idioma preferido"
                     required
-                    options={idiomaData}
+                    idMaster={MasterTableId.IDIOMA}
                     value={watchedIdioma}
                     onChange={(val) =>
                       setInfoValue("idioma", val, { shouldValidate: true })
@@ -614,7 +417,7 @@ export function AddClientModal({
                   <SearchableSelect
                     label="Idioma de facturación"
                     required
-                    options={idiomaData}
+                    idMaster={MasterTableId.IDIOMA}
                     value={watchedIdiomaFacturacion}
                     onChange={(val) =>
                       setInfoValue("idiomaFacturacion", val, { shouldValidate: true })
@@ -625,7 +428,7 @@ export function AddClientModal({
                   <MultiSearchableSelect
                     label="Formato de Informe"
                     required
-                    options={formatoInformeData}
+                    idMaster={MasterTableId.TIPO_FORMATO_INFORME}
                     value={watchedFormatoInforme ?? []}
                     onChange={(val) =>
                       setInfoValue("formatoInforme", val, { shouldValidate: true })
@@ -636,7 +439,7 @@ export function AddClientModal({
                   <SearchableSelect
                     label="Plantilla de informe"
                     required
-                    options={plantillaOptions}
+                    idMaster={MasterTableId.PLANTILLA_INFORME}
                     value={watchedPlantillaInforme ?? null}
                     onChange={(val) =>
                       setInfoValue("plantillaInforme", val, { shouldValidate: true })
@@ -679,7 +482,6 @@ export function AddClientModal({
                     />
                   </div>
                 </form>
-              )}
             </>
             ),
           },
@@ -913,7 +715,7 @@ export function AddClientModal({
               )}
               <CustomButton
                 onClick={handleConfirm}
-                disabled={!isInfoValid || isLoadingInfo}
+                disabled={!isInfoValid}
                 loading={isSubmitting}
                 loadingText="Creando..."
                 className="min-w-35"

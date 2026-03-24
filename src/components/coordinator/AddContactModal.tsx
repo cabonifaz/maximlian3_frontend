@@ -5,9 +5,7 @@ import { useForm } from "react-hook-form";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
 import { contactSchema, type ContactFormData } from "@maximilian/schemas";
-import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 
 interface AddContactModalProps {
@@ -33,23 +31,6 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
     reset(defaultValues ?? { enviarCorreo: false } as ContactFormData);
   }, [isOpen]);
 
-  const { data: tiposPersona } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_PERSONA],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_PERSONA),
-    enabled: isOpen,
-  });
-
-  const { data: tiposContacto } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_CONTACTO],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_CONTACTO),
-    enabled: isOpen,
-  });
-
-  const { data: areasTrabajo } = useQuery({
-    queryKey: ["masterTable", MasterTableId.AREA_TRABAJO],
-    queryFn: () => masterTableService.list(MasterTableId.AREA_TRABAJO),
-    enabled: isOpen,
-  });
 
   if (!isOpen) return null;
 
@@ -78,7 +59,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             <SearchableSelect
               label="Tipo Persona"
               required
-              options={tiposPersona}
+              idMaster={MasterTableId.TIPO_PERSONA}
               value={watchedTipoPersona}
               onChange={(val) =>
                 setValue("tipoPersona", val, { shouldValidate: true })
@@ -89,7 +70,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             <SearchableSelect
               label="Tipo de Contacto"
               required
-              options={tiposContacto}
+              idMaster={MasterTableId.TIPO_CONTACTO}
               value={watchedTipoContacto}
               onChange={(val) =>
                 setValue("tipoContacto", val, { shouldValidate: true })
@@ -145,7 +126,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
               <SearchableSelect
                 label="Área de Trabajo"
                 required
-                options={areasTrabajo}
+                idMaster={MasterTableId.AREA_TRABAJO}
                 value={watchedAreaTrabajo}
                 onChange={(val) =>
                   setValue("areaTrabajo", val, { shouldValidate: true })

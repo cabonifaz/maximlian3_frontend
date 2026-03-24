@@ -182,49 +182,56 @@ export function ClientDetailModal({
     queryKey: ["masterTable", MasterTableId.TIPO_PERSONA],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_PERSONA),
     enabled: isOpen,
+    staleTime: Infinity,
   });
 
   const { data: paisData } = useQuery({
     queryKey: ["masterTable", MasterTableId.PAIS],
     queryFn: () => masterTableService.list(MasterTableId.PAIS),
     enabled: isOpen,
+    staleTime: Infinity,
   });
 
   const { data: tipoRegTributarioData } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_REG_TRIBUTARIO],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_REG_TRIBUTARIO),
     enabled: isOpen,
+    staleTime: Infinity,
   });
 
   const { data: formatoInformeData } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_FORMATO_INFORME],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_FORMATO_INFORME),
     enabled: isOpen,
+    staleTime: Infinity,
   });
 
   const { data: rateMonedas } = useQuery({
     queryKey: ["masterTable", MasterTableId.MONEDA],
     queryFn: () => masterTableService.list(MasterTableId.MONEDA),
     enabled: isOpen,
+    staleTime: Infinity,
   });
 
   const { data: empresaAtencionData } = useQuery({
     queryKey: ["masterTable", MasterTableId.EMPRESA_ATENCION],
     queryFn: () => masterTableService.list(MasterTableId.EMPRESA_ATENCION),
     enabled: isOpen,
+    staleTime: Infinity,
   });
 
   const { data: idiomaData } = useQuery({
     queryKey: ["masterTable", MasterTableId.IDIOMA],
     queryFn: () => masterTableService.list(MasterTableId.IDIOMA),
     enabled: isOpen,
+    staleTime: Infinity,
   });
-
 
   const { data: plantillaInformeData } = useQuery({
     queryKey: ["masterTable", MasterTableId.PLANTILLA_INFORME],
     queryFn: () => masterTableService.list(MasterTableId.PLANTILLA_INFORME),
     enabled: isOpen,
+    staleTime: Infinity,
   });
   const plantillaOptions = plantillaInformeData ?? [];
 

@@ -70,6 +70,7 @@ export function EditUserModal({
     queryKey: ["masterTable", MasterTableId.ROLES],
     queryFn: () => masterTableService.list(MasterTableId.ROLES),
     enabled: isOpen,
+    staleTime: Infinity,
     retry: 1,
   });
 
@@ -83,6 +84,7 @@ export function EditUserModal({
     queryKey: ["masterTable", MasterTableId.IDIOMA],
     queryFn: () => masterTableService.list(MasterTableId.IDIOMA),
     enabled: isOpen,
+    staleTime: Infinity,
     retry: 1,
   });
 

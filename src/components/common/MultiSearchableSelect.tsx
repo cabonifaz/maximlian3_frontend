@@ -1,11 +1,14 @@
 import { useState, useMemo, useRef } from "react";
-import { Search, X, Check } from "lucide-react";
+import { Search, X, Check, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
+import { masterTableService } from "@maximilian/services/masterTable.service";
 import { CustomLabel } from "./CustomLabel";
 
 export interface MultiSearchableSelectProps {
   label: string;
-  options: MasterTableEntry[] | undefined;
+  idMaster?: number;
+  options?: MasterTableEntry[] | undefined;
   value: number[];
   onChange: (val: number[]) => void;
   error?: string;
@@ -19,6 +22,7 @@ export interface MultiSearchableSelectProps {
 
 export function MultiSearchableSelect({
   label,
+  idMaster,
   options,
   value,
   onChange,
@@ -35,27 +39,36 @@ export function MultiSearchableSelect({
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLDivElement>(null);
 
+  const { data: fetchedOptions, isLoading } = useQuery({
+    queryKey: ["masterTable", idMaster],
+    queryFn: () => masterTableService.list(idMaster!),
+    enabled: idMaster !== undefined && isOpen,
+    staleTime: Infinity,
+  });
+
+  const resolvedOptions = idMaster ? fetchedOptions : options;
+
   const filteredOptions = useMemo(() => {
-    if (!options) return [];
+    if (!resolvedOptions) return [];
     const seen = new Set<number>();
-    return options
+    return resolvedOptions
       .filter((opt) => {
         if (opt.num1 == null || seen.has(opt.num1)) return false;
         seen.add(opt.num1);
         return opt.string1?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false;
       })
       .sort((a, b) => (a.string1 || "").localeCompare(b.string1 || ""));
-  }, [options, searchTerm]);
+  }, [resolvedOptions, searchTerm]);
 
   const selectedOptions = useMemo(() => {
-    if (!options) return [];
+    if (!resolvedOptions) return [];
     const seen = new Set<number>();
-    return options.filter((opt) => {
+    return resolvedOptions.filter((opt) => {
       if (opt.num1 == null || seen.has(opt.num1) || !value.includes(opt.num1)) return false;
       seen.add(opt.num1);
       return true;
     });
-  }, [options, value]);
+  }, [resolvedOptions, value]);
 
   const handleToggle = () => {
     if (disabled) return;
@@ -137,7 +150,11 @@ export function MultiSearchableSelect({
               />
             </div>
             <div className="max-h-48 overflow-y-auto">
-              {filteredOptions.length > 0 ? (
+              {isLoading ? (
+                <div className="px-4 py-6 flex justify-center">
+                  <Loader2 size={16} className="animate-spin text-gray-400" />
+                </div>
+              ) : filteredOptions.length > 0 ? (
                 filteredOptions.map((opt) => {
                   const selected = value.includes(opt.num1!);
                   return (

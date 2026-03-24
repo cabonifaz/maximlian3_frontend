@@ -2,9 +2,7 @@ import { X } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
 import { rateSchema, type RateFormData } from "@maximilian/schemas";
-import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
@@ -40,29 +38,6 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
     reset(defaultValues ?? ({} as RateFormData));
   }, [isOpen]);
 
-  const { data: productos } = useQuery({
-    queryKey: ["masterTable", MasterTableId.PRODUCTO],
-    queryFn: () => masterTableService.list(MasterTableId.PRODUCTO),
-    enabled: isOpen,
-  });
-
-  const { data: paises } = useQuery({
-    queryKey: ["masterTable", MasterTableId.PAIS],
-    queryFn: () => masterTableService.list(MasterTableId.PAIS),
-    enabled: isOpen,
-  });
-
-  const { data: monedas } = useQuery({
-    queryKey: ["masterTable", MasterTableId.MONEDA],
-    queryFn: () => masterTableService.list(MasterTableId.MONEDA),
-    enabled: isOpen,
-  });
-
-  const { data: tiposTramite } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
-    enabled: isOpen,
-  });
 
   if (!isOpen) return null;
 
@@ -87,7 +62,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             <SearchableSelect
               label="Producto"
               required
-              options={productos}
+              idMaster={MasterTableId.PRODUCTO}
               value={watchedProducto as number | undefined}
               onChange={(val) => setValue("producto", val)}
               error={errors.producto?.message}
@@ -97,7 +72,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             <SearchableSelect
               label="País"
               required
-              options={paises}
+              idMaster={MasterTableId.PAIS}
               value={watchedPais as number | undefined}
               onChange={(val) => setValue("pais", val)}
               error={errors.pais?.message}
@@ -107,7 +82,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             <SearchableSelect
               label="Moneda"
               required
-              options={monedas}
+              idMaster={MasterTableId.MONEDA}
               value={watchedMoneda as number | undefined}
               onChange={(val) => setValue("moneda", val)}
               error={errors.moneda?.message}
@@ -117,7 +92,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             <SearchableSelect
               label="Trámite"
               required
-              options={tiposTramite}
+              idMaster={MasterTableId.TIPO_TRAMITE}
               value={watchedTramite as number | undefined}
               onChange={(val) => setValue("tramite", val)}
               error={errors.tramite?.message}

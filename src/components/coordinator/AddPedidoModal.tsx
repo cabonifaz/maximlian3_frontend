@@ -58,7 +58,6 @@ interface InformacionTabProps {
   setValue: UseFormSetValue<PedidoFormData>;
   watch: UseFormWatch<PedidoFormData>;
   errors: Partial<Record<keyof PedidoFormData, { message?: string }>>;
-  clientes: ClienteCorta[];
   selectedIdTarifario: number | undefined;
   onTarifarioSelect: (id: number | undefined) => void;
   tarifarioError?: string;
@@ -104,7 +103,7 @@ function FileIcon({ ext }: { ext: string }) {
   return <FileText size={18} className={colorMap[ext] ?? "text-gray-400"} />;
 }
 
-function InformacionTab({ register, setValue, watch, errors, clientes, selectedIdTarifario, onTarifarioSelect, tarifarioError }: InformacionTabProps) {
+function InformacionTab({ register, setValue, watch, errors, selectedIdTarifario, onTarifarioSelect, tarifarioError }: InformacionTabProps) {
   const idCliente = watch("idCliente");
   const idPais = watch("idPais");
   const idIdioma = watch("idIdioma");
@@ -119,9 +118,16 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
   const autogenerarCodigo = watch("autogenerarCodigo");
   const idTipoPlazoCredito = watch("idTipoPlazoCredito");
 
+  const [clientesEnabled, setClientesEnabled] = useState(false);
+  const { data: clientes = [], isFetching: isLoadingClientes } = useQuery({
+    queryKey: ["clientes", "listaCorta"],
+    queryFn: () => clientService.listaCorta(),
+    enabled: clientesEnabled,
+  });
+
   const clienteOptions = useMemo(
     () =>
-      clientes.map((c) => ({
+      clientes.map((c: ClienteCorta) => ({
         idEmpresa: 0,
         idMasterTable: null,
         idMaster: 0,
@@ -139,14 +145,12 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
     [clientes]
   );
 
-  const { data: tiposPersona } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_PERSONA],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_PERSONA),
-  });
+  const queryClient = useQueryClient();
 
   const { data: empresasAtencion } = useQuery({
     queryKey: ["masterTable", MasterTableId.EMPRESA_ATENCION],
     queryFn: () => masterTableService.list(MasterTableId.EMPRESA_ATENCION),
+    staleTime: Infinity,
   });
 
   useEffect(() => {
@@ -158,36 +162,6 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
     }
   }, [empresasAtencion, idEmpresaAtencion, setValue]);
 
-  const { data: paises } = useQuery({
-    queryKey: ["masterTable", MasterTableId.PAIS],
-    queryFn: () => masterTableService.list(MasterTableId.PAIS),
-  });
-
-  const { data: idiomas } = useQuery({
-    queryKey: ["masterTable", MasterTableId.IDIOMA],
-    queryFn: () => masterTableService.list(MasterTableId.IDIOMA),
-  });
-
-  const { data: clasesInforme } = useQuery({
-    queryKey: ["masterTable", MasterTableId.CLASE_INFORME],
-    queryFn: () => masterTableService.list(MasterTableId.CLASE_INFORME),
-  });
-
-  const { data: tiposTramite } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
-  });
-
-  const { data: plantillasInforme } = useQuery({
-    queryKey: ["masterTable", MasterTableId.PLANTILLA_INFORME],
-    queryFn: () => masterTableService.list(MasterTableId.PLANTILLA_INFORME),
-  });
-
-  const { data: tiposPlazoCredito } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_PLAZO_CREDITO],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_PLAZO_CREDITO),
-  });
-
   useEffect(() => {
     if (autogenerarCodigo) setValue("codigo", "", { shouldValidate: false });
   }, [autogenerarCodigo, setValue]);
@@ -195,12 +169,22 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
   const handleClienteChange = (val: number | undefined) => {
     setValue("idCliente", val as number, { shouldValidate: true });
     if (val == null) return;
-    const cliente = clientes.find((c) => c.idCliente === val);
+    const cliente = clientes.find((c: ClienteCorta) => c.idCliente === val);
     if (!cliente) return;
     setValue("nroDocumento", cliente.numeroDocumento, { shouldValidate: true });
     setValue("idIdioma", cliente.idIdioma, { shouldValidate: true });
     setValue("logoImprimible", cliente.logoImprimible, { shouldValidate: true });
     setValue("idPlantillaInforme", cliente.idPlantilla, { shouldValidate: true });
+    queryClient.prefetchQuery({
+      queryKey: ["masterTable", MasterTableId.IDIOMA],
+      queryFn: () => masterTableService.list(MasterTableId.IDIOMA),
+      staleTime: Infinity,
+    });
+    queryClient.prefetchQuery({
+      queryKey: ["masterTable", MasterTableId.PLANTILLA_INFORME],
+      queryFn: () => masterTableService.list(MasterTableId.PLANTILLA_INFORME),
+      staleTime: Infinity,
+    });
   };
 
   return (
@@ -212,6 +196,8 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
           options={clienteOptions}
           value={idCliente}
           onChange={handleClienteChange}
+          onOpen={() => setClientesEnabled(true)}
+          loading={isLoadingClientes}
           placeholder="Seleccione"
           required
           error={errors.idCliente?.message}
@@ -228,7 +214,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
         </div>
         <SearchableSelect
           label="Plantilla de Informe"
-          options={plantillasInforme}
+          idMaster={MasterTableId.PLANTILLA_INFORME}
           value={idPlantillaInforme}
           onChange={(val) => setValue("idPlantillaInforme", val as number, { shouldValidate: true })}
           placeholder="Seleccione"
@@ -237,7 +223,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
         />
         <SearchableSelect
           label="Idioma del Informe"
-          options={idiomas}
+          idMaster={MasterTableId.IDIOMA}
           value={idIdioma}
           onChange={(val) => setValue("idIdioma", val as number, { shouldValidate: true })}
           placeholder="Seleccione"
@@ -259,7 +245,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
         <SearchableSelect
           label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />País del Informe</span>}
           required
-          options={paises}
+          idMaster={MasterTableId.PAIS}
           value={idPais}
           onChange={(val) => setValue("idPais", val as number, { shouldValidate: true })}
           placeholder="Seleccione"
@@ -267,7 +253,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
         />
         <SearchableSelect
           label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />Clases de Informe</span>}
-          options={clasesInforme}
+          idMaster={MasterTableId.CLASE_INFORME}
           value={idClaseInforme}
           onChange={(val) => setValue("idClaseInforme", val as number, { shouldValidate: true })}
           placeholder="Seleccione"
@@ -276,7 +262,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
         />
         <SearchableSelect
           label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />Tipo de Trámite</span>}
-          options={tiposTramite}
+          idMaster={MasterTableId.TIPO_TRAMITE}
           value={idTipoTramite}
           onChange={(val) => setValue("idTipoTramite", val as number, { shouldValidate: true })}
           placeholder="Seleccione"
@@ -298,6 +284,21 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
                   if (!idPais) setValue("idPais", entry.idPais, { shouldValidate: true });
                   if (!idClaseInforme) setValue("idClaseInforme", entry.idProducto, { shouldValidate: true });
                   if (!idTipoTramite) setValue("idTipoTramite", entry.idTipoTramite, { shouldValidate: true });
+                  queryClient.prefetchQuery({
+                    queryKey: ["masterTable", MasterTableId.PAIS],
+                    queryFn: () => masterTableService.list(MasterTableId.PAIS),
+                    staleTime: Infinity,
+                  });
+                  queryClient.prefetchQuery({
+                    queryKey: ["masterTable", MasterTableId.CLASE_INFORME],
+                    queryFn: () => masterTableService.list(MasterTableId.CLASE_INFORME),
+                    staleTime: Infinity,
+                  });
+                  queryClient.prefetchQuery({
+                    queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
+                    queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
+                    staleTime: Infinity,
+                  });
                 }
                 onTarifarioSelect(entry?.idTarifario);
               }}
@@ -312,11 +313,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
 
       {/* Right column: order fields */}
       <div className="flex flex-col gap-5 flex-2">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs uppercase tracking-wide text-gray-400 whitespace-nowrap">Datos del Investigado</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
+
         <div className="flex flex-col gap-1.5">
           <CustomLabel required>Investigado</CustomLabel>
           <input
@@ -329,7 +326,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
         </div>
         <SearchableSelect
           label="Tipo de Persona"
-          options={tiposPersona}
+          idMaster={MasterTableId.TIPO_PERSONA}
           value={idTipoPersona}
           onChange={(val) => setValue("idTipoPersona", val as number, { shouldValidate: true })}
           placeholder="Seleccione"
@@ -345,15 +342,18 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
             className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
           />
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs uppercase tracking-wide text-gray-400 whitespace-nowrap">Datos del Pedido</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
+
         <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <CustomLabel required={!autogenerarCodigo}>Código</CustomLabel>
-            <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+          <CustomLabel required={!autogenerarCodigo}>Código</CustomLabel>
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              placeholder={autogenerarCodigo ? "Autogenerado" : "Código"}
+              disabled={autogenerarCodigo}
+              {...register("codigo")}
+              className={`flex-1 px-4 py-2.5 border ${errors.codigo ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all ${autogenerarCodigo ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-brand-white"}`}
+            />
+            <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer shrink-0">
               <input
                 type="checkbox"
                 {...register("autogenerarCodigo")}
@@ -362,13 +362,6 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
               Autogenerar
             </label>
           </div>
-          <input
-            type="text"
-            placeholder={autogenerarCodigo ? "Autogenerado" : "Código"}
-            disabled={autogenerarCodigo}
-            {...register("codigo")}
-            className={`w-full px-4 py-2.5 border ${errors.codigo ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all ${autogenerarCodigo ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-brand-white"}`}
-          />
           {errors.codigo && <p className="text-xs text-red-500">{errors.codigo.message}</p>}
         </div>
         <SearchableSelect
@@ -417,11 +410,12 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
             />
             <div className="w-40">
               <SearchableSelect
-                options={tiposPlazoCredito}
+                idMaster={MasterTableId.TIPO_PLAZO_CREDITO}
                 value={idTipoPlazoCredito}
                 onChange={(val) => {
                   setValue("idTipoPlazoCredito", val as number, { shouldValidate: true });
-                  const entry = tiposPlazoCredito?.find((t) => t.num1 === val);
+                  const cached = queryClient.getQueryData<{ num1?: number; string1?: string }[]>(["masterTable", MasterTableId.TIPO_PLAZO_CREDITO]);
+                  const entry = cached?.find((t) => t.num1 === val);
                   setValue("tipoPlazoCredito", entry?.string1 ?? "", { shouldValidate: false });
                 }}
                 placeholder="Tipo"
@@ -461,6 +455,7 @@ function AnexosTab({ files, onFilesChange, missingTipoIds, onClearMissingTipo }:
   const { data: tipoOptions = [] } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_DOCUMENTO],
     queryFn: () => masterTableService.list(MasterTableId.TIPO_DOCUMENTO),
+    staleTime: Infinity,
   });
 
   const uniqueFormatos = useMemo(
@@ -629,12 +624,6 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
 
   const queryClient = useQueryClient();
 
-  const { data: clientes = [] } = useQuery({
-    queryKey: ["clientes", "listaCorta"],
-    queryFn: () => clientService.listaCorta(),
-    enabled: isOpen,
-  });
-
   const {
     register,
     setValue,
@@ -699,7 +688,8 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
       setActiveTab("anexos");
       return;
     }
-    const cliente = clientes.find((c) => c.idCliente === data.idCliente);
+    const clientesCache = queryClient.getQueryData<ClienteCorta[]>(["clientes", "listaCorta"]) ?? [];
+    const cliente = clientesCache.find((c: ClienteCorta) => c.idCliente === data.idCliente);
     createPedido({
       codigo: data.autogenerarCodigo ? null : (data.codigo ?? ""),
       idCliente: data.idCliente,
@@ -740,7 +730,6 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
           setValue={setValue}
           watch={watch}
           errors={errors}
-          clientes={clientes}
           selectedIdTarifario={selectedIdTarifario}
           onTarifarioSelect={(id) => {
             setSelectedIdTarifario(id);
