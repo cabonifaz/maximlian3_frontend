@@ -427,9 +427,11 @@ interface AnexosTabProps {
   pedidoId: number | null;
   newFiles: UploadedFile[];
   onNewFilesChange: (files: UploadedFile[]) => void;
+  missingTipoIds: Set<string>;
+  onClearMissingTipo: (id: string) => void;
 }
 
-function AnexosTab({ pedidoId, newFiles, onNewFilesChange }: AnexosTabProps) {
+function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onClearMissingTipo }: AnexosTabProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [archivoToDelete, setArchivoToDelete] = useState<PedidoArchivoEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -505,6 +507,7 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange }: AnexosTabProps) {
 
   const handleTipoChange = (id: string, tipoId: number | undefined) => {
     onNewFilesChange(newFiles.map((f) => (f.id === id ? { ...f, tipoId } : f)));
+    if (tipoId !== undefined) onClearMissingTipo(id);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -603,6 +606,38 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange }: AnexosTabProps) {
                   ))
                 ) : (
                   <>
+                    {filteredNewFiles.map((f) => (
+                      <tr key={f.id} className="bg-amber-50 hover:bg-amber-100/60 transition-colors">
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-2">
+                            <FileIcon ext={f.type} />
+                            <span className="text-gray-700 font-medium truncate max-w-40">{f.name}</span>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-200 text-amber-800 whitespace-nowrap shrink-0">
+                              Nuevo
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3"><FileTypeBadge ext={f.type} /></td>
+                        <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{formatBytes(f.size)}</td>
+                        <td className="py-2.5 px-3">
+                          <SearchableSelect
+                            options={tipoOptions}
+                            value={f.tipoId}
+                            onChange={(val) => handleTipoChange(f.id, val)}
+                            placeholder="— Seleccione —"
+                            error={missingTipoIds.has(f.id) ? "Requerido" : undefined}
+                          />
+                        </td>
+                        <td className="py-2.5 px-3 text-right">
+                          <button
+                            onClick={() => onNewFilesChange(newFiles.filter((n) => n.id !== f.id))}
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                     {filteredArchivos.map((f) => {
                       const ext = getExtension(f.nombreDocumento);
                       return (
@@ -635,34 +670,6 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange }: AnexosTabProps) {
                         </tr>
                       );
                     })}
-                    {filteredNewFiles.map((f) => (
-                      <tr key={f.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="py-2.5 px-3">
-                          <div className="flex items-center gap-2">
-                            <FileIcon ext={f.type} />
-                            <span className="text-gray-700 font-medium truncate max-w-40">{f.name}</span>
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3"><FileTypeBadge ext={f.type} /></td>
-                        <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{formatBytes(f.size)}</td>
-                        <td className="py-2.5 px-3">
-                          <SearchableSelect
-                            options={tipoOptions}
-                            value={f.tipoId}
-                            onChange={(val) => handleTipoChange(f.id, val)}
-                            placeholder="— Seleccione —"
-                          />
-                        </td>
-                        <td className="py-2.5 px-3 text-right">
-                          <button
-                            onClick={() => onNewFilesChange(newFiles.filter((n) => n.id !== f.id))}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
                   </>
                 )}
               </tbody>
@@ -754,6 +761,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
   const [selectedIdTarifario, setSelectedIdTarifario] = useState<number | undefined>(undefined);
   const [newFiles, setNewFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [missingTipoIds, setMissingTipoIds] = useState<Set<string>>(new Set());
 
   const queryClient = useQueryClient();
 
@@ -796,6 +804,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
     setSelectedIdTarifario(undefined);
     setNewFiles([]);
     setIsUploading(false);
+    setMissingTipoIds(new Set());
     onClose();
   };
 
@@ -841,6 +850,12 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
   });
 
   const onSubmit = (data: PedidoFormData) => {
+    const missing = new Set(newFiles.filter((f) => !f.tipoId).map((f) => f.id));
+    if (missing.size > 0) {
+      setMissingTipoIds(missing);
+      setActiveTab("anexos");
+      return;
+    }
     const cliente = clientes.find((c) => c.idCliente === data.idCliente);
     updatePedido({
       idPedido: pedidoId!,
@@ -916,7 +931,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
     {
       id: "anexos",
       label: "Anexos",
-      content: <AnexosTab pedidoId={pedidoId} newFiles={newFiles} onNewFilesChange={setNewFiles} />,
+      content: <AnexosTab pedidoId={pedidoId} newFiles={newFiles} onNewFilesChange={setNewFiles} missingTipoIds={missingTipoIds} onClearMissingTipo={(id) => setMissingTipoIds((prev) => { const next = new Set(prev); next.delete(id); return next; })} />,
     },
   ];
 

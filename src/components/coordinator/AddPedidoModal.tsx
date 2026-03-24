@@ -447,9 +447,11 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
 interface AnexosTabProps {
   files: UploadedFile[];
   onFilesChange: (files: UploadedFile[]) => void;
+  missingTipoIds: Set<string>;
+  onClearMissingTipo: (id: string) => void;
 }
 
-function AnexosTab({ files, onFilesChange }: AnexosTabProps) {
+function AnexosTab({ files, onFilesChange, missingTipoIds, onClearMissingTipo }: AnexosTabProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterFormato, setFilterFormato] = useState("");
@@ -499,6 +501,7 @@ function AnexosTab({ files, onFilesChange }: AnexosTabProps) {
 
   const handleTipoChange = (id: string, tipoId: number | undefined) => {
     onFilesChange(files.map((f) => (f.id === id ? { ...f, tipoId } : f)));
+    if (tipoId !== undefined) onClearMissingTipo(id);
   };
 
   return (
@@ -595,6 +598,7 @@ function AnexosTab({ files, onFilesChange }: AnexosTabProps) {
                         value={f.tipoId}
                         onChange={(val) => handleTipoChange(f.id, val)}
                         placeholder="— Seleccione —"
+                        error={missingTipoIds.has(f.id) ? "Requerido" : undefined}
                       />
                     </td>
                     <td className="py-2.5 px-3 text-right">
@@ -621,6 +625,7 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
   const [selectedIdTarifario, setSelectedIdTarifario] = useState<number | undefined>(undefined);
   const [anexosFiles, setAnexosFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [missingTipoIds, setMissingTipoIds] = useState<Set<string>>(new Set());
 
   const queryClient = useQueryClient();
 
@@ -649,6 +654,7 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
     setSelectedIdTarifario(undefined);
     setAnexosFiles([]);
     setIsUploading(false);
+    setMissingTipoIds(new Set());
     onClose();
   };
 
@@ -687,6 +693,12 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
   });
 
   const onSubmit = (data: PedidoFormData) => {
+    const missing = new Set(anexosFiles.filter((f) => !f.tipoId).map((f) => f.id));
+    if (missing.size > 0) {
+      setMissingTipoIds(missing);
+      setActiveTab("anexos");
+      return;
+    }
     const cliente = clientes.find((c) => c.idCliente === data.idCliente);
     createPedido({
       codigo: data.autogenerarCodigo ? null : (data.codigo ?? ""),
@@ -741,7 +753,7 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
     {
       id: "anexos",
       label: "Anexos",
-      content: <AnexosTab files={anexosFiles} onFilesChange={setAnexosFiles} />,
+      content: <AnexosTab files={anexosFiles} onFilesChange={setAnexosFiles} missingTipoIds={missingTipoIds} onClearMissingTipo={(id) => setMissingTipoIds((prev) => { const next = new Set(prev); next.delete(id); return next; })} />,
     },
   ];
 
