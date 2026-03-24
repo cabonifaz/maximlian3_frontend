@@ -45,6 +45,7 @@ export default function PedidoManagement() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedPedidoId, setSelectedPedidoId] = useState<number | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
+  const [menuDropdownStyle, setMenuDropdownStyle] = useState<React.CSSProperties>({});
   const [pedidoToCancel, setPedidoToCancel] = useState<PedidoListEntry | null>(null);
 
   const cancelPedidoMutation = useMutation({
@@ -118,11 +119,20 @@ export default function PedidoManagement() {
         <span className="text-sm text-gray-600">{pedido.logoImprimible ? "Sí" : "No"}</span>
       </td>
       <td className="px-6 py-4">{getEstadoBadge(pedido.descripcionEstado, pedido.colorLetra, pedido.colorFondo)}</td>
-      <td className="px-6 py-4 text-right relative">
+      <td className="px-6 py-4 text-right">
         <button
-          onClick={() =>
-            setActiveMenuId(activeMenuId === pedido.idPedido ? null : pedido.idPedido)
-          }
+          onClick={(e) => {
+            if (activeMenuId === pedido.idPedido) {
+              setActiveMenuId(null);
+            } else {
+              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+              const menuHeight = 120;
+              const spaceBelow = window.innerHeight - rect.bottom;
+              const top = spaceBelow < menuHeight ? rect.top - menuHeight - 4 : rect.bottom + 4;
+              setMenuDropdownStyle({ top, right: window.innerWidth - rect.right });
+              setActiveMenuId(pedido.idPedido);
+            }
+          }}
           className="p-2 text-gray-400 hover:text-brand-black hover:bg-gray-100 rounded-lg transition-all cursor-pointer hover:scale-110 active:scale-90"
         >
           <MoreHorizontal size={18} />
@@ -132,9 +142,8 @@ export default function PedidoManagement() {
           <>
             <div className="fixed inset-0 z-10" onClick={() => setActiveMenuId(null)} />
             <div
-              className={`absolute right-6 ${
-                index >= (pedidosData?.lstPedido.length ?? 0) - 2 ? "bottom-10" : "top-10"
-              } w-52 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}
+              className="fixed w-52 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100"
+              style={menuDropdownStyle}
             >
               <button
                 onClick={() => {
@@ -178,11 +187,11 @@ export default function PedidoManagement() {
           <h1 className="text-2xl font-bold text-brand-black">Pedidos</h1>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 md:w-80">
+          <div className="relative flex-1 md:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Busca por cliente o código"
+              placeholder="Busca por cliente, investigado o código"
               className="w-full pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
               value={searchTerm}
               onChange={handleSearchChange}

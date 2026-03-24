@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const pedidoSchema = z.object({
-  codigo: z.string().min(1, "El código es requerido"),
+  codigo: z.string().optional(),
   idTipoPersona: z.number({ error: "El tipo de persona es requerido" }),
   idEmpresaAtencion: z.number({ error: "El atendido por es requerido" }),
   montoCredito: z.preprocess(

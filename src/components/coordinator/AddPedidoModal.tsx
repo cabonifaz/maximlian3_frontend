@@ -300,7 +300,7 @@ function InformacionTab({ register, setValue, watch, errors, clientes, selectedI
       {/* Right column: order fields */}
       <div className="flex flex-col gap-5 flex-2">
         <div className="flex flex-col gap-1.5">
-          <CustomLabel required>Código</CustomLabel>
+          <CustomLabel optional>Código</CustomLabel>
           <input
             type="text"
             placeholder="Código"
@@ -573,7 +573,7 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
   const onSubmit = (data: PedidoFormData) => {
     const cliente = clientes.find((c) => c.idCliente === data.idCliente);
     createPedido({
-      codigo: data.codigo,
+      codigo: data.codigo || null,
       idCliente: data.idCliente,
       numeroDocumento: data.nroDocumento,
       nombreCliente: cliente?.nombreCliente ?? "",
