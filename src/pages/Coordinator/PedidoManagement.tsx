@@ -1,5 +1,7 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Search, Filter, MoreHorizontal, Edit, UserPlus, X, Plus } from "lucide-react";
+import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
+import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
@@ -18,12 +20,12 @@ const PEDIDO_COLUMNS = [
   { label: "Acciones", className: "text-right" },
 ];
 
-const ESTADO_OPTIONS = [
-  { id: 1, label: "Pendiente" },
-  { id: 2, label: "En revisión" },
-  { id: 3, label: "Aprobado" },
-  { id: 4, label: "Observado" },
-  { id: 5, label: "Cancelado" },
+const ESTADO_OPTIONS: MasterTableEntry[] = [
+  { num1: 1, string1: "Pendiente" },
+  { num1: 2, string1: "En revisión" },
+  { num1: 3, string1: "Aprobado" },
+  { num1: 4, string1: "Observado" },
+  { num1: 5, string1: "Cancelado" },
 ];
 
 function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: string) {
@@ -55,10 +57,7 @@ export default function PedidoManagement() {
       queryClient.invalidateQueries({ queryKey: ["pedidos"] });
     },
   });
-  const [filterEstado, setFilterEstado] = useState<number | undefined>(undefined);
-  const [isEstadoOpen, setIsEstadoOpen] = useState(false);
-  const [estadoDropdownStyle, setEstadoDropdownStyle] = useState<React.CSSProperties>({});
-  const estadoBtnRef = useRef<HTMLButtonElement>(null);
+  const [filterEstados, setFilterEstados] = useState<number[]>([]);
 
   const debouncedSearch = useDebounce(searchTerm);
 
@@ -68,12 +67,12 @@ export default function PedidoManagement() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["pedidos", currentPage, debouncedSearch, filterEstado],
+    queryKey: ["pedidos", currentPage, debouncedSearch, filterEstados],
     queryFn: () =>
       pedidoService.list({
         numPag: currentPage,
         busqueda: debouncedSearch || undefined,
-        idEstado: filterEstado,
+        idEstado: filterEstados.length > 0 ? filterEstados.join(",") : undefined,
       }),
   });
 
@@ -82,18 +81,9 @@ export default function PedidoManagement() {
     setCurrentPage(1);
   };
 
-  const handleEstadoButtonClick = () => {
-    if (!isEstadoOpen && estadoBtnRef.current) {
-      const rect = estadoBtnRef.current.getBoundingClientRect();
-      setEstadoDropdownStyle({ top: rect.bottom + 8, left: rect.left, width: Math.max(rect.width, 180) });
-    }
-    setIsEstadoOpen((v) => !v);
-  };
-
-  const handleSelectEstado = (idEstado: number | undefined) => {
-    setFilterEstado(idEstado);
+  const handleEstadosChange = (ids: number[]) => {
+    setFilterEstados(ids);
     setCurrentPage(1);
-    setIsEstadoOpen(false);
   };
 
   const handlePageChange = (page: number) => {
@@ -101,8 +91,6 @@ export default function PedidoManagement() {
       setCurrentPage(page);
     }
   };
-
-  const selectedEstadoLabel = ESTADO_OPTIONS.find((e) => e.id === filterEstado)?.label;
 
   const renderRow = (pedido: PedidoListEntry, _index: number) => (
     <>
@@ -192,55 +180,21 @@ export default function PedidoManagement() {
             <input
               type="text"
               placeholder="Busca por cliente, investigado o código"
-              className="w-full pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm placeholder:text-gray-400 focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
               value={searchTerm}
               onChange={handleSearchChange}
             />
           </div>
 
-          <div className="relative">
-            <button
-              ref={estadoBtnRef}
-              onClick={handleEstadoButtonClick}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-colors cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${filterEstado ? "bg-brand-wine/10 border-brand-wine/30 text-brand-wine" : "bg-brand-white border-gray-200 text-gray-700 hover:bg-gray-50"}`}
-            >
-              <Filter className="w-4 h-4" />
-              <span>{selectedEstadoLabel ?? "Estado"}</span>
-              {filterEstado && (
-                <X
-                  className="w-3 h-3 ml-1"
-                  onClick={(e) => { e.stopPropagation(); handleSelectEstado(undefined); }}
-                />
-              )}
-            </button>
-            {isEstadoOpen && (
-              <>
-                <div className="fixed inset-0 z-100" onClick={() => setIsEstadoOpen(false)} />
-                <div
-                  className="fixed bg-brand-white border border-gray-100 rounded-xl shadow-2xl z-101 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-                  style={estadoDropdownStyle}
-                >
-                  <div className="max-h-48 overflow-y-auto">
-                    <div
-                      className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${!filterEstado ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-500 italic"}`}
-                      onClick={() => handleSelectEstado(undefined)}
-                    >
-                      Todos
-                    </div>
-                    {ESTADO_OPTIONS.map((opt) => (
-                      <div
-                        key={opt.id}
-                        className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${filterEstado === opt.id ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-600"}`}
-                        onClick={() => handleSelectEstado(opt.id)}
-                      >
-                        {opt.label}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          <MultiSearchableSelect
+            label="Estado"
+            hideLabel
+            triggerIcon={Filter}
+            options={ESTADO_OPTIONS}
+            value={filterEstados}
+            onChange={handleEstadosChange}
+            placeholder="Todos los estados"
+          />
 
           <button
             onClick={() => setIsAddModalOpen(true)}

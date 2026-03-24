@@ -13,6 +13,8 @@ export interface MultiSearchableSelectProps {
   required?: boolean;
   optional?: boolean;
   disabled?: boolean;
+  hideLabel?: boolean;
+  triggerIcon?: React.ElementType;
 }
 
 export function MultiSearchableSelect({
@@ -25,6 +27,8 @@ export function MultiSearchableSelect({
   required = false,
   optional = false,
   disabled = false,
+  hideLabel = false,
+  triggerIcon: TriggerIcon = Search,
 }: MultiSearchableSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -81,8 +85,8 @@ export function MultiSearchableSelect({
   };
 
   return (
-    <div className="relative space-y-2">
-      <CustomLabel required={required} optional={optional}>{label}</CustomLabel>
+    <div className={`relative ${hideLabel ? "" : "space-y-2"}`}>
+      {!hideLabel && <CustomLabel required={required} optional={optional}>{label}</CustomLabel>}
       <div
         ref={triggerRef}
         className={`w-full px-4 py-2 bg-brand-white border ${error ? "border-red-500" : "border-gray-200"} rounded-xl text-sm flex items-center justify-between gap-2 transition-all min-h-[42px] ${isOpen ? "relative z-[102]" : ""} ${disabled ? "bg-gray-50 cursor-not-allowed opacity-70" : "cursor-pointer hover:border-brand-wine/30"}`}
@@ -111,7 +115,7 @@ export function MultiSearchableSelect({
             <span className="text-gray-400">{placeholder}</span>
           )}
         </div>
-        <Search size={16} className="text-gray-400 shrink-0" />
+        <TriggerIcon size={16} className="text-gray-400 shrink-0" />
       </div>
 
       {!disabled && isOpen && (

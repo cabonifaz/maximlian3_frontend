@@ -23,7 +23,7 @@ export interface PedidoListResponse {
 export interface PedidoListParams {
   busqueda?: string;
   idCliente?: number;
-  idEstado?: number;
+  idEstado?: string;
   numPag?: number;
 }
 
