@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { toast } from "sonner";
-import { Upload, Trash2, FileText, Filter, AlertCircle, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Upload, Trash2, FileText, Filter, AlertCircle, RotateCcw, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { CustomDatePicker } from "@maximilian/components/common/CustomDatePicker";
 import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -455,6 +455,7 @@ interface AnexosTabProps {
 function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onClearMissingTipo }: AnexosTabProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [archivoToDelete, setArchivoToDelete] = useState<PedidoArchivoEntry | null>(null);
+  const [viewingArchivoId, setViewingArchivoId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [numPag, setNumPag] = useState(1);
@@ -490,6 +491,18 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
       setArchivoToDelete(null);
     },
   });
+
+  const handleViewArchivo = async (f: PedidoArchivoEntry) => {
+    setViewingArchivoId(f.idPedidoArchivo);
+    try {
+      const result = await pedidoService.getArchivo({ idPedidoArchivo: f.idPedidoArchivo, idPedido: pedidoId! });
+      window.open(result.downloadUrl, "_blank");
+    } catch {
+      // error handled by interceptor
+    } finally {
+      setViewingArchivoId(null);
+    }
+  };
 
   const archivos = useMemo(() => data?.lstPedidoArchivo ?? [], [data]);
   const totalPaginas = data?.totalPaginas ?? 1;
@@ -668,6 +681,13 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
                         <tr key={f.idPedidoArchivo} className="hover:bg-gray-50/50 transition-colors">
                           <td className="py-2.5 px-3">
                             <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleViewArchivo(f)}
+                                disabled={viewingArchivoId === f.idPedidoArchivo}
+                                className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                              >
+                                <Download size={15} />
+                              </button>
                               <FileIcon ext={ext} />
                               <span className="text-gray-700 font-medium truncate max-w-40">{f.nombreDocumento}</span>
                             </div>

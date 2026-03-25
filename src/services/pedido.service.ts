@@ -12,6 +12,7 @@ import type {
   PedidoArchivoListResponse,
   AddPedidoArchivosRequest,
   DeletePedidoArchivoRequest,
+  GetPedidoArchivoResponse,
 } from "@maximilian/shared/types/pedido.type";
 
 export const pedidoService = {
@@ -88,5 +89,14 @@ export const pedidoService = {
       data
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+  },
+
+  getArchivo: async (params: { idPedidoArchivo: number; idPedido: number }): Promise<GetPedidoArchivoResponse> => {
+    const { data } = await maximilianService.get<ApiResponse<GetPedidoArchivoResponse[]>>(
+      "/api/PedidoArchivo/obtener",
+      { params: { IdPedidoArchivo: params.idPedidoArchivo, IdPedido: params.idPedido } }
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    return data.result[0];
   },
 };

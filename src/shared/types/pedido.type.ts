@@ -152,3 +152,15 @@ export interface DeletePedidoArchivoRequest {
   idPedidoArchivo: number;
   idPedido: number;
 }
+
+export interface GetPedidoArchivoResponse {
+  idPedidoArchivo: number;
+  idPedido: number;
+  documentoURL: string;
+  nombreDocumento: string;
+  tamanoArchivo: number;
+  idFormato: number;
+  idEstado: number;
+  idTipoArchivo: number;
+  downloadUrl: string;
+}
