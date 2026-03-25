@@ -35,8 +35,6 @@ export function TarifarioCortaTable({
   onTarifarioSelect,
   error,
 }: TarifarioCortaTableProps) {
-  const visible = !!idCliente;
-
   const { data, isLoading } = useQuery({
     queryKey: ["tarifario", "listaCorta", { idCliente, idTipoProducto, idTipoTramite, idPais }],
     queryFn: () =>
@@ -46,7 +44,7 @@ export function TarifarioCortaTable({
         idTipoTramite,
         idPais,
       }),
-    enabled: visible,
+    enabled: !!idCliente,
   });
 
   const entries: TarifarioCortaEntry[] = data ?? [];
@@ -85,71 +83,73 @@ export function TarifarioCortaTable({
   };
 
   return (
-    <div
-      className={`overflow-hidden transition-all duration-300 ${
-        visible ? "opacity-100 max-h-[300px]" : "opacity-0 max-h-0"
-      }`}
-    >
+    <div>
       {error && <p className="text-xs text-red-500 mb-1">{error}</p>}
       <div className="border border-gray-200 rounded-xl overflow-hidden">
-        <div className="overflow-y-auto max-h-[260px]">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-gray-50 z-10">
-            <tr className="border-b border-gray-200">
-              <th className="py-2.5 px-3 w-10" />
-              <th className="text-left py-2.5 px-4 text-xs font-bold text-gray-400 uppercase tracking-wide">
-                Tipo Trámite
-              </th>
-              <th className="text-left py-2.5 px-4 text-xs font-bold text-gray-400 uppercase tracking-wide">
-                Precio
-              </th>
-              <th className="text-left py-2.5 px-4 text-xs font-bold text-gray-400 uppercase tracking-wide">
-                Moneda
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {isLoading ? (
-              <>
-                <SkeletonRow />
-                <SkeletonRow />
-                <SkeletonRow />
-              </>
-            ) : entries.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="py-4 px-4 text-center text-sm text-gray-400">
-                  Sin tarifas para los filtros seleccionados
-                </td>
+        <div className="overflow-y-auto max-h-65">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-gray-50 z-10">
+              <tr className="border-b border-gray-200">
+                <th className="py-2.5 px-3 w-10" />
+                <th className="text-left py-2.5 px-4 text-xs font-bold text-gray-400 uppercase tracking-wide">
+                  Tipo Trámite
+                </th>
+                <th className="text-left py-2.5 px-4 text-xs font-bold text-gray-400 uppercase tracking-wide">
+                  Precio
+                </th>
+                <th className="text-left py-2.5 px-4 text-xs font-bold text-gray-400 uppercase tracking-wide">
+                  Moneda
+                </th>
               </tr>
-            ) : (
-              entries.map((entry) => {
-                const isSelected = entry.idTarifario === selectedIdTarifario;
-                return (
-                  <tr
-                    key={entry.idTarifario}
-                    onClick={() => handleCheckbox(entry)}
-                    className={`cursor-pointer transition-colors ${
-                      isSelected ? "bg-brand-wine/5" : "hover:bg-gray-50/50"
-                    }`}
-                  >
-                    <td className="py-3 px-3 w-10">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleCheckbox(entry)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-4 h-4 accent-brand-wine cursor-pointer"
-                      />
-                    </td>
-                    <td className="py-3 px-4 text-gray-700">{entry.tipoTramite}</td>
-                    <td className="py-3 px-4 font-semibold text-gray-800">{entry.precio}</td>
-                    <td className="py-3 px-4 text-gray-600">{entry.moneda}</td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {!idCliente ? (
+                <tr>
+                  <td colSpan={4} className="py-4 px-4 text-center text-sm text-gray-400">
+                    Seleccione un cliente para ver las tarifas
+                  </td>
+                </tr>
+              ) : isLoading ? (
+                <>
+                  <SkeletonRow />
+                  <SkeletonRow />
+                  <SkeletonRow />
+                </>
+              ) : entries.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-4 px-4 text-center text-sm text-gray-400">
+                    Sin tarifas para los filtros seleccionados
+                  </td>
+                </tr>
+              ) : (
+                entries.map((entry) => {
+                  const isSelected = entry.idTarifario === selectedIdTarifario;
+                  return (
+                    <tr
+                      key={entry.idTarifario}
+                      onClick={() => handleCheckbox(entry)}
+                      className={`cursor-pointer transition-colors ${
+                        isSelected ? "bg-brand-wine/5" : "hover:bg-gray-50/50"
+                      }`}
+                    >
+                      <td className="py-3 px-3 w-10">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleCheckbox(entry)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-4 h-4 accent-brand-wine cursor-pointer"
+                        />
+                      </td>
+                      <td className="py-3 px-4 text-gray-700">{entry.tipoTramite}</td>
+                      <td className="py-3 px-4 font-semibold text-gray-800">{entry.precio}</td>
+                      <td className="py-3 px-4 text-gray-600">{entry.moneda}</td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

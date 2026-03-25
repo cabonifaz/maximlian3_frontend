@@ -23,10 +23,9 @@ import { TarifarioCortaTable } from "@maximilian/components/coordinator/Tarifari
 import { zodResolver } from "@hookform/resolvers/zod";
 import { pedidoSchema, type PedidoFormData } from "@maximilian/schemas";
 
-const pedidoResolver: Resolver<PedidoFormData> = (...args) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result: any = zodResolver(pedidoSchema)(...args);
-  const { fechaDesde, fechaHasta } = args[0];
+const pedidoResolver: Resolver<PedidoFormData> = async (...args) => {
+  const result = await zodResolver(pedidoSchema)(...args);
+  const { fechaDesde, fechaHasta, autogenerarCodigo, codigo } = args[0];
   if (fechaDesde && fechaHasta && fechaHasta < fechaDesde) {
     result.errors = {
       ...result.errors,
@@ -34,6 +33,12 @@ const pedidoResolver: Resolver<PedidoFormData> = (...args) => {
         type: "custom",
         message: "La fecha hasta debe ser mayor o igual a la fecha desde",
       },
+    };
+  }
+  if (!autogenerarCodigo && (!codigo || (codigo as string).trim() === "")) {
+    result.errors = {
+      ...result.errors,
+      codigo: { type: "custom", message: "El código es requerido" },
     };
   }
   return result;
@@ -53,14 +58,22 @@ interface AddPedidoModalProps {
   onClose: () => void;
 }
 
-interface InformacionTabProps {
+interface ClienteTarifaTabProps {
   register: UseFormRegister<PedidoFormData>;
   setValue: UseFormSetValue<PedidoFormData>;
   watch: UseFormWatch<PedidoFormData>;
   errors: Partial<Record<keyof PedidoFormData, { message?: string }>>;
   selectedIdTarifario: number | undefined;
-  onTarifarioSelect: (id: number | undefined) => void;
+  onTarifarioSelect: (entry: TarifarioCortaEntry | undefined) => void;
   tarifarioError?: string;
+}
+
+interface InfoPedidoTabProps {
+  register: UseFormRegister<PedidoFormData>;
+  setValue: UseFormSetValue<PedidoFormData>;
+  watch: UseFormWatch<PedidoFormData>;
+  errors: Partial<Record<keyof PedidoFormData, { message?: string }>>;
+  selectedTarifario: TarifarioCortaEntry | undefined;
 }
 
 function formatBytes(bytes: number): string {
@@ -103,20 +116,14 @@ function FileIcon({ ext }: { ext: string }) {
   return <FileText size={18} className={colorMap[ext] ?? "text-gray-400"} />;
 }
 
-function InformacionTab({ register, setValue, watch, errors, selectedIdTarifario, onTarifarioSelect, tarifarioError }: InformacionTabProps) {
+function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifario, onTarifarioSelect, tarifarioError }: ClienteTarifaTabProps) {
   const idCliente = watch("idCliente");
   const idPais = watch("idPais");
   const idIdioma = watch("idIdioma");
   const idClaseInforme = watch("idClaseInforme");
   const logoImprimible = watch("logoImprimible");
   const idTipoTramite = watch("idTipoTramite");
-  const idTipoPersona = watch("idTipoPersona");
-  const idEmpresaAtencion = watch("idEmpresaAtencion");
   const idPlantillaInforme = watch("idPlantillaInforme");
-  const fechaDesde = watch("fechaDesde");
-  const fechaHasta = watch("fechaHasta");
-  const autogenerarCodigo = watch("autogenerarCodigo");
-  const idTipoPlazoCredito = watch("idTipoPlazoCredito");
 
   const [clientesEnabled, setClientesEnabled] = useState(false);
   const { data: clientes = [], isFetching: isLoadingClientes } = useQuery({
@@ -147,25 +154,6 @@ function InformacionTab({ register, setValue, watch, errors, selectedIdTarifario
 
   const queryClient = useQueryClient();
 
-  const { data: empresasAtencion } = useQuery({
-    queryKey: ["masterTable", MasterTableId.EMPRESA_ATENCION],
-    queryFn: () => masterTableService.list(MasterTableId.EMPRESA_ATENCION),
-    staleTime: Infinity,
-  });
-
-  useEffect(() => {
-    if (empresasAtencion && !idEmpresaAtencion) {
-      const defaultOption = empresasAtencion.find((o) => o.num1 === 1);
-      if (defaultOption?.num1 != null) {
-        setValue("idEmpresaAtencion", defaultOption.num1, { shouldValidate: false });
-      }
-    }
-  }, [empresasAtencion, idEmpresaAtencion, setValue]);
-
-  useEffect(() => {
-    if (autogenerarCodigo) setValue("codigo", "", { shouldValidate: false });
-  }, [autogenerarCodigo, setValue]);
-
   const handleClienteChange = (val: number | undefined) => {
     setValue("idCliente", val as number, { shouldValidate: true });
     if (val == null) return;
@@ -189,8 +177,8 @@ function InformacionTab({ register, setValue, watch, errors, selectedIdTarifario
 
   return (
     <div className="flex gap-6">
-      {/* Left column: client data + filters + tarifa */}
-      <div className="flex flex-col gap-5 flex-[3]">
+      {/* Left column */}
+      <div className="flex-1 flex flex-col gap-5">
         <SearchableSelect
           label="Cliente"
           options={clienteOptions}
@@ -241,7 +229,10 @@ function InformacionTab({ register, setValue, watch, errors, selectedIdTarifario
             />
           </CustomLabel>
         </div>
-        {/* Filter fields */}
+      </div>
+
+      {/* Right column */}
+      <div className="flex-1 flex flex-col gap-5 min-h-120">
         <SearchableSelect
           label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />País del Informe</span>}
           required
@@ -269,51 +260,78 @@ function InformacionTab({ register, setValue, watch, errors, selectedIdTarifario
           required
           error={errors.idTipoTramite?.message}
         />
-        {/* Tarifa */}
-        {idCliente && (
-          <div className="flex flex-col gap-1">
-            <CustomLabel required>Tarifa</CustomLabel>
-            <TarifarioCortaTable
-              idCliente={idCliente}
-              idTipoProducto={idClaseInforme}
-              idTipoTramite={idTipoTramite}
-              idPais={idPais}
-              selectedIdTarifario={selectedIdTarifario}
-              onTarifarioSelect={(entry: TarifarioCortaEntry | undefined) => {
-                if (entry) {
-                  if (!idPais) setValue("idPais", entry.idPais, { shouldValidate: true });
-                  if (!idClaseInforme) setValue("idClaseInforme", entry.idProducto, { shouldValidate: true });
-                  if (!idTipoTramite) setValue("idTipoTramite", entry.idTipoTramite, { shouldValidate: true });
-                  queryClient.prefetchQuery({
-                    queryKey: ["masterTable", MasterTableId.PAIS],
-                    queryFn: () => masterTableService.list(MasterTableId.PAIS),
-                    staleTime: Infinity,
-                  });
-                  queryClient.prefetchQuery({
-                    queryKey: ["masterTable", MasterTableId.CLASE_INFORME],
-                    queryFn: () => masterTableService.list(MasterTableId.CLASE_INFORME),
-                    staleTime: Infinity,
-                  });
-                  queryClient.prefetchQuery({
-                    queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
-                    queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
-                    staleTime: Infinity,
-                  });
-                }
-                onTarifarioSelect(entry?.idTarifario);
-              }}
-              error={tarifarioError}
-            />
-          </div>
-        )}
+        <div className="flex flex-col gap-1">
+          <CustomLabel required>Tarifa</CustomLabel>
+          <TarifarioCortaTable
+            idCliente={idCliente}
+            idTipoProducto={idClaseInforme}
+            idTipoTramite={idTipoTramite}
+            idPais={idPais}
+            selectedIdTarifario={selectedIdTarifario}
+            onTarifarioSelect={(entry: TarifarioCortaEntry | undefined) => {
+              if (entry) {
+                if (!idPais) setValue("idPais", entry.idPais, { shouldValidate: true });
+                if (!idClaseInforme) setValue("idClaseInforme", entry.idProducto, { shouldValidate: true });
+                if (!idTipoTramite) setValue("idTipoTramite", entry.idTipoTramite, { shouldValidate: true });
+                queryClient.prefetchQuery({
+                  queryKey: ["masterTable", MasterTableId.PAIS],
+                  queryFn: () => masterTableService.list(MasterTableId.PAIS),
+                  staleTime: Infinity,
+                });
+                queryClient.prefetchQuery({
+                  queryKey: ["masterTable", MasterTableId.CLASE_INFORME],
+                  queryFn: () => masterTableService.list(MasterTableId.CLASE_INFORME),
+                  staleTime: Infinity,
+                });
+                queryClient.prefetchQuery({
+                  queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
+                  queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
+                  staleTime: Infinity,
+                });
+              }
+              onTarifarioSelect(entry);
+            }}
+            error={tarifarioError}
+          />
+        </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Divider */}
-      <div className="w-px bg-gray-200 self-stretch" />
+function InfoPedidoTab({ register, setValue, watch, errors, selectedTarifario }: InfoPedidoTabProps) {
+  const idTipoPersona = watch("idTipoPersona");
+  const idEmpresaAtencion = watch("idEmpresaAtencion");
+  const fechaDesde = watch("fechaDesde");
+  const fechaHasta = watch("fechaHasta");
+  const autogenerarCodigo = watch("autogenerarCodigo");
+  const idTipoPlazoCredito = watch("idTipoPlazoCredito");
 
-      {/* Right column: order fields */}
-      <div className="flex flex-col gap-5 flex-2">
+  const queryClient = useQueryClient();
 
+  const { data: empresasAtencion } = useQuery({
+    queryKey: ["masterTable", MasterTableId.EMPRESA_ATENCION],
+    queryFn: () => masterTableService.list(MasterTableId.EMPRESA_ATENCION),
+    staleTime: Infinity,
+  });
+
+  useEffect(() => {
+    if (empresasAtencion && !idEmpresaAtencion) {
+      const defaultOption = empresasAtencion.find((o) => o.num1 === 1);
+      if (defaultOption?.num1 != null) {
+        setValue("idEmpresaAtencion", defaultOption.num1, { shouldValidate: false });
+      }
+    }
+  }, [empresasAtencion, idEmpresaAtencion, setValue]);
+
+  useEffect(() => {
+    if (autogenerarCodigo) setValue("codigo", "", { shouldValidate: false });
+  }, [autogenerarCodigo, setValue]);
+
+  return (
+    <div className="flex gap-6">
+      {/* Left column */}
+      <div className="flex-1 flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <CustomLabel required>Investigado</CustomLabel>
           <input
@@ -342,7 +360,18 @@ function InformacionTab({ register, setValue, watch, errors, selectedIdTarifario
             className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
           />
         </div>
+        <div className="flex flex-col gap-1.5 flex-1">
+          <CustomLabel optional>Comentario</CustomLabel>
+          <textarea
+            placeholder="Comentario"
+            {...register("comentario")}
+            className="w-full flex-1 px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all resize-none"
+          />
+        </div>
+      </div>
 
+      {/* Right column */}
+      <div className="flex-1 flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <CustomLabel required={!autogenerarCodigo}>Código</CustomLabel>
           <div className="flex items-center gap-3">
@@ -388,13 +417,16 @@ function InformacionTab({ register, setValue, watch, errors, selectedIdTarifario
           error={errors.fechaHasta?.message}
         />
         <div className="flex flex-col gap-1.5">
-          <CustomLabel optional>Monto Crédito</CustomLabel>
+          <CustomLabel optional>
+            Monto Crédito{selectedTarifario?.simboloMoneda ? ` ${selectedTarifario.simboloMoneda}` : ""}
+          </CustomLabel>
           <input
             type="text"
             inputMode="numeric"
-            placeholder="Monto Crédito"
+            placeholder={!selectedTarifario ? "Seleccione una Tarifa primero" : "Monto Crédito"}
+            disabled={!selectedTarifario}
             {...register("montoCredito")}
-            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.montoCredito ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+            className={`w-full px-4 py-2.5 border ${errors.montoCredito ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all ${!selectedTarifario ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-brand-white"}`}
           />
           {errors.montoCredito && <p className="text-xs text-red-500">{errors.montoCredito.message}</p>}
         </div>
@@ -423,15 +455,6 @@ function InformacionTab({ register, setValue, watch, errors, selectedIdTarifario
             </div>
           </div>
           {errors.plazoCredito && <p className="text-xs text-red-500">{errors.plazoCredito.message}</p>}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <CustomLabel optional>Comentario</CustomLabel>
-          <textarea
-            placeholder="Comentario"
-            rows={3}
-            {...register("comentario")}
-            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all resize-none"
-          />
         </div>
       </div>
     </div>
@@ -616,8 +639,8 @@ function AnexosTab({ files, onFilesChange, missingTipoIds, onClearMissingTipo }:
 }
 
 export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
-  const [activeTab, setActiveTab] = useState("informacion");
-  const [selectedIdTarifario, setSelectedIdTarifario] = useState<number | undefined>(undefined);
+  const [activeTab, setActiveTab] = useState("cliente-tarifa");
+  const [selectedTarifario, setSelectedTarifario] = useState<TarifarioCortaEntry | undefined>(undefined);
   const [anexosFiles, setAnexosFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [missingTipoIds, setMissingTipoIds] = useState<Set<string>>(new Set());
@@ -639,8 +662,8 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
 
   const handleClose = () => {
     reset();
-    setActiveTab("informacion");
-    setSelectedIdTarifario(undefined);
+    setActiveTab("cliente-tarifa");
+    setSelectedTarifario(undefined);
     setAnexosFiles([]);
     setIsUploading(false);
     setMissingTipoIds(new Set());
@@ -722,20 +745,33 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
 
   const tabs = [
     {
-      id: "informacion",
-      label: "Información",
+      id: "cliente-tarifa",
+      label: "Cliente y Tarifa",
       content: (
-        <InformacionTab
+        <ClienteTarifaTab
           register={register}
           setValue={setValue}
           watch={watch}
           errors={errors}
-          selectedIdTarifario={selectedIdTarifario}
-          onTarifarioSelect={(id) => {
-            setSelectedIdTarifario(id);
-            setValue("idTarifario", id as number, { shouldValidate: true });
+          selectedIdTarifario={selectedTarifario?.idTarifario}
+          onTarifarioSelect={(entry) => {
+            setSelectedTarifario(entry);
+            setValue("idTarifario", entry?.idTarifario as number, { shouldValidate: true });
           }}
           tarifarioError={errors.idTarifario?.message}
+        />
+      ),
+    },
+    {
+      id: "info-pedido",
+      label: "Información del Pedido",
+      content: (
+        <InfoPedidoTab
+          register={register}
+          setValue={setValue}
+          watch={watch}
+          errors={errors}
+          selectedTarifario={selectedTarifario}
         />
       ),
     },

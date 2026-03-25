@@ -38,15 +38,6 @@ export const pedidoSchema = z
     fechaHasta: z.date({ error: "La fecha hasta es requerida" }),
     idTarifario: z.number({ error: "Seleccione un tarifario de la tabla" }),
     comentario: z.string().optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (!data.autogenerarCodigo && (!data.codigo || data.codigo.trim() === "")) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "El código es requerido",
-        path: ["codigo"],
-      });
-    }
   });
 
 export type PedidoFormData = z.infer<typeof pedidoSchema>;
