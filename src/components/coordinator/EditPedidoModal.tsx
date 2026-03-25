@@ -612,6 +612,7 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
                   <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Formato</th>
                   <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Tamaño</th>
                   <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Tipo</th>
+                  <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Fecha de Carga</th>
                   <th className="py-2 px-3" />
                 </tr>
               </thead>
@@ -619,7 +620,7 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
                 {isLoading ? (
                   [1, 2, 3].map((i) => (
                     <tr key={i}>
-                      {[1, 2, 3, 4].map((j) => (
+                      {[1, 2, 3, 4, 5].map((j) => (
                         <td key={j} className="py-2.5 px-3">
                           <div className="h-3.5 bg-gray-200 rounded animate-pulse w-3/4" />
                         </td>
@@ -650,6 +651,7 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
                             error={missingTipoIds.has(f.id) ? "Requerido" : undefined}
                           />
                         </td>
+                        <td className="py-2.5 px-3 text-gray-400">—</td>
                         <td className="py-2.5 px-3 text-right">
                           <button
                             onClick={() => onNewFilesChange(newFiles.filter((n) => n.id !== f.id))}
@@ -681,6 +683,7 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
                               disabled
                             />
                           </td>
+                          <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{f.fechaCarga}</td>
                           <td className="py-2.5 px-3 text-right">
                             <button
                               onClick={() => setArchivoToDelete(f)}
@@ -772,7 +775,7 @@ function useFormReset(
       fechaDesde: new Date(pedido.fchDesde),
       fechaHasta: new Date(pedido.fchHasta),
       comentario: pedido.comentario,
-      logoImprimible: false,
+      logoImprimible: pedido.imprimeLogoSafety,
     });
     setSelectedTarifario(tarifaEntry);
   }, [pedido, allTarifas, reset, setSelectedTarifario]);
@@ -860,6 +863,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
             })
           );
           toast.dismiss(toastId);
+          setNewFiles([]);
           queryClient.invalidateQueries({ queryKey: ["pedidoArchivos", pedidoId] });
         } catch {
           toast.error("No se pudieron subir los archivos", { id: toastId });
@@ -867,7 +871,6 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
           setIsUploading(false);
         }
       }
-      handleClose();
     },
   });
 
@@ -901,6 +904,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
       fchHasta: data.fechaHasta.toISOString(),
       comentario: data.comentario ?? "",
       idEstado: pedido!.idEstado,
+      imprimeLogoSafety: data.logoImprimible ?? false,
     });
   };
 
@@ -986,7 +990,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
         onClick={handleSubmit(onSubmit)}
         disabled={isLoadingAll || isError}
       >
-        Guardar
+        {newFiles.length > 0 ? `Guardar (${newFiles.length} nuevo${newFiles.length === 1 ? " archivo" : "s archivos"})` : "Guardar"}
       </CustomButton>
     </div>
   );

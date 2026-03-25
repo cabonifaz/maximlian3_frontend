@@ -734,6 +734,7 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
       fchHasta: data.fechaHasta.toISOString(),
       comentario: data.comentario ?? "",
       idEstado: 1,
+      imprimeLogoSafety: data.logoImprimible ?? false,
       archivos: anexosFiles.map((f) => ({
         formatoArchivo: f.file.type || "application/octet-stream",
         nombreDocumento: f.name,

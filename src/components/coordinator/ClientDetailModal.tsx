@@ -580,7 +580,7 @@ export function ClientDetailModal({
                     </div>
                   </div>
 
-                  <div className="border border-gray-100 rounded-2xl overflow-hidden">
+                  <div className="border border-gray-100 rounded-2xl overflow-hidden min-h-75">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead className="bg-gray-50 text-gray-400 uppercase">
                         <tr>

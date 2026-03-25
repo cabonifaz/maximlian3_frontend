@@ -59,6 +59,7 @@ export interface CreatePedidoRequest {
   fchHasta: string;
   comentario: string;
   idEstado: number;
+  imprimeLogoSafety: boolean;
   archivos: CreatePedidoArchivoRequest[];
 }
 
@@ -95,6 +96,7 @@ export interface GetPedidoResponse {
   fchHasta: string;
   comentario: string;
   idEstado: number;
+  imprimeLogoSafety: boolean;
 }
 
 export interface UpdatePedidoRequest {
@@ -119,6 +121,7 @@ export interface UpdatePedidoRequest {
   fchHasta: string;
   comentario: string;
   idEstado: number;
+  imprimeLogoSafety: boolean;
 }
 
 export interface PedidoArchivoEntry {
@@ -131,6 +134,7 @@ export interface PedidoArchivoEntry {
   idFormato: number;
   idTipoArchivo: number;
   idEstado: number;
+  fechaCarga: string;
 }
 
 export interface PedidoArchivoListResponse {
