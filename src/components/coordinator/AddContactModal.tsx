@@ -1,11 +1,11 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
+import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { useForm } from "react-hook-form";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
 import { contactSchema, type ContactFormData } from "@maximilian/schemas";
-import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 
 interface AddContactModalProps {
@@ -31,23 +31,6 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
     reset(defaultValues ?? { enviarCorreo: false } as ContactFormData);
   }, [isOpen]);
 
-  const { data: tiposPersona } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_PERSONA],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_PERSONA),
-    enabled: isOpen,
-  });
-
-  const { data: tiposContacto } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_CONTACTO],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_CONTACTO),
-    enabled: isOpen,
-  });
-
-  const { data: areasTrabajo } = useQuery({
-    queryKey: ["masterTable", MasterTableId.AREA_TRABAJO],
-    queryFn: () => masterTableService.list(MasterTableId.AREA_TRABAJO),
-    enabled: isOpen,
-  });
 
   if (!isOpen) return null;
 
@@ -66,9 +49,9 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
       <div className="bg-brand-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-xl font-bold text-brand-black">{defaultValues ? "Editar Contacto" : "Nuevo Contacto"}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <CustomButton variant="ghost" size="icon" onClick={onClose}>
             <X size={20} className="text-gray-400" />
-          </button>
+          </CustomButton>
         </div>
 
         <form onSubmit={handleSubmit(handleConfirm)} className="p-8 space-y-6">
@@ -76,7 +59,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             <SearchableSelect
               label="Tipo Persona"
               required
-              options={tiposPersona}
+              idMaster={MasterTableId.TIPO_PERSONA}
               value={watchedTipoPersona}
               onChange={(val) =>
                 setValue("tipoPersona", val, { shouldValidate: true })
@@ -87,7 +70,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             <SearchableSelect
               label="Tipo de Contacto"
               required
-              options={tiposContacto}
+              idMaster={MasterTableId.TIPO_CONTACTO}
               value={watchedTipoContacto}
               onChange={(val) =>
                 setValue("tipoContacto", val, { shouldValidate: true })
@@ -96,7 +79,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             />
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Código de Contacto <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Código de Contacto</CustomLabel>
               <input
                 {...register("codigoContacto")}
                 type="text"
@@ -107,7 +90,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Nombre <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Nombre</CustomLabel>
               <input
                 {...register("nombre")}
                 type="text"
@@ -118,7 +101,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Email <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Email</CustomLabel>
               <input
                 {...register("email")}
                 type="email"
@@ -129,7 +112,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Teléfono <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Teléfono</CustomLabel>
               <input
                 {...register("telefono")}
                 type="text"
@@ -143,7 +126,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
               <SearchableSelect
                 label="Área de Trabajo"
                 required
-                options={areasTrabajo}
+                idMaster={MasterTableId.AREA_TRABAJO}
                 value={watchedAreaTrabajo}
                 onChange={(val) =>
                   setValue("areaTrabajo", val, { shouldValidate: true })
@@ -166,13 +149,10 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
           </div>
 
           <div className="flex justify-end pt-4">
-            <button
-              type="submit"
-              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 active:scale-[0.98] transition-all shadow-lg shadow-black/10"
-            >
+            <CustomButton type="submit">
               <div className="w-2 h-2 rounded-full bg-brand-white" />
               <span>Confirmar</span>
-            </button>
+            </CustomButton>
           </div>
         </form>
       </div>

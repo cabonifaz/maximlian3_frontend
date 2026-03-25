@@ -2,11 +2,11 @@ import { X } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
 import { rateSchema, type RateFormData } from "@maximilian/schemas";
-import { masterTableService } from "@maximilian/services/masterTable.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
+import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
 
 interface AddRateModalProps {
   isOpen: boolean;
@@ -38,29 +38,6 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
     reset(defaultValues ?? ({} as RateFormData));
   }, [isOpen]);
 
-  const { data: productos } = useQuery({
-    queryKey: ["masterTable", MasterTableId.PRODUCTO],
-    queryFn: () => masterTableService.list(MasterTableId.PRODUCTO),
-    enabled: isOpen,
-  });
-
-  const { data: paises } = useQuery({
-    queryKey: ["masterTable", MasterTableId.PAIS],
-    queryFn: () => masterTableService.list(MasterTableId.PAIS),
-    enabled: isOpen,
-  });
-
-  const { data: monedas } = useQuery({
-    queryKey: ["masterTable", MasterTableId.MONEDA],
-    queryFn: () => masterTableService.list(MasterTableId.MONEDA),
-    enabled: isOpen,
-  });
-
-  const { data: tiposTramite } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
-    enabled: isOpen,
-  });
 
   if (!isOpen) return null;
 
@@ -75,9 +52,9 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
       <div className="bg-brand-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-xl font-bold text-brand-black">{defaultValues ? "Editar Tarifa" : "Nueva Tarifa"}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <CustomButton variant="ghost" size="icon" onClick={onClose}>
             <X size={20} className="text-gray-400" />
-          </button>
+          </CustomButton>
         </div>
 
         <form onSubmit={handleSubmit(handleConfirm)} className="p-8 space-y-6">
@@ -85,7 +62,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             <SearchableSelect
               label="Producto"
               required
-              options={productos}
+              idMaster={MasterTableId.PRODUCTO}
               value={watchedProducto as number | undefined}
               onChange={(val) => setValue("producto", val)}
               error={errors.producto?.message}
@@ -95,7 +72,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             <SearchableSelect
               label="País"
               required
-              options={paises}
+              idMaster={MasterTableId.PAIS}
               value={watchedPais as number | undefined}
               onChange={(val) => setValue("pais", val)}
               error={errors.pais?.message}
@@ -105,7 +82,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             <SearchableSelect
               label="Moneda"
               required
-              options={monedas}
+              idMaster={MasterTableId.MONEDA}
               value={watchedMoneda as number | undefined}
               onChange={(val) => setValue("moneda", val)}
               error={errors.moneda?.message}
@@ -115,7 +92,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             <SearchableSelect
               label="Trámite"
               required
-              options={tiposTramite}
+              idMaster={MasterTableId.TIPO_TRAMITE}
               value={watchedTramite as number | undefined}
               onChange={(val) => setValue("tramite", val)}
               error={errors.tramite?.message}
@@ -123,7 +100,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             />
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Días Min. <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Días Min.</CustomLabel>
               <input
                 {...register("diasMin", { valueAsNumber: true, onChange: () => clearErrors(["diasMin", "diasMax"]) })}
                 type="number"
@@ -133,7 +110,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Días Max. <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Días Max.</CustomLabel>
               <input
                 {...register("diasMax", { valueAsNumber: true, onChange: () => clearErrors(["diasMin", "diasMax"]) })}
                 type="number"
@@ -143,7 +120,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Precio <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Precio</CustomLabel>
               <input
                 {...register("precio", { valueAsNumber: true })}
                 type="number"
@@ -154,7 +131,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Penalidad <span className="text-red-500 ml-0.5">*</span></label>
+              <CustomLabel required>Penalidad</CustomLabel>
               <input
                 {...register("penalidad", { valueAsNumber: true })}
                 type="number"
@@ -166,13 +143,10 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
           </div>
 
           <div className="flex justify-end pt-4">
-            <button
-              type="submit"
-              className="flex items-center gap-2 px-8 py-3 bg-brand-black text-brand-white rounded-xl font-bold hover:bg-brand-black/90 active:scale-[0.98] transition-all shadow-lg shadow-black/10"
-            >
+            <CustomButton type="submit">
               <div className="w-2 h-2 rounded-full bg-brand-white" />
               <span>Confirmar</span>
-            </button>
+            </CustomButton>
           </div>
         </form>
       </div>

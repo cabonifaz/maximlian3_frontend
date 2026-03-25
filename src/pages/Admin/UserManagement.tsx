@@ -4,18 +4,14 @@ import {
   Plus,
   Filter,
   MoreHorizontal,
-  ChevronLeft,
-  ChevronRight,
   Edit2,
   Trash2,
-  Loader2,
-  AlertCircle,
-  RefreshCw,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreateUserModal } from "@maximilian/components/admin/CreateUserModal";
 import { EditUserModal } from "@maximilian/components/admin/EditUserModal";
 import { DeleteUserModal } from "@maximilian/components/admin/DeleteUserModal";
+import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { type UserFormData } from "@maximilian/schemas";
 import { userService } from "@maximilian/services/user.service";
 import type {
@@ -36,6 +32,17 @@ interface UpdateUserMutationParams {
   resetForm: () => void;
 }
 
+const USER_COLUMNS = [
+  { label: "Nombre" },
+  { label: "Apellido Paterno" },
+  { label: "Apellido Materno" },
+  { label: "Nombre de Usuario" },
+  { label: "Rol(es)" },
+  { label: "Email" },
+  { label: "Estado" },
+  { label: "" },
+];
+
 export default function UserManagement() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -46,25 +53,21 @@ export default function UserManagement() {
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(false);
 
-  // Pagination and Filtering state
   const [currentPage, setCurrentPage] = useState(1);
   const [filter, setFilter] = useState("");
 
   const queryClient = useQueryClient();
 
-  // Fetch Users Query
   const {
     data: usersData,
     isLoading,
     isError,
-    error,
     refetch,
   } = useQuery({
     queryKey: ["users", currentPage, filter],
     queryFn: () => userService.list({ numPag: currentPage, filtro: filter }),
   });
 
-  // Create User Mutation
   const createUserMutation = useMutation({
     mutationFn: ({ userData }: CreateUserMutationParams) => {
       const apiRequest: CreateUserRequest = {
@@ -88,7 +91,6 @@ export default function UserManagement() {
     },
   });
 
-  // Update User Mutation
   const updateUserMutation = useMutation({
     mutationFn: ({ userData }: UpdateUserMutationParams) => {
       if (editingUserId === null)
@@ -115,7 +117,6 @@ export default function UserManagement() {
     },
   });
 
-  // Delete User Mutation
   const deleteUserMutation = useMutation({
     mutationFn: (idUsuario: number) => {
       const apiRequest: DeleteUserRequest = { idUsuarioEliminar: idUsuario };
@@ -186,7 +187,7 @@ export default function UserManagement() {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilter(e.target.value);
-    setCurrentPage(1); // Reset to first page on search
+    setCurrentPage(1);
   };
 
   const handlePageChange = (page: number) => {
@@ -194,6 +195,86 @@ export default function UserManagement() {
       setCurrentPage(page);
     }
   };
+
+  const renderRow = (user: UserListEntry, index: number) => (
+    <>
+      <td className="px-6 py-4 text-brand-black font-medium">{user.nombres}</td>
+      <td className="px-6 py-4 text-gray-600">{user.apellidoPaterno}</td>
+      <td className="px-6 py-4 text-gray-600">{user.apellidoMaterno}</td>
+      <td className="px-6 py-4 text-gray-600">{user.username}</td>
+      <td className="px-6 py-4">
+        <div className="flex flex-wrap gap-1">
+          {user.roles ? (
+            user.roles.split(", ").map((role, idx) => (
+              <span
+                key={idx}
+                className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium capitalize"
+              >
+                {role.toLowerCase()}
+              </span>
+            ))
+          ) : (
+            <span className="text-gray-400 italic text-[10px]">Sin roles</span>
+          )}
+        </div>
+      </td>
+      <td className="px-6 py-4 text-gray-600">{user.email}</td>
+      <td className="px-6 py-4">
+        <span
+          className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
+            user.estado === "Activo"
+              ? "bg-green-50 text-green-700 border-green-100"
+              : "bg-red-50 text-red-700 border-red-100"
+          }`}
+        >
+          {user.estado}
+        </span>
+      </td>
+      <td className="px-6 py-4 text-right relative">
+        <button
+          onClick={() =>
+            setActiveMenuId(
+              activeMenuId === user.idUsuario ? null : user.idUsuario,
+            )
+          }
+          className="text-gray-400 hover:text-brand-black transition-colors p-1 cursor-pointer hover:scale-110 active:scale-90"
+        >
+          <MoreHorizontal size={20} />
+        </button>
+
+        {activeMenuId === user.idUsuario && (
+          <>
+            <div
+              className="fixed inset-0 z-10"
+              onClick={() => setActiveMenuId(null)}
+            />
+            <div
+              className={`absolute right-6 ${
+                index >= (usersData?.lstUsuarios.length ?? 0) - 2
+                  ? "bottom-10"
+                  : "top-10"
+              } w-48 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}
+            >
+              <button
+                onClick={() => openEditModal(user)}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <Edit2 size={14} />
+                <span>Editar usuario</span>
+              </button>
+              <button
+                onClick={() => openDeleteModal(user)}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <Trash2 size={14} />
+                <span>Eliminar usuario</span>
+              </button>
+            </div>
+          </>
+        )}
+      </td>
+    </>
+  );
 
   return (
     <div className="space-y-6">
@@ -256,217 +337,22 @@ export default function UserManagement() {
         isSubmitting={deleteUserMutation.isPending}
       />
 
-      <div className="bg-brand-white border border-gray-200 rounded-xl overflow-hidden shadow-sm relative min-h-[400px] flex flex-col">
-        {isLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-3 py-20">
-            <Loader2 size={40} className="text-brand-wine animate-spin" />
-            <p className="text-sm font-medium text-gray-500">
-              Cargando usuarios...
-            </p>
-          </div>
-        ) : isError ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 py-20">
-            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-500">
-              <AlertCircle size={28} />
-            </div>
-            <div className="text-center space-y-1">
-              <p className="text-sm font-bold text-brand-black">
-                Error al cargar usuarios
-              </p>
-              <p className="text-xs text-gray-500">
-                {(error as Error).message}
-              </p>
-            </div>
-            <button
-              onClick={() => refetch()}
-              className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-xs font-bold hover:bg-brand-wine/90 transition-all cursor-pointer"
-            >
-              <RefreshCw size={14} />
-              <span>REINTENTAR</span>
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto flex-1">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-gray-50 border-b border-gray-100 text-gray-600 font-medium sticky top-0 z-10">
-                <tr>
-                  <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
-                    Nombre
-                  </th>
-                  <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
-                    Apellido Paterno
-                  </th>
-                  <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
-                    Apellido Materno
-                  </th>
-                  <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
-                    Nombre de Usuario
-                  </th>
-                  <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
-                    Rol(es)
-                  </th>
-                  <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-4"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {usersData?.lstUsuarios.map((user) => (
-                  <tr
-                    key={user.idUsuario}
-                    className="hover:bg-gray-50/50 transition-colors"
-                  >
-                    <td className="px-6 py-4 text-brand-black font-medium">
-                      {user.nombres}
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {user.apellidoPaterno}
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {user.apellidoMaterno}
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">{user.username}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {user.roles ? (
-                          user.roles.split(", ").map((role, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium capitalize"
-                            >
-                              {role.toLowerCase()}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-gray-400 italic text-[10px]">
-                            Sin roles
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">{user.email}</td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
-                          user.estado === "Activo"
-                            ? "bg-green-50 text-green-700 border-green-100"
-                            : "bg-red-50 text-red-700 border-red-100"
-                        }`}
-                      >
-                        {user.estado}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right relative">
-                      <button
-                        onClick={() =>
-                          setActiveMenuId(
-                            activeMenuId === user.idUsuario
-                              ? null
-                              : user.idUsuario,
-                          )
-                        }
-                        className="text-gray-400 hover:text-brand-black transition-colors p-1 cursor-pointer hover:scale-110 active:scale-90"
-                      >
-                        <MoreHorizontal size={20} />
-                      </button>
-
-                      {activeMenuId === user.idUsuario && (
-                        <>
-                          <div
-                            className="fixed inset-0 z-10"
-                            onClick={() => setActiveMenuId(null)}
-                          />
-                          <div
-                            className={`absolute right-6 ${
-                              (usersData?.lstUsuarios.indexOf(user) ?? 0) > 0 &&
-                              (usersData?.lstUsuarios.indexOf(user) ?? 0) >=
-                                (usersData?.lstUsuarios.length ?? 0) - 2
-                                ? "bottom-10"
-                                : "top-10"
-                            } w-48 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}
-                          >
-                            <button
-                              onClick={() => openEditModal(user)}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
-                            >
-                              <Edit2 size={14} />
-                              <span>Editar usuario</span>
-                            </button>
-                            <button
-                              onClick={() => openDeleteModal(user)}
-                              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
-                            >
-                              <Trash2 size={14} />
-                              <span>Eliminar usuario</span>
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-
-                {(!usersData || usersData.lstUsuarios.length === 0) && (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="px-6 py-20 text-center text-gray-400 text-sm"
-                    >
-                      No se encontraron usuarios registrados.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-gray-500 text-xs">
-          <span>
-            Mostrando {usersData?.lstUsuarios.length || 0} de{" "}
-            {usersData?.totalRegistros || 0} registros
-          </span>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              className="flex items-center gap-1 hover:text-brand-black disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-not-allowed"
-              disabled={isLoading || isError || currentPage === 1}
-            >
-              <ChevronLeft size={16} /> Anterior
-            </button>
-            <div className="flex items-center gap-2">
-              {[...Array(usersData?.totalPaginas || 1)].map((_, i) => (
-                <button
-                  key={i + 1}
-                  onClick={() => handlePageChange(i + 1)}
-                  className={`w-6 h-6 flex items-center justify-center rounded font-medium cursor-pointer hover:scale-110 transition-transform ${
-                    currentPage === i + 1
-                      ? "bg-brand-black text-brand-white"
-                      : "hover:bg-gray-100 text-gray-500"
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              className="flex items-center gap-1 hover:text-brand-black disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-not-allowed"
-              disabled={
-                isLoading ||
-                isError ||
-                currentPage === (usersData?.totalPaginas || 1)
-              }
-            >
-              Siguiente <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
+      <CustomTable
+        columns={USER_COLUMNS}
+        data={usersData?.lstUsuarios}
+        getId={(u) => u.idUsuario}
+        renderRow={renderRow}
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={() => refetch()}
+        emptyMessage="No se encontraron usuarios registrados."
+        errorMessage="Error al cargar usuarios"
+        currentPage={currentPage}
+        totalPages={usersData?.totalPaginas ?? 1}
+        totalRecords={usersData?.totalRegistros ?? 0}
+        onPageChange={handlePageChange}
+        entityLabel="usuarios"
+      />
 
       {isLoadingUser && (
         <LoadingScreen message="Cargando datos del usuario..." />

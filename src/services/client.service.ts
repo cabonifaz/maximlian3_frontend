@@ -18,6 +18,10 @@ import type {
   DeleteTarifarioRequest,
   GetTarifarioRequest,
   CreateContactoRequest,
+  ClienteCorta,
+  ClienteListaCortaResponse,
+  TarifarioCortaEntry,
+  TarifarioCortaResponse,
   UpdateContactoRequest,
   DeleteContactoRequest,
   GetContactoRequest,
@@ -207,5 +211,27 @@ export const clientService = {
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
     return res.result[0];
+  },
+
+  listTarifarioCorta: async (params: {
+    idCliente: number;
+    idTipoProducto?: number;
+    idTipoTramite?: number;
+    idPais?: number;
+  }): Promise<TarifarioCortaEntry[]> => {
+    const { data } = await maximilianService.get<ApiResponse<TarifarioCortaResponse>>(
+      "/api/Tarifario/listaCorta",
+      { params }
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    return data.result.lstTarifario;
+  },
+
+  listaCorta: async (): Promise<ClienteCorta[]> => {
+    const { data } = await maximilianService.get<ApiResponse<ClienteListaCortaResponse>>(
+      "/api/Cliente/listaCorta"
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    return data.result.lstCliente;
   },
 };

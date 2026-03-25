@@ -1,72 +1,96 @@
-import { useState, useMemo, useRef } from "react";
-import { Search } from "lucide-react";
+import { useState, useMemo, useRef, type ReactNode } from "react";
+import { Search, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
+import { masterTableService } from "@maximilian/services/masterTable.service";
+import { CustomLabel } from "./CustomLabel";
 
 export interface SearchableSelectProps {
-  label: string;
-  options: MasterTableEntry[] | undefined;
+  label?: ReactNode;
+  idMaster?: number;
+  options?: MasterTableEntry[] | undefined;
   value: string | number | undefined;
   onChange: (val: number) => void;
   error?: string;
   placeholder?: string;
   required?: boolean;
+  optional?: boolean;
   disabled?: boolean;
+  loading?: boolean;
+  onOpen?: () => void;
 }
 
 export function SearchableSelect({
   label,
+  idMaster,
   options,
   value,
   onChange,
   error,
   placeholder = "Seleccione...",
   required = false,
+  optional = false,
   disabled = false,
+  loading = false,
+  onOpen,
 }: SearchableSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLDivElement>(null);
 
+  const { data: fetchedOptions, isLoading: isMasterLoading } = useQuery({
+    queryKey: ["masterTable", idMaster],
+    queryFn: () => masterTableService.list(idMaster!),
+    enabled: idMaster !== undefined && isOpen,
+    staleTime: Infinity,
+  });
+
+  const showLoading = isMasterLoading || loading;
+  const resolvedOptions = idMaster ? fetchedOptions : options;
+
   const filteredOptions = useMemo(() => {
-    if (!options) return [];
-    return options
+    if (!resolvedOptions) return [];
+    return resolvedOptions
       .filter((opt) =>
         opt.string1?.toLowerCase().includes(searchTerm.toLowerCase()),
       )
       .sort((a, b) => (a.string1 || "").localeCompare(b.string1 || ""));
-  }, [options, searchTerm]);
+  }, [resolvedOptions, searchTerm]);
 
-  const selectedOption = options?.find((opt) => opt.num1 === value);
+  const selectedOption = resolvedOptions?.find((opt) => opt.num1 === value);
 
   const handleToggle = () => {
     if (disabled) return;
-    if (!isOpen && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropdownStyle({
-        top: rect.bottom + 8,
-        left: rect.left,
-        width: rect.width,
-      });
+    if (!isOpen) {
+      onOpen?.();
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        setDropdownStyle({
+          top: rect.bottom + 8,
+          left: rect.left,
+          width: rect.width,
+        });
+      }
     }
     setIsOpen(!isOpen);
   };
 
   return (
     <div className="relative space-y-2">
-      <label className="text-sm font-bold text-gray-700">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
+      {label != null && <CustomLabel required={required} optional={optional}>{label}</CustomLabel>}
       <div
         ref={triggerRef}
         className={`w-full px-4 py-2.5 bg-brand-white border ${error ? "border-red-500" : "border-gray-200"} rounded-xl text-sm flex items-center justify-between transition-all ${disabled ? "bg-gray-50 cursor-not-allowed opacity-70" : "cursor-pointer hover:border-brand-wine/30"}`}
         onClick={handleToggle}
       >
-        <span className={selectedOption ? "text-brand-black" : "text-gray-400"}>
+        <span
+          className={`truncate min-w-0 ${selectedOption ? "text-brand-black" : "text-gray-400"}`}
+          title={selectedOption?.string1 ?? undefined}
+        >
           {selectedOption ? selectedOption.string1 : placeholder}
         </span>
-        <Search size={16} className="text-gray-400" />
+        <Search size={16} className="text-gray-400 shrink-0 ml-2" />
       </div>
 
       {!disabled && isOpen && (
@@ -88,7 +112,11 @@ export function SearchableSelect({
               />
             </div>
             <div className="max-h-48 overflow-y-auto">
-              {filteredOptions.length > 0 ? (
+              {showLoading ? (
+                <div className="px-4 py-6 flex justify-center">
+                  <Loader2 size={16} className="animate-spin text-gray-400" />
+                </div>
+              ) : filteredOptions.length > 0 ? (
                 filteredOptions.map((opt) => (
                   <div
                     key={opt.num1}

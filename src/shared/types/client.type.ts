@@ -217,3 +217,32 @@ export type ContactoDetail = {
   email: string | null;
   enviarCorreo: boolean;
 };
+
+export interface ClienteCorta {
+  idCliente: number;
+  numeroDocumento: string;
+  nombreCliente: string;
+  idIdioma: number;
+  logoImprimible: boolean;
+  idPlantilla: number;
+}
+
+export interface ClienteListaCortaResponse {
+  lstCliente: ClienteCorta[];
+}
+
+export type TarifarioCortaEntry = {
+  idTarifario: number;
+  tipoTramite: string;
+  idMoneda: number;
+  moneda: string;
+  simboloMoneda: string;
+  precio: number;
+  idPais: number;
+  idProducto: number;
+  idTipoTramite: number;
+};
+
+export type TarifarioCortaResponse = {
+  lstTarifario: TarifarioCortaEntry[];
+};
