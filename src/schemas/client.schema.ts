@@ -30,7 +30,10 @@ export const rateSchema = z.object({
   diasMin: z.number({ error: "Días mínimos es requerido" }).min(0, "Días mínimos debe ser mayor o igual a 0"),
   diasMax: z.number({ error: "Días máximos es requerido" }).min(0, "Días máximos debe ser mayor o igual a 0"),
   precio: z.number({ error: "El precio es requerido" }).min(0, "El precio debe ser mayor o igual a 0"),
-  penalidad: z.number({ error: "La penalidad es requerida" }).min(0, "La penalidad debe ser mayor o igual a 0"),
+  penalidad: z.preprocess(
+    (val) => (typeof val === "number" && isNaN(val) ? undefined : val),
+    z.number().min(0, "La penalidad debe ser mayor o igual a 0").optional()
+  ),
 }).superRefine((data, ctx) => {
   if (data.diasMax <= data.diasMin) {
     ctx.addIssue({

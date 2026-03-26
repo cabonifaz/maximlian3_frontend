@@ -185,7 +185,6 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
     if (val == null) return;
     const cliente = clientes.find((c) => c.idCliente === val);
     if (!cliente) return;
-    setValue("nroDocumento", cliente.numeroDocumento, { shouldValidate: true });
     setValue("idIdioma", cliente.idIdioma, { shouldValidate: true });
     setValue("logoImprimible", cliente.logoImprimible, { shouldValidate: true });
     setValue("idPlantillaInforme", cliente.idPlantilla, { shouldValidate: true });
@@ -204,16 +203,6 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
           required
           error={errors.idCliente?.message}
         />
-        <div className="flex flex-col gap-1.5">
-          <CustomLabel required>Nro. Documento</CustomLabel>
-          <input
-            type="text"
-            placeholder="Nro. Documento"
-            {...register("nroDocumento")}
-            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.nroDocumento ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
-          />
-          {errors.nroDocumento && <p className="text-xs text-red-500">{errors.nroDocumento.message}</p>}
-        </div>
         <SearchableSelect
           label="Plantilla de Informe"
           options={plantillasInforme}
@@ -347,6 +336,16 @@ function InfoPedidoTab({ register, setValue, watch, errors, selectedTarifario }:
           error={errors.idTipoPersona?.message}
         />
         <div className="flex flex-col gap-1.5">
+          <CustomLabel required>Nro. Documento</CustomLabel>
+          <input
+            type="text"
+            placeholder="Nro. Documento"
+            {...register("nroDocumento")}
+            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.nroDocumento ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+          />
+          {errors.nroDocumento && <p className="text-xs text-red-500">{errors.nroDocumento.message}</p>}
+        </div>
+        <div className="flex flex-col gap-1.5">
           <CustomLabel optional>Nro. de Referencia</CustomLabel>
           <input
             type="text"
@@ -402,7 +401,7 @@ function InfoPedidoTab({ register, setValue, watch, errors, selectedTarifario }:
         />
         <div className="flex flex-col gap-1.5">
           <CustomLabel optional>
-            Monto Crédito{selectedTarifario?.simboloMoneda ? ` ${selectedTarifario.simboloMoneda}` : ""}
+            Monto Crédito{selectedTarifario?.simboloMoneda ? ` (${selectedTarifario.simboloMoneda})` : ""}
           </CustomLabel>
           <input
             type="text"

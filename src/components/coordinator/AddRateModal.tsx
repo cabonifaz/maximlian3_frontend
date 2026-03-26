@@ -131,7 +131,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             </div>
 
             <div className="space-y-2">
-              <CustomLabel required>Penalidad</CustomLabel>
+              <CustomLabel optional>Penalidad</CustomLabel>
               <input
                 {...register("penalidad", { valueAsNumber: true })}
                 type="number"

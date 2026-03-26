@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -31,6 +31,7 @@ import { SearchableSelect } from "@maximilian/components/common/SearchableSelect
 import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomUrlInput } from "@maximilian/components/common/CustomUrlInput";
 
 interface ClientDetailModalProps {
   isOpen: boolean;
@@ -74,6 +75,7 @@ export function ClientDetailModal({
 
   const {
     register: infoRegister,
+    control: infoControl,
     reset: infoReset,
     setValue: setInfoValue,
     watch: infoWatch,
@@ -85,7 +87,10 @@ export function ClientDetailModal({
 
   // Populate form when client data is loaded
   useEffect(() => {
-    if (isOpen) setActiveTab("info");
+    if (isOpen) {
+      setActiveTab("info");
+      setSelectedRateIndex(null);
+    }
   }, [isOpen]);
 
   useEffect(() => {
@@ -384,10 +389,17 @@ export function ClientDetailModal({
 
                   <div className="space-y-2">
                     <CustomLabel optional>Sitio Web</CustomLabel>
-                    <input
-                      {...infoRegister("sitioWeb")}
-                      type="text"
-                      className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.sitioWeb ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+                    <Controller
+                      name="sitioWeb"
+                      control={infoControl}
+                      render={({ field }) => (
+                        <CustomUrlInput
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          error={!!infoErrors.sitioWeb}
+                        />
+                      )}
                     />
                     {infoErrors.sitioWeb && <p className="text-xs text-red-500">{infoErrors.sitioWeb.message}</p>}
                   </div>
@@ -776,7 +788,7 @@ export function ClientDetailModal({
       <AddRateModal
         key={editingRate ? `edit-rate-${editingRate.idTarifario}` : "new-rate"}
         isOpen={isRateModalOpen}
-        onClose={() => { setIsRateModalOpen(false); setEditingRate(null); }}
+        onClose={() => { setIsRateModalOpen(false); setEditingRate(null); setSelectedRateIndex(null); }}
         onConfirm={(data) => {
           if (editingRate) {
             updateTarifarioMutation.mutate({
@@ -863,10 +875,11 @@ export function ClientDetailModal({
 
       <ConfirmDeleteModal
         isOpen={rateToDelete !== null}
-        onClose={() => setRateToDelete(null)}
+        onClose={() => { setRateToDelete(null); setSelectedRateIndex(null); }}
         onConfirm={() => {
           deleteTarifarioMutation.mutate({ idTarifario: rateToDelete!.idTarifario, idCliente: client!.idCliente });
           setRateToDelete(null);
+          setSelectedRateIndex(null);
         }}
         title="Eliminar Tarifa"
         isSubmitting={deleteTarifarioMutation.isPending}

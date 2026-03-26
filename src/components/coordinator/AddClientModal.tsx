@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus, MailCheck, MailX } from "lucide-react";
 import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
@@ -18,6 +18,7 @@ import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomUrlInput } from "@maximilian/components/common/CustomUrlInput";
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -45,7 +46,7 @@ interface RateEntry {
   diasMin: number;
   diasMax: number;
   precio: number;
-  penalidad: number;
+  penalidad?: number;
 }
 
 interface ContactEntry {
@@ -81,6 +82,7 @@ export function AddClientModal({
 
   const {
     register: infoRegister,
+    control: infoControl,
     handleSubmit: handleInfoSubmit,
     formState: { errors: infoErrors, isValid: isInfoValid },
     reset: infoReset,
@@ -331,11 +333,17 @@ export function AddClientModal({
 
                   <div className="space-y-2">
                     <CustomLabel optional>Sitio Web</CustomLabel>
-                    <input
-                      {...infoRegister("sitioWeb")}
-                      type="text"
-                      placeholder="Sitio Web"
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
+                    <Controller
+                      name="sitioWeb"
+                      control={infoControl}
+                      render={({ field }) => (
+                        <CustomUrlInput
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          error={!!infoErrors.sitioWeb}
+                        />
+                      )}
                     />
                     {infoErrors.sitioWeb && (
                       <p className="text-xs text-red-500">

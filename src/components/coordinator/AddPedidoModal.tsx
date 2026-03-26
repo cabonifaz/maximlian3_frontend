@@ -17,6 +17,7 @@ import {
   type UseFormRegister,
   type UseFormSetValue,
   type UseFormWatch,
+  type UseFormClearErrors,
 } from "react-hook-form";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { TarifarioCortaTable } from "@maximilian/components/coordinator/TarifarioCortaTable";
@@ -72,6 +73,7 @@ interface InfoPedidoTabProps {
   register: UseFormRegister<PedidoFormData>;
   setValue: UseFormSetValue<PedidoFormData>;
   watch: UseFormWatch<PedidoFormData>;
+  clearErrors: UseFormClearErrors<PedidoFormData>;
   errors: Partial<Record<keyof PedidoFormData, { message?: string }>>;
   selectedTarifario: TarifarioCortaEntry | undefined;
 }
@@ -159,7 +161,6 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
     if (val == null) return;
     const cliente = clientes.find((c: ClienteCorta) => c.idCliente === val);
     if (!cliente) return;
-    setValue("nroDocumento", cliente.numeroDocumento, { shouldValidate: true });
     setValue("idIdioma", cliente.idIdioma, { shouldValidate: true });
     setValue("logoImprimible", cliente.logoImprimible, { shouldValidate: true });
     setValue("idPlantillaInforme", cliente.idPlantilla, { shouldValidate: true });
@@ -190,16 +191,6 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
           required
           error={errors.idCliente?.message}
         />
-        <div className="flex flex-col gap-1.5">
-          <CustomLabel required>Nro. Documento</CustomLabel>
-          <input
-            type="text"
-            placeholder="Nro. Documento"
-            {...register("nroDocumento")}
-            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.nroDocumento ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
-          />
-          {errors.nroDocumento && <p className="text-xs text-red-500">{errors.nroDocumento.message}</p>}
-        </div>
         <SearchableSelect
           label="Plantilla de Informe"
           idMaster={MasterTableId.PLANTILLA_INFORME}
@@ -299,7 +290,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
   );
 }
 
-function InfoPedidoTab({ register, setValue, watch, errors, selectedTarifario }: InfoPedidoTabProps) {
+function InfoPedidoTab({ register, setValue, watch, clearErrors, errors, selectedTarifario }: InfoPedidoTabProps) {
   const idTipoPersona = watch("idTipoPersona");
   const idEmpresaAtencion = watch("idEmpresaAtencion");
   const fechaDesde = watch("fechaDesde");
@@ -325,8 +316,11 @@ function InfoPedidoTab({ register, setValue, watch, errors, selectedTarifario }:
   }, [empresasAtencion, idEmpresaAtencion, setValue]);
 
   useEffect(() => {
-    if (autogenerarCodigo) setValue("codigo", "", { shouldValidate: false });
-  }, [autogenerarCodigo, setValue]);
+    if (autogenerarCodigo) {
+      setValue("codigo", "", { shouldValidate: false });
+      clearErrors("codigo");
+    }
+  }, [autogenerarCodigo, setValue, clearErrors]);
 
   return (
     <div className="flex gap-6">
@@ -351,6 +345,16 @@ function InfoPedidoTab({ register, setValue, watch, errors, selectedTarifario }:
           required
           error={errors.idTipoPersona?.message}
         />
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel required>Nro. Documento</CustomLabel>
+          <input
+            type="text"
+            placeholder="Nro. Documento"
+            {...register("nroDocumento")}
+            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.nroDocumento ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+          />
+          {errors.nroDocumento && <p className="text-xs text-red-500">{errors.nroDocumento.message}</p>}
+        </div>
         <div className="flex flex-col gap-1.5">
           <CustomLabel optional>Nro. de Referencia</CustomLabel>
           <input
@@ -418,7 +422,7 @@ function InfoPedidoTab({ register, setValue, watch, errors, selectedTarifario }:
         />
         <div className="flex flex-col gap-1.5">
           <CustomLabel optional>
-            Monto Crédito{selectedTarifario?.simboloMoneda ? ` ${selectedTarifario.simboloMoneda}` : ""}
+            Monto Crédito{selectedTarifario?.simboloMoneda ? ` (${selectedTarifario.simboloMoneda})` : ""}
           </CustomLabel>
           <input
             type="text"
@@ -653,6 +657,7 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
     watch,
     handleSubmit,
     reset,
+    clearErrors,
     formState: { errors },
   } = useForm<PedidoFormData>({
     resolver: pedidoResolver,
@@ -771,6 +776,7 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
           register={register}
           setValue={setValue}
           watch={watch}
+          clearErrors={clearErrors}
           errors={errors}
           selectedTarifario={selectedTarifario}
         />
