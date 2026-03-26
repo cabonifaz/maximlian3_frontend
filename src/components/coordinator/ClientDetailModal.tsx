@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useDebounce } from "@maximilian/hooks/useDebounce";
 import {
   Plus,
   Loader2,
@@ -52,6 +53,7 @@ export function ClientDetailModal({
   const [editingRate, setEditingRate] = useState<TarifarioDetail | null>(null);
   const [selectedRateIndex, setSelectedRateIndex] = useState<number | null>(null);
   const [contactosPag, setContactosPag] = useState(1);
+  const [contactosSearch, setContactosSearch] = useState("");
   const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<ContactoDetail | null>(null);
@@ -150,6 +152,9 @@ export function ClientDetailModal({
   const deleteTarifarioMutation = useMutation({
     mutationFn: clientService.deleteTarifario,
     onSuccess: () => {
+      if (tarifarioPag > 1 && (tarifarioData?.lstTarifario.length ?? 0) === 1) {
+        setTarifarioPag(p => p - 1);
+      }
       queryClient.invalidateQueries({ queryKey: ["tarifario", client?.idCliente] });
       setSelectedRateIndex(null);
     },
@@ -177,6 +182,9 @@ export function ClientDetailModal({
   const deleteContactoMutation = useMutation({
     mutationFn: clientService.deleteContacto,
     onSuccess: () => {
+      if (contactosPag > 1 && (contactosData?.lstClienteContactos.length ?? 0) === 1) {
+        setContactosPag(p => p - 1);
+      }
       queryClient.invalidateQueries({ queryKey: ["contactos", client?.idCliente] });
       setSelectedContactIndex(null);
     },
@@ -242,22 +250,26 @@ export function ClientDetailModal({
 
   const [tarifarioSearch, setTarifarioSearch] = useState("");
   const [tarifarioPag, setTarifarioPag] = useState(1);
+  const debouncedTarifarioSearch = useDebounce(tarifarioSearch);
 
   const { data: tarifarioData, isLoading: tarifarioLoading } = useQuery({
-    queryKey: ["tarifario", client?.idCliente, tarifarioSearch, tarifarioPag],
+    queryKey: ["tarifario", client?.idCliente, debouncedTarifarioSearch, tarifarioPag],
     queryFn: () => clientService.listTarifario({
       idCliente: client!.idCliente,
-      busqueda: tarifarioSearch || undefined,
+      busqueda: debouncedTarifarioSearch || undefined,
       numPag: tarifarioPag,
     }),
     enabled: activeTab === "rates" && !!client?.idCliente,
   });
 
 
+  const debouncedContactosSearch = useDebounce(contactosSearch);
+
   const { data: contactosData, isLoading: contactosLoading } = useQuery({
-    queryKey: ["contactos", client?.idCliente, contactosPag],
+    queryKey: ["contactos", client?.idCliente, debouncedContactosSearch, contactosPag],
     queryFn: () => clientService.listContactos({
       idCliente: client!.idCliente,
+      busqueda: debouncedContactosSearch || undefined,
       numPag: contactosPag,
     }),
     enabled: activeTab === "contacts" && !!client?.idCliente,
@@ -592,7 +604,7 @@ export function ClientDetailModal({
                     </div>
                   </div>
 
-                  <div className="border border-gray-100 rounded-2xl overflow-hidden min-h-75">
+                  <div className="border border-gray-100 rounded-2xl overflow-hidden min-h-60">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead className="bg-gray-50 text-gray-400 uppercase">
                         <tr>
@@ -647,7 +659,15 @@ export function ClientDetailModal({
             content: isLoadingClient ? loadingState : isErrorClient ? errorState : (
                 <div className="animate-in fade-in duration-300 space-y-6">
                   <div className="flex items-center justify-between gap-4">
-                    <div className="flex-1 max-w-xs" />
+                    <div className="flex-1 max-w-xs">
+                      <input
+                        type="text"
+                        placeholder="Buscar..."
+                        value={contactosSearch}
+                        onChange={(e) => { setContactosSearch(e.target.value); setContactosPag(1); setSelectedContactIndex(null); }}
+                        className="w-full px-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm outline-none"
+                      />
+                    </div>
                     <div className="flex gap-2">
                       <CustomButton
                         size="sm"
@@ -685,7 +705,7 @@ export function ClientDetailModal({
                     </div>
                   </div>
 
-                  <div className="border border-gray-100 rounded-2xl overflow-hidden">
+                  <div className="border border-gray-100 rounded-2xl overflow-hidden min-h-60">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead className="bg-gray-50 text-gray-400 uppercase">
                         <tr>

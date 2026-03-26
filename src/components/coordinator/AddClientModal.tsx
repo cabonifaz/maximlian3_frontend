@@ -79,6 +79,8 @@ export function AddClientModal({
   const [addedRates, setAddedRates] = useState<RateEntry[]>([]);
   const [selectedRateIndex, setSelectedRateIndex] = useState<number | null>(null);
   const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null);
+  const [contactsPag, setContactsPag] = useState(1);
+  const [contactSearch, setContactSearch] = useState("");
 
   const {
     register: infoRegister,
@@ -111,6 +113,8 @@ export function AddClientModal({
     setAddedRates([]);
     setSelectedRateIndex(null);
     setSelectedContactIndex(null);
+    setContactsPag(1);
+    setContactSearch("");
     setActiveTab("info");
   };
 
@@ -204,8 +208,14 @@ export function AddClientModal({
     };
   };
 
+  const CONTACTS_PER_PAGE = 5;
+
   const handleAddContact = (data: ContactFormData) => {
-    setAddedContacts((prev) => [...prev, buildContact(data)]);
+    setAddedContacts((prev) => {
+      const next = [...prev, buildContact(data)];
+      setContactsPag(Math.ceil(next.length / CONTACTS_PER_PAGE));
+      return next;
+    });
     setSelectedContactIndex(null);
   };
 
@@ -533,7 +543,7 @@ export function AddClientModal({
                 </div>
               </div>
 
-              <div className="border border-gray-100 rounded-2xl overflow-hidden">
+              <div className="border border-gray-100 rounded-2xl overflow-hidden min-h-60">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead className="bg-gray-50 text-gray-400 uppercase">
                     <tr>
@@ -614,6 +624,12 @@ export function AddClientModal({
                   <input
                     type="text"
                     placeholder="Buscar..."
+                    value={contactSearch}
+                    onChange={(e) => {
+                      setContactSearch(e.target.value);
+                      setContactsPag(1);
+                      setSelectedContactIndex(null);
+                    }}
                     className="w-full px-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm outline-none"
                   />
                 </div>
@@ -633,9 +649,10 @@ export function AddClientModal({
                     size="sm"
                     disabled={selectedContactIndex === null}
                     onClick={() => {
-                      setAddedContacts((prev) =>
-                        prev.filter((_, idx) => idx !== selectedContactIndex),
-                      );
+                      const next = addedContacts.filter((_, idx) => idx !== selectedContactIndex);
+                      const newTotal = Math.ceil(next.length / CONTACTS_PER_PAGE);
+                      if (contactsPag > newTotal && newTotal > 0) setContactsPag(newTotal);
+                      setAddedContacts(next);
                       setSelectedContactIndex(null);
                     }}
                   >
@@ -644,7 +661,7 @@ export function AddClientModal({
                 </div>
               </div>
 
-              <div className="border border-gray-100 rounded-2xl overflow-hidden">
+              <div className="border border-gray-100 rounded-2xl overflow-hidden min-h-60">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead className="bg-gray-50 text-gray-400 uppercase">
                     <tr>
@@ -660,39 +677,65 @@ export function AddClientModal({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {addedContacts.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className="px-4 py-10 text-center text-gray-400 text-sm italic"
-                        >
-                          No hay contactos agregados.
-                        </td>
-                      </tr>
-                    ) : (
-                      addedContacts.map((contact, i) => (
-                        <tr key={i} className="hover:bg-gray-50/50">
-                          <td className="px-3 py-3">
-                            <input
-                              type="checkbox"
-                              checked={selectedContactIndex === i}
-                              onChange={() => setSelectedContactIndex(selectedContactIndex === i ? null : i)}
-                              className="accent-brand-wine cursor-pointer w-4 h-4"
-                            />
-                          </td>
-                          <td className="px-4 py-3 text-gray-600">{contact.nombre}</td>
-                          <td className="px-4 py-3 text-gray-600">{contact.email}</td>
-                          <td className="px-4 py-3 text-gray-600">{contact.telefono}</td>
-                          <td className="px-4 py-3 text-gray-600">{contact.tipoContactoLabel}</td>
-                          <td className="px-4 py-3 text-gray-600">{contact.areaTrabajoLabel}</td>
-                          <td className="px-4 py-3 text-center">
-                            {contact.enviarCorreo
-                              ? <MailCheck size={16} className="inline text-green-500" />
-                              : <MailX size={16} className="inline text-gray-400" />}
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                    {(() => {
+                      const term = contactSearch.toLowerCase();
+                      const filtered = addedContacts
+                        .map((c, originalIndex) => ({ ...c, originalIndex }))
+                        .filter(c =>
+                          !term ||
+                          c.nombre.toLowerCase().includes(term) ||
+                          c.email.toLowerCase().includes(term) ||
+                          c.telefono.toLowerCase().includes(term) ||
+                          c.tipoContactoLabel.toLowerCase().includes(term) ||
+                          c.areaTrabajoLabel.toLowerCase().includes(term),
+                        );
+                      const totalPages = Math.ceil(filtered.length / CONTACTS_PER_PAGE);
+                      const paged = filtered.slice((contactsPag - 1) * CONTACTS_PER_PAGE, contactsPag * CONTACTS_PER_PAGE);
+
+                      if (addedContacts.length === 0) return (
+                        <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm italic">No hay contactos agregados.</td></tr>
+                      );
+                      if (filtered.length === 0) return (
+                        <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm italic">Sin resultados.</td></tr>
+                      );
+                      return (
+                        <>
+                          {paged.map((contact) => (
+                            <tr key={contact.originalIndex} className="hover:bg-gray-50/50">
+                              <td className="px-3 py-3">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedContactIndex === contact.originalIndex}
+                                  onChange={() => setSelectedContactIndex(selectedContactIndex === contact.originalIndex ? null : contact.originalIndex)}
+                                  className="accent-brand-wine cursor-pointer w-4 h-4"
+                                />
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">{contact.nombre}</td>
+                              <td className="px-4 py-3 text-gray-600">{contact.email}</td>
+                              <td className="px-4 py-3 text-gray-600">{contact.telefono}</td>
+                              <td className="px-4 py-3 text-gray-600">{contact.tipoContactoLabel}</td>
+                              <td className="px-4 py-3 text-gray-600">{contact.areaTrabajoLabel}</td>
+                              <td className="px-4 py-3 text-center">
+                                {contact.enviarCorreo
+                                  ? <MailCheck size={16} className="inline text-green-500" />
+                                  : <MailX size={16} className="inline text-gray-400" />}
+                              </td>
+                            </tr>
+                          ))}
+                          {totalPages > 1 && (
+                            <tr>
+                              <td colSpan={7}>
+                                <div className="flex items-center justify-end gap-2 px-2 py-2">
+                                  <button disabled={contactsPag === 1} onClick={() => setContactsPag(p => p - 1)} className="px-2 py-1 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors cursor-pointer">‹</button>
+                                  <span className="text-sm">{contactsPag} / {totalPages}</span>
+                                  <button disabled={contactsPag === totalPages} onClick={() => setContactsPag(p => p + 1)} className="px-2 py-1 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors cursor-pointer">›</button>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      );
+                    })()}
                   </tbody>
                 </table>
               </div>
