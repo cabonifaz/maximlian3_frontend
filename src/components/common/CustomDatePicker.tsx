@@ -32,6 +32,7 @@ export function CustomDatePicker({
   const [open, setOpen] = useState(false);
 
   const handleSelect = (date: Date | undefined) => {
+    if (date === undefined) return;
     onChange(date);
     setOpen(false);
   };
