@@ -29,12 +29,16 @@ import type { GetPedidoResponse, PedidoArchivoEntry } from "@maximilian/shared/t
 const pedidoResolver: Resolver<PedidoFormData> = async (...args) => {
   const result = await zodResolver(pedidoSchema)(...args);
   const { fechaDesde, fechaHasta, codigo } = args[0];
-  if (fechaDesde && fechaHasta && fechaHasta < fechaDesde) {
+  if (fechaDesde && fechaHasta && fechaHasta <= fechaDesde) {
     result.errors = {
       ...result.errors,
+      fechaDesde: {
+        type: "custom",
+        message: "La fecha \"Desde\" debe ser menor a la fecha \"Hasta\"",
+      },
       fechaHasta: {
         type: "custom",
-        message: "La fecha hasta debe ser mayor o igual a la fecha desde",
+        message: "La fecha \"Hasta\" debe ser mayor a la fecha \"Desde\"",
       },
     };
   }
