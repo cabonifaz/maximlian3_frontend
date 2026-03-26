@@ -47,9 +47,16 @@ export function CustomUrlInput({ value, onChange, onBlur, error }: Props) {
   }
 
   function handleDomainChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const d = e.target.value;
-    setDomain(d);
-    onChange(d ? protocol + d : "");
+    const raw = e.target.value;
+    const parsed = parseUrl(raw);
+    if (parsed.domain !== raw) {
+      setProtocol(parsed.protocol);
+      setDomain(parsed.domain);
+      onChange(parsed.domain ? parsed.protocol + parsed.domain : "");
+    } else {
+      setDomain(raw);
+      onChange(raw ? protocol + raw : "");
+    }
   }
 
   const borderClass = error ? "border-red-500" : "border-gray-200";

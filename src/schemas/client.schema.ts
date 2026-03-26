@@ -33,7 +33,7 @@ export const rateSchema = z.object({
   penalidad: z.preprocess(
     (val) => (typeof val === "number" && isNaN(val) ? undefined : val),
     z.number().min(0, "La penalidad debe ser mayor o igual a 0").optional()
-  ),
+  ) as unknown as z.ZodOptional<z.ZodNumber>,
 }).superRefine((data, ctx) => {
   if (data.diasMax <= data.diasMin) {
     ctx.addIssue({

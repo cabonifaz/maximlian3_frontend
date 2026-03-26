@@ -6,7 +6,7 @@ export type CreateClientRateRequest = {
   diasMax: number;
   diasMin: number;
   precio: number;
-  penalidad: number;
+  penalidad?: number;
 };
 
 export type CreateClientContactRequest = {
@@ -156,7 +156,7 @@ export type CreateTarifarioRequest = {
   diasMax: number;
   diasMin: number;
   precio: number;
-  penalidad: number;
+  penalidad?: number;
 };
 
 export type UpdateTarifarioRequest = CreateTarifarioRequest & { idTarifario: number };
