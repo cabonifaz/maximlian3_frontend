@@ -561,7 +561,7 @@ export function ClientDetailModal({
                     <div className="flex-1 max-w-xs">
                       <input
                         type="text"
-                        placeholder="Buscar..."
+                        placeholder="Buscar por producto y país"
                         value={tarifarioSearch}
                         onChange={(e) => { setTarifarioSearch(e.target.value); setTarifarioPag(1); setSelectedRateIndex(null); }}
                         className="w-full px-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm outline-none"
@@ -662,7 +662,7 @@ export function ClientDetailModal({
                     <div className="flex-1 max-w-xs">
                       <input
                         type="text"
-                        placeholder="Buscar..."
+                        placeholder="Buscar por nombre"
                         value={contactosSearch}
                         onChange={(e) => { setContactosSearch(e.target.value); setContactosPag(1); setSelectedContactIndex(null); }}
                         className="w-full px-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm outline-none"

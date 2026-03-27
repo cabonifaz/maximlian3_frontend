@@ -512,7 +512,7 @@ export function AddClientModal({
                 <div className="flex-1 max-w-xs">
                   <input
                     type="text"
-                    placeholder="Buscar..."
+                    placeholder="Buscar por producto y país"
                     className="w-full px-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm outline-none"
                   />
                 </div>
@@ -623,7 +623,7 @@ export function AddClientModal({
                 <div className="flex-1 max-w-xs">
                   <input
                     type="text"
-                    placeholder="Buscar..."
+                    placeholder="Buscar por nombre"
                     value={contactSearch}
                     onChange={(e) => {
                       setContactSearch(e.target.value);
