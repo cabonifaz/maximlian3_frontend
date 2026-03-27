@@ -18,6 +18,7 @@ import {
   type UseFormSetValue,
   type UseFormWatch,
   type UseFormReset,
+  type UseFormTrigger,
 } from "react-hook-form";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
@@ -81,6 +82,7 @@ interface InfoPedidoTabProps {
   register: UseFormRegister<PedidoFormData>;
   setValue: UseFormSetValue<PedidoFormData>;
   watch: UseFormWatch<PedidoFormData>;
+  trigger: UseFormTrigger<PedidoFormData>;
   errors: Partial<Record<keyof PedidoFormData, { message?: string }>>;
   selectedTarifario: TarifarioCortaEntry | undefined;
 }
@@ -291,7 +293,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
   );
 }
 
-function InfoPedidoTab({ register, setValue, watch, errors, selectedTarifario }: InfoPedidoTabProps) {
+function InfoPedidoTab({ register, setValue, watch, trigger, errors, selectedTarifario }: InfoPedidoTabProps) {
   const idTipoPersona = watch("idTipoPersona");
   const idEmpresaAtencion = watch("idEmpresaAtencion");
   const fechaDesde = watch("fechaDesde");
@@ -393,14 +395,14 @@ function InfoPedidoTab({ register, setValue, watch, errors, selectedTarifario }:
           label="Desde"
           required
           value={fechaDesde}
-          onChange={(date) => setValue("fechaDesde", date as Date, { shouldValidate: true })}
+          onChange={(date) => { setValue("fechaDesde", date as Date, { shouldValidate: true }); if (errors.fechaHasta) trigger("fechaHasta"); }}
           error={errors.fechaDesde?.message}
         />
         <CustomDatePicker
           label="Hasta"
           required
           value={fechaHasta}
-          onChange={(date) => setValue("fechaHasta", date as Date, { shouldValidate: true })}
+          onChange={(date) => { setValue("fechaHasta", date as Date, { shouldValidate: true }); if (errors.fechaDesde) trigger("fechaDesde"); }}
           error={errors.fechaHasta?.message}
         />
         <div className="flex flex-col gap-1.5">
@@ -837,6 +839,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
     watch,
     handleSubmit,
     reset,
+    trigger,
     formState: { errors },
   } = useForm<PedidoFormData>({
     resolver: pedidoResolver,
@@ -980,6 +983,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
         register={register}
         setValue={setValue}
         watch={watch}
+        trigger={trigger}
         errors={errors}
         selectedTarifario={selectedTarifario}
       />
