@@ -840,7 +840,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
     handleSubmit,
     reset,
     trigger,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<PedidoFormData>({
     resolver: pedidoResolver,
     mode: "onTouched",
@@ -1015,7 +1015,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
         loading={isPending || isUploading}
         loadingText="Guardando..."
         onClick={handleSubmit(onSubmit)}
-        disabled={isLoadingAll || isError}
+        disabled={isLoadingAll || isError || (!isDirty && newFiles.length === 0)}
       >
         {newFiles.length > 0 ? `Guardar (${newFiles.length} nuevo${newFiles.length === 1 ? " archivo" : "s archivos"})` : "Guardar"}
       </CustomButton>
