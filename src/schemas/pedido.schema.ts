@@ -25,6 +25,7 @@ export const pedidoSchema = z
     idTipoPlazoCredito: z.number().optional(),
     tipoPlazoCredito: z.string().optional(),
     idCliente: z.number({ error: "El cliente es requerido" }),
+    nroDocumentoCliente: z.string().optional(),
     nroDocumento: z.string().min(1, "El nro. de documento es requerido"),
     investigado: z.string().min(1, "El investigado es requerido"),
     idPais: z.number({ error: "El país del informe es requerido" }),

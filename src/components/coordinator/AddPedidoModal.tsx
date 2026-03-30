@@ -126,6 +126,7 @@ function FileIcon({ ext }: { ext: string }) {
 
 function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifario, onTarifarioSelect, tarifarioError }: ClienteTarifaTabProps) {
   const idCliente = watch("idCliente");
+  const nroDocumentoCliente = watch("nroDocumentoCliente");
   const idPais = watch("idPais");
   const idIdioma = watch("idIdioma");
   const idClaseInforme = watch("idClaseInforme");
@@ -167,6 +168,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
     if (val == null) return;
     const cliente = clientes.find((c: ClienteCorta) => c.idCliente === val);
     if (!cliente) return;
+    setValue("nroDocumentoCliente", cliente.numeroDocumento);
     setValue("idIdioma", cliente.idIdioma, { shouldValidate: true });
     setValue("logoImprimible", cliente.logoImprimible, { shouldValidate: true });
     setValue("idPlantillaInforme", cliente.idPlantilla, { shouldValidate: true });
@@ -197,6 +199,17 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
           required
           error={errors.idCliente?.message}
         />
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel>Nro. documento del cliente</CustomLabel>
+          <input
+            type="text"
+            disabled
+            {...register("nroDocumentoCliente")}
+            value={nroDocumentoCliente ?? ""}
+            placeholder="—"
+            className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-500 cursor-not-allowed outline-none"
+          />
+        </div>
         <SearchableSelect
           label="Plantilla de Informe"
           idMaster={MasterTableId.PLANTILLA_INFORME}
@@ -728,10 +741,11 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
     createPedido({
       codigo: data.autogenerarCodigo ? null : (data.codigo ?? ""),
       idCliente: data.idCliente,
-      numeroDocumento: data.nroDocumento,
+      numeroDocumento: data.nroDocumentoCliente ?? "",
       nombreCliente: cliente?.nombreCliente ?? "",
       idTipoPersona: data.idTipoPersona,
       idCompania: data.idEmpresaAtencion,
+      numeroDocumentoInvestigado: data.nroDocumento,
       investigarRazonSocialNombres: data.investigado,
       idTarifario: data.idTarifario,
       idPlantilla: data.idPlantillaInforme,
