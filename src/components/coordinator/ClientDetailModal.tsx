@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useDebounce } from "@maximilian/hooks/useDebounce";
 import {
   Plus,
   Loader2,
@@ -9,7 +10,7 @@ import {
 } from "lucide-react";
 import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -31,6 +32,7 @@ import { SearchableSelect } from "@maximilian/components/common/SearchableSelect
 import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomUrlInput } from "@maximilian/components/common/CustomUrlInput";
 
 interface ClientDetailModalProps {
   isOpen: boolean;
@@ -51,6 +53,7 @@ export function ClientDetailModal({
   const [editingRate, setEditingRate] = useState<TarifarioDetail | null>(null);
   const [selectedRateIndex, setSelectedRateIndex] = useState<number | null>(null);
   const [contactosPag, setContactosPag] = useState(1);
+  const [contactosSearch, setContactosSearch] = useState("");
   const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<ContactoDetail | null>(null);
@@ -74,6 +77,7 @@ export function ClientDetailModal({
 
   const {
     register: infoRegister,
+    control: infoControl,
     reset: infoReset,
     setValue: setInfoValue,
     watch: infoWatch,
@@ -85,7 +89,10 @@ export function ClientDetailModal({
 
   // Populate form when client data is loaded
   useEffect(() => {
-    if (isOpen) setActiveTab("info");
+    if (isOpen) {
+      setActiveTab("info");
+      setSelectedRateIndex(null);
+    }
   }, [isOpen]);
 
   useEffect(() => {
@@ -145,6 +152,9 @@ export function ClientDetailModal({
   const deleteTarifarioMutation = useMutation({
     mutationFn: clientService.deleteTarifario,
     onSuccess: () => {
+      if (tarifarioPag > 1 && (tarifarioData?.lstTarifario.length ?? 0) === 1) {
+        setTarifarioPag(p => p - 1);
+      }
       queryClient.invalidateQueries({ queryKey: ["tarifario", client?.idCliente] });
       setSelectedRateIndex(null);
     },
@@ -152,8 +162,11 @@ export function ClientDetailModal({
 
   const createContactoMutation = useMutation({
     mutationFn: clientService.createContacto,
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["contactos", client?.idCliente] });
+      if (variables.idTipoContacto === 0) {
+        queryClient.invalidateQueries({ queryKey: ["masterTable", MasterTableId.TIPO_CONTACTO] });
+      }
       setIsContactModalOpen(false);
       setEditingContact(null);
     },
@@ -161,8 +174,11 @@ export function ClientDetailModal({
 
   const updateContactoMutation = useMutation({
     mutationFn: clientService.updateContacto,
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["contactos", client?.idCliente] });
+      if (variables.idTipoContacto === 0) {
+        queryClient.invalidateQueries({ queryKey: ["masterTable", MasterTableId.TIPO_CONTACTO] });
+      }
       setIsContactModalOpen(false);
       setEditingContact(null);
       setSelectedContactIndex(null);
@@ -172,6 +188,9 @@ export function ClientDetailModal({
   const deleteContactoMutation = useMutation({
     mutationFn: clientService.deleteContacto,
     onSuccess: () => {
+      if (contactosPag > 1 && (contactosData?.lstClienteContactos.length ?? 0) === 1) {
+        setContactosPag(p => p - 1);
+      }
       queryClient.invalidateQueries({ queryKey: ["contactos", client?.idCliente] });
       setSelectedContactIndex(null);
     },
@@ -237,22 +256,26 @@ export function ClientDetailModal({
 
   const [tarifarioSearch, setTarifarioSearch] = useState("");
   const [tarifarioPag, setTarifarioPag] = useState(1);
+  const debouncedTarifarioSearch = useDebounce(tarifarioSearch);
 
   const { data: tarifarioData, isLoading: tarifarioLoading } = useQuery({
-    queryKey: ["tarifario", client?.idCliente, tarifarioSearch, tarifarioPag],
+    queryKey: ["tarifario", client?.idCliente, debouncedTarifarioSearch, tarifarioPag],
     queryFn: () => clientService.listTarifario({
       idCliente: client!.idCliente,
-      busqueda: tarifarioSearch || undefined,
+      busqueda: debouncedTarifarioSearch || undefined,
       numPag: tarifarioPag,
     }),
     enabled: activeTab === "rates" && !!client?.idCliente,
   });
 
 
+  const debouncedContactosSearch = useDebounce(contactosSearch);
+
   const { data: contactosData, isLoading: contactosLoading } = useQuery({
-    queryKey: ["contactos", client?.idCliente, contactosPag],
+    queryKey: ["contactos", client?.idCliente, debouncedContactosSearch, contactosPag],
     queryFn: () => clientService.listContactos({
       idCliente: client!.idCliente,
+      busqueda: debouncedContactosSearch || undefined,
       numPag: contactosPag,
     }),
     enabled: activeTab === "contacts" && !!client?.idCliente,
@@ -384,10 +407,17 @@ export function ClientDetailModal({
 
                   <div className="space-y-2">
                     <CustomLabel optional>Sitio Web</CustomLabel>
-                    <input
-                      {...infoRegister("sitioWeb")}
-                      type="text"
-                      className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.sitioWeb ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+                    <Controller
+                      name="sitioWeb"
+                      control={infoControl}
+                      render={({ field }) => (
+                        <CustomUrlInput
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          error={!!infoErrors.sitioWeb}
+                        />
+                      )}
                     />
                     {infoErrors.sitioWeb && <p className="text-xs text-red-500">{infoErrors.sitioWeb.message}</p>}
                   </div>
@@ -537,7 +567,7 @@ export function ClientDetailModal({
                     <div className="flex-1 max-w-xs">
                       <input
                         type="text"
-                        placeholder="Buscar..."
+                        placeholder="Buscar por producto y país"
                         value={tarifarioSearch}
                         onChange={(e) => { setTarifarioSearch(e.target.value); setTarifarioPag(1); setSelectedRateIndex(null); }}
                         className="w-full px-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm outline-none"
@@ -580,7 +610,7 @@ export function ClientDetailModal({
                     </div>
                   </div>
 
-                  <div className="border border-gray-100 rounded-2xl overflow-hidden min-h-75">
+                  <div className="border border-gray-100 rounded-2xl overflow-hidden min-h-60">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead className="bg-gray-50 text-gray-400 uppercase">
                         <tr>
@@ -635,7 +665,15 @@ export function ClientDetailModal({
             content: isLoadingClient ? loadingState : isErrorClient ? errorState : (
                 <div className="animate-in fade-in duration-300 space-y-6">
                   <div className="flex items-center justify-between gap-4">
-                    <div className="flex-1 max-w-xs" />
+                    <div className="flex-1 max-w-xs">
+                      <input
+                        type="text"
+                        placeholder="Buscar por nombre"
+                        value={contactosSearch}
+                        onChange={(e) => { setContactosSearch(e.target.value); setContactosPag(1); setSelectedContactIndex(null); }}
+                        className="w-full px-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm outline-none"
+                      />
+                    </div>
                     <div className="flex gap-2">
                       <CustomButton
                         size="sm"
@@ -673,7 +711,7 @@ export function ClientDetailModal({
                     </div>
                   </div>
 
-                  <div className="border border-gray-100 rounded-2xl overflow-hidden">
+                  <div className="border border-gray-100 rounded-2xl overflow-hidden min-h-60">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead className="bg-gray-50 text-gray-400 uppercase">
                         <tr>
@@ -776,7 +814,7 @@ export function ClientDetailModal({
       <AddRateModal
         key={editingRate ? `edit-rate-${editingRate.idTarifario}` : "new-rate"}
         isOpen={isRateModalOpen}
-        onClose={() => { setIsRateModalOpen(false); setEditingRate(null); }}
+        onClose={() => { setIsRateModalOpen(false); setEditingRate(null); setSelectedRateIndex(null); }}
         onConfirm={(data) => {
           if (editingRate) {
             updateTarifarioMutation.mutate({
@@ -830,6 +868,7 @@ export function ClientDetailModal({
               nombres: data.nombre,
               idTipoPersonaContacto: Number(data.tipoPersona),
               idTipoContacto: Number(data.tipoContacto),
+              tipoContacto: data.tipoContacto === 0 ? (data.tipoContactoNuevo ?? null) : null,
               idAreaTrabajo: Number(data.areaTrabajo),
               telefono: data.telefono || null,
               email: data.email || null,
@@ -842,6 +881,7 @@ export function ClientDetailModal({
               nombres: data.nombre,
               idTipoPersonaContacto: Number(data.tipoPersona),
               idTipoContacto: Number(data.tipoContacto),
+              tipoContacto: data.tipoContacto === 0 ? (data.tipoContactoNuevo ?? null) : null,
               idAreaTrabajo: Number(data.areaTrabajo),
               telefono: data.telefono || null,
               email: data.email || null,
@@ -863,10 +903,11 @@ export function ClientDetailModal({
 
       <ConfirmDeleteModal
         isOpen={rateToDelete !== null}
-        onClose={() => setRateToDelete(null)}
+        onClose={() => { setRateToDelete(null); setSelectedRateIndex(null); }}
         onConfirm={() => {
           deleteTarifarioMutation.mutate({ idTarifario: rateToDelete!.idTarifario, idCliente: client!.idCliente });
           setRateToDelete(null);
+          setSelectedRateIndex(null);
         }}
         title="Eliminar Tarifa"
         isSubmitting={deleteTarifarioMutation.isPending}

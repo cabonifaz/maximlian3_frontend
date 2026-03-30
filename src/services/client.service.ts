@@ -122,11 +122,12 @@ export const clientService = {
 
   listContactos: async (params: {
     idCliente: number;
+    busqueda?: string;
     numPag?: number;
   }): Promise<ContactoListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<ContactoListResponse>>(
       "/api/ClienteContacto/listar",
-      { params: { IdCliente: params.idCliente, NumPag: params.numPag } }
+      { params: { IdCliente: params.idCliente, Busqueda: params.busqueda, NumPag: params.numPag } }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
       throw new Error(data.mensaje || "Error al listar los contactos");

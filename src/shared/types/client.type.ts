@@ -6,13 +6,14 @@ export type CreateClientRateRequest = {
   diasMax: number;
   diasMin: number;
   precio: number;
-  penalidad: number;
+  penalidad?: number;
 };
 
 export type CreateClientContactRequest = {
   nombres: string;
   idTipoPersonaContacto: number;
   idTipoContacto: number;
+  tipoContacto?: string | null;
   areaTrabajo: number;
   telefono: string;
   email: string;
@@ -156,7 +157,7 @@ export type CreateTarifarioRequest = {
   diasMax: number;
   diasMin: number;
   precio: number;
-  penalidad: number;
+  penalidad?: number;
 };
 
 export type UpdateTarifarioRequest = CreateTarifarioRequest & { idTarifario: number };
@@ -168,6 +169,7 @@ export type CreateContactoRequest = {
   nombres: string;
   idTipoPersonaContacto: number;
   idTipoContacto: number;
+  tipoContacto?: string | null;
   idAreaTrabajo: number;
   telefono: string | null;
   email: string | null;
@@ -181,6 +183,7 @@ export type UpdateContactoRequest = {
   nombres: string;
   idTipoPersonaContacto: number;
   idTipoContacto: number;
+  tipoContacto?: string | null;
   idAreaTrabajo: number;
   telefono: string | null;
   email: string | null;

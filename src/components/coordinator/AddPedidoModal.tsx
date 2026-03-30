@@ -17,6 +17,8 @@ import {
   type UseFormRegister,
   type UseFormSetValue,
   type UseFormWatch,
+  type UseFormClearErrors,
+  type UseFormTrigger,
 } from "react-hook-form";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { TarifarioCortaTable } from "@maximilian/components/coordinator/TarifarioCortaTable";
@@ -26,12 +28,16 @@ import { pedidoSchema, type PedidoFormData } from "@maximilian/schemas";
 const pedidoResolver: Resolver<PedidoFormData> = async (...args) => {
   const result = await zodResolver(pedidoSchema)(...args);
   const { fechaDesde, fechaHasta, autogenerarCodigo, codigo } = args[0];
-  if (fechaDesde && fechaHasta && fechaHasta < fechaDesde) {
+  if (fechaDesde && fechaHasta && fechaHasta <= fechaDesde) {
     result.errors = {
       ...result.errors,
+      fechaDesde: {
+        type: "custom",
+        message: "La fecha \"Desde\" debe ser menor a la fecha \"Hasta\"",
+      },
       fechaHasta: {
         type: "custom",
-        message: "La fecha hasta debe ser mayor o igual a la fecha desde",
+        message: "La fecha \"Hasta\" debe ser mayor a la fecha \"Desde\"",
       },
     };
   }
@@ -72,6 +78,8 @@ interface InfoPedidoTabProps {
   register: UseFormRegister<PedidoFormData>;
   setValue: UseFormSetValue<PedidoFormData>;
   watch: UseFormWatch<PedidoFormData>;
+  clearErrors: UseFormClearErrors<PedidoFormData>;
+  trigger: UseFormTrigger<PedidoFormData>;
   errors: Partial<Record<keyof PedidoFormData, { message?: string }>>;
   selectedTarifario: TarifarioCortaEntry | undefined;
 }
@@ -118,6 +126,7 @@ function FileIcon({ ext }: { ext: string }) {
 
 function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifario, onTarifarioSelect, tarifarioError }: ClienteTarifaTabProps) {
   const idCliente = watch("idCliente");
+  const nroDocumentoCliente = watch("nroDocumentoCliente");
   const idPais = watch("idPais");
   const idIdioma = watch("idIdioma");
   const idClaseInforme = watch("idClaseInforme");
@@ -159,7 +168,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
     if (val == null) return;
     const cliente = clientes.find((c: ClienteCorta) => c.idCliente === val);
     if (!cliente) return;
-    setValue("nroDocumento", cliente.numeroDocumento, { shouldValidate: true });
+    setValue("nroDocumentoCliente", cliente.numeroDocumento);
     setValue("idIdioma", cliente.idIdioma, { shouldValidate: true });
     setValue("logoImprimible", cliente.logoImprimible, { shouldValidate: true });
     setValue("idPlantillaInforme", cliente.idPlantilla, { shouldValidate: true });
@@ -191,14 +200,15 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
           error={errors.idCliente?.message}
         />
         <div className="flex flex-col gap-1.5">
-          <CustomLabel required>Nro. Documento</CustomLabel>
+          <CustomLabel>Nro. documento del cliente</CustomLabel>
           <input
             type="text"
-            placeholder="Nro. Documento"
-            {...register("nroDocumento")}
-            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.nroDocumento ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+            disabled
+            {...register("nroDocumentoCliente")}
+            value={nroDocumentoCliente ?? ""}
+            placeholder="—"
+            className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-500 cursor-not-allowed outline-none"
           />
-          {errors.nroDocumento && <p className="text-xs text-red-500">{errors.nroDocumento.message}</p>}
         </div>
         <SearchableSelect
           label="Plantilla de Informe"
@@ -299,7 +309,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
   );
 }
 
-function InfoPedidoTab({ register, setValue, watch, errors, selectedTarifario }: InfoPedidoTabProps) {
+function InfoPedidoTab({ register, setValue, watch, clearErrors, trigger, errors, selectedTarifario }: InfoPedidoTabProps) {
   const idTipoPersona = watch("idTipoPersona");
   const idEmpresaAtencion = watch("idEmpresaAtencion");
   const fechaDesde = watch("fechaDesde");
@@ -325,8 +335,11 @@ function InfoPedidoTab({ register, setValue, watch, errors, selectedTarifario }:
   }, [empresasAtencion, idEmpresaAtencion, setValue]);
 
   useEffect(() => {
-    if (autogenerarCodigo) setValue("codigo", "", { shouldValidate: false });
-  }, [autogenerarCodigo, setValue]);
+    if (autogenerarCodigo) {
+      setValue("codigo", "", { shouldValidate: false });
+      clearErrors("codigo");
+    }
+  }, [autogenerarCodigo, setValue, clearErrors]);
 
   return (
     <div className="flex gap-6">
@@ -351,6 +364,16 @@ function InfoPedidoTab({ register, setValue, watch, errors, selectedTarifario }:
           required
           error={errors.idTipoPersona?.message}
         />
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel required>Nro. Documento</CustomLabel>
+          <input
+            type="text"
+            placeholder="Nro. Documento"
+            {...register("nroDocumento")}
+            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.nroDocumento ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+          />
+          {errors.nroDocumento && <p className="text-xs text-red-500">{errors.nroDocumento.message}</p>}
+        </div>
         <div className="flex flex-col gap-1.5">
           <CustomLabel optional>Nro. de Referencia</CustomLabel>
           <input
@@ -406,19 +429,19 @@ function InfoPedidoTab({ register, setValue, watch, errors, selectedTarifario }:
           label="Desde"
           required
           value={fechaDesde}
-          onChange={(date) => setValue("fechaDesde", date as Date, { shouldValidate: true })}
+          onChange={(date) => { setValue("fechaDesde", date as Date, { shouldValidate: true }); if (errors.fechaHasta) trigger("fechaHasta"); }}
           error={errors.fechaDesde?.message}
         />
         <CustomDatePicker
           label="Hasta"
           required
           value={fechaHasta}
-          onChange={(date) => setValue("fechaHasta", date as Date, { shouldValidate: true })}
+          onChange={(date) => { setValue("fechaHasta", date as Date, { shouldValidate: true }); if (errors.fechaDesde) trigger("fechaDesde"); }}
           error={errors.fechaHasta?.message}
         />
         <div className="flex flex-col gap-1.5">
           <CustomLabel optional>
-            Monto Crédito{selectedTarifario?.simboloMoneda ? ` ${selectedTarifario.simboloMoneda}` : ""}
+            Monto Crédito{selectedTarifario?.simboloMoneda ? ` (${selectedTarifario.simboloMoneda})` : ""}
           </CustomLabel>
           <input
             type="text"
@@ -653,6 +676,8 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
     watch,
     handleSubmit,
     reset,
+    clearErrors,
+    trigger,
     formState: { errors },
   } = useForm<PedidoFormData>({
     resolver: pedidoResolver,
@@ -716,10 +741,11 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
     createPedido({
       codigo: data.autogenerarCodigo ? null : (data.codigo ?? ""),
       idCliente: data.idCliente,
-      numeroDocumento: data.nroDocumento,
+      numeroDocumento: data.nroDocumentoCliente ?? "",
       nombreCliente: cliente?.nombreCliente ?? "",
       idTipoPersona: data.idTipoPersona,
       idCompania: data.idEmpresaAtencion,
+      numeroDocumentoInvestigado: data.nroDocumento,
       investigarRazonSocialNombres: data.investigado,
       idTarifario: data.idTarifario,
       idPlantilla: data.idPlantillaInforme,
@@ -771,6 +797,8 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
           register={register}
           setValue={setValue}
           watch={watch}
+          clearErrors={clearErrors}
+          trigger={trigger}
           errors={errors}
           selectedTarifario={selectedTarifario}
         />

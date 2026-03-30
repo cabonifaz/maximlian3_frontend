@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, type ReactNode } from "react";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import { masterTableService } from "@maximilian/services/masterTable.service";
@@ -18,6 +18,8 @@ export interface SearchableSelectProps {
   disabled?: boolean;
   loading?: boolean;
   onOpen?: () => void;
+  onAddNew?: (searchTerm: string) => void;
+  displayValue?: string;
 }
 
 export function SearchableSelect({
@@ -33,6 +35,8 @@ export function SearchableSelect({
   disabled = false,
   loading = false,
   onOpen,
+  onAddNew,
+  displayValue,
 }: SearchableSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -85,10 +89,10 @@ export function SearchableSelect({
         onClick={handleToggle}
       >
         <span
-          className={`truncate min-w-0 ${selectedOption ? "text-brand-black" : "text-gray-400"}`}
-          title={selectedOption?.string1 ?? undefined}
+          className={`truncate min-w-0 ${selectedOption || displayValue ? "text-brand-black" : "text-gray-400"}`}
+          title={selectedOption?.string1 ?? displayValue ?? undefined}
         >
-          {selectedOption ? selectedOption.string1 : placeholder}
+          {selectedOption ? selectedOption.string1 : (displayValue ?? placeholder)}
         </span>
         <Search size={16} className="text-gray-400 shrink-0 ml-2" />
       </div>
@@ -136,6 +140,21 @@ export function SearchableSelect({
                 </div>
               )}
             </div>
+            {onAddNew && (
+              <div
+                className={`border-t border-gray-100 px-4 py-2.5 flex items-center gap-2 text-sm transition-colors font-medium ${searchTerm.trim() ? "cursor-pointer hover:bg-brand-wine/5 text-brand-wine" : "cursor-not-allowed text-gray-300"}`}
+                onClick={(e) => {
+                  if (!searchTerm.trim()) return;
+                  e.stopPropagation();
+                  onAddNew(searchTerm.trim());
+                  setIsOpen(false);
+                  setSearchTerm("");
+                }}
+              >
+                <Plus size={14} />
+                Agregar nuevo tipo
+              </div>
+            )}
           </div>
         </>
       )}

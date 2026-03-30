@@ -30,7 +30,10 @@ export const rateSchema = z.object({
   diasMin: z.number({ error: "Días mínimos es requerido" }).min(0, "Días mínimos debe ser mayor o igual a 0"),
   diasMax: z.number({ error: "Días máximos es requerido" }).min(0, "Días máximos debe ser mayor o igual a 0"),
   precio: z.number({ error: "El precio es requerido" }).min(0, "El precio debe ser mayor o igual a 0"),
-  penalidad: z.number({ error: "La penalidad es requerida" }).min(0, "La penalidad debe ser mayor o igual a 0"),
+  penalidad: z.preprocess(
+    (val) => (typeof val === "number" && isNaN(val) ? undefined : val),
+    z.number().min(0, "La penalidad debe ser mayor o igual a 0").optional()
+  ) as unknown as z.ZodOptional<z.ZodNumber>,
 }).superRefine((data, ctx) => {
   if (data.diasMax <= data.diasMin) {
     ctx.addIssue({
@@ -49,6 +52,7 @@ export const rateSchema = z.object({
 export const contactSchema = z.object({
   tipoPersona: z.number({ error: "El tipo de persona es requerido" }),
   tipoContacto: z.number({ error: "El tipo de contacto es requerido" }),
+  tipoContactoNuevo: z.string().optional(),
   codigoContacto: z.string().min(1, "El código de contacto es requerido"),
   nombre: z.string().min(1, "El nombre es requerido"),
   email: z.string().email("Email inválido"),
