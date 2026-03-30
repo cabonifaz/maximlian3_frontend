@@ -162,8 +162,11 @@ export function ClientDetailModal({
 
   const createContactoMutation = useMutation({
     mutationFn: clientService.createContacto,
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["contactos", client?.idCliente] });
+      if (variables.idTipoContacto === 0) {
+        queryClient.invalidateQueries({ queryKey: ["masterTable", MasterTableId.TIPO_CONTACTO] });
+      }
       setIsContactModalOpen(false);
       setEditingContact(null);
     },
@@ -171,8 +174,11 @@ export function ClientDetailModal({
 
   const updateContactoMutation = useMutation({
     mutationFn: clientService.updateContacto,
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["contactos", client?.idCliente] });
+      if (variables.idTipoContacto === 0) {
+        queryClient.invalidateQueries({ queryKey: ["masterTable", MasterTableId.TIPO_CONTACTO] });
+      }
       setIsContactModalOpen(false);
       setEditingContact(null);
       setSelectedContactIndex(null);
@@ -862,6 +868,7 @@ export function ClientDetailModal({
               nombres: data.nombre,
               idTipoPersonaContacto: Number(data.tipoPersona),
               idTipoContacto: Number(data.tipoContacto),
+              tipoContacto: data.tipoContacto === 0 ? (data.tipoContactoNuevo ?? null) : null,
               idAreaTrabajo: Number(data.areaTrabajo),
               telefono: data.telefono || null,
               email: data.email || null,
@@ -874,6 +881,7 @@ export function ClientDetailModal({
               nombres: data.nombre,
               idTipoPersonaContacto: Number(data.tipoPersona),
               idTipoContacto: Number(data.tipoContacto),
+              tipoContacto: data.tipoContacto === 0 ? (data.tipoContactoNuevo ?? null) : null,
               idAreaTrabajo: Number(data.areaTrabajo),
               telefono: data.telefono || null,
               email: data.email || null,

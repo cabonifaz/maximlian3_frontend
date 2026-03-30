@@ -52,6 +52,7 @@ export const rateSchema = z.object({
 export const contactSchema = z.object({
   tipoPersona: z.number({ error: "El tipo de persona es requerido" }),
   tipoContacto: z.number({ error: "El tipo de contacto es requerido" }),
+  tipoContactoNuevo: z.string().optional(),
   codigoContacto: z.string().min(1, "El código de contacto es requerido"),
   nombre: z.string().min(1, "El nombre es requerido"),
   email: z.string().email("Email inválido"),

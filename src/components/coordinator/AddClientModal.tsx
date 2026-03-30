@@ -54,6 +54,7 @@ interface ContactEntry {
   tipoPersonaLabel: string;
   tipoContactoId: number;
   tipoContactoLabel: string;
+  tipoContactoNuevo?: string;
   codigoContacto: string;
   nombre: string;
   email: string;
@@ -168,6 +169,7 @@ export function AddClientModal({
       addedContacts.map((c) => ({
         tipoPersona: c.tipoPersonaId,
         tipoContacto: c.tipoContactoId,
+        tipoContactoNuevo: c.tipoContactoNuevo,
         codigoContacto: c.codigoContacto,
         nombre: c.nombre,
         email: c.email,
@@ -197,7 +199,10 @@ export function AddClientModal({
       tipoPersonaId,
       tipoPersonaLabel: getLabel(MasterTableId.TIPO_PERSONA, tipoPersonaId),
       tipoContactoId,
-      tipoContactoLabel: getLabel(MasterTableId.TIPO_CONTACTO, tipoContactoId),
+      tipoContactoLabel: tipoContactoId === 0
+        ? (data.tipoContactoNuevo ?? String(tipoContactoId))
+        : getLabel(MasterTableId.TIPO_CONTACTO, tipoContactoId),
+      tipoContactoNuevo: data.tipoContactoNuevo,
       codigoContacto: data.codigoContacto,
       nombre: data.nombre,
       email: data.email,

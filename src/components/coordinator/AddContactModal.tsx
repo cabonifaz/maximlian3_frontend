@@ -1,12 +1,24 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { contactSchema, type ContactFormData } from "@maximilian/schemas";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
+
+const contactResolver: Resolver<ContactFormData> = async (...args) => {
+  const result = await zodResolver(contactSchema)(...args);
+  const { tipoContacto, tipoContactoNuevo } = args[0];
+  if (tipoContacto === 0 && !tipoContactoNuevo?.trim()) {
+    result.errors = {
+      ...result.errors,
+      tipoContacto: { type: "custom", message: "El tipo de contacto es requerido" },
+    };
+  }
+  return result;
+};
 
 interface AddContactModalProps {
   isOpen: boolean;
@@ -24,7 +36,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
     watch,
     setValue,
   } = useForm<ContactFormData>({
-    resolver: zodResolver(contactSchema),
+    resolver: contactResolver,
   });
 
   useEffect(() => {
@@ -36,6 +48,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
 
   const watchedTipoPersona = watch("tipoPersona");
   const watchedTipoContacto = watch("tipoContacto");
+  const watchedTipoContactoNuevo = watch("tipoContactoNuevo");
   const watchedAreaTrabajo = watch("areaTrabajo");
 
   const handleConfirm = (data: ContactFormData) => {
@@ -72,9 +85,15 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
               required
               idMaster={MasterTableId.TIPO_CONTACTO}
               value={watchedTipoContacto}
-              onChange={(val) =>
-                setValue("tipoContacto", val, { shouldValidate: true })
-              }
+              onChange={(val) => {
+                setValue("tipoContacto", val, { shouldValidate: true });
+                if (val !== 0) setValue("tipoContactoNuevo", undefined);
+              }}
+              onAddNew={(term) => {
+                setValue("tipoContacto", 0, { shouldValidate: true });
+                setValue("tipoContactoNuevo", term, { shouldValidate: true });
+              }}
+              displayValue={watchedTipoContacto === 0 ? watchedTipoContactoNuevo : undefined}
               error={errors.tipoContacto?.message}
             />
 

@@ -134,6 +134,7 @@ export default function ClientManagement() {
           nombres: c.nombre,
           idTipoPersonaContacto: c.tipoPersona as number,
           idTipoContacto: c.tipoContacto as number,
+          tipoContacto: c.tipoContacto === 0 ? (c.tipoContactoNuevo ?? null) : null,
           areaTrabajo: c.areaTrabajo as number,
           telefono: c.telefono,
           email: c.email,
@@ -153,8 +154,11 @@ export default function ClientManagement() {
       };
       return clientService.create(apiRequest);
     },
-    onSuccess: (_, { reset }) => {
+    onSuccess: (_, { contacts, reset }) => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
+      if (contacts.some((c) => c.tipoContacto === 0)) {
+        queryClient.invalidateQueries({ queryKey: ["masterTable", MasterTableId.TIPO_CONTACTO] });
+      }
       setIsModalOpen(false);
       reset();
     },
