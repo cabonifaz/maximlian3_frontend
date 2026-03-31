@@ -145,8 +145,8 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
     () =>
       clientes.map((c: ClienteCorta) => ({
         idEmpresa: 0,
-        idMasterTable: null,
-        idMaster: 0,
+        idTablaMaestra: null,
+        idMaestro: 0,
         descripcion: "",
         num1: c.idCliente,
         num2: null,

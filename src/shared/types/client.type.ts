@@ -102,9 +102,9 @@ export type ClientListEntry = {
 };
 
 export type ClientListResponse = {
-  LstClientes: ClientListEntry[];
-  TotalRegistros: number;
-  TotalPaginas: number;
+  lstClientes: ClientListEntry[];
+  totalRegistros: number;
+  totalPaginas: number;
 };
 
 export interface DeleteClientRequest {
@@ -126,9 +126,9 @@ export type TarifarioListEntry = {
 };
 
 export type TarifarioListResponse = {
-  LstTarifario: TarifarioListEntry[];
-  TotalRegistros: number;
-  TotalPaginas: number;
+  lstTarifario: TarifarioListEntry[];
+  totalRegistros: number;
+  totalPaginas: number;
 };
 
 export type ContactoListEntry = {
@@ -143,9 +143,9 @@ export type ContactoListEntry = {
 };
 
 export type ContactoListResponse = {
-  LstClienteContactos: ContactoListEntry[];
-  TotalRegistros: number;
-  TotalPaginas: number;
+  lstClienteContactos: ContactoListEntry[];
+  totalRegistros: number;
+  totalPaginas: number;
 };
 
 export type CreateTarifarioRequest = {

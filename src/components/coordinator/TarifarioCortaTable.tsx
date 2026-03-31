@@ -40,9 +40,9 @@ export function TarifarioCortaTable({
     queryFn: () =>
       clientService.listTarifarioCorta({
         idCliente: idCliente!,
-        idTipoProducto,
-        idTipoTramite,
-        idPais,
+        IdTipoProducto: idTipoProducto,
+        IdTipoTramite: idTipoTramite,
+        IdPais: idPais,
       }),
     enabled: !!idCliente,
   });

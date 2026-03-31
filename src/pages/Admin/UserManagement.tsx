@@ -156,7 +156,7 @@ export default function UserManagement() {
         firstName: details.nombres || "",
         paternalLastName: details.apellidoPaterno || "",
         maternalLastName: details.apellidoMaterno || "",
-        usernameCreacion: user.username || "",
+        usernameCreacion: user.usuario || "",
         email: details.email || "",
         roles: details.roles || [],
         languages: details.idiomas || [],
@@ -177,7 +177,7 @@ export default function UserManagement() {
       firstName: user.nombres,
       paternalLastName: user.apellidoPaterno,
       maternalLastName: user.apellidoMaterno ?? undefined,
-      usernameCreacion: user.username,
+      usernameCreacion: user.usuario,
       email: user.email,
       roles: user.roles ? user.roles.split(", ") : [],
     });
@@ -201,7 +201,7 @@ export default function UserManagement() {
       <td className="px-6 py-4 text-brand-black font-medium">{user.nombres}</td>
       <td className="px-6 py-4 text-gray-600">{user.apellidoPaterno}</td>
       <td className="px-6 py-4 text-gray-600">{user.apellidoMaterno}</td>
-      <td className="px-6 py-4 text-gray-600">{user.username}</td>
+      <td className="px-6 py-4 text-gray-600">{user.usuario}</td>
       <td className="px-6 py-4">
         <div className="flex flex-wrap gap-1">
           {user.roles ? (
