@@ -47,7 +47,7 @@ export function EditUserModal({
       firstName: "",
       paternalLastName: "",
       maternalLastName: "",
-      usernameCreacion: "",
+      usuarioCreacion: "",
       email: "",
       roles: [],
       languages: [],
@@ -160,7 +160,7 @@ export function EditUserModal({
                 {(errors.firstName ||
                   errors.paternalLastName ||
                   errors.maternalLastName ||
-                  errors.usernameCreacion ||
+                  errors.usuarioCreacion ||
                   errors.email) && (
                   <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                 )}
@@ -245,15 +245,15 @@ export function EditUserModal({
                     Nombre de Usuario
                   </label>
                   <input
-                    {...register("usernameCreacion")}
+                    {...register("usuarioCreacion")}
                     type="text"
                     placeholder="Nombre de Usuario"
                     disabled
                     className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500 outline-none transition-all cursor-not-allowed"
                   />
-                  {errors.usernameCreacion && (
+                  {errors.usuarioCreacion && (
                     <p className="text-xs text-red-500">
-                      {errors.usernameCreacion.message}
+                      {errors.usuarioCreacion.message}
                     </p>
                   )}
                 </div>
