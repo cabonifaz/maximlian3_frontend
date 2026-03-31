@@ -23,8 +23,8 @@ export type MasterTableId = (typeof MasterTableId)[keyof typeof MasterTableId];
 
 export type MasterTableEntry = {
   idEmpresa: number;
-  idMasterTable: number | null;
-  idMaster: number;
+  idTablaMaestra: number | null;
+  idMaestro: number;
   descripcion: string;
   num1: number | null;
   num2: number | null;

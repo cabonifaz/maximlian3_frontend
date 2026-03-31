@@ -89,21 +89,6 @@ export default function ClientManagement() {
     queryFn: () => masterTableService.list(MasterTableId.ESTADO_CLIENTE),
   });
 
-  const { data: tiposPersona } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_PERSONA],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_PERSONA),
-  });
-
-  const paisMap = useMemo(
-    () => Object.fromEntries((paises ?? []).map((e) => [e.num1, e.string1])),
-    [paises],
-  );
-
-  const tipoPersonaMap = useMemo(
-    () =>
-      Object.fromEntries((tiposPersona ?? []).map((e) => [e.num1, e.string1])),
-    [tiposPersona],
-  );
 
   const createClientMutation = useMutation({
     mutationFn: ({ data, contacts, rates }: ClientMutationParams) => {
@@ -244,11 +229,11 @@ export default function ClientManagement() {
         <span className="text-sm font-bold text-brand-black">{client.nombre}</span>
       </td>
       <td className="px-6 py-4">
-        <span className="text-sm text-gray-600">{paisMap[client.idPais] ?? "-"}</span>
+        <span className="text-sm text-gray-600">{client.pais || "-"}</span>
       </td>
       <td className="px-6 py-4">
         <span className="text-sm text-gray-600 capitalize">
-          {tipoPersonaMap[client.idTipoPersona]?.toLowerCase() ?? "-"}
+          {client.tipoPersona?.toLowerCase() || "-"}
         </span>
       </td>
       <td className="px-6 py-4">
@@ -258,13 +243,13 @@ export default function ClientManagement() {
         <span className="text-sm text-gray-500">{client.email}</span>
       </td>
       <td className="px-6 py-4">
-        {client.idEstado === 1 ? (
+        {client.estado?.toLowerCase() === "activo" ? (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600">
-            Activo
+            {client.estado}
           </span>
-        ) : client.idEstado === 2 ? (
+        ) : client.estado ? (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500">
-            Inactivo
+            {client.estado}
           </span>
         ) : (
           <span className="text-sm text-gray-400">-</span>

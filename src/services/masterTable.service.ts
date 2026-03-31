@@ -8,12 +8,12 @@ export const masterTableService = {
    * List MasterTable parameters by idMaster
    * @param idMaster The master ID to filter by
    */
-  list: async (idMaster: number) => {
+  list: async (idMaestro: number) => {
     try {
       const { data } = await maximilianService.get<ApiResponse<MasterTableResponse>>(
-        "/api/MasterTable/listar",
+        "/api/TablaMaestra/listar",
         {
-          params: { IdMaster: idMaster },
+          params: { IdMaestro: idMaestro },
         }
       );
 
@@ -23,7 +23,7 @@ export const masterTableService = {
 
       return data.result;
     } catch (error) {
-      console.error(`Error fetching MasterTable parameters for ID ${idMaster}:`, error);
+      console.error(`Error fetching MasterTable parameters for ID ${idMaestro}:`, error);
       throw error;
     }
   },

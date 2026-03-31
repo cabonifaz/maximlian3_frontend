@@ -15,9 +15,9 @@ export interface PedidoListEntry {
 }
 
 export interface PedidoListResponse {
-  lstPedido: PedidoListEntry[];
-  totalRegistros: number;
-  totalPaginas: number;
+  LstPedido: PedidoListEntry[];
+  TotalRegistros: number;
+  TotalPaginas: number;
 }
 
 export interface PedidoListParams {
@@ -141,9 +141,9 @@ export interface PedidoArchivoEntry {
 }
 
 export interface PedidoArchivoListResponse {
-  lstPedidoArchivo: PedidoArchivoEntry[];
-  totalRegistros: number;
-  totalPaginas: number;
+  LstPedidoArchivo: PedidoArchivoEntry[];
+  TotalRegistros: number;
+  TotalPaginas: number;
 }
 
 export interface AddPedidoArchivosRequest {

@@ -94,17 +94,17 @@ export type ClientListRequest = {
 export type ClientListEntry = {
   idCliente: number;
   nombre: string;
-  idPais: number;
-  idTipoPersona: number;
   email: string;
   telefono: string;
-  idEstado: number;
+  pais: string;
+  tipoPersona: string;
+  estado: string;
 };
 
 export type ClientListResponse = {
-  lstClientes: ClientListEntry[];
-  totalRegistros: number;
-  totalPaginas: number;
+  LstClientes: ClientListEntry[];
+  TotalRegistros: number;
+  TotalPaginas: number;
 };
 
 export interface DeleteClientRequest {
@@ -126,9 +126,9 @@ export type TarifarioListEntry = {
 };
 
 export type TarifarioListResponse = {
-  lstTarifario: TarifarioListEntry[];
-  totalRegistros: number;
-  totalPaginas: number;
+  LstTarifario: TarifarioListEntry[];
+  TotalRegistros: number;
+  TotalPaginas: number;
 };
 
 export type ContactoListEntry = {
@@ -143,9 +143,9 @@ export type ContactoListEntry = {
 };
 
 export type ContactoListResponse = {
-  lstClienteContactos: ContactoListEntry[];
-  totalRegistros: number;
-  totalPaginas: number;
+  LstClienteContactos: ContactoListEntry[];
+  TotalRegistros: number;
+  TotalPaginas: number;
 };
 
 export type CreateTarifarioRequest = {
@@ -231,7 +231,7 @@ export interface ClienteCorta {
 }
 
 export interface ClienteListaCortaResponse {
-  lstCliente: ClienteCorta[];
+  LstCliente: ClienteCorta[];
 }
 
 export type TarifarioCortaEntry = {
@@ -247,5 +247,5 @@ export type TarifarioCortaEntry = {
 };
 
 export type TarifarioCortaResponse = {
-  lstTarifario: TarifarioCortaEntry[];
+  LstTarifario: TarifarioCortaEntry[];
 };
