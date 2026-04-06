@@ -365,14 +365,13 @@ function InfoPedidoTab({ register, setValue, watch, clearErrors, trigger, errors
           error={errors.idTipoPersona?.message}
         />
         <div className="flex flex-col gap-1.5">
-          <CustomLabel required>Nro. Documento</CustomLabel>
+          <CustomLabel optional>Nro. Documento</CustomLabel>
           <input
             type="text"
             placeholder="Nro. Documento"
             {...register("nroDocumento")}
-            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.nroDocumento ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
           />
-          {errors.nroDocumento && <p className="text-xs text-red-500">{errors.nroDocumento.message}</p>}
         </div>
         <div className="flex flex-col gap-1.5">
           <CustomLabel optional>Nro. de Referencia</CustomLabel>
@@ -745,7 +744,7 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
       nombreCliente: cliente?.nombreCliente ?? "",
       idTipoPersona: data.idTipoPersona,
       idCompania: data.idEmpresaAtencion,
-      numeroDocumentoInvestigado: data.nroDocumento,
+      numeroDocumentoInvestigado: data.nroDocumento ?? "",
       investigarRazonSocialNombres: data.investigado,
       idTarifario: data.idTarifario,
       idPlantilla: data.idPlantillaInforme,

@@ -225,7 +225,7 @@ export const clientService = {
       { params: { idCliente: params.idCliente, IdTipoProducto: params.IdTipoProducto, IdTipoTramite: params.IdTipoTramite, IdPais: params.IdPais } }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
-    return data.result.LstTarifario;
+    return data.result.lstTarifario;
   },
 
   listaCorta: async (): Promise<ClienteCorta[]> => {
@@ -233,6 +233,6 @@ export const clientService = {
       "/api/Cliente/listaCorta"
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
-    return data.result.LstCliente;
+    return data.result.lstCliente;
   },
 };

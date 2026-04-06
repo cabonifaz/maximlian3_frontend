@@ -231,7 +231,7 @@ export interface ClienteCorta {
 }
 
 export interface ClienteListaCortaResponse {
-  LstCliente: ClienteCorta[];
+  lstCliente: ClienteCorta[];
 }
 
 export type TarifarioCortaEntry = {
@@ -247,5 +247,5 @@ export type TarifarioCortaEntry = {
 };
 
 export type TarifarioCortaResponse = {
-  LstTarifario: TarifarioCortaEntry[];
+  lstTarifario: TarifarioCortaEntry[];
 };
