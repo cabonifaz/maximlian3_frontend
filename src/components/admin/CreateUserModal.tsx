@@ -46,7 +46,7 @@ export function CreateUserModal({
       paternalLastName: "",
       maternalLastName: "",
       usuarioCreacion: "",
-      email: "",
+      correo: "",
       roles: [],
       languages: [],
     },
@@ -165,7 +165,7 @@ export function CreateUserModal({
                   errors.paternalLastName ||
                   errors.maternalLastName ||
                   errors.usuarioCreacion ||
-                  errors.email) && (
+                  errors.correo) && (
                   <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                 )}
               </button>
@@ -263,16 +263,16 @@ export function CreateUserModal({
                 <div className="space-y-2 col-span-2">
                   <CustomLabel required className="text-sm font-semibold text-brand-black">Email</CustomLabel>
                   <input
-                    {...register("email")}
+                    {...register("correo")}
                     type="email"
                     placeholder="Email"
                     className={`w-full px-4 py-2 bg-brand-white border ${
-                      errors.email ? "border-red-500" : "border-gray-200"
+                      errors.correo ? "border-red-500" : "border-gray-200"
                     } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
                   />
-                  {errors.email && (
+                  {errors.correo && (
                     <p className="text-xs text-brand-wine">
-                      {errors.email.message}
+                      {errors.correo.message}
                     </p>
                   )}
                 </div>

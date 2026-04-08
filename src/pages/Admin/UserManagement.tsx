@@ -75,7 +75,7 @@ export default function UserManagement() {
         apellidoPaterno: userData.paternalLastName,
         apellidoMaterno: userData.maternalLastName || null,
         usuarioCreacion: userData.usuarioCreacion,
-        email: userData.email,
+        correo: userData.correo,
         roles: userData.roles as number[],
         idiomas: (userData.languages || []) as number[],
       };
@@ -157,7 +157,7 @@ export default function UserManagement() {
         paternalLastName: details.apellidoPaterno || "",
         maternalLastName: details.apellidoMaterno || "",
         usuarioCreacion: user.usuario || "",
-        email: details.email || "",
+        correo: details.correo || "",
         roles: details.roles || [],
         languages: details.idiomas || [],
       };
@@ -178,7 +178,7 @@ export default function UserManagement() {
       paternalLastName: user.apellidoPaterno,
       maternalLastName: user.apellidoMaterno ?? undefined,
       usuarioCreacion: user.usuario,
-      email: user.email,
+      correo: user.correo,
       roles: user.roles ? user.roles.split(", ") : [],
     });
     setIsDeleteModalOpen(true);
@@ -218,7 +218,7 @@ export default function UserManagement() {
           )}
         </div>
       </td>
-      <td className="px-6 py-4 text-gray-600">{user.email}</td>
+      <td className="px-6 py-4 text-gray-600">{user.correo}</td>
       <td className="px-6 py-4">
         <span
           className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${

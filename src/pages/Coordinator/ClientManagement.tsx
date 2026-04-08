@@ -99,7 +99,7 @@ export default function ClientManagement() {
         idPais: data.pais as number,
         idRegistroTributario: data.tipoRegistroTributario as number,
         numRegistroTributario: data.numRegistroTributario ?? "",
-        email: data.email,
+        correo: data.correo,
         idEstado: 1,
         webSite: data.sitioWeb || "",
         telefono: data.telefono,
@@ -122,7 +122,7 @@ export default function ClientManagement() {
           tipoContacto: c.tipoContacto === 0 ? (c.tipoContactoNuevo ?? null) : null,
           areaTrabajo: c.areaTrabajo as number,
           telefono: c.telefono,
-          email: c.email,
+          correo: c.correo,
           codigo: c.codigoContacto || null,
           enviarCorreo: c.enviarCorreo,
         })),
@@ -240,7 +240,7 @@ export default function ClientManagement() {
         <span className="text-sm text-gray-600 font-medium">{client.telefono}</span>
       </td>
       <td className="px-6 py-4">
-        <span className="text-sm text-gray-500">{client.email}</span>
+        <span className="text-sm text-gray-500">{client.correo}</span>
       </td>
       <td className="px-6 py-4">
         {client.estado?.toLowerCase() === "activo" ? (
@@ -487,7 +487,7 @@ export default function ClientManagement() {
         isSubmitting={deleteClientMutation.isPending}
       >
         <p><span className="font-bold">Nombre:</span> {clientToDelete?.nombre ?? "-"}</p>
-        <p><span className="font-bold">Email:</span> {clientToDelete?.email ?? "-"}</p>
+        <p><span className="font-bold">Email:</span> {clientToDelete?.correo ?? "-"}</p>
       </ConfirmDeleteModal>
     </div>
   );

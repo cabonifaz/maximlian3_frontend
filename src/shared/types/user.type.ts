@@ -3,7 +3,7 @@ export type CreateUserRequest = {
   apellidoPaterno: string;
   apellidoMaterno: string | null;
   usuarioCreacion: string;
-  email: string;
+  correo: string;
   roles: number[];
   idiomas: number[];
 };
@@ -16,7 +16,7 @@ export type UserDetails = {
   nombres: string;
   apellidoPaterno: string;
   apellidoMaterno: string | null;
-  email: string;
+  correo: string;
   roles: number[];
   idiomas: number[];
 };
@@ -45,7 +45,7 @@ export type UserListEntry = {
   nombres: string;
   apellidoPaterno: string;
   apellidoMaterno: string | null;
-  email: string;
+  correo: string;
   usuario: string;
   roles: string;
   estado: string;

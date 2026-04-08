@@ -57,7 +57,7 @@ interface ContactEntry {
   tipoContactoNuevo?: string;
   codigoContacto: string;
   nombre: string;
-  email: string;
+  correo: string;
   telefono: string;
   areaTrabajoId: number;
   areaTrabajoLabel: string;
@@ -172,7 +172,7 @@ export function AddClientModal({
         tipoContactoNuevo: c.tipoContactoNuevo,
         codigoContacto: c.codigoContacto,
         nombre: c.nombre,
-        email: c.email,
+        correo: c.correo,
         telefono: c.telefono,
         areaTrabajo: c.areaTrabajoId,
         enviarCorreo: c.enviarCorreo,
@@ -205,7 +205,7 @@ export function AddClientModal({
       tipoContactoNuevo: data.tipoContactoNuevo,
       codigoContacto: data.codigoContacto,
       nombre: data.nombre,
-      email: data.email,
+      correo: data.correo,
       telefono: data.telefono,
       areaTrabajoId,
       areaTrabajoLabel: getLabel(MasterTableId.AREA_TRABAJO, areaTrabajoId),
@@ -319,14 +319,14 @@ export function AddClientModal({
                   <div className="space-y-2">
                     <CustomLabel required>Email</CustomLabel>
                     <input
-                      {...infoRegister("email")}
+                      {...infoRegister("correo")}
                       type="email"
                       placeholder="Email"
                       className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
                     />
-                    {infoErrors.email && (
+                    {infoErrors.correo && (
                       <p className="text-xs text-red-500">
-                        {infoErrors.email.message}
+                        {infoErrors.correo.message}
                       </p>
                     )}
                   </div>
@@ -689,7 +689,7 @@ export function AddClientModal({
                         .filter(c =>
                           !term ||
                           c.nombre.toLowerCase().includes(term) ||
-                          c.email.toLowerCase().includes(term) ||
+                          c.correo.toLowerCase().includes(term) ||
                           c.telefono.toLowerCase().includes(term) ||
                           c.tipoContactoLabel.toLowerCase().includes(term) ||
                           c.areaTrabajoLabel.toLowerCase().includes(term),
@@ -716,7 +716,7 @@ export function AddClientModal({
                                 />
                               </td>
                               <td className="px-4 py-3 text-gray-600">{contact.nombre}</td>
-                              <td className="px-4 py-3 text-gray-600">{contact.email}</td>
+                              <td className="px-4 py-3 text-gray-600">{contact.correo}</td>
                               <td className="px-4 py-3 text-gray-600">{contact.telefono}</td>
                               <td className="px-4 py-3 text-gray-600">{contact.tipoContactoLabel}</td>
                               <td className="px-4 py-3 text-gray-600">{contact.areaTrabajoLabel}</td>
@@ -824,7 +824,7 @@ export function AddClientModal({
                 tipoContacto: addedContacts[selectedContactIndex].tipoContactoId,
                 codigoContacto: addedContacts[selectedContactIndex].codigoContacto,
                 nombre: addedContacts[selectedContactIndex].nombre,
-                email: addedContacts[selectedContactIndex].email,
+                correo: addedContacts[selectedContactIndex].correo,
                 telefono: addedContacts[selectedContactIndex].telefono,
                 areaTrabajo: addedContacts[selectedContactIndex].areaTrabajoId,
                 enviarCorreo: addedContacts[selectedContactIndex].enviarCorreo,

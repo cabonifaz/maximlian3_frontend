@@ -48,7 +48,7 @@ export function EditUserModal({
       paternalLastName: "",
       maternalLastName: "",
       usuarioCreacion: "",
-      email: "",
+      correo: "",
       roles: [],
       languages: [],
     },
@@ -161,7 +161,7 @@ export function EditUserModal({
                   errors.paternalLastName ||
                   errors.maternalLastName ||
                   errors.usuarioCreacion ||
-                  errors.email) && (
+                  errors.correo) && (
                   <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                 )}
               </button>
@@ -262,15 +262,15 @@ export function EditUserModal({
                     Email
                   </label>
                   <input
-                    {...register("email")}
+                    {...register("correo")}
                     type="email"
                     placeholder="Email"
                     disabled
                     className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500 outline-none transition-all cursor-not-allowed"
                   />
-                  {errors.email && (
+                  {errors.correo && (
                     <p className="text-xs text-brand-wine">
-                      {errors.email.message}
+                      {errors.correo.message}
                     </p>
                   )}
                 </div>

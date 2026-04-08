@@ -103,7 +103,7 @@ export function ClientDetailModal({
         nombre: client.nombre,
         pais: client.idPais,
         direccion: client.direccion ?? "",
-        email: client.email ?? "",
+        correo: client.correo ?? "",
         telefono: client.telefono ?? "",
         sitioWeb: client.webSite ?? "",
         fax: client.fax ?? "",
@@ -388,11 +388,11 @@ export function ClientDetailModal({
                   <div className="space-y-2">
                     <CustomLabel required>Email</CustomLabel>
                     <input
-                      {...infoRegister("email")}
+                      {...infoRegister("correo")}
                       type="email"
-                      className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.email ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+                      className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.correo ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
                     />
-                    {infoErrors.email && <p className="text-xs text-red-500">{infoErrors.email.message}</p>}
+                    {infoErrors.correo && <p className="text-xs text-red-500">{infoErrors.correo.message}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -738,7 +738,7 @@ export function ClientDetailModal({
                                 <input type="checkbox" checked={selectedContactIndex === i} onChange={() => setSelectedContactIndex(selectedContactIndex === i ? null : i)} className="accent-brand-wine cursor-pointer w-4 h-4" />
                               </td>
                               <td className="px-4 py-3 text-gray-600">{c.nombres}</td>
-                              <td className="px-4 py-3 text-gray-600">{c.email}</td>
+                              <td className="px-4 py-3 text-gray-600">{c.correo}</td>
                               <td className="px-4 py-3 text-gray-600">{c.telefono}</td>
                               <td className="px-4 py-3 text-gray-600">{c.tipoContacto}</td>
                               <td className="px-4 py-3 text-gray-600">{c.areaTrabajo}</td>
@@ -781,7 +781,7 @@ export function ClientDetailModal({
                 idPais: formData.pais as number,
                 idRegistroTributario: formData.tipoRegistroTributario as number,
                 numRegistroTributario: formData.numRegistroTributario ?? "",
-                email: formData.email ?? "",
+                correo: formData.correo ?? "",
                 idEstado: client.idEstado,
                 webSite: formData.sitioWeb ?? "",
                 telefono: formData.telefono ?? "",
@@ -871,7 +871,7 @@ export function ClientDetailModal({
               tipoContacto: data.tipoContacto === 0 ? (data.tipoContactoNuevo ?? null) : null,
               idAreaTrabajo: Number(data.areaTrabajo),
               telefono: data.telefono || null,
-              email: data.email || null,
+              correo: data.correo || null,
               enviarCorreo: data.enviarCorreo ?? false,
             });
           } else {
@@ -884,7 +884,7 @@ export function ClientDetailModal({
               tipoContacto: data.tipoContacto === 0 ? (data.tipoContactoNuevo ?? null) : null,
               idAreaTrabajo: Number(data.areaTrabajo),
               telefono: data.telefono || null,
-              email: data.email || null,
+              correo: data.correo || null,
               enviarCorreo: data.enviarCorreo ?? false,
             });
           }
@@ -894,7 +894,7 @@ export function ClientDetailModal({
           tipoContacto: editingContact.idTipoContacto,
           codigoContacto: editingContact.codigo ?? "",
           nombre: editingContact.nombres,
-          email: editingContact.email ?? "",
+          correo: editingContact.correo ?? "",
           telefono: editingContact.telefono ?? "",
           areaTrabajo: editingContact.idAreaTrabajo,
           enviarCorreo: editingContact.enviarCorreo,
@@ -929,7 +929,7 @@ export function ClientDetailModal({
         isSubmitting={deleteContactoMutation.isPending}
       >
         <p><span className="font-bold">Nombre:</span> {contactToDelete?.nombres ?? "-"}</p>
-        <p><span className="font-bold">Email:</span> {contactToDelete?.email ?? "-"}</p>
+        <p><span className="font-bold">Email:</span> {contactToDelete?.correo ?? "-"}</p>
         <p><span className="font-bold">Teléfono:</span> {contactToDelete?.telefono ?? "-"}</p>
       </ConfirmDeleteModal>
     </>
