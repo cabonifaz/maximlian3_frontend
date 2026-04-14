@@ -17,7 +17,7 @@ const ASSIGNMENT_COLUMNS = [
   { label: "Analista" },
   { label: "Traductor" },
   { label: "Estado" },
-  { label: "Vigencia" },
+  { label: "Vencimiento" },
   { label: "Acciones", className: "text-right" },
 ];
 
@@ -246,7 +246,7 @@ export default function AssignmentManagement() {
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 cursor-pointer"
               >
                 <Edit size={14} />
-                <span>Modificar</span>
+                <span>Reasignar</span>
               </button>
               <button
                 onClick={() => {

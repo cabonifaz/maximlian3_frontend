@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Loader2, Search } from "lucide-react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Eye, Loader2, Search } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomPedidoDetalleModal } from "@maximilian/components/coordinator/CustomPedidoDetalleModal";
 import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
@@ -31,7 +32,8 @@ const PEDIDO_COLUMNS = [
   { label: "Investigado" },
   { label: "Idioma del informe" },
   { label: "Tipo de tramite" },
-  { label: "Vigencia" },
+  { label: "Vencimiento" },
+  { label: "Ver detalle", className: "text-center" },
 ];
 
 const ASIGNACIONES_INICIALES: AssignmentRoleSelection[] = [
@@ -110,10 +112,12 @@ export function AssignmentWorkflowModal({
   tabInicial = "pedidos",
   titulo = "Nueva Asignación",
 }: AssignmentWorkflowModalProps) {
+  const queryClient = useQueryClient();
   const [tabActiva, setTabActiva] = useState<TabAsignacion>(tabInicial);
   const [terminoBusquedaPedido, setTerminoBusquedaPedido] = useState("");
   const [terminoBusquedaUsuario, setTerminoBusquedaUsuario] = useState("");
   const [paginaPedido, setPaginaPedido] = useState(1);
+  const [pedidoDetalleId, setPedidoDetalleId] = useState<number | null>(null);
   const [idsSeleccionados, setIdsSeleccionados] = useState<Set<number>>(
     () => new Set(pedidosIniciales.map((pedido) => pedido.idPedido)),
   );
@@ -245,7 +249,9 @@ export function AssignmentWorkflowModal({
         idPedidos: pedidosElegidos.map((pedido) => pedido.idPedido),
         assignments: asignacionesBorrador,
       }),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
+      await queryClient.invalidateQueries({ queryKey: ["pedidos"] });
       onSuccess?.();
       onClose();
     },
@@ -297,6 +303,15 @@ export function AssignmentWorkflowModal({
       <td className="px-6 py-4 text-sm text-slate-600">{pedido.idioma}</td>
       <td className="px-6 py-4 text-sm text-slate-600">{pedido.tipoTramite || "-"}</td>
       <td className="px-6 py-4">{getBadgeVigencia(pedido.vigencia)}</td>
+      <td className="px-6 py-4 text-center">
+        <button
+          type="button"
+          onClick={() => setPedidoDetalleId(pedido.idPedido)}
+          className="inline-flex items-center rounded-lg p-2 text-slate-400 transition-all hover:bg-gray-100 hover:text-brand-black"
+        >
+          <Eye size={16} />
+        </button>
+      </td>
     </>
   );
 
@@ -492,58 +507,66 @@ export function AssignmentWorkflowModal({
   );
 
   return (
-    <CustomTabbedModal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={titulo}
-      tabs={[
-        {
-          id: "pedidos",
-          label: "Pedidos",
-          content: contenidoPedidos,
-          indicator: cantidadSeleccionados > 0 ? <span className="rounded-full bg-brand-wine/10 px-2 py-0.5 text-xs text-brand-wine">{cantidadSeleccionados}</span> : null,
-        },
-        {
-          id: "asignacion",
-          label: "Asignación",
-          content: contenidoAsignacion,
-          disabled: cantidadSeleccionados === 0,
-          tooltip: cantidadSeleccionados === 0 ? "Seleccione al menos 1 pedido" : undefined,
-        },
-      ]}
-      activeTab={tabActiva}
-      onTabChange={handleCambiarTab}
-      tabVariant="underline"
-      maxWidth="max-w-6xl"
-      zIndex="z-[90]"
-      footer={
-        <div className="flex justify-end gap-4">
-          <CustomButton variant="secondary" size="compact" onClick={onClose} disabled={guardarAsignacionesMutation.isPending}>
-            Cancelar
-          </CustomButton>
-          {tabActiva === "pedidos" ? (
-            <CustomButton
-              variant="wine"
-              size="compact"
-              onClick={() => setTabActiva("asignacion")}
-              disabled={cantidadSeleccionados === 0}
-            >
-              Continuar
+    <>
+      <CustomTabbedModal
+        isOpen={isOpen}
+        onClose={onClose}
+        title={titulo}
+        tabs={[
+          {
+            id: "pedidos",
+            label: "Pedidos",
+            content: contenidoPedidos,
+            indicator: cantidadSeleccionados > 0 ? <span className="rounded-full bg-brand-wine/10 px-2 py-0.5 text-xs text-brand-wine">{cantidadSeleccionados}</span> : null,
+          },
+          {
+            id: "asignacion",
+            label: "Asignación",
+            content: contenidoAsignacion,
+            disabled: cantidadSeleccionados === 0,
+            tooltip: cantidadSeleccionados === 0 ? "Seleccione al menos 1 pedido" : undefined,
+          },
+        ]}
+        activeTab={tabActiva}
+        onTabChange={handleCambiarTab}
+        tabVariant="underline"
+        maxWidth="max-w-6xl"
+        zIndex="z-[90]"
+        footer={
+          <div className="flex justify-end gap-4">
+            <CustomButton variant="secondary" size="compact" onClick={onClose} disabled={guardarAsignacionesMutation.isPending}>
+              Cancelar
             </CustomButton>
-          ) : (
-            <CustomButton
-              variant="wine"
-              size="compact"
-              onClick={() => guardarAsignacionesMutation.mutate()}
-              loading={guardarAsignacionesMutation.isPending}
-              loadingText="Guardando..."
-              disabled={!puedeGuardar}
-            >
-              Guardar Cambios
-            </CustomButton>
-          )}
-        </div>
-      }
-    />
+            {tabActiva === "pedidos" ? (
+              <CustomButton
+                variant="wine"
+                size="compact"
+                onClick={() => setTabActiva("asignacion")}
+                disabled={cantidadSeleccionados === 0}
+              >
+                Continuar
+              </CustomButton>
+            ) : (
+              <CustomButton
+                variant="wine"
+                size="compact"
+                onClick={() => guardarAsignacionesMutation.mutate()}
+                loading={guardarAsignacionesMutation.isPending}
+                loadingText="Guardando..."
+                disabled={!puedeGuardar}
+              >
+                Guardar Cambios
+              </CustomButton>
+            )}
+          </div>
+        }
+      />
+      <CustomPedidoDetalleModal
+        isOpen={pedidoDetalleId !== null}
+        onClose={() => setPedidoDetalleId(null)}
+        pedidoId={pedidoDetalleId}
+        zIndex="z-[110]"
+      />
+    </>
   );
 }
