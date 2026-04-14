@@ -6,12 +6,13 @@ export interface PedidoListEntry {
   investigado: string;
   idIdioma: number;
   idioma: string;
+  tipoTramite?: string;
   logoImprimible: boolean;
   estado: number;
   descripcionEstado: string;
   colorLetra: string;
   colorFondo: string;
-  vigencia: number;
+  vigencia: string | number;
 }
 
 export interface PedidoListResponse {

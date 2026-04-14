@@ -17,18 +17,9 @@ function parseUrl(val: string): { protocol: Protocol; domain: string } {
 }
 
 export function CustomUrlInput({ value, onChange, onBlur, error }: Props) {
-  const parsed = parseUrl(value);
-  const [protocol, setProtocol] = useState<Protocol>(parsed.protocol);
-  const [domain, setDomain] = useState(parsed.domain);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Sync when form resets externally (e.g. modal open/close)
-  useEffect(() => {
-    const p = parseUrl(value);
-    setProtocol(p.protocol);
-    setDomain(p.domain);
-  }, [value]);
+  const { protocol, domain } = parseUrl(value);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -41,7 +32,6 @@ export function CustomUrlInput({ value, onChange, onBlur, error }: Props) {
   }, []);
 
   function handleProtocolChange(p: Protocol) {
-    setProtocol(p);
     setOpen(false);
     onChange(domain ? p + domain : "");
   }
@@ -50,11 +40,8 @@ export function CustomUrlInput({ value, onChange, onBlur, error }: Props) {
     const raw = e.target.value;
     const parsed = parseUrl(raw);
     if (parsed.domain !== raw) {
-      setProtocol(parsed.protocol);
-      setDomain(parsed.domain);
       onChange(parsed.domain ? parsed.protocol + parsed.domain : "");
     } else {
-      setDomain(raw);
       onChange(raw ? protocol + raw : "");
     }
   }

@@ -97,7 +97,11 @@ export function CustomTable<T>({
   const handleSelectRow = (id: number) => {
     if (!onSelectionChange || !selectedIds) return;
     const next = new Set(selectedIds);
-    next.has(id) ? next.delete(id) : next.add(id);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
     onSelectionChange(next);
   };
 
