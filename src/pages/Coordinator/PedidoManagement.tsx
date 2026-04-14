@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
 import { AddPedidoModal } from "@maximilian/components/coordinator/AddPedidoModal";
+import { AssignmentWorkflowModal } from "@maximilian/components/coordinator/AssignmentWorkflowModal";
 import { EditPedidoModal } from "@maximilian/components/coordinator/EditPedidoModal";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { pedidoService } from "@maximilian/services/pedido.service";
@@ -49,6 +50,7 @@ export default function PedidoManagement() {
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
   const [menuDropdownStyle, setMenuDropdownStyle] = useState<React.CSSProperties>({});
   const [pedidoToCancel, setPedidoToCancel] = useState<PedidoListEntry | null>(null);
+  const [modalAsignacion, setModalAsignacion] = useState<{ key: number; pedidosIniciales: PedidoListEntry[] } | null>(null);
 
   const cancelPedidoMutation = useMutation({
     mutationFn: (idPedido: number) => pedidoService.cancel({ idPedido }),
@@ -92,7 +94,7 @@ export default function PedidoManagement() {
     }
   };
 
-  const renderRow = (pedido: PedidoListEntry, _index: number) => (
+  const renderRow = (pedido: PedidoListEntry) => (
     <>
       <td className="px-6 py-4">
         <span className="text-sm font-bold text-brand-black">{pedido.cliente}</span>
@@ -145,7 +147,13 @@ export default function PedidoManagement() {
                 <span>Modificar pedido</span>
               </button>
               <button
-                onClick={() => setActiveMenuId(null)}
+                onClick={() => {
+                  setModalAsignacion({
+                    key: Date.now(),
+                    pedidosIniciales: [pedido],
+                  });
+                  setActiveMenuId(null);
+                }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
               >
                 <UserPlus size={14} />
@@ -231,6 +239,20 @@ export default function PedidoManagement() {
         onClose={() => { setIsEditModalOpen(false); setSelectedPedidoId(null); }}
         pedidoId={selectedPedidoId}
       />
+      {modalAsignacion ? (
+        <AssignmentWorkflowModal
+          key={modalAsignacion.key}
+          isOpen
+          onClose={() => setModalAsignacion(null)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
+            queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+          }}
+          pedidosIniciales={modalAsignacion.pedidosIniciales}
+          tabInicial="asignacion"
+          titulo="Nueva Asignación"
+        />
+      ) : null}
       <ConfirmDeleteModal
         isOpen={pedidoToCancel !== null}
         onClose={() => setPedidoToCancel(null)}

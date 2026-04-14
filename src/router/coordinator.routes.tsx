@@ -37,12 +37,10 @@ export const coordinatorRoutes: RouteObject[] = [
       },
       {
         path: "assignments",
-        element: (
-          <div className="p-8">
-            <h1 className="text-2xl font-bold text-brand-black">Asignaciones</h1>
-            <p className="mt-4 text-gray-600">Página en construcción...</p>
-          </div>
-        ),
+        lazy: () =>
+          import("@maximilian/pages/Coordinator/AssignmentManagement").then((m) => ({
+            Component: m.default,
+          })),
       },
       {
         path: "review",

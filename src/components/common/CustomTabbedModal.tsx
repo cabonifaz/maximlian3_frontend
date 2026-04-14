@@ -7,6 +7,8 @@ interface TabDefinition {
   label: string;
   content: React.ReactNode;
   indicator?: React.ReactNode;
+  tooltip?: string;
+  disabled?: boolean;
 }
 
 interface CustomTabbedModalProps {
@@ -71,35 +73,59 @@ export function CustomTabbedModal({
           {tabVariant === "segmented" ? (
             <div className="bg-gray-50 p-1 rounded-2xl flex gap-1">
               {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
-                  className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
-                    currentTab === tab.id
-                      ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black"
-                      : "text-gray-400 hover:text-gray-600"
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  {tab.indicator}
-                </button>
+                <div key={tab.id} className="group relative flex-1">
+                  <button
+                    onClick={() => handleTabChange(tab.id)}
+                    className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
+                      tab.disabled
+                        ? "cursor-not-allowed text-gray-300"
+                        : "cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99]"
+                    } ${
+                      currentTab === tab.id
+                        ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black"
+                        : tab.disabled
+                          ? "text-gray-300"
+                          : "text-gray-400 hover:text-gray-600"
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    {tab.indicator}
+                  </button>
+                  {tab.tooltip ? (
+                    <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-brand-black px-3 py-2 text-xs font-medium text-brand-white shadow-lg group-hover:block">
+                      {tab.tooltip}
+                    </div>
+                  ) : null}
+                </div>
               ))}
             </div>
           ) : (
             <div className="flex gap-0 border-b border-gray-200">
               {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
-                  className={`px-6 py-3 text-sm font-bold transition-all cursor-pointer border-b-2 -mb-px flex items-center gap-2 ${
-                    currentTab === tab.id
-                      ? "border-brand-black text-brand-black"
-                      : "border-transparent text-gray-400 hover:text-gray-600"
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  {tab.indicator}
-                </button>
+                <div key={tab.id} className="group relative">
+                  <button
+                    onClick={() => handleTabChange(tab.id)}
+                    className={`-mb-px flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-bold transition-all ${
+                      tab.disabled
+                        ? "cursor-not-allowed border-transparent text-gray-300"
+                        : "cursor-pointer"
+                    } ${
+                      currentTab === tab.id
+                        ? "border-brand-black text-brand-black"
+                        : tab.disabled
+                          ? "border-transparent text-gray-300"
+                          : "border-transparent text-gray-400 hover:text-gray-600"
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    {tab.indicator}
+                  </button>
+                  {tab.tooltip ? (
+                    <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-brand-black px-3 py-2 text-xs font-medium text-brand-white shadow-lg group-hover:block">
+                      {tab.tooltip}
+                    </div>
+                  ) : null}
+                </div>
               ))}
             </div>
           )}
