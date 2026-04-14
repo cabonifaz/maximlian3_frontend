@@ -4,9 +4,9 @@ import {
   Filter,
   Plus,
   MoreHorizontal,
-  Eye,
   UserMinus,
   X,
+  Edit,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AddClientModal } from "@maximilian/components/coordinator/AddClientModal";
@@ -288,8 +288,8 @@ export default function ClientManagement() {
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
               >
-                <Eye size={14} />
-                <span>Ver detalle</span>
+                <Edit size={14} />
+                <span>Modificar Cliente</span>
               </button>
               <button
                 onClick={() => {

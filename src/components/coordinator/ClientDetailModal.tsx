@@ -320,7 +320,7 @@ export function ClientDetailModal({
       <CustomTabbedModal
         isOpen={isOpen}
         onClose={onClose}
-        title="Detalle del Cliente"
+        title="Modificar un Cliente"
         subtitle={client && (
           client.idEstado === 1 ? (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600">
