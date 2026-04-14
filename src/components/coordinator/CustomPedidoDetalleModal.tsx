@@ -1,12 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, Download, RotateCcw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedModal";
+import { TarifarioCortaTable } from "@maximilian/components/coordinator/TarifarioCortaTable";
 import { clientService } from "@maximilian/services/client.service";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
-import { MasterTableId, type MasterTableEntry } from "@maximilian/shared/types/master-table.type";
+import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import type { TarifarioCortaEntry } from "@maximilian/shared/types/client.type";
 import type { PedidoArchivoEntry } from "@maximilian/shared/types/pedido.type";
 
@@ -61,47 +64,50 @@ function FileTypeBadge({ ext }: { ext: string }) {
   return <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-bold ${cls}`}>{ext}</span>;
 }
 
-function obtenerTextoTabla(tabla: MasterTableEntry[] | undefined, id?: number | null) {
-  if (id == null) return "-";
-  return tabla?.find((item) => item.num1 === id)?.string1 ?? "-";
-}
-
-function CampoDetalle({ etiqueta, valor }: { etiqueta: string; valor: string }) {
+function CampoSoloLectura({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
-    <div className="rounded-2xl border border-gray-100 bg-gray-50/70 px-4 py-3">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{etiqueta}</p>
-      <p className="mt-1 text-sm font-medium text-brand-black break-words">{valor || "-"}</p>
+    <div className="flex flex-col gap-1.5">
+      <CustomLabel>{etiqueta}</CustomLabel>
+      <input
+        type="text"
+        value={valor || "-"}
+        disabled
+        readOnly
+        className="w-full cursor-not-allowed rounded-xl border border-gray-200 bg-gray-100 px-4 py-2.5 text-sm text-gray-500 outline-none"
+      />
     </div>
   );
 }
 
-function SeccionDetalle({
-  titulo,
-  campos,
-}: {
-  titulo: string;
-  campos: Array<{ etiqueta: string; valor: string }>;
-}) {
+function TextAreaSoloLectura({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
-    <section className="space-y-4">
-      <h3 className="text-base font-bold text-brand-black">{titulo}</h3>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {campos.map((campo) => (
-          <CampoDetalle key={campo.etiqueta} etiqueta={campo.etiqueta} valor={campo.valor} />
-        ))}
-      </div>
-    </section>
+    <div className="flex flex-col gap-1.5">
+      <CustomLabel optional>{etiqueta}</CustomLabel>
+      <textarea
+        value={valor || "-"}
+        disabled
+        readOnly
+        className="min-h-32 w-full resize-none rounded-xl border border-gray-200 bg-gray-100 px-4 py-2.5 text-sm text-gray-500 outline-none"
+      />
+    </div>
   );
 }
 
 function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
   const [descargandoId, setDescargandoId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["pedidoArchivos", "detalle", pedidoId],
-    queryFn: () => pedidoService.listArchivos({ idPedido: pedidoId!, numPag: 1 }),
+    queryKey: ["pedidoArchivos", "detalle", pedidoId, debouncedSearch],
+    queryFn: () => pedidoService.listArchivos({ idPedido: pedidoId!, busqueda: debouncedSearch || undefined, numPag: 1 }),
     enabled: !!pedidoId,
   });
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const handleDescargar = async (archivo: PedidoArchivoEntry) => {
     setDescargandoId(archivo.idPedidoArchivo);
@@ -150,8 +156,16 @@ function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-100">
-      <table className="w-full text-left text-sm">
+    <div className="space-y-3">
+      <input
+        type="text"
+        placeholder="Buscar por nombre..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
+      />
+      <div className="overflow-hidden rounded-2xl border border-gray-100">
+        <table className="w-full text-left text-sm">
         <thead className="bg-white">
           <tr className="border-b border-gray-100">
             <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-400">Nombre</th>
@@ -187,7 +201,8 @@ function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
             );
           })}
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   );
 }
@@ -274,11 +289,6 @@ export function CustomPedidoDetalleModal({
     enabled: isOpen,
   });
 
-  const cliente = useMemo(
-    () => clientes.find((item) => item.idCliente === pedido?.idCliente),
-    [clientes, pedido?.idCliente],
-  );
-
   const tarifarioSeleccionado = useMemo<TarifarioCortaEntry | undefined>(
     () => allTarifas?.find((item) => item.idTarifario === pedido?.idTarifario),
     [allTarifas, pedido?.idTarifario],
@@ -309,26 +319,91 @@ export function CustomPedidoDetalleModal({
     : isError || !pedido
     ? errorContent
     : (
-      <div className="space-y-8">
-        <SeccionDetalle
-          titulo="Cliente"
-          campos={[
-            { etiqueta: "Cliente", valor: cliente?.nombreCliente ?? "-" },
-            { etiqueta: "Nro. documento del cliente", valor: pedido.numeroDocumento || "-" },
-            { etiqueta: "Plantilla de informe", valor: obtenerTextoTabla(plantillasInforme, pedido.idPlantilla) },
-            { etiqueta: "Idioma del informe", valor: obtenerTextoTabla(idiomas, pedido.idIdioma) },
-            { etiqueta: "Logo imprimible", valor: pedido.imprimeLogoSafety ? "Si" : "No" },
-          ]}
-        />
-        <SeccionDetalle
-          titulo="Tarifa"
-          campos={[
-            { etiqueta: "Pais del informe", valor: obtenerTextoTabla(paises, tarifarioSeleccionado?.idPais) },
-            { etiqueta: "Clase de informe", valor: obtenerTextoTabla(clasesInforme, tarifarioSeleccionado?.idProducto ?? pedido.idClaseInforme) },
-            { etiqueta: "Tipo de tramite", valor: tarifarioSeleccionado?.tipoTramite ?? obtenerTextoTabla(tiposTramite, tarifarioSeleccionado?.idTipoTramite) },
-            { etiqueta: "Tarifa", valor: tarifarioSeleccionado ? `${tarifarioSeleccionado.moneda} ${tarifarioSeleccionado.precio}` : "-" },
-          ]}
-        />
+      <div className="flex gap-6">
+        <div className="flex flex-1 flex-col gap-5">
+          <SearchableSelect
+            label="Cliente"
+            options={clientes.map((item) => ({
+              idEmpresa: 0,
+              idTablaMaestra: null,
+              idMaestro: 0,
+              descripcion: "",
+              num1: item.idCliente,
+              num2: null,
+              num3: null,
+              string1: item.nombreCliente,
+              string2: null,
+              string3: null,
+              date1: null,
+              date2: null,
+              date3: null,
+            }))}
+            value={pedido.idCliente}
+            onChange={() => {}}
+            disabled
+          />
+          <CampoSoloLectura etiqueta="Nro. documento del cliente" valor={pedido.numeroDocumento || "-"} />
+          <SearchableSelect
+            label="Plantilla de Informe"
+            options={plantillasInforme}
+            value={pedido.idPlantilla}
+            onChange={() => {}}
+            disabled
+          />
+          <SearchableSelect
+            label="Idioma del Informe"
+            options={idiomas}
+            value={pedido.idIdioma}
+            onChange={() => {}}
+            disabled
+          />
+          <div className="flex flex-col gap-1.5">
+            <CustomLabel>Logo Imprimible</CustomLabel>
+            <input
+              type="checkbox"
+              checked={pedido.imprimeLogoSafety}
+              disabled
+              readOnly
+              className="h-4 w-4 cursor-not-allowed accent-brand-wine"
+            />
+          </div>
+        </div>
+
+        <div className="flex min-h-120 flex-1 flex-col gap-5">
+          <SearchableSelect
+            label="Pais del Informe"
+            options={paises}
+            value={tarifarioSeleccionado?.idPais}
+            onChange={() => {}}
+            disabled
+          />
+          <SearchableSelect
+            label="Clases de Informe"
+            options={clasesInforme}
+            value={tarifarioSeleccionado?.idProducto ?? pedido.idClaseInforme}
+            onChange={() => {}}
+            disabled
+          />
+          <SearchableSelect
+            label="Tipo de Tramite"
+            options={tiposTramite}
+            value={tarifarioSeleccionado?.idTipoTramite}
+            onChange={() => {}}
+            disabled
+          />
+          <div className="flex flex-col gap-1">
+            <CustomLabel>Tarifa</CustomLabel>
+            <TarifarioCortaTable
+              idCliente={pedido.idCliente}
+              idTipoProducto={tarifarioSeleccionado?.idProducto ?? pedido.idClaseInforme}
+              idTipoTramite={tarifarioSeleccionado?.idTipoTramite}
+              idPais={tarifarioSeleccionado?.idPais}
+              selectedIdTarifario={pedido.idTarifario}
+              onTarifarioSelect={() => {}}
+              soloLectura
+            />
+          </div>
+        </div>
       </div>
     );
 
@@ -337,28 +412,48 @@ export function CustomPedidoDetalleModal({
     : isError || !pedido
     ? errorContent
     : (
-      <div className="space-y-8">
-        <SeccionDetalle
-          titulo="Informacion principal"
-          campos={[
-            { etiqueta: "Investigado", valor: pedido.investigarRazonSocialNombres || "-" },
-            { etiqueta: "Tipo de persona", valor: obtenerTextoTabla(tiposPersona, pedido.idTipoPersona) },
-            { etiqueta: "Nro. documento", valor: pedido.numeroDocumentoInvestigado || "-" },
-            { etiqueta: "Nro. de referencia", valor: pedido.numReferencia || "-" },
-            { etiqueta: "Comentario", valor: pedido.comentario || "-" },
-            { etiqueta: "Codigo", valor: pedido.codigo || "-" },
-            { etiqueta: "Atendido por", valor: obtenerTextoTabla(empresasAtencion, pedido.idCompania) },
-            { etiqueta: "Desde", valor: formatearFecha(pedido.fchDesde) },
-            { etiqueta: "Hasta", valor: formatearFecha(pedido.fchHasta) },
-            { etiqueta: "Monto credito", valor: formatearMonto(pedido.montoCredito, tarifarioSeleccionado?.simboloMoneda) },
-            {
-              etiqueta: "Plazo credito",
-              valor: pedido.plazoCredito != null
-                ? `${pedido.plazoCredito} ${obtenerTextoTabla(tiposPlazoCredito, pedido.idTipoPlazoCredito)}`
-                : "-",
-            },
-          ]}
-        />
+      <div className="flex gap-6">
+        <div className="flex flex-1 flex-col gap-5">
+          <CampoSoloLectura etiqueta="Investigado" valor={pedido.investigarRazonSocialNombres || "-"} />
+          <SearchableSelect
+            label="Tipo de Persona"
+            options={tiposPersona}
+            value={pedido.idTipoPersona}
+            onChange={() => {}}
+            disabled
+          />
+          <CampoSoloLectura etiqueta="Nro. Documento" valor={pedido.numeroDocumentoInvestigado || "-"} />
+          <CampoSoloLectura etiqueta="Nro. de Referencia" valor={pedido.numReferencia || "-"} />
+          <TextAreaSoloLectura etiqueta="Comentario" valor={pedido.comentario || "-"} />
+        </div>
+
+        <div className="flex flex-1 flex-col gap-5">
+          <CampoSoloLectura etiqueta="Codigo" valor={pedido.codigo || "-"} />
+          <SearchableSelect
+            label="Atendido por"
+            options={empresasAtencion}
+            value={pedido.idCompania}
+            onChange={() => {}}
+            disabled
+          />
+          <CampoSoloLectura etiqueta="Desde" valor={formatearFecha(pedido.fchDesde)} />
+          <CampoSoloLectura etiqueta="Hasta" valor={formatearFecha(pedido.fchHasta)} />
+          <CampoSoloLectura etiqueta="Monto Credito" valor={formatearMonto(pedido.montoCredito, tarifarioSeleccionado?.simboloMoneda)} />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <CampoSoloLectura etiqueta="Plazo Credito" valor={pedido.plazoCredito != null ? String(pedido.plazoCredito) : "-"} />
+            </div>
+            <div className="w-40">
+              <SearchableSelect
+                label="Tipo"
+                options={tiposPlazoCredito}
+                value={pedido.idTipoPlazoCredito ?? undefined}
+                onChange={() => {}}
+                disabled
+              />
+            </div>
+          </div>
+        </div>
       </div>
     );
 
