@@ -203,10 +203,10 @@ export function AddClientModal({
         ? (data.tipoContactoNuevo ?? String(tipoContactoId))
         : getLabel(MasterTableId.TIPO_CONTACTO, tipoContactoId),
       tipoContactoNuevo: data.tipoContactoNuevo,
-      codigoContacto: data.codigoContacto,
+      codigoContacto: data.codigoContacto ?? "",
       nombre: data.nombre,
       correo: data.correo,
-      telefono: data.telefono,
+      telefono: data.telefono ?? "",
       areaTrabajoId,
       areaTrabajoLabel: getLabel(MasterTableId.AREA_TRABAJO, areaTrabajoId),
       enviarCorreo: data.enviarCorreo,
@@ -302,7 +302,7 @@ export function AddClientModal({
                   />
 
                   <div className="space-y-2">
-                    <CustomLabel required>Dirección</CustomLabel>
+                    <CustomLabel optional>Dirección</CustomLabel>
                     <input
                       {...infoRegister("direccion")}
                       type="text"
@@ -332,7 +332,7 @@ export function AddClientModal({
                   </div>
 
                   <div className="space-y-2">
-                    <CustomLabel required>Teléfono</CustomLabel>
+                    <CustomLabel optional>Teléfono</CustomLabel>
                     <input
                       {...infoRegister("telefono")}
                       type="text"
