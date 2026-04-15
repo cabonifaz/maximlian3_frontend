@@ -56,10 +56,14 @@ export interface SaveAssignmentsRequest {
 }
 
 export interface CreateAssignmentRequest {
+  idsPedido: number[];
+  asignados: CreateAssignmentAssignee[];
+}
+
+export interface CreateAssignmentAssignee {
   idUsuarioAsignado: number;
   idRolAsignado: number;
   idEstado: number;
-  idsPedido: number[];
 }
 
 export interface UpdateAssignmentRequest {

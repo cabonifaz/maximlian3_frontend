@@ -176,6 +176,7 @@ export function AssignmentWorkflowModal({
     queryFn: () =>
       assignmentService.listCandidates({
         role: rolActivo!,
+        filtro: busquedaUsuarioDebounced || undefined,
         idiomasPedido,
       }),
     enabled: isOpen && tabActiva === "asignacion" && rolActivo !== null,
@@ -223,25 +224,6 @@ export function AssignmentWorkflowModal({
       }),
     );
   }, [candidatosAnalista, candidatosTraductor]);
-
-  const candidatosFiltrados = useMemo(() => {
-    const lista = candidatos ?? [];
-    const termino = normalizarBusqueda(terminoBusquedaUsuario);
-
-    if (!termino) return lista;
-
-    return lista.filter((candidate) => {
-      const nombreCompleto = normalizarBusqueda(candidate.nombre);
-      const nombres = normalizarBusqueda(candidate.nombres || "");
-      const apellidos = normalizarBusqueda(candidate.apellidos || "");
-
-      return (
-        nombreCompleto.includes(termino) ||
-        nombres.includes(termino) ||
-        apellidos.includes(termino)
-      );
-    });
-  }, [candidatos, terminoBusquedaUsuario]);
 
   const guardarAsignacionesMutation = useMutation({
     mutationFn: () =>
@@ -397,8 +379,8 @@ export function AssignmentWorkflowModal({
           <div className="flex justify-center py-10">
             <Loader2 className="h-8 w-8 animate-spin text-brand-wine" />
           </div>
-        ) : candidatosFiltrados.length ? (
-          candidatosFiltrados.map((candidate) => (
+        ) : candidatos?.length ? (
+          candidatos.map((candidate) => (
             <div
               key={candidate.idUsuario}
               className="flex w-full items-center justify-between gap-6 rounded-2xl border border-gray-100 px-6 py-4 transition-colors hover:bg-gray-50"
