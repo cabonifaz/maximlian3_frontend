@@ -98,7 +98,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             />
 
             <div className="space-y-2">
-              <CustomLabel required>Código de Contacto</CustomLabel>
+              <CustomLabel optional>Código de Contacto</CustomLabel>
               <input
                 {...register("codigoContacto")}
                 type="text"
@@ -131,7 +131,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             </div>
 
             <div className="space-y-2">
-              <CustomLabel required>Teléfono</CustomLabel>
+              <CustomLabel optional>Teléfono</CustomLabel>
               <input
                 {...register("telefono")}
                 type="text"

@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { rateSchema, type RateFormData } from "@maximilian/schemas";
@@ -7,6 +8,7 @@ import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { masterTableService } from "@maximilian/services/masterTable.service";
 
 interface AddRateModalProps {
   isOpen: boolean;
@@ -34,9 +36,24 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
   const watchedMoneda = watch("moneda");
   const watchedTramite = watch("tramite");
 
+  const { data: productos } = useQuery({
+    queryKey: ["masterTable", MasterTableId.PRODUCTO],
+    queryFn: () => masterTableService.list(MasterTableId.PRODUCTO),
+    enabled: isOpen,
+    staleTime: Infinity,
+  });
+
   useEffect(() => {
     reset(defaultValues ?? ({} as RateFormData));
-  }, [isOpen]);
+  }, [defaultValues, isOpen, reset]);
+
+  useEffect(() => {
+    if (!isOpen || defaultValues?.producto || watchedProducto || productos?.length !== 1) return;
+    const productoUnico = productos[0]?.num1;
+    if (productoUnico != null) {
+      setValue("producto", productoUnico, { shouldValidate: true });
+    }
+  }, [defaultValues?.producto, isOpen, productos, setValue, watchedProducto]);
 
 
   if (!isOpen) return null;
