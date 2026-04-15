@@ -17,7 +17,8 @@ import type {
 
 type RegistroGenerico = Record<string, unknown>;
 
-const ESTADO_ASIGNACION_ACTIVA = 1;
+const ESTADO_ASIGNACION_ANALISTA = 1;
+const ESTADO_ASIGNACION_TRADUCTOR = 2;
 const IDS_ROL_POR_TIPO: Record<AssignmentRole, number> = {
   translator: 3,
   analyst: 4,
@@ -261,8 +262,8 @@ function normalizarListaAsignaciones(resultado: unknown): AssignmentListResponse
 function construirPayloadCreacion(
   idPedidos: number[],
   assignments: AssignmentRoleSelection[],
-): CreateAssignmentRequest[] {
-  return assignments
+): CreateAssignmentRequest {
+  const asignados = assignments
     .filter((assignment) => (assignment.assignee?.idUsuario ?? 0) > 0)
     .map((assignment) => {
       const idRolAsignado = assignment.assignee?.idRolAsignado ?? IDS_ROL_POR_TIPO[assignment.role];
@@ -274,10 +275,17 @@ function construirPayloadCreacion(
       return {
         idUsuarioAsignado: assignment.assignee!.idUsuario,
         idRolAsignado,
-        idEstado: ESTADO_ASIGNACION_ACTIVA,
-        idsPedido: idPedidos,
+        idEstado:
+          assignment.role === "translator"
+            ? ESTADO_ASIGNACION_TRADUCTOR
+            : ESTADO_ASIGNACION_ANALISTA,
       };
     });
+
+  return {
+    idsPedido: idPedidos,
+    asignados,
+  };
 }
 
 export const assignmentService = {
@@ -359,9 +367,9 @@ export const assignmentService = {
   },
 
   saveAssignments: async ({ idPedidos, assignments }: SaveAssignmentsRequest): Promise<AssignmentRoleSelection[]> => {
-    const payloads = construirPayloadCreacion(idPedidos, assignments);
+    const payload = construirPayloadCreacion(idPedidos, assignments);
 
-    await Promise.all(payloads.map((payload) => assignmentService.create(payload)));
+    await assignmentService.create(payload);
 
     return assignments;
   },
