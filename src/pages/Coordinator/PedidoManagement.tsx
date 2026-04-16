@@ -214,6 +214,7 @@ export default function PedidoManagement() {
             options={ESTADO_OPTIONS}
             value={filterEstados}
             onChange={handleEstadosChange}
+            resumirSelecciones
             placeholder="Todos los estados"
           />
 
