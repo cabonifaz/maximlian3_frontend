@@ -376,7 +376,7 @@ export function ClientDetailModal({
                   />
 
                   <div className="space-y-2">
-                    <CustomLabel required>Dirección</CustomLabel>
+                    <CustomLabel optional>Dirección</CustomLabel>
                     <input
                       {...infoRegister("direccion")}
                       type="text"
@@ -396,7 +396,7 @@ export function ClientDetailModal({
                   </div>
 
                   <div className="space-y-2">
-                    <CustomLabel required>Teléfono</CustomLabel>
+                    <CustomLabel optional>Teléfono</CustomLabel>
                     <input
                       {...infoRegister("telefono")}
                       type="text"

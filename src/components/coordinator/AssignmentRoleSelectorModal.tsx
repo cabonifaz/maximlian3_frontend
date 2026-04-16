@@ -30,6 +30,14 @@ function getBadgeClasses(count: number) {
   return "bg-orange-50 text-orange-500";
 }
 
+function normalizarBusqueda(valor: string) {
+  return valor
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
 export function AssignmentRoleSelectorModal({
   isOpen,
   role,
@@ -41,14 +49,24 @@ export function AssignmentRoleSelectorModal({
   const debouncedSearch = useDebounce(searchTerm, 250);
 
   const { data: candidates, isLoading } = useQuery({
-    queryKey: ["assignment-candidates", role, debouncedSearch, idiomasPedido],
+    queryKey: ["assignment-candidates", role, idiomasPedido],
     queryFn: () =>
       assignmentService.listCandidates({
         role,
-        filtro: debouncedSearch || undefined,
         idiomasPedido,
       }),
     enabled: isOpen,
+  });
+
+  const candidatosFiltrados = (candidates ?? []).filter((candidate) => {
+    const terminoNormalizado = normalizarBusqueda(debouncedSearch);
+    if (!terminoNormalizado) return true;
+
+    return (
+      normalizarBusqueda(candidate.nombre).includes(terminoNormalizado)
+      || normalizarBusqueda(candidate.nombres ?? "").includes(terminoNormalizado)
+      || normalizarBusqueda(candidate.apellidos ?? "").includes(terminoNormalizado)
+    );
   });
 
   if (!isOpen) return null;
@@ -92,8 +110,8 @@ export function AssignmentRoleSelectorModal({
           <div className="space-y-3">
             {isLoading ? (
               <div className="py-10 text-center text-sm text-gray-400">Cargando usuarios...</div>
-            ) : candidates?.length ? (
-              candidates.map((candidate) => (
+            ) : candidatosFiltrados.length ? (
+              candidatosFiltrados.map((candidate) => (
                 <div
                   key={candidate.idUsuario}
                   className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 px-4 py-4 transition-colors hover:bg-gray-50"
