@@ -1,6 +1,5 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { rateSchema, type RateFormData } from "@maximilian/schemas";
@@ -8,7 +7,6 @@ import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
-import { masterTableService } from "@maximilian/services/masterTable.service";
 
 interface AddRateModalProps {
   isOpen: boolean;
@@ -36,24 +34,9 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
   const watchedMoneda = watch("moneda");
   const watchedTramite = watch("tramite");
 
-  const { data: productos } = useQuery({
-    queryKey: ["masterTable", MasterTableId.PRODUCTO],
-    queryFn: () => masterTableService.list(MasterTableId.PRODUCTO),
-    enabled: isOpen,
-    staleTime: Infinity,
-  });
-
   useEffect(() => {
     reset(defaultValues ?? ({} as RateFormData));
   }, [defaultValues, isOpen, reset]);
-
-  useEffect(() => {
-    if (!isOpen || defaultValues?.producto || watchedProducto || productos?.length !== 1) return;
-    const productoUnico = productos[0]?.num1;
-    if (productoUnico != null) {
-      setValue("producto", productoUnico, { shouldValidate: true });
-    }
-  }, [defaultValues?.producto, isOpen, productos, setValue, watchedProducto]);
 
 
   if (!isOpen) return null;
@@ -82,6 +65,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               idMaster={MasterTableId.PRODUCTO}
               value={watchedProducto as number | undefined}
               onChange={(val) => setValue("producto", val)}
+              autoSeleccionarOpcionUnica
               error={errors.producto?.message}
               placeholder="Selecciona un producto"
             />
@@ -92,6 +76,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               idMaster={MasterTableId.PAIS}
               value={watchedPais as number | undefined}
               onChange={(val) => setValue("pais", val)}
+              autoSeleccionarOpcionUnica
               error={errors.pais?.message}
               placeholder="Selecciona un país"
             />
@@ -102,6 +87,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               idMaster={MasterTableId.MONEDA}
               value={watchedMoneda as number | undefined}
               onChange={(val) => setValue("moneda", val)}
+              autoSeleccionarOpcionUnica
               error={errors.moneda?.message}
               placeholder="Selecciona moneda"
             />
@@ -112,6 +98,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               idMaster={MasterTableId.TIPO_TRAMITE}
               value={watchedTramite as number | undefined}
               onChange={(val) => setValue("tramite", val)}
+              autoSeleccionarOpcionUnica
               error={errors.tramite?.message}
               placeholder="Selecciona trámite"
             />

@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, type ReactNode } from "react";
 import { Search, Loader2, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useSeleccionAutomaticaOpcionUnica } from "@maximilian/hooks/useSeleccionAutomaticaOpcionUnica";
 import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { CustomLabel } from "./CustomLabel";
@@ -20,6 +21,7 @@ export interface SearchableSelectProps {
   onOpen?: () => void;
   onAddNew?: (searchTerm: string) => void;
   displayValue?: string;
+  autoSeleccionarOpcionUnica?: boolean;
 }
 
 export function SearchableSelect({
@@ -37,6 +39,7 @@ export function SearchableSelect({
   onOpen,
   onAddNew,
   displayValue,
+  autoSeleccionarOpcionUnica = false,
 }: SearchableSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -46,7 +49,7 @@ export function SearchableSelect({
   const { data: fetchedOptions, isLoading: isMasterLoading } = useQuery({
     queryKey: ["masterTable", idMaster],
     queryFn: () => masterTableService.list(idMaster!),
-    enabled: idMaster !== undefined && isOpen,
+    enabled: idMaster !== undefined && (isOpen || autoSeleccionarOpcionUnica),
     staleTime: Infinity,
   });
 
@@ -63,6 +66,13 @@ export function SearchableSelect({
   }, [resolvedOptions, searchTerm]);
 
   const selectedOption = resolvedOptions?.find((opt) => opt.num1 === value);
+
+  useSeleccionAutomaticaOpcionUnica({
+    activo: autoSeleccionarOpcionUnica,
+    opciones: resolvedOptions,
+    valor: typeof value === "number" ? value : undefined,
+    onSeleccionar: onChange,
+  });
 
   const handleToggle = () => {
     if (disabled) return;

@@ -77,6 +77,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
               onChange={(val) =>
                 setValue("tipoPersona", val, { shouldValidate: true })
               }
+              autoSeleccionarOpcionUnica
               error={errors.tipoPersona?.message}
             />
 
@@ -89,6 +90,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
                 setValue("tipoContacto", val, { shouldValidate: true });
                 if (val !== 0) setValue("tipoContactoNuevo", undefined);
               }}
+              autoSeleccionarOpcionUnica
               onAddNew={(term) => {
                 setValue("tipoContacto", 0, { shouldValidate: true });
                 setValue("tipoContactoNuevo", term, { shouldValidate: true });
@@ -150,6 +152,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
                 onChange={(val) =>
                   setValue("areaTrabajo", val, { shouldValidate: true })
                 }
+                autoSeleccionarOpcionUnica
                 error={errors.areaTrabajo?.message}
               />
             </div>

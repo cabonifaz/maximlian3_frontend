@@ -193,6 +193,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
           options={clienteOptions}
           value={idCliente}
           onChange={handleClienteChange}
+          autoSeleccionarOpcionUnica
           onOpen={() => setClientesEnabled(true)}
           loading={isLoadingClientes}
           placeholder="Seleccione"
@@ -215,6 +216,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
           idMaster={MasterTableId.PLANTILLA_INFORME}
           value={idPlantillaInforme}
           onChange={(val) => setValue("idPlantillaInforme", val as number, { shouldValidate: true })}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
           error={errors.idPlantillaInforme?.message}
@@ -224,6 +226,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
           idMaster={MasterTableId.IDIOMA}
           value={idIdioma}
           onChange={(val) => setValue("idIdioma", val as number, { shouldValidate: true })}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
           error={errors.idIdioma?.message}
@@ -249,6 +252,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
           idMaster={MasterTableId.PAIS}
           value={idPais}
           onChange={(val) => setValue("idPais", val as number, { shouldValidate: true })}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           error={errors.idPais?.message}
         />
@@ -257,6 +261,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
           idMaster={MasterTableId.CLASE_INFORME}
           value={idClaseInforme}
           onChange={(val) => setValue("idClaseInforme", val as number, { shouldValidate: true })}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
           error={errors.idClaseInforme?.message}
@@ -266,6 +271,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, selectedIdTarifar
           idMaster={MasterTableId.TIPO_TRAMITE}
           value={idTipoTramite}
           onChange={(val) => setValue("idTipoTramite", val as number, { shouldValidate: true })}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
           error={errors.idTipoTramite?.message}
@@ -326,15 +332,6 @@ function InfoPedidoTab({ register, setValue, watch, clearErrors, trigger, errors
   });
 
   useEffect(() => {
-    if (empresasAtencion && !idEmpresaAtencion) {
-      const defaultOption = empresasAtencion.find((o) => o.num1 === 1);
-      if (defaultOption?.num1 != null) {
-        setValue("idEmpresaAtencion", defaultOption.num1, { shouldValidate: false });
-      }
-    }
-  }, [empresasAtencion, idEmpresaAtencion, setValue]);
-
-  useEffect(() => {
     if (autogenerarCodigo) {
       setValue("codigo", "", { shouldValidate: false });
       clearErrors("codigo");
@@ -360,6 +357,7 @@ function InfoPedidoTab({ register, setValue, watch, clearErrors, trigger, errors
           idMaster={MasterTableId.TIPO_PERSONA}
           value={idTipoPersona}
           onChange={(val) => setValue("idTipoPersona", val as number, { shouldValidate: true })}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
           error={errors.idTipoPersona?.message}
@@ -420,6 +418,7 @@ function InfoPedidoTab({ register, setValue, watch, clearErrors, trigger, errors
           options={empresasAtencion}
           value={idEmpresaAtencion}
           onChange={(val) => setValue("idEmpresaAtencion", val as number, { shouldValidate: true })}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
           error={errors.idEmpresaAtencion?.message}
@@ -472,6 +471,7 @@ function InfoPedidoTab({ register, setValue, watch, clearErrors, trigger, errors
                   const entry = cached?.find((t) => t.num1 === val);
                   setValue("tipoPlazoCredito", entry?.string1 ?? "", { shouldValidate: false });
                 }}
+                autoSeleccionarOpcionUnica
                 placeholder="Tipo"
               />
             </div>
@@ -637,6 +637,7 @@ function AnexosTab({ files, onFilesChange, missingTipoIds, onClearMissingTipo }:
                         options={tipoOptions}
                         value={f.tipoId}
                         onChange={(val) => handleTipoChange(f.id, val)}
+                        autoSeleccionarOpcionUnica
                         placeholder="— Seleccione —"
                         error={missingTipoIds.has(f.id) ? "Requerido" : undefined}
                       />
