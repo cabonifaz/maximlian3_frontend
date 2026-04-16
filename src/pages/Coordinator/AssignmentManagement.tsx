@@ -7,7 +7,6 @@ import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearch
 import { AssignmentWorkflowModal } from "@maximilian/components/coordinator/AssignmentWorkflowModal";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { assignmentService } from "@maximilian/services/assignment.service";
-import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import type { AssignmentOrderEntry } from "@maximilian/shared/types/assignment.type";
 import type { PedidoListEntry } from "@maximilian/shared/types/pedido.type";
 
@@ -20,15 +19,6 @@ const ASSIGNMENT_COLUMNS = [
   { label: "Vencimiento" },
   { label: "Acciones", className: "text-right" },
 ];
-
-const OPCIONES_ROL = [
-  { num1: 1, string1: "Analista" },
-  { num1: 2, string1: "Traductor" },
-] as MasterTableEntry[];
-
-function normalizarTexto(valor?: string) {
-  return (valor || "").trim().toLowerCase();
-}
 
 function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: string) {
   return (
@@ -123,7 +113,6 @@ export default function AssignmentManagement() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [filterRoles, setFilterRoles] = useState<number[]>([]);
   const [filterEstados, setFilterEstados] = useState<number[]>([]);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
   const [menuDropdownStyle, setMenuDropdownStyle] = useState<React.CSSProperties>({});
@@ -166,25 +155,15 @@ export default function AssignmentManagement() {
 
   const asignacionesFiltradas = useMemo(() => {
     return (data?.lstPedido ?? []).filter((asignacion) => {
-      const pasaRol =
-        filterRoles.length === 0 ||
-        filterRoles.some((rol) => {
-          if (rol === 1) return normalizarTexto(asignacion.analista) !== "" && asignacion.analista !== "-";
-          if (rol === 2) return normalizarTexto(asignacion.traductor) !== "" && asignacion.traductor !== "-";
-          return true;
-        });
-
-      if (!pasaRol) return false;
-
       const pasaEstado =
         filterEstados.length === 0 ||
         filterEstados.some((estado) => asignacion.idEstado === estado);
 
       return pasaEstado;
     });
-  }, [data?.lstPedido, filterEstados, filterRoles]);
+  }, [data?.lstPedido, filterEstados]);
 
-  const usandoFiltroLocal = filterRoles.length > 0 || filterEstados.length > 0;
+  const usandoFiltroLocal = filterEstados.length > 0;
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= (data?.totalPaginas || 1)) {
@@ -309,18 +288,6 @@ export default function AssignmentManagement() {
 
       <div className="flex flex-wrap items-center gap-3">
         <MultiSearchableSelect
-          label="Rol"
-          hideLabel
-          triggerIcon={Filter}
-          options={OPCIONES_ROL}
-          value={filterRoles}
-          onChange={(ids) => {
-            setFilterRoles(ids);
-            setCurrentPage(1);
-          }}
-          placeholder="Filtrar por rol"
-        />
-        <MultiSearchableSelect
           label="Estado"
           hideLabel
           triggerIcon={Filter}
@@ -330,6 +297,7 @@ export default function AssignmentManagement() {
             setFilterEstados(ids);
             setCurrentPage(1);
           }}
+          resumirSelecciones
           placeholder="Filtrar por estado"
         />
       </div>
