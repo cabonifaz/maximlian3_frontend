@@ -36,7 +36,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
 
   useEffect(() => {
     reset(defaultValues ?? ({} as RateFormData));
-  }, [isOpen]);
+  }, [defaultValues, isOpen, reset]);
 
 
   if (!isOpen) return null;
@@ -65,6 +65,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               idMaster={MasterTableId.PRODUCTO}
               value={watchedProducto as number | undefined}
               onChange={(val) => setValue("producto", val)}
+              autoSeleccionarOpcionUnica
               error={errors.producto?.message}
               placeholder="Selecciona un producto"
             />
@@ -75,6 +76,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               idMaster={MasterTableId.PAIS}
               value={watchedPais as number | undefined}
               onChange={(val) => setValue("pais", val)}
+              autoSeleccionarOpcionUnica
               error={errors.pais?.message}
               placeholder="Selecciona un país"
             />
@@ -85,6 +87,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               idMaster={MasterTableId.MONEDA}
               value={watchedMoneda as number | undefined}
               onChange={(val) => setValue("moneda", val)}
+              autoSeleccionarOpcionUnica
               error={errors.moneda?.message}
               placeholder="Selecciona moneda"
             />
@@ -95,6 +98,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               idMaster={MasterTableId.TIPO_TRAMITE}
               value={watchedTramite as number | undefined}
               onChange={(val) => setValue("tramite", val)}
+              autoSeleccionarOpcionUnica
               error={errors.tramite?.message}
               placeholder="Selecciona trámite"
             />

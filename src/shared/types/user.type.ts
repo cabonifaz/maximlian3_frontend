@@ -2,8 +2,8 @@ export type CreateUserRequest = {
   nombres: string;
   apellidoPaterno: string;
   apellidoMaterno: string | null;
-  usernameCreacion: string;
-  email: string;
+  usuarioCreacion: string;
+  correo: string;
   roles: number[];
   idiomas: number[];
 };
@@ -16,7 +16,7 @@ export type UserDetails = {
   nombres: string;
   apellidoPaterno: string;
   apellidoMaterno: string | null;
-  email: string;
+  correo: string;
   roles: number[];
   idiomas: number[];
 };
@@ -45,8 +45,8 @@ export type UserListEntry = {
   nombres: string;
   apellidoPaterno: string;
   apellidoMaterno: string | null;
-  email: string;
-  username: string;
+  correo: string;
+  usuario: string;
   roles: string;
   estado: string;
 };

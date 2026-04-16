@@ -16,7 +16,7 @@ export type CreateClientContactRequest = {
   tipoContacto?: string | null;
   areaTrabajo: number;
   telefono: string;
-  email: string;
+  correo: string;
   codigo: string | null;
   enviarCorreo: boolean;
 };
@@ -28,7 +28,7 @@ export type CreateClientRequest = {
   idPais: number;
   idRegistroTributario: number;
   numRegistroTributario: string;
-  email: string;
+  correo: string;
   idEstado: number;
   webSite: string;
   telefono: string;
@@ -62,7 +62,7 @@ export type ClientDetail = {
   idPais: number;
   idRegistroTributario: number;
   numRegistroTributario: string | null;
-  email: string | null;
+  correo: string | null;
   webSite: string | null;
   telefono: string | null;
   fax: string | null;
@@ -94,11 +94,11 @@ export type ClientListRequest = {
 export type ClientListEntry = {
   idCliente: number;
   nombre: string;
-  idPais: number;
-  idTipoPersona: number;
-  email: string;
+  correo: string;
   telefono: string;
-  idEstado: number;
+  pais: string;
+  tipoPersona: string;
+  estado: string;
 };
 
 export type ClientListResponse = {
@@ -138,7 +138,7 @@ export type ContactoListEntry = {
   tipoContacto: string;
   areaTrabajo: string;
   telefono: string;
-  email: string;
+  correo: string;
   enviarCorreo: boolean;
 };
 
@@ -172,7 +172,7 @@ export type CreateContactoRequest = {
   tipoContacto?: string | null;
   idAreaTrabajo: number;
   telefono: string | null;
-  email: string | null;
+  correo: string | null;
   enviarCorreo: boolean;
 };
 
@@ -186,7 +186,7 @@ export type UpdateContactoRequest = {
   tipoContacto?: string | null;
   idAreaTrabajo: number;
   telefono: string | null;
-  email: string | null;
+  correo: string | null;
   enviarCorreo: boolean;
 };
 
@@ -217,7 +217,7 @@ export type ContactoDetail = {
   idTipoContacto: number;
   idAreaTrabajo: number;
   telefono: string | null;
-  email: string | null;
+  correo: string | null;
   enviarCorreo: boolean;
 };
 

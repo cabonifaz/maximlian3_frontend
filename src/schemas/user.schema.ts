@@ -5,10 +5,10 @@ export const userSchema = z
     firstName: z.string().min(1, "El nombre es requerido"),
     paternalLastName: z.string().min(1, "El apellido paterno es requerido"),
     maternalLastName: z.string().optional(),
-    usernameCreacion: z
+    usuarioCreacion: z
       .string()
       .min(3, "El nombre de usuario debe tener al menos 3 caracteres"),
-    email: z.string().email("Email inválido"),
+    correo: z.string().email("Email inválido"),
     roles: z
       .array(z.union([z.string(), z.number()]))
       .min(1, "Debe seleccionar al menos un rol"),

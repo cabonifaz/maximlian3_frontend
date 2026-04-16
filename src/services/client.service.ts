@@ -216,13 +216,13 @@ export const clientService = {
 
   listTarifarioCorta: async (params: {
     idCliente: number;
-    idTipoProducto?: number;
-    idTipoTramite?: number;
-    idPais?: number;
+    IdTipoProducto?: number;
+    IdTipoTramite?: number;
+    IdPais?: number;
   }): Promise<TarifarioCortaEntry[]> => {
     const { data } = await maximilianService.get<ApiResponse<TarifarioCortaResponse>>(
       "/api/Tarifario/listaCorta",
-      { params }
+      { params: { idCliente: params.idCliente, IdTipoProducto: params.IdTipoProducto, IdTipoTramite: params.IdTipoTramite, IdPais: params.IdPais } }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
     return data.result.lstTarifario;

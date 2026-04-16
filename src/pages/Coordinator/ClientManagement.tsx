@@ -4,9 +4,9 @@ import {
   Filter,
   Plus,
   MoreHorizontal,
-  Eye,
   UserMinus,
   X,
+  Edit,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AddClientModal } from "@maximilian/components/coordinator/AddClientModal";
@@ -89,21 +89,6 @@ export default function ClientManagement() {
     queryFn: () => masterTableService.list(MasterTableId.ESTADO_CLIENTE),
   });
 
-  const { data: tiposPersona } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_PERSONA],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_PERSONA),
-  });
-
-  const paisMap = useMemo(
-    () => Object.fromEntries((paises ?? []).map((e) => [e.num1, e.string1])),
-    [paises],
-  );
-
-  const tipoPersonaMap = useMemo(
-    () =>
-      Object.fromEntries((tiposPersona ?? []).map((e) => [e.num1, e.string1])),
-    [tiposPersona],
-  );
 
   const createClientMutation = useMutation({
     mutationFn: ({ data, contacts, rates }: ClientMutationParams) => {
@@ -114,12 +99,12 @@ export default function ClientManagement() {
         idPais: data.pais as number,
         idRegistroTributario: data.tipoRegistroTributario as number,
         numRegistroTributario: data.numRegistroTributario ?? "",
-        email: data.email,
+        correo: data.correo,
         idEstado: 1,
         webSite: data.sitioWeb || "",
-        telefono: data.telefono,
+        telefono: data.telefono ?? "",
         fax: data.fax ?? "",
-        direccion: data.direccion,
+        direccion: data.direccion ?? "",
         recomendacion: data.recomendacion ?? "",
         idEmpresaAtencion: data.atendidoPor as number,
         idIdioma: data.idioma as number,
@@ -136,8 +121,8 @@ export default function ClientManagement() {
           idTipoContacto: c.tipoContacto as number,
           tipoContacto: c.tipoContacto === 0 ? (c.tipoContactoNuevo ?? null) : null,
           areaTrabajo: c.areaTrabajo as number,
-          telefono: c.telefono,
-          email: c.email,
+          telefono: c.telefono ?? "",
+          correo: c.correo,
           codigo: c.codigoContacto || null,
           enviarCorreo: c.enviarCorreo,
         })),
@@ -244,27 +229,27 @@ export default function ClientManagement() {
         <span className="text-sm font-bold text-brand-black">{client.nombre}</span>
       </td>
       <td className="px-6 py-4">
-        <span className="text-sm text-gray-600">{paisMap[client.idPais] ?? "-"}</span>
+        <span className="text-sm text-gray-600">{client.pais || "-"}</span>
       </td>
       <td className="px-6 py-4">
         <span className="text-sm text-gray-600 capitalize">
-          {tipoPersonaMap[client.idTipoPersona]?.toLowerCase() ?? "-"}
+          {client.tipoPersona?.toLowerCase() || "-"}
         </span>
       </td>
       <td className="px-6 py-4">
         <span className="text-sm text-gray-600 font-medium">{client.telefono}</span>
       </td>
       <td className="px-6 py-4">
-        <span className="text-sm text-gray-500">{client.email}</span>
+        <span className="text-sm text-gray-500">{client.correo}</span>
       </td>
       <td className="px-6 py-4">
-        {client.idEstado === 1 ? (
+        {client.estado?.toLowerCase() === "activo" ? (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600">
-            Activo
+            {client.estado}
           </span>
-        ) : client.idEstado === 2 ? (
+        ) : client.estado ? (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500">
-            Inactivo
+            {client.estado}
           </span>
         ) : (
           <span className="text-sm text-gray-400">-</span>
@@ -303,8 +288,8 @@ export default function ClientManagement() {
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
               >
-                <Eye size={14} />
-                <span>Ver detalle</span>
+                <Edit size={14} />
+                <span>Modificar Cliente</span>
               </button>
               <button
                 onClick={() => {
@@ -502,7 +487,7 @@ export default function ClientManagement() {
         isSubmitting={deleteClientMutation.isPending}
       >
         <p><span className="font-bold">Nombre:</span> {clientToDelete?.nombre ?? "-"}</p>
-        <p><span className="font-bold">Email:</span> {clientToDelete?.email ?? "-"}</p>
+        <p><span className="font-bold">Email:</span> {clientToDelete?.correo ?? "-"}</p>
       </ConfirmDeleteModal>
     </div>
   );

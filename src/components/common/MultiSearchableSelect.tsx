@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import { Search, X, Check, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useSeleccionAutomaticaOpcionUnicaMultiple } from "@maximilian/hooks/useSeleccionAutomaticaOpcionUnica";
 import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { CustomLabel } from "./CustomLabel";
@@ -18,6 +19,8 @@ export interface MultiSearchableSelectProps {
   disabled?: boolean;
   hideLabel?: boolean;
   triggerIcon?: React.ElementType;
+  autoSeleccionarOpcionUnica?: boolean;
+  resumirSelecciones?: boolean;
 }
 
 export function MultiSearchableSelect({
@@ -33,6 +36,8 @@ export function MultiSearchableSelect({
   disabled = false,
   hideLabel = false,
   triggerIcon: TriggerIcon = Search,
+  autoSeleccionarOpcionUnica = false,
+  resumirSelecciones = false,
 }: MultiSearchableSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -42,7 +47,7 @@ export function MultiSearchableSelect({
   const { data: fetchedOptions, isLoading } = useQuery({
     queryKey: ["masterTable", idMaster],
     queryFn: () => masterTableService.list(idMaster!),
-    enabled: idMaster !== undefined && isOpen,
+    enabled: idMaster !== undefined && (isOpen || autoSeleccionarOpcionUnica),
     staleTime: Infinity,
   });
 
@@ -69,6 +74,13 @@ export function MultiSearchableSelect({
       return true;
     });
   }, [resolvedOptions, value]);
+
+  useSeleccionAutomaticaOpcionUnicaMultiple({
+    activo: autoSeleccionarOpcionUnica,
+    opciones: resolvedOptions,
+    valores: value,
+    onSeleccionar: onChange,
+  });
 
   const handleToggle = () => {
     if (disabled) return;
@@ -97,6 +109,8 @@ export function MultiSearchableSelect({
     onChange(value.filter((v) => v !== id));
   };
 
+  const mostrarResumen = resumirSelecciones && selectedOptions.length >= 2;
+
   return (
     <div className={`relative ${hideLabel ? "" : "space-y-2"}`}>
       {!hideLabel && <CustomLabel required={required} optional={optional}>{label}</CustomLabel>}
@@ -107,23 +121,29 @@ export function MultiSearchableSelect({
       >
         <div className="flex flex-wrap gap-1 flex-1">
           {selectedOptions.length > 0 ? (
-            selectedOptions.map((opt) => (
-              <span
-                key={opt.num1}
-                className="text-xs bg-brand-wine/10 text-brand-wine rounded-full px-2 py-0.5 flex items-center gap-1"
-              >
-                {opt.string1}
-                {!disabled && (
-                  <button
-                    type="button"
-                    onClick={(e) => handleRemove(e, opt.num1!)}
-                    className="hover:text-brand-wine/70"
-                  >
-                    <X size={10} />
-                  </button>
-                )}
+            mostrarResumen ? (
+              <span className="text-xs bg-brand-wine/10 text-brand-wine rounded-full px-2 py-0.5 flex items-center gap-1">
+                {selectedOptions.length} seleccionados
               </span>
-            ))
+            ) : (
+              selectedOptions.map((opt) => (
+                <span
+                  key={opt.num1}
+                  className="text-xs bg-brand-wine/10 text-brand-wine rounded-full px-2 py-0.5 flex items-center gap-1"
+                >
+                  {opt.string1}
+                  {!disabled && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleRemove(e, opt.num1!)}
+                      className="hover:text-brand-wine/70"
+                    >
+                      <X size={10} />
+                    </button>
+                  )}
+                </span>
+              ))
+            )
           ) : (
             <span className="text-gray-400">{placeholder}</span>
           )}

@@ -45,8 +45,8 @@ export function CreateUserModal({
       firstName: "",
       paternalLastName: "",
       maternalLastName: "",
-      usernameCreacion: "",
-      email: "",
+      usuarioCreacion: "",
+      correo: "",
       roles: [],
       languages: [],
     },
@@ -89,7 +89,7 @@ export function CreateUserModal({
     if (firstName || paternalLastName) {
       const firstLetter = firstName?.charAt(0) ?? "";
       const lastName = paternalLastName?.replace(/\s+/g, "") ?? "";
-      setValue("usernameCreacion", `${firstLetter}${lastName}`.toLowerCase(), {
+      setValue("usuarioCreacion", `${firstLetter}${lastName}`.toLowerCase(), {
         shouldValidate: true,
       });
     }
@@ -164,8 +164,8 @@ export function CreateUserModal({
                 {(errors.firstName ||
                   errors.paternalLastName ||
                   errors.maternalLastName ||
-                  errors.usernameCreacion ||
-                  errors.email) && (
+                  errors.usuarioCreacion ||
+                  errors.correo) && (
                   <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                 )}
               </button>
@@ -247,32 +247,32 @@ export function CreateUserModal({
                 <div className="space-y-2">
                   <CustomLabel required className="text-sm font-semibold text-brand-black">Nombre de Usuario</CustomLabel>
                   <input
-                    {...register("usernameCreacion")}
+                    {...register("usuarioCreacion")}
                     type="text"
                     placeholder="Nombre de Usuario"
                     className={`w-full px-4 py-2 bg-brand-white border ${
-                      errors.usernameCreacion ? "border-red-500" : "border-gray-200"
+                      errors.usuarioCreacion ? "border-red-500" : "border-gray-200"
                     } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
                   />
-                  {errors.usernameCreacion && (
+                  {errors.usuarioCreacion && (
                     <p className="text-xs text-red-500">
-                      {errors.usernameCreacion.message}
+                      {errors.usuarioCreacion.message}
                     </p>
                   )}
                 </div>
                 <div className="space-y-2 col-span-2">
                   <CustomLabel required className="text-sm font-semibold text-brand-black">Email</CustomLabel>
                   <input
-                    {...register("email")}
+                    {...register("correo")}
                     type="email"
                     placeholder="Email"
                     className={`w-full px-4 py-2 bg-brand-white border ${
-                      errors.email ? "border-red-500" : "border-gray-200"
+                      errors.correo ? "border-red-500" : "border-gray-200"
                     } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
                   />
-                  {errors.email && (
+                  {errors.correo && (
                     <p className="text-xs text-brand-wine">
-                      {errors.email.message}
+                      {errors.correo.message}
                     </p>
                   )}
                 </div>

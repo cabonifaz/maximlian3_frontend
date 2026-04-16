@@ -77,6 +77,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
               onChange={(val) =>
                 setValue("tipoPersona", val, { shouldValidate: true })
               }
+              autoSeleccionarOpcionUnica
               error={errors.tipoPersona?.message}
             />
 
@@ -89,6 +90,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
                 setValue("tipoContacto", val, { shouldValidate: true });
                 if (val !== 0) setValue("tipoContactoNuevo", undefined);
               }}
+              autoSeleccionarOpcionUnica
               onAddNew={(term) => {
                 setValue("tipoContacto", 0, { shouldValidate: true });
                 setValue("tipoContactoNuevo", term, { shouldValidate: true });
@@ -98,7 +100,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             />
 
             <div className="space-y-2">
-              <CustomLabel required>Código de Contacto</CustomLabel>
+              <CustomLabel optional>Código de Contacto</CustomLabel>
               <input
                 {...register("codigoContacto")}
                 type="text"
@@ -122,16 +124,16 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             <div className="space-y-2">
               <CustomLabel required>Email</CustomLabel>
               <input
-                {...register("email")}
+                {...register("correo")}
                 type="email"
                 placeholder="Email"
                 className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
               />
-              {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
+              {errors.correo && <p className="text-xs text-red-500">{errors.correo.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <CustomLabel required>Teléfono</CustomLabel>
+              <CustomLabel optional>Teléfono</CustomLabel>
               <input
                 {...register("telefono")}
                 type="text"
@@ -150,6 +152,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
                 onChange={(val) =>
                   setValue("areaTrabajo", val, { shouldValidate: true })
                 }
+                autoSeleccionarOpcionUnica
                 error={errors.areaTrabajo?.message}
               />
             </div>

@@ -74,8 +74,8 @@ export default function UserManagement() {
         nombres: userData.firstName,
         apellidoPaterno: userData.paternalLastName,
         apellidoMaterno: userData.maternalLastName || null,
-        usernameCreacion: userData.usernameCreacion,
-        email: userData.email,
+        usuarioCreacion: userData.usuarioCreacion,
+        correo: userData.correo,
         roles: userData.roles as number[],
         idiomas: (userData.languages || []) as number[],
       };
@@ -156,8 +156,8 @@ export default function UserManagement() {
         firstName: details.nombres || "",
         paternalLastName: details.apellidoPaterno || "",
         maternalLastName: details.apellidoMaterno || "",
-        usernameCreacion: user.username || "",
-        email: details.email || "",
+        usuarioCreacion: user.usuario || "",
+        correo: details.correo || "",
         roles: details.roles || [],
         languages: details.idiomas || [],
       };
@@ -177,8 +177,8 @@ export default function UserManagement() {
       firstName: user.nombres,
       paternalLastName: user.apellidoPaterno,
       maternalLastName: user.apellidoMaterno ?? undefined,
-      usernameCreacion: user.username,
-      email: user.email,
+      usuarioCreacion: user.usuario,
+      correo: user.correo,
       roles: user.roles ? user.roles.split(", ") : [],
     });
     setIsDeleteModalOpen(true);
@@ -201,7 +201,7 @@ export default function UserManagement() {
       <td className="px-6 py-4 text-brand-black font-medium">{user.nombres}</td>
       <td className="px-6 py-4 text-gray-600">{user.apellidoPaterno}</td>
       <td className="px-6 py-4 text-gray-600">{user.apellidoMaterno}</td>
-      <td className="px-6 py-4 text-gray-600">{user.username}</td>
+      <td className="px-6 py-4 text-gray-600">{user.usuario}</td>
       <td className="px-6 py-4">
         <div className="flex flex-wrap gap-1">
           {user.roles ? (
@@ -218,7 +218,7 @@ export default function UserManagement() {
           )}
         </div>
       </td>
-      <td className="px-6 py-4 text-gray-600">{user.email}</td>
+      <td className="px-6 py-4 text-gray-600">{user.correo}</td>
       <td className="px-6 py-4">
         <span
           className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${

@@ -11,6 +11,7 @@ interface TarifarioCortaTableProps {
   selectedIdTarifario: number | undefined;
   onTarifarioSelect: (entry: TarifarioCortaEntry | undefined) => void;
   error?: string;
+  soloLectura?: boolean;
 }
 
 function SkeletonRow() {
@@ -34,15 +35,16 @@ export function TarifarioCortaTable({
   selectedIdTarifario,
   onTarifarioSelect,
   error,
+  soloLectura = false,
 }: TarifarioCortaTableProps) {
   const { data, isLoading } = useQuery({
     queryKey: ["tarifario", "listaCorta", { idCliente, idTipoProducto, idTipoTramite, idPais }],
     queryFn: () =>
       clientService.listTarifarioCorta({
         idCliente: idCliente!,
-        idTipoProducto,
-        idTipoTramite,
-        idPais,
+        IdTipoProducto: idTipoProducto,
+        IdTipoTramite: idTipoTramite,
+        IdPais: idPais,
       }),
     enabled: !!idCliente,
   });
@@ -79,6 +81,7 @@ export function TarifarioCortaTable({
   }, [data]);
 
   const handleCheckbox = (entry: TarifarioCortaEntry) => {
+    if (soloLectura) return;
     onTarifarioSelect(selectedIdTarifario === entry.idTarifario ? undefined : entry);
   };
 
@@ -128,7 +131,7 @@ export function TarifarioCortaTable({
                     <tr
                       key={entry.idTarifario}
                       onClick={() => handleCheckbox(entry)}
-                      className={`cursor-pointer transition-colors ${
+                      className={`${soloLectura ? "cursor-default" : "cursor-pointer"} transition-colors ${
                         isSelected ? "bg-brand-wine/5" : "hover:bg-gray-50/50"
                       }`}
                     >
@@ -138,7 +141,8 @@ export function TarifarioCortaTable({
                           checked={isSelected}
                           onChange={() => handleCheckbox(entry)}
                           onClick={(e) => e.stopPropagation()}
-                          className="w-4 h-4 accent-brand-wine cursor-pointer"
+                          disabled={soloLectura}
+                          className={`w-4 h-4 accent-brand-wine ${soloLectura ? "cursor-not-allowed" : "cursor-pointer"}`}
                         />
                       </td>
                       <td className="py-3 px-4 text-gray-700">{entry.tipoTramite}</td>

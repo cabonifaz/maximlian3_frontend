@@ -9,7 +9,7 @@ export type UserSession = {
   idEmpresa: number;
   nombres: string;
   email: string;
-  username: string;
+  usuario: string;
   roles: Role[];
 };
 

@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Search, Filter, MoreHorizontal, Edit, UserPlus, X, Plus } from "lucide-react";
+import { Search, Filter, MoreHorizontal, Edit, UserPlus, X, Plus, Eye } from "lucide-react";
 import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
 import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
 import { AddPedidoModal } from "@maximilian/components/coordinator/AddPedidoModal";
+import { AssignmentWorkflowModal } from "@maximilian/components/coordinator/AssignmentWorkflowModal";
+import { CustomPedidoDetalleModal } from "@maximilian/components/coordinator/CustomPedidoDetalleModal";
 import { EditPedidoModal } from "@maximilian/components/coordinator/EditPedidoModal";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { pedidoService } from "@maximilian/services/pedido.service";
@@ -45,10 +47,12 @@ export default function PedidoManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedPedidoId, setSelectedPedidoId] = useState<number | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
   const [menuDropdownStyle, setMenuDropdownStyle] = useState<React.CSSProperties>({});
   const [pedidoToCancel, setPedidoToCancel] = useState<PedidoListEntry | null>(null);
+  const [modalAsignacion, setModalAsignacion] = useState<{ key: number; pedidosIniciales: PedidoListEntry[] } | null>(null);
 
   const cancelPedidoMutation = useMutation({
     mutationFn: (idPedido: number) => pedidoService.cancel({ idPedido }),
@@ -92,7 +96,7 @@ export default function PedidoManagement() {
     }
   };
 
-  const renderRow = (pedido: PedidoListEntry, _index: number) => (
+  const renderRow = (pedido: PedidoListEntry) => (
     <>
       <td className="px-6 py-4">
         <span className="text-sm font-bold text-brand-black">{pedido.cliente}</span>
@@ -114,7 +118,7 @@ export default function PedidoManagement() {
               setActiveMenuId(null);
             } else {
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              const menuHeight = 120;
+              const menuHeight = 156;
               const spaceBelow = window.innerHeight - rect.bottom;
               const top = spaceBelow < menuHeight ? rect.top - menuHeight - 4 : rect.bottom + 4;
               setMenuDropdownStyle({ top, right: window.innerWidth - rect.right });
@@ -136,6 +140,17 @@ export default function PedidoManagement() {
               <button
                 onClick={() => {
                   setSelectedPedidoId(pedido.idPedido);
+                  setIsDetailModalOpen(true);
+                  setActiveMenuId(null);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <Eye size={14} />
+                <span>Ver detalle</span>
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedPedidoId(pedido.idPedido);
                   setIsEditModalOpen(true);
                   setActiveMenuId(null);
                 }}
@@ -145,7 +160,13 @@ export default function PedidoManagement() {
                 <span>Modificar pedido</span>
               </button>
               <button
-                onClick={() => setActiveMenuId(null)}
+                onClick={() => {
+                  setModalAsignacion({
+                    key: Date.now(),
+                    pedidosIniciales: [pedido],
+                  });
+                  setActiveMenuId(null);
+                }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
               >
                 <UserPlus size={14} />
@@ -193,6 +214,7 @@ export default function PedidoManagement() {
             options={ESTADO_OPTIONS}
             value={filterEstados}
             onChange={handleEstadosChange}
+            resumirSelecciones
             placeholder="Todos los estados"
           />
 
@@ -231,6 +253,28 @@ export default function PedidoManagement() {
         onClose={() => { setIsEditModalOpen(false); setSelectedPedidoId(null); }}
         pedidoId={selectedPedidoId}
       />
+      <CustomPedidoDetalleModal
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedPedidoId(null);
+        }}
+        pedidoId={selectedPedidoId}
+      />
+      {modalAsignacion ? (
+        <AssignmentWorkflowModal
+          key={modalAsignacion.key}
+          isOpen
+          onClose={() => setModalAsignacion(null)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
+            queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+          }}
+          pedidosIniciales={modalAsignacion.pedidosIniciales}
+          tabInicial="asignacion"
+          titulo="Nueva Asignación"
+        />
+      ) : null}
       <ConfirmDeleteModal
         isOpen={pedidoToCancel !== null}
         onClose={() => setPedidoToCancel(null)}

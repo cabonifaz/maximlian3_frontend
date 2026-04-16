@@ -47,8 +47,8 @@ export function EditUserModal({
       firstName: "",
       paternalLastName: "",
       maternalLastName: "",
-      usernameCreacion: "",
-      email: "",
+      usuarioCreacion: "",
+      correo: "",
       roles: [],
       languages: [],
     },
@@ -160,8 +160,8 @@ export function EditUserModal({
                 {(errors.firstName ||
                   errors.paternalLastName ||
                   errors.maternalLastName ||
-                  errors.usernameCreacion ||
-                  errors.email) && (
+                  errors.usuarioCreacion ||
+                  errors.correo) && (
                   <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                 )}
               </button>
@@ -245,15 +245,15 @@ export function EditUserModal({
                     Nombre de Usuario
                   </label>
                   <input
-                    {...register("usernameCreacion")}
+                    {...register("usuarioCreacion")}
                     type="text"
                     placeholder="Nombre de Usuario"
                     disabled
                     className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500 outline-none transition-all cursor-not-allowed"
                   />
-                  {errors.usernameCreacion && (
+                  {errors.usuarioCreacion && (
                     <p className="text-xs text-red-500">
-                      {errors.usernameCreacion.message}
+                      {errors.usuarioCreacion.message}
                     </p>
                   )}
                 </div>
@@ -262,15 +262,15 @@ export function EditUserModal({
                     Email
                   </label>
                   <input
-                    {...register("email")}
+                    {...register("correo")}
                     type="email"
                     placeholder="Email"
                     disabled
                     className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500 outline-none transition-all cursor-not-allowed"
                   />
-                  {errors.email && (
+                  {errors.correo && (
                     <p className="text-xs text-brand-wine">
-                      {errors.email.message}
+                      {errors.correo.message}
                     </p>
                   )}
                 </div>
