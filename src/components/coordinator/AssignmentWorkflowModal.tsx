@@ -172,15 +172,31 @@ export function AssignmentWorkflowModal({
   );
 
   const { data: candidatos, isLoading: isLoadingCandidatos, isFetching: isFetchingCandidatos } = useQuery({
-    queryKey: ["assignment-candidates-inline", rolActivo, busquedaUsuarioDebounced, idiomasPedido],
+    queryKey: ["assignment-candidates-inline", rolActivo, idiomasPedido],
     queryFn: () =>
       assignmentService.listCandidates({
         role: rolActivo!,
-        filtro: busquedaUsuarioDebounced || undefined,
         idiomasPedido,
       }),
     enabled: isOpen && tabActiva === "asignacion" && rolActivo !== null,
   });
+
+  const candidatosFiltrados = useMemo(() => {
+    const terminoNormalizado = normalizarBusqueda(busquedaUsuarioDebounced);
+    if (!terminoNormalizado) return candidatos ?? [];
+
+    return (candidatos ?? []).filter((candidato) => {
+      const nombreCompleto = normalizarBusqueda(candidato.nombre);
+      const nombres = normalizarBusqueda(candidato.nombres ?? "");
+      const apellidos = normalizarBusqueda(candidato.apellidos ?? "");
+
+      return (
+        nombreCompleto.includes(terminoNormalizado)
+        || nombres.includes(terminoNormalizado)
+        || apellidos.includes(terminoNormalizado)
+      );
+    });
+  }, [busquedaUsuarioDebounced, candidatos]);
 
   const { data: candidatosAnalista } = useQuery({
     queryKey: ["assignment-candidates-iniciales", "analyst", idiomasPedido],
@@ -379,8 +395,8 @@ export function AssignmentWorkflowModal({
           <div className="flex justify-center py-10">
             <Loader2 className="h-8 w-8 animate-spin text-brand-wine" />
           </div>
-        ) : candidatos?.length ? (
-          candidatos.map((candidate) => (
+        ) : candidatosFiltrados.length ? (
+          candidatosFiltrados.map((candidate) => (
             <div
               key={candidate.idUsuario}
               className="flex w-full items-center justify-between gap-6 rounded-2xl border border-gray-100 px-6 py-4 transition-colors hover:bg-gray-50"
