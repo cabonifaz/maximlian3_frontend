@@ -207,6 +207,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
           options={clienteOptions}
           value={idCliente}
           onChange={handleClienteChange}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
           error={errors.idCliente?.message}
@@ -227,6 +228,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
           options={plantillasInforme}
           value={idPlantillaInforme}
           onChange={(val) => setValue("idPlantillaInforme", val as number, { shouldValidate: true })}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
           error={errors.idPlantillaInforme?.message}
@@ -236,6 +238,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
           options={idiomas}
           value={idIdioma}
           onChange={(val) => setValue("idIdioma", val as number, { shouldValidate: true })}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
           error={errors.idIdioma?.message}
@@ -261,6 +264,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
           options={paises}
           value={idPais}
           onChange={(val) => setValue("idPais", val as number, { shouldValidate: true })}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           error={errors.idPais?.message}
         />
@@ -269,6 +273,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
           options={clasesInforme}
           value={idClaseInforme}
           onChange={(val) => setValue("idClaseInforme", val as number, { shouldValidate: true })}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
           error={errors.idClaseInforme?.message}
@@ -278,6 +283,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
           options={tiposTramite}
           value={idTipoTramite}
           onChange={(val) => setValue("idTipoTramite", val as number, { shouldValidate: true })}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
           error={errors.idTipoTramite?.message}
@@ -350,6 +356,7 @@ function InfoPedidoTab({ register, setValue, watch, trigger, errors, selectedTar
           options={tiposPersona}
           value={idTipoPersona}
           onChange={(val) => setValue("idTipoPersona", val as number, { shouldValidate: true })}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
           error={errors.idTipoPersona?.message}
@@ -399,6 +406,7 @@ function InfoPedidoTab({ register, setValue, watch, trigger, errors, selectedTar
           options={empresasAtencion}
           value={idEmpresaAtencion}
           onChange={(val) => setValue("idEmpresaAtencion", val as number, { shouldValidate: true })}
+          autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
           error={errors.idEmpresaAtencion?.message}
@@ -450,6 +458,7 @@ function InfoPedidoTab({ register, setValue, watch, trigger, errors, selectedTar
                   const entry = tiposPlazoCredito?.find((t) => t.num1 === val);
                   setValue("tipoPlazoCredito", entry?.string1 ?? "", { shouldValidate: false });
                 }}
+                autoSeleccionarOpcionUnica
                 placeholder="Tipo"
               />
             </div>
@@ -677,6 +686,7 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
                             options={tipoOptions}
                             value={f.tipoId}
                             onChange={(val) => handleTipoChange(f.id, val)}
+                            autoSeleccionarOpcionUnica
                             placeholder="— Seleccione —"
                             error={missingTipoIds.has(f.id) ? "Requerido" : undefined}
                           />

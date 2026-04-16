@@ -351,6 +351,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("tipoPersona", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    autoSeleccionarOpcionUnica
                     error={infoErrors.tipoPersona?.message}
                   />
 
@@ -372,6 +373,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("pais", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    autoSeleccionarOpcionUnica
                     error={infoErrors.pais?.message}
                   />
 
@@ -442,6 +444,7 @@ export function ClientDetailModal({
                         shouldDirty: true,
                       })
                     }
+                    autoSeleccionarOpcionUnica
                     error={infoErrors.tipoRegistroTributario?.message}
                   />
 
@@ -464,6 +467,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("moneda", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    autoSeleccionarOpcionUnica
                     error={infoErrors.moneda?.message}
                   />
 
@@ -475,6 +479,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("atendidoPor", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    autoSeleccionarOpcionUnica
                     error={infoErrors.atendidoPor?.message}
                   />
 
@@ -486,6 +491,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("idioma", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    autoSeleccionarOpcionUnica
                     error={infoErrors.idioma?.message}
                   />
 
@@ -497,6 +503,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("idiomaFacturacion", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    autoSeleccionarOpcionUnica
                     error={infoErrors.idiomaFacturacion?.message}
                   />
 
@@ -508,6 +515,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("formatoInforme", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    autoSeleccionarOpcionUnica
                     error={infoErrors.formatoInforme?.message}
                   />
 
@@ -519,6 +527,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("plantillaInforme", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    autoSeleccionarOpcionUnica
                     error={infoErrors.plantillaInforme?.message}
                   />
 
