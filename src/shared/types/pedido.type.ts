@@ -28,7 +28,7 @@ export interface PedidoListParams {
   numPag?: number;
 }
 
-export interface PedidoCancelRequest {
+export interface PedidoAccionRequest {
   idPedido: number;
 }
 
