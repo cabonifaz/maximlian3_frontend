@@ -12,6 +12,7 @@ import { CreateUserModal } from "@maximilian/components/admin/CreateUserModal";
 import { EditUserModal } from "@maximilian/components/admin/EditUserModal";
 import { DeleteUserModal } from "@maximilian/components/admin/DeleteUserModal";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
+import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { type UserFormData } from "@maximilian/schemas";
 import { userService } from "@maximilian/services/user.service";
 import type {
@@ -55,6 +56,7 @@ export default function UserManagement() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [filter, setFilter] = useState("");
+  const debouncedFilter = useDebounce(filter);
 
   const queryClient = useQueryClient();
 
@@ -64,8 +66,9 @@ export default function UserManagement() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["users", currentPage, filter],
-    queryFn: () => userService.list({ numPag: currentPage, filtro: filter }),
+    queryKey: ["users", currentPage, debouncedFilter],
+    queryFn: () => userService.list({ numPag: currentPage, filtro: debouncedFilter }),
+    enabled: filter === debouncedFilter,
   });
 
   const createUserMutation = useMutation({
@@ -101,6 +104,7 @@ export default function UserManagement() {
         nombres: userData.firstName,
         apellidoPaterno: userData.paternalLastName,
         apellidoMaterno: userData.maternalLastName || null,
+        correo: userData.correo,
         roles: userData.roles as number[],
         idiomas: (userData.languages || []) as number[],
       };

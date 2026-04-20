@@ -1,12 +1,21 @@
 import { z } from "zod";
 
+const selectorMultipleRequerido = (mensaje: string) =>
+  z.custom<number[]>(
+    (valor) => Array.isArray(valor) && valor.every((item) => typeof item === "number"),
+    { message: mensaje },
+  ).refine((valor) => valor.length > 0, mensaje);
+
+const textoRequerido = (mensaje: string) =>
+  z.string({ error: mensaje }).min(1, mensaje);
+
 export const clientDetailSchema = z.object({
   id: z.number().optional(),
   tipoPersona: z.number({ error: "Campo requerido" }),
-  nombre: z.string().min(1, "Campo requerido"),
+  nombre: textoRequerido("Campo requerido"),
   pais: z.number({ error: "Campo requerido" }),
   direccion: z.string().optional().or(z.literal("")),
-  correo: z.string().min(1, "Campo requerido").email("Email inválido"),
+  correo: textoRequerido("Campo requerido").email("Email inválido"),
   telefono: z.string().optional().or(z.literal("")),
   sitioWeb: z.string().url("URL inválida").optional().or(z.literal("")),
   fax: z.string().optional(),
@@ -16,7 +25,7 @@ export const clientDetailSchema = z.object({
   atendidoPor: z.number({ error: "Campo requerido" }),
   idioma: z.number({ error: "Campo requerido" }),
   idiomaFacturacion: z.number({ error: "Campo requerido" }),
-  formatoInforme: z.array(z.number()).min(1, "Selecciona al menos un formato"),
+  formatoInforme: selectorMultipleRequerido("Selecciona al menos un formato"),
   plantillaInforme: z.number({ error: "Campo requerido" }),
   imprimeLogoSafety: z.boolean().optional(),
   aplicaPenalidad: z.boolean().optional(),
