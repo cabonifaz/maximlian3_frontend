@@ -35,13 +35,15 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
     reset,
     watch,
     setValue,
+    trigger,
   } = useForm<ContactFormData>({
     resolver: contactResolver,
+    mode: "onTouched",
   });
 
   useEffect(() => {
     reset(defaultValues ?? { enviarCorreo: false } as ContactFormData);
-  }, [isOpen]);
+  }, [defaultValues, isOpen, reset]);
 
 
   if (!isOpen) return null;
@@ -77,6 +79,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
               onChange={(val) =>
                 setValue("tipoPersona", val, { shouldValidate: true })
               }
+              onBlur={() => trigger("tipoPersona")}
               autoSeleccionarOpcionUnica
               error={errors.tipoPersona?.message}
             />
@@ -90,6 +93,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
                 setValue("tipoContacto", val, { shouldValidate: true });
                 if (val !== 0) setValue("tipoContactoNuevo", undefined);
               }}
+              onBlur={() => trigger("tipoContacto")}
               autoSeleccionarOpcionUnica
               onAddNew={(term) => {
                 setValue("tipoContacto", 0, { shouldValidate: true });
@@ -105,7 +109,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
                 {...register("codigoContacto")}
                 type="text"
                 placeholder="Código"
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
+                className={`w-full px-4 py-2.5 bg-brand-white border ${errors.codigoContacto ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300`}
               />
               {errors.codigoContacto && <p className="text-xs text-red-500">{errors.codigoContacto.message}</p>}
             </div>
@@ -116,7 +120,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
                 {...register("nombre")}
                 type="text"
                 placeholder="Nombre"
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
+                className={`w-full px-4 py-2.5 bg-brand-white border ${errors.nombre ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300`}
               />
               {errors.nombre && <p className="text-xs text-red-500">{errors.nombre.message}</p>}
             </div>
@@ -127,7 +131,7 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
                 {...register("correo")}
                 type="email"
                 placeholder="Email"
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
+                className={`w-full px-4 py-2.5 bg-brand-white border ${errors.correo ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300`}
               />
               {errors.correo && <p className="text-xs text-red-500">{errors.correo.message}</p>}
             </div>
@@ -150,9 +154,10 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
                 idMaster={MasterTableId.AREA_TRABAJO}
                 value={watchedAreaTrabajo}
                 onChange={(val) =>
-                  setValue("areaTrabajo", val, { shouldValidate: true })
-                }
-                autoSeleccionarOpcionUnica
+                setValue("areaTrabajo", val, { shouldValidate: true })
+              }
+              onBlur={() => trigger("areaTrabajo")}
+              autoSeleccionarOpcionUnica
                 error={errors.areaTrabajo?.message}
               />
             </div>

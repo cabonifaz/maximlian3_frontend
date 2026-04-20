@@ -93,7 +93,7 @@ export function CreateUserModal({
         shouldValidate: true,
       });
     }
-  }, [firstName, paternalLastName]);
+  }, [firstName, paternalLastName, setValue]);
 
   if (!isOpen) return null;
 
@@ -129,7 +129,7 @@ export function CreateUserModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex min-h-dvh w-screen items-center justify-center overflow-y-auto p-4 bg-brand-black/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div
         className={`bg-brand-white rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 transition-all ${isTranslatorSelected && activeTab === "roles" ? "max-w-4xl w-full" : "max-w-2xl w-full"}`}
       >
@@ -271,7 +271,7 @@ export function CreateUserModal({
                     } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
                   />
                   {errors.correo && (
-                    <p className="text-xs text-brand-wine">
+                    <p className="text-xs text-red-500">
                       {errors.correo.message}
                     </p>
                   )}

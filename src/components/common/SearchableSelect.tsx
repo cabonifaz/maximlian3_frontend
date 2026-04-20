@@ -19,6 +19,7 @@ export interface SearchableSelectProps {
   disabled?: boolean;
   loading?: boolean;
   onOpen?: () => void;
+  onBlur?: () => void;
   onAddNew?: (searchTerm: string) => void;
   displayValue?: string;
   autoSeleccionarOpcionUnica?: boolean;
@@ -37,6 +38,7 @@ export function SearchableSelect({
   disabled = false,
   loading = false,
   onOpen,
+  onBlur,
   onAddNew,
   displayValue,
   autoSeleccionarOpcionUnica = false,
@@ -86,8 +88,11 @@ export function SearchableSelect({
           width: rect.width,
         });
       }
+      setIsOpen(true);
+      return;
     }
-    setIsOpen(!isOpen);
+    setIsOpen(false);
+    onBlur?.();
   };
 
   return (
@@ -109,7 +114,13 @@ export function SearchableSelect({
 
       {!disabled && isOpen && (
         <>
-          <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)} />
+          <div
+            className="fixed inset-0 z-[100]"
+            onClick={() => {
+              setIsOpen(false);
+              onBlur?.();
+            }}
+          />
           <div
             className="fixed bg-brand-white border border-gray-100 rounded-xl shadow-2xl z-[101] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
             style={dropdownStyle}

@@ -26,6 +26,7 @@ export type UpdateUserRequest = {
   nombres: string;
   apellidoPaterno: string;
   apellidoMaterno: string | null;
+  correo: string;
   roles: number[];
   idiomas: number[];
 };

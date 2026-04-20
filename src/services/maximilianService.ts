@@ -12,6 +12,17 @@ const maximilianService = axios.create({
   },
 });
 
+function obtenerMensajeAmigableUsuario(url?: string) {
+  if (!url) return null;
+  if (url.includes("/api/Usuario/obtener")) {
+    return "No se pudo cargar la información del usuario. Intenta nuevamente.";
+  }
+  if (url.includes("/api/Usuario/editar")) {
+    return "No se pudieron guardar los cambios del usuario. Revisa los datos e intenta nuevamente.";
+  }
+  return null;
+}
+
 maximilianService.interceptors.request.use(
   async (config) => {
     try {
@@ -59,7 +70,8 @@ maximilianService.interceptors.response.use(
             ? "La operación no pudo completarse debido a una regla de negocio."
             : "Ha ocurrido un error inesperado en el sistema.";
 
-        toast.error(data.mensaje || fallbackMessage);
+        const mensajeAmigable = obtenerMensajeAmigableUsuario(response.config.url);
+        toast.error(mensajeAmigable || data.mensaje || fallbackMessage);
       } else if (response.config.method !== "get") {
         toast.success(data.mensaje);
       }
@@ -69,7 +81,10 @@ maximilianService.interceptors.response.use(
   },
   (error) => {
     // Handle network or HTTP errors
-    const errorMessage = error.response?.data?.mensaje || "Error de conexión con el servidor";
+    const errorMessage =
+      obtenerMensajeAmigableUsuario(error.config?.url) ||
+      error.response?.data?.mensaje ||
+      "Error de conexión con el servidor";
     toast.error(errorMessage);
     return Promise.reject(error);
   }

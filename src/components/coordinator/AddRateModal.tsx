@@ -24,9 +24,10 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
     watch,
     setValue,
     clearErrors,
+    trigger,
   } = useForm<RateFormData>({
     resolver: zodResolver(rateSchema),
-    mode: "onSubmit",
+    mode: "onTouched",
   });
 
   const watchedProducto = watch("producto");
@@ -64,7 +65,8 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               required
               idMaster={MasterTableId.PRODUCTO}
               value={watchedProducto as number | undefined}
-              onChange={(val) => setValue("producto", val)}
+              onChange={(val) => setValue("producto", val, { shouldValidate: true })}
+              onBlur={() => trigger("producto")}
               autoSeleccionarOpcionUnica
               error={errors.producto?.message}
               placeholder="Selecciona un producto"
@@ -75,7 +77,8 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               required
               idMaster={MasterTableId.PAIS}
               value={watchedPais as number | undefined}
-              onChange={(val) => setValue("pais", val)}
+              onChange={(val) => setValue("pais", val, { shouldValidate: true })}
+              onBlur={() => trigger("pais")}
               autoSeleccionarOpcionUnica
               error={errors.pais?.message}
               placeholder="Selecciona un país"
@@ -86,7 +89,8 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               required
               idMaster={MasterTableId.MONEDA}
               value={watchedMoneda as number | undefined}
-              onChange={(val) => setValue("moneda", val)}
+              onChange={(val) => setValue("moneda", val, { shouldValidate: true })}
+              onBlur={() => trigger("moneda")}
               autoSeleccionarOpcionUnica
               error={errors.moneda?.message}
               placeholder="Selecciona moneda"
@@ -97,7 +101,8 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               required
               idMaster={MasterTableId.TIPO_TRAMITE}
               value={watchedTramite as number | undefined}
-              onChange={(val) => setValue("tramite", val)}
+              onChange={(val) => setValue("tramite", val, { shouldValidate: true })}
+              onBlur={() => trigger("tramite")}
               autoSeleccionarOpcionUnica
               error={errors.tramite?.message}
               placeholder="Selecciona trámite"
@@ -108,7 +113,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               <input
                 {...register("diasMin", { valueAsNumber: true, onChange: () => clearErrors(["diasMin", "diasMax"]) })}
                 type="number"
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+                className={`w-full px-4 py-2.5 bg-brand-white border ${errors.diasMin ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
               />
               {errors.diasMin && <p className="text-xs text-red-500">{errors.diasMin.message}</p>}
             </div>
@@ -118,7 +123,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
               <input
                 {...register("diasMax", { valueAsNumber: true, onChange: () => clearErrors(["diasMin", "diasMax"]) })}
                 type="number"
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+                className={`w-full px-4 py-2.5 bg-brand-white border ${errors.diasMax ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
               />
               {errors.diasMax && <p className="text-xs text-red-500">{errors.diasMax.message}</p>}
             </div>
@@ -129,7 +134,7 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
                 {...register("precio", { valueAsNumber: true })}
                 type="number"
                 step="0.01"
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+                className={`w-full px-4 py-2.5 bg-brand-white border ${errors.precio ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
               />
               {errors.precio && <p className="text-xs text-red-500">{errors.precio.message}</p>}
             </div>

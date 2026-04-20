@@ -82,9 +82,11 @@ export function ClientDetailModal({
     setValue: setInfoValue,
     watch: infoWatch,
     handleSubmit: infoHandleSubmit,
+    trigger: triggerInfo,
     formState: { errors: infoErrors, isDirty: infoIsDirty },
   } = useForm<ClientDetailFormData>({
     resolver: zodResolver(clientDetailSchema),
+    mode: "onTouched",
   });
 
   // Populate form when client data is loaded
@@ -351,6 +353,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("tipoPersona", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("tipoPersona")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.tipoPersona?.message}
                   />
@@ -373,6 +376,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("pais", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("pais")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.pais?.message}
                   />
@@ -444,6 +448,7 @@ export function ClientDetailModal({
                         shouldDirty: true,
                       })
                     }
+                    onBlur={() => triggerInfo("tipoRegistroTributario")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.tipoRegistroTributario?.message}
                   />
@@ -467,6 +472,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("moneda", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("moneda")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.moneda?.message}
                   />
@@ -479,6 +485,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("atendidoPor", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("atendidoPor")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.atendidoPor?.message}
                   />
@@ -491,6 +498,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("idioma", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("idioma")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.idioma?.message}
                   />
@@ -503,6 +511,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("idiomaFacturacion", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("idiomaFacturacion")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.idiomaFacturacion?.message}
                   />
@@ -515,6 +524,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("formatoInforme", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("formatoInforme")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.formatoInforme?.message}
                   />
@@ -527,6 +537,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("plantillaInforme", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("plantillaInforme")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.plantillaInforme?.message}
                   />

@@ -21,6 +21,7 @@ export interface MultiSearchableSelectProps {
   triggerIcon?: React.ElementType;
   autoSeleccionarOpcionUnica?: boolean;
   resumirSelecciones?: boolean;
+  onBlur?: () => void;
 }
 
 export function MultiSearchableSelect({
@@ -38,6 +39,7 @@ export function MultiSearchableSelect({
   triggerIcon: TriggerIcon = Search,
   autoSeleccionarOpcionUnica = false,
   resumirSelecciones = false,
+  onBlur,
 }: MultiSearchableSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -92,7 +94,12 @@ export function MultiSearchableSelect({
         width: rect.width,
       });
     }
-    setIsOpen((prev) => !prev);
+    if (isOpen) {
+      setIsOpen(false);
+      onBlur?.();
+      return;
+    }
+    setIsOpen(true);
   };
 
   const handleSelect = (e: React.MouseEvent, id: number) => {
@@ -153,7 +160,13 @@ export function MultiSearchableSelect({
 
       {!disabled && isOpen && (
         <>
-          <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)} />
+          <div
+            className="fixed inset-0 z-[100]"
+            onClick={() => {
+              setIsOpen(false);
+              onBlur?.();
+            }}
+          />
           <div
             className="fixed bg-brand-white border border-gray-100 rounded-xl shadow-2xl z-[101] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
             style={dropdownStyle}
