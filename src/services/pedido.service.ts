@@ -5,7 +5,7 @@ import type {
   PedidoListParams,
   PedidoListResponse,
   PedidoListEntry,
-  PedidoCancelRequest,
+  PedidoAccionRequest,
   CreatePedidoRequest,
   CreatePedidoResponse,
   GetPedidoResponse,
@@ -135,7 +135,12 @@ export const pedidoService = {
     }
   },
 
-  cancel: async (data: PedidoCancelRequest): Promise<void> => {
+  cancelar: async (data: PedidoAccionRequest): Promise<void> => {
+    const { data: res } = await maximilianService.post<ApiResponse<null>>("/api/Pedido/cancelar", data);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+  },
+
+  eliminar: async (data: PedidoAccionRequest): Promise<void> => {
     const { data: res } = await maximilianService.post<ApiResponse<null>>("/api/Pedido/eliminar", data);
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
   },
