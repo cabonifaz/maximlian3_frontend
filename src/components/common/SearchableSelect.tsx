@@ -23,6 +23,8 @@ export interface SearchableSelectProps {
   onAddNew?: (searchTerm: string) => void;
   displayValue?: string;
   autoSeleccionarOpcionUnica?: boolean;
+  dropdownZIndexClassName?: string;
+  overlayZIndexClassName?: string;
 }
 
 export function SearchableSelect({
@@ -42,6 +44,8 @@ export function SearchableSelect({
   onAddNew,
   displayValue,
   autoSeleccionarOpcionUnica = false,
+  dropdownZIndexClassName = "z-[101]",
+  overlayZIndexClassName = "z-[100]",
 }: SearchableSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -115,14 +119,14 @@ export function SearchableSelect({
       {!disabled && isOpen && (
         <>
           <div
-            className="fixed inset-0 z-[100]"
+            className={`fixed inset-0 ${overlayZIndexClassName}`}
             onClick={() => {
               setIsOpen(false);
               onBlur?.();
             }}
           />
           <div
-            className="fixed bg-brand-white border border-gray-100 rounded-xl shadow-2xl z-[101] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+            className={`fixed bg-brand-white border border-gray-100 rounded-xl shadow-2xl ${dropdownZIndexClassName} overflow-hidden animate-in fade-in zoom-in-95 duration-100`}
             style={dropdownStyle}
           >
             <div className="p-2 border-b border-gray-50">
