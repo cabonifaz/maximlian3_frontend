@@ -340,6 +340,9 @@ export function ClientDetailModal({
           {
             id: "info",
             label: "Información",
+            indicator: Object.keys(infoErrors).length > 0 ? (
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+            ) : undefined,
             content: isLoadingClient ? loadingState : isErrorClient ? errorState : (
                 <form
                   id="client-detail-form"

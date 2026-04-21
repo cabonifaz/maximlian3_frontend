@@ -11,22 +11,22 @@ const textoRequerido = (mensaje: string) =>
 
 export const clientDetailSchema = z.object({
   id: z.number().optional(),
-  tipoPersona: z.number({ error: "Campo requerido" }),
-  nombre: textoRequerido("Campo requerido"),
-  pais: z.number({ error: "Campo requerido" }),
+  tipoPersona: z.number({ error: "El tipo de persona es requerido" }),
+  nombre: textoRequerido("El nombre es requerido"),
+  pais: z.number({ error: "El país es requerido" }),
   direccion: z.string().optional().or(z.literal("")),
-  correo: textoRequerido("Campo requerido").email("Email inválido"),
+  correo: textoRequerido("El email es requerido").email("Email inválido"),
   telefono: z.string().optional().or(z.literal("")),
   sitioWeb: z.string().url("URL inválida").optional().or(z.literal("")),
   fax: z.string().optional(),
-  tipoRegistroTributario: z.number({ error: "Campo requerido" }),
+  tipoRegistroTributario: z.number({ error: "El tipo de registro tributario es requerido" }),
   numRegistroTributario: z.string().optional(),
-  moneda: z.number({ error: "Campo requerido" }),
-  atendidoPor: z.number({ error: "Campo requerido" }),
-  idioma: z.number({ error: "Campo requerido" }),
-  idiomaFacturacion: z.number({ error: "Campo requerido" }),
-  formatoInforme: selectorMultipleRequerido("Selecciona al menos un formato"),
-  plantillaInforme: z.number({ error: "Campo requerido" }),
+  moneda: z.number({ error: "La moneda es requerida" }),
+  atendidoPor: z.number({ error: "El atendido por es requerido" }),
+  idioma: z.number({ error: "El idioma preferido es requerido" }),
+  idiomaFacturacion: z.number({ error: "El idioma de facturación es requerido" }),
+  formatoInforme: selectorMultipleRequerido("El formato de informe es requerido"),
+  plantillaInforme: z.number({ error: "La plantilla de informe es requerida" }),
   imprimeLogoSafety: z.boolean().optional(),
   aplicaPenalidad: z.boolean().optional(),
   recomendacion: z.string().optional(),
@@ -34,7 +34,7 @@ export const clientDetailSchema = z.object({
   if (data.tipoRegistroTributario && !data.numRegistroTributario) {
     ctx.addIssue({
       code: "custom",
-      message: "Campo requerido",
+      message: "El registro tributario es requerido",
       path: ["numRegistroTributario"],
     });
   }

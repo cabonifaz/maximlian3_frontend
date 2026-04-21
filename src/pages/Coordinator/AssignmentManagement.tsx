@@ -59,8 +59,8 @@ function convertirAsignacionAPedido(asignacion: AssignmentOrderEntry): PedidoLis
     cliente: asignacion.cliente,
     investigado: asignacion.investigado,
     idIdioma: asignacion.idIdioma ?? 0,
-    idioma: asignacion.idiomaInforme,
-    tipoTramite: asignacion.tipoTramite,
+    idioma: asignacion.idiomaInforme || "-",
+    tipoTramite: asignacion.tipoTramite || "-",
     analista: asignacion.analista,
     traductor: asignacion.traductor,
     logoImprimible: false,
@@ -68,7 +68,7 @@ function convertirAsignacionAPedido(asignacion: AssignmentOrderEntry): PedidoLis
     descripcionEstado: asignacion.estado || "-",
     colorLetra: asignacion.estadoColorLetra || "#475569",
     colorFondo: asignacion.estadoColorFondo || "#f1f5f9",
-    vigencia: 0,
+    vigencia: asignacion.porVencerTexto || "-",
   };
 }
 

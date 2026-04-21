@@ -23,7 +23,6 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
     reset,
     watch,
     setValue,
-    clearErrors,
     trigger,
   } = useForm<RateFormData>({
     resolver: zodResolver(rateSchema),
@@ -111,7 +110,10 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             <div className="space-y-2">
               <CustomLabel required>Días Min.</CustomLabel>
               <input
-                {...register("diasMin", { valueAsNumber: true, onChange: () => clearErrors(["diasMin", "diasMax"]) })}
+                {...register("diasMin", {
+                  valueAsNumber: true,
+                  onBlur: () => void trigger(["diasMin", "diasMax"]),
+                })}
                 type="number"
                 className={`w-full px-4 py-2.5 bg-brand-white border ${errors.diasMin ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
               />
@@ -121,7 +123,10 @@ export function AddRateModal({ isOpen, onClose, onConfirm, defaultValues }: AddR
             <div className="space-y-2">
               <CustomLabel required>Días Max.</CustomLabel>
               <input
-                {...register("diasMax", { valueAsNumber: true, onChange: () => clearErrors(["diasMin", "diasMax"]) })}
+                {...register("diasMax", {
+                  valueAsNumber: true,
+                  onBlur: () => void trigger(["diasMin", "diasMax"]),
+                })}
                 type="number"
                 className={`w-full px-4 py-2.5 bg-brand-white border ${errors.diasMax ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
               />
