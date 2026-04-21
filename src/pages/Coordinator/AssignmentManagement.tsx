@@ -53,12 +53,16 @@ function getVigenciaBadge(asignacion: AssignmentOrderEntry) {
 function convertirAsignacionAPedido(asignacion: AssignmentOrderEntry): PedidoListEntry {
   return {
     idPedido: asignacion.idPedido,
+    idAsignacion: asignacion.idAsignacion,
     codigo: "",
     idCliente: 0,
     cliente: asignacion.cliente,
     investigado: asignacion.investigado,
     idIdioma: asignacion.idIdioma ?? 0,
     idioma: asignacion.idiomaInforme,
+    tipoTramite: asignacion.tipoTramite,
+    analista: asignacion.analista,
+    traductor: asignacion.traductor,
     logoImprimible: false,
     estado: asignacion.idEstado ?? 0,
     descripcionEstado: asignacion.estado || "-",
@@ -132,6 +136,7 @@ export default function AssignmentManagement() {
         cantidadAsignaciones: number;
       } | null;
     }[];
+    modo?: "crear" | "editar";
   } | null>(null);
 
   const debouncedSearch = useDebounce(searchTerm);
@@ -219,6 +224,7 @@ export default function AssignmentManagement() {
                     tabInicial: "asignacion",
                     pedidosIniciales: [convertirAsignacionAPedido(asignacion)],
                     asignacionesIniciales: convertirAsignacionAAsignacionesIniciales(asignacion),
+                    modo: "editar",
                   });
                   setActiveMenuId(null);
                 }}
@@ -236,7 +242,7 @@ export default function AssignmentManagement() {
                 disabled={!asignacion.idAsignacion}
               >
                 <X size={14} />
-                <span>Anular</span>
+                <span>Eliminar</span>
               </button>
             </div>
           </>
@@ -276,6 +282,7 @@ export default function AssignmentManagement() {
                   { role: "analyst", assignee: null },
                   { role: "translator", assignee: null },
                 ],
+                modo: "crear",
               })
             }
             className="flex items-center justify-center gap-2 rounded-lg bg-brand-wine px-4 py-2 text-sm font-medium text-brand-white shadow-sm shadow-brand-wine/20 transition-all hover:bg-brand-wine/90 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
@@ -330,6 +337,7 @@ export default function AssignmentManagement() {
           }}
           pedidosIniciales={modalAsignacion.pedidosIniciales}
           asignacionesIniciales={modalAsignacion.asignacionesIniciales}
+          modo={modalAsignacion.modo}
           tabInicial={modalAsignacion.tabInicial}
           titulo={modalAsignacion.titulo}
         />
@@ -339,7 +347,7 @@ export default function AssignmentManagement() {
         isOpen={asignacionAAnular !== null}
         onClose={() => setAsignacionAAnular(null)}
         onConfirm={() => anularAsignacionMutation.mutate(asignacionAAnular!.idAsignacion!)}
-        title="Anular asignación"
+        title="Eliminar asignación"
         isSubmitting={anularAsignacionMutation.isPending}
       >
         <p className="text-sm text-gray-600">

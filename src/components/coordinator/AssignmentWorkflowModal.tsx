@@ -23,6 +23,7 @@ interface AssignmentWorkflowModalProps {
   onSuccess?: () => void;
   pedidosIniciales?: PedidoListEntry[];
   asignacionesIniciales?: AssignmentRoleSelection[];
+  modo?: "crear" | "editar";
   tabInicial?: TabAsignacion;
   titulo?: string;
 }
@@ -103,12 +104,59 @@ function normalizarPedidoInicial(pedido: PedidoListEntry): PedidoListEntry {
   };
 }
 
+function obtenerInicialesAsignado(nombre: string) {
+  return nombre
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((parte) => parte.charAt(0).toUpperCase())
+    .join("") || "?";
+}
+
+function tieneAsignado(nombre?: string) {
+  return !!nombre && nombre !== "-" && nombre !== "Sin Asignacion";
+}
+
+function convertirPedidoAAsignacionesIniciales(pedido: PedidoListEntry): AssignmentRoleSelection[] {
+  return [
+    {
+      role: "analyst",
+      assignee: tieneAsignado(pedido.analista)
+        ? {
+            idUsuario: 0,
+            nombre: pedido.analista!,
+            iniciales: obtenerInicialesAsignado(pedido.analista!),
+            rol: "analyst",
+            cantidadAsignaciones: 0,
+          }
+        : null,
+    },
+    {
+      role: "translator",
+      assignee: tieneAsignado(pedido.traductor)
+        ? {
+            idUsuario: 0,
+            nombre: pedido.traductor!,
+            iniciales: obtenerInicialesAsignado(pedido.traductor!),
+            rol: "translator",
+            cantidadAsignaciones: 0,
+          }
+        : null,
+    },
+  ];
+}
+
+function tieneAsignacionesEnPedido(pedido: PedidoListEntry) {
+  return tieneAsignado(pedido.analista) || tieneAsignado(pedido.traductor) || !!pedido.idAsignacion;
+}
+
 export function AssignmentWorkflowModal({
   isOpen,
   onClose,
   onSuccess,
   pedidosIniciales = [],
   asignacionesIniciales = ASIGNACIONES_INICIALES,
+  modo = "crear",
   tabInicial = "pedidos",
   titulo = "Nueva Asignación",
 }: AssignmentWorkflowModalProps) {
@@ -130,6 +178,7 @@ export function AssignmentWorkflowModal({
   );
   const [asignacionesBorrador, setAsignacionesBorrador] = useState<AssignmentRoleSelection[]>(asignacionesIniciales);
   const [rolActivo, setRolActivo] = useState<AssignmentRole | null>(null);
+  const [asignacionesDerivadasDePedido, setAsignacionesDerivadasDePedido] = useState(false);
 
   const busquedaPedidoDebounced = useDebounce(terminoBusquedaPedido);
   const busquedaUsuarioDebounced = useDebounce(terminoBusquedaUsuario, 250);
@@ -246,6 +295,7 @@ export function AssignmentWorkflowModal({
       assignmentService.saveAssignments({
         idPedidos: pedidosElegidos.map((pedido) => pedido.idPedido),
         assignments: asignacionesBorrador,
+        modo: modo === "editar" || pedidosElegidos.some(tieneAsignacionesEnPedido) ? "editar" : "crear",
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
@@ -274,6 +324,18 @@ export function AssignmentWorkflowModal({
 
       return siguiente;
     });
+
+    const pedidosActualizados = Array.from(ids)
+      .map((idPedido) => pedidosActivos.find((pedido) => pedido.idPedido === idPedido) ?? pedidosSeleccionados[idPedido])
+      .filter((pedido): pedido is PedidoListEntry => Boolean(pedido));
+
+    if (pedidosActualizados.length === 1 && tieneAsignacionesEnPedido(pedidosActualizados[0])) {
+      setAsignacionesBorrador(convertirPedidoAAsignacionesIniciales(pedidosActualizados[0]));
+      setAsignacionesDerivadasDePedido(true);
+    } else if (asignacionesDerivadasDePedido) {
+      setAsignacionesBorrador(asignacionesIniciales);
+      setAsignacionesDerivadasDePedido(false);
+    }
   };
 
   const handleElegirCandidato = (candidate: AssignmentCandidate) => {

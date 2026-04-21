@@ -58,6 +58,7 @@ function normalizarFilaAsignacion(fila: unknown): PedidoListEntry {
 
   return {
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido),
+    idAsignacion: obtenerNumero(registro.idAsignacion, registro.IdAsignacion),
     codigo: obtenerTexto(registro.codigo, registro.Codigo),
     idCliente: obtenerNumero(registro.idCliente, registro.IdCliente),
     cliente: obtenerTexto(registro.cliente, registro.nombre, registro.nombreCliente, registro.Cliente) || "-",
@@ -70,6 +71,8 @@ function normalizarFilaAsignacion(fila: unknown): PedidoListEntry {
     idIdioma: obtenerNumero(registro.idIdioma, registro.IdIdioma),
     idioma: obtenerTexto(registro.idioma, registro.idiomaInforme, registro.Idioma) || "-",
     tipoTramite: obtenerTexto(registro.tipoTramite, registro.TipoTramite) || "-",
+    analista: obtenerTexto(registro.analista, registro.nombreAnalista, registro.usuarioAnalista, registro.analistaAsignado),
+    traductor: obtenerTexto(registro.traductor, registro.nombreTraductor, registro.usuarioTraductor, registro.traductorAsignado),
     logoImprimible: obtenerBooleano(registro.logoImprimible, registro.imprimeLogoSafety, registro.LogoImprimible),
     estado: obtenerNumero(registro.estado, registro.idEstado, registro.IdEstado),
     descripcionEstado: obtenerTexto(registro.descripcionEstado, registro.estadoDescripcion, registro.estado, registro.Estado) || "-",

@@ -19,6 +19,8 @@ type RegistroGenerico = Record<string, unknown>;
 
 const ESTADO_ASIGNACION_ANALISTA = 1;
 const ESTADO_ASIGNACION_TRADUCTOR = 2;
+const ESTADO_REASIGNACION_ANALISTA = 4;
+const ESTADO_REASIGNACION_TRADUCTOR = 5;
 const IDS_ROL_POR_TIPO: Record<AssignmentRole, number> = {
   translator: 3,
   analyst: 4,
@@ -366,10 +368,26 @@ export const assignmentService = {
       });
   },
 
-  saveAssignments: async ({ idPedidos, assignments }: SaveAssignmentsRequest): Promise<AssignmentRoleSelection[]> => {
+  saveAssignments: async ({ idPedidos, assignments, modo = "crear" }: SaveAssignmentsRequest): Promise<AssignmentRoleSelection[]> => {
     const payload = construirPayloadCreacion(idPedidos, assignments);
 
-    await assignmentService.create(payload);
+    if (modo === "editar") {
+      await Promise.all(
+        payload.asignados.map((asignado) =>
+          assignmentService.update({
+            idUsuarioAsignado: asignado.idUsuarioAsignado,
+            idRolAsignado: asignado.idRolAsignado,
+            idEstado:
+              asignado.idRolAsignado === IDS_ROL_POR_TIPO.translator
+                ? ESTADO_REASIGNACION_TRADUCTOR
+                : ESTADO_REASIGNACION_ANALISTA,
+            idsPedido: idPedidos,
+          }),
+        ),
+      );
+    } else {
+      await assignmentService.create(payload);
+    }
 
     return assignments;
   },
