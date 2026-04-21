@@ -15,12 +15,14 @@ import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { type UserFormData } from "@maximilian/schemas";
 import { userService } from "@maximilian/services/user.service";
+import { masterTableService } from "@maximilian/services/masterTable.service";
 import type {
   CreateUserRequest,
   DeleteUserRequest,
   UpdateUserRequest,
   UserListEntry,
 } from "@maximilian/shared/types/user.type";
+import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import LoadingScreen from "@maximilian/components/common/LoadingScreen";
 
 interface CreateUserMutationParams {
@@ -43,6 +45,13 @@ const USER_COLUMNS = [
   { label: "Estado" },
   { label: "" },
 ];
+
+const normalizarTexto = (valor: string) =>
+  valor
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
 
 export default function UserManagement() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -107,6 +116,7 @@ export default function UserManagement() {
         correo: userData.correo,
         roles: userData.roles as number[],
         idiomas: (userData.languages || []) as number[],
+        idEstado: userData.activo ? 1 : 2,
       };
       return userService.update(apiRequest);
     },
@@ -153,8 +163,26 @@ export default function UserManagement() {
   const openEditModal = async (user: UserListEntry) => {
     setIsLoadingUser(true);
     setActiveMenuId(null);
+    const obtenerRolesDesdeListado = async () => {
+      if (!user.roles) return [];
+
+      const nombresRoles = user.roles.split(",").map(normalizarTexto).filter(Boolean);
+      if (nombresRoles.length === 0) return [];
+
+      const rolesMaestros = await queryClient.fetchQuery({
+        queryKey: ["masterTable", MasterTableId.ROLES],
+        queryFn: () => masterTableService.list(MasterTableId.ROLES),
+        staleTime: Infinity,
+      });
+
+      return rolesMaestros
+        .filter((rol) => rol.num1 !== null && nombresRoles.includes(normalizarTexto(rol.string1 ?? "")))
+        .map((rol) => rol.num1!);
+    };
+
     try {
       const details = await userService.getById(user.idUsuario);
+      const rolesDesdeListado = await obtenerRolesDesdeListado();
 
       const editData: UserFormData = {
         firstName: details.nombres || "",
@@ -162,14 +190,33 @@ export default function UserManagement() {
         maternalLastName: details.apellidoMaterno || "",
         usuarioCreacion: user.usuario || "",
         correo: details.correo || "",
-        roles: details.roles || [],
+        roles: details.roles?.length ? details.roles : rolesDesdeListado,
         languages: details.idiomas || [],
+        activo:
+          details.idEstado !== undefined
+            ? details.idEstado === 1
+            : (details.estado ?? user.estado).toLowerCase() === "activo",
       };
       setEditingUserId(user.idUsuario);
       setSelectedUser(editData);
       setIsEditModalOpen(true);
     } catch (error) {
       console.error("Error loading user details", error);
+      if (user.estado.toLowerCase() !== "activo") {
+        const rolesDesdeListado = await obtenerRolesDesdeListado();
+        setEditingUserId(user.idUsuario);
+        setSelectedUser({
+          firstName: user.nombres || "",
+          paternalLastName: user.apellidoPaterno || "",
+          maternalLastName: user.apellidoMaterno || "",
+          usuarioCreacion: user.usuario || "",
+          correo: user.correo || "",
+          roles: rolesDesdeListado,
+          languages: [],
+          activo: false,
+        });
+        setIsEditModalOpen(true);
+      }
     } finally {
       setIsLoadingUser(false);
     }
@@ -184,6 +231,7 @@ export default function UserManagement() {
       usuarioCreacion: user.usuario,
       correo: user.correo,
       roles: user.roles ? user.roles.split(", ") : [],
+      activo: user.estado.toLowerCase() === "activo",
     });
     setIsDeleteModalOpen(true);
     setActiveMenuId(null);

@@ -51,6 +51,7 @@ export function EditUserModal({
       correo: "",
       roles: [],
       languages: [],
+      activo: true,
     },
   });
 
@@ -273,6 +274,20 @@ export function EditUserModal({
                       {errors.correo.message}
                     </p>
                   )}
+                </div>
+                <div className="col-span-2 flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    {...register("activo")}
+                    id="editar-usuario-activo"
+                    className="w-4 h-4 accent-brand-wine cursor-pointer"
+                  />
+                  <label
+                    htmlFor="editar-usuario-activo"
+                    className="text-sm font-semibold text-brand-black cursor-pointer"
+                  >
+                    Activo
+                  </label>
                 </div>
               </div>
             ) : (

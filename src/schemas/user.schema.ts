@@ -13,6 +13,7 @@ export const userSchema = z
       .array(z.union([z.string(), z.number()]))
       .min(1, "Debe seleccionar al menos un rol"),
     languages: z.array(z.union([z.string(), z.number()])).optional(),
+    activo: z.boolean().optional(),
   })
   .refine(
     (data) => {

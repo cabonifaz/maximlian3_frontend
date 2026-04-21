@@ -11,6 +11,83 @@ import type {
   UserListResponse,
 } from "@maximilian/shared/types/user.type";
 
+type RegistroGenerico = Record<string, unknown>;
+
+function esRegistro(valor: unknown): valor is RegistroGenerico {
+  return typeof valor === "object" && valor !== null;
+}
+
+function obtenerTexto(...valores: unknown[]): string {
+  for (const valor of valores) {
+    if (typeof valor === "string") {
+      const texto = valor.trim();
+      if (texto) return texto;
+    }
+  }
+
+  return "";
+}
+
+function obtenerNumero(valor: unknown): number | undefined {
+  if (typeof valor === "number" && Number.isFinite(valor)) return valor;
+  if (typeof valor === "string" && valor.trim() !== "") {
+    const numero = Number(valor);
+    if (Number.isFinite(numero)) return numero;
+  }
+
+  return undefined;
+}
+
+function obtenerListaNumerica(valor: unknown, llaves: string[]): number[] {
+  if (Array.isArray(valor)) {
+    return valor
+      .map((item) => {
+        if (esRegistro(item)) {
+          for (const llave of llaves) {
+            const numero = obtenerNumero(item[llave]);
+            if (numero !== undefined) return numero;
+          }
+        }
+
+        return obtenerNumero(item);
+      })
+      .filter((numero): numero is number => numero !== undefined);
+  }
+
+  if (typeof valor === "string") {
+    return valor
+      .split(",")
+      .map((item) => obtenerNumero(item))
+      .filter((numero): numero is number => numero !== undefined);
+  }
+
+  return [];
+}
+
+function normalizarDetallesUsuario(registro: unknown): UserDetails {
+  const fila = esRegistro(registro) ? registro : {};
+
+  const roles = obtenerListaNumerica(
+    fila.roles ?? fila.Roles ?? fila.lstRoles ?? fila.LstRoles,
+    ["idRol", "IdRol", "idRole", "num1", "Num1"],
+  );
+  const idiomas = obtenerListaNumerica(
+    fila.idiomas ?? fila.Idiomas ?? fila.lstIdiomas ?? fila.LstIdiomas ?? fila.languages ?? fila.Languages,
+    ["idIdioma", "IdIdioma", "idLanguage", "num1", "Num1"],
+  );
+
+  return {
+    nombres: obtenerTexto(fila.nombres, fila.Nombres),
+    apellidoPaterno: obtenerTexto(fila.apellidoPaterno, fila.ApellidoPaterno),
+    apellidoMaterno: obtenerTexto(fila.apellidoMaterno, fila.ApellidoMaterno) || null,
+    correo: obtenerTexto(fila.correo, fila.Correo),
+    roles,
+    idiomas,
+    idEstado: obtenerNumero(fila.idEstado ?? fila.IdEstado),
+    estado: obtenerTexto(fila.estado, fila.Estado),
+  };
+}
+
 export const userService = {
   /**
    * List users in the system.
@@ -58,7 +135,8 @@ export const userService = {
       }
 
       // Handle both object and array response patterns
-      return Array.isArray(data.result) ? data.result[0] : data.result;
+      const resultado = Array.isArray(data.result) ? data.result[0] : data.result;
+      return normalizarDetallesUsuario(resultado);
     } catch (error) {
       console.error(`Error fetching user ${idUsuario}:`, error);
       throw error;

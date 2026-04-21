@@ -19,6 +19,8 @@ export type UserDetails = {
   correo: string;
   roles: number[];
   idiomas: number[];
+  idEstado?: number;
+  estado?: string;
 };
 
 export type UpdateUserRequest = {
@@ -29,6 +31,7 @@ export type UpdateUserRequest = {
   correo: string;
   roles: number[];
   idiomas: number[];
+  idEstado: number;
 };
 
 export type DeleteUserRequest = {
