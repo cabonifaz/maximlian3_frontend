@@ -53,7 +53,7 @@ function obtenerBooleano(...valores: unknown[]): boolean {
   return false;
 }
 
-function normalizarFilaAsignacion(fila: unknown): PedidoListEntry {
+function normalizarFilaPedido(fila: unknown): PedidoListEntry {
   const registro = typeof fila === "object" && fila !== null ? (fila as Record<string, unknown>) : {};
 
   return {
@@ -82,14 +82,14 @@ function normalizarFilaAsignacion(fila: unknown): PedidoListEntry {
   };
 }
 
-function normalizarRespuestaAsignacion(resultado: PedidoListResponse | Record<string, unknown>): PedidoListResponse {
+function normalizarRespuestaPedido(resultado: PedidoListResponse | Record<string, unknown>): PedidoListResponse {
   const registro = typeof resultado === "object" && resultado !== null ? resultado : {};
   const listaOriginal = Array.isArray((registro as Record<string, unknown>).lstPedido)
     ? ((registro as Record<string, unknown>).lstPedido as unknown[])
     : [];
 
   return {
-    lstPedido: listaOriginal.map(normalizarFilaAsignacion),
+    lstPedido: listaOriginal.map(normalizarFilaPedido),
     totalRegistros: obtenerNumero(
       (registro as Record<string, unknown>).totalRegistros,
       (registro as Record<string, unknown>).TotalRegistros,
@@ -114,7 +114,7 @@ export const pedidoService = {
         throw new Error(data.mensaje || "Error al listar los pedidos");
       }
 
-      return data.result;
+      return normalizarRespuestaPedido(data.result);
     } catch (error) {
       console.error("Error listing pedidos:", error);
       throw error;
@@ -131,7 +131,7 @@ export const pedidoService = {
         throw new Error(data.mensaje || "Error al listar los pedidos para asignacion");
       }
 
-      return normalizarRespuestaAsignacion(data.result);
+      return normalizarRespuestaPedido(data.result);
     } catch (error) {
       console.error("Error listing pedidos for assignment:", error);
       throw error;

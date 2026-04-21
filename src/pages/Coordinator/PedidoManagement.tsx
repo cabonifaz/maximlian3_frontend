@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Search, Filter, MoreHorizontal, Edit, UserPlus, X, Plus, Eye, Trash2 } from "lucide-react";
 import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
 import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
@@ -59,6 +59,7 @@ export default function PedidoManagement() {
     mutationFn: (idPedido: number) => pedidoService.cancelar({ idPedido }),
     onSuccess: () => {
       setPedidoACancelar(null);
+      queryClient.removeQueries({ queryKey: ["pedidos"], type: "inactive" });
       queryClient.invalidateQueries({ queryKey: ["pedidos"] });
     },
   });
@@ -104,6 +105,14 @@ export default function PedidoManagement() {
       setCurrentPage(page);
     }
   };
+
+  const pedidosFiltrados = useMemo(() => {
+    const pedidos = pedidosData?.lstPedido;
+    if (!pedidos || filterEstados.length === 0) return pedidos;
+
+    const estadosSeleccionados = new Set(filterEstados);
+    return pedidos.filter((pedido) => estadosSeleccionados.has(pedido.estado));
+  }, [filterEstados, pedidosData?.lstPedido]);
 
   const renderRow = (pedido: PedidoListEntry) => (
     <>
@@ -249,7 +258,7 @@ export default function PedidoManagement() {
 
       <CustomTable
         columns={PEDIDO_COLUMNS}
-        data={pedidosData?.lstPedido}
+        data={pedidosFiltrados}
         getId={(p) => p.idPedido}
         renderRow={renderRow}
         isLoading={isLoading}

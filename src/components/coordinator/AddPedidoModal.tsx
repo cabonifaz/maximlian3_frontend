@@ -50,6 +50,10 @@ const pedidoResolver: Resolver<PedidoFormData> = async (...args) => {
   return result;
 };
 
+function IndicadorErrorTab() {
+  return <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />;
+}
+
 interface UploadedFile {
   id: string;
   name: string;
@@ -774,10 +778,34 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
     });
   };
 
+  const hayErroresClienteTarifa = !!(
+    errors.idCliente ||
+    errors.idPlantillaInforme ||
+    errors.idIdioma ||
+    errors.idPais ||
+    errors.idClaseInforme ||
+    errors.idTipoTramite ||
+    errors.idTarifario
+  );
+  const hayErroresInfoPedido = !!(
+    errors.investigado ||
+    errors.idTipoPersona ||
+    errors.codigo ||
+    errors.idEmpresaAtencion ||
+    errors.fechaDesde ||
+    errors.fechaHasta ||
+    errors.montoCredito ||
+    errors.plazoCredito ||
+    errors.idTipoPlazoCredito
+  );
+  const anexosSinTipo = anexosFiles.some((archivo) => !archivo.tipoId);
+  const hayErroresAnexos = anexosSinTipo || missingTipoIds.size > 0;
+
   const tabs = [
     {
       id: "cliente-tarifa",
       label: "Cliente y Tarifa",
+      indicator: hayErroresClienteTarifa ? <IndicadorErrorTab /> : undefined,
       content: (
         <ClienteTarifaTab
           register={register}
@@ -796,6 +824,7 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
     {
       id: "info-pedido",
       label: "Información del Pedido",
+      indicator: hayErroresInfoPedido ? <IndicadorErrorTab /> : undefined,
       content: (
         <InfoPedidoTab
           register={register}
@@ -811,11 +840,10 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
     {
       id: "anexos",
       label: "Anexos",
+      indicator: hayErroresAnexos ? <IndicadorErrorTab /> : undefined,
       content: <AnexosTab files={anexosFiles} onFilesChange={setAnexosFiles} missingTipoIds={missingTipoIds} onClearMissingTipo={(id) => setMissingTipoIds((prev) => { const next = new Set(prev); next.delete(id); return next; })} />,
     },
   ];
-
-  const anexosSinTipo = anexosFiles.some((archivo) => !archivo.tipoId);
 
   const footer = (
     <div className="flex justify-end">

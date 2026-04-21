@@ -26,8 +26,10 @@ export interface PedidoListResponse {
 
 export interface PedidoListParams {
   busqueda?: string;
+  idPedido?: number;
   idCliente?: number;
   idEstado?: string;
+  idEstadoAsignacion?: number;
   numPag?: number;
 }
 
