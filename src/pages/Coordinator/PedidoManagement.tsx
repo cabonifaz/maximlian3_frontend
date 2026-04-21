@@ -72,8 +72,14 @@ export default function PedidoManagement() {
     },
   });
   const [filterEstados, setFilterEstados] = useState<number[]>([]);
+  const [versionFiltroEstados, setVersionFiltroEstados] = useState(0);
 
   const debouncedSearch = useDebounce(searchTerm);
+  const estadosFiltroOrdenados = useMemo(
+    () => [...filterEstados].sort((a, b) => a - b),
+    [filterEstados],
+  );
+  const estadosFiltroClave = estadosFiltroOrdenados.join(",");
 
   const {
     data: pedidosData,
@@ -81,13 +87,14 @@ export default function PedidoManagement() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["pedidos", currentPage, debouncedSearch, filterEstados],
+    queryKey: ["pedidos", currentPage, debouncedSearch, estadosFiltroClave, versionFiltroEstados],
     queryFn: () =>
       pedidoService.list({
         numPag: currentPage,
         busqueda: debouncedSearch || undefined,
-        idEstado: filterEstados.length > 0 ? filterEstados.join(",") : undefined,
+        idEstado: estadosFiltroClave || undefined,
       }),
+    gcTime: 0,
   });
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,6 +104,7 @@ export default function PedidoManagement() {
 
   const handleEstadosChange = (ids: number[]) => {
     setFilterEstados(ids);
+    setVersionFiltroEstados((version) => version + 1);
     setCurrentPage(1);
   };
 
@@ -108,11 +116,11 @@ export default function PedidoManagement() {
 
   const pedidosFiltrados = useMemo(() => {
     const pedidos = pedidosData?.lstPedido;
-    if (!pedidos || filterEstados.length === 0) return pedidos;
+    if (!pedidos || estadosFiltroOrdenados.length === 0) return pedidos;
 
-    const estadosSeleccionados = new Set(filterEstados);
+    const estadosSeleccionados = new Set(estadosFiltroOrdenados);
     return pedidos.filter((pedido) => estadosSeleccionados.has(pedido.estado));
-  }, [filterEstados, pedidosData?.lstPedido]);
+  }, [estadosFiltroOrdenados, pedidosData?.lstPedido]);
 
   const renderRow = (pedido: PedidoListEntry) => (
     <>
