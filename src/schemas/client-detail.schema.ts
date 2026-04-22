@@ -9,24 +9,30 @@ const selectorMultipleRequerido = (mensaje: string) =>
 const textoRequerido = (mensaje: string) =>
   z.string({ error: mensaje }).min(1, mensaje);
 
+const selectorRequerido = (mensaje: string) =>
+  z.custom<number>(
+    (valor) => typeof valor === "number" && Number.isFinite(valor) && valor > 0,
+    { message: mensaje },
+  );
+
 export const clientDetailSchema = z.object({
   id: z.number().optional(),
-  tipoPersona: z.number({ error: "El tipo de persona es requerido" }),
+  tipoPersona: selectorRequerido("El tipo de persona es requerido"),
   nombre: textoRequerido("El nombre es requerido"),
-  pais: z.number({ error: "El país es requerido" }),
+  pais: selectorRequerido("El país es requerido"),
   direccion: z.string().optional().or(z.literal("")),
   correo: textoRequerido("El email es requerido").email("Email inválido"),
   telefono: z.string().optional().or(z.literal("")),
   sitioWeb: z.string().url("URL inválida").optional().or(z.literal("")),
   fax: z.string().optional(),
-  tipoRegistroTributario: z.number({ error: "El tipo de registro tributario es requerido" }),
+  tipoRegistroTributario: selectorRequerido("El tipo de registro tributario es requerido"),
   numRegistroTributario: z.string().optional(),
-  moneda: z.number({ error: "La moneda es requerida" }),
-  atendidoPor: z.number({ error: "El atendido por es requerido" }),
-  idioma: z.number({ error: "El idioma preferido es requerido" }),
-  idiomaFacturacion: z.number({ error: "El idioma de facturación es requerido" }),
+  moneda: selectorRequerido("La moneda es requerida"),
+  atendidoPor: selectorRequerido("El atendido por es requerido"),
+  idioma: selectorRequerido("El idioma preferido es requerido"),
+  idiomaFacturacion: selectorRequerido("El idioma de facturación es requerido"),
   formatoInforme: selectorMultipleRequerido("El formato de informe es requerido"),
-  plantillaInforme: z.number({ error: "La plantilla de informe es requerida" }),
+  plantillaInforme: selectorRequerido("La plantilla de informe es requerida"),
   imprimeLogoSafety: z.boolean().optional(),
   aplicaPenalidad: z.boolean().optional(),
   recomendacion: z.string().optional(),

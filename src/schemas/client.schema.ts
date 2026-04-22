@@ -2,9 +2,11 @@ import { z } from "zod";
 
 const selectorRequerido = (mensaje: string) =>
   z.custom<string | number>(
-    (valor) => typeof valor === "string" || typeof valor === "number",
+    (valor) =>
+      (typeof valor === "string" && valor !== "")
+      || (typeof valor === "number" && Number.isFinite(valor) && valor > 0),
     { message: mensaje },
-  ).refine((valor) => valor !== "", mensaje);
+  );
 
 const selectorMultipleRequerido = (mensaje: string) =>
   z.custom<number[]>(
@@ -14,6 +16,18 @@ const selectorMultipleRequerido = (mensaje: string) =>
 
 const textoRequerido = (mensaje: string) =>
   z.string({ error: mensaje }).min(1, mensaje);
+
+const numeroRequerido = (mensaje: string) =>
+  z.custom<number>(
+    (valor) => typeof valor === "number" && Number.isFinite(valor),
+    { message: mensaje },
+  );
+
+const idRequerido = (mensaje: string) =>
+  z.custom<number>(
+    (valor) => typeof valor === "number" && Number.isFinite(valor) && valor > 0,
+    { message: mensaje },
+  );
 
 export const clientInfoSchema = z.object({
   tipoPersona: selectorRequerido("El tipo de persona es requerido"),
@@ -31,20 +45,29 @@ export const clientInfoSchema = z.object({
   idioma: selectorRequerido("El idioma preferido es requerido"),
   idiomaFacturacion: selectorRequerido("El idioma de facturación es requerido"),
   formatoInforme: selectorMultipleRequerido("El formato de informe es requerido"),
-  plantillaInforme: z.number({ error: 'La plantilla de informe es requerida' }),
+  plantillaInforme: idRequerido("La plantilla de informe es requerida"),
   imprimeLogoSafety: z.boolean(),
   aplicaPenalidad: z.boolean(),
   recomendacion: z.string().optional(),
 });
 
 export const rateSchema = z.object({
-  producto: z.number({ error: "El producto es requerido" }),
-  pais: z.number({ error: "El país es requerido" }),
-  moneda: z.number({ error: "La moneda es requerida" }),
-  tramite: z.number({ error: "El trámite es requerido" }),
-  diasMin: z.number({ error: "Días mínimos es requerido" }).min(0, "Días mínimos debe ser mayor o igual a 0"),
-  diasMax: z.number({ error: "Días máximos es requerido" }).min(0, "Días máximos debe ser mayor o igual a 0"),
-  precio: z.number({ error: "El precio es requerido" }).min(0, "El precio debe ser mayor o igual a 0"),
+  producto: idRequerido("El producto es requerido"),
+  pais: idRequerido("El país es requerido"),
+  moneda: idRequerido("La moneda es requerida"),
+  tramite: idRequerido("El trámite es requerido"),
+  diasMin: numeroRequerido("Días mínimos es requerido").refine(
+    (valor) => valor >= 0,
+    "Días mínimos debe ser mayor o igual a 0",
+  ),
+  diasMax: numeroRequerido("Días máximos es requerido").refine(
+    (valor) => valor >= 0,
+    "Días máximos debe ser mayor o igual a 0",
+  ),
+  precio: numeroRequerido("El precio es requerido").refine(
+    (valor) => valor >= 0,
+    "El precio debe ser mayor o igual a 0",
+  ),
   penalidad: z.preprocess(
     (val) => (typeof val === "number" && isNaN(val) ? undefined : val),
     z.number().min(0, "La penalidad debe ser mayor o igual a 0").optional()
@@ -54,11 +77,6 @@ export const rateSchema = z.object({
     ctx.addIssue({
       code: "custom",
       message: "Días mínimos debe ser menor a días máximos",
-      path: ["diasMin"],
-    });
-    ctx.addIssue({
-      code: "custom",
-      message: "Días máximos debe ser mayor a días mínimos",
       path: ["diasMax"],
     });
   }
