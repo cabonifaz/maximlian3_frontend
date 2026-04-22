@@ -7,10 +7,7 @@ import { CustomTabbedModal } from "@maximilian/components/common/CustomTabbedMod
 import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { assignmentService } from "@maximilian/services/assignment.service";
-import { clientService } from "@maximilian/services/client.service";
-import { masterTableService } from "@maximilian/services/masterTable.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
-import { MasterTableId, type MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import type {
   AssignmentCandidate,
   AssignmentRole,
@@ -111,15 +108,6 @@ function normalizarPedidoInicial(pedido: PedidoListEntry): PedidoListEntry {
     colorFondo: pedido.colorFondo || "#f1f5f9",
     vigencia: pedido.vigencia || "-",
   };
-}
-
-function obtenerEtiquetaCatalogo(
-  opciones: MasterTableEntry[] | undefined,
-  id: number | undefined,
-  respaldo = "-",
-) {
-  if (!id) return respaldo;
-  return opciones?.find((opcion) => opcion.num1 === id)?.string1 ?? respaldo;
 }
 
 function obtenerInicialesAsignado(nombre: string) {
@@ -223,51 +211,10 @@ export function AssignmentWorkflowModal({
       pedidoService.listAsignacion({
         numPag: esModoEdicion ? 1 : paginaPedido,
         busqueda: !esModoEdicion ? busquedaPedidoDebounced || undefined : undefined,
+        idPedido: esModoEdicion ? idPedidoEdicion : undefined,
         idEstadoAsignacion: !esModoEdicion ? ID_ESTADO_ASIGNACION_SIN_ASIGNACION_PENDIENTE : undefined,
       }),
-    enabled: isOpen && !esModoEdicion,
-  });
-
-  const {
-    data: pedidoDetalleEdicion,
-    isLoading: isLoadingPedidoDetalleEdicion,
-    isError: isErrorPedidoDetalleEdicion,
-    refetch: refetchPedidoDetalleEdicion,
-  } = useQuery({
-    queryKey: ["pedido-detalle-asignacion", idPedidoEdicion],
-    queryFn: () => pedidoService.getById(idPedidoEdicion!),
-    enabled: isOpen && esModoEdicion && !!idPedidoEdicion,
-  });
-
-  const {
-    data: tarifarioDetalleEdicion,
-    isLoading: isLoadingTarifarioDetalleEdicion,
-  } = useQuery({
-    queryKey: [
-      "tarifario-detalle-asignacion",
-      pedidoDetalleEdicion?.idCliente,
-      pedidoDetalleEdicion?.idTarifario,
-    ],
-    queryFn: () =>
-      clientService.getTarifarioById({
-        idCliente: pedidoDetalleEdicion!.idCliente,
-        idTarifario: pedidoDetalleEdicion!.idTarifario,
-      }),
-    enabled: isOpen && esModoEdicion && !!pedidoDetalleEdicion?.idCliente && !!pedidoDetalleEdicion?.idTarifario,
-  });
-
-  const { data: idiomasData, isLoading: isLoadingIdiomasEdicion } = useQuery({
-    queryKey: ["masterTable", MasterTableId.IDIOMA],
-    queryFn: () => masterTableService.list(MasterTableId.IDIOMA),
-    enabled: isOpen && esModoEdicion,
-    staleTime: Infinity,
-  });
-
-  const { data: tiposTramiteData, isLoading: isLoadingTiposTramiteEdicion } = useQuery({
-    queryKey: ["masterTable", MasterTableId.TIPO_TRAMITE],
-    queryFn: () => masterTableService.list(MasterTableId.TIPO_TRAMITE),
-    enabled: isOpen && esModoEdicion,
-    staleTime: Infinity,
+    enabled: isOpen && (!esModoEdicion || !!idPedidoEdicion),
   });
 
   const pedidoEdicion = useMemo(
@@ -280,37 +227,8 @@ export function AssignmentWorkflowModal({
     [pedidosIniciales],
   );
 
-  const pedidoDetalleNormalizado = useMemo<PedidoListEntry | null>(() => {
-    if (!pedidoDetalleEdicion) return null;
-
-    const pedidoInicial = pedidosInicialesNormalizados.find((pedido) => pedido.idPedido === pedidoDetalleEdicion.idPedido);
-    const idTipoTramite = tarifarioDetalleEdicion?.idTipoTramite;
-
-    return {
-      idPedido: pedidoDetalleEdicion.idPedido,
-      idAsignacion: pedidoInicial?.idAsignacion,
-      codigo: pedidoDetalleEdicion.codigo ?? "",
-      idCliente: pedidoDetalleEdicion.idCliente,
-      cliente: pedidoDetalleEdicion.nombreCliente || pedidoInicial?.cliente || "-",
-      investigado: pedidoDetalleEdicion.investigarRazonSocialNombres || pedidoInicial?.investigado || "-",
-      idIdioma: pedidoDetalleEdicion.idIdioma,
-      idioma: obtenerEtiquetaCatalogo(idiomasData, pedidoDetalleEdicion.idIdioma, pedidoInicial?.idioma || "-"),
-      tipoTramite: obtenerEtiquetaCatalogo(tiposTramiteData, idTipoTramite, pedidoInicial?.tipoTramite || "-"),
-      analista: pedidoInicial?.analista,
-      traductor: pedidoInicial?.traductor,
-      logoImprimible: pedidoDetalleEdicion.imprimeLogoSafety,
-      estado: pedidoDetalleEdicion.idEstado,
-      descripcionEstado: pedidoInicial?.descripcionEstado || "-",
-      colorLetra: pedidoInicial?.colorLetra || "#475569",
-      colorFondo: pedidoInicial?.colorFondo || "#f1f5f9",
-      vigencia: pedidoInicial?.vigencia || "-",
-    };
-  }, [idiomasData, pedidoDetalleEdicion, pedidosInicialesNormalizados, tarifarioDetalleEdicion, tiposTramiteData]);
-
   const pedidosActivos = esModoEdicion
-    ? pedidoDetalleNormalizado
-      ? [pedidoDetalleNormalizado]
-      : pedidoEdicion
+    ? pedidoEdicion
       ? [pedidoEdicion]
       : pedidosInicialesNormalizados
     : pedidosData?.lstPedido ?? [];
@@ -322,12 +240,6 @@ export function AssignmentWorkflowModal({
         .filter((pedido): pedido is PedidoListEntry => Boolean(pedido)),
     [idsSeleccionados, pedidosSeleccionados],
   );
-
-  const isLoadingDatosPedidoEdicion =
-    isLoadingPedidoDetalleEdicion
-    || isLoadingTarifarioDetalleEdicion
-    || isLoadingIdiomasEdicion
-    || isLoadingTiposTramiteEdicion;
 
   const idiomasPedido = useMemo(
     () =>
@@ -393,13 +305,12 @@ export function AssignmentWorkflowModal({
   }, [asignacionesIniciales]);
 
   useEffect(() => {
-    const pedidoActivoEdicion = pedidoDetalleNormalizado ?? pedidoEdicion;
-    if (!esModoEdicion || !pedidoActivoEdicion) return;
+    if (!esModoEdicion || !pedidoEdicion) return;
 
     setPedidosSeleccionados({
-      [pedidoActivoEdicion.idPedido]: normalizarPedidoInicial(pedidoActivoEdicion),
+      [pedidoEdicion.idPedido]: normalizarPedidoInicial(pedidoEdicion),
     });
-  }, [esModoEdicion, pedidoDetalleNormalizado, pedidoEdicion]);
+  }, [esModoEdicion, pedidoEdicion]);
 
   useEffect(() => {
     setAsignacionesBorrador((actual) =>
@@ -544,15 +455,9 @@ export function AssignmentWorkflowModal({
         data={pedidosActivos}
         getId={(pedido) => pedido.idPedido}
         renderRow={renderPedidoRow}
-        isLoading={esModoEdicion ? isLoadingDatosPedidoEdicion : isLoadingPedidos || isFetchingPedidos}
-        isError={esModoEdicion ? isErrorPedidoDetalleEdicion : isErrorPedidos}
-        onRetry={() => {
-          if (esModoEdicion) {
-            void refetchPedidoDetalleEdicion();
-            return;
-          }
-          void refetchPedidos();
-        }}
+        isLoading={isLoadingPedidos || isFetchingPedidos}
+        isError={isErrorPedidos}
+        onRetry={() => refetchPedidos()}
         emptyMessage="No se encontraron pedidos."
         errorMessage="Error al cargar los pedidos"
         currentPage={esModoEdicion ? 1 : paginaPedido}
