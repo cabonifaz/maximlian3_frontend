@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import {
   Plus,
@@ -22,6 +22,7 @@ import { AddContactModal } from "./AddContactModal";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { clientService } from "@maximilian/services/client.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
+import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import type {
   TarifarioListEntry,
   TarifarioDetail,
@@ -41,6 +42,23 @@ interface ClientDetailModalProps {
 }
 
 type Tab = "info" | "rates" | "contacts";
+
+function opcionesIncluyenValor(options: MasterTableEntry[] | undefined, valor: number | undefined) {
+  if (!options || typeof valor !== "number" || !Number.isFinite(valor) || valor <= 0) return true;
+  return options.some((option) => option.num1 === valor);
+}
+
+function filtrarValoresValidos(options: MasterTableEntry[] | undefined, valores: number[] | undefined) {
+  if (!options || !valores) return valores ?? [];
+
+  const idsValidos = new Set(
+    options
+      .map((option) => option.num1)
+      .filter((id): id is number => typeof id === "number" && Number.isFinite(id) && id > 0),
+  );
+
+  return valores.filter((valor) => idsValidos.has(valor));
+}
 
 
 export function ClientDetailModal({
@@ -83,7 +101,7 @@ export function ClientDetailModal({
     watch: infoWatch,
     handleSubmit: infoHandleSubmit,
     trigger: triggerInfo,
-    formState: { errors: infoErrors, isDirty: infoIsDirty },
+    formState: { errors: infoErrors },
   } = useForm<ClientDetailFormData>({
     resolver: zodResolver(clientDetailSchema),
     mode: "onTouched",
@@ -254,7 +272,7 @@ export function ClientDetailModal({
     enabled: isOpen,
     staleTime: Infinity,
   });
-  const plantillaOptions = plantillaInformeData ?? [];
+  const plantillaOptions = useMemo(() => plantillaInformeData ?? [], [plantillaInformeData]);
 
   const [tarifarioSearch, setTarifarioSearch] = useState("");
   const [tarifarioPag, setTarifarioPag] = useState(1);
@@ -283,9 +301,6 @@ export function ClientDetailModal({
     enabled: activeTab === "contacts" && !!client?.idCliente,
   });
 
-
-  if (!isOpen) return null;
-
   const watchedPais = infoWatch("pais");
   const watchedTipoRegTributario = infoWatch("tipoRegistroTributario");
   const watchedAtendidoPor = infoWatch("atendidoPor");
@@ -295,6 +310,55 @@ export function ClientDetailModal({
   const watchedMoneda = infoWatch("moneda");
   const watchedFormatoInforme = infoWatch("formatoInforme");
   const watchedPlantillaInforme = infoWatch("plantillaInforme");
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const validarSelector = (
+      campo: keyof ClientDetailFormData,
+      valor: number | undefined,
+      options: MasterTableEntry[] | undefined,
+    ) => {
+      if (opcionesIncluyenValor(options, valor)) return;
+      setInfoValue(campo, 0 as never, { shouldValidate: true });
+    };
+
+    validarSelector("tipoPersona", watchedTipoPersona, tipoPersonaData);
+    validarSelector("pais", watchedPais, paisData);
+    validarSelector("tipoRegistroTributario", watchedTipoRegTributario, tipoRegTributarioData);
+    validarSelector("moneda", watchedMoneda, rateMonedas);
+    validarSelector("atendidoPor", watchedAtendidoPor, empresaAtencionData);
+    validarSelector("idioma", watchedIdioma, idiomaData);
+    validarSelector("idiomaFacturacion", watchedIdiomaFacturacion, idiomaData);
+    validarSelector("plantillaInforme", watchedPlantillaInforme, plantillaOptions);
+
+    const formatosValidos = filtrarValoresValidos(formatoInformeData, watchedFormatoInforme);
+    if (formatosValidos.length !== (watchedFormatoInforme ?? []).length) {
+      setInfoValue("formatoInforme", formatosValidos, { shouldValidate: true });
+    }
+  }, [
+    empresaAtencionData,
+    formatoInformeData,
+    idiomaData,
+    isOpen,
+    paisData,
+    plantillaOptions,
+    rateMonedas,
+    setInfoValue,
+    tipoPersonaData,
+    tipoRegTributarioData,
+    watchedAtendidoPor,
+    watchedFormatoInforme,
+    watchedIdioma,
+    watchedIdiomaFacturacion,
+    watchedMoneda,
+    watchedPais,
+    watchedPlantillaInforme,
+    watchedTipoPersona,
+    watchedTipoRegTributario,
+  ]);
+
+  if (!isOpen) return null;
 
   const loadingState = (
     <div className="h-full flex flex-col items-center justify-center gap-3 py-20">
@@ -822,7 +886,7 @@ export function ClientDetailModal({
                 idPlantilla: formData.plantillaInforme ?? client.idPlantilla,
               });
             })}
-            disabled={!infoIsDirty}
+            disabled={updateInfoMutation.isPending}
             loading={updateInfoMutation.isPending}
             loadingText="Guardando..."
             className="min-w-35"

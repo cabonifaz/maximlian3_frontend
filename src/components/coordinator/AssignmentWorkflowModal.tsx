@@ -194,6 +194,7 @@ export function AssignmentWorkflowModal({
   const {
     data: pedidosData,
     isLoading: isLoadingPedidos,
+    isFetching: isFetchingPedidos,
     isError: isErrorPedidos,
     refetch: refetchPedidos,
   } = useQuery({
@@ -221,10 +222,15 @@ export function AssignmentWorkflowModal({
     [idPedidoEdicion, pedidosData?.lstPedido],
   );
 
+  const pedidosInicialesNormalizados = useMemo(
+    () => pedidosIniciales.map(normalizarPedidoInicial),
+    [pedidosIniciales],
+  );
+
   const pedidosActivos = esModoEdicion
     ? pedidoEdicion
       ? [pedidoEdicion]
-      : []
+      : pedidosInicialesNormalizados
     : pedidosData?.lstPedido ?? [];
 
   const pedidosElegidos = useMemo(
@@ -335,6 +341,7 @@ export function AssignmentWorkflowModal({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
       await queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+      await queryClient.invalidateQueries({ queryKey: ["pedidos-asignacion-modal"] });
       onSuccess?.();
       onClose();
     },
@@ -434,8 +441,11 @@ export function AssignmentWorkflowModal({
                 setTerminoBusquedaPedido(e.target.value);
                 setPaginaPedido(1);
               }}
-              className="w-full rounded-xl border border-gray-200 bg-brand-white py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
+              className="w-full rounded-xl border border-gray-200 bg-brand-white py-2.5 pl-10 pr-10 text-sm outline-none transition-all focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
             />
+            {isFetchingPedidos ? (
+              <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400" />
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -445,7 +455,7 @@ export function AssignmentWorkflowModal({
         data={pedidosActivos}
         getId={(pedido) => pedido.idPedido}
         renderRow={renderPedidoRow}
-        isLoading={isLoadingPedidos}
+        isLoading={isLoadingPedidos || (!esModoEdicion && isFetchingPedidos)}
         isError={isErrorPedidos}
         onRetry={() => refetchPedidos()}
         emptyMessage="No se encontraron pedidos."
