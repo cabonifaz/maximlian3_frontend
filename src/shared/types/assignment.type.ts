@@ -68,10 +68,11 @@ export interface CreateAssignmentAssignee {
 }
 
 export interface UpdateAssignmentRequest {
-  idUsuarioAsignado: number;
-  idRolAsignado: number;
-  idEstado: number;
-  idsPedido: number[];
+  idUsuarioAsignado?: number;
+  idRolAsignado?: number;
+  idEstado?: number;
+  idPedido: number;
+  asignados: CreateAssignmentAssignee[];
 }
 
 export interface DeleteAssignmentRequest {
