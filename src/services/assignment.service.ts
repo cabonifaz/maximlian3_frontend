@@ -302,6 +302,30 @@ function construirPayloadCreacion(
   };
 }
 
+function construirPayloadEdicion(
+  idPedidos: number[],
+  assignments: AssignmentRoleSelection[],
+): UpdateAssignmentRequest {
+  const idPedido = idPedidos[0];
+
+  if (!idPedido) {
+    throw new Error("No se pudo identificar el pedido a reasignar");
+  }
+
+  const asignados = construirPayloadCreacion(idPedidos, assignments).asignados.map((asignado) => ({
+    ...asignado,
+    idEstado:
+      asignado.idRolAsignado === IDS_ROL_POR_TIPO.translator
+        ? ESTADO_REASIGNACION_TRADUCTOR
+        : ESTADO_REASIGNACION_ANALISTA,
+  }));
+
+  return {
+    idPedido,
+    asignados,
+  };
+}
+
 export const assignmentService = {
   list: async (params: AssignmentListParams): Promise<AssignmentListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Asignacion/listar", {
@@ -384,19 +408,7 @@ export const assignmentService = {
     const payload = construirPayloadCreacion(idPedidos, assignments);
 
     if (modo === "editar") {
-      await Promise.all(
-        payload.asignados.map((asignado) =>
-          assignmentService.update({
-            idUsuarioAsignado: asignado.idUsuarioAsignado,
-            idRolAsignado: asignado.idRolAsignado,
-            idEstado:
-              asignado.idRolAsignado === IDS_ROL_POR_TIPO.translator
-                ? ESTADO_REASIGNACION_TRADUCTOR
-                : ESTADO_REASIGNACION_ANALISTA,
-            idsPedido: idPedidos,
-          }),
-        ),
-      );
+      await assignmentService.update(construirPayloadEdicion(idPedidos, assignments));
     } else {
       await assignmentService.create(payload);
     }
