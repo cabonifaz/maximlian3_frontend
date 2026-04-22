@@ -1,8 +1,10 @@
 import { type RouteObject, Navigate } from "react-router";
+import { CustomRouteErrorBoundary } from "@maximilian/components/common/CustomRouteErrorBoundary";
 
 export const coordinatorRoutes: RouteObject[] = [
   {
     path: "coordinator",
+    errorElement: <CustomRouteErrorBoundary />,
     lazy: () =>
       import("@maximilian/components/coordinator/CoordinatorLayout").then((m) => ({
         Component: m.default,

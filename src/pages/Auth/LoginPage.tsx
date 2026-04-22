@@ -13,6 +13,7 @@ import {
 } from "@maximilian/schemas";
 import { authService } from "@maximilian/services/auth.service";
 import { translateAuthError } from "@maximilian/shared/utils/auth-errors";
+import { consumirMensajeSesion } from "@maximilian/services/session.service";
 
 const REMEMBER_ME_COOKIE = "maximilian_remember_me";
 
@@ -43,6 +44,11 @@ export default function LoginPage() {
 
   // Load saved credentials on mount
   useEffect(() => {
+    const mensajeSesion = consumirMensajeSesion();
+    if (mensajeSesion) {
+      setAuthError(mensajeSesion);
+    }
+
     const savedData = Cookies.get(REMEMBER_ME_COOKIE);
     if (savedData) {
       try {

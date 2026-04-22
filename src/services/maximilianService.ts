@@ -3,6 +3,7 @@ import { fetchAuthSession } from "aws-amplify/auth";
 import { toast } from "sonner";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { cerrarSesionExpirada } from "./session.service";
 
 const maximilianService = axios.create({
   baseURL: import.meta.env.VITE_API_URL!,
@@ -49,6 +50,8 @@ maximilianService.interceptors.request.use(
       }
     } catch (error) {
       console.error("Error fetching Cognito token:", error);
+      void cerrarSesionExpirada();
+      return Promise.reject(error);
     }
     return config;
   },
@@ -80,6 +83,11 @@ maximilianService.interceptors.response.use(
     return response;
   },
   (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      void cerrarSesionExpirada();
+      return Promise.reject(error);
+    }
+
     // Handle network or HTTP errors
     const errorMessage =
       obtenerMensajeAmigableUsuario(error.config?.url) ||
