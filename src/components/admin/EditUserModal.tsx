@@ -260,12 +260,12 @@ export function EditUserModal({
                 </div>
                 <div className="space-y-2 col-span-2">
                   <label className="text-sm font-semibold text-brand-black">
-                    Email
+                    Correo Electrónico
                   </label>
                   <input
                     {...register("correo")}
                     type="email"
-                    placeholder="Email"
+                    placeholder="Correo Electrónico"
                     disabled
                     className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500 outline-none transition-all cursor-not-allowed"
                   />

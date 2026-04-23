@@ -2,10 +2,10 @@ import { useState } from "react";
 import {
   Search,
   Plus,
-  Filter,
   MoreHorizontal,
   Edit2,
   Trash2,
+  X,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreateUserModal } from "@maximilian/components/admin/CreateUserModal";
@@ -16,6 +16,7 @@ import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { type UserFormData } from "@maximilian/schemas";
 import { userService } from "@maximilian/services/user.service";
 import { masterTableService } from "@maximilian/services/masterTable.service";
+import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import type {
   CreateUserRequest,
   DeleteUserRequest,
@@ -41,10 +42,13 @@ const USER_COLUMNS = [
   { label: "Apellido Materno" },
   { label: "Nombre de Usuario" },
   { label: "Rol(es)" },
-  { label: "Email" },
+  { label: "Correo" },
   { label: "Estado" },
   { label: "" },
 ];
+
+const ID_MAESTRO_ESTADO_USUARIO = 100;
+const ID_ESTADO_USUARIO_ACTIVO = 1;
 
 const normalizarTexto = (valor: string) =>
   valor
@@ -65,6 +69,7 @@ export default function UserManagement() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [filter, setFilter] = useState("");
+  const [idEstadoFiltro, setIdEstadoFiltro] = useState<number | undefined>(ID_ESTADO_USUARIO_ACTIVO);
   const debouncedFilter = useDebounce(filter);
 
   const queryClient = useQueryClient();
@@ -75,8 +80,13 @@ export default function UserManagement() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["users", currentPage, debouncedFilter],
-    queryFn: () => userService.list({ numPag: currentPage, filtro: debouncedFilter }),
+    queryKey: ["users", currentPage, debouncedFilter, idEstadoFiltro],
+    queryFn: () =>
+      userService.list({
+        numPag: currentPage,
+        filtro: debouncedFilter,
+        idEstado: idEstadoFiltro,
+      }),
     enabled: filter === debouncedFilter,
   });
 
@@ -340,16 +350,38 @@ export default function UserManagement() {
             />
             <input
               type="text"
-              placeholder="Buscar usuario"
+              placeholder="Buscar por nombre, usuario o correo"
               value={filter}
               onChange={handleSearchChange}
-              className="pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-lg text-sm w-72 focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all"
+              className="pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-lg text-sm w-96 focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all"
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
-            <Filter size={16} />
-            <span>Estado</span>
-          </button>
+          <div className="flex w-56 items-center gap-2">
+            <div className="flex-1">
+              <SearchableSelect
+                idMaster={ID_MAESTRO_ESTADO_USUARIO}
+                value={idEstadoFiltro}
+                onChange={(idEstado) => {
+                  setIdEstadoFiltro(idEstado);
+                  setCurrentPage(1);
+                }}
+                placeholder="Estado"
+              />
+            </div>
+            {idEstadoFiltro ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIdEstadoFiltro(undefined);
+                  setCurrentPage(1);
+                }}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-400 transition-colors hover:bg-gray-50 hover:text-brand-black"
+                title="Limpiar estado"
+              >
+                <X size={16} />
+              </button>
+            ) : null}
+          </div>
           <button
             onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"

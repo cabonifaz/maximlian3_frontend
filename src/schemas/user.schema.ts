@@ -8,7 +8,7 @@ export const userSchema = z
     usuarioCreacion: z
       .string()
       .min(3, "El nombre de usuario debe tener al menos 3 caracteres"),
-    correo: z.string().email("Email inválido"),
+    correo: z.string().email("Correo inválido"),
     roles: z
       .array(z.union([z.string(), z.number()]))
       .min(1, "Debe seleccionar al menos un rol"),

@@ -321,11 +321,11 @@ export function AddClientModal({
                   </div>
 
                   <div className="space-y-2">
-                    <CustomLabel required>Email</CustomLabel>
+                    <CustomLabel required>Correo Electrónico</CustomLabel>
                     <input
                       {...infoRegister("correo")}
                       type="email"
-                      placeholder="Email"
+                      placeholder="Correo Electrónico"
                       className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.correo ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300`}
                     />
                     {infoErrors.correo && (
@@ -690,7 +690,7 @@ export function AddClientModal({
                     <tr>
                       <th className="px-3 py-3 w-8" />
                       <th className="px-4 py-3 font-bold">Nombre</th>
-                      <th className="px-4 py-3 font-bold">Email</th>
+                      <th className="px-4 py-3 font-bold">Correo</th>
                       <th className="px-4 py-3 font-bold">Teléfono</th>
                       <th className="px-4 py-3 font-bold">Tipo Contacto</th>
                       <th className="px-4 py-3 font-bold">Área Trabajo</th>

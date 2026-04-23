@@ -459,7 +459,7 @@ export function ClientDetailModal({
                   </div>
 
                   <div className="space-y-2">
-                    <CustomLabel required>Email</CustomLabel>
+                    <CustomLabel required>Correo</CustomLabel>
                     <input
                       {...infoRegister("correo")}
                       type="email"
@@ -804,7 +804,7 @@ export function ClientDetailModal({
                         <tr>
                           <th className="px-3 py-3 w-8" />
                           <th className="px-4 py-3 font-bold">Nombre</th>
-                          <th className="px-4 py-3 font-bold">Email</th>
+                          <th className="px-4 py-3 font-bold">Correo</th>
                           <th className="px-4 py-3 font-bold">Teléfono</th>
                           <th className="px-4 py-3 font-bold">Tipo Contacto</th>
                           <th className="px-4 py-3 font-bold">Área Trabajo</th>
@@ -1016,7 +1016,7 @@ export function ClientDetailModal({
         isSubmitting={deleteContactoMutation.isPending}
       >
         <p><span className="font-bold">Nombre:</span> {contactToDelete?.nombres ?? "-"}</p>
-        <p><span className="font-bold">Email:</span> {contactToDelete?.correo ?? "-"}</p>
+        <p><span className="font-bold">Correo:</span> {contactToDelete?.correo ?? "-"}</p>
         <p><span className="font-bold">Teléfono:</span> {contactToDelete?.telefono ?? "-"}</p>
       </ConfirmDeleteModal>
     </>

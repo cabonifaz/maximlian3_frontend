@@ -36,7 +36,7 @@ const CLIENT_COLUMNS = [
   { label: "País" },
   { label: "Tipo de Persona" },
   { label: "Teléfono" },
-  { label: "Email" },
+  { label: "Correo" },
   { label: "Estado" },
   { label: "Acciones", className: "text-right" },
 ];
@@ -487,7 +487,7 @@ export default function ClientManagement() {
         isSubmitting={deleteClientMutation.isPending}
       >
         <p><span className="font-bold">Nombre:</span> {clientToDelete?.nombre ?? "-"}</p>
-        <p><span className="font-bold">Email:</span> {clientToDelete?.correo ?? "-"}</p>
+        <p><span className="font-bold">Correo:</span> {clientToDelete?.correo ?? "-"}</p>
       </ConfirmDeleteModal>
     </div>
   );
