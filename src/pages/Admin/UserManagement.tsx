@@ -73,6 +73,12 @@ export default function UserManagement() {
 
   const queryClient = useQueryClient();
 
+  const { data: estadosUsuarioData } = useQuery({
+    queryKey: ["masterTable", ID_MAESTRO_ESTADO_USUARIO],
+    queryFn: () => masterTableService.list(ID_MAESTRO_ESTADO_USUARIO),
+    staleTime: Infinity,
+  });
+
   const {
     data: usersData,
     isLoading,
@@ -357,7 +363,7 @@ export default function UserManagement() {
           </div>
           <div className="w-48">
             <SearchableSelect
-              idMaster={ID_MAESTRO_ESTADO_USUARIO}
+              options={estadosUsuarioData}
               value={idEstadoFiltro}
               onChange={(idEstado) => {
                 setIdEstadoFiltro(idEstado);
