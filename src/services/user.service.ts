@@ -95,15 +95,20 @@ export const userService = {
    */
   list: async (params: UserListRequest) => {
     try {
+      const parametros = new URLSearchParams({
+        numPag: String(params.numPag),
+      });
+
+      if (params.idEstado != null) {
+        parametros.set("idEstado", String(params.idEstado));
+      }
+
+      if (params.filtro?.trim()) {
+        parametros.set("filtro", params.filtro.trim());
+      }
+
       const { data } = await maximilianService.get<ApiResponse<UserListResponse>>(
-        "/api/Usuario/listar",
-        {
-          params: {
-            numPag: params.numPag,
-            filtro: params.filtro || undefined,
-            idEstado: params.idEstado,
-          },
-        }
+        `/api/Usuario/listar?${parametros.toString()}`
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {

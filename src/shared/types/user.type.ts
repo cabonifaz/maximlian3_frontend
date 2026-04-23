@@ -41,7 +41,7 @@ export type DeleteUserRequest = {
 export type UserListRequest = {
   numPag: number;
   filtro?: string;
-  idEstado?: number;
+  idEstado?: number | null;
 };
 
 export type UserListEntry = {

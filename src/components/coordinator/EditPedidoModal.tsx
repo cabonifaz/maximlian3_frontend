@@ -462,6 +462,11 @@ function InfoPedidoTab({ register, setValue, watch, trigger, errors, selectedTar
                   const entry = tiposPlazoCredito?.find((t) => t.num1 === val);
                   setValue("tipoPlazoCredito", entry?.string1 ?? "", { shouldValidate: false });
                 }}
+                onClear={() => {
+                  setValue("idTipoPlazoCredito", undefined, { shouldValidate: true });
+                  setValue("tipoPlazoCredito", "", { shouldValidate: false });
+                }}
+                optional
                 autoSeleccionarOpcionUnica
                 placeholder="Tipo"
               />
