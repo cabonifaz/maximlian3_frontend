@@ -126,11 +126,11 @@ export function AddContactModal({ isOpen, onClose, onConfirm, defaultValues }: A
             </div>
 
             <div className="space-y-2">
-              <CustomLabel required>Email</CustomLabel>
+              <CustomLabel required>Correo Electrónico</CustomLabel>
               <input
                 {...register("correo")}
                 type="email"
-                placeholder="Email"
+                placeholder="Correo Electrónico"
                 className={`w-full px-4 py-2.5 bg-brand-white border ${errors.correo ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300`}
               />
               {errors.correo && <p className="text-xs text-red-500">{errors.correo.message}</p>}

@@ -100,7 +100,8 @@ export const userService = {
         {
           params: {
             numPag: params.numPag,
-            Filtro: params.filtro || "",
+            filtro: params.filtro || undefined,
+            idEstado: params.idEstado,
           },
         }
       );

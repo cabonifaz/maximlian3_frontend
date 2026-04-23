@@ -261,11 +261,11 @@ export function CreateUserModal({
                   )}
                 </div>
                 <div className="space-y-2 col-span-2">
-                  <CustomLabel required className="text-sm font-semibold text-brand-black">Email</CustomLabel>
+                  <CustomLabel required className="text-sm font-semibold text-brand-black">Correo Electrónico</CustomLabel>
                   <input
                     {...register("correo")}
                     type="email"
-                    placeholder="Email"
+                    placeholder="Correo Electrónico"
                     className={`w-full px-4 py-2 bg-brand-white border ${
                       errors.correo ? "border-red-500" : "border-gray-200"
                     } rounded-lg text-sm focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all`}
