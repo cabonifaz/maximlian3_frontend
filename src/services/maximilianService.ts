@@ -6,7 +6,9 @@ import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import { cerrarSesionExpirada } from "./session.service";
 
 const maximilianService = axios.create({
-  baseURL: import.meta.env.VITE_API_URL!,
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    "https://maximilianbackendpreprod-f9haawdbdna5h9gx.canadacentral-01.azurewebsites.net",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -95,7 +97,7 @@ maximilianService.interceptors.response.use(
       "Error de conexión con el servidor";
     toast.error(errorMessage);
     return Promise.reject(error);
-  }
+  },
 );
 
 export default maximilianService;
