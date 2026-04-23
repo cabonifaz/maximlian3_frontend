@@ -47,7 +47,6 @@ const USER_COLUMNS = [
 ];
 
 const ID_MAESTRO_ESTADO_USUARIO = 100;
-const ID_ESTADO_USUARIO_ACTIVO = 1;
 
 const normalizarTexto = (valor: string) =>
   valor
@@ -68,7 +67,7 @@ export default function UserManagement() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [filter, setFilter] = useState("");
-  const [idEstadoFiltro, setIdEstadoFiltro] = useState<number | undefined>(ID_ESTADO_USUARIO_ACTIVO);
+  const [idEstadoFiltro, setIdEstadoFiltro] = useState<number | undefined>(undefined);
   const debouncedFilter = useDebounce(filter);
 
   const queryClient = useQueryClient();
@@ -369,6 +368,12 @@ export default function UserManagement() {
                 setIdEstadoFiltro(idEstado);
                 setCurrentPage(1);
               }}
+              onClear={() => {
+                setIdEstadoFiltro(undefined);
+                setCurrentPage(1);
+              }}
+              optional
+              etiquetaOpcionVacia="Todos"
               placeholder="Estado"
             />
           </div>

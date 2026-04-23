@@ -18,7 +18,7 @@ export function DeleteUserModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-50 flex min-h-dvh w-screen items-center justify-center overflow-y-auto p-4 bg-brand-black/40 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-brand-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
         <div className="p-8">
           <div className="flex items-center justify-between mb-6">
