@@ -7,7 +7,7 @@ import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { masterTableService } from "@maximilian/services/masterTable.service";
-import { MasterTableId } from "@maximilian/shared/types/master-table.type";
+import { MasterTableId, type MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import { clientService } from "@maximilian/services/client.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import type { ClienteCorta, TarifarioCortaEntry } from "@maximilian/shared/types/client.type";
@@ -549,6 +549,29 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
     ])).sort(),
     [archivos, newFiles]
   );
+  const formatoOptions = useMemo<MasterTableEntry[]>(
+    () =>
+      uniqueFormatos.map((formato, indice) => ({
+        idEmpresa: 0,
+        idTablaMaestra: null,
+        idMaestro: 0,
+        descripcion: formato,
+        num1: indice + 1,
+        num2: null,
+        num3: null,
+        string1: formato,
+        string2: null,
+        string3: null,
+        date1: null,
+        date2: null,
+        date3: null,
+      })),
+    [uniqueFormatos]
+  );
+  const valorFormatoSeleccionado = useMemo(
+    () => formatoOptions.find((opcion) => opcion.string1 === filterFormato)?.num1,
+    [filterFormato, formatoOptions]
+  );
 
   const filteredArchivos = useMemo(() => archivos.filter((f) => {
     const ext = getExtension(f.nombreDocumento);
@@ -573,6 +596,9 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
       file: f,
     }));
     onNewFilesChange([...newFiles, ...next]);
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
   };
 
   const handleTipoChange = (id: string, tipoId: number | undefined) => {
@@ -624,26 +650,35 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
           />
-          <select
-            value={filterFormato}
-            onChange={(e) => setFilterFormato(e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all cursor-pointer bg-white"
-          >
-            <option value="">Formato</option>
-            {uniqueFormatos.map((fmt) => (
-              <option key={fmt} value={fmt}>{fmt}</option>
-            ))}
-          </select>
-          <select
-            value={filterTipo ?? ""}
-            onChange={(e) => setFilterTipo(e.target.value ? Number(e.target.value) : undefined)}
-            className="px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all cursor-pointer bg-white"
-          >
-            <option value="">Tipo</option>
-            {tipoOptions.map((t) => (
-              <option key={t.num1} value={t.num1 ?? ""}>{t.string1}</option>
-            ))}
-          </select>
+          <div className="w-36 shrink-0">
+            <SearchableSelect
+              options={formatoOptions}
+              value={valorFormatoSeleccionado ?? undefined}
+              onChange={(valor) => {
+                const formato = formatoOptions.find((opcion) => opcion.num1 === valor)?.string1 ?? "";
+                setFilterFormato(formato);
+              }}
+              onClear={() => setFilterFormato("")}
+              optional
+              etiquetaOpcionVacia="Formato"
+              placeholder="Formato"
+              dropdownZIndexClassName="z-50"
+              overlayZIndexClassName="z-40"
+            />
+          </div>
+          <div className="w-40 shrink-0">
+            <SearchableSelect
+              options={tipoOptions}
+              value={filterTipo}
+              onChange={(valor) => setFilterTipo(valor)}
+              onClear={() => setFilterTipo(undefined)}
+              optional
+              etiquetaOpcionVacia="Tipo"
+              placeholder="Tipo"
+              dropdownZIndexClassName="z-50"
+              overlayZIndexClassName="z-40"
+            />
+          </div>
         </div>
 
         {/* Table */}
