@@ -5,7 +5,6 @@ import {
   MoreHorizontal,
   Edit2,
   Trash2,
-  X,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreateUserModal } from "@maximilian/components/admin/CreateUserModal";
@@ -356,31 +355,16 @@ export default function UserManagement() {
               className="pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-lg text-sm w-96 focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all"
             />
           </div>
-          <div className="flex w-56 items-center gap-2">
-            <div className="flex-1">
-              <SearchableSelect
-                idMaster={ID_MAESTRO_ESTADO_USUARIO}
-                value={idEstadoFiltro}
-                onChange={(idEstado) => {
-                  setIdEstadoFiltro(idEstado);
-                  setCurrentPage(1);
-                }}
-                placeholder="Estado"
-              />
-            </div>
-            {idEstadoFiltro ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setIdEstadoFiltro(undefined);
-                  setCurrentPage(1);
-                }}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-400 transition-colors hover:bg-gray-50 hover:text-brand-black"
-                title="Limpiar estado"
-              >
-                <X size={16} />
-              </button>
-            ) : null}
+          <div className="w-48">
+            <SearchableSelect
+              idMaster={ID_MAESTRO_ESTADO_USUARIO}
+              value={idEstadoFiltro}
+              onChange={(idEstado) => {
+                setIdEstadoFiltro(idEstado);
+                setCurrentPage(1);
+              }}
+              placeholder="Estado"
+            />
           </div>
           <button
             onClick={() => setIsCreateModalOpen(true)}
