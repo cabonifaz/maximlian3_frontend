@@ -23,6 +23,7 @@ interface AssignmentWorkflowModalProps {
   onSuccess?: () => void;
   pedidosIniciales?: PedidoListEntry[];
   asignacionesIniciales?: AssignmentRoleSelection[];
+  modo?: "crear" | "editar";
   tabInicial?: TabAsignacion;
   titulo?: string;
 }
@@ -41,10 +42,16 @@ const ASIGNACIONES_INICIALES: AssignmentRoleSelection[] = [
   { role: "translator", assignee: null },
 ];
 
+const ID_ESTADO_ASIGNACION_SIN_ASIGNACION_PENDIENTE = 4;
+
 const ETIQUETAS_ROL: Record<AssignmentRole, string> = {
   analyst: "Analista",
   translator: "Traductor(a)",
 };
+
+function IndicadorErrorTab() {
+  return <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />;
+}
 
 function getBadgeVigencia(vigencia: string | number) {
   const texto = String(vigencia || "-").trim();
@@ -103,12 +110,59 @@ function normalizarPedidoInicial(pedido: PedidoListEntry): PedidoListEntry {
   };
 }
 
+function obtenerInicialesAsignado(nombre: string) {
+  return nombre
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((parte) => parte.charAt(0).toUpperCase())
+    .join("") || "?";
+}
+
+function tieneAsignado(nombre?: string) {
+  return !!nombre && nombre !== "-" && nombre !== "Sin Asignacion";
+}
+
+function convertirPedidoAAsignacionesIniciales(pedido: PedidoListEntry): AssignmentRoleSelection[] {
+  return [
+    {
+      role: "analyst",
+      assignee: tieneAsignado(pedido.analista)
+        ? {
+            idUsuario: 0,
+            nombre: pedido.analista!,
+            iniciales: obtenerInicialesAsignado(pedido.analista!),
+            rol: "analyst",
+            cantidadAsignaciones: 0,
+          }
+        : null,
+    },
+    {
+      role: "translator",
+      assignee: tieneAsignado(pedido.traductor)
+        ? {
+            idUsuario: 0,
+            nombre: pedido.traductor!,
+            iniciales: obtenerInicialesAsignado(pedido.traductor!),
+            rol: "translator",
+            cantidadAsignaciones: 0,
+          }
+        : null,
+    },
+  ];
+}
+
+function tieneAsignacionesEnPedido(pedido: PedidoListEntry) {
+  return tieneAsignado(pedido.analista) || tieneAsignado(pedido.traductor) || !!pedido.idAsignacion;
+}
+
 export function AssignmentWorkflowModal({
   isOpen,
   onClose,
   onSuccess,
   pedidosIniciales = [],
   asignacionesIniciales = ASIGNACIONES_INICIALES,
+  modo = "crear",
   tabInicial = "pedidos",
   titulo = "Nueva Asignación",
 }: AssignmentWorkflowModalProps) {
@@ -130,6 +184,9 @@ export function AssignmentWorkflowModal({
   );
   const [asignacionesBorrador, setAsignacionesBorrador] = useState<AssignmentRoleSelection[]>(asignacionesIniciales);
   const [rolActivo, setRolActivo] = useState<AssignmentRole | null>(null);
+  const [asignacionesDerivadasDePedido, setAsignacionesDerivadasDePedido] = useState(false);
+  const esModoEdicion = modo === "editar";
+  const idPedidoEdicion = pedidosIniciales[0]?.idPedido;
 
   const busquedaPedidoDebounced = useDebounce(terminoBusquedaPedido);
   const busquedaUsuarioDebounced = useDebounce(terminoBusquedaUsuario, 250);
@@ -137,19 +194,44 @@ export function AssignmentWorkflowModal({
   const {
     data: pedidosData,
     isLoading: isLoadingPedidos,
+    isFetching: isFetchingPedidos,
     isError: isErrorPedidos,
     refetch: refetchPedidos,
   } = useQuery({
-    queryKey: ["pedidos-asignacion-modal", "listarAsignacion", paginaPedido, busquedaPedidoDebounced],
+    queryKey: [
+      "pedidos-asignacion-modal",
+      "listarAsignacion",
+      modo,
+      idPedidoEdicion,
+      paginaPedido,
+      busquedaPedidoDebounced,
+      ID_ESTADO_ASIGNACION_SIN_ASIGNACION_PENDIENTE,
+    ],
     queryFn: () =>
       pedidoService.listAsignacion({
-        numPag: paginaPedido,
-        busqueda: busquedaPedidoDebounced || undefined,
+        numPag: esModoEdicion ? 1 : paginaPedido,
+        busqueda: !esModoEdicion ? busquedaPedidoDebounced || undefined : undefined,
+        idPedido: esModoEdicion ? idPedidoEdicion : undefined,
+        idEstadoAsignacion: !esModoEdicion ? ID_ESTADO_ASIGNACION_SIN_ASIGNACION_PENDIENTE : undefined,
       }),
-    enabled: isOpen,
+    enabled: isOpen && (!esModoEdicion || !!idPedidoEdicion),
   });
 
-  const pedidosActivos = pedidosData?.lstPedido ?? [];
+  const pedidoEdicion = useMemo(
+    () => pedidosData?.lstPedido.find((pedido) => pedido.idPedido === idPedidoEdicion),
+    [idPedidoEdicion, pedidosData?.lstPedido],
+  );
+
+  const pedidosInicialesNormalizados = useMemo(
+    () => pedidosIniciales.map(normalizarPedidoInicial),
+    [pedidosIniciales],
+  );
+
+  const pedidosActivos = esModoEdicion
+    ? pedidoEdicion
+      ? [pedidoEdicion]
+      : pedidosInicialesNormalizados
+    : pedidosData?.lstPedido ?? [];
 
   const pedidosElegidos = useMemo(
     () =>
@@ -223,6 +305,14 @@ export function AssignmentWorkflowModal({
   }, [asignacionesIniciales]);
 
   useEffect(() => {
+    if (!esModoEdicion || !pedidoEdicion) return;
+
+    setPedidosSeleccionados({
+      [pedidoEdicion.idPedido]: normalizarPedidoInicial(pedidoEdicion),
+    });
+  }, [esModoEdicion, pedidoEdicion]);
+
+  useEffect(() => {
     setAsignacionesBorrador((actual) =>
       actual.map((asignacion) => {
         const asignadoActual = asignacion.assignee;
@@ -246,10 +336,12 @@ export function AssignmentWorkflowModal({
       assignmentService.saveAssignments({
         idPedidos: pedidosElegidos.map((pedido) => pedido.idPedido),
         assignments: asignacionesBorrador,
+        modo: modo === "editar" || pedidosElegidos.some(tieneAsignacionesEnPedido) ? "editar" : "crear",
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
       await queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+      await queryClient.invalidateQueries({ queryKey: ["pedidos-asignacion-modal"] });
       onSuccess?.();
       onClose();
     },
@@ -257,6 +349,8 @@ export function AssignmentWorkflowModal({
 
   const cantidadSeleccionados = idsSeleccionados.size;
   const puedeGuardar = cantidadSeleccionados > 0 && asignacionesBorrador.some((asignacion) => (asignacion.assignee?.idUsuario ?? 0) > 0);
+  const hayErroresPedidos = cantidadSeleccionados === 0;
+  const hayErroresAsignacion = cantidadSeleccionados > 0 && !puedeGuardar;
 
   const handleSeleccionPedidos = (ids: Set<number>) => {
     setIdsSeleccionados(ids);
@@ -274,6 +368,18 @@ export function AssignmentWorkflowModal({
 
       return siguiente;
     });
+
+    const pedidosActualizados = Array.from(ids)
+      .map((idPedido) => pedidosActivos.find((pedido) => pedido.idPedido === idPedido) ?? pedidosSeleccionados[idPedido])
+      .filter((pedido): pedido is PedidoListEntry => Boolean(pedido));
+
+    if (pedidosActualizados.length === 1 && tieneAsignacionesEnPedido(pedidosActualizados[0])) {
+      setAsignacionesBorrador(convertirPedidoAAsignacionesIniciales(pedidosActualizados[0]));
+      setAsignacionesDerivadasDePedido(true);
+    } else if (asignacionesDerivadasDePedido) {
+      setAsignacionesBorrador(asignacionesIniciales);
+      setAsignacionesDerivadasDePedido(false);
+    }
   };
 
   const handleElegirCandidato = (candidate: AssignmentCandidate) => {
@@ -318,39 +424,48 @@ export function AssignmentWorkflowModal({
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-2xl font-bold text-brand-black">Pedidos seleccionados: {cantidadSeleccionados}</p>
-          <p className="mt-1 text-sm text-slate-500">Seleccione uno o varios pedidos para continuar con la asignación.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {esModoEdicion
+              ? "Pedido seleccionado para reasignación."
+              : "Seleccione uno o varios pedidos para continuar con la asignación."}
+          </p>
         </div>
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar por cliente o investigado"
-            value={terminoBusquedaPedido}
-            onChange={(e) => {
-              setTerminoBusquedaPedido(e.target.value);
-              setPaginaPedido(1);
-            }}
-            className="w-full rounded-xl border border-gray-200 bg-brand-white py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
-          />
-        </div>
+        {!esModoEdicion ? (
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar por cliente o investigado"
+              value={terminoBusquedaPedido}
+              onChange={(e) => {
+                setTerminoBusquedaPedido(e.target.value);
+                setPaginaPedido(1);
+              }}
+              className="w-full rounded-xl border border-gray-200 bg-brand-white py-2.5 pl-10 pr-10 text-sm outline-none transition-all focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
+            />
+            {isFetchingPedidos ? (
+              <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400" />
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <CustomTable
         columns={PEDIDO_COLUMNS}
-        data={pedidosData?.lstPedido}
+        data={pedidosActivos}
         getId={(pedido) => pedido.idPedido}
         renderRow={renderPedidoRow}
-        isLoading={isLoadingPedidos}
+        isLoading={isLoadingPedidos || isFetchingPedidos}
         isError={isErrorPedidos}
         onRetry={() => refetchPedidos()}
         emptyMessage="No se encontraron pedidos."
         errorMessage="Error al cargar los pedidos"
-        currentPage={paginaPedido}
-        totalPages={pedidosData?.totalPaginas ?? 1}
-        totalRecords={pedidosData?.totalRegistros ?? 0}
+        currentPage={esModoEdicion ? 1 : paginaPedido}
+        totalPages={esModoEdicion ? 1 : pedidosData?.totalPaginas ?? 1}
+        totalRecords={esModoEdicion ? pedidosActivos.length : pedidosData?.totalRegistros ?? 0}
         onPageChange={setPaginaPedido}
         entityLabel="pedidos"
-        selectable
+        selectable={!esModoEdicion}
         selectedIds={idsSeleccionados}
         onSelectionChange={handleSeleccionPedidos}
       />
@@ -515,12 +630,15 @@ export function AssignmentWorkflowModal({
             id: "pedidos",
             label: "Pedidos",
             content: contenidoPedidos,
-            indicator: cantidadSeleccionados > 0 ? <span className="rounded-full bg-brand-wine/10 px-2 py-0.5 text-xs text-brand-wine">{cantidadSeleccionados}</span> : null,
+            indicator: hayErroresPedidos
+              ? <IndicadorErrorTab />
+              : <span className="rounded-full bg-brand-wine/10 px-2 py-0.5 text-xs text-brand-wine">{cantidadSeleccionados}</span>,
           },
           {
             id: "asignacion",
             label: "Asignación",
             content: contenidoAsignacion,
+            indicator: hayErroresAsignacion ? <IndicadorErrorTab /> : undefined,
             disabled: cantidadSeleccionados === 0,
             tooltip: cantidadSeleccionados === 0 ? "Seleccione al menos 1 pedido" : undefined,
           },

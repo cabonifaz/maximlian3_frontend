@@ -2,11 +2,13 @@ import { createBrowserRouter, Navigate } from "react-router";
 import { adminRoutes } from "@maximilian/router/admin.routes";
 import { authRoutes } from "@maximilian/router/auth.routes";
 import { coordinatorRoutes } from "@maximilian/router/coordinator.routes";
+import { CustomRouteErrorBoundary } from "@maximilian/components/common/CustomRouteErrorBoundary";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <Navigate to="/login" replace />,
+    errorElement: <CustomRouteErrorBoundary />,
   },
   ...authRoutes,
   ...adminRoutes,

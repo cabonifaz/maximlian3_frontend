@@ -53,6 +53,7 @@ export interface AssignmentRoleSelection {
 export interface SaveAssignmentsRequest {
   idPedidos: number[];
   assignments: AssignmentRoleSelection[];
+  modo?: "crear" | "editar";
 }
 
 export interface CreateAssignmentRequest {
@@ -67,8 +68,11 @@ export interface CreateAssignmentAssignee {
 }
 
 export interface UpdateAssignmentRequest {
-  idUsuarioAsignado: number;
-  idsPedido: number[];
+  idUsuarioAsignado?: number;
+  idRolAsignado?: number;
+  idEstado?: number;
+  idPedido: number;
+  asignados: CreateAssignmentAssignee[];
 }
 
 export interface DeleteAssignmentRequest {

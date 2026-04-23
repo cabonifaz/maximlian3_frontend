@@ -19,6 +19,8 @@ type RegistroGenerico = Record<string, unknown>;
 
 const ESTADO_ASIGNACION_ANALISTA = 1;
 const ESTADO_ASIGNACION_TRADUCTOR = 2;
+const ESTADO_REASIGNACION_ANALISTA = 4;
+const ESTADO_REASIGNACION_TRADUCTOR = 5;
 const IDS_ROL_POR_TIPO: Record<AssignmentRole, number> = {
   translator: 3,
   analyst: 4,
@@ -188,12 +190,24 @@ function normalizarPedido(registro: unknown): AssignmentOrderEntry {
       fila.colorFondoEstado,
       fila.colorFondo,
     ) || "#f1f5f9",
-    idiomaInforme: obtenerTexto(fila.idiomaInforme, fila.idioma, fila.descripcionIdioma, fila.Idioma) || "-",
+    idiomaInforme: obtenerTexto(
+      fila.idiomaInforme,
+      fila.IdiomaInforme,
+      fila.idiomaDelInforme,
+      fila.IdiomaDelInforme,
+      fila.idioma,
+      fila.descripcionIdioma,
+      fila.Idioma,
+    ) || "-",
     tipoTramite: obtenerTexto(
       fila.tipoTramite,
+      fila.TipoTramite,
+      fila.tipoTramiteDescripcion,
+      fila.descripcionTramite,
+      fila.tramite,
+      fila.Tramite,
       fila.tipoServicio,
       fila.descripcionTipoTramite,
-      fila.TipoTramite,
     ) || "-",
     diasMin: obtenerNumero(fila.diasMin, fila.diasMinimos, fila.minDias) ?? 0,
     diasMax: obtenerNumero(fila.diasMax, fila.diasMaximos, fila.maxDias) ?? 0,
@@ -288,6 +302,30 @@ function construirPayloadCreacion(
   };
 }
 
+function construirPayloadEdicion(
+  idPedidos: number[],
+  assignments: AssignmentRoleSelection[],
+): UpdateAssignmentRequest {
+  const idPedido = idPedidos[0];
+
+  if (!idPedido) {
+    throw new Error("No se pudo identificar el pedido a reasignar");
+  }
+
+  const asignados = construirPayloadCreacion(idPedidos, assignments).asignados.map((asignado) => ({
+    ...asignado,
+    idEstado:
+      asignado.idRolAsignado === IDS_ROL_POR_TIPO.translator
+        ? ESTADO_REASIGNACION_TRADUCTOR
+        : ESTADO_REASIGNACION_ANALISTA,
+  }));
+
+  return {
+    idPedido,
+    asignados,
+  };
+}
+
 export const assignmentService = {
   list: async (params: AssignmentListParams): Promise<AssignmentListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Asignacion/listar", {
@@ -366,10 +404,14 @@ export const assignmentService = {
       });
   },
 
-  saveAssignments: async ({ idPedidos, assignments }: SaveAssignmentsRequest): Promise<AssignmentRoleSelection[]> => {
+  saveAssignments: async ({ idPedidos, assignments, modo = "crear" }: SaveAssignmentsRequest): Promise<AssignmentRoleSelection[]> => {
     const payload = construirPayloadCreacion(idPedidos, assignments);
 
-    await assignmentService.create(payload);
+    if (modo === "editar") {
+      await assignmentService.update(construirPayloadEdicion(idPedidos, assignments));
+    } else {
+      await assignmentService.create(payload);
+    }
 
     return assignments;
   },

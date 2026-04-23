@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import {
   Plus,
@@ -22,6 +22,7 @@ import { AddContactModal } from "./AddContactModal";
 import { masterTableService } from "@maximilian/services/masterTable.service";
 import { clientService } from "@maximilian/services/client.service";
 import { MasterTableId } from "@maximilian/shared/types/master-table.type";
+import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import type {
   TarifarioListEntry,
   TarifarioDetail,
@@ -41,6 +42,23 @@ interface ClientDetailModalProps {
 }
 
 type Tab = "info" | "rates" | "contacts";
+
+function opcionesIncluyenValor(options: MasterTableEntry[] | undefined, valor: number | undefined) {
+  if (!options || typeof valor !== "number" || !Number.isFinite(valor) || valor <= 0) return true;
+  return options.some((option) => option.num1 === valor);
+}
+
+function filtrarValoresValidos(options: MasterTableEntry[] | undefined, valores: number[] | undefined) {
+  if (!options || !valores) return valores ?? [];
+
+  const idsValidos = new Set(
+    options
+      .map((option) => option.num1)
+      .filter((id): id is number => typeof id === "number" && Number.isFinite(id) && id > 0),
+  );
+
+  return valores.filter((valor) => idsValidos.has(valor));
+}
 
 
 export function ClientDetailModal({
@@ -82,9 +100,11 @@ export function ClientDetailModal({
     setValue: setInfoValue,
     watch: infoWatch,
     handleSubmit: infoHandleSubmit,
-    formState: { errors: infoErrors, isDirty: infoIsDirty },
+    trigger: triggerInfo,
+    formState: { errors: infoErrors },
   } = useForm<ClientDetailFormData>({
     resolver: zodResolver(clientDetailSchema),
+    mode: "onTouched",
   });
 
   // Populate form when client data is loaded
@@ -252,7 +272,7 @@ export function ClientDetailModal({
     enabled: isOpen,
     staleTime: Infinity,
   });
-  const plantillaOptions = plantillaInformeData ?? [];
+  const plantillaOptions = useMemo(() => plantillaInformeData ?? [], [plantillaInformeData]);
 
   const [tarifarioSearch, setTarifarioSearch] = useState("");
   const [tarifarioPag, setTarifarioPag] = useState(1);
@@ -281,9 +301,6 @@ export function ClientDetailModal({
     enabled: activeTab === "contacts" && !!client?.idCliente,
   });
 
-
-  if (!isOpen) return null;
-
   const watchedPais = infoWatch("pais");
   const watchedTipoRegTributario = infoWatch("tipoRegistroTributario");
   const watchedAtendidoPor = infoWatch("atendidoPor");
@@ -293,6 +310,55 @@ export function ClientDetailModal({
   const watchedMoneda = infoWatch("moneda");
   const watchedFormatoInforme = infoWatch("formatoInforme");
   const watchedPlantillaInforme = infoWatch("plantillaInforme");
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const validarSelector = (
+      campo: keyof ClientDetailFormData,
+      valor: number | undefined,
+      options: MasterTableEntry[] | undefined,
+    ) => {
+      if (opcionesIncluyenValor(options, valor)) return;
+      setInfoValue(campo, 0 as never, { shouldValidate: true });
+    };
+
+    validarSelector("tipoPersona", watchedTipoPersona, tipoPersonaData);
+    validarSelector("pais", watchedPais, paisData);
+    validarSelector("tipoRegistroTributario", watchedTipoRegTributario, tipoRegTributarioData);
+    validarSelector("moneda", watchedMoneda, rateMonedas);
+    validarSelector("atendidoPor", watchedAtendidoPor, empresaAtencionData);
+    validarSelector("idioma", watchedIdioma, idiomaData);
+    validarSelector("idiomaFacturacion", watchedIdiomaFacturacion, idiomaData);
+    validarSelector("plantillaInforme", watchedPlantillaInforme, plantillaOptions);
+
+    const formatosValidos = filtrarValoresValidos(formatoInformeData, watchedFormatoInforme);
+    if (formatosValidos.length !== (watchedFormatoInforme ?? []).length) {
+      setInfoValue("formatoInforme", formatosValidos, { shouldValidate: true });
+    }
+  }, [
+    empresaAtencionData,
+    formatoInformeData,
+    idiomaData,
+    isOpen,
+    paisData,
+    plantillaOptions,
+    rateMonedas,
+    setInfoValue,
+    tipoPersonaData,
+    tipoRegTributarioData,
+    watchedAtendidoPor,
+    watchedFormatoInforme,
+    watchedIdioma,
+    watchedIdiomaFacturacion,
+    watchedMoneda,
+    watchedPais,
+    watchedPlantillaInforme,
+    watchedTipoPersona,
+    watchedTipoRegTributario,
+  ]);
+
+  if (!isOpen) return null;
 
   const loadingState = (
     <div className="h-full flex flex-col items-center justify-center gap-3 py-20">
@@ -338,6 +404,9 @@ export function ClientDetailModal({
           {
             id: "info",
             label: "Información",
+            indicator: Object.keys(infoErrors).length > 0 ? (
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+            ) : undefined,
             content: isLoadingClient ? loadingState : isErrorClient ? errorState : (
                 <form
                   id="client-detail-form"
@@ -351,6 +420,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("tipoPersona", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("tipoPersona")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.tipoPersona?.message}
                   />
@@ -373,6 +443,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("pais", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("pais")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.pais?.message}
                   />
@@ -388,7 +459,7 @@ export function ClientDetailModal({
                   </div>
 
                   <div className="space-y-2">
-                    <CustomLabel required>Email</CustomLabel>
+                    <CustomLabel required>Correo</CustomLabel>
                     <input
                       {...infoRegister("correo")}
                       type="email"
@@ -444,6 +515,7 @@ export function ClientDetailModal({
                         shouldDirty: true,
                       })
                     }
+                    onBlur={() => triggerInfo("tipoRegistroTributario")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.tipoRegistroTributario?.message}
                   />
@@ -467,6 +539,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("moneda", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("moneda")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.moneda?.message}
                   />
@@ -479,6 +552,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("atendidoPor", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("atendidoPor")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.atendidoPor?.message}
                   />
@@ -491,6 +565,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("idioma", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("idioma")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.idioma?.message}
                   />
@@ -503,6 +578,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("idiomaFacturacion", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("idiomaFacturacion")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.idiomaFacturacion?.message}
                   />
@@ -515,6 +591,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("formatoInforme", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("formatoInforme")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.formatoInforme?.message}
                   />
@@ -527,6 +604,7 @@ export function ClientDetailModal({
                     onChange={(val) =>
                       setInfoValue("plantillaInforme", val, { shouldValidate: true, shouldDirty: true })
                     }
+                    onBlur={() => triggerInfo("plantillaInforme")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.plantillaInforme?.message}
                   />
@@ -726,7 +804,7 @@ export function ClientDetailModal({
                         <tr>
                           <th className="px-3 py-3 w-8" />
                           <th className="px-4 py-3 font-bold">Nombre</th>
-                          <th className="px-4 py-3 font-bold">Email</th>
+                          <th className="px-4 py-3 font-bold">Correo</th>
                           <th className="px-4 py-3 font-bold">Teléfono</th>
                           <th className="px-4 py-3 font-bold">Tipo Contacto</th>
                           <th className="px-4 py-3 font-bold">Área Trabajo</th>
@@ -808,7 +886,7 @@ export function ClientDetailModal({
                 idPlantilla: formData.plantillaInforme ?? client.idPlantilla,
               });
             })}
-            disabled={!infoIsDirty}
+            disabled={updateInfoMutation.isPending}
             loading={updateInfoMutation.isPending}
             loadingText="Guardando..."
             className="min-w-35"
@@ -938,7 +1016,7 @@ export function ClientDetailModal({
         isSubmitting={deleteContactoMutation.isPending}
       >
         <p><span className="font-bold">Nombre:</span> {contactToDelete?.nombres ?? "-"}</p>
-        <p><span className="font-bold">Email:</span> {contactToDelete?.correo ?? "-"}</p>
+        <p><span className="font-bold">Correo:</span> {contactToDelete?.correo ?? "-"}</p>
         <p><span className="font-bold">Teléfono:</span> {contactToDelete?.telefono ?? "-"}</p>
       </ConfirmDeleteModal>
     </>

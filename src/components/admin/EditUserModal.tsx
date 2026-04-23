@@ -51,6 +51,7 @@ export function EditUserModal({
       correo: "",
       roles: [],
       languages: [],
+      activo: true,
     },
   });
 
@@ -125,7 +126,7 @@ export function EditUserModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex min-h-dvh w-screen items-center justify-center overflow-y-auto p-4 bg-brand-black/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div
         className={`bg-brand-white rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 transition-all ${isTranslatorSelected && activeTab === "roles" ? "max-w-4xl w-full" : "max-w-2xl w-full"}`}
       >
@@ -259,20 +260,34 @@ export function EditUserModal({
                 </div>
                 <div className="space-y-2 col-span-2">
                   <label className="text-sm font-semibold text-brand-black">
-                    Email
+                    Correo Electrónico
                   </label>
                   <input
                     {...register("correo")}
                     type="email"
-                    placeholder="Email"
+                    placeholder="Correo Electrónico"
                     disabled
                     className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500 outline-none transition-all cursor-not-allowed"
                   />
                   {errors.correo && (
-                    <p className="text-xs text-brand-wine">
+                    <p className="text-xs text-red-500">
                       {errors.correo.message}
                     </p>
                   )}
+                </div>
+                <div className="col-span-2 flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    {...register("activo")}
+                    id="editar-usuario-activo"
+                    className="w-4 h-4 accent-brand-wine cursor-pointer"
+                  />
+                  <label
+                    htmlFor="editar-usuario-activo"
+                    className="text-sm font-semibold text-brand-black cursor-pointer"
+                  >
+                    Activo
+                  </label>
                 </div>
               </div>
             ) : (

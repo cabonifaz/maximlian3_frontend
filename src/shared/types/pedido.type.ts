@@ -1,5 +1,6 @@
 export interface PedidoListEntry {
   idPedido: number;
+  idAsignacion?: number;
   codigo: string;
   idCliente: number;
   cliente: string;
@@ -7,6 +8,8 @@ export interface PedidoListEntry {
   idIdioma: number;
   idioma: string;
   tipoTramite?: string;
+  analista?: string;
+  traductor?: string;
   logoImprimible: boolean;
   estado: number;
   descripcionEstado: string;
@@ -23,12 +26,14 @@ export interface PedidoListResponse {
 
 export interface PedidoListParams {
   busqueda?: string;
+  idPedido?: number;
   idCliente?: number;
   idEstado?: string;
+  idEstadoAsignacion?: number;
   numPag?: number;
 }
 
-export interface PedidoCancelRequest {
+export interface PedidoAccionRequest {
   idPedido: number;
 }
 

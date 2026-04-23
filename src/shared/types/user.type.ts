@@ -19,6 +19,8 @@ export type UserDetails = {
   correo: string;
   roles: number[];
   idiomas: number[];
+  idEstado?: number;
+  estado?: string;
 };
 
 export type UpdateUserRequest = {
@@ -26,8 +28,10 @@ export type UpdateUserRequest = {
   nombres: string;
   apellidoPaterno: string;
   apellidoMaterno: string | null;
+  correo: string;
   roles: number[];
   idiomas: number[];
+  idEstado: number;
 };
 
 export type DeleteUserRequest = {
@@ -37,6 +41,7 @@ export type DeleteUserRequest = {
 export type UserListRequest = {
   numPag: number;
   filtro?: string;
+  idEstado?: number;
 };
 
 export type UserListEntry = {

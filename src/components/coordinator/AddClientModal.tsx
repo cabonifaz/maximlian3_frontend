@@ -272,6 +272,7 @@ export function AddClientModal({
                     onChange={(val) =>
                       setInfoValue("tipoPersona", val, { shouldValidate: true })
                     }
+                    onBlur={() => triggerInfo("tipoPersona")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.tipoPersona?.message}
                   />
@@ -282,7 +283,7 @@ export function AddClientModal({
                       {...infoRegister("nombre")}
                       type="text"
                       placeholder="Nombre"
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
+                      className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.nombre ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300`}
                     />
                     {infoErrors.nombre && (
                       <p className="text-xs text-red-500">
@@ -299,6 +300,7 @@ export function AddClientModal({
                     onChange={(val) =>
                       setInfoValue("pais", val, { shouldValidate: true })
                     }
+                    onBlur={() => triggerInfo("pais")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.pais?.message}
                   />
@@ -319,12 +321,12 @@ export function AddClientModal({
                   </div>
 
                   <div className="space-y-2">
-                    <CustomLabel required>Email</CustomLabel>
+                    <CustomLabel required>Correo Electrónico</CustomLabel>
                     <input
                       {...infoRegister("correo")}
                       type="email"
-                      placeholder="Email"
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300"
+                      placeholder="Correo Electrónico"
+                      className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.correo ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300`}
                     />
                     {infoErrors.correo && (
                       <p className="text-xs text-red-500">
@@ -389,6 +391,7 @@ export function AddClientModal({
                         shouldValidate: true,
                       })
                     }
+                    onBlur={() => triggerInfo("tipoRegistroTributario")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.tipoRegistroTributario?.message}
                   />
@@ -400,7 +403,7 @@ export function AddClientModal({
                       type="text"
                       placeholder="Registro Tributario"
                       disabled={!watchedTipoRegTributario}
-                      className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                      className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.numRegistroTributario ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`}
                     />
                     {infoErrors.numRegistroTributario && (
                       <p className="text-xs text-red-500">{infoErrors.numRegistroTributario.message}</p>
@@ -415,6 +418,7 @@ export function AddClientModal({
                     onChange={(val) =>
                       setInfoValue("moneda", val, { shouldValidate: true })
                     }
+                    onBlur={() => triggerInfo("moneda")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.moneda?.message}
                   />
@@ -427,6 +431,7 @@ export function AddClientModal({
                     onChange={(val) =>
                       setInfoValue("atendidoPor", val, { shouldValidate: true })
                     }
+                    onBlur={() => triggerInfo("atendidoPor")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.atendidoPor?.message}
                   />
@@ -439,6 +444,7 @@ export function AddClientModal({
                     onChange={(val) =>
                       setInfoValue("idioma", val, { shouldValidate: true })
                     }
+                    onBlur={() => triggerInfo("idioma")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.idioma?.message}
                   />
@@ -451,6 +457,7 @@ export function AddClientModal({
                     onChange={(val) =>
                       setInfoValue("idiomaFacturacion", val, { shouldValidate: true })
                     }
+                    onBlur={() => triggerInfo("idiomaFacturacion")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.idiomaFacturacion?.message}
                   />
@@ -463,6 +470,7 @@ export function AddClientModal({
                     onChange={(val) =>
                       setInfoValue("formatoInforme", val, { shouldValidate: true })
                     }
+                    onBlur={() => triggerInfo("formatoInforme")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.formatoInforme?.message}
                   />
@@ -475,6 +483,7 @@ export function AddClientModal({
                     onChange={(val) =>
                       setInfoValue("plantillaInforme", val, { shouldValidate: true })
                     }
+                    onBlur={() => triggerInfo("plantillaInforme")}
                     autoSeleccionarOpcionUnica
                     error={infoErrors.plantillaInforme?.message}
                   />
@@ -681,7 +690,7 @@ export function AddClientModal({
                     <tr>
                       <th className="px-3 py-3 w-8" />
                       <th className="px-4 py-3 font-bold">Nombre</th>
-                      <th className="px-4 py-3 font-bold">Email</th>
+                      <th className="px-4 py-3 font-bold">Correo</th>
                       <th className="px-4 py-3 font-bold">Teléfono</th>
                       <th className="px-4 py-3 font-bold">Tipo Contacto</th>
                       <th className="px-4 py-3 font-bold">Área Trabajo</th>

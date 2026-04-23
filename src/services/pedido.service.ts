@@ -5,7 +5,7 @@ import type {
   PedidoListParams,
   PedidoListResponse,
   PedidoListEntry,
-  PedidoCancelRequest,
+  PedidoAccionRequest,
   CreatePedidoRequest,
   CreatePedidoResponse,
   GetPedidoResponse,
@@ -53,11 +53,12 @@ function obtenerBooleano(...valores: unknown[]): boolean {
   return false;
 }
 
-function normalizarFilaAsignacion(fila: unknown): PedidoListEntry {
+function normalizarFilaPedido(fila: unknown): PedidoListEntry {
   const registro = typeof fila === "object" && fila !== null ? (fila as Record<string, unknown>) : {};
 
   return {
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido),
+    idAsignacion: obtenerNumero(registro.idAsignacion, registro.IdAsignacion),
     codigo: obtenerTexto(registro.codigo, registro.Codigo),
     idCliente: obtenerNumero(registro.idCliente, registro.IdCliente),
     cliente: obtenerTexto(registro.cliente, registro.nombre, registro.nombreCliente, registro.Cliente) || "-",
@@ -70,6 +71,8 @@ function normalizarFilaAsignacion(fila: unknown): PedidoListEntry {
     idIdioma: obtenerNumero(registro.idIdioma, registro.IdIdioma),
     idioma: obtenerTexto(registro.idioma, registro.idiomaInforme, registro.Idioma) || "-",
     tipoTramite: obtenerTexto(registro.tipoTramite, registro.TipoTramite) || "-",
+    analista: obtenerTexto(registro.analista, registro.nombreAnalista, registro.usuarioAnalista, registro.analistaAsignado),
+    traductor: obtenerTexto(registro.traductor, registro.nombreTraductor, registro.usuarioTraductor, registro.traductorAsignado),
     logoImprimible: obtenerBooleano(registro.logoImprimible, registro.imprimeLogoSafety, registro.LogoImprimible),
     estado: obtenerNumero(registro.estado, registro.idEstado, registro.IdEstado),
     descripcionEstado: obtenerTexto(registro.descripcionEstado, registro.estadoDescripcion, registro.estado, registro.Estado) || "-",
@@ -79,14 +82,14 @@ function normalizarFilaAsignacion(fila: unknown): PedidoListEntry {
   };
 }
 
-function normalizarRespuestaAsignacion(resultado: PedidoListResponse | Record<string, unknown>): PedidoListResponse {
+function normalizarRespuestaPedido(resultado: PedidoListResponse | Record<string, unknown>): PedidoListResponse {
   const registro = typeof resultado === "object" && resultado !== null ? resultado : {};
   const listaOriginal = Array.isArray((registro as Record<string, unknown>).lstPedido)
     ? ((registro as Record<string, unknown>).lstPedido as unknown[])
     : [];
 
   return {
-    lstPedido: listaOriginal.map(normalizarFilaAsignacion),
+    lstPedido: listaOriginal.map(normalizarFilaPedido),
     totalRegistros: obtenerNumero(
       (registro as Record<string, unknown>).totalRegistros,
       (registro as Record<string, unknown>).TotalRegistros,
@@ -111,7 +114,7 @@ export const pedidoService = {
         throw new Error(data.mensaje || "Error al listar los pedidos");
       }
 
-      return data.result;
+      return normalizarRespuestaPedido(data.result);
     } catch (error) {
       console.error("Error listing pedidos:", error);
       throw error;
@@ -128,14 +131,19 @@ export const pedidoService = {
         throw new Error(data.mensaje || "Error al listar los pedidos para asignacion");
       }
 
-      return normalizarRespuestaAsignacion(data.result);
+      return normalizarRespuestaPedido(data.result);
     } catch (error) {
       console.error("Error listing pedidos for assignment:", error);
       throw error;
     }
   },
 
-  cancel: async (data: PedidoCancelRequest): Promise<void> => {
+  cancelar: async (data: PedidoAccionRequest): Promise<void> => {
+    const { data: res } = await maximilianService.post<ApiResponse<null>>("/api/Pedido/cancelar", data);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+  },
+
+  eliminar: async (data: PedidoAccionRequest): Promise<void> => {
     const { data: res } = await maximilianService.post<ApiResponse<null>>("/api/Pedido/eliminar", data);
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
   },

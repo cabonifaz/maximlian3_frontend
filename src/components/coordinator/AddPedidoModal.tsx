@@ -50,6 +50,10 @@ const pedidoResolver: Resolver<PedidoFormData> = async (...args) => {
   return result;
 };
 
+function IndicadorErrorTab() {
+  return <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />;
+}
+
 interface UploadedFile {
   id: string;
   name: string;
@@ -610,12 +614,14 @@ function AnexosTab({ files, onFilesChange, missingTipoIds, onClearMissingTipo }:
             </div>
           ) : (
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-white">
+              <thead className="sticky top-0 z-30 bg-white">
                 <tr className="border-b border-gray-100">
                   <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Nombre</th>
                   <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Formato</th>
                   <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Tamaño</th>
-                  <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Tipo</th>
+                  <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">
+                    Tipo <span className="text-red-500">*</span>
+                  </th>
                   <th className="py-2 px-3" />
                 </tr>
               </thead>
@@ -639,7 +645,9 @@ function AnexosTab({ files, onFilesChange, missingTipoIds, onClearMissingTipo }:
                         onChange={(val) => handleTipoChange(f.id, val)}
                         autoSeleccionarOpcionUnica
                         placeholder="— Seleccione —"
-                        error={missingTipoIds.has(f.id) ? "Requerido" : undefined}
+                        error={missingTipoIds.has(f.id) ? "Seleccione el tipo de archivo adjunto" : undefined}
+                        dropdownZIndexClassName="z-20"
+                        overlayZIndexClassName="z-10"
                       />
                     </td>
                     <td className="py-2.5 px-3 text-right">
@@ -770,10 +778,34 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
     });
   };
 
+  const hayErroresClienteTarifa = !!(
+    errors.idCliente ||
+    errors.idPlantillaInforme ||
+    errors.idIdioma ||
+    errors.idPais ||
+    errors.idClaseInforme ||
+    errors.idTipoTramite ||
+    errors.idTarifario
+  );
+  const hayErroresInfoPedido = !!(
+    errors.investigado ||
+    errors.idTipoPersona ||
+    errors.codigo ||
+    errors.idEmpresaAtencion ||
+    errors.fechaDesde ||
+    errors.fechaHasta ||
+    errors.montoCredito ||
+    errors.plazoCredito ||
+    errors.idTipoPlazoCredito
+  );
+  const anexosSinTipo = anexosFiles.some((archivo) => !archivo.tipoId);
+  const hayErroresAnexos = anexosSinTipo || missingTipoIds.size > 0;
+
   const tabs = [
     {
       id: "cliente-tarifa",
       label: "Cliente y Tarifa",
+      indicator: hayErroresClienteTarifa ? <IndicadorErrorTab /> : undefined,
       content: (
         <ClienteTarifaTab
           register={register}
@@ -792,6 +824,7 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
     {
       id: "info-pedido",
       label: "Información del Pedido",
+      indicator: hayErroresInfoPedido ? <IndicadorErrorTab /> : undefined,
       content: (
         <InfoPedidoTab
           register={register}
@@ -807,21 +840,30 @@ export function AddPedidoModal({ isOpen, onClose }: AddPedidoModalProps) {
     {
       id: "anexos",
       label: "Anexos",
+      indicator: hayErroresAnexos ? <IndicadorErrorTab /> : undefined,
       content: <AnexosTab files={anexosFiles} onFilesChange={setAnexosFiles} missingTipoIds={missingTipoIds} onClearMissingTipo={(id) => setMissingTipoIds((prev) => { const next = new Set(prev); next.delete(id); return next; })} />,
     },
   ];
 
   const footer = (
     <div className="flex justify-end">
+      <div className="group relative">
       <CustomButton
         variant="primary"
         size="md"
         loading={isPending || isUploading}
         loadingText="Guardando..."
+        disabled={anexosSinTipo}
         onClick={handleSubmit(onSubmit)}
       >
         Confirmar
       </CustomButton>
+      {anexosSinTipo ? (
+        <div className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 hidden w-64 rounded-lg bg-brand-black px-3 py-2 text-xs font-medium text-brand-white shadow-lg group-hover:block">
+          Seleccione el tipo de documento de todos los archivos adjuntos.
+        </div>
+      ) : null}
+      </div>
     </div>
   );
 

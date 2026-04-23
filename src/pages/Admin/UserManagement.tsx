@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   Search,
   Plus,
-  Filter,
   MoreHorizontal,
   Edit2,
   Trash2,
@@ -12,14 +11,18 @@ import { CreateUserModal } from "@maximilian/components/admin/CreateUserModal";
 import { EditUserModal } from "@maximilian/components/admin/EditUserModal";
 import { DeleteUserModal } from "@maximilian/components/admin/DeleteUserModal";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
+import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { type UserFormData } from "@maximilian/schemas";
 import { userService } from "@maximilian/services/user.service";
+import { masterTableService } from "@maximilian/services/masterTable.service";
+import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import type {
   CreateUserRequest,
   DeleteUserRequest,
   UpdateUserRequest,
   UserListEntry,
 } from "@maximilian/shared/types/user.type";
+import { MasterTableId } from "@maximilian/shared/types/master-table.type";
 import LoadingScreen from "@maximilian/components/common/LoadingScreen";
 
 interface CreateUserMutationParams {
@@ -38,10 +41,20 @@ const USER_COLUMNS = [
   { label: "Apellido Materno" },
   { label: "Nombre de Usuario" },
   { label: "Rol(es)" },
-  { label: "Email" },
+  { label: "Correo" },
   { label: "Estado" },
   { label: "" },
 ];
+
+const ID_MAESTRO_ESTADO_USUARIO = 100;
+const ID_ESTADO_USUARIO_ACTIVO = 1;
+
+const normalizarTexto = (valor: string) =>
+  valor
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
 
 export default function UserManagement() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -55,8 +68,16 @@ export default function UserManagement() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [filter, setFilter] = useState("");
+  const [idEstadoFiltro, setIdEstadoFiltro] = useState<number | undefined>(ID_ESTADO_USUARIO_ACTIVO);
+  const debouncedFilter = useDebounce(filter);
 
   const queryClient = useQueryClient();
+
+  const { data: estadosUsuarioData } = useQuery({
+    queryKey: ["masterTable", ID_MAESTRO_ESTADO_USUARIO],
+    queryFn: () => masterTableService.list(ID_MAESTRO_ESTADO_USUARIO),
+    staleTime: Infinity,
+  });
 
   const {
     data: usersData,
@@ -64,8 +85,14 @@ export default function UserManagement() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["users", currentPage, filter],
-    queryFn: () => userService.list({ numPag: currentPage, filtro: filter }),
+    queryKey: ["users", currentPage, debouncedFilter, idEstadoFiltro],
+    queryFn: () =>
+      userService.list({
+        numPag: currentPage,
+        filtro: debouncedFilter,
+        idEstado: idEstadoFiltro,
+      }),
+    enabled: filter === debouncedFilter,
   });
 
   const createUserMutation = useMutation({
@@ -101,8 +128,10 @@ export default function UserManagement() {
         nombres: userData.firstName,
         apellidoPaterno: userData.paternalLastName,
         apellidoMaterno: userData.maternalLastName || null,
+        correo: userData.correo,
         roles: userData.roles as number[],
         idiomas: (userData.languages || []) as number[],
+        idEstado: userData.activo ? 1 : 2,
       };
       return userService.update(apiRequest);
     },
@@ -149,8 +178,26 @@ export default function UserManagement() {
   const openEditModal = async (user: UserListEntry) => {
     setIsLoadingUser(true);
     setActiveMenuId(null);
+    const obtenerRolesDesdeListado = async () => {
+      if (!user.roles) return [];
+
+      const nombresRoles = user.roles.split(",").map(normalizarTexto).filter(Boolean);
+      if (nombresRoles.length === 0) return [];
+
+      const rolesMaestros = await queryClient.fetchQuery({
+        queryKey: ["masterTable", MasterTableId.ROLES],
+        queryFn: () => masterTableService.list(MasterTableId.ROLES),
+        staleTime: Infinity,
+      });
+
+      return rolesMaestros
+        .filter((rol) => rol.num1 !== null && nombresRoles.includes(normalizarTexto(rol.string1 ?? "")))
+        .map((rol) => rol.num1!);
+    };
+
     try {
       const details = await userService.getById(user.idUsuario);
+      const rolesDesdeListado = await obtenerRolesDesdeListado();
 
       const editData: UserFormData = {
         firstName: details.nombres || "",
@@ -158,14 +205,33 @@ export default function UserManagement() {
         maternalLastName: details.apellidoMaterno || "",
         usuarioCreacion: user.usuario || "",
         correo: details.correo || "",
-        roles: details.roles || [],
+        roles: details.roles?.length ? details.roles : rolesDesdeListado,
         languages: details.idiomas || [],
+        activo:
+          details.idEstado !== undefined
+            ? details.idEstado === 1
+            : (details.estado ?? user.estado).toLowerCase() === "activo",
       };
       setEditingUserId(user.idUsuario);
       setSelectedUser(editData);
       setIsEditModalOpen(true);
     } catch (error) {
       console.error("Error loading user details", error);
+      if (user.estado.toLowerCase() !== "activo") {
+        const rolesDesdeListado = await obtenerRolesDesdeListado();
+        setEditingUserId(user.idUsuario);
+        setSelectedUser({
+          firstName: user.nombres || "",
+          paternalLastName: user.apellidoPaterno || "",
+          maternalLastName: user.apellidoMaterno || "",
+          usuarioCreacion: user.usuario || "",
+          correo: user.correo || "",
+          roles: rolesDesdeListado,
+          languages: [],
+          activo: false,
+        });
+        setIsEditModalOpen(true);
+      }
     } finally {
       setIsLoadingUser(false);
     }
@@ -180,6 +246,7 @@ export default function UserManagement() {
       usuarioCreacion: user.usuario,
       correo: user.correo,
       roles: user.roles ? user.roles.split(", ") : [],
+      activo: user.estado.toLowerCase() === "activo",
     });
     setIsDeleteModalOpen(true);
     setActiveMenuId(null);
@@ -288,16 +355,23 @@ export default function UserManagement() {
             />
             <input
               type="text"
-              placeholder="Buscar usuario"
+              placeholder="Buscar por nombre, usuario o correo"
               value={filter}
               onChange={handleSearchChange}
-              className="pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-lg text-sm w-72 focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all"
+              className="pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-lg text-sm w-96 focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all"
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
-            <Filter size={16} />
-            <span>Estado</span>
-          </button>
+          <div className="w-48">
+            <SearchableSelect
+              options={estadosUsuarioData}
+              value={idEstadoFiltro}
+              onChange={(idEstado) => {
+                setIdEstadoFiltro(idEstado);
+                setCurrentPage(1);
+              }}
+              placeholder="Estado"
+            />
+          </div>
           <button
             onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"

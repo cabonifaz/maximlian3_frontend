@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Search, Filter, MoreHorizontal, Edit, UserPlus, X, Plus, Eye } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Search, Filter, MoreHorizontal, Edit, UserPlus, X, Plus, Eye, Trash2 } from "lucide-react";
 import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
 import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -51,19 +51,35 @@ export default function PedidoManagement() {
   const [selectedPedidoId, setSelectedPedidoId] = useState<number | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
   const [menuDropdownStyle, setMenuDropdownStyle] = useState<React.CSSProperties>({});
-  const [pedidoToCancel, setPedidoToCancel] = useState<PedidoListEntry | null>(null);
+  const [pedidoACancelar, setPedidoACancelar] = useState<PedidoListEntry | null>(null);
+  const [pedidoAEliminar, setPedidoAEliminar] = useState<PedidoListEntry | null>(null);
   const [modalAsignacion, setModalAsignacion] = useState<{ key: number; pedidosIniciales: PedidoListEntry[] } | null>(null);
 
-  const cancelPedidoMutation = useMutation({
-    mutationFn: (idPedido: number) => pedidoService.cancel({ idPedido }),
+  const cancelarPedidoMutation = useMutation({
+    mutationFn: (idPedido: number) => pedidoService.cancelar({ idPedido }),
     onSuccess: () => {
-      setPedidoToCancel(null);
+      setPedidoACancelar(null);
+      queryClient.removeQueries({ queryKey: ["pedidos"], type: "inactive" });
+      queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+    },
+  });
+
+  const eliminarPedidoMutation = useMutation({
+    mutationFn: (idPedido: number) => pedidoService.eliminar({ idPedido }),
+    onSuccess: () => {
+      setPedidoAEliminar(null);
       queryClient.invalidateQueries({ queryKey: ["pedidos"] });
     },
   });
   const [filterEstados, setFilterEstados] = useState<number[]>([]);
+  const [versionFiltroEstados, setVersionFiltroEstados] = useState(0);
 
   const debouncedSearch = useDebounce(searchTerm);
+  const estadosFiltroOrdenados = useMemo(
+    () => [...filterEstados].sort((a, b) => a - b),
+    [filterEstados],
+  );
+  const estadosFiltroClave = estadosFiltroOrdenados.join(",");
 
   const {
     data: pedidosData,
@@ -71,13 +87,14 @@ export default function PedidoManagement() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["pedidos", currentPage, debouncedSearch, filterEstados],
+    queryKey: ["pedidos", currentPage, debouncedSearch, estadosFiltroClave, versionFiltroEstados],
     queryFn: () =>
       pedidoService.list({
         numPag: currentPage,
         busqueda: debouncedSearch || undefined,
-        idEstado: filterEstados.length > 0 ? filterEstados.join(",") : undefined,
+        idEstado: estadosFiltroClave || undefined,
       }),
+    gcTime: 0,
   });
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,6 +104,7 @@ export default function PedidoManagement() {
 
   const handleEstadosChange = (ids: number[]) => {
     setFilterEstados(ids);
+    setVersionFiltroEstados((version) => version + 1);
     setCurrentPage(1);
   };
 
@@ -95,6 +113,14 @@ export default function PedidoManagement() {
       setCurrentPage(page);
     }
   };
+
+  const pedidosFiltrados = useMemo(() => {
+    const pedidos = pedidosData?.lstPedido;
+    if (!pedidos || estadosFiltroOrdenados.length === 0) return pedidos;
+
+    const estadosSeleccionados = new Set(estadosFiltroOrdenados);
+    return pedidos.filter((pedido) => estadosSeleccionados.has(pedido.estado));
+  }, [estadosFiltroOrdenados, pedidosData?.lstPedido]);
 
   const renderRow = (pedido: PedidoListEntry) => (
     <>
@@ -118,7 +144,7 @@ export default function PedidoManagement() {
               setActiveMenuId(null);
             } else {
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              const menuHeight = 156;
+              const menuHeight = 196;
               const spaceBelow = window.innerHeight - rect.bottom;
               const top = spaceBelow < menuHeight ? rect.top - menuHeight - 4 : rect.bottom + 4;
               setMenuDropdownStyle({ top, right: window.innerWidth - rect.right });
@@ -174,13 +200,23 @@ export default function PedidoManagement() {
               </button>
               <button
                 onClick={() => {
-                  setPedidoToCancel(pedido);
+                  setPedidoACancelar(pedido);
                   setActiveMenuId(null);
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
               >
                 <X size={14} />
                 <span>Cancelar pedido</span>
+              </button>
+              <button
+                onClick={() => {
+                  setPedidoAEliminar(pedido);
+                  setActiveMenuId(null);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <Trash2 size={14} />
+                <span>Eliminar pedido</span>
               </button>
             </div>
           </>
@@ -230,7 +266,7 @@ export default function PedidoManagement() {
 
       <CustomTable
         columns={PEDIDO_COLUMNS}
-        data={pedidosData?.lstPedido}
+        data={pedidosFiltrados}
         getId={(p) => p.idPedido}
         renderRow={renderRow}
         isLoading={isLoading}
@@ -276,15 +312,27 @@ export default function PedidoManagement() {
         />
       ) : null}
       <ConfirmDeleteModal
-        isOpen={pedidoToCancel !== null}
-        onClose={() => setPedidoToCancel(null)}
-        onConfirm={() => cancelPedidoMutation.mutate(pedidoToCancel!.idPedido)}
+        isOpen={pedidoACancelar !== null}
+        onClose={() => setPedidoACancelar(null)}
+        onConfirm={() => cancelarPedidoMutation.mutate(pedidoACancelar!.idPedido)}
         title="Cancelar pedido"
-        isSubmitting={cancelPedidoMutation.isPending}
+        isSubmitting={cancelarPedidoMutation.isPending}
       >
         <p className="text-sm text-gray-600">
-          Pedido de <span className="font-semibold">{pedidoToCancel?.cliente}</span> —{" "}
-          {pedidoToCancel?.investigado}
+          Pedido de <span className="font-semibold">{pedidoACancelar?.cliente}</span> —{" "}
+          {pedidoACancelar?.investigado}
+        </p>
+      </ConfirmDeleteModal>
+      <ConfirmDeleteModal
+        isOpen={pedidoAEliminar !== null}
+        onClose={() => setPedidoAEliminar(null)}
+        onConfirm={() => eliminarPedidoMutation.mutate(pedidoAEliminar!.idPedido)}
+        title="Eliminar pedido"
+        isSubmitting={eliminarPedidoMutation.isPending}
+      >
+        <p className="text-sm text-gray-600">
+          Pedido de <span className="font-semibold">{pedidoAEliminar?.cliente}</span> —{" "}
+          {pedidoAEliminar?.investigado}
         </p>
       </ConfirmDeleteModal>
     </div>

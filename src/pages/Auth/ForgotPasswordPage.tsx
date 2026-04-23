@@ -155,7 +155,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 bg-brand-black text-brand-white rounded-xl text-base font-bold hover:bg-brand-black/90 active:scale-[0.98] transition-all shadow-lg shadow-black/10 mt-2 disabled:opacity-70 flex justify-center items-center gap-2"
+              className="w-full py-3.5 bg-brand-black text-brand-white rounded-xl text-base font-bold hover:bg-brand-black/80 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10 mt-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 flex justify-center items-center gap-2 cursor-pointer"
             >
               {isLoading ? (
                 <>
@@ -246,7 +246,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 bg-brand-black text-brand-white rounded-xl text-base font-bold hover:bg-brand-black/90 active:scale-[0.98] transition-all shadow-lg shadow-black/10 mt-4 disabled:opacity-70 flex justify-center items-center gap-2"
+              className="w-full py-3.5 bg-brand-black text-brand-white rounded-xl text-base font-bold hover:bg-brand-black/80 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10 mt-4 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 flex justify-center items-center gap-2 cursor-pointer"
             >
               {isLoading ? (
                 <>
