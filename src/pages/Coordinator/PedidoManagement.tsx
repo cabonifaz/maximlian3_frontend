@@ -41,6 +41,10 @@ function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: str
   );
 }
 
+function esPedidoCancelado(pedido: PedidoListEntry) {
+  return pedido.estado === 5;
+}
+
 export default function PedidoManagement() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
@@ -174,40 +178,44 @@ export default function PedidoManagement() {
                 <Eye size={14} />
                 <span>Ver detalle</span>
               </button>
-              <button
-                onClick={() => {
-                  setSelectedPedidoId(pedido.idPedido);
-                  setIsEditModalOpen(true);
-                  setActiveMenuId(null);
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
-              >
-                <Edit size={14} />
-                <span>Modificar pedido</span>
-              </button>
-              <button
-                onClick={() => {
-                  setModalAsignacion({
-                    key: Date.now(),
-                    pedidosIniciales: [pedido],
-                  });
-                  setActiveMenuId(null);
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
-              >
-                <UserPlus size={14} />
-                <span>Asignar</span>
-              </button>
-              <button
-                onClick={() => {
-                  setPedidoACancelar(pedido);
-                  setActiveMenuId(null);
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
-              >
-                <X size={14} />
-                <span>Cancelar pedido</span>
-              </button>
+              {!esPedidoCancelado(pedido) ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setSelectedPedidoId(pedido.idPedido);
+                      setIsEditModalOpen(true);
+                      setActiveMenuId(null);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Edit size={14} />
+                    <span>Modificar pedido</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setModalAsignacion({
+                        key: Date.now(),
+                        pedidosIniciales: [pedido],
+                      });
+                      setActiveMenuId(null);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <UserPlus size={14} />
+                    <span>Asignar</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPedidoACancelar(pedido);
+                      setActiveMenuId(null);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <X size={14} />
+                    <span>Cancelar pedido</span>
+                  </button>
+                </>
+              ) : null}
               <button
                 onClick={() => {
                   setPedidoAEliminar(pedido);
