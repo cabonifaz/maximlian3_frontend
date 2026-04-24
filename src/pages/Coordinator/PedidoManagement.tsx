@@ -5,10 +5,9 @@ import type { MasterTableEntry } from "@maximilian/shared/types/master-table.typ
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
-import { AddPedidoModal } from "@maximilian/components/coordinator/AddPedidoModal";
+import { PedidoModal } from "@maximilian/components/coordinator/PedidoModal";
 import { AssignmentWorkflowModal } from "@maximilian/components/coordinator/AssignmentWorkflowModal";
 import { CustomPedidoDetalleModal } from "@maximilian/components/coordinator/CustomPedidoDetalleModal";
-import { EditPedidoModal } from "@maximilian/components/coordinator/EditPedidoModal";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { type PedidoListEntry } from "@maximilian/shared/types/pedido.type";
@@ -280,14 +279,16 @@ export default function PedidoManagement() {
         onPageChange={handlePageChange}
         entityLabel="pedidos"
       />
-      <AddPedidoModal
+      <PedidoModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+        modo="crear"
       />
-      <EditPedidoModal
+      <PedidoModal
         isOpen={isEditModalOpen}
         onClose={() => { setIsEditModalOpen(false); setSelectedPedidoId(null); }}
         pedidoId={selectedPedidoId}
+        modo="editar"
       />
       <CustomPedidoDetalleModal
         isOpen={isDetailModalOpen}

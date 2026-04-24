@@ -7,9 +7,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CreateUserModal } from "@maximilian/components/admin/CreateUserModal";
-import { EditUserModal } from "@maximilian/components/admin/EditUserModal";
-import { DeleteUserModal } from "@maximilian/components/admin/DeleteUserModal";
+import { UserModal } from "@maximilian/components/admin/UserModal";
+import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { type UserFormData } from "@maximilian/schemas";
@@ -387,34 +386,48 @@ export default function UserManagement() {
         </div>
       </div>
 
-      <CreateUserModal
+      <UserModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onConfirm={handleCreateUser}
+        modo="crear"
         isSubmitting={createUserMutation.isPending}
       />
 
-      <EditUserModal
+      <UserModal
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
           setEditingUserId(null);
         }}
         onConfirm={handleEditUser}
-        initialData={selectedUser}
+        modo="editar"
+        datosIniciales={selectedUser}
         isSubmitting={updateUserMutation.isPending}
       />
 
-      <DeleteUserModal
+      <ConfirmDeleteModal
         isOpen={isDeleteModalOpen}
         onClose={() => {
           setIsDeleteModalOpen(false);
           setDeletingUserId(null);
         }}
         onConfirm={handleDeleteUser}
-        userName={selectedUser?.firstName}
         isSubmitting={deleteUserMutation.isPending}
-      />
+        title="¿Eliminar este usuario?"
+        descripcion="Esta acción eliminará al usuario seleccionado de forma permanente. El usuario dejará de tener acceso al sistema."
+        textoCargandoConfirmar="Eliminando..."
+        anchoMaximoClassName="max-w-lg"
+      >
+        <p>
+          Usuario seleccionado:{" "}
+          <span className="font-bold text-brand-black">
+            {selectedUser
+              ? `${selectedUser.firstName} ${selectedUser.paternalLastName} ${selectedUser?.maternalLastName ?? ""}`.trim()
+              : "-"}
+          </span>
+        </p>
+      </ConfirmDeleteModal>
 
       <CustomTable
         columns={USER_COLUMNS}
