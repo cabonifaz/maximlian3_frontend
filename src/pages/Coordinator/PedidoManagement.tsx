@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Search, Filter, MoreHorizontal, Edit, UserPlus, X, Plus, Eye, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router";
 import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
 import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -45,6 +46,7 @@ function esPedidoCancelado(pedido: PedidoListEntry) {
 }
 
 export default function PedidoManagement() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -125,6 +127,8 @@ export default function PedidoManagement() {
     return pedidos.filter((pedido) => estadosSeleccionados.has(pedido.estado));
   }, [estadosFiltroOrdenados, pedidosData?.lstPedido]);
 
+  const tieneAsignaciones = (pedido: PedidoListEntry) => pedido.asignaciones.length > 0;
+
   const renderRow = (pedido: PedidoListEntry) => (
     <>
       <td className="px-6 py-4">
@@ -192,16 +196,20 @@ export default function PedidoManagement() {
                   </button>
                   <button
                     onClick={() => {
-                      setModalAsignacion({
-                        key: Date.now(),
-                        pedidosIniciales: [pedido],
-                      });
-                      setActiveMenuId(null);
+                      if (tieneAsignaciones(pedido)) {
+                    navigate(`/coordinator/assignments?busqueda=${encodeURIComponent(pedido.investigado)}`);
+                  } else {
+                    setModalAsignacion({
+                          key: Date.now(),
+                          pedidosIniciales: [pedido],
+                        });
+                      }
+                  setActiveMenuId(null);
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
                   >
                     <UserPlus size={14} />
-                    <span>Asignar</span>
+                    <span>{tieneAsignaciones(pedido) ? "Ver asignacion" : "Asignar"}</span>
                   </button>
                   <button
                     onClick={() => {

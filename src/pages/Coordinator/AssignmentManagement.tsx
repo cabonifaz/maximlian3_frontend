@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Search, MoreHorizontal, Edit, X, Plus } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
 import { AssignmentWorkflowModal } from "@maximilian/components/coordinator/AssignmentWorkflowModal";
@@ -77,28 +78,56 @@ function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: str
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
-  let lineas = [texto];
+  const dividirEnLineas = (valor: string, limite = 18) => {
+    const palabras = valor.split(/\s+/).filter(Boolean);
+    const lineas: string[] = [];
+    let lineaActual = "";
+
+    for (const palabra of palabras) {
+      const siguienteLinea = lineaActual ? `${lineaActual} ${palabra}` : palabra;
+      if (siguienteLinea.length <= limite) {
+        lineaActual = siguienteLinea;
+        continue;
+      }
+
+      if (lineaActual) {
+        lineas.push(lineaActual);
+      }
+
+      lineaActual = palabra;
+    }
+
+    if (lineaActual) {
+      lineas.push(lineaActual);
+    }
+
+    return lineas.slice(0, 3);
+  };
+
+  let lineas = dividirEnLineas(texto);
 
   if (textoNormalizado.startsWith("reasignado a ")) {
-    lineas = ["Reasignado a", texto.slice("Reasignado a ".length).trim() || "-"];
+    lineas = ["Reasignado a", ...dividirEnLineas(texto.slice("Reasignado a ".length).trim() || "-")];
   } else if (textoNormalizado.startsWith("asignado a ")) {
-    lineas = ["Asignado a", texto.slice("Asignado a ".length).trim() || "-"];
+    lineas = ["Asignado a", ...dividirEnLineas(texto.slice("Asignado a ".length).trim() || "-")];
   } else if (textoNormalizado === "traduccion completa") {
     lineas = ["Traduccion", "completa"];
   } else if (textoNormalizado === "analisis completo") {
     lineas = ["Analisis", "completo"];
   } else if (textoNormalizado === "asignacion anulada") {
     lineas = ["Asignacion", "anulada"];
+  } else if (textoNormalizado === "sin asignacion") {
+    lineas = ["Sin", "Asignacion"];
   }
 
   return (
     <span
-      className="inline-flex min-w-32 flex-col items-center justify-center rounded-2xl px-3 py-2 text-center text-xs font-bold leading-tight"
+      className="mx-auto inline-flex min-h-14 w-40 flex-col items-center justify-center rounded-2xl px-3 py-2 text-center text-xs font-bold leading-tight"
       style={{ backgroundColor: colorFondo, color: colorLetra }}
       title={texto}
     >
       {lineas.map((linea) => (
-        <span key={linea} className="whitespace-nowrap">
+        <span key={linea} className="block w-full text-center">
           {linea}
         </span>
       ))}
@@ -144,6 +173,7 @@ function convertirAsignacionAPedido(asignacion: AssignmentOrderEntry): PedidoLis
     colorLetra: asignacion.estadoColorLetra || "#475569",
     colorFondo: asignacion.estadoColorFondo || "#f1f5f9",
     vigencia: asignacion.porVencerTexto || "-",
+    asignaciones: [],
   };
 }
 
@@ -188,9 +218,20 @@ function convertirAsignacionAAsignacionesIniciales(asignacion: AssignmentOrderEn
   ];
 }
 
+function esNuevaAsignacionDesdeListado(asignacion: AssignmentOrderEntry) {
+  const estadoNormalizado = (asignacion.estado || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+  return asignacion.idEstado === 4 && estadoNormalizado === "sin asignacion";
+}
+
 export default function AssignmentManagement() {
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get("busqueda") || "");
   const [currentPage, setCurrentPage] = useState(1);
   const [idEstadoFiltro, setIdEstadoFiltro] = useState<number | undefined>(undefined);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
@@ -216,6 +257,12 @@ export default function AssignmentManagement() {
   } | null>(null);
 
   const debouncedSearch = useDebounce(searchTerm);
+
+  useEffect(() => {
+    const busqueda = searchParams.get("busqueda") || "";
+    setSearchTerm((valorActual) => (valorActual === busqueda ? valorActual : busqueda));
+    setCurrentPage(1);
+  }, [searchParams]);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["assignment-orders", currentPage, debouncedSearch, idEstadoFiltro],
@@ -264,7 +311,7 @@ export default function AssignmentManagement() {
       <td className="px-6 py-4 text-sm text-slate-600">{asignacion.investigado}</td>
       <td className="px-6 py-4 text-sm text-slate-600">{asignacion.analista || "-"}</td>
       <td className="px-6 py-4 text-sm text-slate-600">{asignacion.traductor || "-"}</td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 text-center">
         {getEstadoBadge(
           asignacion.estado || "-",
           asignacion.estadoColorLetra || "#475569",
@@ -300,20 +347,26 @@ export default function AssignmentManagement() {
             >
               <button
                 onClick={() => {
+                  const esNuevaAsignacion = esNuevaAsignacionDesdeListado(asignacion);
                   setModalAsignacion({
                     key: Date.now(),
-                    titulo: "Modificar Asignación",
+                    titulo: esNuevaAsignacion ? "Nueva Asignación" : "Modificar Asignación",
                     tabInicial: "asignacion",
                     pedidosIniciales: [convertirAsignacionAPedido(asignacion)],
-                    asignacionesIniciales: convertirAsignacionAAsignacionesIniciales(asignacion),
-                    modo: "editar",
+                    asignacionesIniciales: esNuevaAsignacion
+                      ? [
+                          { role: "analyst", assignee: null },
+                          { role: "translator", assignee: null },
+                        ]
+                      : convertirAsignacionAAsignacionesIniciales(asignacion),
+                    modo: esNuevaAsignacion ? "crear" : "editar",
                   });
                   setActiveMenuId(null);
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 cursor-pointer"
               >
                 <Edit size={14} />
-                <span>Reasignar</span>
+                <span>{esNuevaAsignacionDesdeListado(asignacion) ? "Asignar" : "Reasignar"}</span>
               </button>
               <button
                 onClick={() => {
