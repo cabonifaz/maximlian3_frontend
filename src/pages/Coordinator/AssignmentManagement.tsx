@@ -17,7 +17,7 @@ const ASSIGNMENT_COLUMNS = [
   { label: "Investigado" },
   { label: "Analista" },
   { label: "Traductor" },
-  { label: "Estado" },
+  { label: "Estado", className: "text-center" },
   { label: "Vencimiento" },
   { label: "Acciones", className: "text-right" },
 ];
@@ -72,12 +72,37 @@ function construirOpcionesEliminacion(asignacion: AssignmentOrderEntry): MasterT
 }
 
 function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: string) {
+  const texto = descripcion.trim() || "-";
+  const textoNormalizado = texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  let lineas = [texto];
+
+  if (textoNormalizado.startsWith("reasignado a ")) {
+    lineas = ["Reasignado a", texto.slice("Reasignado a ".length).trim() || "-"];
+  } else if (textoNormalizado.startsWith("asignado a ")) {
+    lineas = ["Asignado a", texto.slice("Asignado a ".length).trim() || "-"];
+  } else if (textoNormalizado === "traduccion completa") {
+    lineas = ["Traduccion", "completa"];
+  } else if (textoNormalizado === "analisis completo") {
+    lineas = ["Analisis", "completo"];
+  } else if (textoNormalizado === "asignacion anulada") {
+    lineas = ["Asignacion", "anulada"];
+  }
+
   return (
     <span
-      className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold text-center"
+      className="inline-flex min-w-32 flex-col items-center justify-center rounded-2xl px-3 py-2 text-center text-xs font-bold leading-tight"
       style={{ backgroundColor: colorFondo, color: colorLetra }}
+      title={texto}
     >
-      {descripcion}
+      {lineas.map((linea) => (
+        <span key={linea} className="whitespace-nowrap">
+          {linea}
+        </span>
+      ))}
     </span>
   );
 }
