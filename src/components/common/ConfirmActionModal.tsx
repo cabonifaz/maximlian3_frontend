@@ -7,6 +7,7 @@ interface ConfirmActionModalProps {
   onConfirm: () => void;
   title: string;
   isSubmitting?: boolean;
+  confirmDisabled?: boolean;
   children: React.ReactNode;
   descripcion?: string;
   textoConfirmar?: string;
@@ -21,6 +22,7 @@ export function ConfirmActionModal({
   onConfirm,
   title,
   isSubmitting = false,
+  confirmDisabled = false,
   children,
   descripcion = "¿Estás seguro de que deseas continuar? Esta acción no se puede deshacer.",
   textoConfirmar = "Confirmar",
@@ -62,6 +64,7 @@ export function ConfirmActionModal({
             variant={varianteConfirmar}
             size="compact"
             onClick={onConfirm}
+            disabled={confirmDisabled}
             loading={isSubmitting}
             loadingText={textoCargandoConfirmar}
           >

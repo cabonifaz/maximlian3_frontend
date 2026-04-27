@@ -6,6 +6,7 @@ interface ConfirmDeleteModalProps {
   onConfirm: () => void;
   title: string;
   isSubmitting?: boolean;
+  confirmDisabled?: boolean;
   children: React.ReactNode;
   descripcion?: string;
   textoConfirmar?: string;
@@ -19,6 +20,7 @@ export function ConfirmDeleteModal({
   onConfirm,
   title,
   isSubmitting = false,
+  confirmDisabled = false,
   children,
   descripcion,
   textoConfirmar,
@@ -32,6 +34,7 @@ export function ConfirmDeleteModal({
       onConfirm={onConfirm}
       title={title}
       isSubmitting={isSubmitting}
+      confirmDisabled={confirmDisabled}
       descripcion={descripcion}
       textoConfirmar={textoConfirmar}
       textoCargandoConfirmar={textoCargandoConfirmar}

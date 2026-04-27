@@ -2,6 +2,8 @@ export type AssignmentRole = "analyst" | "translator";
 
 export interface AssignmentOrderEntry {
   idAsignacion?: number;
+  analistaIdAsignacion?: number;
+  traductorIdAsignacion?: number;
   idPedido: number;
   idIdioma?: number;
   cliente: string;
