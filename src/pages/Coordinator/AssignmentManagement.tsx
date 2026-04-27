@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { Search, Filter, MoreHorizontal, Edit, X, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search, MoreHorizontal, Edit, X, Plus } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
-import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
 import { AssignmentWorkflowModal } from "@maximilian/components/coordinator/AssignmentWorkflowModal";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
@@ -193,7 +192,7 @@ export default function AssignmentManagement() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [filterEstados, setFilterEstados] = useState<number[]>([]);
+  const [idEstadoFiltro, setIdEstadoFiltro] = useState<number | undefined>(undefined);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
   const [menuDropdownStyle, setMenuDropdownStyle] = useState<React.CSSProperties>({});
   const [asignacionAAnular, setAsignacionAAnular] = useState<AssignmentOrderEntry | null>(null);
@@ -219,11 +218,12 @@ export default function AssignmentManagement() {
   const debouncedSearch = useDebounce(searchTerm);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["assignment-orders", currentPage, debouncedSearch],
+    queryKey: ["assignment-orders", currentPage, debouncedSearch, idEstadoFiltro],
     queryFn: () =>
       assignmentService.list({
         numPag: currentPage,
         busqueda: debouncedSearch || undefined,
+        idEstado: idEstadoFiltro,
       }),
   });
 
@@ -251,18 +251,6 @@ export default function AssignmentManagement() {
 
     setIdAsignacionAEliminar(undefined);
   }, [asignacionAAnular]);
-
-  const asignacionesFiltradas = useMemo(() => {
-    return (data?.lstPedido ?? []).filter((asignacion) => {
-      const pasaEstado =
-        filterEstados.length === 0 ||
-        filterEstados.some((estado) => asignacion.idEstado === estado);
-
-      return pasaEstado;
-    });
-  }, [data?.lstPedido, filterEstados]);
-
-  const usandoFiltroLocal = filterEstados.length > 0;
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= (data?.totalPaginas || 1)) {
@@ -388,24 +376,28 @@ export default function AssignmentManagement() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <MultiSearchableSelect
-          label="Estado"
-          hideLabel
-          triggerIcon={Filter}
+        <div className="w-full max-w-xs">
+        <SearchableSelect
           idMaster={43}
-          value={filterEstados}
-          onChange={(ids) => {
-            setFilterEstados(ids);
+          value={idEstadoFiltro}
+          onChange={(idEstado) => {
+            setIdEstadoFiltro(idEstado);
             setCurrentPage(1);
           }}
-          resumirSelecciones
+          onClear={() => {
+            setIdEstadoFiltro(undefined);
+            setCurrentPage(1);
+          }}
+          optional
+          etiquetaOpcionVacia="Todos los estados"
           placeholder="Filtrar por estado"
         />
+        </div>
       </div>
 
       <CustomTable
         columns={ASSIGNMENT_COLUMNS}
-        data={asignacionesFiltradas}
+        data={data?.lstPedido}
         getId={(asignacion) => asignacion.idPedido}
         renderRow={renderRow}
         isLoading={isLoading}
@@ -413,9 +405,9 @@ export default function AssignmentManagement() {
         onRetry={() => refetch()}
         emptyMessage="No se encontraron asignaciones."
         errorMessage="Error al cargar las asignaciones"
-        currentPage={usandoFiltroLocal ? 1 : currentPage}
-        totalPages={usandoFiltroLocal ? 1 : data?.totalPaginas ?? 1}
-        totalRecords={usandoFiltroLocal ? asignacionesFiltradas.length : data?.totalRegistros ?? 0}
+        currentPage={currentPage}
+        totalPages={data?.totalPaginas ?? 1}
+        totalRecords={data?.totalRegistros ?? 0}
         onPageChange={handlePageChange}
         entityLabel="asignaciones"
       />
