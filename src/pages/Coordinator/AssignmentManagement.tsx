@@ -378,7 +378,7 @@ export default function AssignmentManagement() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="w-full max-w-xs">
         <SearchableSelect
-          idMaster={43}
+          idMaster={98}
           value={idEstadoFiltro}
           onChange={(idEstado) => {
             setIdEstadoFiltro(idEstado);
