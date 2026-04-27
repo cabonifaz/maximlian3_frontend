@@ -1,14 +1,16 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Filter, MoreHorizontal, Edit, X, Plus } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
 import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
 import { AssignmentWorkflowModal } from "@maximilian/components/coordinator/AssignmentWorkflowModal";
+import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { assignmentService } from "@maximilian/services/assignment.service";
 import type { AssignmentOrderEntry } from "@maximilian/shared/types/assignment.type";
 import type { PedidoListEntry } from "@maximilian/shared/types/pedido.type";
+import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 
 const ASSIGNMENT_COLUMNS = [
   { label: "Cliente" },
@@ -19,6 +21,55 @@ const ASSIGNMENT_COLUMNS = [
   { label: "Vencimiento" },
   { label: "Acciones", className: "text-right" },
 ];
+
+const ID_ROL_TRADUCTOR = 3;
+const ID_ROL_ANALISTA = 4;
+
+function tieneAsignado(nombre?: string) {
+  return !!nombre && nombre !== "-" && nombre !== "Sin Asignacion";
+}
+
+function construirOpcionesEliminacion(asignacion: AssignmentOrderEntry): MasterTableEntry[] {
+  const opciones: MasterTableEntry[] = [];
+
+  if (tieneAsignado(asignacion.analista) && asignacion.analistaIdAsignacion) {
+    opciones.push({
+      idEmpresa: 0,
+      idTablaMaestra: null,
+      idMaestro: 0,
+      descripcion: "",
+      num1: asignacion.analistaIdAsignacion,
+      num2: ID_ROL_ANALISTA,
+      num3: null,
+      string1: `Analista - ${asignacion.analista}`,
+      string2: null,
+      string3: null,
+      date1: null,
+      date2: null,
+      date3: null,
+    });
+  }
+
+  if (tieneAsignado(asignacion.traductor) && asignacion.traductorIdAsignacion) {
+    opciones.push({
+      idEmpresa: 0,
+      idTablaMaestra: null,
+      idMaestro: 0,
+      descripcion: "",
+      num1: asignacion.traductorIdAsignacion,
+      num2: ID_ROL_TRADUCTOR,
+      num3: null,
+      string1: `Traductor - ${asignacion.traductor}`,
+      string2: null,
+      string3: null,
+      date1: null,
+      date2: null,
+      date3: null,
+    });
+  }
+
+  return opciones;
+}
 
 function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: string) {
   return (
@@ -121,6 +172,7 @@ export default function AssignmentManagement() {
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
   const [menuDropdownStyle, setMenuDropdownStyle] = useState<React.CSSProperties>({});
   const [asignacionAAnular, setAsignacionAAnular] = useState<AssignmentOrderEntry | null>(null);
+  const [idAsignacionAEliminar, setIdAsignacionAEliminar] = useState<number | undefined>(undefined);
   const [modalAsignacion, setModalAsignacion] = useState<{
     key: number;
     titulo: string;
@@ -151,12 +203,29 @@ export default function AssignmentManagement() {
   });
 
   const anularAsignacionMutation = useMutation({
-    mutationFn: (idAsignacion: number) => assignmentService.delete({ idAsignacion }),
+    mutationFn: ({ idAsignacion }: { idAsignacion: number }) =>
+      assignmentService.delete({ idAsignacion }),
     onSuccess: () => {
       setAsignacionAAnular(null);
+      setIdAsignacionAEliminar(undefined);
       queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
     },
   });
+
+  useEffect(() => {
+    if (!asignacionAAnular) {
+      setIdAsignacionAEliminar(undefined);
+      return;
+    }
+
+    const opciones = construirOpcionesEliminacion(asignacionAAnular);
+    if (opciones.length === 1) {
+      setIdAsignacionAEliminar(opciones[0].num1 ?? undefined);
+      return;
+    }
+
+    setIdAsignacionAEliminar(undefined);
+  }, [asignacionAAnular]);
 
   const asignacionesFiltradas = useMemo(() => {
     return (data?.lstPedido ?? []).filter((asignacion) => {
@@ -239,7 +308,7 @@ export default function AssignmentManagement() {
                   setActiveMenuId(null);
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50 cursor-pointer"
-                disabled={!asignacion.idAsignacion}
+                disabled={!asignacion.analistaIdAsignacion && !asignacion.traductorIdAsignacion}
               >
                 <X size={14} />
                 <span>Eliminar</span>
@@ -345,14 +414,38 @@ export default function AssignmentManagement() {
 
       <ConfirmDeleteModal
         isOpen={asignacionAAnular !== null}
-        onClose={() => setAsignacionAAnular(null)}
-        onConfirm={() => anularAsignacionMutation.mutate(asignacionAAnular!.idAsignacion!)}
+        onClose={() => {
+          setAsignacionAAnular(null);
+          setIdAsignacionAEliminar(undefined);
+        }}
+        onConfirm={() =>
+          anularAsignacionMutation.mutate({
+            idAsignacion: idAsignacionAEliminar!,
+          })
+        }
         title="Eliminar asignación"
         isSubmitting={anularAsignacionMutation.isPending}
+        confirmDisabled={idAsignacionAEliminar === undefined}
+        anchoMaximoClassName="max-w-lg"
       >
         <p className="text-sm text-gray-600">
           Pedido de <span className="font-semibold">{asignacionAAnular?.cliente}</span> — {asignacionAAnular?.investigado}
         </p>
+        {asignacionAAnular ? (
+          <SearchableSelect
+            label="Asignacion a eliminar"
+            options={construirOpcionesEliminacion(asignacionAAnular)}
+            value={idAsignacionAEliminar}
+            onChange={(idAsignacionSeleccionada) => {
+              setIdAsignacionAEliminar(idAsignacionSeleccionada);
+            }}
+            placeholder="Seleccione una asignacion"
+            required
+            error={idAsignacionAEliminar === undefined ? "Seleccione la asignacion a eliminar" : undefined}
+            dropdownZIndexClassName="z-[120]"
+            overlayZIndexClassName="z-[110]"
+          />
+        ) : null}
       </ConfirmDeleteModal>
     </div>
   );

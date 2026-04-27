@@ -67,6 +67,13 @@ function obtenerLista(registro: RegistroGenerico, claves: string[]): unknown[] {
   return [];
 }
 
+function obtenerRegistro(...valores: unknown[]): RegistroGenerico | undefined {
+  for (const valor of valores) {
+    if (esRegistroGenerico(valor)) return valor;
+  }
+  return undefined;
+}
+
 function obtenerIniciales(nombreCompleto: string): string {
   const partes = nombreCompleto
     .split(/\s+/)
@@ -148,10 +155,26 @@ function normalizarVigencia(registro: RegistroGenerico) {
 
 function normalizarPedido(registro: unknown): AssignmentOrderEntry {
   const fila = esRegistroGenerico(registro) ? registro : {};
+  const analista = obtenerRegistro(fila.analista, fila.analyst, fila.analistaAsignado);
+  const traductor = obtenerRegistro(fila.traductor, fila.translator, fila.traductorAsignado);
   const vigencia = normalizarVigencia(fila);
+  const analistaIdAsignacion = obtenerNumero(
+    analista?.idAsignacion,
+    analista?.IdAsignacion,
+    fila.idAsignacionAnalista,
+    fila.IdAsignacionAnalista,
+  );
+  const traductorIdAsignacion = obtenerNumero(
+    traductor?.idAsignacion,
+    traductor?.IdAsignacion,
+    fila.idAsignacionTraductor,
+    fila.IdAsignacionTraductor,
+  );
 
   return {
-    idAsignacion: obtenerNumero(fila.idAsignacion, fila.IdAsignacion),
+    idAsignacion: obtenerNumero(fila.idAsignacion, fila.IdAsignacion, analistaIdAsignacion, traductorIdAsignacion),
+    analistaIdAsignacion,
+    traductorIdAsignacion,
     idPedido: obtenerNumero(fila.idPedido, fila.IdPedido)!,
     idIdioma: obtenerNumero(fila.idIdioma, fila.IdIdioma),
     cliente: obtenerTexto(fila.cliente, fila.nombreCliente, fila.Cliente) || "-",
@@ -162,12 +185,16 @@ function normalizarPedido(registro: unknown): AssignmentOrderEntry {
       fila.Investigado,
     ) || "-",
     analista: obtenerTexto(
+      analista?.nombre,
+      analista?.Nombre,
       fila.analista,
       fila.nombreAnalista,
       fila.usuarioAnalista,
       fila.analistaAsignado,
     ) || "-",
     traductor: obtenerTexto(
+      traductor?.nombre,
+      traductor?.Nombre,
       fila.traductor,
       fila.nombreTraductor,
       fila.usuarioTraductor,
