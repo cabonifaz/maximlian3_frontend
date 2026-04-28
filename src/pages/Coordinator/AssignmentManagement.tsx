@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Search, MoreHorizontal, Edit, X, Plus } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router";
+import { useLocation } from "react-router";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
 import { AssignmentWorkflowModal } from "@maximilian/components/coordinator/AssignmentWorkflowModal";
@@ -228,10 +228,15 @@ function esNuevaAsignacionDesdeListado(asignacion: AssignmentOrderEntry) {
   return asignacion.idEstado === 4 && estadoNormalizado === "sin asignacion";
 }
 
+type EstadoNavegacionAsignaciones = {
+  busquedaInicial?: string;
+};
+
 export default function AssignmentManagement() {
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const estadoNavegacion = location.state as EstadoNavegacionAsignaciones | null;
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState(() => searchParams.get("busqueda") || "");
+  const [searchTerm, setSearchTerm] = useState(() => estadoNavegacion?.busquedaInicial || "");
   const [currentPage, setCurrentPage] = useState(1);
   const [idEstadoFiltro, setIdEstadoFiltro] = useState<number | undefined>(undefined);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
@@ -258,12 +263,6 @@ export default function AssignmentManagement() {
 
   const debouncedSearch = useDebounce(searchTerm);
 
-  useEffect(() => {
-    const busqueda = searchParams.get("busqueda") || "";
-    setSearchTerm((valorActual) => (valorActual === busqueda ? valorActual : busqueda));
-    setCurrentPage(1);
-  }, [searchParams]);
-
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["assignment-orders", currentPage, debouncedSearch, idEstadoFiltro],
     queryFn: () =>
@@ -283,21 +282,6 @@ export default function AssignmentManagement() {
       queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
     },
   });
-
-  useEffect(() => {
-    if (!asignacionAAnular) {
-      setIdAsignacionAEliminar(undefined);
-      return;
-    }
-
-    const opciones = construirOpcionesEliminacion(asignacionAAnular);
-    if (opciones.length === 1) {
-      setIdAsignacionAEliminar(opciones[0].num1 ?? undefined);
-      return;
-    }
-
-    setIdAsignacionAEliminar(undefined);
-  }, [asignacionAAnular]);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= (data?.totalPaginas || 1)) {
@@ -370,7 +354,9 @@ export default function AssignmentManagement() {
               </button>
               <button
                 onClick={() => {
+                  const opcionesEliminacion = construirOpcionesEliminacion(asignacion);
                   setAsignacionAAnular(asignacion);
+                  setIdAsignacionAEliminar(opcionesEliminacion.length === 1 ? (opcionesEliminacion[0].num1 ?? undefined) : undefined);
                   setActiveMenuId(null);
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50 cursor-pointer"

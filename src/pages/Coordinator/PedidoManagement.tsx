@@ -197,14 +197,18 @@ export default function PedidoManagement() {
                   <button
                     onClick={() => {
                       if (tieneAsignaciones(pedido)) {
-                    navigate(`/coordinator/assignments?busqueda=${encodeURIComponent(pedido.investigado)}`);
-                  } else {
-                    setModalAsignacion({
+                        navigate("/coordinator/assignments", {
+                          state: {
+                            busquedaInicial: pedido.investigado,
+                          },
+                        });
+                      } else {
+                        setModalAsignacion({
                           key: Date.now(),
                           pedidosIniciales: [pedido],
                         });
                       }
-                  setActiveMenuId(null);
+                      setActiveMenuId(null);
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
                   >
