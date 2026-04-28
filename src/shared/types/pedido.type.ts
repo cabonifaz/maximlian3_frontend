@@ -6,6 +6,7 @@ export interface PedidoAsignacionEntry {
 export interface PedidoListEntry {
   idPedido: number;
   idAsignacion?: number;
+  fechaMod?: string;
   codigo: string;
   idCliente: number;
   cliente: string;
