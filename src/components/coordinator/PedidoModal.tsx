@@ -209,14 +209,14 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
   });
 
   const handleClienteChange = (val: number | undefined) => {
-    setValue("idCliente", val as number, { shouldValidate: true });
+    setValue("idCliente", val as number, { shouldValidate: true, shouldDirty: true });
     if (val == null) return;
     const cliente = clientes.find((c) => c.idCliente === val);
     if (!cliente) return;
-    setValue("nroDocumentoCliente", cliente.numeroDocumento);
-    setValue("idIdioma", cliente.idIdioma, { shouldValidate: true });
-    setValue("logoImprimible", cliente.logoImprimible, { shouldValidate: true });
-    setValue("idPlantillaInforme", cliente.idPlantilla, { shouldValidate: true });
+    setValue("nroDocumentoCliente", cliente.numeroDocumento ?? "", { shouldDirty: true });
+    setValue("idIdioma", cliente.idIdioma, { shouldValidate: true, shouldDirty: true });
+    setValue("logoImprimible", cliente.logoImprimible, { shouldValidate: true, shouldDirty: true });
+    setValue("idPlantillaInforme", cliente.idPlantilla, { shouldValidate: true, shouldDirty: true });
   };
 
   return (
@@ -248,7 +248,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
           label="Plantilla de Informe"
           options={plantillasInforme}
           value={idPlantillaInforme}
-          onChange={(val) => setValue("idPlantillaInforme", val as number, { shouldValidate: true })}
+          onChange={(val) => setValue("idPlantillaInforme", val as number, { shouldValidate: true, shouldDirty: true })}
           autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
@@ -258,7 +258,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
           label="Idioma del Informe"
           options={idiomas}
           value={idIdioma}
-          onChange={(val) => setValue("idIdioma", val as number, { shouldValidate: true })}
+          onChange={(val) => setValue("idIdioma", val as number, { shouldValidate: true, shouldDirty: true })}
           autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
@@ -284,7 +284,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
           required
           options={paises}
           value={idPais}
-          onChange={(val) => setValue("idPais", val as number, { shouldValidate: true })}
+          onChange={(val) => setValue("idPais", val as number, { shouldValidate: true, shouldDirty: true })}
           autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           error={errors.idPais?.message}
@@ -293,7 +293,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
           label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />Clases de Informe</span>}
           options={clasesInforme}
           value={idClaseInforme}
-          onChange={(val) => setValue("idClaseInforme", val as number, { shouldValidate: true })}
+          onChange={(val) => setValue("idClaseInforme", val as number, { shouldValidate: true, shouldDirty: true })}
           autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
@@ -303,7 +303,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
           label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />Tipo de Trámite</span>}
           options={tiposTramite}
           value={idTipoTramite}
-          onChange={(val) => setValue("idTipoTramite", val as number, { shouldValidate: true })}
+          onChange={(val) => setValue("idTipoTramite", val as number, { shouldValidate: true, shouldDirty: true })}
           autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
@@ -319,9 +319,9 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
             selectedIdTarifario={selectedIdTarifario}
             onTarifarioSelect={(entry: TarifarioCortaEntry | undefined) => {
               if (entry) {
-                if (!idPais) setValue("idPais", entry.idPais, { shouldValidate: true });
-                if (!idClaseInforme) setValue("idClaseInforme", entry.idProducto, { shouldValidate: true });
-                if (!idTipoTramite) setValue("idTipoTramite", entry.idTipoTramite, { shouldValidate: true });
+                if (!idPais) setValue("idPais", entry.idPais, { shouldValidate: true, shouldDirty: true });
+                if (!idClaseInforme) setValue("idClaseInforme", entry.idProducto, { shouldValidate: true, shouldDirty: true });
+                if (!idTipoTramite) setValue("idTipoTramite", entry.idTipoTramite, { shouldValidate: true, shouldDirty: true });
               }
               onTarifarioSelect(entry);
             }}
@@ -392,7 +392,7 @@ function InfoPedidoTab({
           label="Tipo de Persona"
           options={tiposPersona}
           value={idTipoPersona}
-          onChange={(val) => setValue("idTipoPersona", val as number, { shouldValidate: true })}
+          onChange={(val) => setValue("idTipoPersona", val as number, { shouldValidate: true, shouldDirty: true })}
           autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
@@ -455,7 +455,7 @@ function InfoPedidoTab({
           label="Atendido por"
           options={empresasAtencion}
           value={idEmpresaAtencion}
-          onChange={(val) => setValue("idEmpresaAtencion", val as number, { shouldValidate: true })}
+          onChange={(val) => setValue("idEmpresaAtencion", val as number, { shouldValidate: true, shouldDirty: true })}
           autoSeleccionarOpcionUnica
           placeholder="Seleccione"
           required
@@ -465,14 +465,14 @@ function InfoPedidoTab({
           label="Desde"
           required
           value={fechaDesde}
-          onChange={(date) => { setValue("fechaDesde", date as Date, { shouldValidate: true }); if (errors.fechaHasta) trigger("fechaHasta"); }}
+          onChange={(date) => { setValue("fechaDesde", date as Date, { shouldValidate: true, shouldDirty: true }); if (errors.fechaHasta) trigger("fechaHasta"); }}
           error={errors.fechaDesde?.message}
         />
         <CustomDatePicker
           label="Hasta"
           required
           value={fechaHasta}
-          onChange={(date) => { setValue("fechaHasta", date as Date, { shouldValidate: true }); if (errors.fechaDesde) trigger("fechaDesde"); }}
+          onChange={(date) => { setValue("fechaHasta", date as Date, { shouldValidate: true, shouldDirty: true }); if (errors.fechaDesde) trigger("fechaDesde"); }}
           error={errors.fechaHasta?.message}
         />
         <div className="flex flex-col gap-1.5">
@@ -504,13 +504,13 @@ function InfoPedidoTab({
                 options={tiposPlazoCredito}
                 value={idTipoPlazoCredito}
                 onChange={(val) => {
-                  setValue("idTipoPlazoCredito", val as number, { shouldValidate: true });
+                  setValue("idTipoPlazoCredito", val as number, { shouldValidate: true, shouldDirty: true });
                   const entry = tiposPlazoCredito?.find((t) => t.num1 === val);
-                  setValue("tipoPlazoCredito", entry?.string1 ?? "", { shouldValidate: false });
+                  setValue("tipoPlazoCredito", entry?.string1 ?? "", { shouldValidate: false, shouldDirty: true });
                 }}
                 onClear={() => {
-                  setValue("idTipoPlazoCredito", undefined, { shouldValidate: true });
-                  setValue("tipoPlazoCredito", "", { shouldValidate: false });
+                  setValue("idTipoPlazoCredito", undefined, { shouldValidate: true, shouldDirty: true });
+                  setValue("tipoPlazoCredito", "", { shouldValidate: false, shouldDirty: true });
                 }}
                 optional
                 autoSeleccionarOpcionUnica
@@ -909,9 +909,9 @@ function useFormReset(
     reset({
       codigo: pedido.codigo ?? "",
       idCliente: pedido.idCliente,
-      nroDocumentoCliente: pedido.numeroDocumento,
-      nroDocumento: pedido.numeroDocumentoInvestigado,
-      investigado: pedido.investigarRazonSocialNombres,
+      nroDocumentoCliente: pedido.numeroDocumento ?? "",
+      nroDocumento: pedido.numeroDocumentoInvestigado ?? "",
+      investigado: pedido.investigarRazonSocialNombres ?? "",
       idTipoPersona: pedido.idTipoPersona,
       idEmpresaAtencion: pedido.idCompania,
       idIdioma: pedido.idIdioma,
@@ -920,14 +920,14 @@ function useFormReset(
       idTarifario: pedido.idTarifario,
       idPais: tarifaEntry?.idPais,
       idTipoTramite: tarifaEntry?.idTipoTramite,
-      nroReferencia: pedido.numReferencia ?? undefined,
+      nroReferencia: pedido.numReferencia ?? "",
       montoCredito: pedido.montoCredito ?? undefined,
       plazoCredito: pedido.plazoCredito ?? undefined,
       idTipoPlazoCredito: pedido.idTipoPlazoCredito ?? undefined,
-      tipoPlazoCredito: pedido.tipoPlazoCredito ?? undefined,
+      tipoPlazoCredito: pedido.tipoPlazoCredito ?? "",
       fechaDesde: new Date(pedido.fchDesde),
       fechaHasta: new Date(pedido.fchHasta),
-      comentario: pedido.comentario,
+      comentario: pedido.comentario ?? "",
       logoImprimible: pedido.imprimeLogoSafety,
     });
     setSelectedTarifario(tarifaEntry);
@@ -1149,7 +1149,7 @@ export function PedidoModal({
         selectedIdTarifario={selectedTarifario?.idTarifario}
         onTarifarioSelect={(entry) => {
           setSelectedTarifario(entry);
-          setValue("idTarifario", entry?.idTarifario as number, { shouldValidate: true });
+          setValue("idTarifario", entry?.idTarifario as number, { shouldValidate: true, shouldDirty: true });
         }}
         tarifarioError={errors.idTarifario?.message}
       />
