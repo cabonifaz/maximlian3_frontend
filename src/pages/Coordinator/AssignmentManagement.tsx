@@ -1,32 +1,136 @@
-import { useMemo, useState } from "react";
-import { Search, Filter, MoreHorizontal, Edit, X, Plus } from "lucide-react";
+import { useState } from "react";
+import { Search, MoreHorizontal, Edit, X, Plus } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "react-router";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
-import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
 import { AssignmentWorkflowModal } from "@maximilian/components/coordinator/AssignmentWorkflowModal";
+import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { assignmentService } from "@maximilian/services/assignment.service";
 import type { AssignmentOrderEntry } from "@maximilian/shared/types/assignment.type";
 import type { PedidoListEntry } from "@maximilian/shared/types/pedido.type";
+import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 
 const ASSIGNMENT_COLUMNS = [
   { label: "Cliente" },
   { label: "Investigado" },
   { label: "Analista" },
   { label: "Traductor" },
-  { label: "Estado" },
+  { label: "Estado", className: "text-center" },
   { label: "Vencimiento" },
   { label: "Acciones", className: "text-right" },
 ];
 
+const ID_ROL_TRADUCTOR = 3;
+const ID_ROL_ANALISTA = 4;
+
+function tieneAsignado(nombre?: string) {
+  return !!nombre && nombre !== "-" && nombre !== "Sin Asignacion";
+}
+
+function construirOpcionesEliminacion(asignacion: AssignmentOrderEntry): MasterTableEntry[] {
+  const opciones: MasterTableEntry[] = [];
+
+  if (tieneAsignado(asignacion.analista) && asignacion.analistaIdAsignacion) {
+    opciones.push({
+      idEmpresa: 0,
+      idTablaMaestra: null,
+      idMaestro: 0,
+      descripcion: "",
+      num1: asignacion.analistaIdAsignacion,
+      num2: ID_ROL_ANALISTA,
+      num3: null,
+      string1: `Analista - ${asignacion.analista}`,
+      string2: null,
+      string3: null,
+      date1: null,
+      date2: null,
+      date3: null,
+    });
+  }
+
+  if (tieneAsignado(asignacion.traductor) && asignacion.traductorIdAsignacion) {
+    opciones.push({
+      idEmpresa: 0,
+      idTablaMaestra: null,
+      idMaestro: 0,
+      descripcion: "",
+      num1: asignacion.traductorIdAsignacion,
+      num2: ID_ROL_TRADUCTOR,
+      num3: null,
+      string1: `Traductor - ${asignacion.traductor}`,
+      string2: null,
+      string3: null,
+      date1: null,
+      date2: null,
+      date3: null,
+    });
+  }
+
+  return opciones;
+}
+
 function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: string) {
+  const texto = descripcion.trim() || "-";
+  const textoNormalizado = texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  const dividirEnLineas = (valor: string, limite = 18) => {
+    const palabras = valor.split(/\s+/).filter(Boolean);
+    const lineas: string[] = [];
+    let lineaActual = "";
+
+    for (const palabra of palabras) {
+      const siguienteLinea = lineaActual ? `${lineaActual} ${palabra}` : palabra;
+      if (siguienteLinea.length <= limite) {
+        lineaActual = siguienteLinea;
+        continue;
+      }
+
+      if (lineaActual) {
+        lineas.push(lineaActual);
+      }
+
+      lineaActual = palabra;
+    }
+
+    if (lineaActual) {
+      lineas.push(lineaActual);
+    }
+
+    return lineas.slice(0, 3);
+  };
+
+  let lineas = dividirEnLineas(texto);
+
+  if (textoNormalizado.startsWith("reasignado a ")) {
+    lineas = ["Reasignado a", ...dividirEnLineas(texto.slice("Reasignado a ".length).trim() || "-")];
+  } else if (textoNormalizado.startsWith("asignado a ")) {
+    lineas = ["Asignado a", ...dividirEnLineas(texto.slice("Asignado a ".length).trim() || "-")];
+  } else if (textoNormalizado === "traduccion completa") {
+    lineas = ["Traduccion", "completa"];
+  } else if (textoNormalizado === "analisis completo") {
+    lineas = ["Analisis", "completo"];
+  } else if (textoNormalizado === "asignacion anulada") {
+    lineas = ["Asignacion", "anulada"];
+  } else if (textoNormalizado === "sin asignacion") {
+    lineas = ["Sin", "Asignacion"];
+  }
+
   return (
     <span
-      className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold text-center"
+      className="mx-auto inline-flex min-h-14 w-40 flex-col items-center justify-center rounded-2xl px-3 py-2 text-center text-xs font-bold leading-tight"
       style={{ backgroundColor: colorFondo, color: colorLetra }}
+      title={texto}
     >
-      {descripcion}
+      {lineas.map((linea) => (
+        <span key={linea} className="block w-full text-center">
+          {linea}
+        </span>
+      ))}
     </span>
   );
 }
@@ -69,6 +173,7 @@ function convertirAsignacionAPedido(asignacion: AssignmentOrderEntry): PedidoLis
     colorLetra: asignacion.estadoColorLetra || "#475569",
     colorFondo: asignacion.estadoColorFondo || "#f1f5f9",
     vigencia: asignacion.porVencerTexto || "-",
+    asignaciones: [],
   };
 }
 
@@ -113,14 +218,31 @@ function convertirAsignacionAAsignacionesIniciales(asignacion: AssignmentOrderEn
   ];
 }
 
+function esNuevaAsignacionDesdeListado(asignacion: AssignmentOrderEntry) {
+  const estadoNormalizado = (asignacion.estado || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+  return asignacion.idEstado === 4 && estadoNormalizado === "sin asignacion";
+}
+
+type EstadoNavegacionAsignaciones = {
+  busquedaInicial?: string;
+};
+
 export default function AssignmentManagement() {
+  const location = useLocation();
+  const estadoNavegacion = location.state as EstadoNavegacionAsignaciones | null;
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(() => estadoNavegacion?.busquedaInicial || "");
   const [currentPage, setCurrentPage] = useState(1);
-  const [filterEstados, setFilterEstados] = useState<number[]>([]);
+  const [idEstadoFiltro, setIdEstadoFiltro] = useState<number | undefined>(undefined);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
   const [menuDropdownStyle, setMenuDropdownStyle] = useState<React.CSSProperties>({});
   const [asignacionAAnular, setAsignacionAAnular] = useState<AssignmentOrderEntry | null>(null);
+  const [idAsignacionAEliminar, setIdAsignacionAEliminar] = useState<number | undefined>(undefined);
   const [modalAsignacion, setModalAsignacion] = useState<{
     key: number;
     titulo: string;
@@ -142,33 +264,24 @@ export default function AssignmentManagement() {
   const debouncedSearch = useDebounce(searchTerm);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["assignment-orders", currentPage, debouncedSearch],
+    queryKey: ["assignment-orders", currentPage, debouncedSearch, idEstadoFiltro],
     queryFn: () =>
       assignmentService.list({
         numPag: currentPage,
         busqueda: debouncedSearch || undefined,
+        idEstado: idEstadoFiltro,
       }),
   });
 
   const anularAsignacionMutation = useMutation({
-    mutationFn: (idAsignacion: number) => assignmentService.delete({ idAsignacion }),
+    mutationFn: ({ idAsignacion }: { idAsignacion: number }) =>
+      assignmentService.delete({ idAsignacion }),
     onSuccess: () => {
       setAsignacionAAnular(null);
+      setIdAsignacionAEliminar(undefined);
       queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
     },
   });
-
-  const asignacionesFiltradas = useMemo(() => {
-    return (data?.lstPedido ?? []).filter((asignacion) => {
-      const pasaEstado =
-        filterEstados.length === 0 ||
-        filterEstados.some((estado) => asignacion.idEstado === estado);
-
-      return pasaEstado;
-    });
-  }, [data?.lstPedido, filterEstados]);
-
-  const usandoFiltroLocal = filterEstados.length > 0;
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= (data?.totalPaginas || 1)) {
@@ -182,7 +295,7 @@ export default function AssignmentManagement() {
       <td className="px-6 py-4 text-sm text-slate-600">{asignacion.investigado}</td>
       <td className="px-6 py-4 text-sm text-slate-600">{asignacion.analista || "-"}</td>
       <td className="px-6 py-4 text-sm text-slate-600">{asignacion.traductor || "-"}</td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 text-center">
         {getEstadoBadge(
           asignacion.estado || "-",
           asignacion.estadoColorLetra || "#475569",
@@ -218,28 +331,36 @@ export default function AssignmentManagement() {
             >
               <button
                 onClick={() => {
+                  const esNuevaAsignacion = esNuevaAsignacionDesdeListado(asignacion);
                   setModalAsignacion({
                     key: Date.now(),
-                    titulo: "Modificar Asignación",
+                    titulo: esNuevaAsignacion ? "Nueva Asignación" : "Modificar Asignación",
                     tabInicial: "asignacion",
                     pedidosIniciales: [convertirAsignacionAPedido(asignacion)],
-                    asignacionesIniciales: convertirAsignacionAAsignacionesIniciales(asignacion),
-                    modo: "editar",
+                    asignacionesIniciales: esNuevaAsignacion
+                      ? [
+                          { role: "analyst", assignee: null },
+                          { role: "translator", assignee: null },
+                        ]
+                      : convertirAsignacionAAsignacionesIniciales(asignacion),
+                    modo: esNuevaAsignacion ? "crear" : "editar",
                   });
                   setActiveMenuId(null);
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 cursor-pointer"
               >
                 <Edit size={14} />
-                <span>Reasignar</span>
+                <span>{esNuevaAsignacionDesdeListado(asignacion) ? "Asignar" : "Reasignar"}</span>
               </button>
               <button
                 onClick={() => {
+                  const opcionesEliminacion = construirOpcionesEliminacion(asignacion);
                   setAsignacionAAnular(asignacion);
+                  setIdAsignacionAEliminar(opcionesEliminacion.length === 1 ? (opcionesEliminacion[0].num1 ?? undefined) : undefined);
                   setActiveMenuId(null);
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50 cursor-pointer"
-                disabled={!asignacion.idAsignacion}
+                disabled={!asignacion.analistaIdAsignacion && !asignacion.traductorIdAsignacion}
               >
                 <X size={14} />
                 <span>Eliminar</span>
@@ -294,24 +415,28 @@ export default function AssignmentManagement() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <MultiSearchableSelect
-          label="Estado"
-          hideLabel
-          triggerIcon={Filter}
-          idMaster={43}
-          value={filterEstados}
-          onChange={(ids) => {
-            setFilterEstados(ids);
+        <div className="w-full max-w-xs">
+        <SearchableSelect
+          idMaster={98}
+          value={idEstadoFiltro}
+          onChange={(idEstado) => {
+            setIdEstadoFiltro(idEstado);
             setCurrentPage(1);
           }}
-          resumirSelecciones
+          onClear={() => {
+            setIdEstadoFiltro(undefined);
+            setCurrentPage(1);
+          }}
+          optional
+          etiquetaOpcionVacia="Todos los estados"
           placeholder="Filtrar por estado"
         />
+        </div>
       </div>
 
       <CustomTable
         columns={ASSIGNMENT_COLUMNS}
-        data={asignacionesFiltradas}
+        data={data?.lstPedido}
         getId={(asignacion) => asignacion.idPedido}
         renderRow={renderRow}
         isLoading={isLoading}
@@ -319,9 +444,9 @@ export default function AssignmentManagement() {
         onRetry={() => refetch()}
         emptyMessage="No se encontraron asignaciones."
         errorMessage="Error al cargar las asignaciones"
-        currentPage={usandoFiltroLocal ? 1 : currentPage}
-        totalPages={usandoFiltroLocal ? 1 : data?.totalPaginas ?? 1}
-        totalRecords={usandoFiltroLocal ? asignacionesFiltradas.length : data?.totalRegistros ?? 0}
+        currentPage={currentPage}
+        totalPages={data?.totalPaginas ?? 1}
+        totalRecords={data?.totalRegistros ?? 0}
         onPageChange={handlePageChange}
         entityLabel="asignaciones"
       />
@@ -345,14 +470,38 @@ export default function AssignmentManagement() {
 
       <ConfirmDeleteModal
         isOpen={asignacionAAnular !== null}
-        onClose={() => setAsignacionAAnular(null)}
-        onConfirm={() => anularAsignacionMutation.mutate(asignacionAAnular!.idAsignacion!)}
+        onClose={() => {
+          setAsignacionAAnular(null);
+          setIdAsignacionAEliminar(undefined);
+        }}
+        onConfirm={() =>
+          anularAsignacionMutation.mutate({
+            idAsignacion: idAsignacionAEliminar!,
+          })
+        }
         title="Eliminar asignación"
         isSubmitting={anularAsignacionMutation.isPending}
+        confirmDisabled={idAsignacionAEliminar === undefined}
+        anchoMaximoClassName="max-w-lg"
       >
         <p className="text-sm text-gray-600">
           Pedido de <span className="font-semibold">{asignacionAAnular?.cliente}</span> — {asignacionAAnular?.investigado}
         </p>
+        {asignacionAAnular ? (
+          <SearchableSelect
+            label="Asignacion a eliminar"
+            options={construirOpcionesEliminacion(asignacionAAnular)}
+            value={idAsignacionAEliminar}
+            onChange={(idAsignacionSeleccionada) => {
+              setIdAsignacionAEliminar(idAsignacionSeleccionada);
+            }}
+            placeholder="Seleccione una asignacion"
+            required
+            error={idAsignacionAEliminar === undefined ? "Seleccione la asignacion a eliminar" : undefined}
+            dropdownZIndexClassName="z-[120]"
+            overlayZIndexClassName="z-[110]"
+          />
+        ) : null}
       </ConfirmDeleteModal>
     </div>
   );

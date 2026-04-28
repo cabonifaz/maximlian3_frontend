@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
 import { Search, Filter, MoreHorizontal, Edit, UserPlus, X, Plus, Eye, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router";
 import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
 import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CustomTable } from "@maximilian/components/common/CustomTable";
 import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteModal";
-import { AddPedidoModal } from "@maximilian/components/coordinator/AddPedidoModal";
+import { PedidoModal } from "@maximilian/components/coordinator/PedidoModal";
 import { AssignmentWorkflowModal } from "@maximilian/components/coordinator/AssignmentWorkflowModal";
 import { CustomPedidoDetalleModal } from "@maximilian/components/coordinator/CustomPedidoDetalleModal";
-import { EditPedidoModal } from "@maximilian/components/coordinator/EditPedidoModal";
 import { useDebounce } from "@maximilian/hooks/useDebounce";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { type PedidoListEntry } from "@maximilian/shared/types/pedido.type";
@@ -41,7 +41,12 @@ function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: str
   );
 }
 
+function esPedidoCancelado(pedido: PedidoListEntry) {
+  return pedido.estado === 5;
+}
+
 export default function PedidoManagement() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -122,6 +127,8 @@ export default function PedidoManagement() {
     return pedidos.filter((pedido) => estadosSeleccionados.has(pedido.estado));
   }, [estadosFiltroOrdenados, pedidosData?.lstPedido]);
 
+  const tieneAsignaciones = (pedido: PedidoListEntry) => pedido.asignaciones.length > 0;
+
   const renderRow = (pedido: PedidoListEntry) => (
     <>
       <td className="px-6 py-4">
@@ -174,40 +181,52 @@ export default function PedidoManagement() {
                 <Eye size={14} />
                 <span>Ver detalle</span>
               </button>
-              <button
-                onClick={() => {
-                  setSelectedPedidoId(pedido.idPedido);
-                  setIsEditModalOpen(true);
-                  setActiveMenuId(null);
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
-              >
-                <Edit size={14} />
-                <span>Modificar pedido</span>
-              </button>
-              <button
-                onClick={() => {
-                  setModalAsignacion({
-                    key: Date.now(),
-                    pedidosIniciales: [pedido],
-                  });
-                  setActiveMenuId(null);
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
-              >
-                <UserPlus size={14} />
-                <span>Asignar</span>
-              </button>
-              <button
-                onClick={() => {
-                  setPedidoACancelar(pedido);
-                  setActiveMenuId(null);
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
-              >
-                <X size={14} />
-                <span>Cancelar pedido</span>
-              </button>
+              {!esPedidoCancelado(pedido) ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setSelectedPedidoId(pedido.idPedido);
+                      setIsEditModalOpen(true);
+                      setActiveMenuId(null);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Edit size={14} />
+                    <span>Modificar pedido</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (tieneAsignaciones(pedido)) {
+                        navigate("/coordinator/assignments", {
+                          state: {
+                            busquedaInicial: pedido.investigado,
+                          },
+                        });
+                      } else {
+                        setModalAsignacion({
+                          key: Date.now(),
+                          pedidosIniciales: [pedido],
+                        });
+                      }
+                      setActiveMenuId(null);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <UserPlus size={14} />
+                    <span>{tieneAsignaciones(pedido) ? "Ver asignacion" : "Asignar"}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPedidoACancelar(pedido);
+                      setActiveMenuId(null);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <X size={14} />
+                    <span>Cancelar pedido</span>
+                  </button>
+                </>
+              ) : null}
               <button
                 onClick={() => {
                   setPedidoAEliminar(pedido);
@@ -280,14 +299,16 @@ export default function PedidoManagement() {
         onPageChange={handlePageChange}
         entityLabel="pedidos"
       />
-      <AddPedidoModal
+      <PedidoModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+        modo="crear"
       />
-      <EditPedidoModal
+      <PedidoModal
         isOpen={isEditModalOpen}
         onClose={() => { setIsEditModalOpen(false); setSelectedPedidoId(null); }}
         pedidoId={selectedPedidoId}
+        modo="editar"
       />
       <CustomPedidoDetalleModal
         isOpen={isDetailModalOpen}

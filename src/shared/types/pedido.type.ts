@@ -1,3 +1,8 @@
+export interface PedidoAsignacionEntry {
+  idEstadoAsignacion: number;
+  descripcion: string;
+}
+
 export interface PedidoListEntry {
   idPedido: number;
   idAsignacion?: number;
@@ -16,6 +21,7 @@ export interface PedidoListEntry {
   colorLetra: string;
   colorFondo: string;
   vigencia: string | number;
+  asignaciones: PedidoAsignacionEntry[];
 }
 
 export interface PedidoListResponse {

@@ -5,6 +5,7 @@ import type {
   PedidoListParams,
   PedidoListResponse,
   PedidoListEntry,
+  PedidoAsignacionEntry,
   PedidoAccionRequest,
   CreatePedidoRequest,
   CreatePedidoResponse,
@@ -53,6 +54,29 @@ function obtenerBooleano(...valores: unknown[]): boolean {
   return false;
 }
 
+function normalizarAsignaciones(valor: unknown): PedidoAsignacionEntry[] {
+  if (!Array.isArray(valor)) return [];
+
+  return valor.map((item) => {
+    const registro = typeof item === "object" && item !== null ? (item as Record<string, unknown>) : {};
+
+    return {
+      idEstadoAsignacion: obtenerNumero(
+        registro.idEstadoAsignacion,
+        registro.IdEstadoAsignacion,
+        registro.idEstado,
+        registro.IdEstado,
+      ),
+      descripcion: obtenerTexto(
+        registro.descripcion,
+        registro.descripcionEstado,
+        registro.estadoDescripcion,
+        registro.Descripcion,
+      ) || "-",
+    };
+  });
+}
+
 function normalizarFilaPedido(fila: unknown): PedidoListEntry {
   const registro = typeof fila === "object" && fila !== null ? (fila as Record<string, unknown>) : {};
 
@@ -79,6 +103,7 @@ function normalizarFilaPedido(fila: unknown): PedidoListEntry {
     colorLetra: obtenerTexto(registro.colorLetra, registro.estadoColorLetra, registro.ColorLetra) || "#475569",
     colorFondo: obtenerTexto(registro.colorFondo, registro.estadoColorFondo, registro.ColorFondo) || "#f1f5f9",
     vigencia: obtenerTexto(registro.vigencia, registro.Vigencia) || String(obtenerNumero(registro.vigencia, registro.Vigencia)),
+    asignaciones: normalizarAsignaciones(registro.asignaciones),
   };
 }
 

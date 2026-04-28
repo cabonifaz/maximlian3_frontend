@@ -12,6 +12,7 @@ export interface SearchableSelectProps {
   options?: MasterTableEntry[] | undefined;
   value: string | number | undefined;
   onChange: (val: number) => void;
+  onClear?: () => void;
   error?: string;
   placeholder?: string;
   required?: boolean;
@@ -25,6 +26,7 @@ export interface SearchableSelectProps {
   autoSeleccionarOpcionUnica?: boolean;
   dropdownZIndexClassName?: string;
   overlayZIndexClassName?: string;
+  etiquetaOpcionVacia?: string;
 }
 
 export function SearchableSelect({
@@ -46,6 +48,8 @@ export function SearchableSelect({
   autoSeleccionarOpcionUnica = false,
   dropdownZIndexClassName = "z-[101]",
   overlayZIndexClassName = "z-[100]",
+  etiquetaOpcionVacia = "Seleccione",
+  onClear,
 }: SearchableSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -145,24 +149,41 @@ export function SearchableSelect({
                 <div className="px-4 py-6 flex justify-center">
                   <Loader2 size={16} className="animate-spin text-gray-400" />
                 </div>
-              ) : filteredOptions.length > 0 ? (
-                filteredOptions.map((opt) => (
-                  <div
-                    key={opt.num1}
-                    className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${value === opt.num1 ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-600"}`}
-                    onClick={() => {
-                      onChange(opt.num1!);
-                      setIsOpen(false);
-                      setSearchTerm("");
-                    }}
-                  >
-                    {opt.string1}
-                  </div>
-                ))
               ) : (
-                <div className="px-4 py-3 text-xs text-gray-400 italic text-center">
-                  No se encontraron resultados
-                </div>
+                <>
+                  {optional && (
+                    <div
+                      className={`px-4 py-2 text-sm transition-colors ${onClear ? "cursor-pointer hover:bg-brand-wine/5" : "cursor-not-allowed opacity-60"} ${value == null ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-600"}`}
+                      onClick={() => {
+                        if (!onClear) return;
+                        onClear?.();
+                        setIsOpen(false);
+                        setSearchTerm("");
+                      }}
+                    >
+                      {etiquetaOpcionVacia}
+                    </div>
+                  )}
+                  {filteredOptions.length > 0 ? (
+                    filteredOptions.map((opt) => (
+                      <div
+                        key={opt.num1}
+                        className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${value === opt.num1 ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-600"}`}
+                        onClick={() => {
+                          onChange(opt.num1!);
+                          setIsOpen(false);
+                          setSearchTerm("");
+                        }}
+                      >
+                        {opt.string1}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-xs text-gray-400 italic text-center">
+                      No se encontraron resultados
+                    </div>
+                  )}
+                </>
               )}
             </div>
             {onAddNew && (

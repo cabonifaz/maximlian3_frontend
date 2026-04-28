@@ -212,6 +212,7 @@ export function AssignmentWorkflowModal({
         numPag: esModoEdicion ? 1 : paginaPedido,
         busqueda: !esModoEdicion ? busquedaPedidoDebounced || undefined : undefined,
         idPedido: esModoEdicion ? idPedidoEdicion : undefined,
+        idEstado: !esModoEdicion ? "1" : undefined,
         idEstadoAsignacion: !esModoEdicion ? ID_ESTADO_ASIGNACION_SIN_ASIGNACION_PENDIENTE : undefined,
       }),
     enabled: isOpen && (!esModoEdicion || !!idPedidoEdicion),

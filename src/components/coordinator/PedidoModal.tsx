@@ -7,7 +7,7 @@ import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { SearchableSelect } from "@maximilian/components/common/SearchableSelect";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { masterTableService } from "@maximilian/services/masterTable.service";
-import { MasterTableId } from "@maximilian/shared/types/master-table.type";
+import { MasterTableId, type MasterTableEntry } from "@maximilian/shared/types/master-table.type";
 import { clientService } from "@maximilian/services/client.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import type { ClienteCorta, TarifarioCortaEntry } from "@maximilian/shared/types/client.type";
@@ -15,6 +15,7 @@ import {
   useForm,
   type Resolver,
   type UseFormRegister,
+  type UseFormClearErrors,
   type UseFormSetValue,
   type UseFormWatch,
   type UseFormReset,
@@ -25,32 +26,45 @@ import { ConfirmDeleteModal } from "@maximilian/components/common/ConfirmDeleteM
 import { TarifarioCortaTable } from "@maximilian/components/coordinator/TarifarioCortaTable";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { pedidoSchema, type PedidoFormData } from "@maximilian/schemas";
-import type { GetPedidoResponse, PedidoArchivoEntry } from "@maximilian/shared/types/pedido.type";
+import type {
+  CreatePedidoRequest,
+  GetPedidoResponse,
+  PedidoArchivoEntry,
+  UpdatePedidoRequest,
+} from "@maximilian/shared/types/pedido.type";
 
-const pedidoResolver: Resolver<PedidoFormData> = async (...args) => {
-  const result = await zodResolver(pedidoSchema)(...args);
-  const { fechaDesde, fechaHasta, codigo } = args[0];
-  if (fechaDesde && fechaHasta && fechaHasta <= fechaDesde) {
-    result.errors = {
-      ...result.errors,
-      fechaDesde: {
-        type: "custom",
-        message: "La fecha \"Desde\" debe ser menor a la fecha \"Hasta\"",
-      },
-      fechaHasta: {
-        type: "custom",
-        message: "La fecha \"Hasta\" debe ser mayor a la fecha \"Desde\"",
-      },
-    };
-  }
-  if (!codigo || (codigo as string).trim() === "") {
-    result.errors = {
-      ...result.errors,
-      codigo: { type: "custom", message: "El código es requerido" },
-    };
-  }
-  return result;
-};
+function crearPedidoResolver(
+  esModoEdicion: boolean,
+): Resolver<PedidoFormData> {
+  return async (...args) => {
+    const result = await zodResolver(pedidoSchema)(...args);
+    const { fechaDesde, fechaHasta, codigo, autogenerarCodigo } = args[0];
+
+    if (fechaDesde && fechaHasta && fechaHasta <= fechaDesde) {
+      result.errors = {
+        ...result.errors,
+        fechaDesde: {
+          type: "custom",
+          message: "La fecha \"Desde\" debe ser menor a la fecha \"Hasta\"",
+        },
+        fechaHasta: {
+          type: "custom",
+          message: "La fecha \"Hasta\" debe ser mayor a la fecha \"Desde\"",
+        },
+      };
+    }
+
+    const requiereCodigo = esModoEdicion || !autogenerarCodigo;
+    if (requiereCodigo && (!codigo || (codigo as string).trim() === "")) {
+      result.errors = {
+        ...result.errors,
+        codigo: { type: "custom", message: "El código es requerido" },
+      };
+    }
+
+    return result;
+  };
+}
 
 function IndicadorErrorTab() {
   return <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />;
@@ -65,10 +79,11 @@ interface UploadedFile {
   tipoId?: number;
 }
 
-interface EditPedidoModalProps {
+interface PedidoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  pedidoId: number | null;
+  modo: "crear" | "editar";
+  pedidoId?: number | null;
 }
 
 interface ClienteTarifaTabProps {
@@ -86,9 +101,11 @@ interface InfoPedidoTabProps {
   register: UseFormRegister<PedidoFormData>;
   setValue: UseFormSetValue<PedidoFormData>;
   watch: UseFormWatch<PedidoFormData>;
+  clearErrors: UseFormClearErrors<PedidoFormData>;
   trigger: UseFormTrigger<PedidoFormData>;
   errors: Partial<Record<keyof PedidoFormData, { message?: string }>>;
   selectedTarifario: TarifarioCortaEntry | undefined;
+  permitirAutogenerarCodigo: boolean;
 }
 
 function formatBytes(bytes: number): string {
@@ -316,12 +333,22 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, selecte
   );
 }
 
-function InfoPedidoTab({ register, setValue, watch, trigger, errors, selectedTarifario }: InfoPedidoTabProps) {
+function InfoPedidoTab({
+  register,
+  setValue,
+  watch,
+  clearErrors,
+  trigger,
+  errors,
+  selectedTarifario,
+  permitirAutogenerarCodigo,
+}: InfoPedidoTabProps) {
   const idTipoPersona = watch("idTipoPersona");
   const idEmpresaAtencion = watch("idEmpresaAtencion");
   const fechaDesde = watch("fechaDesde");
   const fechaHasta = watch("fechaHasta");
   const idTipoPlazoCredito = watch("idTipoPlazoCredito");
+  const autogenerarCodigo = watch("autogenerarCodigo");
 
   const { data: tiposPersona } = useQuery({
     queryKey: ["masterTable", MasterTableId.TIPO_PERSONA],
@@ -340,6 +367,12 @@ function InfoPedidoTab({ register, setValue, watch, trigger, errors, selectedTar
     queryFn: () => masterTableService.list(MasterTableId.TIPO_PLAZO_CREDITO),
     staleTime: Infinity,
   });
+
+  useEffect(() => {
+    if (!permitirAutogenerarCodigo || !autogenerarCodigo) return;
+    setValue("codigo", "", { shouldValidate: false });
+    clearErrors("codigo");
+  }, [autogenerarCodigo, clearErrors, permitirAutogenerarCodigo, setValue]);
 
   return (
     <div className="flex gap-6">
@@ -396,13 +429,26 @@ function InfoPedidoTab({ register, setValue, watch, trigger, errors, selectedTar
       {/* Right column */}
       <div className="flex-1 flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <CustomLabel required>Código</CustomLabel>
-          <input
-            type="text"
-            placeholder="Código"
-            {...register("codigo")}
-            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.codigo ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
-          />
+          <CustomLabel required={!autogenerarCodigo}>Código</CustomLabel>
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              placeholder={autogenerarCodigo ? "Autogenerado" : "Código"}
+              disabled={!!autogenerarCodigo}
+              {...register("codigo")}
+              className={`flex-1 px-4 py-2.5 border ${errors.codigo ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all ${autogenerarCodigo ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-brand-white"}`}
+            />
+            {permitirAutogenerarCodigo ? (
+              <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  {...register("autogenerarCodigo")}
+                  className="h-4 w-4 cursor-pointer accent-brand-wine"
+                />
+                Autogenerar
+              </label>
+            ) : null}
+          </div>
           {errors.codigo && <p className="text-xs text-red-500">{errors.codigo.message}</p>}
         </div>
         <SearchableSelect
@@ -462,6 +508,11 @@ function InfoPedidoTab({ register, setValue, watch, trigger, errors, selectedTar
                   const entry = tiposPlazoCredito?.find((t) => t.num1 === val);
                   setValue("tipoPlazoCredito", entry?.string1 ?? "", { shouldValidate: false });
                 }}
+                onClear={() => {
+                  setValue("idTipoPlazoCredito", undefined, { shouldValidate: true });
+                  setValue("tipoPlazoCredito", "", { shouldValidate: false });
+                }}
+                optional
                 autoSeleccionarOpcionUnica
                 placeholder="Tipo"
               />
@@ -475,6 +526,7 @@ function InfoPedidoTab({ register, setValue, watch, trigger, errors, selectedTar
 }
 
 interface AnexosTabProps {
+  esModoEdicion: boolean;
   pedidoId: number | null;
   newFiles: UploadedFile[];
   onNewFilesChange: (files: UploadedFile[]) => void;
@@ -482,7 +534,14 @@ interface AnexosTabProps {
   onClearMissingTipo: (id: string) => void;
 }
 
-function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onClearMissingTipo }: AnexosTabProps) {
+function AnexosTab({
+  esModoEdicion,
+  pedidoId,
+  newFiles,
+  onNewFilesChange,
+  missingTipoIds,
+  onClearMissingTipo,
+}: AnexosTabProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [archivoToDelete, setArchivoToDelete] = useState<PedidoArchivoEntry | null>(null);
   const [viewingArchivoId, setViewingArchivoId] = useState<number | null>(null);
@@ -505,7 +564,7 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
   const { data, isLoading } = useQuery({
     queryKey: ["pedidoArchivos", pedidoId, debouncedSearch, numPag],
     queryFn: () => pedidoService.listArchivos({ idPedido: pedidoId!, busqueda: debouncedSearch || undefined, numPag }),
-    enabled: !!pedidoId,
+    enabled: esModoEdicion && !!pedidoId,
   });
 
   const { data: tipoOptions = [] } = useQuery({
@@ -534,7 +593,10 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
     }
   };
 
-  const archivos = useMemo(() => data?.lstPedidoArchivo ?? [], [data]);
+  const archivos = useMemo(
+    () => (esModoEdicion ? data?.lstPedidoArchivo ?? [] : []),
+    [data, esModoEdicion],
+  );
   const totalPaginas = data?.totalPaginas ?? 1;
 
   const uniqueFormatos = useMemo(
@@ -543,6 +605,29 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
       ...newFiles.map((f) => f.type),
     ])).sort(),
     [archivos, newFiles]
+  );
+  const formatoOptions = useMemo<MasterTableEntry[]>(
+    () =>
+      uniqueFormatos.map((formato, indice) => ({
+        idEmpresa: 0,
+        idTablaMaestra: null,
+        idMaestro: 0,
+        descripcion: formato,
+        num1: indice + 1,
+        num2: null,
+        num3: null,
+        string1: formato,
+        string2: null,
+        string3: null,
+        date1: null,
+        date2: null,
+        date3: null,
+      })),
+    [uniqueFormatos]
+  );
+  const valorFormatoSeleccionado = useMemo(
+    () => formatoOptions.find((opcion) => opcion.string1 === filterFormato)?.num1,
+    [filterFormato, formatoOptions]
   );
 
   const filteredArchivos = useMemo(() => archivos.filter((f) => {
@@ -568,6 +653,9 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
       file: f,
     }));
     onNewFilesChange([...newFiles, ...next]);
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
   };
 
   const handleTipoChange = (id: string, tipoId: number | undefined) => {
@@ -619,26 +707,35 @@ function AnexosTab({ pedidoId, newFiles, onNewFilesChange, missingTipoIds, onCle
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
           />
-          <select
-            value={filterFormato}
-            onChange={(e) => setFilterFormato(e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all cursor-pointer bg-white"
-          >
-            <option value="">Formato</option>
-            {uniqueFormatos.map((fmt) => (
-              <option key={fmt} value={fmt}>{fmt}</option>
-            ))}
-          </select>
-          <select
-            value={filterTipo ?? ""}
-            onChange={(e) => setFilterTipo(e.target.value ? Number(e.target.value) : undefined)}
-            className="px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all cursor-pointer bg-white"
-          >
-            <option value="">Tipo</option>
-            {tipoOptions.map((t) => (
-              <option key={t.num1} value={t.num1 ?? ""}>{t.string1}</option>
-            ))}
-          </select>
+          <div className="w-36 shrink-0">
+            <SearchableSelect
+              options={formatoOptions}
+              value={valorFormatoSeleccionado ?? undefined}
+              onChange={(valor) => {
+                const formato = formatoOptions.find((opcion) => opcion.num1 === valor)?.string1 ?? "";
+                setFilterFormato(formato);
+              }}
+              onClear={() => setFilterFormato("")}
+              optional
+              etiquetaOpcionVacia="Formato"
+              placeholder="Formato"
+              dropdownZIndexClassName="z-50"
+              overlayZIndexClassName="z-40"
+            />
+          </div>
+          <div className="w-40 shrink-0">
+            <SearchableSelect
+              options={tipoOptions}
+              value={filterTipo}
+              onChange={(valor) => setFilterTipo(valor)}
+              onClear={() => setFilterTipo(undefined)}
+              optional
+              etiquetaOpcionVacia="Tipo"
+              placeholder="Tipo"
+              dropdownZIndexClassName="z-50"
+              overlayZIndexClassName="z-40"
+            />
+          </div>
         </div>
 
         {/* Table */}
@@ -837,7 +934,13 @@ function useFormReset(
   }, [pedido, allTarifas, reset, setSelectedTarifario]);
 }
 
-export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalProps) {
+export function PedidoModal({
+  isOpen,
+  onClose,
+  modo,
+  pedidoId = null,
+}: PedidoModalProps) {
+  const esModoEdicion = modo === "editar";
   const [activeTab, setActiveTab] = useState("cliente-tarifa");
   const [selectedTarifario, setSelectedTarifario] = useState<TarifarioCortaEntry | undefined>(undefined);
   const [newFiles, setNewFiles] = useState<UploadedFile[]>([]);
@@ -845,11 +948,15 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
   const [missingTipoIds, setMissingTipoIds] = useState<Set<string>>(new Set());
 
   const queryClient = useQueryClient();
+  const pedidoResolver = useMemo(
+    () => crearPedidoResolver(esModoEdicion),
+    [esModoEdicion],
+  );
 
   const { data: pedido, isLoading, isError, refetch } = useQuery({
     queryKey: ["pedido", pedidoId],
     queryFn: () => pedidoService.getById(pedidoId!),
-    enabled: !!pedidoId && isOpen,
+    enabled: esModoEdicion && !!pedidoId && isOpen,
   });
 
   const { data: clientes = [] } = useQuery({
@@ -870,15 +977,21 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
     watch,
     handleSubmit,
     reset,
+    clearErrors,
     trigger,
     formState: { errors, isDirty },
   } = useForm<PedidoFormData>({
     resolver: pedidoResolver,
     mode: "onTouched",
-    defaultValues: { logoImprimible: false },
+    defaultValues: { logoImprimible: false, autogenerarCodigo: false },
   });
 
-  useFormReset(pedido, allTarifas, reset, setSelectedTarifario);
+  useFormReset(
+    esModoEdicion ? pedido : undefined,
+    esModoEdicion ? allTarifas : undefined,
+    reset,
+    setSelectedTarifario,
+  );
 
   const handleClose = () => {
     reset();
@@ -890,44 +1003,65 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
     onClose();
   };
 
-  const { mutate: updatePedido, isPending } = useMutation({
-    mutationFn: pedidoService.update,
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ["pedidos"] });
-      queryClient.invalidateQueries({ queryKey: ["pedido", pedidoId] });
-      if (newFiles.length > 0) {
-        const toastId = toast.loading("Subiendo archivos...");
-        setIsUploading(true);
-        try {
-          const uploadResult = await pedidoService.addArchivos({
-            idPedido: pedidoId!,
-            archivos: newFiles.map((f) => ({
-              formatoArchivo: f.file.type || "application/octet-stream",
-              nombreDocumento: f.name,
-              tamanoArchivo: f.size,
-              idTipoArchivo: f.tipoId ?? 0,
-            })),
+  const subirArchivos = async (idPedidoObjetivo: number) => {
+    if (newFiles.length === 0) return;
+
+    const toastId = toast.loading("Subiendo archivos...");
+    setIsUploading(true);
+    try {
+      const uploadResult = await pedidoService.addArchivos({
+        idPedido: idPedidoObjetivo,
+        archivos: newFiles.map((f) => ({
+          formatoArchivo: f.file.type || "application/octet-stream",
+          nombreDocumento: f.name,
+          tamanoArchivo: f.size,
+          idTipoArchivo: f.tipoId ?? 0,
+        })),
+      });
+      await Promise.all(
+        uploadResult.map(({ nombreDocumento, uploadUrl }) => {
+          const file = newFiles.find((f) => f.name === nombreDocumento)?.file;
+          if (!file) return Promise.resolve();
+          return fetch(uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": file.type || "application/octet-stream" },
+            body: file,
           });
-          await Promise.all(
-            uploadResult.map(({ nombreDocumento, uploadUrl }) => {
-              const file = newFiles.find((f) => f.name === nombreDocumento)?.file;
-              if (!file) return Promise.resolve();
-              return fetch(uploadUrl, {
-                method: "PUT",
-                headers: { "Content-Type": file.type || "application/octet-stream" },
-                body: file,
-              });
-            })
-          );
-          toast.dismiss(toastId);
-          setNewFiles([]);
-          queryClient.invalidateQueries({ queryKey: ["pedidoArchivos", pedidoId] });
-        } catch {
-          toast.error("No se pudieron subir los archivos", { id: toastId });
-        } finally {
-          setIsUploading(false);
-        }
+        }),
+      );
+      toast.dismiss(toastId);
+      setNewFiles([]);
+      queryClient.invalidateQueries({
+        queryKey: ["pedidoArchivos", idPedidoObjetivo],
+      });
+    } catch {
+      toast.error("No se pudieron subir los archivos", { id: toastId });
+      throw new Error("Error al subir archivos");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const { mutate: guardarPedido, isPending } = useMutation({
+    mutationFn: async (
+      payload: CreatePedidoRequest | UpdatePedidoRequest,
+    ) => {
+      if (esModoEdicion) {
+        await pedidoService.update(payload as UpdatePedidoRequest);
+        return { idPedido: pedidoId!, archivos: [] };
       }
+
+      return pedidoService.create(payload as CreatePedidoRequest);
+    },
+    onSuccess: async (resultado) => {
+      queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+      if (esModoEdicion) {
+        queryClient.invalidateQueries({ queryKey: ["pedido", pedidoId] });
+      }
+      if (newFiles.length > 0) {
+        await subirArchivos(resultado.idPedido);
+      }
+      handleClose();
     },
   });
 
@@ -939,8 +1073,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
       return;
     }
     const cliente = clientes.find((c) => c.idCliente === data.idCliente);
-    updatePedido({
-      idPedido: pedidoId!,
+    const datosComunes = {
       codigo: data.codigo ?? "",
       idCliente: data.idCliente,
       numeroDocumento: data.nroDocumentoCliente ?? "",
@@ -961,8 +1094,23 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
       fchDesde: data.fechaDesde.toISOString(),
       fchHasta: data.fechaHasta.toISOString(),
       comentario: data.comentario ?? "",
-      idEstado: pedido!.idEstado,
       imprimeLogoSafety: data.logoImprimible ?? false,
+    };
+
+    if (esModoEdicion) {
+      guardarPedido({
+        ...datosComunes,
+        idPedido: pedidoId!,
+        idEstado: pedido!.idEstado,
+      });
+      return;
+    }
+
+    guardarPedido({
+      ...datosComunes,
+      codigo: data.autogenerarCodigo ? null : (data.codigo ?? ""),
+      idEstado: 1,
+      archivos: [],
     });
   };
 
@@ -984,7 +1132,8 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
     </div>
   );
 
-  const isLoadingAll = isLoading || (!!pedido && allTarifas === undefined);
+  const isLoadingAll =
+    esModoEdicion && (isLoading || (!!pedido && allTarifas === undefined));
 
   const clienteTarifaContent = isLoadingAll
     ? loadingContent
@@ -1015,9 +1164,11 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
         register={register}
         setValue={setValue}
         watch={watch}
+        clearErrors={clearErrors}
         trigger={trigger}
         errors={errors}
         selectedTarifario={selectedTarifario}
+        permitirAutogenerarCodigo={!esModoEdicion}
       />
     );
 
@@ -1061,7 +1212,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
       id: "anexos",
       label: "Anexos",
       indicator: hayErroresAnexos ? <IndicadorErrorTab /> : undefined,
-      content: <AnexosTab pedidoId={pedidoId} newFiles={newFiles} onNewFilesChange={setNewFiles} missingTipoIds={missingTipoIds} onClearMissingTipo={(id) => setMissingTipoIds((prev) => { const next = new Set(prev); next.delete(id); return next; })} />,
+      content: <AnexosTab esModoEdicion={esModoEdicion} pedidoId={pedidoId} newFiles={newFiles} onNewFilesChange={setNewFiles} missingTipoIds={missingTipoIds} onClearMissingTipo={(id) => setMissingTipoIds((prev) => { const next = new Set(prev); next.delete(id); return next; })} />,
     },
   ];
 
@@ -1076,7 +1227,11 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
         onClick={handleSubmit(onSubmit)}
         disabled={isLoadingAll || isError || (!isDirty && newFiles.length === 0) || anexosSinTipo}
       >
-        {newFiles.length > 0 ? `Guardar (${newFiles.length} nuevo${newFiles.length === 1 ? " archivo" : "s archivos"})` : "Guardar"}
+        {esModoEdicion
+          ? newFiles.length > 0
+            ? `Guardar (${newFiles.length} nuevo${newFiles.length === 1 ? " archivo" : "s archivos"})`
+            : "Guardar"
+          : "Confirmar"}
       </CustomButton>
       {anexosSinTipo ? (
         <div className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 hidden w-64 rounded-lg bg-brand-black px-3 py-2 text-xs font-medium text-brand-white shadow-lg group-hover:block">
@@ -1091,7 +1246,7 @@ export function EditPedidoModal({ isOpen, onClose, pedidoId }: EditPedidoModalPr
     <CustomTabbedModal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Modificar un Pedido"
+      title={esModoEdicion ? "Modificar un Pedido" : "Registra un Pedido"}
       tabs={tabs}
       footer={footer}
       activeTab={activeTab}
