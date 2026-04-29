@@ -3,7 +3,7 @@ import { fetchAuthSession } from "aws-amplify/auth";
 import { toast } from "sonner";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
-import { cerrarSesionExpirada } from "./session.service";
+import { cerrarSesionExpirada } from "./sesion.service";
 
 const maximilianService = axios.create({
   baseURL:
@@ -30,17 +30,17 @@ maximilianService.interceptors.request.use(
   async (config) => {
     try {
       const { tokens } = await fetchAuthSession();
-      const accessToken = tokens?.accessToken?.toString();
-      const selectedRoleId = sessionStorage.getItem("selected_role_id");
-      const userSession = sessionStorage.getItem("user_session");
-      const session = userSession ? JSON.parse(userSession) : null;
+      const tokenAcceso = tokens?.accessToken?.toString();
+      const idRolSeleccionado = sessionStorage.getItem("selected_role_id");
+      const sesionUsuario = sessionStorage.getItem("user_session");
+      const session = sesionUsuario ? JSON.parse(sesionUsuario) : null;
 
-      if (accessToken) {
-        config.headers.Authorization = `Bearer ${accessToken}`;
+      if (tokenAcceso) {
+        config.headers.Authorization = `Bearer ${tokenAcceso}`;
       }
 
-      if (selectedRoleId) {
-        config.headers.idRol = selectedRoleId;
+      if (idRolSeleccionado) {
+        config.headers.idRol = idRolSeleccionado;
       }
 
       if (session?.idUsuario) {
