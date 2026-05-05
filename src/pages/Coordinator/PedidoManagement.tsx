@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Filter, MoreHorizontal, Edit, UserPlus, X, Plus, Eye, Trash2 } from "lucide-react";
+import { Search, Filter, MoreHorizontal, Edit, UserPlus, X, Plus, Eye, Trash2, TriangleAlert } from "lucide-react";
 import { useNavigate } from "react-router";
 import { MultiSearchableSelect } from "@maximilian/components/common/MultiSearchableSelect";
 import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
@@ -16,9 +16,10 @@ import { type PedidoListEntry } from "@maximilian/shared/types/pedido.type";
 const PEDIDO_COLUMNS = [
   { label: "Cliente" },
   { label: "Investigado" },
-  { label: "Idioma del Informe" },
-  { label: "Logo Imprimible" },
-  { label: "Estado" },
+  { label: "Idioma del Informe", className: "text-center" },
+  { label: "Logo Imprimible", className: "text-center" },
+  { label: "Estado", className: "text-center" },
+  { label: "", className: "text-center w-14" },
   { label: "Acciones", className: "text-right" },
 ];
 
@@ -137,13 +138,32 @@ export default function PedidoManagement() {
       <td className="px-6 py-4">
         <span className="text-sm text-gray-600">{pedido.investigado}</span>
       </td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 text-center">
         <span className="text-sm text-gray-600">{pedido.idioma}</span>
       </td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 text-center">
         <span className="text-sm text-gray-600">{pedido.logoImprimible ? "Sí" : "No"}</span>
       </td>
-      <td className="px-6 py-4">{getEstadoBadge(pedido.descripcionEstado, pedido.colorLetra, pedido.colorFondo)}</td>
+      <td className="px-6 py-4 text-center">
+        <div className="flex justify-center">
+          {getEstadoBadge(pedido.descripcionEstado, pedido.colorLetra, pedido.colorFondo)}
+        </div>
+      </td>
+      <td className="px-6 py-4 text-center">
+        {pedido.fechaMod ? (
+          <div className="relative inline-flex group">
+            <span
+              className="inline-flex items-center text-amber-500 cursor-help"
+              aria-label={`Fecha de modificacion: ${pedido.fechaMod}`}
+            >
+              <TriangleAlert size={16} />
+            </span>
+            <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-brand-black px-3 py-2 text-xs font-medium text-brand-white shadow-lg group-hover:block">
+              {pedido.fechaMod}
+            </div>
+          </div>
+        ) : null}
+      </td>
       <td className="px-6 py-4 text-right">
         <button
           onClick={(e) => {

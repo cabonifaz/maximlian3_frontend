@@ -83,6 +83,7 @@ function normalizarFilaPedido(fila: unknown): PedidoListEntry {
   return {
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido),
     idAsignacion: obtenerNumero(registro.idAsignacion, registro.IdAsignacion),
+    fechaMod: obtenerTexto(registro.fechaMod, registro.FechaMod, registro.fechaModificacion, registro.FechaModificacion),
     codigo: obtenerTexto(registro.codigo, registro.Codigo),
     idCliente: obtenerNumero(registro.idCliente, registro.IdCliente),
     cliente: obtenerTexto(registro.cliente, registro.nombre, registro.nombreCliente, registro.Cliente) || "-",
