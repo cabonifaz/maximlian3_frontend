@@ -12,7 +12,8 @@ interface PropsCustomModalBalanceAnalista {
 }
 
 const opcionesOperacionCambio = ["US Dollar", "Euro", "Sol"];
-const opcionesTipoBalance = ["GN-PG", "GN", "PG"];
+const opcionesTipoBalance = ["Balance general", "Balance consolidado"];
+const opcionesTipoEstadoFinanciero = ["GN-PG", "GN", "PG", "Desagregado", "Totalizado", "Turquía"];
 
 function formatearFecha(fecha: string) {
   if (!fecha) return "";
@@ -34,21 +35,30 @@ export function CustomModalBalanceAnalista({
   onCerrar,
   onGuardar,
 }: PropsCustomModalBalanceAnalista) {
-  const [fechaBalance, setFechaBalance] = useState(convertirFechaEntrada(registroInicial?.fecha ?? ""));
+  const [fechaInicio, setFechaInicio] = useState(convertirFechaEntrada(registroInicial?.fechaInicio ?? registroInicial?.fecha ?? ""));
+  const [fechaFin, setFechaFin] = useState(convertirFechaEntrada(registroInicial?.fechaFin ?? ""));
+  const [esActual, setEsActual] = useState(registroInicial?.esActual ?? false);
   const [tipoCambio, setTipoCambio] = useState(registroInicial?.tipoCambio ?? "");
   const [operacionCambio, setOperacionCambio] = useState(registroInicial?.operacionCambio ?? "");
-  const [tipoBalance, setTipoBalance] = useState(registroInicial?.tipoBalance ?? registroInicial?.tipo ?? "");
+  const [tipoBalance, setTipoBalance] = useState(registroInicial?.tipoBalance ?? "Balance general");
+  const [tipoEstadoFinanciero, setTipoEstadoFinanciero] = useState(registroInicial?.tipoEstadoFinanciero ?? registroInicial?.tipo ?? "");
 
   if (!estaAbierto) return null;
 
   const manejarGuardar = () => {
-    if (!fechaBalance || !tipoCambio.trim() || !operacionCambio.trim() || !tipoBalance.trim()) {
+    if (!fechaInicio || (!esActual && !fechaFin) || !tipoCambio.trim() || !operacionCambio.trim() || !tipoBalance.trim() || !tipoEstadoFinanciero.trim()) {
       return;
     }
 
     onGuardar({
-      fecha: formatearFecha(fechaBalance),
-      tipo: tipoBalance.trim(),
+      fecha: esActual
+        ? `${formatearFecha(fechaInicio)} - Actualidad`
+        : `${formatearFecha(fechaInicio)} - ${formatearFecha(fechaFin)}`,
+      fechaInicio: formatearFecha(fechaInicio),
+      fechaFin: esActual ? "" : formatearFecha(fechaFin),
+      esActual,
+      tipo: tipoEstadoFinanciero.trim(),
+      tipoEstadoFinanciero: tipoEstadoFinanciero.trim(),
       tipoCambio: tipoCambio.trim(),
       operacionCambio: operacionCambio.trim(),
       tipoBalance: tipoBalance.trim(),
@@ -72,14 +82,35 @@ export function CustomModalBalanceAnalista({
 
         <div className="grid gap-5 px-7 py-6 md:grid-cols-2">
           <div className="space-y-2">
-            <CustomLabel>Fecha de Balance</CustomLabel>
+            <CustomLabel>Fecha de Inicio</CustomLabel>
             <input
               type="date"
-              value={fechaBalance}
-              onChange={(event) => setFechaBalance(event.target.value)}
+              value={fechaInicio}
+              onChange={(event) => setFechaInicio(event.target.value)}
               className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
             />
           </div>
+
+          <div className="space-y-2">
+            <CustomLabel>Fecha de Fin</CustomLabel>
+            <input
+              type="date"
+              value={fechaFin}
+              disabled={esActual}
+              onChange={(event) => setFechaFin(event.target.value)}
+              className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all disabled:bg-slate-50 disabled:text-slate-400 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+            />
+          </div>
+
+          <label className="col-span-full flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-slate-600">
+            <input
+              type="checkbox"
+              checked={esActual}
+              onChange={(event) => setEsActual(event.target.checked)}
+              className="h-4 w-4 accent-brand-wine"
+            />
+            Actualidad
+          </label>
 
           <div className="space-y-2">
             <CustomLabel>Tipo de Cambio</CustomLabel>
@@ -116,6 +147,22 @@ export function CustomModalBalanceAnalista({
             >
               <option value="">Seleccionar...</option>
               {opcionesTipoBalance.map((opcion) => (
+                <option key={opcion} value={opcion}>
+                  {opcion}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <CustomLabel>Tipo de Estado Financiero</CustomLabel>
+            <select
+              value={tipoEstadoFinanciero}
+              onChange={(event) => setTipoEstadoFinanciero(event.target.value)}
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+            >
+              <option value="">Seleccionar...</option>
+              {opcionesTipoEstadoFinanciero.map((opcion) => (
                 <option key={opcion} value={opcion}>
                   {opcion}
                 </option>

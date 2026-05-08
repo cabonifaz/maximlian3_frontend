@@ -77,7 +77,11 @@ export interface RegistroBalanceAnalista {
   codigo: string;
   periodo: string;
   fecha: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+  esActual?: boolean;
   tipo: string;
+  tipoEstadoFinanciero?: string;
   tipoCambio?: string;
   operacionCambio?: string;
   tipoBalance?: string;
@@ -263,6 +267,17 @@ export interface RegistroBancoAnalista {
   numeroCuenta: string;
   sector: string;
   telefono: string;
+  sectoristaJefeCuenta?: string;
+}
+
+export interface ArchivoInvestigacionAnalista {
+  id: string;
+  nombre: string;
+  extension: string;
+  tamano: number;
+  tipoDocumento: "Informativo" | "Evidencia";
+  faseVinculada?: IdSeccionInvestigacionAnalista;
+  archivo: File;
 }
 
 export interface ResultadoBusquedaBancoAnalista {

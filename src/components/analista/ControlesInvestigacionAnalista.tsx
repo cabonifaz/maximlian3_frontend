@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Briefcase, Building2, Check, Eye, FileText, Landmark, LibraryBig, Lock, Sparkles, User, Users } from "lucide-react";
+import { Briefcase, Building2, Check, Eye, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import type { IdSeccionInvestigacionAnalista, ResumenInvestigacionAnalista } from "@maximilian/shared/types/analista.type";
@@ -141,6 +141,7 @@ interface PropsResumenPedidoInvestigacionAnalista {
   mostrarBotonFinalizar: boolean;
   onFinalizarInvestigacion?: () => void;
   onExtraerInformacion?: () => void;
+  onAbrirArchivos?: () => void;
 }
 
 export function CampoInvestigacionAnalista({
@@ -325,6 +326,7 @@ export function ResumenPedidoInvestigacionAnalista({
   mostrarBotonFinalizar,
   onFinalizarInvestigacion,
   onExtraerInformacion,
+  onAbrirArchivos,
 }: PropsResumenPedidoInvestigacionAnalista) {
   return (
     <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -357,8 +359,9 @@ export function ResumenPedidoInvestigacionAnalista({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-500">
-            Archivos ({resumen.archivos})
+          <button type="button" onClick={onAbrirArchivos} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-500">
+            <Paperclip size={14} />
+            Archivos
           </button>
           <CustomButton
             size="sm"

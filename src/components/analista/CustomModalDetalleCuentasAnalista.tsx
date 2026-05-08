@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
@@ -14,6 +15,7 @@ interface PropsCustomModalDetalleCuentasAnalista {
   onCerrar: () => void;
   onGuardar: (detalle: DetalleCuentasBalanceAnalista) => void;
   detalleInicial?: DetalleCuentasBalanceAnalista;
+  tipoEstadoFinanciero?: string;
 }
 
 function crearDetalleVacio(): DetalleCuentasBalanceAnalista {
@@ -74,10 +76,23 @@ export function CustomModalDetalleCuentasAnalista({
   onCerrar,
   onGuardar,
   detalleInicial,
+  tipoEstadoFinanciero,
 }: PropsCustomModalDetalleCuentasAnalista) {
   const detalleBase = useMemo(() => detalleInicial ?? crearDetalleVacio(), [detalleInicial]);
   const [detalle, setDetalle] = useState<DetalleCuentasBalanceAnalista>(detalleBase);
   const [pestanaActiva, setPestanaActiva] = useState("balance-general");
+
+  useEffect(() => {
+    setDetalle(detalleBase);
+  }, [detalleBase]);
+
+  const mostrarRatios = ["Desagregado", "Totalizado", "Turquía"].includes(tipoEstadoFinanciero ?? "");
+
+  useEffect(() => {
+    if (!mostrarRatios && pestanaActiva === "ratios") {
+      setPestanaActiva("balance-general");
+    }
+  }, [mostrarRatios, pestanaActiva]);
 
   if (!estaAbierto) return null;
 
@@ -150,6 +165,8 @@ export function CustomModalDetalleCuentasAnalista({
     {
       id: "ratios",
       label: "Ratios",
+      disabled: !mostrarRatios,
+      tooltip: "Los ratios se habilitan para estados financieros Desagregado, Totalizado o Turquía.",
       content: (
         <div className="grid gap-8 md:grid-cols-2">
           <CampoDetalle etiqueta="Índice de Liquidez" valor={detalle.ratios.liquidez} onChange={(valor) => actualizarRatios("liquidez", valor)} />
@@ -160,6 +177,23 @@ export function CustomModalDetalleCuentasAnalista({
       ),
     },
   ];
+
+  const validarTotalesBalance = () => {
+    const totalActivos = Number.parseFloat(detalle.balanceGeneral.totalActivos.replace(",", "."));
+    const totalPasivoPatrimonio = Number.parseFloat(detalle.balanceGeneral.totalPasivoPatrimonio.replace(",", "."));
+
+    if (Number.isNaN(totalActivos) || Number.isNaN(totalPasivoPatrimonio)) {
+      toast.error("Ingrese valores numéricos válidos para Total Activos y Total Pasivo y Patrimonio.");
+      return false;
+    }
+
+    if (Math.abs(totalActivos - totalPasivoPatrimonio) > 0.000001) {
+      toast.error("Total Activos debe ser igual a Total Pasivo y Patrimonio, incluyendo decimales.");
+      return false;
+    }
+
+    return true;
+  };
 
   return (
     <CustomModalPestanas
@@ -179,7 +213,10 @@ export function CustomModalDetalleCuentasAnalista({
           </CustomButton>
           <CustomButton
             size="sm"
-            onClick={() => onGuardar(detalle)}
+            onClick={() => {
+              if (!validarTotalesBalance()) return;
+              onGuardar(detalle);
+            }}
           >
             Guardar Cambios
           </CustomButton>

@@ -128,6 +128,7 @@ export function CustomModalBancoAnalista({
   const [sector, setSector] = useState(registroInicial?.sector ?? "");
   const [telefono, setTelefono] = useState(registroInicial?.telefono ?? "");
   const [numeroCuenta, setNumeroCuenta] = useState(registroInicial?.numeroCuenta ?? "");
+  const [sectoristaJefeCuenta, setSectoristaJefeCuenta] = useState(registroInicial?.sectoristaJefeCuenta ?? "");
   const [estaAbiertoModalBusqueda, setEstaAbiertoModalBusqueda] = useState(false);
 
   if (!estaAbierto) return null;
@@ -142,6 +143,7 @@ export function CustomModalBancoAnalista({
       sector: sector.trim(),
       telefono: telefono.trim(),
       numeroCuenta: numeroCuenta.trim(),
+      sectoristaJefeCuenta: sectoristaJefeCuenta.trim(),
     });
   };
 
@@ -174,6 +176,11 @@ export function CustomModalBancoAnalista({
             <div className="space-y-2">
               <CustomLabel>Lista de Sectores</CustomLabel>
               <input value={sector} onChange={(event) => setSector(event.target.value)} placeholder="Ingrese el sector" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+            </div>
+
+            <div className="space-y-2">
+              <CustomLabel>Sectorista / Jefe de Cuenta</CustomLabel>
+              <input value={sectoristaJefeCuenta} onChange={(event) => setSectoristaJefeCuenta(event.target.value)} placeholder="Nombre del sectorista o jefe de cuenta" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
             </div>
 
             <div className="space-y-2">

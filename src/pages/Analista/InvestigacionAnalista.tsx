@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { CustomModalBalanceAnalista } from "@maximilian/components/analista/CustomModalBalanceAnalista";
 import { CustomModalBancoAnalista } from "@maximilian/components/analista/CustomModalBancoAnalista";
+import { CustomModalArchivosInvestigacionAnalista } from "@maximilian/components/analista/CustomModalArchivosInvestigacionAnalista";
 import { CustomModalBuscarEjecutivoAnalista } from "@maximilian/components/analista/CustomModalBuscarEjecutivoAnalista";
 import { CustomModalDetalleCuentasAnalista } from "@maximilian/components/analista/CustomModalDetalleCuentasAnalista";
 import { CustomModalFinalizarInvestigacionAnalista } from "@maximilian/components/analista/CustomModalFinalizarInvestigacionAnalista";
@@ -43,6 +44,7 @@ import {
   seccionesInvestigacionAnalista,
 } from "@maximilian/shared/utils/datos-simulados-analista";
 import type {
+  ArchivoInvestigacionAnalista,
   DatosInvestigacionAnalista,
   IdSeccionInvestigacionAnalista,
   ModoInvestigacionAnalista,
@@ -106,7 +108,9 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
   const [estaAbiertoModalBuscarEjecutivo, setEstaAbiertoModalBuscarEjecutivo] = useState(false);
   const [estaAbiertoModalRegistroPersona, setEstaAbiertoModalRegistroPersona] = useState(false);
   const [estaAbiertoModalExtraccionInformacion, setEstaAbiertoModalExtraccionInformacion] = useState(false);
+  const [estaAbiertoModalArchivosInvestigacion, setEstaAbiertoModalArchivosInvestigacion] = useState(false);
   const [alcanceExtraccionInformacion, setAlcanceExtraccionInformacion] = useState<"general" | "informacion-financiera">("general");
+  const [archivosInvestigacion, setArchivosInvestigacion] = useState<ArchivoInvestigacionAnalista[]>([]);
   const [indiceEjecutivoSeleccionado, setIndiceEjecutivoSeleccionado] = useState<number | null>(null);
   const [indiceEjecutivoAEliminar, setIndiceEjecutivoAEliminar] = useState<number | null>(null);
   const [busquedaEjecutivo, setBusquedaEjecutivo] = useState("");
@@ -376,23 +380,28 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
   ) => {
     setDatosInvestigacion((anterior) => {
       const balances = [...anterior.balances];
-      const esGananciaPerdida = registro.tipo.includes("PG");
-      const esBalanceGeneral = registro.tipo.includes("GN");
+      const tipoEstadoFinanciero = registro.tipoEstadoFinanciero ?? registro.tipo;
+      const esGananciaPerdida = tipoEstadoFinanciero.includes("PG");
+      const esBalanceGeneral = tipoEstadoFinanciero.includes("GN");
 
       const balanceActualizado: RegistroBalanceAnalista = indiceBalanceSeleccionado != null
         ? {
             ...balances[indiceBalanceSeleccionado],
             ...registro,
-            periodo: registro.fecha.split("/")[2] ?? balances[indiceBalanceSeleccionado].periodo,
+            periodo: registro.fechaInicio?.split("/")[2] ?? balances[indiceBalanceSeleccionado].periodo,
             balanceGeneral: esBalanceGeneral,
             perdidaGanancia: esGananciaPerdida,
             cuentas: true,
           }
         : {
             codigo: generarCodigoBalance(balances),
-            periodo: registro.fecha.split("/")[2] ?? "",
+            periodo: registro.fechaInicio?.split("/")[2] ?? "",
             fecha: registro.fecha,
             tipo: registro.tipo,
+            fechaInicio: registro.fechaInicio,
+            fechaFin: registro.fechaFin,
+            esActual: registro.esActual,
+            tipoEstadoFinanciero: registro.tipoEstadoFinanciero,
             tipoCambio: registro.tipoCambio,
             operacionCambio: registro.operacionCambio,
             tipoBalance: registro.tipoBalance,
@@ -989,6 +998,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
               <th className="px-4 py-3">Código</th>
               <th className="px-4 py-3">Periodo</th>
               <th className="px-4 py-3">Fecha</th>
+              <th className="px-4 py-3">Tipo de Balance</th>
               <th className="px-4 py-3">Tipo</th>
               <th className="px-4 py-3">Balance General</th>
               <th className="px-4 py-3">Perdida Ganancia</th>
@@ -999,7 +1009,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
           <tbody className="divide-y divide-gray-100 bg-white">
             {balancesFiltrados.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-300">
+                <td colSpan={9} className="px-4 py-10 text-center text-sm text-slate-300">
                   Sin balances registrados.
                 </td>
               </tr>
@@ -1013,6 +1023,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                   <td className="px-4 py-4 text-sm font-semibold text-slate-700">{balance.codigo}</td>
                   <td className="px-4 py-4 text-sm text-slate-500">{balance.periodo}</td>
                   <td className="px-4 py-4 text-sm text-slate-500">{balance.fecha}</td>
+                  <td className="px-4 py-4 text-sm text-slate-500">{balance.tipoBalance || "-"}</td>
                   <td className="px-4 py-4 text-sm text-slate-500">{balance.tipo}</td>
                   <td className="px-4 py-4">
                     {balance.balanceGeneral ? (
@@ -1140,7 +1151,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                 <tr>
                   <th className="px-4 py-3">Nombre Proveedor</th>
                   <th className="px-4 py-3">Contacto</th>
-                  <th className="px-4 py-3">Tipo</th>
+                  <th className="px-4 py-3 text-center">Tipo</th>
                   <th className="px-4 py-3">Teléfono</th>
                   <th className="px-4 py-3 text-right">Acciones</th>
                 </tr>
@@ -1152,8 +1163,8 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                     <tr key={`${proveedor.nombreEmpresa}-${proveedor.telefono}`}>
                       <td className="px-4 py-4 text-sm font-semibold leading-4 text-slate-700">{proveedor.nombreEmpresa}</td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500">{proveedor.contacto || "-"}</td>
-                      <td className="px-4 py-4 text-sm">
-                        <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${proveedor.tipoProveedor === "Nacional" ? "bg-green-50 text-green-600" : "bg-purple-50 text-purple-600"}`}>
+                      <td className="px-4 py-4 text-center text-sm">
+                        <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-1 text-[10px] font-bold uppercase ${proveedor.tipoProveedor === "Nacional" ? "bg-green-50 text-green-600" : "bg-purple-50 text-purple-600"}`}>
                           {proveedor.tipoProveedor}
                         </span>
                       </td>
@@ -1218,7 +1229,8 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                 <tr>
                   <th className="px-4 py-3">Banco</th>
                   <th className="px-4 py-3">Número de Cuenta</th>
-                  <th className="px-4 py-3">Sector</th>
+                  <th className="px-4 py-3 text-center">Sector</th>
+                  <th className="px-4 py-3">Sectorista / Jefe de Cuenta</th>
                   <th className="px-4 py-3">Teléfono</th>
                   <th className="px-4 py-3 text-right">Acciones</th>
                 </tr>
@@ -1230,8 +1242,8 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                     <tr key={`${banco.banco}-${banco.numeroCuenta}`}>
                       <td className="px-4 py-4 text-sm font-semibold leading-4 text-slate-700">{banco.banco}</td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500">{banco.numeroCuenta}</td>
-                      <td className="px-4 py-4 text-sm">
-                        <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
+                      <td className="px-4 py-4 text-center text-sm">
+                        <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
                           banco.sector.toLowerCase().includes("finanzas")
                             ? "bg-blue-50 text-blue-600"
                             : banco.sector.toLowerCase().includes("comercio")
@@ -1241,6 +1253,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                                 : "bg-orange-50 text-orange-600"
                         }`}>{banco.sector}</span>
                       </td>
+                      <td className="px-4 py-4 text-sm leading-4 text-slate-500">{banco.sectoristaJefeCuenta || "-"}</td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500">{banco.telefono}</td>
                       <td className="px-4 py-4 text-right text-slate-400">
                         <div className="flex justify-end gap-3">
@@ -1429,6 +1442,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
         mostrarBotonFinalizar={idSeccionActiva === "datos-generales" && !esSoloLectura}
         onFinalizarInvestigacion={() => setEstaAbiertoModalFinalizarInvestigacion(true)}
         onExtraerInformacion={() => abrirModalExtraccionInformacion("general")}
+        onAbrirArchivos={() => setEstaAbiertoModalArchivosInvestigacion(true)}
       />
 
       <div className="grid gap-6 xl:grid-cols-[240px_minmax(0,1fr)]">
@@ -1510,6 +1524,15 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
         onExtraer={extraerInformacionDemo}
       />
 
+      <CustomModalArchivosInvestigacionAnalista
+        estaAbierto={estaAbiertoModalArchivosInvestigacion}
+        archivos={archivosInvestigacion}
+        faseActual={idSeccionActiva}
+        secciones={seccionesInvestigacionAnalista}
+        onCerrar={() => setEstaAbiertoModalArchivosInvestigacion(false)}
+        onArchivosChange={setArchivosInvestigacion}
+      />
+
       <CustomModalOperacionAnalista
         key={`${pestanaRamoOperaciones}-${indiceOperacionSeleccionada ?? "nuevo"}-${estaAbiertoModalOperacion ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalOperacion}
@@ -1549,6 +1572,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
         key={`${indiceBalanceSeleccionado ?? "sin-balance"}-${estaAbiertoModalDetalleBalance ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalDetalleBalance}
         detalleInicial={indiceBalanceSeleccionado != null ? datosInvestigacion.balances[indiceBalanceSeleccionado]?.detalleCuentas : undefined}
+        tipoEstadoFinanciero={indiceBalanceSeleccionado != null ? datosInvestigacion.balances[indiceBalanceSeleccionado]?.tipoEstadoFinanciero : undefined}
         onCerrar={() => {
           setIndiceBalanceSeleccionado(null);
           setEstaAbiertoModalDetalleBalance(false);
