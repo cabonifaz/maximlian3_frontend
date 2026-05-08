@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
-import type { RegistroBancoAnalista, ResultadoBusquedaBancoAnalista } from "@maximilian/shared/types/analista.type";
+import type { RegistroBancoAnalista, ResultadoBusquedaBancoAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalBancoAnalista {
   estaAbierto: boolean;

@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
-import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/analista.type";
+import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalRegistroPersonaDirectorioAnalista {
   estaAbierto: boolean;

@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
-import type { RegistroImportacionExportacionAnalista } from "@maximilian/shared/types/analista.type";
+import type { RegistroImportacionExportacionAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
 function crearOpcionTablaMaestra(num1: number, string1: string): EntradaTablaMaestra {

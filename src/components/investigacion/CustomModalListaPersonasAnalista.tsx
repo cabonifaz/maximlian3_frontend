@@ -3,7 +3,7 @@ import { Pencil, Plus, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
-import type { EmpresaRelacionadaAnalista } from "@maximilian/shared/types/analista.type";
+import type { EmpresaRelacionadaAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import {
   CustomModalRegistroEmpresaRelacionadaAnalista,

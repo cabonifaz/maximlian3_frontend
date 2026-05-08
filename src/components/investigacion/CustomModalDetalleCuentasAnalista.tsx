@@ -8,7 +8,7 @@ import type {
   DetalleCuentasBalanceAnalista,
   DetalleEstadoGananciaAnalista,
   DetalleRatiosBalanceAnalista,
-} from "@maximilian/shared/types/analista.type";
+} from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalDetalleCuentasAnalista {
   estaAbierto: boolean;

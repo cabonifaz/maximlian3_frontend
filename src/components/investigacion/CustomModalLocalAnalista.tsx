@@ -3,7 +3,7 @@ import { Eye, Image as IconoImagen, Trash2, Upload, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
-import type { RegistroImagenLocalAnalista, RegistroLocalAnalista } from "@maximilian/shared/types/analista.type";
+import type { RegistroImagenLocalAnalista, RegistroLocalAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalLocalAnalista {
   estaAbierto: boolean;

@@ -2,7 +2,7 @@ import { Trash2, Upload, X } from "lucide-react";
 import { useMemo, useRef } from "react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
-import type { ArchivoInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/analista.type";
+import type { ArchivoInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface PropsCustomModalArchivosInvestigacionAnalista {

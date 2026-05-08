@@ -8,8 +8,8 @@ import {
   obtenerTextoEstadoAnalista,
   registrosBandejaAnalista,
   tarjetasResumenAnalista,
-} from "@maximilian/shared/utils/datos-simulados-analista";
-import type { AccionBandejaAnalista, RegistroBandejaAnalista } from "@maximilian/shared/types/analista.type";
+} from "@maximilian/shared/utils/datos-simulados-investigacion";
+import type { AccionBandejaAnalista, RegistroBandejaAnalista } from "@maximilian/shared/types/investigacion.type";
 
 function obtenerIconoTarjeta(id: string) {
   if (id === "aprobado") return <CheckCircle2 size={18} className="text-green-500" />;

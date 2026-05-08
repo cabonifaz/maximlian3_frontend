@@ -5,7 +5,7 @@ import type {
   ModoInvestigacionAnalista,
   RegistroBandejaAnalista,
   TarjetaResumenAnalista,
-} from "@maximilian/shared/types/analista.type";
+} from "@maximilian/shared/types/investigacion.type";
 
 export const seccionesInvestigacionAnalista: Array<{
   id: IdSeccionInvestigacionAnalista;

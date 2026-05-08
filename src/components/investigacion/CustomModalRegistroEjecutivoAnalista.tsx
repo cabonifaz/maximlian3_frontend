@@ -5,7 +5,7 @@ import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import type {
   RegistroDirectorioEjecutivoAnalista,
   RegistroPersonaDirectorioAnalista,
-} from "@maximilian/shared/types/analista.type";
+} from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalRegistroEjecutivoAnalista {
   estaAbierto: boolean;

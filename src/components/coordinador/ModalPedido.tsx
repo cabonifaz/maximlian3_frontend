@@ -23,7 +23,7 @@ import {
 } from "react-hook-form";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
-import { CustomModalExtraccionInformacionAnalista } from "@maximilian/components/analista/CustomModalExtraccionInformacionAnalista";
+import { CustomModalExtraccionInformacionAnalista } from "@maximilian/components/investigacion/CustomModalExtraccionInformacionAnalista";
 import { TablaTarifarioCorta } from "@maximilian/components/coordinador/TablaTarifarioCorta";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { pedidoSchema, type PedidoFormData } from "@maximilian/schemas";

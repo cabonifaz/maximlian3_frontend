@@ -13,22 +13,22 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { CustomModalBalanceAnalista } from "@maximilian/components/analista/CustomModalBalanceAnalista";
-import { CustomModalBancoAnalista } from "@maximilian/components/analista/CustomModalBancoAnalista";
-import { CustomModalArchivosInvestigacionAnalista } from "@maximilian/components/analista/CustomModalArchivosInvestigacionAnalista";
-import { CustomModalBuscarEjecutivoAnalista } from "@maximilian/components/analista/CustomModalBuscarEjecutivoAnalista";
-import { CustomModalDetalleCuentasAnalista } from "@maximilian/components/analista/CustomModalDetalleCuentasAnalista";
-import { CustomModalFinalizarInvestigacionAnalista } from "@maximilian/components/analista/CustomModalFinalizarInvestigacionAnalista";
-import { CustomModalExtraccionInformacionAnalista } from "@maximilian/components/analista/CustomModalExtraccionInformacionAnalista";
+import { CustomModalBalanceAnalista } from "@maximilian/components/investigacion/CustomModalBalanceAnalista";
+import { CustomModalBancoAnalista } from "@maximilian/components/investigacion/CustomModalBancoAnalista";
+import { CustomModalArchivosInvestigacionAnalista } from "@maximilian/components/investigacion/CustomModalArchivosInvestigacionAnalista";
+import { CustomModalBuscarEjecutivoAnalista } from "@maximilian/components/investigacion/CustomModalBuscarEjecutivoAnalista";
+import { CustomModalDetalleCuentasAnalista } from "@maximilian/components/investigacion/CustomModalDetalleCuentasAnalista";
+import { CustomModalFinalizarInvestigacionAnalista } from "@maximilian/components/investigacion/CustomModalFinalizarInvestigacionAnalista";
+import { CustomModalExtraccionInformacionAnalista } from "@maximilian/components/investigacion/CustomModalExtraccionInformacionAnalista";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
-import { CustomModalListaPersonasAnalista } from "@maximilian/components/analista/CustomModalListaPersonasAnalista";
-import { CustomModalLocalAnalista } from "@maximilian/components/analista/CustomModalLocalAnalista";
-import { CustomModalOperacionAnalista } from "@maximilian/components/analista/CustomModalOperacionAnalista";
-import { CustomModalProveedorAnalista } from "@maximilian/components/analista/CustomModalProveedorAnalista";
-import { CustomModalRegistroEjecutivoAnalista } from "@maximilian/components/analista/CustomModalRegistroEjecutivoAnalista";
-import { CustomModalRegistroPersonaDirectorioAnalista } from "@maximilian/components/analista/CustomModalRegistroPersonaDirectorioAnalista";
+import { CustomModalListaPersonasAnalista } from "@maximilian/components/investigacion/CustomModalListaPersonasAnalista";
+import { CustomModalLocalAnalista } from "@maximilian/components/investigacion/CustomModalLocalAnalista";
+import { CustomModalOperacionAnalista } from "@maximilian/components/investigacion/CustomModalOperacionAnalista";
+import { CustomModalProveedorAnalista } from "@maximilian/components/investigacion/CustomModalProveedorAnalista";
+import { CustomModalRegistroEjecutivoAnalista } from "@maximilian/components/investigacion/CustomModalRegistroEjecutivoAnalista";
+import { CustomModalRegistroPersonaDirectorioAnalista } from "@maximilian/components/investigacion/CustomModalRegistroPersonaDirectorioAnalista";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import {
   AreaInvestigacionAnalista,
@@ -37,12 +37,12 @@ import {
   MenuSeccionesInvestigacionAnalista,
   PestanasInvestigacionAnalista,
   ResumenPedidoInvestigacionAnalista,
-} from "@maximilian/components/analista/ControlesInvestigacionAnalista";
+} from "@maximilian/components/investigacion/ControlesInvestigacionAnalista";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import {
   obtenerDatosInvestigacionAnalista,
   seccionesInvestigacionAnalista,
-} from "@maximilian/shared/utils/datos-simulados-analista";
+} from "@maximilian/shared/utils/datos-simulados-investigacion";
 import type {
   ArchivoInvestigacionAnalista,
   DatosInvestigacionAnalista,
@@ -57,7 +57,7 @@ import type {
   RegistroPersonaDirectorioAnalista,
   RegistroProveedorAnalista,
   ResultadoBusquedaBancoAnalista,
-} from "@maximilian/shared/types/analista.type";
+} from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface PropsPantallaInvestigacionAnalista {
