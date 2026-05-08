@@ -45,7 +45,7 @@ function PopoverContent({
   )
 }
 
-function PopoverHeader({ className, ...props }: React.ComponentProps<"div">) {
+function PopoverEncabezado({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="popover-header"
@@ -82,7 +82,7 @@ export {
   Popover,
   PopoverContent,
   PopoverDescription,
-  PopoverHeader,
+  PopoverEncabezado,
   PopoverTitle,
   PopoverTrigger,
 }

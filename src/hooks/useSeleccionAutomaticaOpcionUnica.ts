@@ -1,21 +1,21 @@
 import { useEffect, useMemo } from "react";
-import type { MasterTableEntry } from "@maximilian/shared/types/master-table.type";
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface UseSeleccionAutomaticaOpcionUnicaProps {
   activo: boolean;
-  opciones: MasterTableEntry[] | undefined;
+  opciones: EntradaTablaMaestra[] | undefined;
   valor: number | undefined;
   onSeleccionar: (valor: number) => void;
 }
 
 interface UseSeleccionAutomaticaOpcionUnicaMultipleProps {
   activo: boolean;
-  opciones: MasterTableEntry[] | undefined;
+  opciones: EntradaTablaMaestra[] | undefined;
   valores: number[];
   onSeleccionar: (valores: number[]) => void;
 }
 
-function obtenerIdUnico(opciones: MasterTableEntry[] | undefined) {
+function obtenerIdUnico(opciones: EntradaTablaMaestra[] | undefined) {
   if (!opciones) return undefined;
 
   const idsUnicos = Array.from(
