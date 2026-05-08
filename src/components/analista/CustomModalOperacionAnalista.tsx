@@ -24,6 +24,24 @@ function crearOpcionTablaMaestra(num1: number, string1: string): EntradaTablaMae
   };
 }
 
+function normalizarMontoDosDecimales(valor: string) {
+  const valorLimpio = valor.trim().replace(",", ".");
+  if (!valorLimpio) return "";
+
+  const numero = Number.parseFloat(valorLimpio);
+  if (Number.isNaN(numero)) return valor;
+
+  return numero.toFixed(2);
+}
+
+function sanitizarMontoDosDecimales(valor: string) {
+  const valorNormalizado = valor.replace(",", ".").replace(/[^0-9.]/g, "");
+  const partes = valorNormalizado.split(".");
+  const entero = partes[0] ?? "";
+  const decimal = partes[1] ?? "";
+  return partes.length > 1 ? `${entero}.${decimal.slice(0, 2)}` : entero;
+}
+
 interface PropsCustomModalOperacionAnalista {
   estaAbierto: boolean;
   titulo: string;
@@ -85,7 +103,7 @@ export function CustomModalOperacionAnalista({
       moneda: monedaActual.trim(),
       paises: paises.trim(),
       productos: productos.trim(),
-      monto: monto.trim(),
+      monto: normalizarMontoDosDecimales(monto),
       operaciones: operaciones.trim(),
     });
   };
@@ -134,7 +152,8 @@ export function CustomModalOperacionAnalista({
               <CustomLabel>Monto</CustomLabel>
               <input
                 value={monto}
-                onChange={(event) => setMonto(event.target.value)}
+                onChange={(event) => setMonto(sanitizarMontoDosDecimales(event.target.value))}
+                onBlur={(event) => setMonto(normalizarMontoDosDecimales(event.target.value))}
                 placeholder="$ .00"
                 className="h-12 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
               />

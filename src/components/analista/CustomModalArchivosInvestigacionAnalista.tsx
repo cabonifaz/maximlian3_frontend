@@ -1,7 +1,9 @@
-import { Paperclip, Trash2, Upload, X } from "lucide-react";
-import { useRef } from "react";
+import { Trash2, Upload, X } from "lucide-react";
+import { useMemo, useRef } from "react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import type { ArchivoInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/analista.type";
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface PropsCustomModalArchivosInvestigacionAnalista {
   estaAbierto: boolean;
@@ -22,6 +24,24 @@ function obtenerExtensionArchivo(nombre: string) {
   return nombre.split(".").pop()?.toUpperCase() ?? "—";
 }
 
+function crearOpcion(num1: number, string1: string): EntradaTablaMaestra {
+  return {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: "",
+    num1,
+    num2: null,
+    num3: null,
+    string1,
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  };
+}
+
 export function CustomModalArchivosInvestigacionAnalista({
   estaAbierto,
   archivos,
@@ -31,6 +51,14 @@ export function CustomModalArchivosInvestigacionAnalista({
   onArchivosChange,
 }: PropsCustomModalArchivosInvestigacionAnalista) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const opcionesTipoDocumento = useMemo(
+    () => [crearOpcion(1, "Informativo"), crearOpcion(2, "Evidencia")],
+    [],
+  );
+  const opcionesSecciones = useMemo(
+    () => secciones.map((seccion, indice) => crearOpcion(indice + 1, seccion.titulo)),
+    [secciones],
+  );
 
   if (!estaAbierto) return null;
 
@@ -55,7 +83,7 @@ export function CustomModalArchivosInvestigacionAnalista({
 
   return (
     <div className="fixed inset-0 z-[115] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
-      <div className="flex w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+      <div className="flex w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-8 py-6">
           <div>
             <h2 className="text-2xl font-bold text-brand-black">Archivos de la investigación</h2>
@@ -91,7 +119,7 @@ export function CustomModalArchivosInvestigacionAnalista({
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <div className="max-h-80 overflow-y-auto rounded-xl border border-gray-100">
               {archivos.length === 0 ? (
-                <div className="flex min-h-40 items-center justify-center text-sm text-gray-400">
+              <div className="flex min-h-40 items-center justify-center text-sm text-gray-400">
                   No hay archivos adjuntos
                 </div>
               ) : (
@@ -111,8 +139,7 @@ export function CustomModalArchivosInvestigacionAnalista({
                       <tr key={archivo.id} className="bg-amber-50 transition-colors hover:bg-amber-100/60">
                         <td className="px-3 py-2.5">
                           <div className="flex items-center gap-2">
-                            <Paperclip size={16} className="shrink-0 text-gray-400" />
-                            <span className="max-w-48 truncate font-medium text-gray-700">{archivo.nombre}</span>
+                            <span title={archivo.nombre} className="max-w-32 truncate font-medium text-gray-700">{archivo.nombre}</span>
                             <span className="shrink-0 rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
                               Nuevo
                             </span>
@@ -121,48 +148,43 @@ export function CustomModalArchivosInvestigacionAnalista({
                         <td className="px-3 py-2.5 text-gray-500">{archivo.extension}</td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-gray-500">{formatearTamanoArchivo(archivo.tamano)}</td>
                         <td className="px-3 py-2.5">
-                          <select
-                            value={archivo.tipoDocumento}
-                            onChange={(event) =>
+                          <CustomSelectorBuscable
+                            options={opcionesTipoDocumento}
+                            value={archivo.tipoDocumento === "Informativo" ? 1 : 2}
+                            onChange={(valor) =>
                               onArchivosChange(
                                 archivos.map((item) =>
                                   item.id === archivo.id
                                     ? {
                                         ...item,
-                                        tipoDocumento: event.target.value as ArchivoInvestigacionAnalista["tipoDocumento"],
-                                        faseVinculada: event.target.value === "Evidencia" ? item.faseVinculada ?? faseActual : undefined,
+                                        tipoDocumento: valor === 2 ? "Evidencia" : "Informativo",
+                                        faseVinculada: valor === 2 ? item.faseVinculada ?? faseActual : undefined,
                                       }
                                     : item,
                                 ),
                               )
                             }
-                            className="h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-slate-600 outline-none"
-                          >
-                            <option value="Informativo">Informativo</option>
-                            <option value="Evidencia">Evidencia</option>
-                          </select>
+                            placeholder="Seleccione"
+                          />
                         </td>
                         <td className="px-3 py-2.5">
                           {archivo.tipoDocumento === "Evidencia" ? (
-                            <select
-                              value={archivo.faseVinculada ?? faseActual}
-                              onChange={(event) =>
+                            <CustomSelectorBuscable
+                              options={opcionesSecciones}
+                              value={
+                                opcionesSecciones.find((seccion) => seccion.string1 === secciones.find((item) => item.id === (archivo.faseVinculada ?? faseActual))?.titulo)?.num1 ?? undefined
+                              }
+                              onChange={(valor) =>
                                 onArchivosChange(
                                   archivos.map((item) =>
                                     item.id === archivo.id
-                                      ? { ...item, faseVinculada: event.target.value as IdSeccionInvestigacionAnalista }
+                                      ? { ...item, faseVinculada: secciones[(valor ?? 1) - 1]?.id as IdSeccionInvestigacionAnalista }
                                       : item,
                                   ),
                                 )
                               }
-                              className="h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-slate-600 outline-none"
-                            >
-                              {secciones.map((seccion) => (
-                                <option key={seccion.id} value={seccion.id}>
-                                  {seccion.titulo}
-                                </option>
-                              ))}
-                            </select>
+                              placeholder="Seleccione"
+                            />
                           ) : (
                             <span className="text-xs text-slate-400">No aplica</span>
                           )}
@@ -185,9 +207,10 @@ export function CustomModalArchivosInvestigacionAnalista({
           </div>
         </div>
 
-        <div className="flex justify-end border-t border-gray-100 bg-gray-50/50 px-8 py-5">
-          <CustomButton variant="secondary" size="sm" onClick={onCerrar}>
-            Cerrar
+        <div className="flex justify-end gap-3 border-t border-gray-100 bg-gray-50/50 px-8 py-5">
+          <CustomButton variant="secondary" size="sm" onClick={() => inputRef.current?.click()}>
+            <Upload size={14} />
+            Subir archivos
           </CustomButton>
         </div>
       </div>

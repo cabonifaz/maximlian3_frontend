@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, Download, RotateCcw } from "lucide-react";
+import { AlertCircle, Download, RotateCcw, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
+import { CustomModalExtraccionInformacionAnalista } from "@maximilian/components/analista/CustomModalExtraccionInformacionAnalista";
 import { TablaTarifarioCorta } from "@maximilian/components/coordinador/TablaTarifarioCorta";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
@@ -97,6 +98,7 @@ function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
   const [descargandoId, setDescargandoId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [busquedaConRetardo, setDebouncedSearch] = useState("");
+  const [estaAbiertoModalExtraccion, setEstaAbiertoModalExtraccion] = useState(false);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["pedidoArchivos", "detalle", pedidoId, busquedaConRetardo],
@@ -181,7 +183,9 @@ function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
 
             return (
               <tr key={archivo.idPedidoArchivo} className="hover:bg-gray-50/70">
-                <td className="px-4 py-3 font-medium text-brand-black">{archivo.nombreDocumento}</td>
+                <td className="px-4 py-3 font-medium text-brand-black">
+                  <span title={archivo.nombreDocumento} className="block max-w-48 truncate">{archivo.nombreDocumento}</span>
+                </td>
                 <td className="px-4 py-3">
                   <FileTypeBadge ext={extension} />
                 </td>
@@ -203,6 +207,19 @@ function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
         </tbody>
         </table>
       </div>
+      <div className="flex justify-start">
+        <CustomButton variant="secondary" size="sm" onClick={() => setEstaAbiertoModalExtraccion(true)}>
+          <Sparkles size={14} />
+          Extraer información
+        </CustomButton>
+      </div>
+
+      <CustomModalExtraccionInformacionAnalista
+        estaAbierto={estaAbiertoModalExtraccion}
+        alcance="general"
+        onCerrar={() => setEstaAbiertoModalExtraccion(false)}
+        onExtraer={async () => Promise.resolve()}
+      />
     </div>
   );
 }

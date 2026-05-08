@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router";
@@ -65,9 +65,86 @@ interface PropsPantallaInvestigacionAnalista {
   modo: ModoInvestigacionAnalista;
 }
 
+const FILAS_POR_PAGINA_INVESTIGACION = 5;
+
+function obtenerTotalPaginas(totalRegistros: number) {
+  return Math.max(1, Math.ceil(totalRegistros / FILAS_POR_PAGINA_INVESTIGACION));
+}
+
+function paginarRegistros<T>(registros: T[], paginaActual: number) {
+  const inicio = (paginaActual - 1) * FILAS_POR_PAGINA_INVESTIGACION;
+  return registros.slice(inicio, inicio + FILAS_POR_PAGINA_INVESTIGACION);
+}
+
+function obtenerPorcentajeNumerico(valor?: string) {
+  const numero = Number.parseFloat((valor ?? "").replace("%", "").replace(",", ".").trim());
+  return Number.isNaN(numero) ? 0 : numero;
+}
+
+function formatearPorcentajeOchoDecimales(valor: number) {
+  return `${valor.toFixed(8)}%`;
+}
+
+function PaginacionInvestigacion({
+  paginaActual,
+  totalRegistros,
+  onPaginaChange,
+  etiquetaRegistros,
+  contenidoCentro,
+}: {
+  paginaActual: number;
+  totalRegistros: number;
+  onPaginaChange: (pagina: number) => void;
+  etiquetaRegistros: string;
+  contenidoCentro?: ReactNode;
+}) {
+  const totalPaginas = obtenerTotalPaginas(totalRegistros);
+  const paginaSegura = Math.min(paginaActual, totalPaginas);
+  const mostrando = totalRegistros === 0
+    ? 0
+    : Math.min(FILAS_POR_PAGINA_INVESTIGACION, totalRegistros - ((paginaSegura - 1) * FILAS_POR_PAGINA_INVESTIGACION));
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-white px-4 py-3">
+      <p className="text-xs font-medium text-slate-400">
+        Mostrando {mostrando} de {totalRegistros} {etiquetaRegistros}
+      </p>
+
+      {contenidoCentro ? (
+        <div className="text-xs font-semibold text-slate-500">{contenidoCentro}</div>
+      ) : <div />}
+
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => onPaginaChange(Math.max(1, paginaSegura - 1))}
+          disabled={paginaSegura === 1}
+          className="flex items-center gap-1 text-xs text-slate-500 transition-colors hover:text-brand-black disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <ArrowLeft size={14} />
+          Anterior
+        </button>
+        <span className="text-xs font-medium text-slate-400">
+          {paginaSegura}/{totalPaginas}
+        </span>
+        <button
+          type="button"
+          onClick={() => onPaginaChange(Math.min(totalPaginas, paginaSegura + 1))}
+          disabled={paginaSegura === totalPaginas}
+          className="flex items-center gap-1 text-xs text-slate-500 transition-colors hover:text-brand-black disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          Siguiente
+          <ArrowRight size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestigacionAnalista) {
   const navigate = useNavigate();
   const esSoloLectura = modo === "detalle";
+  const contenedorPantallaRef = useRef<HTMLDivElement>(null);
 
   const datosIniciales = useMemo(() => obtenerDatosInvestigacionAnalista(modo), [modo]);
 
@@ -95,6 +172,12 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
   const [indiceBancoSeleccionado, setIndiceBancoSeleccionado] = useState<number | null>(null);
   const [indiceBancoAEliminar, setIndiceBancoAEliminar] = useState<number | null>(null);
   const [busquedaBalances, setBusquedaBalances] = useState("");
+  const [paginaCompanias, setPaginaCompanias] = useState(1);
+  const [paginaOperaciones, setPaginaOperaciones] = useState(1);
+  const [paginaBalances, setPaginaBalances] = useState(1);
+  const [paginaProveedores, setPaginaProveedores] = useState(1);
+  const [paginaBancos, setPaginaBancos] = useState(1);
+  const [paginaEjecutivos, setPaginaEjecutivos] = useState(1);
   const [filtroProveedorNombre, setFiltroProveedorNombre] = useState("");
   const [filtroProveedorTipo, setFiltroProveedorTipo] = useState("Todos");
   const [filtroProveedorContacto, setFiltroProveedorContacto] = useState("");
@@ -110,6 +193,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
   const [estaAbiertoModalExtraccionInformacion, setEstaAbiertoModalExtraccionInformacion] = useState(false);
   const [estaAbiertoModalArchivosInvestigacion, setEstaAbiertoModalArchivosInvestigacion] = useState(false);
   const [alcanceExtraccionInformacion, setAlcanceExtraccionInformacion] = useState<"general" | "informacion-financiera">("general");
+  const [tituloSeccionExtraccion, setTituloSeccionExtraccion] = useState("");
   const [archivosInvestigacion, setArchivosInvestigacion] = useState<ArchivoInvestigacionAnalista[]>([]);
   const [indiceEjecutivoSeleccionado, setIndiceEjecutivoSeleccionado] = useState<number | null>(null);
   const [indiceEjecutivoAEliminar, setIndiceEjecutivoAEliminar] = useState<number | null>(null);
@@ -176,6 +260,12 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
     },
   ];
 
+  const opcionesFiltroTipoProveedor = [
+    { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 1, num2: null, num3: null, string1: "Todos", string2: null, string3: null, date1: null, date2: null, date3: null },
+    { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 2, num2: null, num3: null, string1: "Nacional", string2: null, string3: null, date1: null, date2: null, date3: null },
+    { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 3, num2: null, num3: null, string1: "Extranjero", string2: null, string3: null, date1: null, date2: null, date3: null },
+  ];
+
   const { data: opcionesTipoPersona } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA),
@@ -223,8 +313,16 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
     }));
   };
 
-  const actualizarPorcentajesCompras = (
-    campoOrigen: "comprasNacionalesPorcentaje" | "comprasExtranjeroPorcentaje",
+  const formatearPorcentajeComplementario = (valor: number) => valor.toFixed(2);
+
+  const esPorcentajeMayorACero = (valor?: string) => {
+    const numero = Number.parseFloat((valor ?? "").trim().replace(",", "."));
+    return !Number.isNaN(numero) && numero > 0;
+  };
+
+  const actualizarPorcentajesComplementarios = (
+    campoOrigen: "ventasContadoPorcentaje" | "ventasCreditoPorcentaje" | "comprasNacionalesPorcentaje" | "comprasExtranjeroPorcentaje",
+    campoComplementario: "ventasContadoPorcentaje" | "ventasCreditoPorcentaje" | "comprasNacionalesPorcentaje" | "comprasExtranjeroPorcentaje",
     valor: string,
   ) => {
     const valorLimpio = valor.trim();
@@ -234,11 +332,6 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
         ...anterior.operacionPrincipal,
         [campoOrigen]: valor,
       };
-
-      const campoComplementario =
-        campoOrigen === "comprasNacionalesPorcentaje"
-          ? "comprasExtranjeroPorcentaje"
-          : "comprasNacionalesPorcentaje";
 
       if (!valorLimpio) {
         operacionPrincipal[campoComplementario] = "";
@@ -256,7 +349,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
         };
       }
 
-      operacionPrincipal[campoComplementario] = (100 - numero).toFixed(numero % 1 === 0 ? 0 : 2);
+      operacionPrincipal[campoComplementario] = formatearPorcentajeComplementario(100 - numero);
 
       return {
         ...anterior,
@@ -320,16 +413,23 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
     });
   };
 
+  const pestanaRamoOperacionesVisible =
+    pestanaRamoOperaciones === "exportaciones" && !esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje)
+      ? "operaciones"
+      : pestanaRamoOperaciones === "importaciones" && !esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje)
+        ? "operaciones"
+        : pestanaRamoOperaciones;
+
   const registrosOperacionActivos =
-    pestanaRamoOperaciones === "importaciones"
+    pestanaRamoOperacionesVisible === "importaciones"
       ? datosInvestigacion.importaciones
-      : pestanaRamoOperaciones === "exportaciones"
+      : pestanaRamoOperacionesVisible === "exportaciones"
         ? datosInvestigacion.exportaciones
         : [];
 
   const guardarOperacion = (registro: DatosInvestigacionAnalista["importaciones"][number]) => {
     setDatosInvestigacion((anterior) => {
-      const clave = pestanaRamoOperaciones === "importaciones" ? "importaciones" : "exportaciones";
+      const clave = pestanaRamoOperacionesVisible === "importaciones" ? "importaciones" : "exportaciones";
       const listaActual = [...anterior[clave]];
 
       if (indiceOperacionSeleccionada != null) {
@@ -498,7 +598,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
   };
 
   const eliminarOperacionSeleccionada = () => {
-    if (pestanaRamoOperaciones === "locales") {
+    if (pestanaRamoOperacionesVisible === "locales") {
       if (indiceLocalSeleccionado == null) return;
       setDatosInvestigacion((anterior) => ({
         ...anterior,
@@ -511,7 +611,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
     if (indiceOperacionSeleccionada == null) return;
 
     setDatosInvestigacion((anterior) => {
-      const clave = pestanaRamoOperaciones === "importaciones" ? "importaciones" : "exportaciones";
+      const clave = pestanaRamoOperacionesVisible === "importaciones" ? "importaciones" : "exportaciones";
       return {
         ...anterior,
         [clave]: anterior[clave].filter((_, indice) => indice !== indiceOperacionSeleccionada),
@@ -550,18 +650,8 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
     return coincideNombre && coincideCuenta && coincideTelefono && coincideSector;
   });
 
-  const exportacionesHabilitadas = datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje.trim() !== "";
-  const importacionesHabilitadas = datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje.trim() !== "";
-
-  useEffect(() => {
-    if (pestanaRamoOperaciones === "exportaciones" && !exportacionesHabilitadas) {
-      setPestanaRamoOperaciones("operaciones");
-    }
-
-    if (pestanaRamoOperaciones === "importaciones" && !importacionesHabilitadas) {
-      setPestanaRamoOperaciones("operaciones");
-    }
-  }, [exportacionesHabilitadas, importacionesHabilitadas, pestanaRamoOperaciones]);
+  const exportacionesHabilitadas = esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje);
+  const importacionesHabilitadas = esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje);
 
   const irASeccion = (direccion: "anterior" | "siguiente") => {
     const nuevoIndice = direccion === "anterior" ? indiceSeccionActiva - 1 : indiceSeccionActiva + 1;
@@ -574,10 +664,30 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
         }));
       }
       setIdSeccionActiva(seccionDestino.id);
+      requestAnimationFrame(() => {
+        const contenedorPrincipal = document.querySelector("main");
+        if (contenedorPrincipal instanceof HTMLElement) {
+          contenedorPrincipal.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        contenedorPantallaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     }
   };
 
   const guardarEjecutivo = (registro: Omit<RegistroDirectorioEjecutivoAnalista, "id">) => {
+    const porcentajeRegistro = obtenerPorcentajeNumerico(registro.porcentaje);
+    const totalSinRegistroActual = datosInvestigacion.directorioEjecutivo.reduce((total, ejecutivo, indice) => {
+      if (indiceEjecutivoSeleccionado != null && indice === indiceEjecutivoSeleccionado) {
+        return total;
+      }
+      return total + obtenerPorcentajeNumerico(ejecutivo.porcentaje);
+    }, 0);
+
+    if (totalSinRegistroActual + porcentajeRegistro > 100) {
+      toast.error("La suma del porcentaje de participación no puede ser mayor a 100.");
+      return;
+    }
+
     setDatosInvestigacion((anterior) => {
       const directorioEjecutivo = [...anterior.directorioEjecutivo];
 
@@ -605,6 +715,37 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
     setEstaAbiertoModalEjecutivo(false);
   };
 
+  const completarPorcentajeEjecutivos = () => {
+    if (datosInvestigacion.directorioEjecutivo.length === 0 || porcentajeRestanteEjecutivos <= 0) {
+      return;
+    }
+
+    setDatosInvestigacion((anterior) => {
+      const directorioEjecutivo = anterior.directorioEjecutivo.filter((ejecutivo) => ejecutivo.nombreCompleto !== "Otros");
+      directorioEjecutivo.unshift({
+        id: Date.now(),
+        ejecutivo: "Otros",
+        cargo: "-",
+        porcentaje: formatearPorcentajeOchoDecimales(porcentajeRestanteEjecutivos),
+        lista: false,
+        detalleEjecutivo: false,
+        orden: String(directorioEjecutivo.length + 1),
+        vinculadoDesde: "",
+        companiaAnterior: "",
+        esParteDirectorio: false,
+        pais: "",
+        tipoPersona: "",
+        descripcionBusqueda: "Otros",
+        nombreCompleto: "Otros",
+      });
+
+      return {
+        ...anterior,
+        directorioEjecutivo,
+      };
+    });
+  };
+
   const guardarPersonaDirectorio = (registro: Omit<RegistroPersonaDirectorioAnalista, "id">) => {
     const nuevoRegistro = {
       id: Date.now(),
@@ -630,8 +771,51 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
     ].some((valor) => valor.toLowerCase().includes(termino));
   });
 
-  const abrirModalExtraccionInformacion = (alcance: "general" | "informacion-financiera") => {
+  const companiasPaginadas = paginarRegistros(
+    datosInvestigacion.companiasRelacionadas,
+    Math.min(paginaCompanias, obtenerTotalPaginas(datosInvestigacion.companiasRelacionadas.length)),
+  );
+  const registrosLocalesPaginados = paginarRegistros(
+    datosInvestigacion.locales,
+    Math.min(paginaOperaciones, obtenerTotalPaginas(datosInvestigacion.locales.length)),
+  );
+  const registrosImportacionExportacionTabla = pestanaRamoOperacionesVisible === "importaciones"
+    ? datosInvestigacion.importaciones
+    : pestanaRamoOperacionesVisible === "exportaciones"
+      ? datosInvestigacion.exportaciones
+      : [];
+  const registrosImportacionExportacionPaginados = paginarRegistros(
+    registrosImportacionExportacionTabla,
+    Math.min(paginaOperaciones, obtenerTotalPaginas(registrosImportacionExportacionTabla.length)),
+  );
+  const balancesPaginados = paginarRegistros(
+    balancesFiltrados,
+    Math.min(paginaBalances, obtenerTotalPaginas(balancesFiltrados.length)),
+  );
+  const proveedoresPaginados = paginarRegistros(
+    proveedoresFiltrados,
+    Math.min(paginaProveedores, obtenerTotalPaginas(proveedoresFiltrados.length)),
+  );
+  const bancosPaginados = paginarRegistros(
+    bancosFiltrados,
+    Math.min(paginaBancos, obtenerTotalPaginas(bancosFiltrados.length)),
+  );
+  const ejecutivosPaginados = paginarRegistros(
+    ejecutivosFiltrados,
+    Math.min(paginaEjecutivos, obtenerTotalPaginas(ejecutivosFiltrados.length)),
+  );
+  const totalPorcentajeEjecutivos = datosInvestigacion.directorioEjecutivo.reduce(
+    (total, ejecutivo) => total + obtenerPorcentajeNumerico(ejecutivo.porcentaje),
+    0,
+  );
+  const porcentajeRestanteEjecutivos = Math.max(0, 100 - totalPorcentajeEjecutivos);
+
+  const abrirModalExtraccionInformacion = (
+    alcance: "general" | "informacion-financiera",
+    tituloSeccion?: string,
+  ) => {
     setAlcanceExtraccionInformacion(alcance);
+    setTituloSeccionExtraccion(tituloSeccion ?? "");
     setEstaAbiertoModalExtraccionInformacion(true);
   };
 
@@ -671,13 +855,12 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
     );
   };
 
-  const botonExtraSeccion = idSeccionActiva === "informacion-financiera" ? (
+  const botonExtraSeccion = !esSoloLectura ? (
     <CustomButton
       variant="secondary"
       size="sm"
-      disabled={esSoloLectura}
       className="border-blue-300 text-blue-600"
-      onClick={() => abrirModalExtraccionInformacion("informacion-financiera")}
+      onClick={() => abrirModalExtraccionInformacion(idSeccionActiva === "informacion-financiera" ? "informacion-financiera" : "general", seccionActual.titulo)}
     >
       <Sparkles size={14} />
       Extraer Información
@@ -755,7 +938,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
-                {datosInvestigacion.companiasRelacionadas.map((empresa) => (
+                {companiasPaginadas.map((empresa) => (
                   <tr key={`${empresa.empresa}-${empresa.idFiscal}`}>
                     <td className="px-4 py-4 text-sm font-semibold text-slate-700">{empresa.empresa}</td>
                     <td className="px-4 py-4 text-sm text-slate-400">{empresa.idFiscal}</td>
@@ -768,6 +951,12 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
               </tbody>
             </table>
           </div>
+          <PaginacionInvestigacion
+            paginaActual={paginaCompanias}
+            totalRegistros={datosInvestigacion.companiasRelacionadas.length}
+            onPaginaChange={setPaginaCompanias}
+            etiquetaRegistros="companias"
+          />
         </div>
       );
     }
@@ -798,8 +987,8 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
   };
 
   const renderizarRamoOperaciones = () => {
-    if (pestanaRamoOperaciones === "importaciones" || pestanaRamoOperaciones === "exportaciones" || pestanaRamoOperaciones === "locales") {
-      const tituloBoton = pestanaRamoOperaciones === "locales" ? "Agregar Local" : "Nuevo";
+    if (pestanaRamoOperacionesVisible === "importaciones" || pestanaRamoOperacionesVisible === "exportaciones" || pestanaRamoOperacionesVisible === "locales") {
+      const tituloBoton = pestanaRamoOperacionesVisible === "locales" ? "Agregar Local" : "Nuevo";
       return (
         <div className="space-y-5">
           <div className="flex flex-wrap items-center gap-3">
@@ -807,7 +996,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
               size="sm"
               disabled={esSoloLectura}
               onClick={() => {
-                if (pestanaRamoOperaciones === "locales") {
+                if (pestanaRamoOperacionesVisible === "locales") {
                   setIndiceLocalSeleccionado(null);
                   setEstaAbiertoModalLocal(true);
                   return;
@@ -824,12 +1013,12 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
               size="sm"
               disabled={
                 esSoloLectura ||
-                (pestanaRamoOperaciones === "locales"
+                (pestanaRamoOperacionesVisible === "locales"
                   ? indiceLocalSeleccionado == null
                   : indiceOperacionSeleccionada == null)
               }
               onClick={() => {
-                if (pestanaRamoOperaciones === "locales") {
+                if (pestanaRamoOperacionesVisible === "locales") {
                   setEstaAbiertoModalLocal(true);
                   return;
                 }
@@ -844,7 +1033,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
               size="sm"
               disabled={
                 esSoloLectura ||
-                (pestanaRamoOperaciones === "locales"
+                (pestanaRamoOperacionesVisible === "locales"
                   ? indiceLocalSeleccionado == null
                   : indiceOperacionSeleccionada == null)
               }
@@ -862,7 +1051,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
           <div className="overflow-hidden rounded-2xl border border-gray-100">
             <table className="w-full text-left">
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
-                {pestanaRamoOperaciones === "locales" ? (
+                {pestanaRamoOperacionesVisible === "locales" ? (
                   <tr>
                     <th className="px-4 py-3">Tipo Local</th>
                     <th className="px-4 py-3">Comentario</th>
@@ -881,22 +1070,20 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                 )}
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
-                {(pestanaRamoOperaciones === "locales"
+                {(pestanaRamoOperacionesVisible === "locales"
                   ? datosInvestigacion.locales.length
-                  : pestanaRamoOperaciones === "importaciones"
-                    ? datosInvestigacion.importaciones.length
-                    : datosInvestigacion.exportaciones.length) === 0 ? (
+                  : registrosImportacionExportacionTabla.length) === 0 ? (
                   <tr>
-                    <td colSpan={pestanaRamoOperaciones === "locales" ? 4 : 6} className="px-4 py-10 text-center text-sm text-slate-300">
+                    <td colSpan={pestanaRamoOperacionesVisible === "locales" ? 4 : 6} className="px-4 py-10 text-center text-sm text-slate-300">
                       Sin registros disponibles.
                     </td>
                   </tr>
-                ) : pestanaRamoOperaciones === "locales" ? (
-                  datosInvestigacion.locales.map((local, indice) => (
+                ) : pestanaRamoOperacionesVisible === "locales" ? (
+                  registrosLocalesPaginados.map((local) => (
                     <tr
                       key={`${local.tipoLocal}-${local.comentario}`}
-                      className={`cursor-pointer transition-colors ${indiceLocalSeleccionado === indice ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
-                      onClick={() => setIndiceLocalSeleccionado(indice)}
+                      className={`cursor-pointer transition-colors ${indiceLocalSeleccionado === datosInvestigacion.locales.findIndex((item) => item.tipoLocal === local.tipoLocal && item.comentario === local.comentario) ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
+                      onClick={() => setIndiceLocalSeleccionado(datosInvestigacion.locales.findIndex((item) => item.tipoLocal === local.tipoLocal && item.comentario === local.comentario))}
                     >
                       <td className="px-4 py-4 text-sm font-semibold text-slate-700">{local.tipoLocal}</td>
                       <td className="px-4 py-4 text-sm text-slate-500">{local.comentario}</td>
@@ -907,13 +1094,11 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                     </tr>
                   ))
                 ) : (
-                  (pestanaRamoOperaciones === "importaciones"
-                    ? datosInvestigacion.importaciones
-                    : datosInvestigacion.exportaciones).map((registro, indice) => (
+                  registrosImportacionExportacionPaginados.map((registro) => (
                     <tr
                       key={`${registro.anio}-${registro.paises}-${registro.monto}`}
-                      className={`cursor-pointer transition-colors ${indiceOperacionSeleccionada === indice ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
-                      onClick={() => setIndiceOperacionSeleccionada(indice)}
+                      className={`cursor-pointer transition-colors ${indiceOperacionSeleccionada === registrosOperacionActivos.findIndex((item) => item.anio === registro.anio && item.paises === registro.paises && item.monto === registro.monto) ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
+                      onClick={() => setIndiceOperacionSeleccionada(registrosOperacionActivos.findIndex((item) => item.anio === registro.anio && item.paises === registro.paises && item.monto === registro.monto))}
                     >
                       <td className="px-4 py-4 text-sm text-slate-500">{registro.anio}</td>
                       <td className="px-4 py-4 text-sm text-slate-500">{registro.moneda}</td>
@@ -927,6 +1112,12 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
               </tbody>
             </table>
           </div>
+          <PaginacionInvestigacion
+            paginaActual={paginaOperaciones}
+            totalRegistros={pestanaRamoOperacionesVisible === "locales" ? datosInvestigacion.locales.length : registrosImportacionExportacionTabla.length}
+            onPaginaChange={setPaginaOperaciones}
+            etiquetaRegistros="registros"
+          />
         </div>
       );
     }
@@ -938,17 +1129,17 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
         <CampoInvestigacionAnalista etiqueta="Categoría CIIU" valor={datosInvestigacion.operacionPrincipal.categoriaCiiu} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("categoriaCiiu", valor)} />
         <CampoInvestigacionAnalista etiqueta="Clase CIIU" valor={datosInvestigacion.operacionPrincipal.claseCiiu} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("claseCiiu", valor)} />
         <AreaInvestigacionAnalista etiqueta="Actividad Principal" valor={datosInvestigacion.operacionPrincipal.actividadPrincipal} soloLectura={esSoloLectura} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("actividadPrincipal", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Ventas al Contado (%)" valor={datosInvestigacion.operacionPrincipal.ventasContadoPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("ventasContadoPorcentaje", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Ventas al Contado (%)" valor={datosInvestigacion.operacionPrincipal.ventasContadoPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarPorcentajesComplementarios("ventasContadoPorcentaje", "ventasCreditoPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Ventas al Contado" valor={datosInvestigacion.operacionPrincipal.ventasContadoDetalle} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("ventasContadoDetalle", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Ventas a Crédito (%)" valor={datosInvestigacion.operacionPrincipal.ventasCreditoPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("ventasCreditoPorcentaje", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Ventas a Crédito (%)" valor={datosInvestigacion.operacionPrincipal.ventasCreditoPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarPorcentajesComplementarios("ventasCreditoPorcentaje", "ventasContadoPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Ventas a Crédito" valor={datosInvestigacion.operacionPrincipal.ventasCreditoDetalle} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("ventasCreditoDetalle", valor)} />
         <CampoInvestigacionAnalista etiqueta="Territorio de Ventas" valor={datosInvestigacion.operacionPrincipal.territorioVentasPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Territorio" valor={datosInvestigacion.operacionPrincipal.territorioVentasDetalle} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasDetalle", valor)} />
         <CampoInvestigacionAnalista etiqueta="(%) Ventas en el Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("ventasExtranjeroPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Ventas Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroDetalle} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("ventasExtranjeroDetalle", valor)} />
-        <CampoInvestigacionAnalista etiqueta="(%) Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarPorcentajesCompras("comprasNacionalesPorcentaje", valor)} />
+        <CampoInvestigacionAnalista etiqueta="(%) Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarPorcentajesComplementarios("comprasNacionalesPorcentaje", "comprasExtranjeroPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesDetalle} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("comprasNacionalesDetalle", valor)} />
-        <CampoInvestigacionAnalista etiqueta="(%) Compras en el Extranjero" valor={datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarPorcentajesCompras("comprasExtranjeroPorcentaje", valor)} />
+        <CampoInvestigacionAnalista etiqueta="(%) Compras en el Extranjero" valor={datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarPorcentajesComplementarios("comprasExtranjeroPorcentaje", "comprasNacionalesPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Compras Extranjero" valor={datosInvestigacion.operacionPrincipal.comprasExtranjeroDetalle} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("comprasExtranjeroDetalle", valor)} />
         <CampoInvestigacionAnalista etiqueta="N. de Empleados" valor={datosInvestigacion.operacionPrincipal.numeroEmpleados} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("numeroEmpleados", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Empleados" valor={datosInvestigacion.operacionPrincipal.numeroEmpleadosDetalle} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("numeroEmpleadosDetalle", valor)} />
@@ -1013,7 +1204,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                   Sin balances registrados.
                 </td>
               </tr>
-            ) : balancesFiltrados.map((balance) => {
+            ) : balancesPaginados.map((balance) => {
               const indiceReal = datosInvestigacion.balances.findIndex(
                 (registro) => registro.codigo === balance.codigo && registro.periodo === balance.periodo,
               );
@@ -1080,6 +1271,12 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
           </tbody>
         </table>
       </div>
+      <PaginacionInvestigacion
+        paginaActual={paginaBalances}
+        totalRegistros={balancesFiltrados.length}
+        onPaginaChange={setPaginaBalances}
+        etiquetaRegistros="balances"
+      />
     </div>
   );
 
@@ -1114,11 +1311,12 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
               </div>
               <div className="space-y-2">
                 <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-300">Tipo de Proveedor</CustomLabel>
-                <select value={filtroProveedorTipo} onChange={(event) => setFiltroProveedorTipo(event.target.value)} className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-slate-600 outline-none">
-                  <option>Todos</option>
-                  <option>Nacional</option>
-                  <option>Extranjero</option>
-                </select>
+                <CustomSelectorBuscable
+                  options={opcionesFiltroTipoProveedor}
+                  value={opcionesFiltroTipoProveedor.find((opcion) => opcion.string1 === filtroProveedorTipo)?.num1 ?? undefined}
+                  onChange={(valor) => setFiltroProveedorTipo(opcionesFiltroTipoProveedor.find((opcion) => opcion.num1 === valor)?.string1 ?? "Todos")}
+                  placeholder="Tipo"
+                />
               </div>
               <div className="space-y-2">
                 <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-300">Nombre de Contacto</CustomLabel>
@@ -1157,7 +1355,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
-                {proveedoresFiltrados.map((proveedor) => {
+                {proveedoresPaginados.map((proveedor) => {
                   const indiceReal = datosInvestigacion.proveedores.findIndex((item) => item.nombreEmpresa === proveedor.nombreEmpresa && item.telefono === proveedor.telefono);
                   return (
                     <tr key={`${proveedor.nombreEmpresa}-${proveedor.telefono}`}>
@@ -1181,6 +1379,12 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
               </tbody>
             </table>
           </div>
+          <PaginacionInvestigacion
+            paginaActual={paginaProveedores}
+            totalRegistros={proveedoresFiltrados.length}
+            onPaginaChange={setPaginaProveedores}
+            etiquetaRegistros="proveedores"
+          />
         </div>
       ) : null}
 
@@ -1236,7 +1440,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
-                {bancosFiltrados.map((banco) => {
+                {bancosPaginados.map((banco) => {
                   const indiceReal = datosInvestigacion.bancos.findIndex((item) => item.banco === banco.banco && item.numeroCuenta === banco.numeroCuenta);
                   return (
                     <tr key={`${banco.banco}-${banco.numeroCuenta}`}>
@@ -1267,6 +1471,12 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
               </tbody>
             </table>
           </div>
+          <PaginacionInvestigacion
+            paginaActual={paginaBancos}
+            totalRegistros={bancosFiltrados.length}
+            onPaginaChange={setPaginaBancos}
+            etiquetaRegistros="bancos"
+          />
         </div>
       ) : null}
     </div>
@@ -1292,9 +1502,13 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
           />
         </label>
         <div className="flex flex-wrap gap-3">
-          <CustomButton variant="secondary" size="sm" disabled={esSoloLectura} className="border-blue-300 text-blue-600">
-            <Sparkles size={14} />
-            Extraer Información
+          <CustomButton
+            variant="secondary"
+            size="sm"
+            disabled={esSoloLectura || datosInvestigacion.directorioEjecutivo.length === 0 || porcentajeRestanteEjecutivos <= 0}
+            onClick={completarPorcentajeEjecutivos}
+          >
+            Completar porcentaje
           </CustomButton>
           <CustomButton
             size="sm"
@@ -1332,7 +1546,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                   Sin ejecutivos registrados.
                 </td>
               </tr>
-            ) : ejecutivosFiltrados.map((ejecutivo) => {
+            ) : ejecutivosPaginados.map((ejecutivo) => {
               const indiceReal = datosInvestigacion.directorioEjecutivo.findIndex((item) => item.id === ejecutivo.id);
 
               return (
@@ -1342,7 +1556,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                   </td>
                   <td className="px-4 py-4 text-sm font-semibold text-slate-700">{ejecutivo.ejecutivo}</td>
                   <td className="px-4 py-4 text-sm text-slate-500">{ejecutivo.cargo}</td>
-                  <td className="px-4 py-4 text-sm text-slate-400">{ejecutivo.porcentaje || "-"}</td>
+                  <td className="px-4 py-4 text-sm text-slate-400">{ejecutivo.porcentaje || "0.00000000%"}</td>
                   <td className="px-4 py-4">
                     {ejecutivo.lista ? <Check size={16} className="text-green-500" /> : <span className="text-slate-300">-</span>}
                   </td>
@@ -1374,6 +1588,13 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
           </tbody>
         </table>
       </div>
+      <PaginacionInvestigacion
+        paginaActual={paginaEjecutivos}
+        totalRegistros={ejecutivosFiltrados.length}
+        onPaginaChange={setPaginaEjecutivos}
+        etiquetaRegistros="ejecutivos"
+        contenidoCentro={`Total % participación: ${formatearPorcentajeOchoDecimales(Math.min(totalPorcentajeEjecutivos, 100))}`}
+      />
     </div>
   );
 
@@ -1415,7 +1636,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                 },
                 { id: "locales", etiqueta: "Locales" },
               ]}
-              valorActivo={pestanaRamoOperaciones}
+              valorActivo={pestanaRamoOperacionesVisible}
               onChange={(valor) => setPestanaRamoOperaciones(valor as PestanaRamoOperaciones)}
             />
             {renderizarRamoOperaciones()}
@@ -1435,7 +1656,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
   };
 
   return (
-    <div className="space-y-6">
+    <div ref={contenedorPantallaRef} className="space-y-6">
       <ResumenPedidoInvestigacionAnalista
         resumen={datosInvestigacion.resumen}
         esSoloLectura={esSoloLectura}
@@ -1520,6 +1741,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
       <CustomModalExtraccionInformacionAnalista
         estaAbierto={estaAbiertoModalExtraccionInformacion}
         alcance={alcanceExtraccionInformacion}
+        tituloSeccion={tituloSeccionExtraccion}
         onCerrar={() => setEstaAbiertoModalExtraccionInformacion(false)}
         onExtraer={extraerInformacionDemo}
       />
@@ -1534,9 +1756,9 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
       />
 
       <CustomModalOperacionAnalista
-        key={`${pestanaRamoOperaciones}-${indiceOperacionSeleccionada ?? "nuevo"}-${estaAbiertoModalOperacion ? "abierto" : "cerrado"}`}
+        key={`${pestanaRamoOperacionesVisible}-${indiceOperacionSeleccionada ?? "nuevo"}-${estaAbiertoModalOperacion ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalOperacion}
-        titulo={pestanaRamoOperaciones === "importaciones" ? "Nueva Importación" : "Nueva Exportación"}
+        titulo={pestanaRamoOperacionesVisible === "importaciones" ? "Nueva Importación" : "Nueva Exportación"}
         subtitulo="Registro de operaciones"
         registroInicial={indiceOperacionSeleccionada != null ? registrosOperacionActivos[indiceOperacionSeleccionada] : null}
         onCerrar={() => {

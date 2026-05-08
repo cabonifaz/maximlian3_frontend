@@ -2,7 +2,9 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import type { RegistroBalanceAnalista } from "@maximilian/shared/types/analista.type";
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface PropsCustomModalBalanceAnalista {
   estaAbierto: boolean;
@@ -14,6 +16,28 @@ interface PropsCustomModalBalanceAnalista {
 const opcionesOperacionCambio = ["US Dollar", "Euro", "Sol"];
 const opcionesTipoBalance = ["Balance general", "Balance consolidado"];
 const opcionesTipoEstadoFinanciero = ["GN-PG", "GN", "PG", "Desagregado", "Totalizado", "Turquía"];
+
+function crearOpcion(num1: number, string1: string): EntradaTablaMaestra {
+  return {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: "",
+    num1,
+    num2: null,
+    num3: null,
+    string1,
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  };
+}
+
+const opcionesOperacionCambioSelector = opcionesOperacionCambio.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesTipoBalanceSelector = opcionesTipoBalance.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesTipoEstadoFinancieroSelector = opcionesTipoEstadoFinanciero.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 
 function formatearFecha(fecha: string) {
   if (!fecha) return "";
@@ -42,14 +66,27 @@ export function CustomModalBalanceAnalista({
   const [operacionCambio, setOperacionCambio] = useState(registroInicial?.operacionCambio ?? "");
   const [tipoBalance, setTipoBalance] = useState(registroInicial?.tipoBalance ?? "Balance general");
   const [tipoEstadoFinanciero, setTipoEstadoFinanciero] = useState(registroInicial?.tipoEstadoFinanciero ?? registroInicial?.tipo ?? "");
+  const [errorFechas, setErrorFechas] = useState("");
+  const fechaActual = new Date().toISOString().split("T")[0] ?? "";
 
   if (!estaAbierto) return null;
 
   const manejarGuardar = () => {
+    if (fechaInicio && fechaActual && fechaInicio > fechaActual) {
+      setErrorFechas("La fecha de inicio no puede ser mayor a la fecha actual.");
+      return;
+    }
+
+    if (fechaInicio && fechaFin && !esActual && fechaInicio > fechaFin) {
+      setErrorFechas("La fecha de inicio no puede ser mayor a la fecha de fin.");
+      return;
+    }
+
     if (!fechaInicio || (!esActual && !fechaFin) || !tipoCambio.trim() || !operacionCambio.trim() || !tipoBalance.trim() || !tipoEstadoFinanciero.trim()) {
       return;
     }
 
+    setErrorFechas("");
     onGuardar({
       fecha: esActual
         ? `${formatearFecha(fechaInicio)} - Actualidad`
@@ -82,11 +119,48 @@ export function CustomModalBalanceAnalista({
 
         <div className="grid gap-5 px-7 py-6 md:grid-cols-2">
           <div className="space-y-2">
+            <CustomLabel>Tipo de Balance</CustomLabel>
+            <CustomSelectorBuscable
+              options={opcionesTipoBalanceSelector}
+              value={opcionesTipoBalanceSelector.find((opcion) => opcion.string1 === tipoBalance)?.num1 ?? undefined}
+              onChange={(valor) => setTipoBalance(opcionesTipoBalanceSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              placeholder="Seleccionar..."
+            />
+          </div>
+
+          <div className="space-y-2">
+            <CustomLabel>Tipo de Estado Financiero</CustomLabel>
+            <CustomSelectorBuscable
+              options={opcionesTipoEstadoFinancieroSelector}
+              value={opcionesTipoEstadoFinancieroSelector.find((opcion) => opcion.string1 === tipoEstadoFinanciero)?.num1 ?? undefined}
+              onChange={(valor) => setTipoEstadoFinanciero(opcionesTipoEstadoFinancieroSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              placeholder="Seleccionar..."
+            />
+          </div>
+
+          <div className="space-y-2">
             <CustomLabel>Fecha de Inicio</CustomLabel>
             <input
               type="date"
               value={fechaInicio}
-              onChange={(event) => setFechaInicio(event.target.value)}
+              onChange={(event) => {
+                const nuevoValor = event.target.value;
+                setFechaInicio(nuevoValor);
+
+                if (nuevoValor && fechaFin && nuevoValor > fechaFin) {
+                  const mensaje = "La fecha de inicio no puede ser mayor a la fecha de fin.";
+                  setErrorFechas(mensaje);
+                  return;
+                }
+
+                if (nuevoValor && fechaActual && nuevoValor > fechaActual) {
+                  const mensaje = "La fecha de inicio no puede ser mayor a la fecha actual.";
+                  setErrorFechas(mensaje);
+                  return;
+                }
+
+                setErrorFechas("");
+              }}
               className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
             />
           </div>
@@ -97,7 +171,18 @@ export function CustomModalBalanceAnalista({
               type="date"
               value={fechaFin}
               disabled={esActual}
-              onChange={(event) => setFechaFin(event.target.value)}
+              onChange={(event) => {
+                const nuevoValor = event.target.value;
+                setFechaFin(nuevoValor);
+
+                if (fechaInicio && nuevoValor && nuevoValor < fechaInicio) {
+                  const mensaje = "La fecha de fin no puede ser menor a la fecha de inicio.";
+                  setErrorFechas(mensaje);
+                  return;
+                }
+
+                setErrorFechas("");
+              }}
               className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all disabled:bg-slate-50 disabled:text-slate-400 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
             />
           </div>
@@ -106,11 +191,22 @@ export function CustomModalBalanceAnalista({
             <input
               type="checkbox"
               checked={esActual}
-              onChange={(event) => setEsActual(event.target.checked)}
+              onChange={(event) => {
+                const estaSeleccionado = event.target.checked;
+                setEsActual(estaSeleccionado);
+                setErrorFechas("");
+                if (estaSeleccionado) {
+                  setFechaFin("");
+                }
+              }}
               className="h-4 w-4 accent-brand-wine"
             />
             Actualidad
           </label>
+
+          {errorFechas ? (
+            <p className="col-span-full text-sm text-red-500">{errorFechas}</p>
+          ) : null}
 
           <div className="space-y-2">
             <CustomLabel>Tipo de Cambio</CustomLabel>
@@ -124,51 +220,14 @@ export function CustomModalBalanceAnalista({
 
           <div className="space-y-2">
             <CustomLabel>Operación de Cambio</CustomLabel>
-            <select
-              value={operacionCambio}
-              onChange={(event) => setOperacionCambio(event.target.value)}
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
-            >
-              <option value="">Seleccionar...</option>
-              {opcionesOperacionCambio.map((opcion) => (
-                <option key={opcion} value={opcion}>
-                  {opcion}
-                </option>
-              ))}
-            </select>
+            <CustomSelectorBuscable
+              options={opcionesOperacionCambioSelector}
+              value={opcionesOperacionCambioSelector.find((opcion) => opcion.string1 === operacionCambio)?.num1 ?? undefined}
+              onChange={(valor) => setOperacionCambio(opcionesOperacionCambioSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              placeholder="Seleccionar..."
+            />
           </div>
 
-          <div className="space-y-2">
-            <CustomLabel>Tipo de Balance</CustomLabel>
-            <select
-              value={tipoBalance}
-              onChange={(event) => setTipoBalance(event.target.value)}
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
-            >
-              <option value="">Seleccionar...</option>
-              {opcionesTipoBalance.map((opcion) => (
-                <option key={opcion} value={opcion}>
-                  {opcion}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-2 md:col-span-2">
-            <CustomLabel>Tipo de Estado Financiero</CustomLabel>
-            <select
-              value={tipoEstadoFinanciero}
-              onChange={(event) => setTipoEstadoFinanciero(event.target.value)}
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
-            >
-              <option value="">Seleccionar...</option>
-              {opcionesTipoEstadoFinanciero.map((opcion) => (
-                <option key={opcion} value={opcion}>
-                  {opcion}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
         <div className="flex justify-end gap-3 border-t border-gray-100 px-7 py-5">

@@ -99,6 +99,36 @@ function obtenerMarcadorInvestigacion(etiqueta: string) {
   return `Ingrese ${etiquetaNormalizada}`;
 }
 
+function normalizarPorcentajeDosDecimales(valor: string) {
+  const valorLimpio = valor.trim().replace("%", "").replace(",", ".");
+  if (!valorLimpio) return "";
+
+  const numero = Number.parseFloat(valorLimpio);
+  if (Number.isNaN(numero)) return valor;
+
+  return numero.toFixed(2);
+}
+
+function sanitizarPorcentajeDosDecimales(valor: string) {
+  const valorNormalizado = valor.replace(",", ".").replace(/[^0-9.]/g, "");
+  const partes = valorNormalizado.split(".");
+  const entero = partes[0] ?? "";
+  const decimal = partes[1] ?? "";
+  const valorCompuesto = partes.length > 1 ? `${entero}.${decimal.slice(0, 2)}` : entero;
+
+  if (!valorCompuesto) return "";
+
+  if (entero && Number.parseInt(entero, 10) > 100) {
+    return "100";
+  }
+
+  if (valorCompuesto === "100" || valorCompuesto.startsWith("100.")) {
+    return "100";
+  }
+
+  return valorCompuesto;
+}
+
 interface PropsCampoInvestigacionAnalista {
   etiqueta: string;
   valor: string;
@@ -153,6 +183,7 @@ export function CampoInvestigacionAnalista({
   onChange,
 }: PropsCampoInvestigacionAnalista) {
   const marcadorFinal = marcador ?? obtenerMarcadorInvestigacion(etiqueta);
+  const esCampoPorcentaje = etiqueta.includes("%");
 
   return (
     <label className={`space-y-2 ${className ?? ""}`}>
@@ -162,7 +193,11 @@ export function CampoInvestigacionAnalista({
       <input
         value={valor}
         readOnly={soloLectura}
-        onChange={(event) => onChange?.(event.target.value)}
+        onChange={(event) => onChange?.(esCampoPorcentaje ? sanitizarPorcentajeDosDecimales(event.target.value) : event.target.value)}
+        onBlur={(event) => {
+          if (soloLectura || !onChange || !esCampoPorcentaje) return;
+          onChange(normalizarPorcentajeDosDecimales(event.target.value));
+        }}
         placeholder={marcadorFinal}
         className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400"
       />
@@ -359,9 +394,13 @@ export function ResumenPedidoInvestigacionAnalista({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button type="button" onClick={onAbrirArchivos} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-500">
+          <button
+            type="button"
+            onClick={onAbrirArchivos}
+            className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.02] hover:bg-slate-800 active:scale-[0.98]"
+          >
             <Paperclip size={14} />
-            Archivos
+            Adjuntar archivos
           </button>
           <CustomButton
             size="sm"

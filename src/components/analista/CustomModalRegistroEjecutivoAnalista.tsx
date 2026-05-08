@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
@@ -23,11 +24,14 @@ export function CustomModalRegistroEjecutivoAnalista({
   onBuscarEjecutivo,
   onGuardar,
 }: PropsCustomModalRegistroEjecutivoAnalista) {
-  if (!estaAbierto) return null;
-
   const ejecutivoDefecto = registroInicial?.nombreCompleto ?? personaSeleccionada?.nombres ?? "";
   const tipoPersonaDefecto = registroInicial?.tipoPersona ?? personaSeleccionada?.tipoPersona ?? "Natural";
   const paisDefecto = registroInicial?.pais ?? personaSeleccionada?.pais ?? "";
+  const [porcentajeParticipacion, setPorcentajeParticipacion] = useState(
+    limpiarPorcentaje(registroInicial?.porcentaje),
+  );
+
+  if (!estaAbierto) return null;
 
   const manejarEnvio = (formData: FormData) => {
     const ejecutivo = String(formData.get("ejecutivo") ?? "").trim();
@@ -35,7 +39,7 @@ export function CustomModalRegistroEjecutivoAnalista({
 
     if (!ejecutivo || !cargo) return;
 
-    const porcentaje = String(formData.get("porcentaje") ?? "").trim();
+    const porcentaje = formatearPorcentajeParticipacion(porcentajeParticipacion);
     const imprimirListado = formData.get("imprimirListado") === "si";
     const imprimirDetalle = formData.get("imprimirDetalle") === "si";
     const esParteDirectorio = formData.get("esParteDirectorio") === "si";
@@ -43,7 +47,7 @@ export function CustomModalRegistroEjecutivoAnalista({
     onGuardar({
       ejecutivo: ejecutivo.length > 13 ? `${ejecutivo.slice(0, 13)}...` : ejecutivo,
       cargo: cargo.length > 10 ? `${cargo.slice(0, 10)}...` : cargo,
-      porcentaje: porcentaje || "0.00%",
+      porcentaje,
       lista: imprimirListado,
       detalleEjecutivo: imprimirDetalle,
       orden: registroInicial?.orden ?? "1",
@@ -99,22 +103,29 @@ export function CustomModalRegistroEjecutivoAnalista({
             </div>
 
             <div className="pt-1">
-              <CampoInput nombre="cargo" etiqueta="Cargo" marcador="Cargo o posición" valorDefecto={registroInicial?.cargo.replace("...", "")} />
+              <CampoInput nombre="cargo" etiqueta="Cargo" marcador="Cargo o posición" valorInicial={registroInicial?.cargo.replace("...", "")} />
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
-              <CampoInput nombre="vinculadoDesde" etiqueta="Vinculado Desde" marcador="Fecha o período" valorDefecto={registroInicial?.vinculadoDesde} />
-              <CampoInput nombre="companiaAnterior" etiqueta="Compañía Anterior" marcador="Empresa previa" valorDefecto={registroInicial?.companiaAnterior} />
+              <CampoInput nombre="vinculadoDesde" etiqueta="Vinculado Desde" marcador="Fecha o período" valorInicial={registroInicial?.vinculadoDesde} />
+              <CampoInput nombre="companiaAnterior" etiqueta="Compañía Anterior" marcador="Empresa previa" valorInicial={registroInicial?.companiaAnterior} />
             </div>
 
             <div className="pt-1">
-              <CampoInput nombre="porcentaje" etiqueta="% Participación" marcador="0.00%" valorDefecto={registroInicial?.porcentaje === "-" ? "" : registroInicial?.porcentaje} />
+              <CampoInput
+                nombre="porcentaje"
+                etiqueta="% Participación"
+                marcador="0.00000000"
+                valor={porcentajeParticipacion}
+                onChange={(valor) => setPorcentajeParticipacion(sanitizarPorcentajeParticipacion(valor))}
+                onBlur={() => setPorcentajeParticipacion(limpiarPorcentaje(formatearPorcentajeParticipacion(porcentajeParticipacion)))}
+              />
             </div>
 
             <div className="space-y-4 pt-5">
-              <GrupoRadio nombre="esParteDirectorio" etiqueta="¿Es parte del Directorio?" valorDefecto={registroInicial?.esParteDirectorio ? "si" : "no"} />
-              <GrupoRadio nombre="imprimirListado" etiqueta="¿Se imprime en el listado de ejecutivos?" valorDefecto={registroInicial?.lista ? "si" : "no"} />
-              <GrupoRadio nombre="imprimirDetalle" etiqueta="¿Imprime los detalles del ejecutivo?" valorDefecto={registroInicial?.detalleEjecutivo ? "si" : "no"} />
+              <GrupoRadio nombre="esParteDirectorio" etiqueta="¿Forma parte del directorio Ejecutivo?" valorDefecto={registroInicial?.esParteDirectorio ? "si" : "no"} />
+              <GrupoRadio nombre="imprimirListado" etiqueta="¿Figura en el listado de ejecutivos?" valorDefecto={registroInicial?.lista ? "si" : "no"} />
+              <GrupoRadio nombre="imprimirDetalle" etiqueta="¿Se tiene los detalles del Ejecutivo?" valorDefecto={registroInicial?.detalleEjecutivo ? "si" : "no"} />
             </div>
           </div>
 
@@ -136,24 +147,80 @@ function CampoInput({
   nombre,
   etiqueta,
   marcador,
-  valorDefecto,
+  valorInicial,
+  valor,
+  onChange,
+  onBlur,
 }: {
   nombre: string;
   etiqueta: string;
   marcador: string;
-  valorDefecto?: string;
+  valorInicial?: string;
+  valor?: string;
+  onChange?: (valor: string) => void;
+  onBlur?: () => void;
 }) {
+  if (valor !== undefined) {
+    return (
+      <label className="space-y-2">
+        <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8ea0c0]">{etiqueta}</CustomLabel>
+        <input
+          name={nombre}
+          value={valor}
+          onChange={(event) => onChange?.(event.target.value)}
+          onBlur={onBlur}
+          placeholder={marcador}
+          className="h-11 w-full rounded-lg border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none"
+        />
+      </label>
+    );
+  }
+
   return (
     <label className="space-y-2">
       <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8ea0c0]">{etiqueta}</CustomLabel>
       <input
         name={nombre}
-        defaultValue={valorDefecto}
+        defaultValue={valorInicial}
         placeholder={marcador}
         className="h-11 w-full rounded-lg border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none"
       />
     </label>
   );
+}
+
+function limpiarPorcentaje(valor?: string) {
+  return (valor ?? "").replace("%", "").trim();
+}
+
+function sanitizarPorcentajeParticipacion(valor: string) {
+  const valorNormalizado = limpiarPorcentaje(valor).replace(",", ".").replace(/[^0-9.]/g, "");
+  const partes = valorNormalizado.split(".");
+  const entero = partes[0] ?? "";
+  const decimal = partes[1] ?? "";
+  const valorCompuesto = partes.length > 1 ? `${entero}.${decimal.slice(0, 8)}` : entero;
+
+  if (!valorCompuesto) return "";
+
+  if (entero && Number.parseInt(entero, 10) > 100) {
+    return "100";
+  }
+
+  if (valorCompuesto === "100" || valorCompuesto.startsWith("100.")) {
+    return "100";
+  }
+
+  return valorCompuesto;
+}
+
+function formatearPorcentajeParticipacion(valor: string) {
+  const valorLimpio = limpiarPorcentaje(valor).replace(",", ".");
+  if (!valorLimpio) return "0.00000000%";
+
+  const numero = Number.parseFloat(valorLimpio);
+  if (Number.isNaN(numero)) return "0.00000000%";
+
+  return `${numero.toFixed(8)}%`;
 }
 
 function GrupoRadio({

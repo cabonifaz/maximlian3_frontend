@@ -2,7 +2,9 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import type { RegistroProveedorAnalista } from "@maximilian/shared/types/analista.type";
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface PropsCustomModalProveedorAnalista {
   estaAbierto: boolean;
@@ -11,11 +13,35 @@ interface PropsCustomModalProveedorAnalista {
   onGuardar: (registro: RegistroProveedorAnalista) => void;
 }
 
-const opcionesTipoPersona = ["Jurídica", "Natural"];
+const opcionesTipoProveedor = ["Nacional", "Extranjero"];
 const opcionesPais = ["México", "Perú", "Colombia", "Estados Unidos", "Reino Unido"];
 const opcionesTaxId = ["RFC", "NIT", "Tax ID"];
 const opcionesMoneda = ["Divisa", "US Dollar", "Euro"];
 const opcionesLimiteCredito = ["Sin límite operativo", "Limitado", "Sujeto a evaluación"];
+
+function crearOpcion(num1: number, string1: string): EntradaTablaMaestra {
+  return {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: "",
+    num1,
+    num2: null,
+    num3: null,
+    string1,
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  };
+}
+
+const opcionesTipoProveedorSelector = opcionesTipoProveedor.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesPaisSelector = opcionesPais.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesTaxIdSelector = opcionesTaxId.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesMonedaSelector = opcionesMoneda.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesLimiteCreditoSelector = opcionesLimiteCredito.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 
 export function CustomModalProveedorAnalista({
   estaAbierto,
@@ -23,11 +49,13 @@ export function CustomModalProveedorAnalista({
   onCerrar,
   onGuardar,
 }: PropsCustomModalProveedorAnalista) {
-  const [tipoPersona, setTipoPersona] = useState(registroInicial?.tipoPersona ?? "");
+  const [tipoProveedor, setTipoProveedor] = useState(registroInicial?.tipoProveedor ?? "");
   const [nombreEmpresa, setNombreEmpresa] = useState(registroInicial?.nombreEmpresa ?? "");
   const [pais, setPais] = useState(registroInicial?.pais ?? "");
   const [taxIdType, setTaxIdType] = useState(registroInicial?.taxIdType ?? "");
   const [taxIdNumber, setTaxIdNumber] = useState(registroInicial?.taxIdNumber ?? "");
+  const [contacto, setContacto] = useState(registroInicial?.contacto ?? "");
+  const [telefono, setTelefono] = useState(registroInicial?.telefono ?? "");
   const [tieneReferenciaComercial, setTieneReferenciaComercial] = useState(registroInicial?.tieneReferenciaComercial ?? false);
   const [comienzoNegociaciones, setComienzoNegociaciones] = useState(registroInicial?.comienzoNegociaciones ?? "");
   const [operacionCambioMoneda, setOperacionCambioMoneda] = useState(registroInicial?.operacionCambioMoneda ?? "");
@@ -38,16 +66,16 @@ export function CustomModalProveedorAnalista({
   if (!estaAbierto) return null;
 
   const manejarGuardar = () => {
-    if (!tipoPersona || !nombreEmpresa.trim() || !pais || !taxIdType || !taxIdNumber.trim()) {
+    if (!tipoProveedor || !nombreEmpresa.trim() || !pais || !taxIdType || !taxIdNumber.trim()) {
       return;
     }
 
     onGuardar({
       nombreEmpresa: nombreEmpresa.trim(),
-      contacto: registroInicial?.contacto ?? "",
-      tipoProveedor: pais === "México" ? "Nacional" : "Extranjero",
-      telefono: registroInicial?.telefono ?? "",
-      tipoPersona,
+      contacto: contacto.trim(),
+      tipoProveedor,
+      telefono: telefono.trim(),
+      tipoPersona: registroInicial?.tipoPersona ?? "Juridica",
       pais,
       taxIdType,
       taxIdNumber: taxIdNumber.trim(),
@@ -75,11 +103,13 @@ export function CustomModalProveedorAnalista({
 
         <div className="space-y-4 overflow-y-auto px-7 py-6">
           <div className="space-y-2">
-            <CustomLabel>Tipo de Persona</CustomLabel>
-            <select value={tipoPersona} onChange={(event) => setTipoPersona(event.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none">
-              <option value="">Seleccionar...</option>
-              {opcionesTipoPersona.map((opcion) => <option key={opcion} value={opcion}>{opcion}</option>)}
-            </select>
+            <CustomLabel>Tipo de Proveedor</CustomLabel>
+            <CustomSelectorBuscable
+              options={opcionesTipoProveedorSelector}
+              value={opcionesTipoProveedorSelector.find((opcion) => opcion.string1 === tipoProveedor)?.num1 ?? undefined}
+              onChange={(valor) => setTipoProveedor(opcionesTipoProveedorSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              placeholder="Seleccionar..."
+            />
           </div>
 
           <div className="space-y-2">
@@ -90,24 +120,38 @@ export function CustomModalProveedorAnalista({
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <CustomLabel>País</CustomLabel>
-              <select value={pais} onChange={(event) => setPais(event.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none">
-                <option value="">Seleccionar país...</option>
-                {opcionesPais.map((opcion) => <option key={opcion} value={opcion}>{opcion}</option>)}
-              </select>
+              <CustomSelectorBuscable
+                options={opcionesPaisSelector}
+                value={opcionesPaisSelector.find((opcion) => opcion.string1 === pais)?.num1 ?? undefined}
+                onChange={(valor) => setPais(opcionesPaisSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+                placeholder="Seleccionar país..."
+              />
             </div>
 
             <div className="space-y-2">
               <CustomLabel>Tax ID Type</CustomLabel>
-              <select value={taxIdType} onChange={(event) => setTaxIdType(event.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none">
-                <option value="">Seleccionar tipo...</option>
-                {opcionesTaxId.map((opcion) => <option key={opcion} value={opcion}>{opcion}</option>)}
-              </select>
+              <CustomSelectorBuscable
+                options={opcionesTaxIdSelector}
+                value={opcionesTaxIdSelector.find((opcion) => opcion.string1 === taxIdType)?.num1 ?? undefined}
+                onChange={(valor) => setTaxIdType(opcionesTaxIdSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+                placeholder="Seleccionar tipo..."
+              />
             </div>
           </div>
 
           <div className="space-y-2">
             <CustomLabel>Tax ID Number</CustomLabel>
             <input value={taxIdNumber} onChange={(event) => setTaxIdNumber(event.target.value)} placeholder="Ingrese número de identificación fiscal..." className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+          </div>
+
+          <div className="space-y-2">
+            <CustomLabel>Nombre de Contacto</CustomLabel>
+            <input value={contacto} onChange={(event) => setContacto(event.target.value)} placeholder="Ingrese el nombre de contacto" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+          </div>
+
+          <div className="space-y-2">
+            <CustomLabel>Teléfono</CustomLabel>
+            <input value={telefono} onChange={(event) => setTelefono(event.target.value)} placeholder="Ingrese el teléfono" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
           </div>
 
           <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-slate-600">
@@ -118,16 +162,16 @@ export function CustomModalProveedorAnalista({
               aria-checked={tieneReferenciaComercial}
               aria-label="Tiene referencia comercial"
               onClick={() => setTieneReferenciaComercial((valorActual) => !valorActual)}
-              className={`relative h-6 w-11 rounded-full text-[10px] font-bold uppercase transition-colors focus:outline-none focus:ring-2 focus:ring-brand-black/20 ${
+              className={`relative h-6 w-16 rounded-full text-[10px] font-bold uppercase transition-colors focus:outline-none focus:ring-2 focus:ring-brand-black/20 ${
                 tieneReferenciaComercial ? "bg-brand-black" : "bg-slate-200"
               }`}
             >
-              <span className={`absolute inset-y-0 flex items-center transition-all ${tieneReferenciaComercial ? "left-2 text-white" : "right-2 text-slate-500"}`}>
+              <span className={`absolute inset-y-0 flex items-center transition-all ${tieneReferenciaComercial ? "left-3 text-white" : "right-3 text-slate-500"}`}>
                 {tieneReferenciaComercial ? "Sí" : "No"}
               </span>
               <span
                 className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                  tieneReferenciaComercial ? "translate-x-5 left-0.5" : "left-0.5 translate-x-0"
+                  tieneReferenciaComercial ? "translate-x-10 left-0.5" : "left-0.5 translate-x-0"
                 }`}
               />
             </button>
@@ -143,20 +187,24 @@ export function CustomModalProveedorAnalista({
               <div className="space-y-2">
                 <CustomLabel>Operaciones de Cambio de Moneda</CustomLabel>
                 <div className="grid gap-3 md:grid-cols-[140px_minmax(0,1fr)]">
-                  <select value={operacionCambioMoneda} onChange={(event) => setOperacionCambioMoneda(event.target.value)} className="h-11 rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none">
-                    <option value="">Divisa</option>
-                    {opcionesMoneda.map((opcion) => <option key={opcion} value={opcion}>{opcion}</option>)}
-                  </select>
+                  <CustomSelectorBuscable
+                    options={opcionesMonedaSelector}
+                    value={opcionesMonedaSelector.find((opcion) => opcion.string1 === operacionCambioMoneda)?.num1 ?? undefined}
+                    onChange={(valor) => setOperacionCambioMoneda(opcionesMonedaSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+                    placeholder="Divisa"
+                  />
                   <input value={tipoCambio} onChange={(event) => setTipoCambio(event.target.value)} placeholder="$ 0.00" className="h-11 rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <CustomLabel>Límite de Crédito</CustomLabel>
-                <select value={limiteCredito} onChange={(event) => setLimiteCredito(event.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none">
-                  <option value="">Seleccione...</option>
-                  {opcionesLimiteCredito.map((opcion) => <option key={opcion} value={opcion}>{opcion}</option>)}
-                </select>
+                <CustomSelectorBuscable
+                  options={opcionesLimiteCreditoSelector}
+                  value={opcionesLimiteCreditoSelector.find((opcion) => opcion.string1 === limiteCredito)?.num1 ?? undefined}
+                  onChange={(valor) => setLimiteCredito(opcionesLimiteCreditoSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+                  placeholder="Seleccione..."
+                />
               </div>
 
               <div className="space-y-2">

@@ -174,6 +174,11 @@ export function CustomModalBancoAnalista({
             </div>
 
             <div className="space-y-2">
+              <CustomLabel>Número de Cuenta</CustomLabel>
+              <input value={numeroCuenta} onChange={(event) => setNumeroCuenta(event.target.value)} placeholder="0000 0000 0000" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+            </div>
+
+            <div className="space-y-2">
               <CustomLabel>Lista de Sectores</CustomLabel>
               <input value={sector} onChange={(event) => setSector(event.target.value)} placeholder="Ingrese el sector" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
             </div>
@@ -186,11 +191,6 @@ export function CustomModalBancoAnalista({
             <div className="space-y-2">
               <CustomLabel>Numero(s) de Teléfono</CustomLabel>
               <input value={telefono} onChange={(event) => setTelefono(event.target.value)} placeholder="+52 ..." className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
-            </div>
-
-            <div className="space-y-2">
-              <CustomLabel>Número de Cuenta</CustomLabel>
-              <input value={numeroCuenta} onChange={(event) => setNumeroCuenta(event.target.value)} placeholder="0000 0000 0000" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
             </div>
 
             {sector ? (

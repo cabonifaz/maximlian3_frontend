@@ -8,6 +8,7 @@ type AlcanceExtraccionAnalista = "general" | "informacion-financiera";
 interface PropsCustomModalExtraccionInformacionAnalista {
   estaAbierto: boolean;
   alcance: AlcanceExtraccionAnalista;
+  tituloSeccion?: string;
   onCerrar: () => void;
   onExtraer: (archivos: File[], alcance: AlcanceExtraccionAnalista) => Promise<void> | void;
 }
@@ -25,6 +26,7 @@ function obtenerExtensionArchivo(nombreArchivo: string) {
 export function CustomModalExtraccionInformacionAnalista({
   estaAbierto,
   alcance,
+  tituloSeccion,
   onCerrar,
   onExtraer,
 }: PropsCustomModalExtraccionInformacionAnalista) {
@@ -32,7 +34,11 @@ export function CustomModalExtraccionInformacionAnalista({
   const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>([]);
   const [estaProcesando, setEstaProcesando] = useState(false);
 
-  const titulo = alcance === "general" ? "Extraer información del pedido" : "Extraer información financiera";
+  const titulo = tituloSeccion
+    ? `Extraer información para "${tituloSeccion}"`
+    : alcance === "general"
+      ? "Extraer información del pedido"
+      : "Extraer información financiera";
   const descripcion = useMemo(() => {
     if (alcance === "general") {
       return "En el flujo final, esta opción llenará todas las secciones. En esta demo, el documento solo completará la sección Información Financiera.";
