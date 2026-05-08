@@ -31,10 +31,12 @@ export default function PaginaSeleccionRol() {
 
     if (roleNormalized === "ADMINISTRADOR") {
       navigate("/administrador");
+    } else if (roleNormalized === "ANALISTA") {
+      navigate("/analista");
     } else if (roleNormalized === "COORDINADOR") {
       navigate("/coordinador");
     } else {
-      // Fallback for other roles (Analyst/Translator)
+      // Fallback for other roles
       navigate("/administrador");
     }
   };

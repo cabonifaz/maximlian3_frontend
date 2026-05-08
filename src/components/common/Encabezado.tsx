@@ -62,6 +62,8 @@ export function Encabezado({ role: initialRole }: PropsEncabezado) {
       const roleNormalized = roleName.toUpperCase();
       if (roleNormalized === "ADMINISTRADOR") {
         navigate("/administrador");
+      } else if (roleNormalized === "ANALISTA") {
+        navigate("/analista");
       } else if (roleNormalized === "COORDINADOR") {
         navigate("/coordinador");
       } else {
