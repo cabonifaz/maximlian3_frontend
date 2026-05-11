@@ -2,6 +2,8 @@ import { Trash2, Upload, X } from "lucide-react";
 import { useMemo, useRef } from "react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { CustomBloqueCargaArchivosAnalista } from "@maximilian/components/investigacion/CustomBloqueCargaArchivosAnalista";
+import type { ReferenciaBloqueCargaArchivosAnalista } from "@maximilian/components/investigacion/CustomBloqueCargaArchivosAnalista";
 import type { ArchivoInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
@@ -50,7 +52,7 @@ export function CustomModalArchivosInvestigacionAnalista({
   onCerrar,
   onArchivosChange,
 }: PropsCustomModalArchivosInvestigacionAnalista) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const bloqueCargaRef = useRef<ReferenciaBloqueCargaArchivosAnalista>(null);
   const opcionesTipoDocumento = useMemo(
     () => [crearOpcion(1, "Informativo"), crearOpcion(2, "Evidencia")],
     [],
@@ -62,10 +64,10 @@ export function CustomModalArchivosInvestigacionAnalista({
 
   if (!estaAbierto) return null;
 
-  const agregarArchivos = (listaArchivos?: FileList | null) => {
-    if (!listaArchivos?.length) return;
+  const agregarArchivos = (listaArchivos: File[]) => {
+    if (!listaArchivos.length) return;
 
-    const nuevosArchivos: ArchivoInvestigacionAnalista[] = Array.from(listaArchivos).map((archivo) => ({
+    const nuevosArchivos: ArchivoInvestigacionAnalista[] = listaArchivos.map((archivo) => ({
       id: `${archivo.name}-${archivo.size}-${Date.now()}-${Math.random()}`,
       nombre: archivo.name,
       extension: obtenerExtensionArchivo(archivo.name),
@@ -75,10 +77,6 @@ export function CustomModalArchivosInvestigacionAnalista({
     }));
 
     onArchivosChange([...archivos, ...nuevosArchivos]);
-
-    if (inputRef.current) {
-      inputRef.current.value = "";
-    }
   };
 
   return (
@@ -97,24 +95,11 @@ export function CustomModalArchivosInvestigacionAnalista({
         </div>
 
         <div className="flex gap-4 px-8 py-6">
-          <div
-            onClick={() => inputRef.current?.click()}
-            className="flex min-h-72 w-44 shrink-0 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-200 p-4 text-center transition-colors hover:border-brand-wine/40 hover:bg-gray-50"
-          >
-            <div className="rounded-full bg-gray-100 p-3">
-              <Upload size={22} className="text-gray-400" />
-            </div>
-            <p className="text-xs leading-relaxed text-gray-500">
-              Arrastra archivos aquí o haz clic para subir
-            </p>
-            <input
-              ref={inputRef}
-              type="file"
-              multiple
-              className="hidden"
-              onChange={(event) => agregarArchivos(event.target.files)}
-            />
-          </div>
+          <CustomBloqueCargaArchivosAnalista
+            ref={bloqueCargaRef}
+            textoIndicativo="Arrastra archivos aquí o haz clic para subir"
+            onAgregarArchivos={agregarArchivos}
+          />
 
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <div className="max-h-80 overflow-y-auto rounded-xl border border-gray-100">
@@ -208,7 +193,7 @@ export function CustomModalArchivosInvestigacionAnalista({
         </div>
 
         <div className="flex justify-end gap-3 border-t border-gray-100 bg-gray-50/50 px-8 py-5">
-          <CustomButton variant="secondary" size="sm" onClick={() => inputRef.current?.click()}>
+          <CustomButton variant="secondary" size="sm" onClick={() => bloqueCargaRef.current?.abrirSelector()}>
             <Upload size={14} />
             Subir archivos
           </CustomButton>
