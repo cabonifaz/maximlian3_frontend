@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from "react";
-import { FileText, Sparkles, Trash2, Upload, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { FileText, Sparkles, Trash2, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomBloqueCargaArchivosAnalista } from "@maximilian/components/investigacion/CustomBloqueCargaArchivosAnalista";
 
 type AlcanceExtraccionAnalista = "general" | "informacion-financiera";
 
@@ -30,7 +31,6 @@ export function CustomModalExtraccionInformacionAnalista({
   onCerrar,
   onExtraer,
 }: PropsCustomModalExtraccionInformacionAnalista) {
-  const inputArchivoRef = useRef<HTMLInputElement>(null);
   const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>([]);
   const [estaProcesando, setEstaProcesando] = useState(false);
 
@@ -68,14 +68,10 @@ export function CustomModalExtraccionInformacionAnalista({
     }
   };
 
-  const agregarArchivos = (listaArchivos?: FileList | null) => {
-    if (!listaArchivos?.length) return;
+  const agregarArchivos = (listaArchivos: File[]) => {
+    if (!listaArchivos.length) return;
 
-    setArchivosSeleccionados((anteriores) => [...anteriores, ...Array.from(listaArchivos)]);
-
-    if (inputArchivoRef.current) {
-      inputArchivoRef.current.value = "";
-    }
+    setArchivosSeleccionados((anteriores) => [...anteriores, ...listaArchivos]);
   };
 
   return (
@@ -95,30 +91,16 @@ export function CustomModalExtraccionInformacionAnalista({
         </div>
 
         <div className="flex gap-4 px-7 py-6">
-          <div
-            onClick={() => inputArchivoRef.current?.click()}
-            className="flex min-h-72 w-44 shrink-0 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-200 p-4 text-center transition-colors hover:border-brand-wine/40 hover:bg-gray-50"
-          >
-            <div className="rounded-full bg-gray-100 p-3">
-              <Upload size={22} className="text-gray-400" />
-            </div>
-            <p className="text-xs leading-relaxed text-gray-500">
-              Arrastra archivos aquí o haz clic para subir
-            </p>
-            <input
-              ref={inputArchivoRef}
-              type="file"
-              multiple
-              className="hidden"
-              onChange={(event) => agregarArchivos(event.target.files)}
-            />
-          </div>
+          <CustomBloqueCargaArchivosAnalista
+            textoIndicativo="Arrastra archivos aquí o haz clic para subir"
+            onAgregarArchivos={agregarArchivos}
+          />
 
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <div className="space-y-1">
               <CustomLabel>Documentos</CustomLabel>
               <p className="text-xs text-slate-400">
-                Puede cargar uno o varios archivos para la demo y eliminar los que no correspondan antes de extraer.
+                Puede ir sumando archivos de uno en uno o en lote, de cualquier tipo, y eliminar los que no correspondan antes de extraer.
               </p>
             </div>
 

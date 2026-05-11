@@ -820,8 +820,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
   };
 
   const extraerInformacionDemo = async (archivos: File[], alcance: "general" | "informacion-financiera") => {
-    const archivo = archivos[0];
-    if (!archivo) return;
+    if (archivos.length === 0) return;
 
     const toastId = toast.loading(
       alcance === "general"
@@ -836,11 +835,15 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
       month: "2-digit",
       year: "numeric",
     }).format(new Date());
+    const nombresArchivos = archivos.map((archivo) => archivo.name).join(", ");
+    const descripcionArchivos = archivos.length === 1
+      ? `del archivo ${nombresArchivos}`
+      : `de los archivos ${nombresArchivos}`;
 
     setDatosInvestigacion((anterior) => ({
       ...anterior,
       informacionFinanciera: {
-        contenido: `Información simulada extraída del archivo ${archivo.name}. Se identificó contenido financiero con referencias a estados de resultados, composición de activos y estructura operativa de la empresa.`,
+        contenido: `Información simulada extraída ${descripcionArchivos}. Se identificó contenido financiero con referencias a estados de resultados, composición de activos y estructura operativa de la empresa.`,
         comentariosFinancieros: "El documento sugiere un comportamiento financiero estable, con continuidad operativa y referencias consistentes para elaborar el análisis financiero preliminar.",
         activosFijos: `Se detectan activos fijos asociados a infraestructura operativa, mobiliario y equipamiento relevante. Extracción demo procesada el ${fechaExtraccion}.`,
         seguros: "Se identifican menciones a coberturas patrimoniales y operativas. En la integración real, aquí se resumirían las pólizas, vigencias y riesgos cubiertos.",
