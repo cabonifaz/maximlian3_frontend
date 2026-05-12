@@ -3,6 +3,7 @@ import { Eye, Image as IconoImagen, Trash2, Upload, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
+import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInvestigacionAnalista";
 import type { RegistroImagenLocalAnalista, RegistroLocalAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalLocalAnalista {
@@ -212,12 +213,13 @@ export function CustomModalLocalAnalista({
 
         <div className="space-y-5 overflow-y-auto px-6 py-5">
           <div className="space-y-2">
-            <CustomLabel>Tipo de Local</CustomLabel>
-            <input
-              value={tipoLocal}
-              onChange={(event) => setTipoLocal(event.target.value)}
-              placeholder="Ej. Sede Principal, Almacén, Sucursal..."
-              className="h-12 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+            <SelectorMaestroConAltaInvestigacionAnalista
+              etiqueta="Tipo de Local"
+              valor={tipoLocal}
+              soloLectura={false}
+              opcionesIniciales={["Sede Principal", "Sucursal", "Almacén", "Planta", "Oficina"]}
+              marcador="Seleccione tipo de local"
+              onChange={setTipoLocal}
             />
           </div>
 

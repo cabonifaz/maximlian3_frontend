@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInvestigacionAnalista";
 import type {
   RegistroDirectorioEjecutivoAnalista,
   RegistroPersonaDirectorioAnalista,
@@ -28,6 +29,8 @@ export function CustomModalRegistroEjecutivoAnalista({
   const tipoPersonaDefecto = registroInicial?.tipoPersona ?? personaSeleccionada?.tipoPersona ?? "Natural";
   const paisDefecto = registroInicial?.pais ?? personaSeleccionada?.pais ?? "";
   const vinculadoDesdeDefecto = convertirFechaParaInput(registroInicial?.vinculadoDesde ?? "");
+  const cargoDefecto = limpiarTextoCargo(registroInicial?.cargo ?? "");
+  const [cargo, setCargo] = useState(cargoDefecto);
   const [porcentajeParticipacion, setPorcentajeParticipacion] = useState(
     limpiarPorcentaje(registroInicial?.porcentaje),
   );
@@ -36,7 +39,6 @@ export function CustomModalRegistroEjecutivoAnalista({
 
   const manejarEnvio = (formData: FormData) => {
     const ejecutivo = String(formData.get("ejecutivo") ?? "").trim();
-    const cargo = String(formData.get("cargo") ?? "").trim();
 
     if (!ejecutivo || !cargo) return;
 
@@ -104,7 +106,14 @@ export function CustomModalRegistroEjecutivoAnalista({
             </div>
 
             <div className="pt-1">
-              <CampoInput nombre="cargo" etiqueta="Cargo" marcador="Cargo o posición" valorInicial={registroInicial?.cargo.replace("...", "")} />
+              <SelectorMaestroConAltaInvestigacionAnalista
+                etiqueta="Cargo"
+                valor={cargo}
+                soloLectura={false}
+                opcionesIniciales={["Presidente", "Director", "Gerente General", "Apoderado", "Vicepresidente", "Secretario"]}
+                marcador="Seleccione o agregue cargo"
+                onChange={setCargo}
+              />
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -142,6 +151,10 @@ export function CustomModalRegistroEjecutivoAnalista({
       </div>
     </div>
   );
+}
+
+function limpiarTextoCargo(valor: string) {
+  return valor.replace("...", "").trim();
 }
 
 function CampoInput({

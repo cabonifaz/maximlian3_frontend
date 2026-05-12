@@ -136,12 +136,14 @@ export function CustomModalListaPersonasAnalista({
                 options={opcionesTipoPersona}
                 value={idTipoPersona}
                 onChange={setIdTipoPersona}
+                placeholder="Seleccione tipo persona"
               />
               <CustomSelectorBuscable
                 label="País"
                 options={opcionesPais}
                 value={idPais}
                 onChange={setIdPais}
+                placeholder="Seleccione un país"
               />
               <CustomSelectorBuscable
                 label="Criterio"
@@ -149,6 +151,7 @@ export function CustomModalListaPersonasAnalista({
                 value={idCriterio}
                 onChange={setIdCriterio}
                 displayValue="Nombre / Razón Social"
+                placeholder="Seleccione criterio"
               />
             </div>
 

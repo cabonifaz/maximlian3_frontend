@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type { RegistroBancoAnalista, ResultadoBusquedaBancoAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalBancoAnalista {
@@ -20,6 +22,32 @@ interface PropsCustomModalBusquedaBancoAnalista {
   onSeleccionar: (resultado: ResultadoBusquedaBancoAnalista) => void;
   onAgregarNuevoBanco: () => void;
 }
+
+const opcionesTipoPersona = ["Jurídica", "Natural"];
+const opcionesPais = ["México", "Perú"];
+const opcionesCriterio = ["Razón Social/Nombres"];
+
+function crearOpcion(num1: number, string1: string): EntradaTablaMaestra {
+  return {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: "",
+    num1,
+    num2: null,
+    num3: null,
+    string1,
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  };
+}
+
+const opcionesTipoPersonaSelector = opcionesTipoPersona.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesPaisSelector = opcionesPais.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesCriterioSelector = opcionesCriterio.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 
 function CustomModalBusquedaBancoAnalista({
   estaAbierto,
@@ -51,26 +79,30 @@ function CustomModalBusquedaBancoAnalista({
 
         <div className="space-y-5 overflow-y-auto px-8 py-6">
           <div className="grid gap-4 md:grid-cols-4">
-            <div className="space-y-2">
-              <CustomLabel>Tipo Persona</CustomLabel>
-              <select value={tipoPersona} onChange={(event) => setTipoPersona(event.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-slate-50 px-4 text-sm text-slate-600 outline-none">
-                <option>Jurídica</option>
-                <option>Natural</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <CustomLabel>País</CustomLabel>
-              <select value={pais} onChange={(event) => setPais(event.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-slate-50 px-4 text-sm text-slate-600 outline-none">
-                <option>México</option>
-                <option>Perú</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <CustomLabel>Criterio</CustomLabel>
-              <select value={criterio} onChange={(event) => setCriterio(event.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-slate-50 px-4 text-sm text-slate-600 outline-none">
-                <option>Razón Social/Nombres</option>
-              </select>
-            </div>
+            <CustomSelectorBuscable
+              label="Tipo Persona"
+              options={opcionesTipoPersonaSelector}
+              value={opcionesTipoPersonaSelector.find((opcion) => opcion.string1 === tipoPersona)?.num1 ?? undefined}
+              displayValue={tipoPersona}
+              onChange={(valor) => setTipoPersona(opcionesTipoPersonaSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              placeholder="Seleccione tipo persona"
+            />
+            <CustomSelectorBuscable
+              label="País"
+              options={opcionesPaisSelector}
+              value={opcionesPaisSelector.find((opcion) => opcion.string1 === pais)?.num1 ?? undefined}
+              displayValue={pais}
+              onChange={(valor) => setPais(opcionesPaisSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              placeholder="Seleccione un país"
+            />
+            <CustomSelectorBuscable
+              label="Criterio"
+              options={opcionesCriterioSelector}
+              value={opcionesCriterioSelector.find((opcion) => opcion.string1 === criterio)?.num1 ?? undefined}
+              displayValue={criterio}
+              onChange={(valor) => setCriterio(opcionesCriterioSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              placeholder="Seleccione criterio"
+            />
             <div className="space-y-2">
               <CustomLabel>Descripción</CustomLabel>
               <input value={descripcion} onChange={(event) => setDescripcion(event.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-slate-50 px-4 text-sm text-slate-600 outline-none" />

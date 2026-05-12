@@ -1,7 +1,9 @@
-import type { ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Briefcase, Building2, Check, Eye, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type { IdSeccionInvestigacionAnalista, ResumenInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 
 const clasesEtiquetaCampoInvestigacion =
@@ -131,6 +133,79 @@ function sanitizarPorcentajeDosDecimales(valor: string) {
 
 function sanitizarNumeroEntero(valor: string) {
   return valor.replace(/\D/g, "");
+}
+
+function crearOpcionTablaMaestra(num1: number, string1: string): EntradaTablaMaestra {
+  return {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: "",
+    num1,
+    num2: null,
+    num3: null,
+    string1,
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  };
+}
+
+export function SelectorMaestroConAltaInvestigacionAnalista({
+  etiqueta,
+  valor,
+  soloLectura,
+  opcionesIniciales,
+  marcador,
+  onChange,
+}: {
+  etiqueta: string;
+  valor: string;
+  soloLectura: boolean;
+  opcionesIniciales: string[];
+  marcador?: string;
+  onChange?: (valor: string) => void;
+}) {
+  const [opciones, setOpciones] = useState<EntradaTablaMaestra[]>(() =>
+    opcionesIniciales.map((opcion, indice) => crearOpcionTablaMaestra(indice + 1, opcion)),
+  );
+
+  const valorSeleccionado = useMemo(
+    () => opciones.find((opcion) => opcion.string1 === valor)?.num1 ?? undefined,
+    [opciones, valor],
+  );
+
+  const manejarCambio = (nuevoValor: number) => {
+    const valorTexto = opciones.find((opcion) => opcion.num1 === nuevoValor)?.string1 ?? "";
+    onChange?.(valorTexto);
+  };
+
+  const manejarAltaNuevo = (termino: string) => {
+    setOpciones((anteriores) => {
+      if (anteriores.some((opcion) => opcion.string1 === termino)) {
+        return anteriores;
+      }
+      const siguienteId = anteriores.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
+      return [...anteriores, crearOpcionTablaMaestra(siguienteId, termino)];
+    });
+    onChange?.(termino);
+  };
+
+  return (
+    <CustomSelectorBuscable
+      label={etiqueta}
+      options={opciones}
+      value={valorSeleccionado}
+      displayValue={valor}
+      onChange={manejarCambio}
+      onAddNew={manejarAltaNuevo}
+      placeholder={marcador ?? `Seleccione ${etiqueta.toLowerCase()}`}
+      required
+      disabled={soloLectura}
+    />
+  );
 }
 
 interface PropsCampoInvestigacionAnalista {

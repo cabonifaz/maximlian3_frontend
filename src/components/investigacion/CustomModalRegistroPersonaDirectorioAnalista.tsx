@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalRegistroPersonaDirectorioAnalista {
@@ -16,6 +19,32 @@ const opcionesDocumento = ["DNI", "Pasaporte", "RFC", "NIT"];
 const opcionesIdFiscal = ["RUC", "RFC", "NIT", "Tax ID"];
 const opcionesEstadoCivil = ["Soltero/a", "Casado/a", "Divorciado/a", "Viudo/a"];
 const opcionesProfesion = ["Seleccione profesión", "Administrador", "Abogado", "Contador", "Ingeniero"];
+
+function crearOpcion(num1: number, string1: string): EntradaTablaMaestra {
+  return {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: "",
+    num1,
+    num2: null,
+    num3: null,
+    string1,
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  };
+}
+
+const opcionesTipoPersonaSelector = opcionesTipoPersona.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesPaisSelector = opcionesPais.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesNacionalidadSelector = opcionesNacionalidad.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesDocumentoSelector = opcionesDocumento.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesIdFiscalSelector = opcionesIdFiscal.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesEstadoCivilSelector = opcionesEstadoCivil.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesProfesionSelector = opcionesProfesion.slice(1).map((opcion, indice) => crearOpcion(indice + 1, opcion));
 
 export function CustomModalRegistroPersonaDirectorioAnalista({
   estaAbierto,
@@ -67,28 +96,28 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
         >
           <div className="space-y-4 overflow-y-auto px-6 py-5">
             <div className="grid gap-4 md:grid-cols-[0.9fr_2fr_1fr]">
-              <CampoSelect nombre="tipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersona} valorDefecto="Natural" />
+              <CampoSelector nombre="tipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersonaSelector} valorDefecto="Natural" />
               <CampoInput nombre="nombres" etiqueta="Nombres" marcador="Ingrese nombres completos" />
-              <CampoSelect nombre="pais" etiqueta="País" opciones={opcionesPais} marcadorVacio="Seleccione un país" />
+              <CampoSelector nombre="pais" etiqueta="País" opciones={opcionesPaisSelector} marcadorVacio="Seleccione un país" />
             </div>
 
             <div className="grid gap-4 md:grid-cols-[1.35fr_1fr_1fr]">
               <CampoInput nombre="direccionPrincipal" etiqueta="Dirección Principal" marcador="Ingrese dirección" />
               <CampoInput nombre="ciudadProvinciaEstado" etiqueta="Ciudad / Provincia / Estado" marcador="Ingrese ciudad" />
-              <CampoSelect nombre="nacionalidad" etiqueta="Nacionalidad" opciones={opcionesNacionalidad} marcadorVacio="Seleccione nacionalidad" />
+              <CampoSelector nombre="nacionalidad" etiqueta="Nacionalidad" opciones={opcionesNacionalidadSelector} marcadorVacio="Seleccione nacionalidad" />
             </div>
 
             <div className="grid gap-4 md:grid-cols-[0.9fr_1fr_1fr_1fr]">
-              <CampoSelect nombre="tipoDocumentoIdentidad" etiqueta="Tipo Doc. Identidad" opciones={opcionesDocumento} valorDefecto="DNI" />
+              <CampoSelector nombre="tipoDocumentoIdentidad" etiqueta="Tipo Doc. Identidad" opciones={opcionesDocumentoSelector} valorDefecto="DNI" />
               <CampoInput nombre="numeroDocumentoIdentidad" etiqueta="Nro. Doc. Identidad" marcador="Ingrese nro. documento" />
-              <CampoSelect nombre="tipoIdFiscal" etiqueta="Tipo de ID Fiscal" opciones={opcionesIdFiscal} valorDefecto="RUC" />
+              <CampoSelector nombre="tipoIdFiscal" etiqueta="Tipo de ID Fiscal" opciones={opcionesIdFiscalSelector} valorDefecto="RUC" />
               <CampoInput nombre="numeroIdFiscal" etiqueta="Nro ID Fiscal" marcador="Ingrese id fiscal" />
             </div>
 
             <div className="grid gap-4 md:grid-cols-[1fr_1fr_1fr]">
               <CampoInput nombre="fechaNacimiento" etiqueta="Fecha de Nacimiento" marcador="mm/dd/yyyy" tipo="date" />
-              <CampoSelect nombre="estadoCivil" etiqueta="Estado Civil" opciones={opcionesEstadoCivil} valorDefecto="Soltero/a" />
-              <CampoSelect nombre="profesion" etiqueta="Profesión" opciones={opcionesProfesion} marcadorVacio="Seleccione profesión" />
+              <CampoSelector nombre="estadoCivil" etiqueta="Estado Civil" opciones={opcionesEstadoCivilSelector} valorDefecto="Soltero/a" />
+              <CampoSelector nombre="profesion" etiqueta="Profesión" opciones={opcionesProfesionSelector} marcadorVacio="Seleccione profesión" permiteAltaNueva required />
             </div>
 
             <CampoArea
@@ -136,35 +165,50 @@ function CampoInput({
   );
 }
 
-function CampoSelect({
+function CampoSelector({
   nombre,
   etiqueta,
   opciones,
   valorDefecto,
   marcadorVacio = "Seleccione",
+  permiteAltaNueva = false,
+  required = false,
 }: {
   nombre: string;
   etiqueta: string;
-  opciones: string[];
+  opciones: EntradaTablaMaestra[];
   valorDefecto?: string;
   marcadorVacio?: string;
+  permiteAltaNueva?: boolean;
+  required?: boolean;
 }) {
+  const [valorSeleccionado, setValorSeleccionado] = useState(valorDefecto ?? "");
+  const [opcionesLocales, setOpcionesLocales] = useState(opciones);
+
+  const manejarAltaNueva = (terminoBusqueda: string) => {
+    setOpcionesLocales((anteriores) => {
+      if (anteriores.some((opcion) => opcion.string1 === terminoBusqueda)) {
+        return anteriores;
+      }
+      const siguienteId = anteriores.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
+      return [...anteriores, crearOpcion(siguienteId, terminoBusqueda)];
+    });
+    setValorSeleccionado(terminoBusqueda);
+  };
+
   return (
-    <label className="space-y-2">
-      <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8ea0c0]">{etiqueta}</CustomLabel>
-      <select
-        name={nombre}
-        defaultValue={valorDefecto ?? ""}
-        className="h-11 w-full rounded-lg border border-[#dbe4f0] bg-white px-4 text-sm text-slate-700 outline-none"
-      >
-        {!valorDefecto ? <option value="">{marcadorVacio}</option> : null}
-        {opciones.map((opcion) => (
-          <option key={opcion} value={opcion}>
-            {opcion}
-          </option>
-        ))}
-      </select>
-    </label>
+    <div className="space-y-2">
+      <CustomLabel required={required} className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8ea0c0]">{etiqueta}</CustomLabel>
+      <CustomSelectorBuscable
+        options={opcionesLocales}
+        value={opcionesLocales.find((opcion) => opcion.string1 === valorSeleccionado)?.num1 ?? undefined}
+        displayValue={valorSeleccionado}
+        onChange={(valor) => setValorSeleccionado(opcionesLocales.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+        placeholder={marcadorVacio}
+        onAddNew={permiteAltaNueva ? manejarAltaNueva : undefined}
+      />
+      <input type="hidden" name={nombre} value={valorSeleccionado} />
+    </div>
   );
 }
 
