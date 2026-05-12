@@ -27,6 +27,7 @@ export function CustomModalRegistroEjecutivoAnalista({
   const ejecutivoDefecto = registroInicial?.nombreCompleto ?? personaSeleccionada?.nombres ?? "";
   const tipoPersonaDefecto = registroInicial?.tipoPersona ?? personaSeleccionada?.tipoPersona ?? "Natural";
   const paisDefecto = registroInicial?.pais ?? personaSeleccionada?.pais ?? "";
+  const vinculadoDesdeDefecto = convertirFechaParaInput(registroInicial?.vinculadoDesde ?? "");
   const [porcentajeParticipacion, setPorcentajeParticipacion] = useState(
     limpiarPorcentaje(registroInicial?.porcentaje),
   );
@@ -51,7 +52,7 @@ export function CustomModalRegistroEjecutivoAnalista({
       lista: imprimirListado,
       detalleEjecutivo: imprimirDetalle,
       orden: registroInicial?.orden ?? "1",
-      vinculadoDesde: String(formData.get("vinculadoDesde") ?? "").trim(),
+      vinculadoDesde: formatearFechaParaGuardar(String(formData.get("vinculadoDesde") ?? "").trim()),
       companiaAnterior: String(formData.get("companiaAnterior") ?? "").trim(),
       esParteDirectorio,
       pais: paisDefecto,
@@ -107,7 +108,7 @@ export function CustomModalRegistroEjecutivoAnalista({
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
-              <CampoInput nombre="vinculadoDesde" etiqueta="Vinculado Desde" marcador="Fecha o período" valorInicial={registroInicial?.vinculadoDesde} />
+              <CampoInput nombre="vinculadoDesde" etiqueta="Vinculado Desde" marcador="Seleccionar fecha" valorInicial={vinculadoDesdeDefecto} tipo="date" />
               <CampoInput nombre="companiaAnterior" etiqueta="Compañía Anterior" marcador="Empresa previa" valorInicial={registroInicial?.companiaAnterior} />
             </div>
 
@@ -151,6 +152,7 @@ function CampoInput({
   valor,
   onChange,
   onBlur,
+  tipo = "text",
 }: {
   nombre: string;
   etiqueta: string;
@@ -159,6 +161,7 @@ function CampoInput({
   valor?: string;
   onChange?: (valor: string) => void;
   onBlur?: () => void;
+  tipo?: "text" | "date";
 }) {
   if (valor !== undefined) {
     return (
@@ -166,6 +169,7 @@ function CampoInput({
         <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8ea0c0]">{etiqueta}</CustomLabel>
         <input
           name={nombre}
+          type={tipo}
           value={valor}
           onChange={(event) => onChange?.(event.target.value)}
           onBlur={onBlur}
@@ -181,6 +185,7 @@ function CampoInput({
       <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8ea0c0]">{etiqueta}</CustomLabel>
       <input
         name={nombre}
+        type={tipo}
         defaultValue={valorInicial}
         placeholder={marcador}
         className="h-11 w-full rounded-lg border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none"
@@ -221,6 +226,27 @@ function formatearPorcentajeParticipacion(valor: string) {
   if (Number.isNaN(numero)) return "0.00000000%";
 
   return `${numero.toFixed(8)}%`;
+}
+
+function convertirFechaParaInput(valor: string) {
+  if (!valor) return "";
+  if (valor.includes("-")) return valor;
+  if (!valor.includes("/")) return "";
+
+  const [dia, mes, ano] = valor.split("/");
+  if (!dia || !mes || !ano) return "";
+
+  return `${ano}-${mes}-${dia}`;
+}
+
+function formatearFechaParaGuardar(valor: string) {
+  if (!valor) return "";
+  if (!valor.includes("-")) return valor;
+
+  const [ano, mes, dia] = valor.split("-");
+  if (!ano || !mes || !dia) return valor;
+
+  return `${dia}/${mes}/${ano}`;
 }
 
 function GrupoRadio({

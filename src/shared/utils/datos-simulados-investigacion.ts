@@ -286,6 +286,7 @@ const datosEjemploInvestigacionAnalista: DatosInvestigacionAnalista = {
   importaciones: [
     {
       anio: "2025",
+      mes: "Diciembre",
       moneda: "US Dollar",
       paises: "Sweden, China, Japan, Brazil, India, Estados Unidos, Turkey, Czech Republic, Lithuania, Morocco, Taiwan, Italy, South Korea",
       productos: "Sin datos de productos",
@@ -296,6 +297,7 @@ const datosEjemploInvestigacionAnalista: DatosInvestigacionAnalista = {
   exportaciones: [
     {
       anio: "2025",
+      mes: "Noviembre",
       moneda: "US Dollar",
       paises: "Ecuador",
       productos: "Sin datos de productos",

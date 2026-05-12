@@ -129,6 +129,10 @@ function sanitizarPorcentajeDosDecimales(valor: string) {
   return valorCompuesto;
 }
 
+function sanitizarNumeroEntero(valor: string) {
+  return valor.replace(/\D/g, "");
+}
+
 interface PropsCampoInvestigacionAnalista {
   etiqueta: string;
   valor: string;
@@ -184,6 +188,7 @@ export function CampoInvestigacionAnalista({
 }: PropsCampoInvestigacionAnalista) {
   const marcadorFinal = marcador ?? obtenerMarcadorInvestigacion(etiqueta);
   const esCampoPorcentaje = etiqueta.includes("%");
+  const esCampoEntero = etiqueta === "N. de Empleados";
 
   return (
     <label className={`space-y-2 ${className ?? ""}`}>
@@ -193,7 +198,19 @@ export function CampoInvestigacionAnalista({
       <input
         value={valor}
         readOnly={soloLectura}
-        onChange={(event) => onChange?.(esCampoPorcentaje ? sanitizarPorcentajeDosDecimales(event.target.value) : event.target.value)}
+        onChange={(event) => {
+          if (esCampoPorcentaje) {
+            onChange?.(sanitizarPorcentajeDosDecimales(event.target.value));
+            return;
+          }
+
+          if (esCampoEntero) {
+            onChange?.(sanitizarNumeroEntero(event.target.value));
+            return;
+          }
+
+          onChange?.(event.target.value);
+        }}
         onBlur={(event) => {
           if (soloLectura || !onChange || !esCampoPorcentaje) return;
           onChange(normalizarPorcentajeDosDecimales(event.target.value));

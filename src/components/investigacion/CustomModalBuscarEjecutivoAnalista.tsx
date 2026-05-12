@@ -9,23 +9,19 @@ interface PropsCustomModalBuscarEjecutivoAnalista {
   registros: RegistroPersonaDirectorioAnalista[];
   onCerrar: () => void;
   onSeleccionar: (registro: RegistroPersonaDirectorioAnalista) => void;
-  onAgregarEmpresaPersona: () => void;
+  onAgregarEjecutivo: () => void;
 }
 
-const opcionesTipoPersona = ["Natural", "Jurídica"];
 const opcionesPais = ["México", "Perú", "Colombia", "Estados Unidos", "Chile"];
-const opcionesCriterio = ["Razón Social/Nombres", "Documento", "ID Fiscal"];
 
 export function CustomModalBuscarEjecutivoAnalista({
   estaAbierto,
   registros,
   onCerrar,
   onSeleccionar,
-  onAgregarEmpresaPersona,
+  onAgregarEjecutivo,
 }: PropsCustomModalBuscarEjecutivoAnalista) {
-  const [tipoPersona, setTipoPersona] = useState("Natural");
   const [pais, setPais] = useState("");
-  const [criterio] = useState("Razón Social/Nombres");
   const [descripcion, setDescripcion] = useState("");
   const [busquedaActiva, setBusquedaActiva] = useState("");
 
@@ -33,7 +29,6 @@ export function CustomModalBuscarEjecutivoAnalista({
     const termino = busquedaActiva.trim().toLowerCase();
 
     return registros.filter((registro) => {
-      const coincideTipo = !tipoPersona || registro.tipoPersona === tipoPersona;
       const coincidePais = !pais || registro.pais === pais;
       const coincideDescripcion =
         !termino ||
@@ -41,9 +36,9 @@ export function CustomModalBuscarEjecutivoAnalista({
         registro.numeroDocumentoIdentidad.toLowerCase().includes(termino) ||
         registro.numeroIdFiscal.toLowerCase().includes(termino);
 
-      return coincideTipo && coincidePais && coincideDescripcion;
+      return coincidePais && coincideDescripcion;
     });
-  }, [busquedaActiva, pais, registros, tipoPersona]);
+  }, [busquedaActiva, pais, registros]);
 
   if (!estaAbierto) return null;
 
@@ -54,7 +49,7 @@ export function CustomModalBuscarEjecutivoAnalista({
           <div>
             <h2 className="text-[18px] font-bold text-slate-800">Buscar Ejecutivo</h2>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#9aa8bd]">
-              Búsqueda de terceros
+              Búsqueda de ejecutivos
             </p>
           </div>
           <CustomButton variant="ghost" size="icon" onClick={onCerrar}>
@@ -63,10 +58,8 @@ export function CustomModalBuscarEjecutivoAnalista({
         </div>
 
         <div className="space-y-4 px-6 pb-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            <CampoSelect etiqueta="Tipo Persona" valor={tipoPersona} onChange={setTipoPersona} opciones={opcionesTipoPersona} />
+          <div className="grid gap-4 md:grid-cols-1">
             <CampoSelect etiqueta="País" valor={pais} onChange={setPais} opciones={opcionesPais} marcadorVacio="Seleccione un país" />
-            <CampoSelect etiqueta="Criterio" valor={criterio} onChange={() => undefined} opciones={opcionesCriterio} disabled />
           </div>
 
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
@@ -94,10 +87,10 @@ export function CustomModalBuscarEjecutivoAnalista({
 
           <button
             type="button"
-            className="text-sm font-medium text-[#3b82f6] transition-colors hover:text-[#2563eb]"
-            onClick={onAgregarEmpresaPersona}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[#2764ff] transition-colors hover:text-[#1d4ed8]"
+            onClick={onAgregarEjecutivo}
           >
-            Agregar Empresa o Persona
+            Agregar Ejecutivo
           </button>
 
           <div className="overflow-hidden rounded-xl border border-[#e6eef7]">

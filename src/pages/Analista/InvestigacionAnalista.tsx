@@ -676,24 +676,51 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
 
   const guardarEjecutivo = (registro: Omit<RegistroDirectorioEjecutivoAnalista, "id">) => {
     const porcentajeRegistro = obtenerPorcentajeNumerico(registro.porcentaje);
-    const totalSinRegistroActual = datosInvestigacion.directorioEjecutivo.reduce((total, ejecutivo, indice) => {
-      if (indiceEjecutivoSeleccionado != null && indice === indiceEjecutivoSeleccionado) {
+    const directorioActual = datosInvestigacion.directorioEjecutivo;
+    const indiceOtros = directorioActual.findIndex((ejecutivo) => ejecutivo.nombreCompleto === "Otros");
+    const indiceRegistroActual = indiceEjecutivoSeleccionado;
+    const esEdicionDeOtros = indiceRegistroActual != null && directorioActual[indiceRegistroActual]?.nombreCompleto === "Otros";
+
+    const totalSinOtrosNiRegistroActual = directorioActual.reduce((total, ejecutivo, indice) => {
+      if (indice === indiceOtros) {
+        return total;
+      }
+      if (indiceRegistroActual != null && indice === indiceRegistroActual) {
         return total;
       }
       return total + obtenerPorcentajeNumerico(ejecutivo.porcentaje);
     }, 0);
 
-    if (totalSinRegistroActual + porcentajeRegistro > 100) {
-      toast.error("La suma del porcentaje de participación no puede ser mayor a 100.");
+    const tieneOtrosDisponible = indiceOtros >= 0 && !esEdicionDeOtros;
+    const nuevoPorcentajeOtros = tieneOtrosDisponible
+      ? 100 - totalSinOtrosNiRegistroActual - porcentajeRegistro
+      : 0;
+
+    if (tieneOtrosDisponible && nuevoPorcentajeOtros < 0) {
+      toast.error("El porcentaje de 'Otros' no alcanza para ajustar este ejecutivo.");
       return;
+    }
+
+    if (!tieneOtrosDisponible) {
+      const totalSinRegistroActual = directorioActual.reduce((total, ejecutivo, indice) => {
+        if (indiceRegistroActual != null && indice === indiceRegistroActual) {
+          return total;
+        }
+        return total + obtenerPorcentajeNumerico(ejecutivo.porcentaje);
+      }, 0);
+
+      if (totalSinRegistroActual + porcentajeRegistro > 100) {
+        toast.error("La suma del porcentaje de participación no puede ser mayor a 100.");
+        return;
+      }
     }
 
     setDatosInvestigacion((anterior) => {
       const directorioEjecutivo = [...anterior.directorioEjecutivo];
 
-      if (indiceEjecutivoSeleccionado != null) {
-        directorioEjecutivo[indiceEjecutivoSeleccionado] = {
-          ...directorioEjecutivo[indiceEjecutivoSeleccionado],
+      if (indiceRegistroActual != null) {
+        directorioEjecutivo[indiceRegistroActual] = {
+          ...directorioEjecutivo[indiceRegistroActual],
           ...registro,
         };
       } else {
@@ -702,6 +729,13 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
           ...registro,
           orden: String(directorioEjecutivo.length + 1),
         });
+      }
+
+      if (tieneOtrosDisponible && indiceOtros >= 0) {
+        directorioEjecutivo[indiceOtros] = {
+          ...directorioEjecutivo[indiceOtros],
+          porcentaje: formatearPorcentajeOchoDecimales(nuevoPorcentajeOtros),
+        };
       }
 
       return {
@@ -942,7 +976,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
                 {companiasPaginadas.map((empresa) => (
-                  <tr key={`${empresa.empresa}-${empresa.idFiscal}`}>
+                  <tr key={`${empresa.empresa}-${empresa.idFiscal}`} className="cursor-pointer transition-colors hover:bg-slate-50">
                     <td className="px-4 py-4 text-sm font-semibold text-slate-700">{empresa.empresa}</td>
                     <td className="px-4 py-4 text-sm text-slate-400">{empresa.idFiscal}</td>
                     <td className="px-4 py-4 text-sm text-slate-500">{empresa.pais}</td>
@@ -1064,6 +1098,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                 ) : (
                   <tr>
                     <th className="px-4 py-3">Año</th>
+                    <th className="px-4 py-3">Mes</th>
                     <th className="px-4 py-3">Moneda</th>
                     <th className="px-4 py-3">Países</th>
                     <th className="px-4 py-3">Productos</th>
@@ -1077,7 +1112,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                   ? datosInvestigacion.locales.length
                   : registrosImportacionExportacionTabla.length) === 0 ? (
                   <tr>
-                    <td colSpan={pestanaRamoOperacionesVisible === "locales" ? 4 : 6} className="px-4 py-10 text-center text-sm text-slate-300">
+                    <td colSpan={pestanaRamoOperacionesVisible === "locales" ? 4 : 7} className="px-4 py-10 text-center text-sm text-slate-300">
                       Sin registros disponibles.
                     </td>
                   </tr>
@@ -1099,11 +1134,12 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                 ) : (
                   registrosImportacionExportacionPaginados.map((registro) => (
                     <tr
-                      key={`${registro.anio}-${registro.paises}-${registro.monto}`}
-                      className={`cursor-pointer transition-colors ${indiceOperacionSeleccionada === registrosOperacionActivos.findIndex((item) => item.anio === registro.anio && item.paises === registro.paises && item.monto === registro.monto) ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
-                      onClick={() => setIndiceOperacionSeleccionada(registrosOperacionActivos.findIndex((item) => item.anio === registro.anio && item.paises === registro.paises && item.monto === registro.monto))}
+                      key={`${registro.anio}-${registro.mes}-${registro.paises}-${registro.monto}`}
+                      className={`cursor-pointer transition-colors ${indiceOperacionSeleccionada === registrosOperacionActivos.findIndex((item) => item.anio === registro.anio && item.mes === registro.mes && item.paises === registro.paises && item.monto === registro.monto) ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
+                      onClick={() => setIndiceOperacionSeleccionada(registrosOperacionActivos.findIndex((item) => item.anio === registro.anio && item.mes === registro.mes && item.paises === registro.paises && item.monto === registro.monto))}
                     >
                       <td className="px-4 py-4 text-sm text-slate-500">{registro.anio}</td>
+                      <td className="px-4 py-4 text-sm text-slate-500">{registro.mes || "-"}</td>
                       <td className="px-4 py-4 text-sm text-slate-500">{registro.moneda}</td>
                       <td className="px-4 py-4 text-sm text-slate-500">{registro.paises}</td>
                       <td className="px-4 py-4 text-sm italic text-slate-300">{registro.productos}</td>
@@ -1842,6 +1878,10 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
           setIndiceBancoSeleccionado(null);
           setEstaAbiertoModalBanco(false);
         }}
+        onAgregarNuevoBanco={() => {
+          setIndiceBancoSeleccionado(null);
+          setEstaAbiertoModalBanco(true);
+        }}
         onGuardar={guardarBanco}
       />
 
@@ -1906,7 +1946,12 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
           setEstaAbiertoModalBuscarEjecutivo(false);
           setEstaAbiertoModalEjecutivo(true);
         }}
-        onAgregarEmpresaPersona={() => setEstaAbiertoModalRegistroPersona(true)}
+        onAgregarEjecutivo={() => {
+          setPersonaDirectorioSeleccionada(null);
+          setIndiceEjecutivoSeleccionado(null);
+          setEstaAbiertoModalBuscarEjecutivo(false);
+          setEstaAbiertoModalEjecutivo(true);
+        }}
       />
 
       <CustomModalRegistroPersonaDirectorioAnalista

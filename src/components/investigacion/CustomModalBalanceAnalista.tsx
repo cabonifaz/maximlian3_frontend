@@ -53,6 +53,24 @@ function convertirFechaEntrada(fecha: string) {
   return `${ano}-${mes}-${dia}`;
 }
 
+function normalizarTipoCambioDosDecimales(valor: string) {
+  const valorLimpio = valor.trim().replace(",", ".");
+  if (!valorLimpio) return "";
+
+  const numero = Number.parseFloat(valorLimpio);
+  if (Number.isNaN(numero)) return valor;
+
+  return numero.toFixed(2);
+}
+
+function sanitizarTipoCambioDosDecimales(valor: string) {
+  const valorNormalizado = valor.replace(",", ".").replace(/[^0-9.]/g, "");
+  const partes = valorNormalizado.split(".");
+  const entero = partes[0] ?? "";
+  const decimal = partes[1] ?? "";
+  return partes.length > 1 ? `${entero}.${decimal.slice(0, 2)}` : entero;
+}
+
 export function CustomModalBalanceAnalista({
   estaAbierto,
   registroInicial,
@@ -212,7 +230,8 @@ export function CustomModalBalanceAnalista({
             <CustomLabel>Tipo de Cambio</CustomLabel>
             <input
               value={tipoCambio}
-              onChange={(event) => setTipoCambio(event.target.value)}
+              onChange={(event) => setTipoCambio(sanitizarTipoCambioDosDecimales(event.target.value))}
+              onBlur={(event) => setTipoCambio(normalizarTipoCambioDosDecimales(event.target.value))}
               placeholder="0.00"
               className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
             />

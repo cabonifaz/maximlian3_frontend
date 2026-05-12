@@ -9,6 +9,7 @@ interface PropsCustomModalBancoAnalista {
   registroInicial?: RegistroBancoAnalista | null;
   resultadosBusqueda: ResultadoBusquedaBancoAnalista[];
   onCerrar: () => void;
+  onAgregarNuevoBanco: () => void;
   onGuardar: (registro: RegistroBancoAnalista) => void;
 }
 
@@ -17,6 +18,7 @@ interface PropsCustomModalBusquedaBancoAnalista {
   resultados: ResultadoBusquedaBancoAnalista[];
   onCerrar: () => void;
   onSeleccionar: (resultado: ResultadoBusquedaBancoAnalista) => void;
+  onAgregarNuevoBanco: () => void;
 }
 
 function CustomModalBusquedaBancoAnalista({
@@ -24,6 +26,7 @@ function CustomModalBusquedaBancoAnalista({
   resultados,
   onCerrar,
   onSeleccionar,
+  onAgregarNuevoBanco,
 }: PropsCustomModalBusquedaBancoAnalista) {
   const [indiceSeleccionado, setIndiceSeleccionado] = useState<number | null>(0);
   const [tipoPersona, setTipoPersona] = useState("Jurídica");
@@ -74,7 +77,13 @@ function CustomModalBusquedaBancoAnalista({
             </div>
           </div>
 
-          <button type="button" className="text-sm font-semibold text-blue-600">Agregar Empresa o Persona</button>
+          <button
+            type="button"
+            onClick={onAgregarNuevoBanco}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[#2764ff] transition-colors hover:text-[#1d4ed8]"
+          >
+            Agregar nuevo banco
+          </button>
 
           <div className="overflow-hidden rounded-2xl border border-gray-100">
             <table className="w-full text-left">
@@ -122,6 +131,7 @@ export function CustomModalBancoAnalista({
   registroInicial,
   resultadosBusqueda,
   onCerrar,
+  onAgregarNuevoBanco,
   onGuardar,
 }: PropsCustomModalBancoAnalista) {
   const [banco, setBanco] = useState(registroInicial?.banco ?? "");
@@ -209,6 +219,10 @@ export function CustomModalBancoAnalista({
         estaAbierto={estaAbiertoModalBusqueda}
         resultados={resultadosBusqueda}
         onCerrar={() => setEstaAbiertoModalBusqueda(false)}
+        onAgregarNuevoBanco={() => {
+          setEstaAbiertoModalBusqueda(false);
+          onAgregarNuevoBanco();
+        }}
         onSeleccionar={(resultado) => {
           setBanco(resultado.nombres);
           setTelefono(resultado.telefono);
