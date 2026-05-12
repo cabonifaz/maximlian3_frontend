@@ -127,22 +127,23 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-8 py-6">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm">
+      <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[22px] bg-white shadow-2xl">
+        <div className="flex items-start justify-between border-b border-gray-100 px-6 py-5 md:px-8">
           <div>
-            <h2 className="text-xl font-bold text-brand-black">Empresas relacionadas</h2>
-            <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
               Registro de terceros
             </p>
+            <h2 className="mt-1 text-[18px] font-bold text-slate-800">Empresas relacionadas</h2>
           </div>
           <CustomButton variant="ghost" size="icon" onClick={manejarCerrar}>
-            <X size={20} className="text-[#8ea0c0]" />
+            <X size={18} className="text-[#c2cad8]" />
           </CustomButton>
         </div>
 
-        <div className="space-y-6 px-8 py-7">
-          <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-5 overflow-y-auto px-6 py-5 md:grid-cols-2 md:px-8 md:py-7">
+          <div className="md:col-span-2">
+            <div className="grid gap-5 md:grid-cols-2">
             <CustomSelectorBuscable
               label="Tipo de Persona"
               options={opcionesTipoPersona}
@@ -158,6 +159,7 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
               onChange={setIdPais}
             />
           </div>
+          </div>
 
           <div className="space-y-2">
             <CustomLabel>Nombre de la Empresa</CustomLabel>
@@ -165,7 +167,7 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
               value={nombreEmpresa}
               onChange={(event) => setNombreEmpresa(event.target.value)}
               placeholder="Razón Social completa"
-              className="h-12 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+              className="h-11 w-full rounded-xl border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
             />
           </div>
 
@@ -182,7 +184,7 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
                 value={numeroIdentificacion}
                 onChange={(event) => setNumeroIdentificacion(event.target.value)}
                 placeholder="Número de identificación"
-                className="h-12 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+                className="h-11 w-full rounded-xl border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
               />
             </div>
           </div>
@@ -194,11 +196,11 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
                 value={telefono}
                 onChange={(event) => setTelefono(event.target.value)}
                 placeholder="Número de teléfono"
-                className="h-12 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+                className="h-11 w-full rounded-xl border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
               />
             </div>
 
-            <label className="flex h-12 items-center gap-3 self-end rounded-xl border border-gray-200 px-4 text-sm font-semibold text-slate-600">
+            <label className="flex h-11 items-center gap-3 self-end rounded-xl border border-[#dbe4f0] px-4 text-sm font-semibold text-slate-600">
               <input
                 type="checkbox"
                 checked={existeInformacion}
@@ -210,7 +212,7 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-gray-100 bg-gray-50/50 px-8 py-5">
+        <div className="flex justify-end gap-3 border-t border-gray-100 bg-gray-50/50 px-6 py-5 md:px-8">
           <CustomButton variant="secondary" size="sm" onClick={manejarCerrar}>
             Cancelar
           </CustomButton>

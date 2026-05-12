@@ -49,6 +49,7 @@ export interface EmpresaRelacionadaAnalista {
 
 export interface RegistroImportacionExportacionAnalista {
   anio: string;
+  mes: string;
   moneda: string;
   paises: string;
   productos: string;
