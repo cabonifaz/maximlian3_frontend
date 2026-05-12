@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInvestigacionAnalista";
 import type { RegistroProveedorAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
@@ -37,11 +38,9 @@ function crearOpcion(num1: number, string1: string): EntradaTablaMaestra {
   };
 }
 
-const opcionesTipoProveedorSelector = opcionesTipoProveedor.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 const opcionesPaisSelector = opcionesPais.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 const opcionesTaxIdSelector = opcionesTaxId.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 const opcionesMonedaSelector = opcionesMoneda.map((opcion, indice) => crearOpcion(indice + 1, opcion));
-const opcionesLimiteCreditoSelector = opcionesLimiteCredito.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 
 export function CustomModalProveedorAnalista({
   estaAbierto,
@@ -102,15 +101,14 @@ export function CustomModalProveedorAnalista({
         </div>
 
         <div className="space-y-4 overflow-y-auto px-7 py-6">
-          <div className="space-y-2">
-            <CustomLabel>Tipo de Proveedor</CustomLabel>
-            <CustomSelectorBuscable
-              options={opcionesTipoProveedorSelector}
-              value={opcionesTipoProveedorSelector.find((opcion) => opcion.string1 === tipoProveedor)?.num1 ?? undefined}
-              onChange={(valor) => setTipoProveedor(opcionesTipoProveedorSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
-              placeholder="Seleccionar..."
-            />
-          </div>
+          <SelectorMaestroConAltaInvestigacionAnalista
+            etiqueta="Tipo de Proveedor"
+            valor={tipoProveedor}
+            soloLectura={false}
+            opcionesIniciales={opcionesTipoProveedor}
+            marcador="Seleccione o agregue tipo de proveedor"
+            onChange={setTipoProveedor}
+          />
 
           <div className="space-y-2">
             <CustomLabel>Nombre de la Empresa / Compañía</CustomLabel>
@@ -197,15 +195,14 @@ export function CustomModalProveedorAnalista({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <CustomLabel>Límite de Crédito</CustomLabel>
-                <CustomSelectorBuscable
-                  options={opcionesLimiteCreditoSelector}
-                  value={opcionesLimiteCreditoSelector.find((opcion) => opcion.string1 === limiteCredito)?.num1 ?? undefined}
-                  onChange={(valor) => setLimiteCredito(opcionesLimiteCreditoSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
-                  placeholder="Seleccione..."
-                />
-              </div>
+              <SelectorMaestroConAltaInvestigacionAnalista
+                etiqueta="Límite de Crédito"
+                valor={limiteCredito}
+                soloLectura={false}
+                opcionesIniciales={opcionesLimiteCredito}
+                marcador="Seleccione o agregue límite de crédito"
+                onChange={setLimiteCredito}
+              />
 
               <div className="space-y-2">
                 <CustomLabel>Promedio Mensual</CustomLabel>

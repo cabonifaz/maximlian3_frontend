@@ -155,6 +155,7 @@ export function CustomModalOperacionAnalista({
             value={idMoneda ?? undefined}
             displayValue={monedaActual}
             onChange={setIdMoneda}
+            placeholder="Seleccione moneda"
           />
 
           <div className="space-y-2">

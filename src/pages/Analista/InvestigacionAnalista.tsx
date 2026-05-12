@@ -37,6 +37,7 @@ import {
   MenuSeccionesInvestigacionAnalista,
   PestanasInvestigacionAnalista,
   ResumenPedidoInvestigacionAnalista,
+  SelectorMaestroConAltaInvestigacionAnalista,
 } from "@maximilian/components/investigacion/ControlesInvestigacionAnalista";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import {
@@ -936,12 +937,26 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
       <CampoInvestigacionAnalista etiqueta="Tipo de Identificación Fiscal" valor={datosInvestigacion.identificacion.tipoIdentificacionFiscal} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("tipoIdentificacionFiscal", valor)} />
       <CampoInvestigacionAnalista etiqueta="Número de Identificación Fiscal" valor={datosInvestigacion.identificacion.numeroIdentificacionFiscal} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("numeroIdentificacionFiscal", valor)} />
       <CampoInvestigacionAnalista etiqueta="Dirección Principal" valor={datosInvestigacion.identificacion.direccionPrincipal} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("direccionPrincipal", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Ciudad/Estado/Provincia" valor={datosInvestigacion.identificacion.ciudadEstadoProvincia} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("ciudadEstadoProvincia", valor)} />
+      <SelectorMaestroConAltaInvestigacionAnalista
+        etiqueta="Ciudad/Estado/Provincia"
+        valor={datosInvestigacion.identificacion.ciudadEstadoProvincia}
+        soloLectura={esSoloLectura}
+        opcionesIniciales={["Ciudad de México", "Lima", "Bogotá", "Santiago", "Buenos Aires"]}
+        marcador="Seleccione o agregue ciudad/estado/provincia"
+        onChange={(valor) => actualizarIdentificacion("ciudadEstadoProvincia", valor)}
+      />
       <CampoInvestigacionAnalista etiqueta="Número de Teléfono" valor={datosInvestigacion.identificacion.numeroTelefono} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("numeroTelefono", valor)} />
       <CampoInvestigacionAnalista etiqueta="Número de Fax" valor={datosInvestigacion.identificacion.numeroFax} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("numeroFax", valor)} />
       <CampoInvestigacionAnalista etiqueta="Correo Electrónico" valor={datosInvestigacion.identificacion.correoElectronico} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("correoElectronico", valor)} />
       <CampoInvestigacionAnalista etiqueta="Página Web" valor={datosInvestigacion.identificacion.paginaWeb} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("paginaWeb", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Estado Actual" valor={datosInvestigacion.identificacion.estadoActual} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("estadoActual", valor)} />
+      <SelectorMaestroConAltaInvestigacionAnalista
+        etiqueta="Estado Actual"
+        valor={datosInvestigacion.identificacion.estadoActual}
+        soloLectura={esSoloLectura}
+        opcionesIniciales={["Activo", "Vigente", "Suspendido", "Inactivo", "En proceso"]}
+        marcador="Seleccione o agregue estado actual"
+        onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}
+      />
       <AreaInvestigacionAnalista etiqueta="Datos Adicionales" valor={datosInvestigacion.identificacion.datosAdicionales} soloLectura={esSoloLectura} className="md:col-span-2" onChange={(valor) => actualizarIdentificacion("datosAdicionales", valor)} />
     </div>
   );
@@ -1000,9 +1015,23 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
 
     return (
       <div className="grid gap-5 md:grid-cols-2">
-        <CampoInvestigacionAnalista etiqueta="Tipo de Empresa" valor={datosInvestigacion.aspectosLegales.tipoEmpresa} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)} />
+        <SelectorMaestroConAltaInvestigacionAnalista
+          etiqueta="Tipo de Empresa"
+          valor={datosInvestigacion.aspectosLegales.tipoEmpresa}
+          soloLectura={esSoloLectura}
+          opcionesIniciales={["S.A.", "S.A. de C.V.", "SRL", "LLC", "SA"]}
+          marcador="Seleccione o agregue tipo de empresa"
+          onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)}
+        />
         <CampoInvestigacionAnalista etiqueta="Fecha de Constitución" valor={datosInvestigacion.aspectosLegales.fechaConstitucion} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("fechaConstitucion", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Ciudad de Registro" valor={datosInvestigacion.aspectosLegales.ciudadRegistro} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("ciudadRegistro", valor)} />
+        <SelectorMaestroConAltaInvestigacionAnalista
+          etiqueta="Ciudad de Registro"
+          valor={datosInvestigacion.aspectosLegales.ciudadRegistro}
+          soloLectura={esSoloLectura}
+          opcionesIniciales={["Ciudad de México", "Lima", "Bogotá", "Santiago", "Buenos Aires"]}
+          marcador="Seleccione o agregue ciudad de registro"
+          onChange={(valor) => actualizarAspectosLegales("ciudadRegistro", valor)}
+        />
         <CampoInvestigacionAnalista etiqueta="Notaría" valor={datosInvestigacion.aspectosLegales.notaria} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("notaria", valor)} />
         <CampoInvestigacionAnalista etiqueta="Notario" valor={datosInvestigacion.aspectosLegales.notario} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("notario", valor)} />
         <CampoInvestigacionAnalista etiqueta="Registro" valor={datosInvestigacion.aspectosLegales.registro} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("registro", valor)} />
@@ -1163,8 +1192,22 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
 
     return (
       <div className="grid gap-5 md:grid-cols-2">
-        <CampoInvestigacionAnalista etiqueta="Sector" valor={datosInvestigacion.operacionPrincipal.sector} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("sector", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Actividad" valor={datosInvestigacion.operacionPrincipal.actividad} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("actividad", valor)} />
+        <SelectorMaestroConAltaInvestigacionAnalista
+          etiqueta="Sector"
+          valor={datosInvestigacion.operacionPrincipal.sector}
+          soloLectura={esSoloLectura}
+          opcionesIniciales={["Finanzas", "Construcción", "Manufactura", "Energía", "Telecomunicaciones", "Comercio Exterior"]}
+          marcador="Seleccione sector"
+          onChange={(valor) => actualizarOperacionPrincipal("sector", valor)}
+        />
+        <SelectorMaestroConAltaInvestigacionAnalista
+          etiqueta="Actividad"
+          valor={datosInvestigacion.operacionPrincipal.actividad}
+          soloLectura={esSoloLectura}
+          opcionesIniciales={["Comercial", "Industrial", "Servicios", "Importación", "Exportación"]}
+          marcador="Seleccione actividad"
+          onChange={(valor) => actualizarOperacionPrincipal("actividad", valor)}
+        />
         <CampoInvestigacionAnalista etiqueta="Categoría CIIU" valor={datosInvestigacion.operacionPrincipal.categoriaCiiu} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("categoriaCiiu", valor)} />
         <CampoInvestigacionAnalista etiqueta="Clase CIIU" valor={datosInvestigacion.operacionPrincipal.claseCiiu} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("claseCiiu", valor)} />
         <AreaInvestigacionAnalista etiqueta="Actividad Principal" valor={datosInvestigacion.operacionPrincipal.actividadPrincipal} soloLectura={esSoloLectura} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("actividadPrincipal", valor)} />
@@ -1946,12 +1989,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
           setEstaAbiertoModalBuscarEjecutivo(false);
           setEstaAbiertoModalEjecutivo(true);
         }}
-        onAgregarEjecutivo={() => {
-          setPersonaDirectorioSeleccionada(null);
-          setIndiceEjecutivoSeleccionado(null);
-          setEstaAbiertoModalBuscarEjecutivo(false);
-          setEstaAbiertoModalEjecutivo(true);
-        }}
+        onAgregarEmpresaPersona={() => setEstaAbiertoModalRegistroPersona(true)}
       />
 
       <CustomModalRegistroPersonaDirectorioAnalista

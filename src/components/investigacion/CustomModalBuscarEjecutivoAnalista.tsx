@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalBuscarEjecutivoAnalista {
@@ -9,19 +11,45 @@ interface PropsCustomModalBuscarEjecutivoAnalista {
   registros: RegistroPersonaDirectorioAnalista[];
   onCerrar: () => void;
   onSeleccionar: (registro: RegistroPersonaDirectorioAnalista) => void;
-  onAgregarEjecutivo: () => void;
+  onAgregarEmpresaPersona: () => void;
 }
 
+const opcionesTipoPersona = ["Natural", "Jurídica"];
 const opcionesPais = ["México", "Perú", "Colombia", "Estados Unidos", "Chile"];
+const opcionesCriterio = ["Razón Social/Nombres", "Documento", "ID Fiscal"];
+
+function crearOpcion(num1: number, string1: string): EntradaTablaMaestra {
+  return {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: "",
+    num1,
+    num2: null,
+    num3: null,
+    string1,
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  };
+}
+
+const opcionesTipoPersonaSelector = opcionesTipoPersona.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesPaisSelector = opcionesPais.map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const opcionesCriterioSelector = opcionesCriterio.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 
 export function CustomModalBuscarEjecutivoAnalista({
   estaAbierto,
   registros,
   onCerrar,
   onSeleccionar,
-  onAgregarEjecutivo,
+  onAgregarEmpresaPersona,
 }: PropsCustomModalBuscarEjecutivoAnalista) {
+  const [tipoPersona, setTipoPersona] = useState("Natural");
   const [pais, setPais] = useState("");
+  const [criterio] = useState("Razón Social/Nombres");
   const [descripcion, setDescripcion] = useState("");
   const [busquedaActiva, setBusquedaActiva] = useState("");
 
@@ -29,6 +57,7 @@ export function CustomModalBuscarEjecutivoAnalista({
     const termino = busquedaActiva.trim().toLowerCase();
 
     return registros.filter((registro) => {
+      const coincideTipo = !tipoPersona || registro.tipoPersona === tipoPersona;
       const coincidePais = !pais || registro.pais === pais;
       const coincideDescripcion =
         !termino ||
@@ -36,9 +65,9 @@ export function CustomModalBuscarEjecutivoAnalista({
         registro.numeroDocumentoIdentidad.toLowerCase().includes(termino) ||
         registro.numeroIdFiscal.toLowerCase().includes(termino);
 
-      return coincidePais && coincideDescripcion;
+      return coincideTipo && coincidePais && coincideDescripcion;
     });
-  }, [busquedaActiva, pais, registros]);
+  }, [busquedaActiva, pais, registros, tipoPersona]);
 
   if (!estaAbierto) return null;
 
@@ -58,8 +87,31 @@ export function CustomModalBuscarEjecutivoAnalista({
         </div>
 
         <div className="space-y-4 px-6 pb-6">
-          <div className="grid gap-4 md:grid-cols-1">
-            <CampoSelect etiqueta="País" valor={pais} onChange={setPais} opciones={opcionesPais} marcadorVacio="Seleccione un país" />
+          <div className="grid gap-4 md:grid-cols-3">
+            <CustomSelectorBuscable
+              label="Tipo Persona"
+              options={opcionesTipoPersonaSelector}
+              value={opcionesTipoPersonaSelector.find((opcion) => opcion.string1 === tipoPersona)?.num1 ?? undefined}
+              displayValue={tipoPersona}
+              onChange={(valor) => setTipoPersona(opcionesTipoPersonaSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              placeholder="Seleccione tipo persona"
+            />
+            <CustomSelectorBuscable
+              label="País"
+              options={opcionesPaisSelector}
+              value={opcionesPaisSelector.find((opcion) => opcion.string1 === pais)?.num1 ?? undefined}
+              displayValue={pais}
+              onChange={(valor) => setPais(opcionesPaisSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              placeholder="Seleccione un país"
+            />
+            <CustomSelectorBuscable
+              label="Criterio"
+              options={opcionesCriterioSelector}
+              value={opcionesCriterioSelector.find((opcion) => opcion.string1 === criterio)?.num1 ?? undefined}
+              displayValue={criterio}
+              onChange={() => undefined}
+              placeholder="Seleccione criterio"
+            />
           </div>
 
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
@@ -88,9 +140,9 @@ export function CustomModalBuscarEjecutivoAnalista({
           <button
             type="button"
             className="inline-flex items-center gap-2 text-sm font-semibold text-[#2764ff] transition-colors hover:text-[#1d4ed8]"
-            onClick={onAgregarEjecutivo}
+            onClick={onAgregarEmpresaPersona}
           >
-            Agregar Ejecutivo
+            Agregar Empresa o Persona
           </button>
 
           <div className="overflow-hidden rounded-xl border border-[#e6eef7]">
@@ -138,40 +190,5 @@ export function CustomModalBuscarEjecutivoAnalista({
         </div>
       </div>
     </div>
-  );
-}
-
-function CampoSelect({
-  etiqueta,
-  valor,
-  onChange,
-  opciones,
-  marcadorVacio = "Seleccione",
-  disabled = false,
-}: {
-  etiqueta: string;
-  valor: string;
-  onChange: (valor: string) => void;
-  opciones: string[];
-  marcadorVacio?: string;
-  disabled?: boolean;
-}) {
-  return (
-    <label className="space-y-2">
-      <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8ea0c0]">{etiqueta}</CustomLabel>
-      <select
-        value={valor}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-lg border border-[#dbe4f0] bg-white px-4 text-sm text-slate-700 outline-none disabled:bg-slate-50"
-      >
-        <option value="">{marcadorVacio}</option>
-        {opciones.map((opcion) => (
-          <option key={opcion} value={opcion}>
-            {opcion}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }

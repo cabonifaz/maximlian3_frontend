@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useState, useMemo, useRef, type ReactNode } from "react";
 import { Search, Loader2, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSeleccionAutomaticaOpcionUnica } from "@maximilian/hooks/useSeleccionAutomaticaOpcionUnica";
@@ -76,6 +76,19 @@ export function CustomSelectorBuscable({
   }, [resolvedOptions, terminoBusqueda]);
 
   const selectedOption = resolvedOptions?.find((opt) => opt.num1 === value);
+  const displayText = selectedOption?.string1 ?? (typeof displayValue === "string" ? displayValue.trim() : displayValue);
+  const mostrarPlaceholder = !displayText;
+
+  const actualizarPosicionDropdown = useCallback(() => {
+    if (!triggerRef.current) return;
+
+    const rect = triggerRef.current.getBoundingClientRect();
+    setDropdownStyle({
+      top: rect.bottom + 8,
+      left: rect.left,
+      width: rect.width,
+    });
+  }, []);
 
   useSeleccionAutomaticaOpcionUnica({
     activo: autoSeleccionarOpcionUnica,
@@ -84,18 +97,26 @@ export function CustomSelectorBuscable({
     onSeleccionar: onChange,
   });
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const manejarDesplazamiento = () => actualizarPosicionDropdown();
+
+    actualizarPosicionDropdown();
+    window.addEventListener("scroll", manejarDesplazamiento, true);
+    window.addEventListener("resize", manejarDesplazamiento);
+
+    return () => {
+      window.removeEventListener("scroll", manejarDesplazamiento, true);
+      window.removeEventListener("resize", manejarDesplazamiento);
+    };
+  }, [isOpen, actualizarPosicionDropdown]);
+
   const handleToggle = () => {
     if (disabled) return;
     if (!isOpen) {
       onOpen?.();
-      if (triggerRef.current) {
-        const rect = triggerRef.current.getBoundingClientRect();
-        setDropdownStyle({
-          top: rect.bottom + 8,
-          left: rect.left,
-          width: rect.width,
-        });
-      }
+      actualizarPosicionDropdown();
       setIsOpen(true);
       return;
     }
@@ -112,10 +133,10 @@ export function CustomSelectorBuscable({
         onClick={handleToggle}
       >
         <span
-          className={`truncate min-w-0 ${selectedOption || displayValue ? "text-brand-black" : "text-gray-400"}`}
-          title={selectedOption?.string1 ?? displayValue ?? undefined}
+          className={`truncate min-w-0 ${mostrarPlaceholder ? "text-gray-400" : "text-brand-black"}`}
+          title={displayText || placeholder}
         >
-          {selectedOption ? selectedOption.string1 : (displayValue ?? placeholder)}
+          {mostrarPlaceholder ? placeholder : displayText}
         </span>
         <Search size={16} className="text-gray-400 shrink-0 ml-2" />
       </div>
