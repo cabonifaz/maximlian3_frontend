@@ -17,6 +17,7 @@ export interface CustomSelectorBuscableProps {
   placeholder?: string;
   required?: boolean;
   optional?: boolean;
+  mostrarTextoOpcionalEnLabel?: boolean;
   disabled?: boolean;
   loading?: boolean;
   onOpen?: () => void;
@@ -39,6 +40,7 @@ export function CustomSelectorBuscable({
   placeholder = "Seleccione...",
   required = false,
   optional = false,
+  mostrarTextoOpcionalEnLabel = true,
   disabled = false,
   loading = false,
   onOpen,
@@ -126,7 +128,7 @@ export function CustomSelectorBuscable({
 
   return (
     <div className="relative space-y-2">
-      {label != null && <CustomLabel required={required} optional={optional}>{label}</CustomLabel>}
+      {label != null && <CustomLabel required={required} optional={optional && mostrarTextoOpcionalEnLabel}>{label}</CustomLabel>}
       <div
         ref={triggerRef}
         className={`w-full px-4 py-2.5 bg-brand-white border ${error ? "border-red-500" : "border-gray-200"} rounded-xl text-sm flex items-center justify-between transition-all ${disabled ? "bg-gray-50 cursor-not-allowed opacity-70" : "cursor-pointer hover:border-brand-wine/30"}`}

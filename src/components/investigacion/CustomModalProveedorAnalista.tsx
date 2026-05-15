@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInvestigacionAnalista";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { RegistroProveedorAnalista } from "@maximilian/shared/types/investigacion.type";
-import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface PropsCustomModalProveedorAnalista {
   estaAbierto: boolean;
@@ -14,33 +16,7 @@ interface PropsCustomModalProveedorAnalista {
   onGuardar: (registro: RegistroProveedorAnalista) => void;
 }
 
-const opcionesTipoProveedor = ["Nacional", "Extranjero"];
-const opcionesPais = ["México", "Perú", "Colombia", "Estados Unidos", "Reino Unido"];
-const opcionesTaxId = ["RFC", "NIT", "Tax ID"];
-const opcionesMoneda = ["Divisa", "US Dollar", "Euro"];
 const opcionesLimiteCredito = ["Sin límite operativo", "Limitado", "Sujeto a evaluación"];
-
-function crearOpcion(num1: number, string1: string): EntradaTablaMaestra {
-  return {
-    idEmpresa: 0,
-    idTablaMaestra: null,
-    idMaestro: 0,
-    descripcion: "",
-    num1,
-    num2: null,
-    num3: null,
-    string1,
-    string2: null,
-    string3: null,
-    date1: null,
-    date2: null,
-    date3: null,
-  };
-}
-
-const opcionesPaisSelector = opcionesPais.map((opcion, indice) => crearOpcion(indice + 1, opcion));
-const opcionesTaxIdSelector = opcionesTaxId.map((opcion, indice) => crearOpcion(indice + 1, opcion));
-const opcionesMonedaSelector = opcionesMoneda.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 
 export function CustomModalProveedorAnalista({
   estaAbierto,
@@ -61,6 +37,26 @@ export function CustomModalProveedorAnalista({
   const [tipoCambio, setTipoCambio] = useState(registroInicial?.tipoCambio ?? "");
   const [limiteCredito, setLimiteCredito] = useState(registroInicial?.limiteCredito ?? "");
   const [promedioMensual, setPromedioMensual] = useState(registroInicial?.promedioMensual ?? "");
+  const { data: opcionesTipoProveedor } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_PROVEEDOR],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PROVEEDOR),
+    staleTime: Infinity,
+  });
+  const { data: opcionesPais } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.PAIS],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
+    staleTime: Infinity,
+  });
+  const { data: opcionesTaxId } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_REG_TRIBUTARIO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_REG_TRIBUTARIO),
+    staleTime: Infinity,
+  });
+  const { data: opcionesMoneda } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.MONEDA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
+    staleTime: Infinity,
+  });
 
   if (!estaAbierto) return null;
 
@@ -105,8 +101,9 @@ export function CustomModalProveedorAnalista({
             etiqueta="Tipo de Proveedor"
             valor={tipoProveedor}
             soloLectura={false}
-            opcionesIniciales={opcionesTipoProveedor}
-            marcador="Seleccione o agregue tipo de proveedor"
+            opcionesTablaMaestra={opcionesTipoProveedor}
+            permiteAltaNueva
+            marcador="Seleccione tipo de proveedor"
             onChange={setTipoProveedor}
           />
 
@@ -119,9 +116,12 @@ export function CustomModalProveedorAnalista({
             <div className="space-y-2">
               <CustomLabel>País</CustomLabel>
               <CustomSelectorBuscable
-                options={opcionesPaisSelector}
-                value={opcionesPaisSelector.find((opcion) => opcion.string1 === pais)?.num1 ?? undefined}
-                onChange={(valor) => setPais(opcionesPaisSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+                options={opcionesPais}
+                value={opcionesPais?.find((opcion) => opcion.string1 === pais)?.num1 ?? undefined}
+                onChange={(valor) => setPais(opcionesPais?.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+                onClear={() => setPais("")}
+                optional
+                mostrarTextoOpcionalEnLabel={false}
                 placeholder="Seleccionar país..."
               />
             </div>
@@ -129,9 +129,12 @@ export function CustomModalProveedorAnalista({
             <div className="space-y-2">
               <CustomLabel>Tax ID Type</CustomLabel>
               <CustomSelectorBuscable
-                options={opcionesTaxIdSelector}
-                value={opcionesTaxIdSelector.find((opcion) => opcion.string1 === taxIdType)?.num1 ?? undefined}
-                onChange={(valor) => setTaxIdType(opcionesTaxIdSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+                options={opcionesTaxId}
+                value={opcionesTaxId?.find((opcion) => opcion.string1 === taxIdType)?.num1 ?? undefined}
+                onChange={(valor) => setTaxIdType(opcionesTaxId?.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+                onClear={() => setTaxIdType("")}
+                optional
+                mostrarTextoOpcionalEnLabel={false}
                 placeholder="Seleccionar tipo..."
               />
             </div>
@@ -186,9 +189,12 @@ export function CustomModalProveedorAnalista({
                 <CustomLabel>Operaciones de Cambio de Moneda</CustomLabel>
                 <div className="grid gap-3 md:grid-cols-[140px_minmax(0,1fr)]">
                   <CustomSelectorBuscable
-                    options={opcionesMonedaSelector}
-                    value={opcionesMonedaSelector.find((opcion) => opcion.string1 === operacionCambioMoneda)?.num1 ?? undefined}
-                    onChange={(valor) => setOperacionCambioMoneda(opcionesMonedaSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+                    options={opcionesMoneda}
+                    value={opcionesMoneda?.find((opcion) => opcion.string1 === operacionCambioMoneda)?.num1 ?? undefined}
+                    onChange={(valor) => setOperacionCambioMoneda(opcionesMoneda?.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+                    onClear={() => setOperacionCambioMoneda("")}
+                    optional
+                    mostrarTextoOpcionalEnLabel={false}
                     placeholder="Divisa"
                   />
                   <input value={tipoCambio} onChange={(event) => setTipoCambio(event.target.value)} placeholder="$ 0.00" className="h-11 rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />

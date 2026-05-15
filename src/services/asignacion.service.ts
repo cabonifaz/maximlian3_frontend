@@ -26,6 +26,11 @@ const IDS_ROL_POR_TIPO: Record<AssignmentRole, number> = {
   analyst: 4,
 };
 
+function esRespuestaOkCompatibilidad(respuesta: ApiResponse<unknown>) {
+  return respuesta.idTipoMensaje === MessageType.SUCCESS
+    || (respuesta.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION && respuesta.mensaje === "OK");
+}
+
 function esRegistroGenerico(valor: unknown): valor is RegistroGenerico {
   return typeof valor === "object" && valor !== null;
 }
@@ -111,7 +116,7 @@ function normalizarRol(valor: unknown, esTraductor?: boolean): AssignmentRole {
 }
 
 function extraerResultado<T>(respuesta: ApiResponse<T>): T {
-  if (respuesta.idTipoMensaje !== MessageType.SUCCESS) {
+  if (!esRespuestaOkCompatibilidad(respuesta)) {
     throw new Error(respuesta.mensaje || "No se pudo completar la operación de asignaciones");
   }
   return respuesta.result;
@@ -173,9 +178,12 @@ function normalizarPedido(registro: unknown): AssignmentOrderEntry {
 
   return {
     idAsignacion: obtenerNumero(fila.idAsignacion, fila.IdAsignacion, analistaIdAsignacion, traductorIdAsignacion),
+    idInforme: obtenerNumero(fila.idInforme, fila.IdInforme),
     analistaIdAsignacion,
     traductorIdAsignacion,
     idPedido: obtenerNumero(fila.idPedido, fila.IdPedido)!,
+    pais: obtenerTexto(fila.pais, fila.Pais, fila.nombrePais, fila.NombrePais) || "-",
+    fechaAsignacion: obtenerTexto(fila.fechaAsignacion, fila.FechaAsignacion, fila.fecha, fila.Fecha),
     idIdioma: obtenerNumero(fila.idIdioma, fila.IdIdioma),
     cliente: obtenerTexto(fila.cliente, fila.nombreCliente, fila.Cliente) || "-",
     investigado: obtenerTexto(
@@ -297,6 +305,14 @@ function normalizarListaAsignaciones(resultado: unknown): AssignmentListResponse
     lstPedido: lista.map(normalizarPedido),
     totalRegistros: obtenerNumero(registro.totalRegistros, registro.TotalRegistros, lista.length) ?? 0,
     totalPaginas: obtenerNumero(registro.totalPaginas, registro.TotalPaginas, 1) ?? 1,
+    resumen: obtenerRegistro(registro.resumen, registro.Resumen)
+      ? {
+          total: obtenerNumero(registro.resumen && esRegistroGenerico(registro.resumen) ? registro.resumen.total : undefined, registro.Resumen && esRegistroGenerico(registro.Resumen) ? registro.Resumen.total : undefined, lista.length) ?? 0,
+          enProceso: obtenerNumero(registro.resumen && esRegistroGenerico(registro.resumen) ? registro.resumen.enProceso : undefined, registro.Resumen && esRegistroGenerico(registro.Resumen) ? registro.Resumen.enProceso : undefined, 0) ?? 0,
+          aprobadas: obtenerNumero(registro.resumen && esRegistroGenerico(registro.resumen) ? registro.resumen.aprobadas : undefined, registro.Resumen && esRegistroGenerico(registro.Resumen) ? registro.Resumen.aprobadas : undefined, 0) ?? 0,
+          rechazadas: obtenerNumero(registro.resumen && esRegistroGenerico(registro.resumen) ? registro.resumen.rechazadas : undefined, registro.Resumen && esRegistroGenerico(registro.Resumen) ? registro.Resumen.rechazadas : undefined, 0) ?? 0,
+        }
+      : undefined,
   };
 }
 
@@ -360,6 +376,17 @@ export const servicioAsignacion = {
         busqueda: params.busqueda,
         idEstado: params.idEstado,
         numPag: params.numPag,
+      },
+    });
+
+    return normalizarListaAsignaciones(extraerResultado(data));
+  },
+
+  bandeja: async (params: AssignmentListParams): Promise<AssignmentListResponse> => {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Asignacion/bandeja", {
+      params: {
+        Busqueda: params.busqueda,
+        NumPag: params.numPag,
       },
     });
 

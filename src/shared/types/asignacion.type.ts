@@ -2,9 +2,12 @@ export type AssignmentRole = "analyst" | "translator";
 
 export interface AssignmentOrderEntry {
   idAsignacion?: number;
+  idInforme?: number;
   analistaIdAsignacion?: number;
   traductorIdAsignacion?: number;
   idPedido: number;
+  pais?: string;
+  fechaAsignacion?: string;
   idIdioma?: number;
   cliente: string;
   investigado: string;
@@ -33,6 +36,12 @@ export interface AssignmentListResponse {
   lstPedido: AssignmentOrderEntry[];
   totalRegistros: number;
   totalPaginas: number;
+  resumen?: {
+    total: number;
+    enProceso: number;
+    aprobadas: number;
+    rechazadas: number;
+  };
 }
 
 export interface AssignmentCandidate {

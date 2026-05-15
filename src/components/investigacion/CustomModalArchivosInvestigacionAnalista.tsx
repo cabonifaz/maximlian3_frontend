@@ -135,7 +135,7 @@ export function CustomModalArchivosInvestigacionAnalista({
                         <td className="px-3 py-2.5">
                           <CustomSelectorBuscable
                             options={opcionesTipoDocumento}
-                            value={archivo.tipoDocumento === "Informativo" ? 1 : 2}
+                            value={archivo.tipoDocumento === "Informativo" ? 1 : archivo.tipoDocumento === "Evidencia" ? 2 : undefined}
                             onChange={(valor) =>
                               onArchivosChange(
                                 archivos.map((item) =>
@@ -149,6 +149,21 @@ export function CustomModalArchivosInvestigacionAnalista({
                                 ),
                               )
                             }
+                            onClear={() =>
+                              onArchivosChange(
+                                archivos.map((item) =>
+                                  item.id === archivo.id
+                                    ? {
+                                        ...item,
+                                        tipoDocumento: "",
+                                        faseVinculada: undefined,
+                                      }
+                                    : item,
+                                ),
+                              )
+                            }
+                            optional
+                            mostrarTextoOpcionalEnLabel={false}
                             placeholder="Seleccione"
                           />
                         </td>
@@ -165,9 +180,20 @@ export function CustomModalArchivosInvestigacionAnalista({
                                     item.id === archivo.id
                                       ? { ...item, faseVinculada: secciones[(valor ?? 1) - 1]?.id as IdSeccionInvestigacionAnalista }
                                       : item,
+                                ),
+                              )
+                            }
+                              onClear={() =>
+                                onArchivosChange(
+                                  archivos.map((item) =>
+                                    item.id === archivo.id
+                                      ? { ...item, faseVinculada: undefined }
+                                      : item,
                                   ),
                                 )
                               }
+                              optional
+                              mostrarTextoOpcionalEnLabel={false}
                               placeholder="Seleccione"
                             />
                           ) : (

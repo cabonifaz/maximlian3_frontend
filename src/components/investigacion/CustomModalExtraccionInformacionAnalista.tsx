@@ -11,7 +11,7 @@ interface PropsCustomModalExtraccionInformacionAnalista {
   alcance: AlcanceExtraccionAnalista;
   tituloSeccion?: string;
   onCerrar: () => void;
-  onExtraer: (archivos: File[], alcance: AlcanceExtraccionAnalista) => Promise<void> | void;
+  onExtraer: (archivos: File[], alcance: AlcanceExtraccionAnalista, especificaciones: string) => Promise<void> | void;
 }
 
 function formatearTamanoArchivo(tamano: number) {
@@ -32,6 +32,7 @@ export function CustomModalExtraccionInformacionAnalista({
   onExtraer,
 }: PropsCustomModalExtraccionInformacionAnalista) {
   const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>([]);
+  const [especificaciones, setEspecificaciones] = useState("");
   const [estaProcesando, setEstaProcesando] = useState(false);
 
   const titulo = tituloSeccion
@@ -52,6 +53,7 @@ export function CustomModalExtraccionInformacionAnalista({
   const manejarCerrar = () => {
     if (estaProcesando) return;
     setArchivosSeleccionados([]);
+    setEspecificaciones("");
     onCerrar();
   };
 
@@ -60,8 +62,9 @@ export function CustomModalExtraccionInformacionAnalista({
 
     setEstaProcesando(true);
     try {
-      await onExtraer(archivosSeleccionados, alcance);
+      await onExtraer(archivosSeleccionados, alcance, especificaciones);
       setArchivosSeleccionados([]);
+      setEspecificaciones("");
       onCerrar();
     } finally {
       setEstaProcesando(false);
@@ -90,69 +93,81 @@ export function CustomModalExtraccionInformacionAnalista({
           </CustomButton>
         </div>
 
-        <div className="flex gap-4 px-7 py-6">
-          <CustomBloqueCargaArchivosAnalista
-            textoIndicativo="Arrastra archivos aquí o haz clic para subir"
-            onAgregarArchivos={agregarArchivos}
-          />
-
-          <div className="flex min-w-0 flex-1 flex-col gap-3">
-            <div className="space-y-1">
-              <CustomLabel>Documentos</CustomLabel>
-              <p className="text-xs text-slate-400">
-                Puede ir sumando archivos de uno en uno o en lote, de cualquier tipo, y eliminar los que no correspondan antes de extraer.
-              </p>
+        <div className="space-y-4 px-6 py-1">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+            <div className="shrink-0">
+              <CustomBloqueCargaArchivosAnalista
+                textoIndicativo="Arrastra archivos aquí o haz clic para subir"
+                onAgregarArchivos={agregarArchivos}
+              />
             </div>
 
-            <div className="max-h-72 overflow-y-auto rounded-xl border border-gray-100">
-              {archivosSeleccionados.length === 0 ? (
-                <div className="flex min-h-40 items-center justify-center text-sm text-gray-400">
-                  No hay archivos adjuntos
-                </div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 z-10 bg-white">
-                    <tr className="border-b border-gray-100">
-                      <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Nombre</th>
-                      <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Formato</th>
-                      <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Tamaño</th>
-                      <th className="px-3 py-2" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {archivosSeleccionados.map((archivo, indice) => (
-                      <tr key={`${archivo.name}-${archivo.size}-${indice}`} className="bg-amber-50 transition-colors hover:bg-amber-100/60">
-                        <td className="px-3 py-2.5">
-                          <div className="flex items-center gap-2">
-                            <FileText size={18} className="shrink-0 text-gray-400" />
-                            <span className="max-w-64 truncate font-medium text-gray-700">{archivo.name}</span>
-                            <span className="shrink-0 rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
-                              Nuevo
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2.5 text-gray-500">{obtenerExtensionArchivo(archivo.name)}</td>
-                        <td className="px-3 py-2.5 whitespace-nowrap text-gray-500">{formatearTamanoArchivo(archivo.size)}</td>
-                        <td className="px-3 py-2.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setArchivosSeleccionados((anteriores) =>
-                                anteriores.filter((_, indiceActual) => indiceActual !== indice),
-                              );
-                            }}
-                            className="rounded-lg p-1.5 text-gray-400 transition-all hover:bg-red-50 hover:text-red-500"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </td>
+            <div className="flex min-w-0 flex-1 flex-col gap-3 self-start">
+              <div className="space-y-1">
+                <CustomLabel>Documentos</CustomLabel>
+                
+              </div>
+
+              <div className="max-h-72 overflow-y-auto rounded-xl border border-gray-100">
+                {archivosSeleccionados.length === 0 ? (
+                  <div className="flex min-h-40 items-center justify-center text-sm text-gray-400">
+                    No hay archivos adjuntos
+                  </div>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 z-10 bg-white">
+                      <tr className="border-b border-gray-100">
+                        <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Nombre</th>
+                        <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Formato</th>
+                        <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Tamaño</th>
+                        <th className="px-3 py-2" />
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {archivosSeleccionados.map((archivo, indice) => (
+                        <tr key={`${archivo.name}-${archivo.size}-${indice}`} className="bg-amber-50 transition-colors hover:bg-amber-100/60">
+                          <td className="px-3 py-2.5">
+                            <div className="flex items-center gap-2">
+                              <FileText size={18} className="shrink-0 text-gray-400" />
+                              <span className="max-w-64 truncate font-medium text-gray-700">{archivo.name}</span>
+                              <span className="shrink-0 rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                                Nuevo
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2.5 text-gray-500">{obtenerExtensionArchivo(archivo.name)}</td>
+                          <td className="px-3 py-2.5 whitespace-nowrap text-gray-500">{formatearTamanoArchivo(archivo.size)}</td>
+                          <td className="px-3 py-2.5 text-right">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setArchivosSeleccionados((anteriores) =>
+                                  anteriores.filter((_, indiceActual) => indiceActual !== indice),
+                                );
+                              }}
+                              className="rounded-lg p-1.5 text-gray-400 transition-all hover:bg-red-50 hover:text-red-500"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </div>
           </div>
+
+          <label className="space-y-2">
+            <CustomLabel>Especificaciones</CustomLabel>
+            <input
+              value={especificaciones}
+              onChange={(event) => setEspecificaciones(event.target.value)}
+              placeholder="Ingrese instrucciones para la IA"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+            />
+          </label>
         </div>
 
         <div className="flex justify-end gap-3 border-t border-gray-100 bg-gray-50/50 px-7 py-5">

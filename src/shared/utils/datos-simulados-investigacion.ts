@@ -31,6 +31,7 @@ export const tarjetasResumenAnalista: TarjetaResumenAnalista[] = [
 
 export const registrosBandejaAnalista: RegistroBandejaAnalista[] = [
   {
+    idInforme: 1,
     idPedido: 82,
     codigo: "#SR-2024-082",
     investigado: "Generation & Power SA",
@@ -41,6 +42,7 @@ export const registrosBandejaAnalista: RegistroBandejaAnalista[] = [
     accion: "iniciar",
   },
   {
+    idInforme: 2,
     idPedido: 42,
     codigo: "#SR-2024-042",
     investigado: "Andina Rental SAC",
@@ -51,6 +53,7 @@ export const registrosBandejaAnalista: RegistroBandejaAnalista[] = [
     accion: "continuar",
   },
   {
+    idInforme: 3,
     idPedido: 58,
     codigo: "#SR-2024-058",
     investigado: "Grupo R. Valdez",
@@ -61,6 +64,7 @@ export const registrosBandejaAnalista: RegistroBandejaAnalista[] = [
     accion: "detalle",
   },
   {
+    idInforme: 4,
     idPedido: 61,
     codigo: "#SR-2024-061",
     investigado: "Nexa Comercial",
@@ -71,6 +75,7 @@ export const registrosBandejaAnalista: RegistroBandejaAnalista[] = [
     accion: "detalle",
   },
   {
+    idInforme: 5,
     idPedido: 89,
     codigo: "#SR-2024-089",
     investigado: "Innova Logistic",
@@ -146,6 +151,7 @@ const datosVaciosInvestigacionAnalista: DatosInvestigacionAnalista = {
     registro: "",
     condiciones: "",
     operacionesCambioDivisas: "",
+    monedaTipoCambio: "",
     capitalInicial: "",
     capitalDesembolsado: "",
     ultimaAmpliacion: "",
@@ -243,6 +249,7 @@ const datosEjemploInvestigacionAnalista: DatosInvestigacionAnalista = {
     registro: "",
     condiciones: "",
     operacionesCambioDivisas: "",
+    monedaTipoCambio: "US Dollar",
     capitalInicial: "",
     capitalDesembolsado: "",
     ultimaAmpliacion: "",

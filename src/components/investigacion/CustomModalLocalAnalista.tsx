@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Eye, Image as IconoImagen, Trash2, Upload, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInvestigacionAnalista";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { RegistroImagenLocalAnalista, RegistroLocalAnalista } from "@maximilian/shared/types/investigacion.type";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface PropsCustomModalLocalAnalista {
   estaAbierto: boolean;
@@ -37,6 +40,11 @@ export function CustomModalLocalAnalista({
     return [];
   });
   const inputArchivoRef = useRef<HTMLInputElement>(null);
+  const { data: opcionesTipoLocal } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_LOCAL],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_LOCAL),
+    staleTime: Infinity,
+  });
 
   useEffect(() => {
     return () => {
@@ -217,7 +225,8 @@ export function CustomModalLocalAnalista({
               etiqueta="Tipo de Local"
               valor={tipoLocal}
               soloLectura={false}
-              opcionesIniciales={["Sede Principal", "Sucursal", "Almacén", "Planta", "Oficina"]}
+              opcionesTablaMaestra={opcionesTipoLocal}
+              permiteAltaNueva
               marcador="Seleccione tipo de local"
               onChange={setTipoLocal}
             />

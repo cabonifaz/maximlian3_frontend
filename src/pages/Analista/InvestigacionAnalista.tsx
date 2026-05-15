@@ -1,8 +1,9 @@
 import { type ReactNode, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Check,
@@ -22,6 +23,7 @@ import { CustomModalFinalizarInvestigacionAnalista } from "@maximilian/component
 import { CustomModalExtraccionInformacionAnalista } from "@maximilian/components/investigacion/CustomModalExtraccionInformacionAnalista";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { CustomModalListaPersonasAnalista } from "@maximilian/components/investigacion/CustomModalListaPersonasAnalista";
 import { CustomModalLocalAnalista } from "@maximilian/components/investigacion/CustomModalLocalAnalista";
@@ -39,11 +41,14 @@ import {
   ResumenPedidoInvestigacionAnalista,
   SelectorMaestroConAltaInvestigacionAnalista,
 } from "@maximilian/components/investigacion/ControlesInvestigacionAnalista";
+import { informeService } from "@maximilian/services/informe.service";
+import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import {
   obtenerDatosInvestigacionAnalista,
   seccionesInvestigacionAnalista,
 } from "@maximilian/shared/utils/datos-simulados-investigacion";
+import type { InformeCrearRequest } from "@maximilian/shared/types/informe.type";
 import type {
   ArchivoInvestigacionAnalista,
   DatosInvestigacionAnalista,
@@ -63,7 +68,18 @@ import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface PropsPantallaInvestigacionAnalista {
   idPedido?: string;
+  idInforme?: number;
   modo: ModoInvestigacionAnalista;
+}
+
+interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInvestigacionAnalista {
+  datosIniciales: DatosInvestigacionAnalista;
+}
+
+interface CambioExtraccionPendiente {
+  etiqueta: string;
+  valorOriginal: string;
+  valorNuevo: string;
 }
 
 const FILAS_POR_PAGINA_INVESTIGACION = 5;
@@ -84,6 +100,352 @@ function obtenerPorcentajeNumerico(valor?: string) {
 
 function formatearPorcentajeOchoDecimales(valor: number) {
   return `${valor.toFixed(8)}%`;
+}
+
+function normalizarMontoDosDecimales(valor: string) {
+  const valorLimpio = valor.trim().replace(",", ".");
+  if (!valorLimpio) return "";
+
+  const numero = Number.parseFloat(valorLimpio);
+  if (Number.isNaN(numero)) return valor;
+
+  return numero.toFixed(2);
+}
+
+function sanitizarMontoDosDecimales(valor: string) {
+  const valorNormalizado = valor.replace(",", ".").replace(/[^0-9.]/g, "");
+  const partes = valorNormalizado.split(".");
+  const entero = partes[0] ?? "";
+  const decimal = partes[1] ?? "";
+  return partes.length > 1 ? `${entero}.${decimal.slice(0, 2)}` : entero;
+}
+
+function obtenerNumeroDesdeTexto(valor?: string) {
+  if (!valor) return 0;
+  const numero = Number.parseFloat(valor.replace(/[^0-9,.-]/g, "").replace(",", ".").trim());
+  return Number.isFinite(numero) ? numero : 0;
+}
+
+function obtenerNumeroOpcionalDesdeTexto(valor?: string) {
+  if (!valor?.trim()) return null;
+  const numero = Number.parseFloat(valor.replace(/[^0-9,.-]/g, "").replace(",", ".").trim());
+  return Number.isFinite(numero) ? numero : null;
+}
+
+function obtenerEnteroDesdeTexto(valor?: string) {
+  if (!valor) return 0;
+  const numero = Number.parseInt(valor.replace(/\D/g, ""), 10);
+  return Number.isFinite(numero) ? numero : 0;
+}
+
+function convertirFechaIso(valor?: string) {
+  if (!valor?.trim()) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return `${valor}T00:00:00.000Z`;
+
+  const partes = valor.split("/");
+  if (partes.length !== 3) return null;
+
+  const [dia, mes, ano] = partes;
+  if (!dia || !mes || !ano) return null;
+
+  return `${ano.padStart(4, "0")}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}T00:00:00.000Z`;
+}
+
+function obtenerIdPorTexto(opciones: { num1: number | null; string1: string | null }[] | undefined, valor: string) {
+  return opciones?.find((opcion) => opcion.string1?.trim().toLowerCase() === valor.trim().toLowerCase())?.num1 ?? 0;
+}
+
+function obtenerIdMoneda(valor: string) {
+  const monedaNormalizada = valor.trim().toLowerCase();
+  if (monedaNormalizada === "us dollar") return 1;
+  if (monedaNormalizada === "euro") return 2;
+  if (monedaNormalizada === "sol") return 3;
+  return 0;
+}
+
+function obtenerIdTipoBalance(valor?: string) {
+  const texto = valor?.trim().toLowerCase() ?? "";
+  if (texto === "balance general") return 1;
+  if (texto === "balance consolidado") return 2;
+  return 0;
+}
+
+function obtenerIdTipoArchivo(valor?: string) {
+  const texto = valor?.trim().toLowerCase() ?? "";
+  if (texto.startsWith("image/")) return 1;
+  if (texto === "application/pdf") return 2;
+  return 0;
+}
+
+function obtenerNumeroMes(valor: string) {
+  const meses: Record<string, number> = {
+    enero: 1,
+    febrero: 2,
+    marzo: 3,
+    abril: 4,
+    mayo: 5,
+    junio: 6,
+    julio: 7,
+    agosto: 8,
+    septiembre: 9,
+    setiembre: 9,
+    octubre: 10,
+    noviembre: 11,
+    diciembre: 12,
+  };
+
+  return meses[valor.trim().toLowerCase()] ?? 0;
+}
+
+function esTextoAfirmativo(valor?: string) {
+  const texto = valor?.trim().toLowerCase() ?? "";
+  return texto === "si" || texto === "sí" || texto === "true" || texto === "1";
+}
+
+function esCorreoElectronicoValido(valor?: string) {
+  const texto = valor?.trim() ?? "";
+  if (!texto) return true;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(texto);
+}
+
+function esPaginaWebValida(valor?: string) {
+  const texto = valor?.trim() ?? "";
+  if (!texto) return true;
+
+  try {
+    const url = new URL(texto);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+const opcionesBooleanasBolsa = [
+  { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 1, num2: null, num3: null, string1: "Sí", string2: null, string3: null, date1: null, date2: null, date3: null },
+  { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 2, num2: null, num3: null, string1: "No", string2: null, string3: null, date1: null, date2: null, date3: null },
+];
+
+function construirCuentaBalance(detalle?: RegistroBalanceAnalista["detalleCuentas"]) {
+  if (!detalle) return null;
+
+  return {
+    totalCorriente: obtenerNumeroDesdeTexto(detalle.balanceGeneral.totalCorrientes),
+    totalNoCorriente: obtenerNumeroDesdeTexto(detalle.balanceGeneral.totalNoCorrientes),
+    otrosActivos: obtenerNumeroDesdeTexto(detalle.balanceGeneral.otrosActivos),
+    totalActivos: obtenerNumeroDesdeTexto(detalle.balanceGeneral.totalActivos),
+    totalPasivosCorrientes: obtenerNumeroDesdeTexto(detalle.balanceGeneral.totalPasivosCorrientes),
+    totalPasivosNoCorrientes: obtenerNumeroDesdeTexto(detalle.balanceGeneral.totalPasivosNoCorrientes),
+    otrosPasivos: obtenerNumeroDesdeTexto(detalle.balanceGeneral.otrosPasivos),
+    totalPasivos: obtenerNumeroDesdeTexto(detalle.balanceGeneral.totalPasivos),
+    patrimonio: obtenerNumeroDesdeTexto(detalle.balanceGeneral.patrimonio),
+    totalPasivoPatrimonio: obtenerNumeroDesdeTexto(detalle.balanceGeneral.totalPasivoPatrimonio),
+    ventasNetas: obtenerNumeroDesdeTexto(detalle.estadoGananciasPerdidas.ventasNetas),
+    utilidadPerdida: obtenerNumeroDesdeTexto(detalle.estadoGananciasPerdidas.utilidadGanancia),
+    indiceLiquidez: obtenerNumeroDesdeTexto(detalle.ratios.liquidez),
+    capitalTrabajo: obtenerNumeroDesdeTexto(detalle.ratios.capitalTrabajo),
+    ratioEndeudamiento: obtenerNumeroDesdeTexto(detalle.ratios.endeudamiento),
+    ratioRentabilidad: obtenerNumeroDesdeTexto(detalle.ratios.rentabilidad),
+  };
+}
+
+function construirPayloadCrearInforme({
+  idPedido,
+  idInforme,
+  idEstado,
+  datosInvestigacion,
+  opcionesTipoPersona,
+  opcionesPais,
+}: {
+  idPedido: number;
+  idInforme?: number;
+  idEstado: number;
+  datosInvestigacion: DatosInvestigacionAnalista;
+  opcionesTipoPersona: { num1: number | null; string1: string | null }[] | undefined;
+  opcionesPais: { num1: number | null; string1: string | null }[] | undefined;
+}): InformeCrearRequest {
+  const { identificacion, aspectosLegales, operacionPrincipal, informacionFinanciera, referencias, datosGenerales } = datosInvestigacion;
+  const esEdicion = typeof idInforme === "number" && idInforme > 0;
+
+  return {
+    ...(esEdicion ? { idInforme } : {}),
+    idPedido,
+    idTipoPersona: obtenerIdPorTexto(opcionesTipoPersona, identificacion.tipoPersona),
+    nombre: identificacion.nombreEmpresa,
+    nombreComercial: identificacion.nombreComercial,
+    idPais: obtenerIdPorTexto(opcionesPais, identificacion.pais),
+    operacionesTCMoneda: 0,
+    taxIdType: 0,
+    taxNum: identificacion.numeroIdentificacionFiscal,
+    direccion: identificacion.direccionPrincipal,
+    ubigeo: identificacion.ciudadEstadoProvincia,
+    codigoPostal: "",
+    telefono: identificacion.numeroTelefono,
+    fax: identificacion.numeroFax,
+    email: identificacion.correoElectronico,
+    paginaWeb: identificacion.paginaWeb,
+    idEstado,
+    datosAdicionales: identificacion.datosAdicionales,
+    observacionesIdentificacion: "",
+    idTipoEmpresa: 0,
+    fechaConstitucion: convertirFechaIso(aspectosLegales.fechaConstitucion),
+    idCiudadRegistro: 0,
+    idNotaria: aspectosLegales.notaria,
+    idNotario: aspectosLegales.notario,
+    idRegistro: aspectosLegales.registro,
+    idPlazo: aspectosLegales.condiciones,
+    idOperacionesCambioDivisas: 0,
+    capitalInicial: obtenerNumeroDesdeTexto(aspectosLegales.capitalInicial),
+    capitalPagado: obtenerNumeroDesdeTexto(aspectosLegales.capitalDesembolsado),
+    fechaUltimoIncremento: convertirFechaIso(aspectosLegales.ultimaAmpliacion),
+    idTipoIncremento: 0,
+    patrimonioNeto: obtenerNumeroDesdeTexto(aspectosLegales.patrimonioNeto),
+    tipoAcciones: aspectosLegales.tipoAcciones,
+    valorAcciones: obtenerNumeroDesdeTexto(aspectosLegales.valorAcciones),
+    cotizaBolsa: esTextoAfirmativo(aspectosLegales.obligacionBolsa),
+    tipoCambio: obtenerNumeroDesdeTexto(aspectosLegales.tipoCambio),
+    antecedentes: aspectosLegales.antecedentes,
+    aspectosLegales: aspectosLegales.aspectosLegales,
+    comentariosAspectoLegal: aspectosLegales.comentariosEmpresasRelacionadas,
+    idSector: 0,
+    idActividad: 0,
+    idIsicCategoria: 0,
+    idIsicClase: 0,
+    actividadPrincipal: operacionPrincipal.actividadPrincipal,
+    ventasContado: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasContadoPorcentaje),
+    ventasContadoText: operacionPrincipal.ventasContadoDetalle,
+    ventasCredito: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasCreditoPorcentaje),
+    ventasCreditoText: operacionPrincipal.ventasCreditoDetalle,
+    idVentasCreditoTiempo: 0,
+    ventasNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.territorioVentasPorcentaje),
+    ventasNacionalesText: operacionPrincipal.territorioVentasDetalle,
+    ventasInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasExtranjeroPorcentaje),
+    ventasInternacionalesText: operacionPrincipal.ventasExtranjeroDetalle,
+    numeroEmpleados: obtenerEnteroDesdeTexto(operacionPrincipal.numeroEmpleados),
+    numeroEmpleadosText: operacionPrincipal.numeroEmpleadosDetalle,
+    comentariosOperaciones: operacionPrincipal.comentariosOperaciones,
+    contenidoInformacionFinanciera: informacionFinanciera.contenido,
+    comentarioInformacionFinanciera: informacionFinanciera.comentariosFinancieros,
+    activosFijos: informacionFinanciera.activosFijos,
+    seguros: informacionFinanciera.seguros,
+    comentarioProveedor: referencias.comentariosProveedores,
+    referenciaBanco: referencias.referenciasBancos,
+    litigios: referencias.litigios,
+    riesgoPrincipal: referencias.riesgoPrincipal,
+    superintendecia: referencias.superintendencia,
+    informacionGeneral: datosGenerales.informacionGeneral,
+    opinionCredito: datosGenerales.opinionCredito,
+    balances: datosInvestigacion.balances.map((balance) => ({
+      ...(esEdicion ? { idInformeBalance: 0 } : {}),
+      fechaBalance: convertirFechaIso(balance.fechaInicio ?? balance.fecha),
+      fechaHasta: balance.esActual ? null : convertirFechaIso(balance.fechaFin),
+      flgActualidad: balance.esActual ?? false,
+      tipoCambio: obtenerNumeroDesdeTexto(balance.tipoCambio),
+      idMoneda: obtenerIdMoneda(balance.operacionCambio ?? ""),
+      tipoBalance: obtenerIdTipoBalance(balance.tipoBalance),
+      cuentaBalance: construirCuentaBalance(balance.detalleCuentas),
+    })),
+    bancos: datosInvestigacion.bancos.map((banco) => ({
+      ...(esEdicion ? { idInformeBanco: 0 } : {}),
+      idBanco: 0,
+      numeroCuenta: banco.numeroCuenta,
+      idSector: 0,
+      referenciaBanco: banco.sectoristaJefeCuenta ?? banco.telefono,
+    })),
+    companiasRelacionadas: datosInvestigacion.companiasRelacionadas.map(() => ({
+      ...(esEdicion ? { idInformeCompaniaRelacionada: 0 } : {}),
+      idCompania: 0,
+    })),
+    exportacionesImportaciones: [
+      ...datosInvestigacion.importaciones.map((registro) => ({
+        ...(esEdicion ? { idInformeExportacionImportacion: 0 } : {}),
+        anio: obtenerEnteroDesdeTexto(registro.anio),
+        mesInicio: obtenerNumeroMes(registro.mes),
+        mesFin: obtenerNumeroMes(registro.mes),
+        idMoneda: obtenerIdMoneda(registro.moneda),
+        paises: registro.paises,
+        monto: obtenerNumeroDesdeTexto(registro.monto),
+        productos: registro.productos,
+        idTipoOperacion: 1,
+        numOperaciones: obtenerEnteroDesdeTexto(registro.operaciones),
+      })),
+      ...datosInvestigacion.exportaciones.map((registro) => ({
+        ...(esEdicion ? { idInformeExportacionImportacion: 0 } : {}),
+        anio: obtenerEnteroDesdeTexto(registro.anio),
+        mesInicio: obtenerNumeroMes(registro.mes),
+        mesFin: obtenerNumeroMes(registro.mes),
+        idMoneda: obtenerIdMoneda(registro.moneda),
+        paises: registro.paises,
+        monto: obtenerNumeroDesdeTexto(registro.monto),
+        productos: registro.productos,
+        idTipoOperacion: 2,
+        numOperaciones: obtenerEnteroDesdeTexto(registro.operaciones),
+      })),
+    ],
+    proveedores: datosInvestigacion.proveedores.map((proveedor) => ({
+      ...(esEdicion ? { idInformeProveedor: 0 } : {}),
+      idBancoProveedor: 0,
+      idTipoPersona: obtenerIdPorTexto(opcionesTipoPersona, proveedor.tipoPersona),
+      nombre: proveedor.nombreEmpresa,
+      idPais: obtenerIdPorTexto(opcionesPais, proveedor.pais),
+      idTipoDocumento: 0,
+      numeroDocumento: proveedor.taxIdNumber,
+      idMoneda: obtenerIdMoneda(proveedor.operacionCambioMoneda ?? ""),
+      fechaInicio: convertirFechaIso(proveedor.comienzoNegociaciones),
+      idLimiteCredito: 0,
+      promedioMensual: obtenerNumeroDesdeTexto(proveedor.promedioMensual),
+      plazoCredito: proveedor.limiteCredito ?? "",
+      productos: proveedor.tipoProveedor,
+      idCalificacion: 0,
+      comentarios: [proveedor.contacto, proveedor.telefono].filter(Boolean).join(" - "),
+    })),
+    directoriosEjecutivos: datosInvestigacion.directorioEjecutivo.map((ejecutivo) => ({
+      ...(esEdicion ? { idInformeDirectorioEjecutivo: 0 } : {}),
+      idTipoPersona: obtenerIdPorTexto(opcionesTipoPersona, ejecutivo.tipoPersona),
+      nombreCompleto: ejecutivo.nombreCompleto,
+      idPais: obtenerIdPorTexto(opcionesPais, ejecutivo.pais),
+      direccion: "",
+      ubigeo: "",
+      codigoPostal: "",
+      idTipoDocumento: 0,
+      numeroDocumento: "",
+      taxIdType: 0,
+      taxNum: "",
+      idNacionalidad: 0,
+      fechaNacimiento: null,
+      idEstadoCivil: 0,
+      idProfesion: 0,
+      referencias: ejecutivo.descripcionBusqueda,
+      cargos: ejecutivo.cargo,
+      formularioVinculado: ejecutivo.vinculadoDesde,
+      companiaAnterior: ejecutivo.companiaAnterior,
+      participacion: obtenerNumeroDesdeTexto(ejecutivo.porcentaje),
+      orden: obtenerEnteroDesdeTexto(ejecutivo.orden),
+      esParticipanteDirectiva: ejecutivo.esParteDirectorio,
+      apareceImpresoLista: ejecutivo.lista,
+      imprimeDatosEjecutivos: ejecutivo.detalleEjecutivo,
+    })),
+    locales: datosInvestigacion.locales.map((local) => ({
+      ...(esEdicion ? { idInformeLocal: 0 } : {}),
+      idTipoLocal: 0,
+      comentario: local.comentario,
+      imagenUrl: local.imagenUrl ?? "",
+      imagenes: (local.imagenes ?? []).map((imagen) => ({
+        ...(esEdicion ? { idInformeLocalImagen: 0 } : {}),
+        imagenURL: imagen.url ?? "",
+        idTipoArchivo: obtenerIdTipoArchivo(imagen.tipo ?? local.imagenTipo),
+      })),
+    })),
+    pedidos: [
+      {
+        ...(esEdicion ? { idInformePedido: 0 } : {}),
+        idPedido,
+        idIdioma: 0,
+        documentoWord: "",
+        documentoExcel: "",
+        idEstado,
+      },
+    ],
+  };
 }
 
 function PaginacionInvestigacion({
@@ -142,14 +504,48 @@ function PaginacionInvestigacion({
   );
 }
 
-function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestigacionAnalista) {
+function IndicadorCambioExtraccion({
+  visible,
+  onClick,
+}: {
+  visible: boolean;
+  onClick: () => void;
+}) {
+  if (!visible) return null;
+
+  return (
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onClick();
+        }}
+        className="inline-flex items-center text-amber-500 transition-colors hover:text-amber-600"
+      >
+        <AlertTriangle size={16} />
+      </button>
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-52 -translate-x-1/2 rounded-lg bg-brand-black px-3 py-2 text-center text-xs font-medium text-white shadow-lg group-hover:block">
+        Hay un posible cambio por la extraccion del documento
+      </span>
+    </span>
+  );
+}
+
+function PantallaInvestigacionAnalista({
+  idPedido,
+  idInforme,
+  modo,
+  datosIniciales,
+}: PropsContenidoPantallaInvestigacionAnalista) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const esSoloLectura = modo === "detalle";
   const contenedorPantallaRef = useRef<HTMLDivElement>(null);
 
-  const datosIniciales = useMemo(() => obtenerDatosInvestigacionAnalista(modo), [modo]);
-
   const [datosInvestigacion, setDatosInvestigacion] = useState<DatosInvestigacionAnalista>(datosIniciales);
+  const [idInformeActual, setIdInformeActual] = useState<number | undefined>(idInforme);
   const [idSeccionActiva, setIdSeccionActiva] = useState<IdSeccionInvestigacionAnalista>("identificacion");
   const [pestanaAspectosLegales, setPestanaAspectosLegales] = useState<PestanaAspectosLegales>("data");
   const [pestanaRamoOperaciones, setPestanaRamoOperaciones] = useState<PestanaRamoOperaciones>("operaciones");
@@ -195,6 +591,8 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
   const [estaAbiertoModalArchivosInvestigacion, setEstaAbiertoModalArchivosInvestigacion] = useState(false);
   const [alcanceExtraccionInformacion, setAlcanceExtraccionInformacion] = useState<"general" | "informacion-financiera">("general");
   const [tituloSeccionExtraccion, setTituloSeccionExtraccion] = useState("");
+  const [cambiosExtraccionPendientes, setCambiosExtraccionPendientes] = useState<Record<string, CambioExtraccionPendiente>>({});
+  const [idCambioExtraccionActivo, setIdCambioExtraccionActivo] = useState<string | null>(null);
   const [archivosInvestigacion, setArchivosInvestigacion] = useState<ArchivoInvestigacionAnalista[]>([]);
   const [indiceEjecutivoSeleccionado, setIndiceEjecutivoSeleccionado] = useState<number | null>(null);
   const [indiceEjecutivoAEliminar, setIndiceEjecutivoAEliminar] = useState<number | null>(null);
@@ -261,12 +659,6 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
     },
   ];
 
-  const opcionesFiltroTipoProveedor = [
-    { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 1, num2: null, num3: null, string1: "Todos", string2: null, string3: null, date1: null, date2: null, date3: null },
-    { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 2, num2: null, num3: null, string1: "Nacional", string2: null, string3: null, date1: null, date2: null, date3: null },
-    { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 3, num2: null, num3: null, string1: "Extranjero", string2: null, string3: null, date1: null, date2: null, date3: null },
-  ];
-
   const { data: opcionesTipoPersona } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA),
@@ -279,10 +671,151 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
     staleTime: Infinity,
   });
 
+  const { data: opcionesTipoRegTributario } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_REG_TRIBUTARIO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_REG_TRIBUTARIO),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesEstadoCliente } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.ESTADO_CLIENTE],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_CLIENTE),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesCiudad } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.CIUDAD],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CIUDAD),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesTipoEmpresa } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_EMPRESA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_EMPRESA),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesMoneda } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.MONEDA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesSectorEconomico } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.SECTOR_ECONOMICO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.SECTOR_ECONOMICO),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesActividadEconomica } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.ACTIVIDAD_ECONOMICA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ACTIVIDAD_ECONOMICA),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesTipoProveedor } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_PROVEEDOR],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PROVEEDOR),
+    staleTime: Infinity,
+  });
+
+  const { data: registroPedidoSeleccionado } = useQuery({
+    queryKey: ["asignacion-resumen-analista", idPedido],
+    queryFn: async () => {
+      if (!idPedido?.trim()) {
+        return null;
+      }
+
+      const respuesta = await servicioAsignacion.bandeja({
+        busqueda: idPedido,
+        numPag: 1,
+      });
+
+      return respuesta.lstPedido.find((registro) => String(registro.idPedido) === idPedido) ?? null;
+    },
+    enabled: Boolean(idPedido),
+  });
+
+  const guardarInformeMutation = useMutation({
+    mutationFn: async (idEstado: number) => {
+      const idPedidoNumerico = Number(idPedido);
+
+      if (!Number.isFinite(idPedidoNumerico) || idPedidoNumerico <= 0) {
+        throw new Error("No se encontró un pedido válido para crear el informe.");
+      }
+
+      if (!esCorreoElectronicoValido(datosInvestigacion.identificacion.correoElectronico)) {
+        throw new Error("Correo inválido");
+      }
+
+      if (!esPaginaWebValida(datosInvestigacion.identificacion.paginaWeb)) {
+        throw new Error("URL inválida");
+      }
+
+      const payload = construirPayloadCrearInforme({
+        idPedido: idPedidoNumerico,
+        idInforme: idInformeActual,
+        idEstado,
+        datosInvestigacion,
+        opcionesTipoPersona,
+        opcionesPais,
+      });
+
+      if (idInformeActual && idInformeActual > 0) {
+        return informeService.editar(payload);
+      }
+
+      return informeService.create(payload);
+    },
+    onSuccess: (respuesta, idEstado) => {
+      const idInformeResultado = respuesta.idInforme ?? idInformeActual;
+
+      if (idInformeResultado && idInformeResultado > 0) {
+        setIdInformeActual(idInformeResultado);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["informes"] });
+      queryClient.invalidateQueries({ queryKey: ["asignaciones-bandeja-analista"] });
+      setEstaAbiertoModalFinalizarInvestigacion(false);
+
+      if (idEstado === 5) {
+        navigate("/analista");
+        return;
+      }
+
+      if (modo === "iniciar" && idInformeResultado && idPedido) {
+        navigate(`/analista/investigacion/${idPedido}?modo=continuar&idInforme=${idInformeResultado}`, { replace: true });
+      }
+    },
+  });
+
   const indiceSeccionActiva = seccionesInvestigacionAnalista.findIndex(
     (seccion) => seccion.id === idSeccionActiva,
   );
   const seccionActual = seccionesInvestigacionAnalista[indiceSeccionActiva];
+  const resumenEncabezado = useMemo(
+    () => ({
+      ...datosInvestigacion.resumen,
+      nombreSolicitado: registroPedidoSeleccionado?.investigado ?? datosInvestigacion.resumen.nombreSolicitado,
+      pais: registroPedidoSeleccionado?.pais ?? datosInvestigacion.resumen.pais,
+      prioridad: registroPedidoSeleccionado?.tipoTramite ?? datosInvestigacion.resumen.prioridad,
+    }),
+    [datosInvestigacion.resumen, registroPedidoSeleccionado],
+  );
+  const errorCorreoElectronico = useMemo(() => (
+    esCorreoElectronicoValido(datosInvestigacion.identificacion.correoElectronico) ? "" : "Correo inválido"
+  ), [datosInvestigacion.identificacion.correoElectronico]);
+  const errorPaginaWeb = useMemo(() => (
+    esPaginaWebValida(datosInvestigacion.identificacion.paginaWeb) ? "" : "URL inválida"
+  ), [datosInvestigacion.identificacion.paginaWeb]);
+  const nombrePlantilla = useMemo(() => "", []);
+  const opcionesFiltroTipoProveedor = useMemo(
+    () => [
+      { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 0, num2: null, num3: null, string1: "Todos", string2: null, string3: null, date1: null, date2: null, date3: null },
+      ...(opcionesTipoProveedor ?? []),
+    ],
+    [opcionesTipoProveedor],
+  );
 
   const actualizarIdentificacion = (campo: keyof DatosInvestigacionAnalista["identificacion"], valor: string) => {
     setDatosInvestigacion((anterior) => ({
@@ -391,6 +924,56 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
       },
     }));
   };
+
+  const aplicarCambioExtraccion = (idCambio: string, onAplicar: () => void) => {
+    onAplicar();
+    setCambiosExtraccionPendientes((anterior) => {
+      const siguientes = { ...anterior };
+      delete siguientes[idCambio];
+      return siguientes;
+    });
+    setIdCambioExtraccionActivo((valorActual) => (valorActual === idCambio ? null : valorActual));
+  };
+
+  const registrarCambioExtraccion = ({
+    id,
+    etiqueta,
+    valorActual,
+    valorExtraido,
+    onAplicar,
+  }: {
+    id: string;
+    etiqueta: string;
+    valorActual: string;
+    valorExtraido: string;
+    onAplicar: () => void;
+  }) => {
+    const valorAnteriorLimpio = valorActual.trim();
+    const valorNuevoLimpio = valorExtraido.trim();
+
+    if (!valorNuevoLimpio || valorAnteriorLimpio === valorNuevoLimpio) return;
+
+    if (!valorAnteriorLimpio) {
+      onAplicar();
+      return;
+    }
+
+    setCambiosExtraccionPendientes((anterior) => ({
+      ...anterior,
+      [id]: {
+        etiqueta,
+        valorOriginal: valorAnteriorLimpio,
+        valorNuevo: valorNuevoLimpio,
+      },
+    }));
+  };
+
+  const obtenerIndicadorCambioExtraccion = (id: string) => (
+    <IndicadorCambioExtraccion
+      visible={Boolean(cambiosExtraccionPendientes[id])}
+      onClick={() => setIdCambioExtraccionActivo(id)}
+    />
+  );
 
   const agregarCompaniaRelacionada = (empresaNueva: DatosInvestigacionAnalista["companiasRelacionadas"][number]) => {
     setDatosInvestigacion((anterior) => {
@@ -854,7 +1437,7 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
     setEstaAbiertoModalExtraccionInformacion(true);
   };
 
-  const extraerInformacionDemo = async (archivos: File[], alcance: "general" | "informacion-financiera") => {
+  const extraerInformacionDemo = async (archivos: File[], alcance: "general" | "informacion-financiera", especificaciones: string) => {
     if (archivos.length === 0) return;
 
     const toastId = toast.loading(
@@ -874,16 +1457,55 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
     const descripcionArchivos = archivos.length === 1
       ? `del archivo ${nombresArchivos}`
       : `de los archivos ${nombresArchivos}`;
+    const sufijoEspecificaciones = especificaciones.trim()
+      ? ` Considerando las especificaciones: ${especificaciones.trim()}.`
+      : "";
 
-    setDatosInvestigacion((anterior) => ({
-      ...anterior,
-      informacionFinanciera: {
-        contenido: `Información simulada extraída ${descripcionArchivos}. Se identificó contenido financiero con referencias a estados de resultados, composición de activos y estructura operativa de la empresa.`,
-        comentariosFinancieros: "El documento sugiere un comportamiento financiero estable, con continuidad operativa y referencias consistentes para elaborar el análisis financiero preliminar.",
-        activosFijos: `Se detectan activos fijos asociados a infraestructura operativa, mobiliario y equipamiento relevante. Extracción demo procesada el ${fechaExtraccion}.`,
-        seguros: "Se identifican menciones a coberturas patrimoniales y operativas. En la integración real, aquí se resumirían las pólizas, vigencias y riesgos cubiertos.",
-      },
-    }));
+    if (alcance === "general") {
+      registrarCambioExtraccion({
+        id: "identificacion.nombreEmpresa",
+        etiqueta: "Nombre de la Empresa",
+        valorActual: datosInvestigacion.identificacion.nombreEmpresa,
+        valorExtraido: "Papelitos",
+        onAplicar: () => actualizarIdentificacion("nombreEmpresa", "Papelitos"),
+      });
+      registrarCambioExtraccion({
+        id: "identificacion.pais",
+        etiqueta: "País",
+        valorActual: datosInvestigacion.identificacion.pais,
+        valorExtraido: "Brasil",
+        onAplicar: () => actualizarIdentificacion("pais", "Brasil"),
+      });
+    }
+
+    registrarCambioExtraccion({
+      id: "informacionFinanciera.contenido",
+      etiqueta: "Contenido",
+      valorActual: datosInvestigacion.informacionFinanciera.contenido,
+      valorExtraido: `Información simulada extraída ${descripcionArchivos}. Se identificó contenido financiero con referencias a estados de resultados, composición de activos y estructura operativa de la empresa.${sufijoEspecificaciones}`,
+      onAplicar: () => actualizarInformacionFinanciera("contenido", `Información simulada extraída ${descripcionArchivos}. Se identificó contenido financiero con referencias a estados de resultados, composición de activos y estructura operativa de la empresa.${sufijoEspecificaciones}`),
+    });
+    registrarCambioExtraccion({
+      id: "informacionFinanciera.comentariosFinancieros",
+      etiqueta: "Comentarios Financieros",
+      valorActual: datosInvestigacion.informacionFinanciera.comentariosFinancieros,
+      valorExtraido: `El documento sugiere un comportamiento financiero estable, con continuidad operativa y referencias consistentes para elaborar el análisis financiero preliminar.${sufijoEspecificaciones}`,
+      onAplicar: () => actualizarInformacionFinanciera("comentariosFinancieros", `El documento sugiere un comportamiento financiero estable, con continuidad operativa y referencias consistentes para elaborar el análisis financiero preliminar.${sufijoEspecificaciones}`),
+    });
+    registrarCambioExtraccion({
+      id: "informacionFinanciera.activosFijos",
+      etiqueta: "Activos",
+      valorActual: datosInvestigacion.informacionFinanciera.activosFijos,
+      valorExtraido: `Se detectan activos fijos asociados a infraestructura operativa, mobiliario y equipamiento relevante. Extracción demo procesada el ${fechaExtraccion}.${sufijoEspecificaciones}`,
+      onAplicar: () => actualizarInformacionFinanciera("activosFijos", `Se detectan activos fijos asociados a infraestructura operativa, mobiliario y equipamiento relevante. Extracción demo procesada el ${fechaExtraccion}.${sufijoEspecificaciones}`),
+    });
+    registrarCambioExtraccion({
+      id: "informacionFinanciera.seguros",
+      etiqueta: "Seguros",
+      valorActual: datosInvestigacion.informacionFinanciera.seguros,
+      valorExtraido: `Se identifican menciones a coberturas patrimoniales y operativas. En la integración real, aquí se resumirían las pólizas, vigencias y riesgos cubiertos.${sufijoEspecificaciones}`,
+      onAplicar: () => actualizarInformacionFinanciera("seguros", `Se identifican menciones a coberturas patrimoniales y operativas. En la integración real, aquí se resumirían las pólizas, vigencias y riesgos cubiertos.${sufijoEspecificaciones}`),
+    });
 
     toast.success(
       alcance === "general"
@@ -893,7 +1515,9 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
     );
   };
 
-  const botonExtraSeccion = !esSoloLectura ? (
+  const permiteExtraccionSeccion = idSeccionActiva !== "balances";
+
+  const botonExtraSeccion = !esSoloLectura && permiteExtraccionSeccion ? (
     <CustomButton
       variant="secondary"
       size="sm"
@@ -917,12 +1541,18 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
           const etiqueta = opcionesTipoPersona?.find((opcion) => opcion.num1 === valor)?.string1 ?? "";
           actualizarIdentificacion("tipoPersona", etiqueta);
         }}
+        onClear={() => {
+          setIdTipoPersonaSeleccionado(undefined);
+          actualizarIdentificacion("tipoPersona", "");
+        }}
+        optional
+        mostrarTextoOpcionalEnLabel={false}
         disabled={esSoloLectura}
       />
-      <CampoInvestigacionAnalista etiqueta="Nombre de la Empresa" valor={datosInvestigacion.identificacion.nombreEmpresa} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("nombreEmpresa", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Nombre de la Empresa" valor={datosInvestigacion.identificacion.nombreEmpresa} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.nombreEmpresa")} onChange={(valor) => actualizarIdentificacion("nombreEmpresa", valor)} />
       <CampoInvestigacionAnalista etiqueta="Nombre Comercial" valor={datosInvestigacion.identificacion.nombreComercial} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("nombreComercial", valor)} />
       <CustomSelectorBuscable
-        label="País"
+        label={<span className="inline-flex items-center gap-2"><span>País</span>{obtenerIndicadorCambioExtraccion("identificacion.pais")}</span>}
         options={opcionesPais}
         value={idPaisSeleccionado}
         displayValue={idPaisSeleccionado == null ? datosInvestigacion.identificacion.pais : undefined}
@@ -931,29 +1561,43 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
           const etiqueta = opcionesPais?.find((opcion) => opcion.num1 === valor)?.string1 ?? "";
           actualizarIdentificacion("pais", etiqueta);
         }}
+        onClear={() => {
+          setIdPaisSeleccionado(undefined);
+          actualizarIdentificacion("pais", "");
+        }}
+        optional
+        mostrarTextoOpcionalEnLabel={false}
         disabled={esSoloLectura}
       />
-      <CampoInvestigacionAnalista etiqueta="Operaciones de Cambio" valor={datosInvestigacion.identificacion.operacionesCambio} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("operacionesCambio", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Tipo de Identificación Fiscal" valor={datosInvestigacion.identificacion.tipoIdentificacionFiscal} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("tipoIdentificacionFiscal", valor)} />
+      <SelectorMaestroConAltaInvestigacionAnalista
+        etiqueta="Tipo de Identificación Fiscal"
+        valor={datosInvestigacion.identificacion.tipoIdentificacionFiscal}
+        soloLectura={esSoloLectura}
+        opcionesTablaMaestra={opcionesTipoRegTributario}
+        marcador="Seleccione tipo de identificacion fiscal"
+        onChange={(valor) => actualizarIdentificacion("tipoIdentificacionFiscal", valor)}
+      />
       <CampoInvestigacionAnalista etiqueta="Número de Identificación Fiscal" valor={datosInvestigacion.identificacion.numeroIdentificacionFiscal} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("numeroIdentificacionFiscal", valor)} />
       <CampoInvestigacionAnalista etiqueta="Dirección Principal" valor={datosInvestigacion.identificacion.direccionPrincipal} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("direccionPrincipal", valor)} />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Ciudad/Estado/Provincia"
         valor={datosInvestigacion.identificacion.ciudadEstadoProvincia}
         soloLectura={esSoloLectura}
-        opcionesIniciales={["Ciudad de México", "Lima", "Bogotá", "Santiago", "Buenos Aires"]}
+        opcionesTablaMaestra={opcionesCiudad}
+        permiteAltaNueva
         marcador="Seleccione o agregue ciudad/estado/provincia"
         onChange={(valor) => actualizarIdentificacion("ciudadEstadoProvincia", valor)}
       />
       <CampoInvestigacionAnalista etiqueta="Número de Teléfono" valor={datosInvestigacion.identificacion.numeroTelefono} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("numeroTelefono", valor)} />
       <CampoInvestigacionAnalista etiqueta="Número de Fax" valor={datosInvestigacion.identificacion.numeroFax} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("numeroFax", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Correo Electrónico" valor={datosInvestigacion.identificacion.correoElectronico} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("correoElectronico", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Página Web" valor={datosInvestigacion.identificacion.paginaWeb} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("paginaWeb", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Correo Electrónico" valor={datosInvestigacion.identificacion.correoElectronico} soloLectura={esSoloLectura} tipoEntrada="email" error={errorCorreoElectronico} onChange={(valor) => actualizarIdentificacion("correoElectronico", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Página Web" valor={datosInvestigacion.identificacion.paginaWeb} soloLectura={esSoloLectura} tipoEntrada="url" error={errorPaginaWeb} onChange={(valor) => actualizarIdentificacion("paginaWeb", valor)} />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Estado Actual"
         valor={datosInvestigacion.identificacion.estadoActual}
         soloLectura={esSoloLectura}
-        opcionesIniciales={["Activo", "Vigente", "Suspendido", "Inactivo", "En proceso"]}
+        opcionesTablaMaestra={opcionesEstadoCliente}
+        permiteAltaNueva
         marcador="Seleccione o agregue estado actual"
         onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}
       />
@@ -1019,32 +1663,84 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
           etiqueta="Tipo de Empresa"
           valor={datosInvestigacion.aspectosLegales.tipoEmpresa}
           soloLectura={esSoloLectura}
-          opcionesIniciales={["S.A.", "S.A. de C.V.", "SRL", "LLC", "SA"]}
-          marcador="Seleccione o agregue tipo de empresa"
+          opcionesTablaMaestra={opcionesTipoEmpresa}
+          permiteAltaNueva
+          marcador="Seleccione tipo de empresa"
           onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)}
         />
-        <CampoInvestigacionAnalista etiqueta="Fecha de Constitución" valor={datosInvestigacion.aspectosLegales.fechaConstitucion} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("fechaConstitucion", valor)} />
+        <label className="space-y-2">
+          <CustomLabel as="p" className="text-sm font-bold text-gray-700">Fecha de Constitucion</CustomLabel>
+          <input
+            type="date"
+            value={datosInvestigacion.aspectosLegales.fechaConstitucion}
+            readOnly={esSoloLectura}
+            onChange={(event) => actualizarAspectosLegales("fechaConstitucion", event.target.value)}
+            className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400"
+          />
+        </label>
         <SelectorMaestroConAltaInvestigacionAnalista
           etiqueta="Ciudad de Registro"
           valor={datosInvestigacion.aspectosLegales.ciudadRegistro}
           soloLectura={esSoloLectura}
-          opcionesIniciales={["Ciudad de México", "Lima", "Bogotá", "Santiago", "Buenos Aires"]}
-          marcador="Seleccione o agregue ciudad de registro"
+          opcionesTablaMaestra={opcionesCiudad}
+          permiteAltaNueva
+          marcador="Seleccione ciudad de registro"
           onChange={(valor) => actualizarAspectosLegales("ciudadRegistro", valor)}
         />
         <CampoInvestigacionAnalista etiqueta="Notaría" valor={datosInvestigacion.aspectosLegales.notaria} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("notaria", valor)} />
         <CampoInvestigacionAnalista etiqueta="Notario" valor={datosInvestigacion.aspectosLegales.notario} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("notario", valor)} />
         <CampoInvestigacionAnalista etiqueta="Registro" valor={datosInvestigacion.aspectosLegales.registro} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("registro", valor)} />
         <CampoInvestigacionAnalista etiqueta="Condiciones" valor={datosInvestigacion.aspectosLegales.condiciones} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("condiciones", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Operaciones de Cambio Divisas" valor={datosInvestigacion.aspectosLegales.operacionesCambioDivisas} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("operacionesCambioDivisas", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Capital Inicial" valor={datosInvestigacion.aspectosLegales.capitalInicial} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("capitalInicial", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Capital Desembolsado" valor={datosInvestigacion.aspectosLegales.capitalDesembolsado} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("capitalDesembolsado", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Última Ampliación" valor={datosInvestigacion.aspectosLegales.ultimaAmpliacion} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("ultimaAmpliacion", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Patrimonio Neto" valor={datosInvestigacion.aspectosLegales.patrimonioNeto} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("patrimonioNeto", valor)} />
+        <SelectorMaestroConAltaInvestigacionAnalista
+          etiqueta="Operaciones de Cambio Divisas"
+          valor={datosInvestigacion.aspectosLegales.operacionesCambioDivisas}
+          soloLectura={esSoloLectura}
+          opcionesTablaMaestra={opcionesMoneda}
+          marcador="Seleccione moneda"
+          onChange={(valor) => actualizarAspectosLegales("operacionesCambioDivisas", valor)}
+        />
+        <CampoInvestigacionAnalista etiqueta="Capital Inicial" valor={datosInvestigacion.aspectosLegales.capitalInicial} soloLectura={esSoloLectura} tipoEntrada="decimal" onChange={(valor) => actualizarAspectosLegales("capitalInicial", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Capital Desembolsado" valor={datosInvestigacion.aspectosLegales.capitalDesembolsado} soloLectura={esSoloLectura} tipoEntrada="decimal" onChange={(valor) => actualizarAspectosLegales("capitalDesembolsado", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Última Ampliación" valor={datosInvestigacion.aspectosLegales.ultimaAmpliacion} soloLectura={esSoloLectura} tipoEntrada="fecha" onChange={(valor) => actualizarAspectosLegales("ultimaAmpliacion", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Patrimonio Neto" valor={datosInvestigacion.aspectosLegales.patrimonioNeto} soloLectura={esSoloLectura} tipoEntrada="decimal" onChange={(valor) => actualizarAspectosLegales("patrimonioNeto", valor)} />
         <CampoInvestigacionAnalista etiqueta="Tipo de Acciones" valor={datosInvestigacion.aspectosLegales.tipoAcciones} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("tipoAcciones", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Valor de las Acciones" valor={datosInvestigacion.aspectosLegales.valorAcciones} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("valorAcciones", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Obligación en Bolsa" valor={datosInvestigacion.aspectosLegales.obligacionBolsa} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("obligacionBolsa", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Tipo de Cambio" valor={datosInvestigacion.aspectosLegales.tipoCambio} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("tipoCambio", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Valor de las Acciones" valor={datosInvestigacion.aspectosLegales.valorAcciones} soloLectura={esSoloLectura} tipoEntrada="decimal" onChange={(valor) => actualizarAspectosLegales("valorAcciones", valor)} />
+        <CustomSelectorBuscable
+          label="Obligación en Bolsa"
+          options={opcionesBooleanasBolsa}
+          value={datosInvestigacion.aspectosLegales.obligacionBolsa === "true" ? 1 : datosInvestigacion.aspectosLegales.obligacionBolsa === "false" ? 2 : undefined}
+          displayValue={datosInvestigacion.aspectosLegales.obligacionBolsa === "true" ? "Sí" : datosInvestigacion.aspectosLegales.obligacionBolsa === "false" ? "No" : ""}
+          onChange={(valor) => actualizarAspectosLegales("obligacionBolsa", valor === 1 ? "true" : "false")}
+          onClear={() => actualizarAspectosLegales("obligacionBolsa", "")}
+          optional
+          mostrarTextoOpcionalEnLabel={false}
+          placeholder="Seleccione valor"
+          disabled={esSoloLectura}
+        />
+        <label className="space-y-2">
+          <CustomLabel as="p" className="text-sm font-bold text-gray-700">Tipo de Cambio</CustomLabel>
+          <div className="grid gap-3 md:grid-cols-[190px_minmax(0,1fr)]">
+            <CustomSelectorBuscable
+              options={opcionesMoneda}
+              value={opcionesMoneda?.find((opcion) => opcion.string1 === datosInvestigacion.aspectosLegales.monedaTipoCambio)?.num1 ?? undefined}
+              displayValue={datosInvestigacion.aspectosLegales.monedaTipoCambio}
+              onChange={(valor) => actualizarAspectosLegales("monedaTipoCambio", opcionesMoneda?.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              onClear={() => actualizarAspectosLegales("monedaTipoCambio", "")}
+              optional
+              mostrarTextoOpcionalEnLabel={false}
+              disabled={esSoloLectura}
+              placeholder="Seleccione moneda"
+            />
+            <input
+              value={datosInvestigacion.aspectosLegales.tipoCambio}
+              readOnly={esSoloLectura}
+              onChange={(event) => actualizarAspectosLegales("tipoCambio", sanitizarMontoDosDecimales(event.target.value))}
+              onBlur={(event) => actualizarAspectosLegales("tipoCambio", normalizarMontoDosDecimales(event.target.value))}
+              placeholder="0.00"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400"
+            />
+          </div>
+        </label>
         <AreaInvestigacionAnalista etiqueta="Antecedentes" valor={datosInvestigacion.aspectosLegales.antecedentes} soloLectura={esSoloLectura} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("antecedentes", valor)} />
         <AreaInvestigacionAnalista etiqueta="Aspectos Legales" valor={datosInvestigacion.aspectosLegales.aspectosLegales} soloLectura={esSoloLectura} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("aspectosLegales", valor)} />
         <AreaInvestigacionAnalista etiqueta="Comentarios sobre Empresas Relacionadas" valor={datosInvestigacion.aspectosLegales.comentariosEmpresasRelacionadas} soloLectura={esSoloLectura} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("comentariosEmpresasRelacionadas", valor)} />
@@ -1196,7 +1892,8 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
           etiqueta="Sector"
           valor={datosInvestigacion.operacionPrincipal.sector}
           soloLectura={esSoloLectura}
-          opcionesIniciales={["Finanzas", "Construcción", "Manufactura", "Energía", "Telecomunicaciones", "Comercio Exterior"]}
+          opcionesTablaMaestra={opcionesSectorEconomico}
+          permiteAltaNueva
           marcador="Seleccione sector"
           onChange={(valor) => actualizarOperacionPrincipal("sector", valor)}
         />
@@ -1204,7 +1901,8 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
           etiqueta="Actividad"
           valor={datosInvestigacion.operacionPrincipal.actividad}
           soloLectura={esSoloLectura}
-          opcionesIniciales={["Comercial", "Industrial", "Servicios", "Importación", "Exportación"]}
+          opcionesTablaMaestra={opcionesActividadEconomica}
+          permiteAltaNueva
           marcador="Seleccione actividad"
           onChange={(valor) => actualizarOperacionPrincipal("actividad", valor)}
         />
@@ -1232,10 +1930,10 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
 
   const renderizarInformacionFinanciera = () => (
     <div className="space-y-5">
-      <AreaInvestigacionAnalista etiqueta="Contenido" valor={datosInvestigacion.informacionFinanciera.contenido} soloLectura={esSoloLectura} filas={5} onChange={(valor) => actualizarInformacionFinanciera("contenido", valor)} />
-      <AreaInvestigacionAnalista etiqueta="Comentarios Financieros" valor={datosInvestigacion.informacionFinanciera.comentariosFinancieros} soloLectura={esSoloLectura} filas={5} onChange={(valor) => actualizarInformacionFinanciera("comentariosFinancieros", valor)} />
-      <AreaInvestigacionAnalista etiqueta="Activos" valor={datosInvestigacion.informacionFinanciera.activosFijos} soloLectura={esSoloLectura} filas={5} onChange={(valor) => actualizarInformacionFinanciera("activosFijos", valor)} />
-      <AreaInvestigacionAnalista etiqueta="Seguros" valor={datosInvestigacion.informacionFinanciera.seguros} soloLectura={esSoloLectura} filas={5} onChange={(valor) => actualizarInformacionFinanciera("seguros", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Contenido" valor={datosInvestigacion.informacionFinanciera.contenido} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("informacionFinanciera.contenido")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("contenido", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Comentarios Financieros" valor={datosInvestigacion.informacionFinanciera.comentariosFinancieros} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("informacionFinanciera.comentariosFinancieros")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("comentariosFinancieros", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Activos" valor={datosInvestigacion.informacionFinanciera.activosFijos} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("informacionFinanciera.activosFijos")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("activosFijos", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Seguros" valor={datosInvestigacion.informacionFinanciera.seguros} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("informacionFinanciera.seguros")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("seguros", valor)} />
     </div>
   );
 
@@ -1396,7 +2094,10 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
                 <CustomSelectorBuscable
                   options={opcionesFiltroTipoProveedor}
                   value={opcionesFiltroTipoProveedor.find((opcion) => opcion.string1 === filtroProveedorTipo)?.num1 ?? undefined}
-                  onChange={(valor) => setFiltroProveedorTipo(opcionesFiltroTipoProveedor.find((opcion) => opcion.num1 === valor)?.string1 ?? "Todos")}
+                  onChange={(valor) => setFiltroProveedorTipo(opcionesFiltroTipoProveedor.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+                  onClear={() => setFiltroProveedorTipo("")}
+                  optional
+                  mostrarTextoOpcionalEnLabel={false}
                   placeholder="Tipo"
                 />
               </div>
@@ -1740,11 +2441,13 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
   return (
     <div ref={contenedorPantallaRef} className="space-y-6">
       <ResumenPedidoInvestigacionAnalista
-        resumen={datosInvestigacion.resumen}
+        idPedido={idPedido}
+        plantilla={nombrePlantilla}
+        resumen={resumenEncabezado}
         esSoloLectura={esSoloLectura}
         mostrarBotonFinalizar={idSeccionActiva === "datos-generales" && !esSoloLectura}
         onFinalizarInvestigacion={() => setEstaAbiertoModalFinalizarInvestigacion(true)}
-        onExtraerInformacion={() => abrirModalExtraccionInformacion("general")}
+        onExtraerInformacion={permiteExtraccionSeccion ? () => abrirModalExtraccionInformacion("general") : undefined}
         onAbrirArchivos={() => setEstaAbiertoModalArchivosInvestigacion(true)}
       />
 
@@ -1766,12 +2469,13 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
               variant="secondary"
               size="sm"
               disabled={esSoloLectura}
-              onClick={() =>
+              onClick={() => {
                 setEstadoSecciones((anterior) => ({
                   ...anterior,
                   [idSeccionActiva]: "borrador",
-                }))
-              }
+                }));
+                guardarInformeMutation.mutate(3);
+              }}
             >
               Guardar Borrador
             </CustomButton>
@@ -1788,7 +2492,11 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
               </CustomButton>
 
               {indiceSeccionActiva === seccionesInvestigacionAnalista.length - 1 ? (
-                <CustomButton size="sm" disabled={esSoloLectura}>
+                <CustomButton
+                  size="sm"
+                  disabled={esSoloLectura}
+                  onClick={() => setEstaAbiertoModalFinalizarInvestigacion(true)}
+                >
                   <Check size={14} />
                   Finalizar Reporte
                 </CustomButton>
@@ -1960,10 +2668,44 @@ function PantallaInvestigacionAnalista({ idPedido, modo }: PropsPantallaInvestig
         <p><span className="font-bold">Banco:</span> {indiceBancoAEliminar != null ? datosInvestigacion.bancos[indiceBancoAEliminar]?.banco ?? "-" : "-"}</p>
       </CustomModalConfirmacionEliminacion>
 
+      <CustomModalConfirmacionAccion
+        isOpen={idCambioExtraccionActivo != null}
+        onClose={() => setIdCambioExtraccionActivo(null)}
+        onConfirm={() => {
+          if (!idCambioExtraccionActivo) return;
+
+          const cambio = cambiosExtraccionPendientes[idCambioExtraccionActivo];
+          if (!cambio) return;
+
+          const acciones: Record<string, () => void> = {
+            "identificacion.nombreEmpresa": () => actualizarIdentificacion("nombreEmpresa", cambio.valorNuevo),
+            "identificacion.pais": () => actualizarIdentificacion("pais", cambio.valorNuevo),
+            "informacionFinanciera.contenido": () => actualizarInformacionFinanciera("contenido", cambio.valorNuevo),
+            "informacionFinanciera.comentariosFinancieros": () => actualizarInformacionFinanciera("comentariosFinancieros", cambio.valorNuevo),
+            "informacionFinanciera.activosFijos": () => actualizarInformacionFinanciera("activosFijos", cambio.valorNuevo),
+            "informacionFinanciera.seguros": () => actualizarInformacionFinanciera("seguros", cambio.valorNuevo),
+          };
+
+          const accion = acciones[idCambioExtraccionActivo];
+          if (!accion) return;
+
+          aplicarCambioExtraccion(idCambioExtraccionActivo, accion);
+        }}
+        title="Reemplazo de valor extraido"
+        descripcion={`Desea reemplazar el valor del campo ${cambiosExtraccionPendientes[idCambioExtraccionActivo ?? ""]?.etiqueta ?? ""}?`}
+        textoConfirmar="Confirmar"
+        textoCargandoConfirmar="Confirmando..."
+        varianteConfirmar="danger"
+      >
+        <p><span className="font-bold">Original:</span> {cambiosExtraccionPendientes[idCambioExtraccionActivo ?? ""]?.valorOriginal ?? "-"}</p>
+        <p><span className="font-bold">Reemplazar por:</span> {cambiosExtraccionPendientes[idCambioExtraccionActivo ?? ""]?.valorNuevo ?? "-"}</p>
+      </CustomModalConfirmacionAccion>
+
       <CustomModalFinalizarInvestigacionAnalista
         estaAbierto={estaAbiertoModalFinalizarInvestigacion}
+        estaGuardando={guardarInformeMutation.isPending}
         onCerrar={() => setEstaAbiertoModalFinalizarInvestigacion(false)}
-        onConfirmar={() => setEstaAbiertoModalFinalizarInvestigacion(false)}
+        onConfirmar={() => guardarInformeMutation.mutate(5)}
       />
 
       <CustomModalRegistroEjecutivoAnalista
@@ -2021,12 +2763,35 @@ export default function InvestigacionAnalista() {
   const { idPedido } = useParams();
   const [searchParams] = useSearchParams();
   const modo = (searchParams.get("modo") as ModoInvestigacionAnalista | null) ?? "iniciar";
+  const idInforme = searchParams.get("idInforme");
+  const idInformeClave = idInforme ?? "sin-informe";
+  const idInformeNumerico = Number(idInforme);
+  const usaDatosBackend = modo !== "iniciar" && Number.isFinite(idInformeNumerico) && idInformeNumerico > 0;
+  const datosBaseInvestigacion = useMemo(() => obtenerDatosInvestigacionAnalista("iniciar"), []);
+  const datosEjemploInvestigacion = useMemo(() => obtenerDatosInvestigacionAnalista(modo), [modo]);
+
+  const { data: informeObtenido } = useQuery({
+    queryKey: ["informe-obtener-analista", idInformeNumerico],
+    queryFn: () => informeService.obtener(idInformeNumerico),
+    enabled: usaDatosBackend,
+  });
+
+  const datosIniciales = (() => {
+    if (modo === "iniciar") return datosBaseInvestigacion;
+    if (informeObtenido?.datosInvestigacion) return informeObtenido.datosInvestigacion;
+    if (usaDatosBackend) return datosBaseInvestigacion;
+    return datosEjemploInvestigacion;
+  })();
+
+  const claveDatos = usaDatosBackend ? String(informeObtenido?.idInforme ?? "cargando") : "local";
 
   return (
     <PantallaInvestigacionAnalista
-      key={`${idPedido ?? "sin-id"}-${modo}`}
+      key={`${idPedido ?? "sin-id"}-${modo}-${idInformeClave}-${claveDatos}`}
       idPedido={idPedido}
+      idInforme={Number.isFinite(idInformeNumerico) && idInformeNumerico > 0 ? idInformeNumerico : undefined}
       modo={modo}
+      datosIniciales={datosIniciales}
     />
   );
 }
