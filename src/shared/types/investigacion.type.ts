@@ -123,6 +123,8 @@ export interface DetalleCuentasBalanceAnalista {
   estadoGananciasPerdidas: DetalleEstadoGananciaAnalista;
   ratios: DetalleRatiosBalanceAnalista;
   totalesHabilitados?: boolean;
+  registrosHabilitados?: boolean;
+  registrosEstadoFinanciero?: Record<string, string>;
 }
 
 export interface RegistroDirectorioEjecutivoAnalista {

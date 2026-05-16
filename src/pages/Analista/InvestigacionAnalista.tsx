@@ -584,6 +584,7 @@ function PantallaInvestigacionAnalista({
   const [filtroBancoTelefono, setFiltroBancoTelefono] = useState("");
   const [filtroBancoSector] = useState("");
   const [estaAbiertoModalFinalizarInvestigacion, setEstaAbiertoModalFinalizarInvestigacion] = useState(false);
+  const [estaAbiertoModalConfirmacionPrimerBorrador, setEstaAbiertoModalConfirmacionPrimerBorrador] = useState(false);
   const [estaAbiertoModalEjecutivo, setEstaAbiertoModalEjecutivo] = useState(false);
   const [estaAbiertoModalBuscarEjecutivo, setEstaAbiertoModalBuscarEjecutivo] = useState(false);
   const [estaAbiertoModalRegistroPersona, setEstaAbiertoModalRegistroPersona] = useState(false);
@@ -597,6 +598,7 @@ function PantallaInvestigacionAnalista({
   const [indiceEjecutivoSeleccionado, setIndiceEjecutivoSeleccionado] = useState<number | null>(null);
   const [indiceEjecutivoAEliminar, setIndiceEjecutivoAEliminar] = useState<number | null>(null);
   const [busquedaEjecutivo, setBusquedaEjecutivo] = useState("");
+  const [debeVolverABandejaTrasGuardarBorrador, setDebeVolverABandejaTrasGuardarBorrador] = useState(false);
   const [personaDirectorioSeleccionada, setPersonaDirectorioSeleccionada] = useState<RegistroPersonaDirectorioAnalista | null>(null);
   const [registrosPersonaDirectorio, setRegistrosPersonaDirectorio] = useState<RegistroPersonaDirectorioAnalista[]>([
     {
@@ -736,6 +738,19 @@ function PantallaInvestigacionAnalista({
     enabled: Boolean(idPedido),
   });
 
+  const marcarSeccionActivaComoBorrador = () => {
+    setEstadoSecciones((anterior) => ({
+      ...anterior,
+      [idSeccionActiva]: "borrador",
+    }));
+  };
+
+  const guardarBorrador = (debeRedirigirABandeja: boolean) => {
+    marcarSeccionActivaComoBorrador();
+    setDebeVolverABandejaTrasGuardarBorrador(debeRedirigirABandeja);
+    guardarInformeMutation.mutate(3);
+  };
+
   const guardarInformeMutation = useMutation({
     mutationFn: async (idEstado: number) => {
       const idPedidoNumerico = Number(idPedido);
@@ -777,11 +792,21 @@ function PantallaInvestigacionAnalista({
       queryClient.invalidateQueries({ queryKey: ["informes"] });
       queryClient.invalidateQueries({ queryKey: ["asignaciones-bandeja-analista"] });
       setEstaAbiertoModalFinalizarInvestigacion(false);
+      setEstaAbiertoModalConfirmacionPrimerBorrador(false);
 
       if (idEstado === 5) {
+        setDebeVolverABandejaTrasGuardarBorrador(false);
         navigate("/analista");
         return;
       }
+
+      if (idEstado === 3 && debeVolverABandejaTrasGuardarBorrador) {
+        setDebeVolverABandejaTrasGuardarBorrador(false);
+        navigate("/analista/bandeja");
+        return;
+      }
+
+      setDebeVolverABandejaTrasGuardarBorrador(false);
 
       if (modo === "iniciar" && idInformeResultado && idPedido) {
         navigate(`/analista/investigacion/${idPedido}?modo=continuar&idInforme=${idInformeResultado}`, { replace: true });
@@ -2470,11 +2495,12 @@ function PantallaInvestigacionAnalista({
               size="sm"
               disabled={esSoloLectura}
               onClick={() => {
-                setEstadoSecciones((anterior) => ({
-                  ...anterior,
-                  [idSeccionActiva]: "borrador",
-                }));
-                guardarInformeMutation.mutate(3);
+                if (!idInformeActual || idInformeActual <= 0) {
+                  setEstaAbiertoModalConfirmacionPrimerBorrador(true);
+                  return;
+                }
+
+                guardarBorrador(false);
               }}
             >
               Guardar Borrador
@@ -2610,7 +2636,7 @@ function PantallaInvestigacionAnalista({
       </CustomModalConfirmacionEliminacion>
 
       <CustomModalProveedorAnalista
-        key={`${indiceProveedorSeleccionado ?? "nuevo"}-${estaAbiertoModalProveedor ? "abierto" : "cerrado"}`}
+        key={`proveedor-${indiceProveedorSeleccionado ?? "nuevo"}-${estaAbiertoModalProveedor ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalProveedor}
         registroInicial={indiceProveedorSeleccionado != null ? datosInvestigacion.proveedores[indiceProveedorSeleccionado] : null}
         onCerrar={() => {
@@ -2621,7 +2647,7 @@ function PantallaInvestigacionAnalista({
       />
 
       <CustomModalBancoAnalista
-        key={`${indiceBancoSeleccionado ?? "nuevo"}-${estaAbiertoModalBanco ? "abierto" : "cerrado"}`}
+        key={`banco-${indiceBancoSeleccionado ?? "nuevo"}-${estaAbiertoModalBanco ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalBanco}
         registroInicial={indiceBancoSeleccionado != null ? datosInvestigacion.bancos[indiceBancoSeleccionado] : null}
         resultadosBusqueda={resultadosBusquedaBanco}
@@ -2667,6 +2693,21 @@ function PantallaInvestigacionAnalista({
       >
         <p><span className="font-bold">Banco:</span> {indiceBancoAEliminar != null ? datosInvestigacion.bancos[indiceBancoAEliminar]?.banco ?? "-" : "-"}</p>
       </CustomModalConfirmacionEliminacion>
+
+      <CustomModalConfirmacionAccion
+        isOpen={estaAbiertoModalConfirmacionPrimerBorrador}
+        onClose={() => setEstaAbiertoModalConfirmacionPrimerBorrador(false)}
+        onConfirm={() => guardarBorrador(true)}
+        title="Guardar primer borrador"
+        descripcion="Se registrará el informe como borrador y volverás a Mi Bandeja para retomarlo después."
+        isSubmitting={guardarInformeMutation.isPending}
+        textoConfirmar="Guardar y volver"
+        textoCargandoConfirmar="Guardando..."
+        varianteConfirmar="primary"
+      >
+        <p><span className="font-bold">Accion:</span> Se guardará el avance actual del informe.</p>
+        <p><span className="font-bold">Destino:</span> Serás redirigido a Mi Bandeja.</p>
+      </CustomModalConfirmacionAccion>
 
       <CustomModalConfirmacionAccion
         isOpen={idCambioExtraccionActivo != null}

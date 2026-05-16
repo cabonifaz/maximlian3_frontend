@@ -1,6 +1,5 @@
-import maximilianService from "./maximilianService";
+import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
-import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   InformeCrearRequest,
   InformeCrearResponse,
@@ -654,7 +653,7 @@ export const informeService = {
       },
     });
 
-    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/listar")) {
       throw new Error(data.mensaje || "Error al listar los informes");
     }
 
@@ -664,7 +663,7 @@ export const informeService = {
   create: async (payload: InformeCrearRequest): Promise<InformeCrearResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/crear", payload);
 
-    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/crear")) {
       throw new Error(data.mensaje || "Error al crear el informe");
     }
 
@@ -674,7 +673,7 @@ export const informeService = {
   editar: async (payload: InformeCrearRequest): Promise<InformeCrearResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/editar", payload);
 
-    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/editar")) {
       throw new Error(data.mensaje || "Error al editar el informe");
     }
 
@@ -688,7 +687,7 @@ export const informeService = {
       },
     });
 
-    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/obtener")) {
       throw new Error(data.mensaje || "Error al obtener el informe");
     }
 

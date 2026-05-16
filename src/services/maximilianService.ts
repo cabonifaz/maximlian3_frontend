@@ -33,9 +33,22 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
   const esEndpointAsignacion =
     url.includes("/api/Asignacion/bandeja")
     || url.includes("/api/Asignacion/listar");
+  const esEndpointInformeGuardar =
+    url.includes("/api/Informe/crear")
+    || url.includes("/api/Informe/editar");
 
-  return esEndpointAsignacion && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION && data.mensaje === "OK";
+  if (esEndpointAsignacion && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION && data.mensaje === "OK") {
+    return true;
+  }
+
+  if (esEndpointInformeGuardar && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "Informe registrado correctamente." || data.mensaje === "Informe actualizado correctamente.";
+  }
+
+  return false;
 }
+
+export { esRespuestaOkCompatibilidad };
 
 maximilianService.interceptors.request.use(
   async (config) => {
