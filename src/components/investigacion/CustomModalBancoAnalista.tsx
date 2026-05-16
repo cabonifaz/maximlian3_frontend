@@ -85,6 +85,9 @@ function CustomModalBusquedaBancoAnalista({
               value={opcionesTipoPersonaSelector.find((opcion) => opcion.string1 === tipoPersona)?.num1 ?? undefined}
               displayValue={tipoPersona}
               onChange={(valor) => setTipoPersona(opcionesTipoPersonaSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              onClear={() => setTipoPersona("")}
+              optional
+              mostrarTextoOpcionalEnLabel={false}
               placeholder="Seleccione tipo persona"
             />
             <CustomSelectorBuscable
@@ -93,6 +96,9 @@ function CustomModalBusquedaBancoAnalista({
               value={opcionesPaisSelector.find((opcion) => opcion.string1 === pais)?.num1 ?? undefined}
               displayValue={pais}
               onChange={(valor) => setPais(opcionesPaisSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              onClear={() => setPais("")}
+              optional
+              mostrarTextoOpcionalEnLabel={false}
               placeholder="Seleccione un país"
             />
             <CustomSelectorBuscable
@@ -101,6 +107,9 @@ function CustomModalBusquedaBancoAnalista({
               value={opcionesCriterioSelector.find((opcion) => opcion.string1 === criterio)?.num1 ?? undefined}
               displayValue={criterio}
               onChange={(valor) => setCriterio(opcionesCriterioSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              onClear={() => setCriterio("")}
+              optional
+              mostrarTextoOpcionalEnLabel={false}
               placeholder="Seleccione criterio"
             />
             <div className="space-y-2">

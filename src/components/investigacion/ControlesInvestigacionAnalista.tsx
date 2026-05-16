@@ -1,7 +1,8 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Briefcase, Building2, Check, Eye, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomEntradaUrl } from "@maximilian/components/common/CustomEntradaUrl";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type { IdSeccionInvestigacionAnalista, ResumenInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
@@ -135,6 +136,24 @@ function sanitizarNumeroEntero(valor: string) {
   return valor.replace(/\D/g, "");
 }
 
+function normalizarNumeroDosDecimales(valor: string) {
+  const valorLimpio = valor.trim().replace(",", ".");
+  if (!valorLimpio) return "";
+
+  const numero = Number.parseFloat(valorLimpio);
+  if (Number.isNaN(numero)) return valor;
+
+  return numero.toFixed(2);
+}
+
+function sanitizarNumeroDosDecimales(valor: string) {
+  const valorNormalizado = valor.replace(",", ".").replace(/[^0-9.]/g, "");
+  const partes = valorNormalizado.split(".");
+  const entero = partes[0] ?? "";
+  const decimal = partes[1] ?? "";
+  return partes.length > 1 ? `${entero}.${decimal.slice(0, 2)}` : entero;
+}
+
 function crearOpcionTablaMaestra(num1: number, string1: string): EntradaTablaMaestra {
   return {
     idEmpresa: 0,
@@ -158,27 +177,51 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   valor,
   soloLectura,
   opcionesIniciales,
+  opcionesTablaMaestra,
   marcador,
   onChange,
+  adicionalEtiqueta,
+  permiteAltaNueva = false,
 }: {
   etiqueta: string;
   valor: string;
   soloLectura: boolean;
-  opcionesIniciales: string[];
+  opcionesIniciales?: string[];
+  opcionesTablaMaestra?: EntradaTablaMaestra[];
   marcador?: string;
   onChange?: (valor: string) => void;
+  adicionalEtiqueta?: ReactNode;
+  permiteAltaNueva?: boolean;
 }) {
   const [opciones, setOpciones] = useState<EntradaTablaMaestra[]>(() =>
-    opcionesIniciales.map((opcion, indice) => crearOpcionTablaMaestra(indice + 1, opcion)),
+    opcionesTablaMaestra ?? (opcionesIniciales ?? []).map((opcion, indice) => crearOpcionTablaMaestra(indice + 1, opcion)),
   );
 
+  useEffect(() => {
+    if (!opcionesTablaMaestra) return;
+
+    setOpciones((anteriores) => {
+      if (!permiteAltaNueva) {
+        return opcionesTablaMaestra;
+      }
+
+      const opcionesExtras = anteriores.filter(
+        (opcionAnterior) => !opcionesTablaMaestra.some((opcionTablaMaestra) => opcionTablaMaestra.string1 === opcionAnterior.string1),
+      );
+
+      return [...opcionesTablaMaestra, ...opcionesExtras];
+    });
+  }, [opcionesTablaMaestra, permiteAltaNueva]);
+
+  const opcionesDisponibles = opciones;
+
   const valorSeleccionado = useMemo(
-    () => opciones.find((opcion) => opcion.string1 === valor)?.num1 ?? undefined,
-    [opciones, valor],
+    () => opcionesDisponibles.find((opcion) => opcion.string1 === valor)?.num1 ?? undefined,
+    [opcionesDisponibles, valor],
   );
 
   const manejarCambio = (nuevoValor: number) => {
-    const valorTexto = opciones.find((opcion) => opcion.num1 === nuevoValor)?.string1 ?? "";
+    const valorTexto = opcionesDisponibles.find((opcion) => opcion.num1 === nuevoValor)?.string1 ?? "";
     onChange?.(valorTexto);
   };
 
@@ -195,14 +238,21 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
 
   return (
     <CustomSelectorBuscable
-      label={etiqueta}
-      options={opciones}
+      label={
+        <span className="inline-flex items-center gap-2">
+          <span>{etiqueta}</span>
+          {adicionalEtiqueta}
+        </span>
+      }
+      options={opcionesDisponibles}
       value={valorSeleccionado}
       displayValue={valor}
       onChange={manejarCambio}
-      onAddNew={manejarAltaNuevo}
+      onClear={() => onChange?.("")}
+      optional
+      mostrarTextoOpcionalEnLabel={false}
+      onAddNew={permiteAltaNueva ? manejarAltaNuevo : undefined}
       placeholder={marcador ?? `Seleccione ${etiqueta.toLowerCase()}`}
-      required
       disabled={soloLectura}
     />
   );
@@ -215,6 +265,10 @@ interface PropsCampoInvestigacionAnalista {
   marcador?: string;
   className?: string;
   onChange?: (valor: string) => void;
+  adicionalEtiqueta?: ReactNode;
+  tipoEntrada?: "texto" | "email" | "url" | "fecha" | "decimal";
+  error?: string;
+  onBlur?: () => void;
 }
 
 interface PropsAreaInvestigacionAnalista extends PropsCampoInvestigacionAnalista {
@@ -245,6 +299,8 @@ interface PropsMenuSeccionesInvestigacionAnalista {
 }
 
 interface PropsResumenPedidoInvestigacionAnalista {
+  idPedido?: string;
+  plantilla?: string;
   resumen: ResumenInvestigacionAnalista;
   esSoloLectura: boolean;
   mostrarBotonFinalizar: boolean;
@@ -260,17 +316,42 @@ export function CampoInvestigacionAnalista({
   marcador,
   className,
   onChange,
+  adicionalEtiqueta,
+  tipoEntrada = "texto",
+  error,
+  onBlur,
 }: PropsCampoInvestigacionAnalista) {
   const marcadorFinal = marcador ?? obtenerMarcadorInvestigacion(etiqueta);
   const esCampoPorcentaje = etiqueta.includes("%");
   const esCampoEntero = etiqueta === "N. de Empleados";
+  const esCampoDecimal = tipoEntrada === "decimal";
+  const clasesInput = `h-11 w-full rounded-xl border bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400 ${error ? "border-red-500" : "border-gray-200"}`;
+
+  if (tipoEntrada === "url" && !soloLectura) {
+    return (
+      <label className={`space-y-2 ${className ?? ""}`}>
+        <CustomLabel as="p" className={clasesEtiquetaCampoInvestigacion}>
+          <span className="inline-flex items-center gap-2">
+            <span>{etiqueta}</span>
+            {adicionalEtiqueta}
+          </span>
+        </CustomLabel>
+        <CustomEntradaUrl value={valor} onChange={(nuevoValor) => onChange?.(nuevoValor)} onBlur={onBlur} error={!!error} />
+        {error ? <p className="text-xs text-red-500">{error}</p> : null}
+      </label>
+    );
+  }
 
   return (
     <label className={`space-y-2 ${className ?? ""}`}>
       <CustomLabel as="p" className={clasesEtiquetaCampoInvestigacion}>
-        {etiqueta}
+        <span className="inline-flex items-center gap-2">
+          <span>{etiqueta}</span>
+          {adicionalEtiqueta}
+        </span>
       </CustomLabel>
       <input
+        type={tipoEntrada === "email" ? "email" : tipoEntrada === "fecha" ? "date" : "text"}
         value={valor}
         readOnly={soloLectura}
         onChange={(event) => {
@@ -284,15 +365,28 @@ export function CampoInvestigacionAnalista({
             return;
           }
 
+          if (esCampoDecimal) {
+            onChange?.(sanitizarNumeroDosDecimales(event.target.value));
+            return;
+          }
+
           onChange?.(event.target.value);
         }}
         onBlur={(event) => {
-          if (soloLectura || !onChange || !esCampoPorcentaje) return;
-          onChange(normalizarPorcentajeDosDecimales(event.target.value));
+          if (soloLectura || !onChange) return;
+
+          if (esCampoPorcentaje) {
+            onChange(normalizarPorcentajeDosDecimales(event.target.value));
+          } else if (esCampoDecimal) {
+            onChange(normalizarNumeroDosDecimales(event.target.value));
+          }
+
+          onBlur?.();
         }}
         placeholder={marcadorFinal}
-        className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400"
+        className={clasesInput}
       />
+      {error ? <p className="text-xs text-red-500">{error}</p> : null}
     </label>
   );
 }
@@ -305,13 +399,17 @@ export function AreaInvestigacionAnalista({
   filas = 4,
   className,
   onChange,
+  adicionalEtiqueta,
 }: PropsAreaInvestigacionAnalista) {
   const marcadorFinal = marcador ?? obtenerMarcadorInvestigacion(etiqueta);
 
   return (
     <label className={`space-y-2 ${className ?? ""}`}>
       <CustomLabel as="p" className={clasesEtiquetaCampoInvestigacion}>
-        {etiqueta}
+        <span className="inline-flex items-center gap-2">
+          <span>{etiqueta}</span>
+          {adicionalEtiqueta}
+        </span>
       </CustomLabel>
       <textarea
         value={valor}
@@ -448,6 +546,8 @@ export function MenuSeccionesInvestigacionAnalista({
 }
 
 export function ResumenPedidoInvestigacionAnalista({
+  idPedido,
+  plantilla,
   resumen,
   esSoloLectura,
   mostrarBotonFinalizar,
@@ -463,24 +563,28 @@ export function ResumenPedidoInvestigacionAnalista({
             Datos del Pedido
           </p>
 
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-5">
             <div className="border-l-[4px] border-brand-black pl-3">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">
-                ID
+                id Pedido
               </p>
-              <p className="mt-1 text-sm font-bold text-slate-900">{resumen.codigo}</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">{idPedido ?? "-"}</p>
             </div>
             <div className="xl:border-l xl:border-gray-100 xl:pl-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">Nombre Solicitado</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">Investigado</p>
               <p className="mt-1 text-sm font-bold text-slate-900">{resumen.nombreSolicitado}</p>
             </div>
             <div className="xl:border-l xl:border-gray-100 xl:pl-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">País</p>
-              <p className="mt-1 text-sm font-bold text-slate-900">🇲🇽 {resumen.pais}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">Pais</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">{resumen.pais}</p>
             </div>
             <div className="xl:border-l xl:border-gray-100 xl:pl-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">Prioridad</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">Tipo</p>
               <p className="mt-1 text-sm font-bold uppercase text-blue-500">{resumen.prioridad}</p>
+            </div>
+            <div className="xl:border-l xl:border-gray-100 xl:pl-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">Plantilla</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">{plantilla || "-"}</p>
             </div>
           </div>
         </div>
@@ -494,15 +598,17 @@ export function ResumenPedidoInvestigacionAnalista({
             <Paperclip size={14} />
             Adjuntar archivos
           </button>
-          <CustomButton
-            size="sm"
-            disabled={esSoloLectura}
-            className="bg-[#2563eb] text-white hover:bg-[#1d4ed8] shadow-md shadow-blue-500/20"
-            onClick={onExtraerInformacion}
-          >
-            <Sparkles size={14} />
-            Extraer Información
-          </CustomButton>
+          {onExtraerInformacion ? (
+            <CustomButton
+              size="sm"
+              disabled={esSoloLectura}
+              className="bg-[#2563eb] text-white hover:bg-[#1d4ed8] shadow-md shadow-blue-500/20"
+              onClick={onExtraerInformacion}
+            >
+              <Sparkles size={14} />
+              Extraer Información
+            </CustomButton>
+          ) : null}
           {mostrarBotonFinalizar ? (
             <CustomButton size="sm" onClick={onFinalizarInvestigacion}>Finalizar Investigación</CustomButton>
           ) : null}

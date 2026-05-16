@@ -2,12 +2,14 @@ import { CustomButton } from "@maximilian/components/common/CustomButton";
 
 interface PropsCustomModalFinalizarInvestigacionAnalista {
   estaAbierto: boolean;
+  estaGuardando?: boolean;
   onCerrar: () => void;
   onConfirmar: () => void;
 }
 
 export function CustomModalFinalizarInvestigacionAnalista({
   estaAbierto,
+  estaGuardando = false,
   onCerrar,
   onConfirmar,
 }: PropsCustomModalFinalizarInvestigacionAnalista) {
@@ -32,6 +34,7 @@ export function CustomModalFinalizarInvestigacionAnalista({
             size="md"
             className="h-12 border-[#e5eaf2] text-xs font-bold uppercase tracking-[0.22em] text-[#63728b]"
             onClick={onCerrar}
+            disabled={estaGuardando}
           >
             Cancelar
           </CustomButton>
@@ -40,6 +43,8 @@ export function CustomModalFinalizarInvestigacionAnalista({
             size="md"
             className="h-12 text-xs font-bold uppercase tracking-[0.22em]"
             onClick={onConfirmar}
+            loading={estaGuardando}
+            loadingText="Confirmando"
           >
             Confirmar
           </CustomButton>

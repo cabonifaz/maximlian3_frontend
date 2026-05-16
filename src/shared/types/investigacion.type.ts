@@ -31,6 +31,7 @@ export interface TarjetaResumenAnalista {
 }
 
 export interface RegistroBandejaAnalista {
+  idInforme: number;
   idPedido: number;
   codigo: string;
   investigado: string;
@@ -121,6 +122,9 @@ export interface DetalleCuentasBalanceAnalista {
   balanceGeneral: DetalleBalanceGeneralAnalista;
   estadoGananciasPerdidas: DetalleEstadoGananciaAnalista;
   ratios: DetalleRatiosBalanceAnalista;
+  totalesHabilitados?: boolean;
+  registrosHabilitados?: boolean;
+  registrosEstadoFinanciero?: Record<string, string>;
 }
 
 export interface RegistroDirectorioEjecutivoAnalista {
@@ -194,6 +198,7 @@ export interface DatosAspectosLegalesAnalista {
   registro: string;
   condiciones: string;
   operacionesCambioDivisas: string;
+  monedaTipoCambio: string;
   capitalInicial: string;
   capitalDesembolsado: string;
   ultimaAmpliacion: string;
@@ -276,7 +281,7 @@ export interface ArchivoInvestigacionAnalista {
   nombre: string;
   extension: string;
   tamano: number;
-  tipoDocumento: "Informativo" | "Evidencia";
+  tipoDocumento: "" | "Informativo" | "Evidencia";
   faseVinculada?: IdSeccionInvestigacionAnalista;
   archivo: File;
 }

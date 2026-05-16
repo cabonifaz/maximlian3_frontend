@@ -65,7 +65,7 @@ export function CustomModalListaPersonasAnalista({
   const [estaAbiertoModalRegistro, setEstaAbiertoModalRegistro] = useState(false);
   const [idTipoPersona, setIdTipoPersona] = useState<number | undefined>(undefined);
   const [idPais, setIdPais] = useState<number | undefined>(undefined);
-  const [idCriterio, setIdCriterio] = useState<number>(1);
+  const [idCriterio, setIdCriterio] = useState<number | undefined>(1);
   const [descripcion, setDescripcion] = useState("");
   const [idRegistroSeleccionado, setIdRegistroSeleccionado] = useState<number | null>(registrosIniciales[0]?.id ?? null);
   const [busquedaAplicada, setBusquedaAplicada] = useState("");
@@ -84,10 +84,13 @@ export function CustomModalListaPersonasAnalista({
         return coincideTipoPersona && coincidePais;
       }
 
-      const campoBusqueda =
-        criterioFiltro === "Teléfono" ? registro.telefono.toLowerCase() : registro.nombres.toLowerCase();
+      const coincideCriterio =
+        !criterioFiltro ||
+        (criterioFiltro === "Teléfono"
+          ? registro.telefono.toLowerCase().includes(termino)
+          : registro.nombres.toLowerCase().includes(termino));
 
-      return coincideTipoPersona && coincidePais && campoBusqueda.includes(termino);
+      return coincideTipoPersona && coincidePais && coincideCriterio;
     });
   }, [busquedaAplicada, criterioFiltro, paisFiltro, registros, tipoPersonaFiltro]);
 
@@ -136,6 +139,9 @@ export function CustomModalListaPersonasAnalista({
                 options={opcionesTipoPersona}
                 value={idTipoPersona}
                 onChange={setIdTipoPersona}
+                onClear={() => setIdTipoPersona(undefined)}
+                optional
+                mostrarTextoOpcionalEnLabel={false}
                 placeholder="Seleccione tipo persona"
               />
               <CustomSelectorBuscable
@@ -143,6 +149,9 @@ export function CustomModalListaPersonasAnalista({
                 options={opcionesPais}
                 value={idPais}
                 onChange={setIdPais}
+                onClear={() => setIdPais(undefined)}
+                optional
+                mostrarTextoOpcionalEnLabel={false}
                 placeholder="Seleccione un país"
               />
               <CustomSelectorBuscable
@@ -151,6 +160,9 @@ export function CustomModalListaPersonasAnalista({
                 value={idCriterio}
                 onChange={setIdCriterio}
                 displayValue="Nombre / Razón Social"
+                onClear={() => setIdCriterio(undefined)}
+                optional
+                mostrarTextoOpcionalEnLabel={false}
                 placeholder="Seleccione criterio"
               />
             </div>

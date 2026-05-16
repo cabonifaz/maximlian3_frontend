@@ -1,28 +1,13 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { RegistroImportacionExportacionAnalista } from "@maximilian/shared/types/investigacion.type";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-
-function crearOpcionTablaMaestra(num1: number, string1: string): EntradaTablaMaestra {
-  return {
-    idEmpresa: 0,
-    idTablaMaestra: null,
-    idMaestro: 0,
-    descripcion: "",
-    num1,
-    num2: null,
-    num3: null,
-    string1,
-    string2: null,
-    string3: null,
-    date1: null,
-    date2: null,
-    date3: null,
-  };
-}
 
 function normalizarMontoDosDecimales(valor: string) {
   const valorLimpio = valor.trim().replace(",", ".");
@@ -55,27 +40,6 @@ interface PropsCustomModalOperacionAnalista {
   onGuardar: (registro: RegistroImportacionExportacionAnalista) => void;
 }
 
-const opcionesMeses: EntradaTablaMaestra[] = [
-  crearOpcionTablaMaestra(1, "Enero"),
-  crearOpcionTablaMaestra(2, "Febrero"),
-  crearOpcionTablaMaestra(3, "Marzo"),
-  crearOpcionTablaMaestra(4, "Abril"),
-  crearOpcionTablaMaestra(5, "Mayo"),
-  crearOpcionTablaMaestra(6, "Junio"),
-  crearOpcionTablaMaestra(7, "Julio"),
-  crearOpcionTablaMaestra(8, "Agosto"),
-  crearOpcionTablaMaestra(9, "Septiembre"),
-  crearOpcionTablaMaestra(10, "Octubre"),
-  crearOpcionTablaMaestra(11, "Noviembre"),
-  crearOpcionTablaMaestra(12, "Diciembre"),
-];
-
-const opcionesMoneda: EntradaTablaMaestra[] = [
-  crearOpcionTablaMaestra(1, "US Dollar"),
-  crearOpcionTablaMaestra(2, "Euro"),
-  crearOpcionTablaMaestra(3, "Sol"),
-];
-
 export function CustomModalOperacionAnalista({
   estaAbierto,
   titulo,
@@ -87,15 +51,25 @@ export function CustomModalOperacionAnalista({
   const [anio, setAnio] = useState(registroInicial?.anio ?? "2025");
   const [mes, setMes] = useState(registroInicial?.mes ?? "");
   const [idMoneda, setIdMoneda] = useState<number | undefined>(
-    opcionesMoneda.find((opcion) => opcion.string1 === registroInicial?.moneda)?.num1 ?? undefined,
+    undefined,
   );
   const [monto, setMonto] = useState(registroInicial?.monto ?? "");
   const [paises, setPaises] = useState(registroInicial?.paises ?? "");
   const [productos, setProductos] = useState(registroInicial?.productos ?? "");
   const [operaciones, setOperaciones] = useState(registroInicial?.operaciones ?? "");
+  const { data: opcionesMeses } = useQuery<EntradaTablaMaestra[]>({
+    queryKey: ["masterTable", TablaMaestraId.MES],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MES),
+    staleTime: Infinity,
+  });
+  const { data: opcionesMoneda } = useQuery<EntradaTablaMaestra[]>({
+    queryKey: ["masterTable", TablaMaestraId.MONEDA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
+    staleTime: Infinity,
+  });
 
   const monedaActual =
-    opcionesMoneda.find((opcion) => opcion.num1 === idMoneda)?.string1 ?? registroInicial?.moneda ?? "";
+    opcionesMoneda?.find((opcion) => opcion.num1 === idMoneda)?.string1 ?? registroInicial?.moneda ?? "";
 
   if (!estaAbierto) return null;
 
@@ -143,9 +117,12 @@ export function CustomModalOperacionAnalista({
           <CustomSelectorBuscable
             label="Mes"
             options={opcionesMeses}
-            value={opcionesMeses.find((opcion) => opcion.string1 === mes)?.num1 ?? undefined}
+            value={opcionesMeses?.find((opcion) => opcion.string1 === mes)?.num1 ?? undefined}
             displayValue={mes}
-            onChange={(valor) => setMes(opcionesMeses.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+            onChange={(valor) => setMes(opcionesMeses?.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+            onClear={() => setMes("")}
+            optional
+            mostrarTextoOpcionalEnLabel={false}
             placeholder="Seleccione mes"
           />
 
@@ -155,6 +132,9 @@ export function CustomModalOperacionAnalista({
             value={idMoneda ?? undefined}
             displayValue={monedaActual}
             onChange={setIdMoneda}
+            onClear={() => setIdMoneda(undefined)}
+            optional
+            mostrarTextoOpcionalEnLabel={false}
             placeholder="Seleccione moneda"
           />
 

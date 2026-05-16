@@ -26,6 +26,30 @@ function obtenerMensajeAmigableUsuario(url?: string) {
   return null;
 }
 
+function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
+  if (data.idTipoMensaje === MessageType.SUCCESS) return true;
+  if (!url) return false;
+
+  const esEndpointAsignacion =
+    url.includes("/api/Asignacion/bandeja")
+    || url.includes("/api/Asignacion/listar");
+  const esEndpointInformeGuardar =
+    url.includes("/api/Informe/crear")
+    || url.includes("/api/Informe/editar");
+
+  if (esEndpointAsignacion && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION && data.mensaje === "OK") {
+    return true;
+  }
+
+  if (esEndpointInformeGuardar && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "Informe registrado correctamente." || data.mensaje === "Informe actualizado correctamente.";
+  }
+
+  return false;
+}
+
+export { esRespuestaOkCompatibilidad };
+
 maximilianService.interceptors.request.use(
   async (config) => {
     try {
@@ -69,7 +93,7 @@ maximilianService.interceptors.response.use(
 
     // If it's a standard API response with idTipoMensaje
     if (data && data.idTipoMensaje !== undefined) {
-      if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      if (!esRespuestaOkCompatibilidad(data, response.config.url)) {
         const fallbackMessage =
           data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION
             ? "La operación no pudo completarse debido a una regla de negocio."

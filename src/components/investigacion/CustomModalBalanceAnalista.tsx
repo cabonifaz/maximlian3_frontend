@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { RegistroBalanceAnalista } from "@maximilian/shared/types/investigacion.type";
-import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface PropsCustomModalBalanceAnalista {
   estaAbierto: boolean;
@@ -12,32 +14,6 @@ interface PropsCustomModalBalanceAnalista {
   onCerrar: () => void;
   onGuardar: (registro: Omit<RegistroBalanceAnalista, "codigo" | "periodo" | "balanceGeneral" | "perdidaGanancia" | "cuentas" | "detalleCuentas">) => void;
 }
-
-const opcionesOperacionCambio = ["US Dollar", "Euro", "Sol"];
-const opcionesTipoBalance = ["Balance general", "Balance consolidado"];
-const opcionesTipoEstadoFinanciero = ["GN-PG", "GN", "PG", "Desagregado", "Totalizado", "Turquía"];
-
-function crearOpcion(num1: number, string1: string): EntradaTablaMaestra {
-  return {
-    idEmpresa: 0,
-    idTablaMaestra: null,
-    idMaestro: 0,
-    descripcion: "",
-    num1,
-    num2: null,
-    num3: null,
-    string1,
-    string2: null,
-    string3: null,
-    date1: null,
-    date2: null,
-    date3: null,
-  };
-}
-
-const opcionesOperacionCambioSelector = opcionesOperacionCambio.map((opcion, indice) => crearOpcion(indice + 1, opcion));
-const opcionesTipoBalanceSelector = opcionesTipoBalance.map((opcion, indice) => crearOpcion(indice + 1, opcion));
-const opcionesTipoEstadoFinancieroSelector = opcionesTipoEstadoFinanciero.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 
 function formatearFecha(fecha: string) {
   if (!fecha) return "";
@@ -86,6 +62,21 @@ export function CustomModalBalanceAnalista({
   const [tipoEstadoFinanciero, setTipoEstadoFinanciero] = useState(registroInicial?.tipoEstadoFinanciero ?? registroInicial?.tipo ?? "");
   const [errorFechas, setErrorFechas] = useState("");
   const fechaActual = new Date().toISOString().split("T")[0] ?? "";
+  const { data: opcionesMoneda } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.MONEDA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
+    staleTime: Infinity,
+  });
+  const { data: opcionesTipoBalance } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_BALANCE],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_BALANCE),
+    staleTime: Infinity,
+  });
+  const { data: opcionesEstadoFinanciero } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.ESTADO_FINANCIERO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_FINANCIERO),
+    staleTime: Infinity,
+  });
 
   if (!estaAbierto) return null;
 
@@ -139,9 +130,12 @@ export function CustomModalBalanceAnalista({
           <div className="space-y-2">
             <CustomLabel>Tipo de Balance</CustomLabel>
             <CustomSelectorBuscable
-              options={opcionesTipoBalanceSelector}
-              value={opcionesTipoBalanceSelector.find((opcion) => opcion.string1 === tipoBalance)?.num1 ?? undefined}
-              onChange={(valor) => setTipoBalance(opcionesTipoBalanceSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              options={opcionesTipoBalance}
+              value={opcionesTipoBalance?.find((opcion) => opcion.string1 === tipoBalance)?.num1 ?? undefined}
+              onChange={(valor) => setTipoBalance(opcionesTipoBalance?.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              onClear={() => setTipoBalance("")}
+              optional
+              mostrarTextoOpcionalEnLabel={false}
               placeholder="Seleccionar..."
             />
           </div>
@@ -149,9 +143,12 @@ export function CustomModalBalanceAnalista({
           <div className="space-y-2">
             <CustomLabel>Tipo de Estado Financiero</CustomLabel>
             <CustomSelectorBuscable
-              options={opcionesTipoEstadoFinancieroSelector}
-              value={opcionesTipoEstadoFinancieroSelector.find((opcion) => opcion.string1 === tipoEstadoFinanciero)?.num1 ?? undefined}
-              onChange={(valor) => setTipoEstadoFinanciero(opcionesTipoEstadoFinancieroSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              options={opcionesEstadoFinanciero}
+              value={opcionesEstadoFinanciero?.find((opcion) => opcion.string1 === tipoEstadoFinanciero)?.num1 ?? undefined}
+              onChange={(valor) => setTipoEstadoFinanciero(opcionesEstadoFinanciero?.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              onClear={() => setTipoEstadoFinanciero("")}
+              optional
+              mostrarTextoOpcionalEnLabel={false}
               placeholder="Seleccionar..."
             />
           </div>
@@ -240,9 +237,12 @@ export function CustomModalBalanceAnalista({
           <div className="space-y-2">
             <CustomLabel>Operación de Cambio</CustomLabel>
             <CustomSelectorBuscable
-              options={opcionesOperacionCambioSelector}
-              value={opcionesOperacionCambioSelector.find((opcion) => opcion.string1 === operacionCambio)?.num1 ?? undefined}
-              onChange={(valor) => setOperacionCambio(opcionesOperacionCambioSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              options={opcionesMoneda}
+              value={opcionesMoneda?.find((opcion) => opcion.string1 === operacionCambio)?.num1 ?? undefined}
+              onChange={(valor) => setOperacionCambio(opcionesMoneda?.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              onClear={() => setOperacionCambio("")}
+              optional
+              mostrarTextoOpcionalEnLabel={false}
               placeholder="Seleccionar..."
             />
           </div>

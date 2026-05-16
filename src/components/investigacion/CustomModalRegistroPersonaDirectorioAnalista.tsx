@@ -117,7 +117,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
             <div className="grid gap-4 md:grid-cols-[1fr_1fr_1fr]">
               <CampoInput nombre="fechaNacimiento" etiqueta="Fecha de Nacimiento" marcador="mm/dd/yyyy" tipo="date" />
               <CampoSelector nombre="estadoCivil" etiqueta="Estado Civil" opciones={opcionesEstadoCivilSelector} valorDefecto="Soltero/a" />
-              <CampoSelector nombre="profesion" etiqueta="Profesión" opciones={opcionesProfesionSelector} marcadorVacio="Seleccione profesión" permiteAltaNueva required />
+              <CampoSelector nombre="profesion" etiqueta="Profesión" opciones={opcionesProfesionSelector} marcadorVacio="Seleccione profesión" permiteAltaNueva />
             </div>
 
             <CampoArea
@@ -172,7 +172,6 @@ function CampoSelector({
   valorDefecto,
   marcadorVacio = "Seleccione",
   permiteAltaNueva = false,
-  required = false,
 }: {
   nombre: string;
   etiqueta: string;
@@ -180,7 +179,6 @@ function CampoSelector({
   valorDefecto?: string;
   marcadorVacio?: string;
   permiteAltaNueva?: boolean;
-  required?: boolean;
 }) {
   const [valorSeleccionado, setValorSeleccionado] = useState(valorDefecto ?? "");
   const [opcionesLocales, setOpcionesLocales] = useState(opciones);
@@ -198,12 +196,15 @@ function CampoSelector({
 
   return (
     <div className="space-y-2">
-      <CustomLabel required={required} className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8ea0c0]">{etiqueta}</CustomLabel>
+      <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8ea0c0]">{etiqueta}</CustomLabel>
       <CustomSelectorBuscable
         options={opcionesLocales}
         value={opcionesLocales.find((opcion) => opcion.string1 === valorSeleccionado)?.num1 ?? undefined}
         displayValue={valorSeleccionado}
         onChange={(valor) => setValorSeleccionado(opcionesLocales.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+        onClear={() => setValorSeleccionado("")}
+        optional
+        mostrarTextoOpcionalEnLabel={false}
         placeholder={marcadorVacio}
         onAddNew={permiteAltaNueva ? manejarAltaNueva : undefined}
       />

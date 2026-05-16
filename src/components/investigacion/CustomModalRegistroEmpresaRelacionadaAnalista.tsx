@@ -150,6 +150,9 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
               value={idTipoPersona}
               displayValue={tipoPersonaActual}
               onChange={setIdTipoPersona}
+              onClear={() => setIdTipoPersona(undefined)}
+              optional
+              mostrarTextoOpcionalEnLabel={false}
               placeholder="Seleccione tipo persona"
             />
             <CustomSelectorBuscable
@@ -158,6 +161,9 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
               value={idPais}
               displayValue={paisActual}
               onChange={setIdPais}
+              onClear={() => setIdPais(undefined)}
+              optional
+              mostrarTextoOpcionalEnLabel={false}
               placeholder="Seleccione un país"
             />
           </div>
@@ -181,6 +187,9 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
                 value={idTipoDocumento}
                 displayValue={tipoDocumentoActual}
                 onChange={setIdTipoDocumento}
+                onClear={() => setIdTipoDocumento(undefined)}
+                optional
+                mostrarTextoOpcionalEnLabel={false}
                 placeholder="Seleccione tipo documento"
               />
               <input

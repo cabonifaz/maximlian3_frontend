@@ -1,15 +1,17 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { CheckCircle2, CircleX, Clock3, Search, SlidersHorizontal, ClipboardList } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
+import { useRetardo } from "@maximilian/hooks/useRetardo";
+import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import {
   obtenerColorEstadoAnalista,
   obtenerTextoEstadoAnalista,
-  registrosBandejaAnalista,
-  tarjetasResumenAnalista,
 } from "@maximilian/shared/utils/datos-simulados-investigacion";
-import type { AccionBandejaAnalista, RegistroBandejaAnalista } from "@maximilian/shared/types/investigacion.type";
+import type { AccionBandejaAnalista, RegistroBandejaAnalista, TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
+import type { AssignmentOrderEntry } from "@maximilian/shared/types/asignacion.type";
 
 function obtenerIconoTarjeta(id: string) {
   if (id === "aprobado") return <CheckCircle2 size={18} className="text-green-500" />;
@@ -30,26 +32,95 @@ function obtenerModoPorAccion(accion: AccionBandejaAnalista) {
   return "detalle";
 }
 
-function coincideBusqueda(registro: RegistroBandejaAnalista, termino: string) {
-  const texto = `${registro.codigo} ${registro.investigado} ${registro.pais}`.toLowerCase();
-  return texto.includes(termino.toLowerCase());
+function formatearFechaAsignacion(valor?: string) {
+  const texto = valor?.trim() ?? "";
+  if (!texto || texto.startsWith("0001-01-01")) return "-";
+
+  const coincidenciaIso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (coincidenciaIso) {
+    const [, ano, mes, dia] = coincidenciaIso;
+    return `${dia}/${mes}/${ano.slice(-2)}`;
+  }
+
+  return texto;
+}
+
+function normalizarEstadoDesdeAsignacion(registro: AssignmentOrderEntry): RegistroBandejaAnalista["estado"] {
+  const estado = (registro.estado ?? "").trim().toLowerCase();
+  if (estado.includes("rechaz")) return "rechazado";
+  if (estado.includes("aprob")) return "aprobado";
+  if (estado.includes("pend")) return "pendiente-aprobacion";
+  if (estado.includes("proceso") || estado.includes("curso") || (registro.idInforme ?? 0) > 0) return "en-proceso";
+  return "asignado";
+}
+
+function obtenerAccionDesdeAsignacion(registro: AssignmentOrderEntry): AccionBandejaAnalista {
+  if ((registro.idInforme ?? 0) > 0) return "continuar";
+
+  const estado = normalizarEstadoDesdeAsignacion(registro);
+  if (estado === "asignado") return "iniciar";
+  if (estado === "en-proceso" || estado === "rechazado") return "continuar";
+  return "detalle";
 }
 
 export default function BandejaAnalista() {
   const navigate = useNavigate();
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
+  const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
 
-  const registrosFiltrados = useMemo(() => {
-    if (!terminoBusqueda.trim()) return registrosBandejaAnalista;
-    return registrosBandejaAnalista.filter((registro) =>
-      coincideBusqueda(registro, terminoBusqueda),
-    );
-  }, [terminoBusqueda]);
+  const {
+    data: respuestaAsignaciones,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["asignaciones-bandeja-analista", paginaActual, terminoBusquedaConRetardo],
+    queryFn: () =>
+      servicioAsignacion.bandeja({
+        numPag: paginaActual,
+        busqueda: terminoBusquedaConRetardo.trim() || undefined,
+      }),
+    enabled: terminoBusqueda === terminoBusquedaConRetardo,
+    retry: false,
+  });
+
+  const registrosFiltrados = useMemo<RegistroBandejaAnalista[]>(
+    () =>
+      (respuestaAsignaciones?.lstPedido ?? []).map((registro) => ({
+        idInforme: registro.idInforme ?? 0,
+        idPedido: registro.idPedido,
+        codigo: String(registro.idPedido),
+        investigado: registro.investigado,
+        pais: registro.pais || "-",
+        fecha: formatearFechaAsignacion(registro.fechaAsignacion),
+        tipo: registro.tipoTramite || "-",
+        estado: normalizarEstadoDesdeAsignacion(registro),
+        accion: obtenerAccionDesdeAsignacion(registro),
+      })),
+    [respuestaAsignaciones?.lstPedido],
+  );
+
+  const tarjetasResumen = useMemo<TarjetaResumenAnalista[]>(() => {
+    const resumen = respuestaAsignaciones?.resumen;
+
+    return [
+      { id: "asignados", titulo: "Asignados", valor: resumen?.total ?? registrosFiltrados.filter((registro) => registro.estado === "asignado").length, colorIcono: "text-slate-500" },
+      { id: "en-proceso", titulo: "En Proceso", valor: resumen?.enProceso ?? registrosFiltrados.filter((registro) => registro.estado === "en-proceso").length, colorIcono: "text-blue-500" },
+      { id: "aprobado", titulo: "Aprobado", valor: resumen?.aprobadas ?? registrosFiltrados.filter((registro) => registro.estado === "aprobado").length, colorIcono: "text-green-500" },
+      { id: "rechazado", titulo: "Rechazado", valor: resumen?.rechazadas ?? registrosFiltrados.filter((registro) => registro.estado === "rechazado").length, colorIcono: "text-red-500" },
+    ];
+  }, [registrosFiltrados, respuestaAsignaciones?.resumen]);
 
   const irADetalle = (registro: RegistroBandejaAnalista) => {
     const modo = obtenerModoPorAccion(registro.accion);
-    navigate(`/analista/investigacion/${registro.idPedido}?modo=${modo}`);
+    const parametros = new URLSearchParams({ modo });
+
+    if (registro.idInforme > 0) {
+      parametros.set("idInforme", String(registro.idInforme));
+    }
+
+    navigate(`/analista/investigacion/${registro.idPedido}?${parametros.toString()}`);
   };
 
   const columnas = [
@@ -65,7 +136,7 @@ export default function BandejaAnalista() {
   return (
     <div className="space-y-8">
       <div className="grid gap-4 md:grid-cols-4">
-        {tarjetasResumenAnalista.map((tarjeta) => (
+        {tarjetasResumen.map((tarjeta) => (
           <article
             key={tarjeta.id}
             className="rounded-2xl border border-gray-100 bg-white px-6 py-5 shadow-sm"
@@ -119,15 +190,18 @@ export default function BandejaAnalista() {
           columns={columnas}
           data={registrosFiltrados}
           getId={(registro) => registro.idPedido}
+          isLoading={isLoading}
+          isError={isError}
+          onRetry={() => void refetch()}
           paginaActual={paginaActual}
-          totalPages={1}
-          totalRecords={32}
+          totalPages={respuestaAsignaciones?.totalPaginas ?? 1}
+          totalRecords={respuestaAsignaciones?.totalRegistros ?? 0}
           entityLabel="pedidos"
           onPageChange={setPaginaActual}
           emptyMessage="No se encontraron pedidos en la bandeja."
           renderRow={(registro) => (
             <>
-              <td className="px-6 py-4 text-sm font-medium text-slate-400">{registro.codigo}</td>
+              <td className="px-6 py-4 text-sm font-medium text-slate-400">{registro.idPedido}</td>
               <td className="max-w-48 px-6 py-4 text-sm font-semibold text-slate-700">
                 <span className="line-clamp-1">{registro.investigado}</span>
               </td>
@@ -141,14 +215,16 @@ export default function BandejaAnalista() {
                   {obtenerTextoEstadoAnalista(registro.estado)}
                 </span>
               </td>
-              <td className="px-6 py-4 text-right">
-                <CustomButton
-                  size="sm"
-                  className="h-10 w-36 justify-center px-3 text-[11px] uppercase tracking-[0.12em]"
-                  onClick={() => irADetalle(registro)}
-                >
-                  {obtenerEtiquetaAccion(registro.accion)}
-                </CustomButton>
+              <td className="px-6 py-4">
+                <div className="flex justify-end">
+                  <CustomButton
+                    size="sm"
+                    className="h-10 w-36 justify-center px-3 text-[11px] uppercase tracking-[0.12em]"
+                    onClick={() => irADetalle(registro)}
+                  >
+                    {obtenerEtiquetaAccion(registro.accion)}
+                  </CustomButton>
+                </div>
               </td>
             </>
           )}

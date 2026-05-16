@@ -3,7 +3,6 @@ import { Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
-import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalBuscarEjecutivoAnalista {
@@ -16,9 +15,8 @@ interface PropsCustomModalBuscarEjecutivoAnalista {
 
 const opcionesTipoPersona = ["Natural", "Jurídica"];
 const opcionesPais = ["México", "Perú", "Colombia", "Estados Unidos", "Chile"];
-const opcionesCriterio = ["Razón Social/Nombres", "Documento", "ID Fiscal"];
 
-function crearOpcion(num1: number, string1: string): EntradaTablaMaestra {
+function crearOpcion(num1: number, string1: string) {
   return {
     idEmpresa: 0,
     idTablaMaestra: null,
@@ -38,7 +36,6 @@ function crearOpcion(num1: number, string1: string): EntradaTablaMaestra {
 
 const opcionesTipoPersonaSelector = opcionesTipoPersona.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 const opcionesPaisSelector = opcionesPais.map((opcion, indice) => crearOpcion(indice + 1, opcion));
-const opcionesCriterioSelector = opcionesCriterio.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 
 export function CustomModalBuscarEjecutivoAnalista({
   estaAbierto,
@@ -49,7 +46,6 @@ export function CustomModalBuscarEjecutivoAnalista({
 }: PropsCustomModalBuscarEjecutivoAnalista) {
   const [tipoPersona, setTipoPersona] = useState("Natural");
   const [pais, setPais] = useState("");
-  const [criterio] = useState("Razón Social/Nombres");
   const [descripcion, setDescripcion] = useState("");
   const [busquedaActiva, setBusquedaActiva] = useState("");
 
@@ -87,13 +83,16 @@ export function CustomModalBuscarEjecutivoAnalista({
         </div>
 
         <div className="space-y-4 px-6 pb-6">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             <CustomSelectorBuscable
               label="Tipo Persona"
               options={opcionesTipoPersonaSelector}
               value={opcionesTipoPersonaSelector.find((opcion) => opcion.string1 === tipoPersona)?.num1 ?? undefined}
               displayValue={tipoPersona}
               onChange={(valor) => setTipoPersona(opcionesTipoPersonaSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              onClear={() => setTipoPersona("")}
+              optional
+              mostrarTextoOpcionalEnLabel={false}
               placeholder="Seleccione tipo persona"
             />
             <CustomSelectorBuscable
@@ -102,15 +101,10 @@ export function CustomModalBuscarEjecutivoAnalista({
               value={opcionesPaisSelector.find((opcion) => opcion.string1 === pais)?.num1 ?? undefined}
               displayValue={pais}
               onChange={(valor) => setPais(opcionesPaisSelector.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+              onClear={() => setPais("")}
+              optional
+              mostrarTextoOpcionalEnLabel={false}
               placeholder="Seleccione un país"
-            />
-            <CustomSelectorBuscable
-              label="Criterio"
-              options={opcionesCriterioSelector}
-              value={opcionesCriterioSelector.find((opcion) => opcion.string1 === criterio)?.num1 ?? undefined}
-              displayValue={criterio}
-              onChange={() => undefined}
-              placeholder="Seleccione criterio"
             />
           </div>
 
@@ -120,7 +114,7 @@ export function CustomModalBuscarEjecutivoAnalista({
               <input
                 value={descripcion}
                 onChange={(event) => setDescripcion(event.target.value)}
-                placeholder="FULANITO PEREZ"
+                placeholder="Buscar por Nombre, Documento, ID Fiscal"
                 className="h-11 w-full rounded-lg border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none"
               />
             </label>
@@ -169,10 +163,12 @@ export function CustomModalBuscarEjecutivoAnalista({
                         <td className="px-4 py-3 text-sm text-slate-500">{registro.pais}</td>
                         <td className="px-4 py-3 text-sm text-slate-500">{registro.numeroDocumentoIdentidad}</td>
                         <td className="px-4 py-3 text-sm text-slate-500">{registro.numeroIdFiscal}</td>
-                        <td className="px-4 py-3 text-right">
-                          <CustomButton type="button" variant="secondary" size="sm" onClick={() => onSeleccionar(registro)}>
-                            Seleccionar
-                          </CustomButton>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end">
+                            <CustomButton type="button" variant="secondary" size="sm" onClick={() => onSeleccionar(registro)}>
+                              Seleccionar
+                            </CustomButton>
+                          </div>
                         </td>
                       </tr>
                     ))}
