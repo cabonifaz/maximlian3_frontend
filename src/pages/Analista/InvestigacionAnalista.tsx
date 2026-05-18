@@ -86,6 +86,7 @@ interface CambioExtraccionPendiente {
   etiqueta: string;
   valorOriginal: string;
   valorNuevo: string;
+  alAplicar?: () => void;
 }
 
 const FILAS_POR_PAGINA_INVESTIGACION = 5;
@@ -1288,6 +1289,7 @@ function PantallaInvestigacionAnalista({
         etiqueta,
         valorOriginal: valorAnteriorLimpio,
         valorNuevo: valorNuevoLimpio,
+        alAplicar: onAplicar,
       },
     }));
   };
@@ -3061,7 +3063,7 @@ function PantallaInvestigacionAnalista({
 
           aplicarCambioExtraccion(
             idCambioExtraccionActivo,
-            () => actualizarCampoInvestigacion(cambio.ruta, cambio.valorNuevo),
+            () => cambio.alAplicar?.(),
           );
         }}
         title="Reemplazo de valor extraido"
