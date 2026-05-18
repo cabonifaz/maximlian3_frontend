@@ -1894,7 +1894,7 @@ function PantallaInvestigacionAnalista({
   const renderizarIdentificacion = () => (
     <div className="grid gap-5 md:grid-cols-2">
       <CustomSelectorBuscable
-        label="Tipo de Persona"
+        label={<span className="inline-flex items-center gap-2"><span>Tipo de Persona</span>{obtenerIndicadorCambioExtraccion("identificacion.tipoPersona")}</span>}
         options={opcionesTipoPersona}
         value={idTipoPersonaSeleccionado}
         displayValue={idTipoPersonaSeleccionado == null ? datosInvestigacion.identificacion.tipoPersona : undefined}
@@ -1912,7 +1912,7 @@ function PantallaInvestigacionAnalista({
         disabled={esSoloLectura}
       />
       <CampoInvestigacionAnalista etiqueta="Nombre de la Empresa" valor={datosInvestigacion.identificacion.nombreEmpresa} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.nombreEmpresa")} onChange={(valor) => actualizarIdentificacion("nombreEmpresa", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Nombre Comercial" valor={datosInvestigacion.identificacion.nombreComercial} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("nombreComercial", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Nombre Comercial" valor={datosInvestigacion.identificacion.nombreComercial} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.nombreComercial")} onChange={(valor) => actualizarIdentificacion("nombreComercial", valor)} />
       <CustomSelectorBuscable
         label={<span className="inline-flex items-center gap-2"><span>País</span>{obtenerIndicadorCambioExtraccion("identificacion.pais")}</span>}
         options={opcionesPais}
@@ -1937,10 +1937,11 @@ function PantallaInvestigacionAnalista({
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesTipoRegTributario}
         marcador="Seleccione tipo de identificacion fiscal"
+        adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.tipoIdentificacionFiscal")}
         onChange={(valor) => actualizarIdentificacion("tipoIdentificacionFiscal", valor)}
       />
-      <CampoInvestigacionAnalista etiqueta="Número de Identificación Fiscal" valor={datosInvestigacion.identificacion.numeroIdentificacionFiscal} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("numeroIdentificacionFiscal", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Dirección Principal" valor={datosInvestigacion.identificacion.direccionPrincipal} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("direccionPrincipal", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Número de Identificación Fiscal" valor={datosInvestigacion.identificacion.numeroIdentificacionFiscal} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.numeroIdentificacionFiscal")} onChange={(valor) => actualizarIdentificacion("numeroIdentificacionFiscal", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Dirección Principal" valor={datosInvestigacion.identificacion.direccionPrincipal} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.direccionPrincipal")} onChange={(valor) => actualizarIdentificacion("direccionPrincipal", valor)} />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Ciudad/Estado/Provincia"
         valor={datosInvestigacion.identificacion.ciudadEstadoProvincia}
@@ -1948,12 +1949,13 @@ function PantallaInvestigacionAnalista({
         opcionesTablaMaestra={opcionesCiudad}
         permiteAltaNueva
         marcador="Seleccione o agregue ciudad/estado/provincia"
+        adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.ciudadEstadoProvincia")}
         onChange={(valor) => actualizarIdentificacion("ciudadEstadoProvincia", valor)}
       />
-      <CampoInvestigacionAnalista etiqueta="Número de Teléfono" valor={datosInvestigacion.identificacion.numeroTelefono} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("numeroTelefono", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Número de Fax" valor={datosInvestigacion.identificacion.numeroFax} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("numeroFax", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Correo Electrónico" valor={datosInvestigacion.identificacion.correoElectronico} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("correoElectronico", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Página Web" valor={datosInvestigacion.identificacion.paginaWeb} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("paginaWeb", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Número de Teléfono" valor={datosInvestigacion.identificacion.numeroTelefono} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.numeroTelefono")} onChange={(valor) => actualizarIdentificacion("numeroTelefono", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Número de Fax" valor={datosInvestigacion.identificacion.numeroFax} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.numeroFax")} onChange={(valor) => actualizarIdentificacion("numeroFax", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Correo Electrónico" valor={datosInvestigacion.identificacion.correoElectronico} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.correoElectronico")} onChange={(valor) => actualizarIdentificacion("correoElectronico", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Página Web" valor={datosInvestigacion.identificacion.paginaWeb} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.paginaWeb")} onChange={(valor) => actualizarIdentificacion("paginaWeb", valor)} />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Estado Actual"
         valor={datosInvestigacion.identificacion.estadoActual}
@@ -1961,9 +1963,10 @@ function PantallaInvestigacionAnalista({
         opcionesTablaMaestra={opcionesEstadoCliente}
         permiteAltaNueva
         marcador="Seleccione o agregue estado actual"
+        adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.estadoActual")}
         onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}
       />
-      <AreaInvestigacionAnalista etiqueta="Datos Adicionales" valor={datosInvestigacion.identificacion.datosAdicionales} soloLectura={esSoloLectura} className="md:col-span-2" onChange={(valor) => actualizarIdentificacion("datosAdicionales", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Datos Adicionales" valor={datosInvestigacion.identificacion.datosAdicionales} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.datosAdicionales")} className="md:col-span-2" onChange={(valor) => actualizarIdentificacion("datosAdicionales", valor)} />
     </div>
   );
 
