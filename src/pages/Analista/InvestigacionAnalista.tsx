@@ -232,15 +232,6 @@ const ETIQUETAS_SECCIONES_EXTRACCION: Record<string, string> = {
   directorioEjecutivo: "Directorio Ejecutivo",
 };
 
-const IDS_CONFLICTO_EXTRACCION_VISIBLES = new Set([
-  "identificacion.nombreEmpresa",
-  "identificacion.pais",
-  "informacionFinanciera.contenido",
-  "informacionFinanciera.comentariosFinancieros",
-  "informacionFinanciera.activosFijos",
-  "informacionFinanciera.seguros",
-]);
-
 const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacionAnalista, Record<string, string[]>> = {
   identificacion: {
     identificacion: [
@@ -1290,11 +1281,6 @@ function PantallaInvestigacionAnalista({
       return;
     }
 
-    if (!IDS_CONFLICTO_EXTRACCION_VISIBLES.has(id)) {
-      onAplicar();
-      return;
-    }
-
     setCambiosExtraccionPendientes((anterior) => ({
       ...anterior,
       [id]: {
@@ -1814,7 +1800,6 @@ function PantallaInvestigacionAnalista({
     () => construirSeccionesDisponiblesExtraccion(alcanceExtraccionInformacion),
     [alcanceExtraccionInformacion],
   );
-
   const abrirModalExtraccionInformacion = (
     alcance: AlcanceExtraccionInforme,
     tituloSeccion?: string,
@@ -3078,9 +3063,9 @@ function PantallaInvestigacionAnalista({
         }}
         title="Reemplazo de valor extraido"
         descripcion={`Desea reemplazar el valor del campo ${cambiosExtraccionPendientes[idCambioExtraccionActivo ?? ""]?.etiqueta ?? ""}?`}
-        textoConfirmar="Confirmar"
-        textoCargandoConfirmar="Confirmando..."
-        varianteConfirmar="danger"
+        textoConfirmar="Reemplazar"
+        textoCargandoConfirmar="Reemplazando..."
+        varianteConfirmar="secondary"
       >
         <p><span className="font-bold">Original:</span> {cambiosExtraccionPendientes[idCambioExtraccionActivo ?? ""]?.valorOriginal ?? "-"}</p>
         <p><span className="font-bold">Reemplazar por:</span> {cambiosExtraccionPendientes[idCambioExtraccionActivo ?? ""]?.valorNuevo ?? "-"}</p>

@@ -201,6 +201,14 @@ function obtenerPlaceholderCampoEntero(etiqueta: string) {
   return "0";
 }
 
+function normalizarTexto(valor?: string) {
+  return (valor ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 export function CustomModalDetalleCuentasAnalista({
   estaAbierto,
   onCerrar,
@@ -222,6 +230,7 @@ export function CustomModalDetalleCuentasAnalista({
   }, [detalleBase]);
 
   const mostrarRatios = ["Desagregado", "Totalizado", "Turquía"].includes(tipoEstadoFinanciero ?? "");
+  const esEstadoFinancieroTotalizado = normalizarTexto(tipoEstadoFinanciero) === "totalizado";
   const totalesHabilitados = detalle.totalesHabilitados ?? false;
   const registrosHabilitados = detalle.registrosHabilitados ?? false;
   const seccionesEstadoFinanciero = useMemo(
@@ -244,16 +253,20 @@ export function CustomModalDetalleCuentasAnalista({
     const totalPasivoPatrimonioMinimo = totalPasivos + patrimonio;
     const advertencias: string[] = [];
 
-    if (totalActivos + 0.000001 < totalActivosMinimo) {
-      advertencias.push(`Total Activos debe ser mayor o igual a la suma de los campos de activos (${formatearNumero(totalActivosMinimo)}).`);
+    if (Math.abs(totalActivos - totalActivosMinimo) > 0.000001) {
+      advertencias.push(`Total Activos debe ser igual a la suma de los campos de activos (${formatearNumero(totalActivosMinimo)}).`);
     }
 
-    if (totalPasivos + 0.000001 < totalPasivosMinimo) {
-      advertencias.push(`Total Pasivos debe ser mayor o igual a la suma de los campos de pasivos (${formatearNumero(totalPasivosMinimo)}).`);
+    if (Math.abs(totalPasivos - totalPasivosMinimo) > 0.000001) {
+      advertencias.push(`Total Pasivos debe ser igual a la suma de los campos de pasivos (${formatearNumero(totalPasivosMinimo)}).`);
     }
 
-    if (totalPasivoPatrimonio + 0.000001 < totalPasivoPatrimonioMinimo) {
-      advertencias.push(`Total Pasivo y Patrimonio debe ser mayor o igual a Total Pasivos + Patrimonio (${formatearNumero(totalPasivoPatrimonioMinimo)}).`);
+    if (Math.abs(totalPasivoPatrimonio - totalPasivoPatrimonioMinimo) > 0.000001) {
+      advertencias.push(`Total Pasivo y Patrimonio debe ser igual a Total Pasivos + Patrimonio (${formatearNumero(totalPasivoPatrimonioMinimo)}).`);
+    }
+
+    if (Math.abs(totalActivos - totalPasivoPatrimonio) > 0.000001) {
+      advertencias.push("Total Activos debe ser igual a Total Pasivo y Patrimonio.");
     }
 
     return advertencias;
@@ -409,6 +422,85 @@ export function CustomModalDetalleCuentasAnalista({
     </div>
   );
 
+  const renderizarBalanceGeneralTotalizado = () => (
+    <div className="space-y-6">
+      {renderizarControlesHabilitacion()}
+
+      <div className="grid gap-8 lg:grid-cols-2">
+        <div className="space-y-5">
+          <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">• Activos</p>
+          <CampoDetalle
+            etiqueta="Total Activo Corriente"
+            valor={detalle.balanceGeneral.totalCorrientes}
+            onChange={(valor) => actualizarBalanceGeneral("totalCorrientes", valor)}
+            deshabilitado={!registrosHabilitados}
+          />
+          <CampoDetalle
+            etiqueta="Total Activo No Corriente"
+            valor={detalle.balanceGeneral.totalNoCorrientes}
+            onChange={(valor) => actualizarBalanceGeneral("totalNoCorrientes", valor)}
+            deshabilitado={!registrosHabilitados}
+          />
+          <CampoDetalle
+            etiqueta="Total Activo"
+            valor={detalle.balanceGeneral.totalActivos}
+            onChange={(valor) => actualizarBalanceGeneral("totalActivos", valor)}
+            negrita
+            deshabilitado={!totalesHabilitados}
+          />
+        </div>
+
+        <div className="space-y-5">
+          <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">• Pasivos y Patrimonio</p>
+          <CampoDetalle
+            etiqueta="Total Pasivo Corriente"
+            valor={detalle.balanceGeneral.totalPasivosCorrientes}
+            onChange={(valor) => actualizarBalanceGeneral("totalPasivosCorrientes", valor)}
+            deshabilitado={!registrosHabilitados}
+          />
+          <CampoDetalle
+            etiqueta="Total Pasivo No Corriente"
+            valor={detalle.balanceGeneral.totalPasivosNoCorrientes}
+            onChange={(valor) => actualizarBalanceGeneral("totalPasivosNoCorrientes", valor)}
+            deshabilitado={!registrosHabilitados}
+          />
+          <CampoDetalle
+            etiqueta="Total Pasivos"
+            valor={detalle.balanceGeneral.totalPasivos}
+            onChange={(valor) => actualizarBalanceGeneral("totalPasivos", valor)}
+            negrita
+            deshabilitado={!totalesHabilitados}
+          />
+          <CampoDetalle
+            etiqueta="Total Patrimonio"
+            valor={detalle.balanceGeneral.patrimonio}
+            onChange={(valor) => actualizarBalanceGeneral("patrimonio", valor)}
+            permitirNegativo
+            negrita
+            deshabilitado={!registrosHabilitados}
+          />
+          <CampoDetalle
+            etiqueta="Total Pasivos + Patrimonio"
+            valor={detalle.balanceGeneral.totalPasivoPatrimonio}
+            onChange={(valor) => actualizarBalanceGeneral("totalPasivoPatrimonio", valor)}
+            negrita
+            deshabilitado={!totalesHabilitados}
+          />
+        </div>
+      </div>
+
+      {totalesHabilitados && advertenciasTotales.length > 0 ? (
+        <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          {advertenciasTotales.map((advertencia) => (
+            <p key={advertencia} className="text-sm text-amber-700">
+              {advertencia}
+            </p>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+
   const renderizarCamposConfigurados = (secciones: typeof seccionesEstadoFinanciero) => (
     <div className="space-y-5">
       {secciones.map((seccion) => (
@@ -532,48 +624,52 @@ export function CustomModalDetalleCuentasAnalista({
       id: "balance-general",
       label: "Balance General",
       content: (
-        <div className="space-y-6">
-          {renderizarControlesHabilitacion()}
+        esEstadoFinancieroTotalizado
+          ? renderizarBalanceGeneralTotalizado()
+          : (
+            <div className="space-y-6">
+              {renderizarControlesHabilitacion()}
 
-          {seccionesBalanceConfiguradas.length > 0 ? (
-            renderizarCamposConfigurados(seccionesBalanceConfiguradas)
-          ) : (
-            <div className="grid gap-8 lg:grid-cols-2">
-              <div className="space-y-5">
-                <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">• Activos</p>
-                <CampoDetalle etiqueta="Total Corrientes" valor={detalle.balanceGeneral.totalCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalCorrientes", valor)} deshabilitado={!registrosHabilitados} />
-                <CampoDetalle etiqueta="Total No Corrientes" valor={detalle.balanceGeneral.totalNoCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalNoCorrientes", valor)} deshabilitado={!registrosHabilitados} />
-                <CampoDetalle etiqueta="Otros Activos" valor={detalle.balanceGeneral.otrosActivos} onChange={(valor) => actualizarBalanceGeneral("otrosActivos", valor)} deshabilitado={!registrosHabilitados} />
-                <CampoDetalle etiqueta="Total Activos" valor={detalle.balanceGeneral.totalActivos} onChange={(valor) => actualizarBalanceGeneral("totalActivos", valor)} negrita deshabilitado={!totalesHabilitados} />
-                {totalesHabilitados && advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Activos")) ? (
-                  <p className="text-sm text-amber-700">
-                    {advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Activos"))}
-                  </p>
-                ) : null}
-              </div>
+              {seccionesBalanceConfiguradas.length > 0 ? (
+                renderizarCamposConfigurados(seccionesBalanceConfiguradas)
+              ) : (
+                <div className="grid gap-8 lg:grid-cols-2">
+                  <div className="space-y-5">
+                    <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">• Activos</p>
+                    <CampoDetalle etiqueta="Total Corrientes" valor={detalle.balanceGeneral.totalCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalCorrientes", valor)} deshabilitado={!registrosHabilitados} />
+                    <CampoDetalle etiqueta="Total No Corrientes" valor={detalle.balanceGeneral.totalNoCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalNoCorrientes", valor)} deshabilitado={!registrosHabilitados} />
+                    <CampoDetalle etiqueta="Otros Activos" valor={detalle.balanceGeneral.otrosActivos} onChange={(valor) => actualizarBalanceGeneral("otrosActivos", valor)} deshabilitado={!registrosHabilitados} />
+                    <CampoDetalle etiqueta="Total Activos" valor={detalle.balanceGeneral.totalActivos} onChange={(valor) => actualizarBalanceGeneral("totalActivos", valor)} negrita deshabilitado={!totalesHabilitados} />
+                    {totalesHabilitados && advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Activos")) ? (
+                      <p className="text-sm text-amber-700">
+                        {advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Activos"))}
+                      </p>
+                    ) : null}
+                  </div>
 
-              <div className="space-y-5">
-                <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">• Pasivos y Patrimonio</p>
-                <CampoDetalle etiqueta="Total Pasivos Corrientes" valor={detalle.balanceGeneral.totalPasivosCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalPasivosCorrientes", valor)} deshabilitado={!registrosHabilitados} />
-                <CampoDetalle etiqueta="Total Pasivos No Corrientes" valor={detalle.balanceGeneral.totalPasivosNoCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalPasivosNoCorrientes", valor)} deshabilitado={!registrosHabilitados} />
-                <CampoDetalle etiqueta="Otros Pasivos" valor={detalle.balanceGeneral.otrosPasivos} onChange={(valor) => actualizarBalanceGeneral("otrosPasivos", valor)} deshabilitado={!registrosHabilitados} />
-                <CampoDetalle etiqueta="Total Pasivos" valor={detalle.balanceGeneral.totalPasivos} onChange={(valor) => actualizarBalanceGeneral("totalPasivos", valor)} negrita deshabilitado={!totalesHabilitados} />
-                {totalesHabilitados && advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivos")) ? (
-                  <p className="text-sm text-amber-700">
-                    {advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivos"))}
-                  </p>
-                ) : null}
-                <CampoDetalle etiqueta="Patrimonio" valor={detalle.balanceGeneral.patrimonio} onChange={(valor) => actualizarBalanceGeneral("patrimonio", valor)} permitirNegativo deshabilitado={!registrosHabilitados} />
-                <CampoDetalle etiqueta="Total Pasivo y Patrimonio" valor={detalle.balanceGeneral.totalPasivoPatrimonio} onChange={(valor) => actualizarBalanceGeneral("totalPasivoPatrimonio", valor)} negrita deshabilitado={!totalesHabilitados} />
-                {totalesHabilitados && advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivo y Patrimonio")) ? (
-                  <p className="text-sm text-amber-700">
-                    {advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivo y Patrimonio"))}
-                  </p>
-                ) : null}
-              </div>
+                  <div className="space-y-5">
+                    <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">• Pasivos y Patrimonio</p>
+                    <CampoDetalle etiqueta="Total Pasivos Corrientes" valor={detalle.balanceGeneral.totalPasivosCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalPasivosCorrientes", valor)} deshabilitado={!registrosHabilitados} />
+                    <CampoDetalle etiqueta="Total Pasivos No Corrientes" valor={detalle.balanceGeneral.totalPasivosNoCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalPasivosNoCorrientes", valor)} deshabilitado={!registrosHabilitados} />
+                    <CampoDetalle etiqueta="Otros Pasivos" valor={detalle.balanceGeneral.otrosPasivos} onChange={(valor) => actualizarBalanceGeneral("otrosPasivos", valor)} deshabilitado={!registrosHabilitados} />
+                    <CampoDetalle etiqueta="Total Pasivos" valor={detalle.balanceGeneral.totalPasivos} onChange={(valor) => actualizarBalanceGeneral("totalPasivos", valor)} negrita deshabilitado={!totalesHabilitados} />
+                    {totalesHabilitados && advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivos")) ? (
+                      <p className="text-sm text-amber-700">
+                        {advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivos"))}
+                      </p>
+                    ) : null}
+                    <CampoDetalle etiqueta="Patrimonio" valor={detalle.balanceGeneral.patrimonio} onChange={(valor) => actualizarBalanceGeneral("patrimonio", valor)} permitirNegativo deshabilitado={!registrosHabilitados} />
+                    <CampoDetalle etiqueta="Total Pasivo y Patrimonio" valor={detalle.balanceGeneral.totalPasivoPatrimonio} onChange={(valor) => actualizarBalanceGeneral("totalPasivoPatrimonio", valor)} negrita deshabilitado={!totalesHabilitados} />
+                    {totalesHabilitados && advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivo y Patrimonio")) ? (
+                      <p className="text-sm text-amber-700">
+                        {advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivo y Patrimonio"))}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          )
       ),
     },
     {
@@ -581,7 +677,7 @@ export function CustomModalDetalleCuentasAnalista({
       label: "Estado de Ganancias y Pérdidas",
       content: (
         <div className="space-y-6">
-          {renderizarControlesHabilitacion()}
+          {!esEstadoFinancieroTotalizado ? renderizarControlesHabilitacion() : null}
           {seccionesGananciasConfiguradas.length > 0 ? (
             renderizarCamposConfigurados(seccionesGananciasConfiguradas)
           ) : (
@@ -600,7 +696,7 @@ export function CustomModalDetalleCuentasAnalista({
       tooltip: "Los ratios se habilitan para estados financieros Desagregado, Totalizado o Turquía.",
       content: (
         <div className="space-y-6">
-          {renderizarControlesHabilitacion()}
+          {!esEstadoFinancieroTotalizado ? renderizarControlesHabilitacion() : null}
           {seccionesRatiosConfiguradas.length > 0 ? (
             renderizarCamposConfigurados(seccionesRatiosConfiguradas)
           ) : (
@@ -624,8 +720,8 @@ export function CustomModalDetalleCuentasAnalista({
     const totalPasivoPatrimonioMinimo = totalPasivos + patrimonio;
 
     if (totalesHabilitados) {
-      if (totalPasivoPatrimonio + 0.000001 < totalPasivoPatrimonioMinimo) {
-        toast.error("Total Pasivo y Patrimonio no puede ser menor a Total Pasivos + Patrimonio.");
+      if (Math.abs(totalPasivoPatrimonio - totalPasivoPatrimonioMinimo) > 0.000001) {
+        toast.error("Total Pasivo y Patrimonio debe ser igual a Total Pasivos + Patrimonio.");
         return false;
       }
 
