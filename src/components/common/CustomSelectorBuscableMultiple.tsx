@@ -22,6 +22,7 @@ export interface MultiCustomSelectorBuscableProps {
   autoSeleccionarOpcionUnica?: boolean;
   resumirSelecciones?: boolean;
   onBlur?: () => void;
+  mostrarAccionSeleccionarTodos?: boolean;
 }
 
 export function MultiCustomSelectorBuscable({
@@ -40,6 +41,7 @@ export function MultiCustomSelectorBuscable({
   autoSeleccionarOpcionUnica = false,
   resumirSelecciones = false,
   onBlur,
+  mostrarAccionSeleccionarTodos = false,
 }: MultiCustomSelectorBuscableProps) {
   const [terminoBusqueda, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -144,6 +146,8 @@ export function MultiCustomSelectorBuscable({
   };
 
   const mostrarResumen = resumirSelecciones && selectedOptions.length >= 2;
+  const idsOpcionesFiltradas = filteredOptions.map((opcion) => opcion.num1).filter((id): id is number => id != null);
+  const estanTodasSeleccionadas = idsOpcionesFiltradas.length > 0 && idsOpcionesFiltradas.every((id) => value.includes(id));
 
   return (
     <div className={`relative ${hideLabel ? "" : "space-y-2"}`}>
@@ -215,7 +219,29 @@ export function MultiCustomSelectorBuscable({
                   <Loader2 size={16} className="animate-spin text-gray-400" />
                 </div>
               ) : filteredOptions.length > 0 ? (
-                filteredOptions.map((opt) => {
+                <>
+                  {mostrarAccionSeleccionarTodos && (
+                    <div
+                      className={`px-4 py-2 text-sm cursor-pointer border-b border-gray-100 transition-colors flex items-center gap-2 select-none ${estanTodasSeleccionadas ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-brand-wine font-medium hover:bg-brand-wine/5"}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (estanTodasSeleccionadas) {
+                          onChange(value.filter((id) => !idsOpcionesFiltradas.includes(id)));
+                          return;
+                        }
+
+                        onChange(Array.from(new Set([...value, ...idsOpcionesFiltradas])));
+                      }}
+                    >
+                      <span
+                        className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${estanTodasSeleccionadas ? "bg-brand-wine border-brand-wine" : "border-gray-300"}`}
+                      >
+                        {estanTodasSeleccionadas && <Check size={10} className="text-white" strokeWidth={3} />}
+                      </span>
+                      {estanTodasSeleccionadas ? "Deseleccionar todos" : "Seleccionar todos"}
+                    </div>
+                  )}
+                  {filteredOptions.map((opt) => {
                   const selected = value.includes(opt.num1!);
                   return (
                     <div
@@ -231,7 +257,8 @@ export function MultiCustomSelectorBuscable({
                       {opt.string1}
                     </div>
                   );
-                })
+                  })}
+                </>
               ) : (
                 <div className="px-4 py-3 text-xs text-gray-400 italic text-center">
                   No se encontraron resultados
