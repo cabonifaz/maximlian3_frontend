@@ -210,24 +210,6 @@ function esTextoAfirmativo(valor?: string) {
   return texto === "si" || texto === "sí" || texto === "true" || texto === "1";
 }
 
-function esCorreoElectronicoValido(valor?: string) {
-  const texto = valor?.trim() ?? "";
-  if (!texto) return true;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(texto);
-}
-
-function esPaginaWebValida(valor?: string) {
-  const texto = valor?.trim() ?? "";
-  if (!texto) return true;
-
-  try {
-    const url = new URL(texto);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
 const opcionesBooleanasBolsa = [
   { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 1, num2: null, num3: null, string1: "Sí", string2: null, string3: null, date1: null, date2: null, date3: null },
   { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 2, num2: null, num3: null, string1: "No", string2: null, string3: null, date1: null, date2: null, date3: null },
@@ -1008,14 +990,6 @@ function PantallaInvestigacionAnalista({
         throw new Error("No se encontró un pedido válido para crear el informe.");
       }
 
-      if (!esCorreoElectronicoValido(datosInvestigacion.identificacion.correoElectronico)) {
-        throw new Error("Correo inválido");
-      }
-
-      if (!esPaginaWebValida(datosInvestigacion.identificacion.paginaWeb)) {
-        throw new Error("URL inválida");
-      }
-
       const payload = construirPayloadCrearInforme({
         idPedido: idPedidoNumerico,
         idInforme: idInformeActual,
@@ -1078,12 +1052,6 @@ function PantallaInvestigacionAnalista({
     }),
     [datosInvestigacion.resumen, registroPedidoSeleccionado],
   );
-  const errorCorreoElectronico = useMemo(() => (
-    esCorreoElectronicoValido(datosInvestigacion.identificacion.correoElectronico) ? "" : "Correo inválido"
-  ), [datosInvestigacion.identificacion.correoElectronico]);
-  const errorPaginaWeb = useMemo(() => (
-    esPaginaWebValida(datosInvestigacion.identificacion.paginaWeb) ? "" : "URL inválida"
-  ), [datosInvestigacion.identificacion.paginaWeb]);
   const nombrePlantilla = useMemo(() => {
     if (!registroPedidoSeleccionado?.idPlantilla) return "";
 
@@ -1999,8 +1967,8 @@ function PantallaInvestigacionAnalista({
       />
       <CampoInvestigacionAnalista etiqueta="Número de Teléfono" valor={datosInvestigacion.identificacion.numeroTelefono} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("numeroTelefono", valor)} />
       <CampoInvestigacionAnalista etiqueta="Número de Fax" valor={datosInvestigacion.identificacion.numeroFax} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("numeroFax", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Correo Electrónico" valor={datosInvestigacion.identificacion.correoElectronico} soloLectura={esSoloLectura} tipoEntrada="email" error={errorCorreoElectronico} onChange={(valor) => actualizarIdentificacion("correoElectronico", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Página Web" valor={datosInvestigacion.identificacion.paginaWeb} soloLectura={esSoloLectura} tipoEntrada="url" error={errorPaginaWeb} onChange={(valor) => actualizarIdentificacion("paginaWeb", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Correo Electrónico" valor={datosInvestigacion.identificacion.correoElectronico} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("correoElectronico", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Página Web" valor={datosInvestigacion.identificacion.paginaWeb} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("paginaWeb", valor)} />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Estado Actual"
         valor={datosInvestigacion.identificacion.estadoActual}
