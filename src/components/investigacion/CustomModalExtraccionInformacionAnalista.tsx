@@ -256,6 +256,7 @@ export function CustomModalExtraccionInformacionAnalista({
                           }
                           hideLabel
                           resumirSelecciones
+                          mostrarAccionSeleccionarTodos
                           placeholder="Seleccione campos"
                         />
                       </div>
