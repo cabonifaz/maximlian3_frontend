@@ -9,6 +9,7 @@ export interface AssignmentOrderEntry {
   pais?: string;
   fechaAsignacion?: string;
   idIdioma?: number;
+  idPlantilla?: number;
   cliente: string;
   investigado: string;
   analista?: string;

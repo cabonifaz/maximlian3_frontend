@@ -2,6 +2,7 @@ import type {
   AccionBandejaAnalista,
   DatosInvestigacionAnalista,
   EstadoInvestigacionAnalista,
+  IdSeccionInvestigacionAnalista,
 } from "./investigacion.type";
 
 export interface InformeListParams {
@@ -241,4 +242,54 @@ export interface InformeObtenerResponse {
   idInforme?: number;
   idPedido?: number;
   datosInvestigacion: DatosInvestigacionAnalista;
+}
+
+export type AlcanceExtraccionInforme = "general" | IdSeccionInvestigacionAnalista;
+export type InformeConfiguracionExtraccion = Record<string, string[]>;
+
+export interface InformeCampoExtraccionDisponible {
+  id: number;
+  claveCampo: string;
+  etiquetaCampo: string;
+}
+
+export interface InformeSeccionExtraccionDisponible {
+  claveSeccion: string;
+  etiquetaSeccion: string;
+  campos: InformeCampoExtraccionDisponible[];
+}
+
+export interface InformeObtenerUrlPrefirmadaRequest {
+  fileName: string;
+  mimeType: string;
+}
+
+export interface InformeObtenerUrlPrefirmadaResponse {
+  uploadUrl: string;
+  fileKey: string;
+  expiresIn?: number;
+}
+
+export interface InformeAutocompletarRequest {
+  fileKey: string;
+  mimeType: string;
+  secciones: InformeConfiguracionExtraccion;
+  prompt: string;
+}
+
+export interface InformeExtraerDocumentoRequest {
+  archivo: File;
+  secciones: string;
+  prompt: string;
+}
+
+export interface InformeExtraccionResponse {
+  exito?: boolean;
+  success?: boolean;
+  mensaje?: string;
+  camposExtraidos?: Partial<DatosInvestigacionAnalista>;
+  extractedFields?: Partial<DatosInvestigacionAnalista>;
+  secciones?: Partial<DatosInvestigacionAnalista>;
+  result?: Partial<DatosInvestigacionAnalista>;
+  alcance?: AlcanceExtraccionInforme;
 }

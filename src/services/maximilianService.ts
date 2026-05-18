@@ -36,6 +36,10 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
   const esEndpointInformeGuardar =
     url.includes("/api/Informe/crear")
     || url.includes("/api/Informe/editar");
+  const esEndpointInformeExtraccion =
+    url.includes("/api/Informe/obtenerUrlPrefirmada")
+    || url.includes("/api/Informe/autocompletar")
+    || url.includes("/api/Informe/extraerDocumento");
 
   if (esEndpointAsignacion && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION && data.mensaje === "OK") {
     return true;
@@ -43,6 +47,10 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
 
   if (esEndpointInformeGuardar && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
     return data.mensaje === "Informe registrado correctamente." || data.mensaje === "Informe actualizado correctamente.";
+  }
+
+  if (esEndpointInformeExtraccion && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return Boolean(data.result);
   }
 
   return false;
@@ -101,7 +109,12 @@ maximilianService.interceptors.response.use(
 
         const mensajeAmigable = obtenerMensajeAmigableUsuario(response.config.url);
         toast.error(mensajeAmigable || data.mensaje || fallbackMessage);
-      } else if (response.config.method !== "get") {
+      } else if (
+        response.config.method !== "get"
+        && !response.config.url?.includes("/api/Informe/obtenerUrlPrefirmada")
+        && !response.config.url?.includes("/api/Informe/autocompletar")
+        && !response.config.url?.includes("/api/Informe/extraerDocumento")
+      ) {
         toast.success(data.mensaje);
       }
     }

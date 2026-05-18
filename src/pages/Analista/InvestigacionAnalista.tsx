@@ -48,7 +48,12 @@ import {
   obtenerDatosInvestigacionAnalista,
   seccionesInvestigacionAnalista,
 } from "@maximilian/shared/utils/datos-simulados-investigacion";
-import type { InformeCrearRequest } from "@maximilian/shared/types/informe.type";
+import type {
+  AlcanceExtraccionInforme,
+  InformeConfiguracionExtraccion,
+  InformeCrearRequest,
+  InformeSeccionExtraccionDisponible,
+} from "@maximilian/shared/types/informe.type";
 import type {
   ArchivoInvestigacionAnalista,
   DatosInvestigacionAnalista,
@@ -77,12 +82,15 @@ interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInves
 }
 
 interface CambioExtraccionPendiente {
+  ruta: string[];
   etiqueta: string;
   valorOriginal: string;
   valorNuevo: string;
 }
 
 const FILAS_POR_PAGINA_INVESTIGACION = 5;
+const ID_ESTADO_PEDIDO_BORRADOR = 3;
+const ID_ESTADO_PEDIDO_FINALIZADO = 5;
 
 function obtenerTotalPaginas(totalRegistros: number) {
   return Math.max(1, Math.ceil(totalRegistros / FILAS_POR_PAGINA_INVESTIGACION));
@@ -202,28 +210,241 @@ function esTextoAfirmativo(valor?: string) {
   return texto === "si" || texto === "sí" || texto === "true" || texto === "1";
 }
 
-function esCorreoElectronicoValido(valor?: string) {
-  const texto = valor?.trim() ?? "";
-  if (!texto) return true;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(texto);
-}
-
-function esPaginaWebValida(valor?: string) {
-  const texto = valor?.trim() ?? "";
-  if (!texto) return true;
-
-  try {
-    const url = new URL(texto);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
 const opcionesBooleanasBolsa = [
   { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 1, num2: null, num3: null, string1: "Sí", string2: null, string3: null, date1: null, date2: null, date3: null },
   { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 2, num2: null, num3: null, string1: "No", string2: null, string3: null, date1: null, date2: null, date3: null },
 ];
+
+const ETIQUETAS_SECCIONES_EXTRACCION: Record<string, string> = {
+  identificacion: "Identificación",
+  aspectosLegales: "Aspectos Legales",
+  companiasRelacionadas: "Compañías Relacionadas",
+  operacionPrincipal: "Ramo Operaciones",
+  importaciones: "Importaciones",
+  exportaciones: "Exportaciones",
+  locales: "Locales",
+  informacionFinanciera: "Información Financiera",
+  balances: "Balances",
+  referencias: "Referencias",
+  proveedores: "Proveedores",
+  bancos: "Bancos",
+  datosGenerales: "Datos Generales",
+  directorioEjecutivo: "Directorio Ejecutivo",
+};
+
+const IDS_CONFLICTO_EXTRACCION_VISIBLES = new Set([
+  "identificacion.nombreEmpresa",
+  "identificacion.pais",
+  "informacionFinanciera.contenido",
+  "informacionFinanciera.comentariosFinancieros",
+  "informacionFinanciera.activosFijos",
+  "informacionFinanciera.seguros",
+]);
+
+const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacionAnalista, Record<string, string[]>> = {
+  identificacion: {
+    identificacion: [
+      "tipoPersona",
+      "nombreEmpresa",
+      "nombreComercial",
+      "pais",
+      "operacionesCambio",
+      "tipoIdentificacionFiscal",
+      "numeroIdentificacionFiscal",
+      "direccionPrincipal",
+      "ciudadEstadoProvincia",
+      "numeroTelefono",
+      "numeroFax",
+      "correoElectronico",
+      "paginaWeb",
+      "estadoActual",
+      "datosAdicionales",
+    ],
+  },
+  "aspectos-legales": {
+    aspectosLegales: [
+      "tipoEmpresa",
+      "fechaConstitucion",
+      "ciudadRegistro",
+      "notaria",
+      "notario",
+      "registro",
+      "condiciones",
+      "operacionesCambioDivisas",
+      "monedaTipoCambio",
+      "capitalInicial",
+      "capitalDesembolsado",
+      "ultimaAmpliacion",
+      "patrimonioNeto",
+      "tipoAcciones",
+      "valorAcciones",
+      "obligacionBolsa",
+      "tipoCambio",
+      "antecedentes",
+      "aspectosLegales",
+      "comentariosEmpresasRelacionadas",
+    ],
+    companiasRelacionadas: ["empresa", "idFiscal", "pais"],
+  },
+  "ramo-operaciones": {
+    operacionPrincipal: [
+      "sector",
+      "actividad",
+      "categoriaCiiu",
+      "claseCiiu",
+      "actividadPrincipal",
+      "ventasContadoPorcentaje",
+      "ventasContadoDetalle",
+      "ventasCreditoPorcentaje",
+      "ventasCreditoDetalle",
+      "ventasCreditoSeleccion",
+      "territorioVentasPorcentaje",
+      "territorioVentasDetalle",
+      "ventasExtranjeroPorcentaje",
+      "ventasExtranjeroDetalle",
+      "comprasNacionalesPorcentaje",
+      "comprasNacionalesDetalle",
+      "comprasExtranjeroPorcentaje",
+      "comprasExtranjeroDetalle",
+      "numeroEmpleados",
+      "numeroEmpleadosDetalle",
+      "comentariosOperaciones",
+    ],
+    importaciones: ["anio", "mes", "moneda", "paises", "productos", "monto", "operaciones"],
+    exportaciones: ["anio", "mes", "moneda", "paises", "productos", "monto", "operaciones"],
+    locales: ["tipoLocal", "direccion", "comentario", "imagen", "imagenUrl", "imagenTipo"],
+  },
+  "informacion-financiera": {
+    informacionFinanciera: ["contenido", "comentariosFinancieros", "activosFijos", "seguros"],
+  },
+  balances: {
+    balances: [
+      "codigo",
+      "periodo",
+      "fecha",
+      "fechaInicio",
+      "fechaFin",
+      "esActual",
+      "tipo",
+      "tipoEstadoFinanciero",
+      "tipoCambio",
+      "operacionCambio",
+      "tipoBalance",
+      "balanceGeneral",
+      "perdidaGanancia",
+      "cuentas",
+      "detalleCuentas",
+    ],
+  },
+  "bancos-proveedores": {
+    referencias: ["comentariosProveedores", "referenciasBancos", "litigios", "riesgoPrincipal", "superintendencia"],
+    proveedores: [
+      "nombreEmpresa",
+      "contacto",
+      "tipoProveedor",
+      "telefono",
+      "tipoPersona",
+      "pais",
+      "taxIdType",
+      "taxIdNumber",
+      "tieneReferenciaComercial",
+      "comienzoNegociaciones",
+      "operacionCambioMoneda",
+      "tipoCambio",
+      "limiteCredito",
+      "promedioMensual",
+    ],
+    bancos: ["banco", "numeroCuenta", "sector", "telefono", "sectoristaJefeCuenta"],
+  },
+  "datos-generales": {
+    datosGenerales: ["informacionGeneral", "opinionCredito"],
+  },
+  "directorio-ejecutivo": {
+    directorioEjecutivo: [
+      "ejecutivo",
+      "cargo",
+      "porcentaje",
+      "lista",
+      "detalleEjecutivo",
+      "orden",
+      "vinculadoDesde",
+      "companiaAnterior",
+      "esParteDirectorio",
+      "pais",
+      "tipoPersona",
+      "descripcionBusqueda",
+      "nombreCompleto",
+    ],
+  },
+};
+
+function humanizarClaveExtraccion(valor: string) {
+  const texto = valor
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ")
+    .trim();
+
+  return texto ? texto.charAt(0).toUpperCase() + texto.slice(1) : valor;
+}
+
+function construirSeccionesDisponiblesExtraccion(alcance: AlcanceExtraccionInforme): InformeSeccionExtraccionDisponible[] {
+  const configuraciones = alcance === "general"
+    ? Object.values(CONFIGURACION_EXTRACCION_POR_SECCION)
+    : [CONFIGURACION_EXTRACCION_POR_SECCION[alcance]];
+
+  return configuraciones.flatMap((configuracion) =>
+    Object.entries(configuracion).map(([claveSeccion, campos]) => ({
+      claveSeccion,
+      etiquetaSeccion: ETIQUETAS_SECCIONES_EXTRACCION[claveSeccion] ?? humanizarClaveExtraccion(claveSeccion),
+      campos: campos.map((campo, indice) => ({
+        id: indice + 1,
+        claveCampo: campo,
+        etiquetaCampo: humanizarClaveExtraccion(campo),
+      })),
+    })),
+  );
+}
+
+function esRegistroPlano(valor: unknown): valor is Record<string, unknown> {
+  return typeof valor === "object" && valor !== null && !Array.isArray(valor);
+}
+
+function obtenerOpcionTablaMaestraPorId(
+  opciones: { num1: number | null; string1: string | null }[] | undefined,
+  valor: unknown,
+) {
+  const numero = typeof valor === "number"
+    ? valor
+    : typeof valor === "string" && valor.trim() !== "" && !Number.isNaN(Number(valor))
+      ? Number(valor)
+      : null;
+
+  if (numero == null) return undefined;
+  return opciones?.find((opcion) => opcion.num1 === numero);
+}
+
+function obtenerOpcionTablaMaestraPorTexto(
+  opciones: { num1: number | null; string1: string | null }[] | undefined,
+  valor: unknown,
+) {
+  const texto = typeof valor === "string" ? valor.trim().toLowerCase() : "";
+  if (!texto) return undefined;
+  return opciones?.find((opcion) => opcion.string1?.trim().toLowerCase() === texto);
+}
+
+function actualizarValorEnRuta<T>(valorActual: T, ruta: string[], valorNuevo: unknown): T {
+  if (ruta.length === 0) return valorNuevo as T;
+
+  const [claveActual, ...restoRuta] = ruta;
+  const registroActual = (esRegistroPlano(valorActual) ? valorActual : {}) as Record<string, unknown>;
+
+  return {
+    ...registroActual,
+    [claveActual]: restoRuta.length === 0
+      ? valorNuevo
+      : actualizarValorEnRuta(registroActual[claveActual], restoRuta, valorNuevo),
+  } as T;
+}
 
 function construirCuentaBalance(detalle?: RegistroBalanceAnalista["detalleCuentas"]) {
   if (!detalle) return null;
@@ -251,17 +472,21 @@ function construirCuentaBalance(detalle?: RegistroBalanceAnalista["detalleCuenta
 function construirPayloadCrearInforme({
   idPedido,
   idInforme,
-  idEstado,
+  idEstadoPedido,
+  idIdiomaPedido,
   datosInvestigacion,
   opcionesTipoPersona,
   opcionesPais,
+  opcionesEstadoCliente,
 }: {
   idPedido: number;
   idInforme?: number;
-  idEstado: number;
+  idEstadoPedido: number;
+  idIdiomaPedido: number;
   datosInvestigacion: DatosInvestigacionAnalista;
   opcionesTipoPersona: { num1: number | null; string1: string | null }[] | undefined;
   opcionesPais: { num1: number | null; string1: string | null }[] | undefined;
+  opcionesEstadoCliente: { num1: number | null; string1: string | null }[] | undefined;
 }): InformeCrearRequest {
   const { identificacion, aspectosLegales, operacionPrincipal, informacionFinanciera, referencias, datosGenerales } = datosInvestigacion;
   const esEdicion = typeof idInforme === "number" && idInforme > 0;
@@ -283,7 +508,7 @@ function construirPayloadCrearInforme({
     fax: identificacion.numeroFax,
     email: identificacion.correoElectronico,
     paginaWeb: identificacion.paginaWeb,
-    idEstado,
+    idEstado: obtenerIdPorTexto(opcionesEstadoCliente, identificacion.estadoActual),
     datosAdicionales: identificacion.datosAdicionales,
     observacionesIdentificacion: "",
     idTipoEmpresa: 0,
@@ -439,10 +664,10 @@ function construirPayloadCrearInforme({
       {
         ...(esEdicion ? { idInformePedido: 0 } : {}),
         idPedido,
-        idIdioma: 0,
+        idIdioma: idIdiomaPedido,
         documentoWord: "",
         documentoExcel: "",
-        idEstado,
+        idEstado: idEstadoPedido,
       },
     ],
   };
@@ -590,7 +815,7 @@ function PantallaInvestigacionAnalista({
   const [estaAbiertoModalRegistroPersona, setEstaAbiertoModalRegistroPersona] = useState(false);
   const [estaAbiertoModalExtraccionInformacion, setEstaAbiertoModalExtraccionInformacion] = useState(false);
   const [estaAbiertoModalArchivosInvestigacion, setEstaAbiertoModalArchivosInvestigacion] = useState(false);
-  const [alcanceExtraccionInformacion, setAlcanceExtraccionInformacion] = useState<"general" | "informacion-financiera">("general");
+  const [alcanceExtraccionInformacion, setAlcanceExtraccionInformacion] = useState<AlcanceExtraccionInforme>("general");
   const [tituloSeccionExtraccion, setTituloSeccionExtraccion] = useState("");
   const [cambiosExtraccionPendientes, setCambiosExtraccionPendientes] = useState<Record<string, CambioExtraccionPendiente>>({});
   const [idCambioExtraccionActivo, setIdCambioExtraccionActivo] = useState<string | null>(null);
@@ -721,6 +946,12 @@ function PantallaInvestigacionAnalista({
     staleTime: Infinity,
   });
 
+  const { data: opcionesPlantillaInforme } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.PLANTILLA_INFORME],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLANTILLA_INFORME),
+    staleTime: Infinity,
+  });
+
   const { data: registroPedidoSeleccionado } = useQuery({
     queryKey: ["asignacion-resumen-analista", idPedido],
     queryFn: async () => {
@@ -748,32 +979,26 @@ function PantallaInvestigacionAnalista({
   const guardarBorrador = (debeRedirigirABandeja: boolean) => {
     marcarSeccionActivaComoBorrador();
     setDebeVolverABandejaTrasGuardarBorrador(debeRedirigirABandeja);
-    guardarInformeMutation.mutate(3);
+    guardarInformeMutation.mutate(ID_ESTADO_PEDIDO_BORRADOR);
   };
 
   const guardarInformeMutation = useMutation({
-    mutationFn: async (idEstado: number) => {
+    mutationFn: async (idEstadoPedido: number) => {
       const idPedidoNumerico = Number(idPedido);
 
       if (!Number.isFinite(idPedidoNumerico) || idPedidoNumerico <= 0) {
         throw new Error("No se encontró un pedido válido para crear el informe.");
       }
 
-      if (!esCorreoElectronicoValido(datosInvestigacion.identificacion.correoElectronico)) {
-        throw new Error("Correo inválido");
-      }
-
-      if (!esPaginaWebValida(datosInvestigacion.identificacion.paginaWeb)) {
-        throw new Error("URL inválida");
-      }
-
       const payload = construirPayloadCrearInforme({
         idPedido: idPedidoNumerico,
         idInforme: idInformeActual,
-        idEstado,
+        idEstadoPedido,
+        idIdiomaPedido: registroPedidoSeleccionado?.idIdioma ?? 0,
         datosInvestigacion,
         opcionesTipoPersona,
         opcionesPais,
+        opcionesEstadoCliente,
       });
 
       if (idInformeActual && idInformeActual > 0) {
@@ -794,13 +1019,13 @@ function PantallaInvestigacionAnalista({
       setEstaAbiertoModalFinalizarInvestigacion(false);
       setEstaAbiertoModalConfirmacionPrimerBorrador(false);
 
-      if (idEstado === 5) {
+      if (idEstado === ID_ESTADO_PEDIDO_FINALIZADO) {
         setDebeVolverABandejaTrasGuardarBorrador(false);
         navigate("/analista");
         return;
       }
 
-      if (idEstado === 3 && debeVolverABandejaTrasGuardarBorrador) {
+      if (idEstado === ID_ESTADO_PEDIDO_BORRADOR && debeVolverABandejaTrasGuardarBorrador) {
         setDebeVolverABandejaTrasGuardarBorrador(false);
         navigate("/analista/bandeja");
         return;
@@ -827,13 +1052,13 @@ function PantallaInvestigacionAnalista({
     }),
     [datosInvestigacion.resumen, registroPedidoSeleccionado],
   );
-  const errorCorreoElectronico = useMemo(() => (
-    esCorreoElectronicoValido(datosInvestigacion.identificacion.correoElectronico) ? "" : "Correo inválido"
-  ), [datosInvestigacion.identificacion.correoElectronico]);
-  const errorPaginaWeb = useMemo(() => (
-    esPaginaWebValida(datosInvestigacion.identificacion.paginaWeb) ? "" : "URL inválida"
-  ), [datosInvestigacion.identificacion.paginaWeb]);
-  const nombrePlantilla = useMemo(() => "", []);
+  const nombrePlantilla = useMemo(() => {
+    if (!registroPedidoSeleccionado?.idPlantilla) return "";
+
+    return opcionesPlantillaInforme?.find(
+      (opcion) => opcion.num1 === registroPedidoSeleccionado.idPlantilla,
+    )?.string1 ?? "";
+  }, [opcionesPlantillaInforme, registroPedidoSeleccionado?.idPlantilla]);
   const opcionesFiltroTipoProveedor = useMemo(
     () => [
       { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 0, num2: null, num3: null, string1: "Todos", string2: null, string3: null, date1: null, date2: null, date3: null },
@@ -950,6 +1175,86 @@ function PantallaInvestigacionAnalista({
     }));
   };
 
+  const actualizarCampoInvestigacion = (ruta: string[], valor: unknown) => {
+    setDatosInvestigacion((anterior) => actualizarValorEnRuta(anterior, ruta, valor));
+  };
+
+  const normalizarValorExtraido = (ruta: string[], valor: unknown) => {
+    const rutaTexto = ruta.join(".");
+
+    if (rutaTexto === "identificacion.tipoPersona") {
+      const opcionPorId = obtenerOpcionTablaMaestraPorId(opcionesTipoPersona, valor);
+      if (opcionPorId?.string1) {
+        return {
+          valor: opcionPorId.string1,
+          alAplicar: () => setIdTipoPersonaSeleccionado(opcionPorId.num1 ?? undefined),
+        };
+      }
+
+      const opcionPorTexto = obtenerOpcionTablaMaestraPorTexto(opcionesTipoPersona, valor);
+      if (opcionPorTexto?.string1) {
+        return {
+          valor: opcionPorTexto.string1,
+          alAplicar: () => setIdTipoPersonaSeleccionado(opcionPorTexto.num1 ?? undefined),
+        };
+      }
+
+      return {
+        valor: valor == null ? "" : String(valor).trim(),
+        alAplicar: () => setIdTipoPersonaSeleccionado(undefined),
+      };
+    }
+
+    if (rutaTexto === "identificacion.pais") {
+      const opcionPorId = obtenerOpcionTablaMaestraPorId(opcionesPais, valor);
+      if (opcionPorId?.string1) {
+        return {
+          valor: opcionPorId.string1,
+          alAplicar: () => setIdPaisSeleccionado(opcionPorId.num1 ?? undefined),
+        };
+      }
+
+      const opcionPorTexto = obtenerOpcionTablaMaestraPorTexto(opcionesPais, valor);
+      if (opcionPorTexto?.string1) {
+        return {
+          valor: opcionPorTexto.string1,
+          alAplicar: () => setIdPaisSeleccionado(opcionPorTexto.num1 ?? undefined),
+        };
+      }
+
+      return {
+        valor: valor == null ? "" : String(valor).trim(),
+        alAplicar: () => setIdPaisSeleccionado(undefined),
+      };
+    }
+
+    if (rutaTexto === "identificacion.estadoActual") {
+      const opcionPorId = obtenerOpcionTablaMaestraPorId(opcionesEstadoCliente, valor);
+      if (opcionPorId?.string1) {
+        return { valor: opcionPorId.string1 };
+      }
+
+      const opcionPorTexto = obtenerOpcionTablaMaestraPorTexto(opcionesEstadoCliente, valor);
+      if (opcionPorTexto?.string1) {
+        return { valor: opcionPorTexto.string1 };
+      }
+    }
+
+    if (rutaTexto === "identificacion.ciudadEstadoProvincia") {
+      const opcionPorId = obtenerOpcionTablaMaestraPorId(opcionesCiudad, valor);
+      if (opcionPorId?.string1) {
+        return { valor: opcionPorId.string1 };
+      }
+
+      const opcionPorTexto = obtenerOpcionTablaMaestraPorTexto(opcionesCiudad, valor);
+      if (opcionPorTexto?.string1) {
+        return { valor: opcionPorTexto.string1 };
+      }
+    }
+
+    return { valor: valor == null ? "" : String(valor).trim() };
+  };
+
   const aplicarCambioExtraccion = (idCambio: string, onAplicar: () => void) => {
     onAplicar();
     setCambiosExtraccionPendientes((anterior) => {
@@ -962,12 +1267,14 @@ function PantallaInvestigacionAnalista({
 
   const registrarCambioExtraccion = ({
     id,
+    ruta,
     etiqueta,
     valorActual,
     valorExtraido,
     onAplicar,
   }: {
     id: string;
+    ruta: string[];
     etiqueta: string;
     valorActual: string;
     valorExtraido: string;
@@ -983,14 +1290,65 @@ function PantallaInvestigacionAnalista({
       return;
     }
 
+    if (!IDS_CONFLICTO_EXTRACCION_VISIBLES.has(id)) {
+      onAplicar();
+      return;
+    }
+
     setCambiosExtraccionPendientes((anterior) => ({
       ...anterior,
       [id]: {
+        ruta,
         etiqueta,
         valorOriginal: valorAnteriorLimpio,
         valorNuevo: valorNuevoLimpio,
       },
     }));
+  };
+
+  const aplicarResultadosExtraccion = (
+    seccionActual: unknown,
+    seccionExtraida: unknown,
+    rutaBase: string[] = [],
+  ) => {
+    if (Array.isArray(seccionActual)) {
+      if (!Array.isArray(seccionExtraida) || seccionExtraida.length === 0) return;
+      actualizarCampoInvestigacion(rutaBase, seccionExtraida);
+      return;
+    }
+
+    if (esRegistroPlano(seccionActual) && esRegistroPlano(seccionExtraida)) {
+      Object.entries(seccionExtraida).forEach(([clave, valor]) => {
+        if (!(clave in seccionActual)) return;
+        aplicarResultadosExtraccion(
+          (seccionActual as Record<string, unknown>)[clave],
+          valor,
+          [...rutaBase, clave],
+        );
+      });
+      return;
+    }
+
+    const { valor: valorExtraido, alAplicar } = normalizarValorExtraido(rutaBase, seccionExtraida);
+    const valorActual = seccionActual == null ? "" : String(seccionActual).trim();
+    if (!valorExtraido) return;
+
+    const etiquetaSeccion = ETIQUETAS_SECCIONES_EXTRACCION[rutaBase[0] ?? ""] ?? humanizarClaveExtraccion(rutaBase[0] ?? "");
+    const etiquetaCampo = humanizarClaveExtraccion(rutaBase[rutaBase.length - 1] ?? "");
+    const etiquetaCompleta = rutaBase.length > 1 ? `${etiquetaSeccion} - ${etiquetaCampo}` : etiquetaCampo;
+    const idCambio = rutaBase.join(".");
+
+    registrarCambioExtraccion({
+      id: idCambio,
+      ruta: rutaBase,
+      etiqueta: etiquetaCompleta,
+      valorActual,
+      valorExtraido,
+      onAplicar: () => {
+        alAplicar?.();
+        actualizarCampoInvestigacion(rutaBase, valorExtraido);
+      },
+    });
   };
 
   const obtenerIndicadorCambioExtraccion = (id: string) => (
@@ -1452,9 +1810,13 @@ function PantallaInvestigacionAnalista({
     0,
   );
   const porcentajeRestanteEjecutivos = Math.max(0, 100 - totalPorcentajeEjecutivos);
+  const seccionesDisponiblesExtraccion = useMemo(
+    () => construirSeccionesDisponiblesExtraccion(alcanceExtraccionInformacion),
+    [alcanceExtraccionInformacion],
+  );
 
   const abrirModalExtraccionInformacion = (
-    alcance: "general" | "informacion-financiera",
+    alcance: AlcanceExtraccionInforme,
     tituloSeccion?: string,
   ) => {
     setAlcanceExtraccionInformacion(alcance);
@@ -1462,82 +1824,72 @@ function PantallaInvestigacionAnalista({
     setEstaAbiertoModalExtraccionInformacion(true);
   };
 
-  const extraerInformacionDemo = async (archivos: File[], alcance: "general" | "informacion-financiera", especificaciones: string) => {
+  const extraerInformacionDocumento = async (
+    archivos: File[],
+    alcance: AlcanceExtraccionInforme,
+    especificaciones: string,
+    configuracionSecciones: InformeConfiguracionExtraccion,
+  ) => {
     if (archivos.length === 0) return;
 
+    const promptBase = alcance === "general"
+      ? "Extrae la mayor cantidad posible de informacion util del documento y responde unicamente con las secciones solicitadas."
+      : `Extrae unicamente la informacion necesaria para completar la seccion ${tituloSeccionExtraccion || "solicitada"} y responde solo con esa estructura.`;
+    const prompt = especificaciones.trim()
+      ? `${promptBase} Considera tambien estas indicaciones del usuario: ${especificaciones.trim()}`
+      : promptBase;
     const toastId = toast.loading(
       alcance === "general"
         ? "Extrayendo información del documento..."
-        : "Extrayendo información financiera...",
+        : `Extrayendo información de ${tituloSeccionExtraccion || "la sección"}...`,
     );
 
-    await new Promise((resolve) => window.setTimeout(resolve, 1200));
+    try {
+      const totalArchivos = archivos.length;
 
-    const fechaExtraccion = new Intl.DateTimeFormat("es-PE", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(new Date());
-    const nombresArchivos = archivos.map((archivo) => archivo.name).join(", ");
-    const descripcionArchivos = archivos.length === 1
-      ? `del archivo ${nombresArchivos}`
-      : `de los archivos ${nombresArchivos}`;
-    const sufijoEspecificaciones = especificaciones.trim()
-      ? ` Considerando las especificaciones: ${especificaciones.trim()}.`
-      : "";
+      for (const [indiceArchivo, archivo] of archivos.entries()) {
+        const etiquetaArchivo = totalArchivos > 1
+          ? ` (${indiceArchivo + 1}/${totalArchivos})`
+          : "";
+        const mimeType = archivo.type || "application/octet-stream";
 
-    if (alcance === "general") {
-      registrarCambioExtraccion({
-        id: "identificacion.nombreEmpresa",
-        etiqueta: "Nombre de la Empresa",
-        valorActual: datosInvestigacion.identificacion.nombreEmpresa,
-        valorExtraido: "Papelitos",
-        onAplicar: () => actualizarIdentificacion("nombreEmpresa", "Papelitos"),
-      });
-      registrarCambioExtraccion({
-        id: "identificacion.pais",
-        etiqueta: "País",
-        valorActual: datosInvestigacion.identificacion.pais,
-        valorExtraido: "Brasil",
-        onAplicar: () => actualizarIdentificacion("pais", "Brasil"),
-      });
+        toast.loading(`Preparando archivo${etiquetaArchivo}...`, { id: toastId });
+        const { uploadUrl, fileKey } = await informeService.obtenerUrlPrefirmada({
+          fileName: archivo.name,
+          mimeType,
+        });
+
+        toast.loading(`Subiendo archivo${etiquetaArchivo}...`, { id: toastId });
+        await informeService.subirArchivoUrlPrefirmada(uploadUrl, archivo);
+
+        toast.loading(`Procesando información${etiquetaArchivo}...`, { id: toastId });
+        const respuestaExtraccion = await informeService.autocompletar({
+          fileKey,
+          mimeType,
+          secciones: configuracionSecciones,
+          prompt,
+        });
+
+        const camposExtraidos = respuestaExtraccion.camposExtraidos
+          ?? respuestaExtraccion.extractedFields
+          ?? respuestaExtraccion.secciones
+          ?? respuestaExtraccion.result;
+
+        if (!camposExtraidos) continue;
+
+        Object.entries(configuracionSecciones).forEach(([claveSeccion]) => {
+          const seccionActualDatos = (datosInvestigacion as unknown as Record<string, unknown>)[claveSeccion];
+          const seccionExtraida = (camposExtraidos as Record<string, unknown>)[claveSeccion];
+          if (seccionActualDatos === undefined || seccionExtraida === undefined) return;
+          aplicarResultadosExtraccion(seccionActualDatos, seccionExtraida, [claveSeccion]);
+        });
+      }
+
+      toast.dismiss(toastId);
+    } catch (error) {
+      toast.error("No se pudo extraer la información del documento.", { id: toastId });
+      throw error;
     }
-
-    registrarCambioExtraccion({
-      id: "informacionFinanciera.contenido",
-      etiqueta: "Contenido",
-      valorActual: datosInvestigacion.informacionFinanciera.contenido,
-      valorExtraido: `Información simulada extraída ${descripcionArchivos}. Se identificó contenido financiero con referencias a estados de resultados, composición de activos y estructura operativa de la empresa.${sufijoEspecificaciones}`,
-      onAplicar: () => actualizarInformacionFinanciera("contenido", `Información simulada extraída ${descripcionArchivos}. Se identificó contenido financiero con referencias a estados de resultados, composición de activos y estructura operativa de la empresa.${sufijoEspecificaciones}`),
-    });
-    registrarCambioExtraccion({
-      id: "informacionFinanciera.comentariosFinancieros",
-      etiqueta: "Comentarios Financieros",
-      valorActual: datosInvestigacion.informacionFinanciera.comentariosFinancieros,
-      valorExtraido: `El documento sugiere un comportamiento financiero estable, con continuidad operativa y referencias consistentes para elaborar el análisis financiero preliminar.${sufijoEspecificaciones}`,
-      onAplicar: () => actualizarInformacionFinanciera("comentariosFinancieros", `El documento sugiere un comportamiento financiero estable, con continuidad operativa y referencias consistentes para elaborar el análisis financiero preliminar.${sufijoEspecificaciones}`),
-    });
-    registrarCambioExtraccion({
-      id: "informacionFinanciera.activosFijos",
-      etiqueta: "Activos",
-      valorActual: datosInvestigacion.informacionFinanciera.activosFijos,
-      valorExtraido: `Se detectan activos fijos asociados a infraestructura operativa, mobiliario y equipamiento relevante. Extracción demo procesada el ${fechaExtraccion}.${sufijoEspecificaciones}`,
-      onAplicar: () => actualizarInformacionFinanciera("activosFijos", `Se detectan activos fijos asociados a infraestructura operativa, mobiliario y equipamiento relevante. Extracción demo procesada el ${fechaExtraccion}.${sufijoEspecificaciones}`),
-    });
-    registrarCambioExtraccion({
-      id: "informacionFinanciera.seguros",
-      etiqueta: "Seguros",
-      valorActual: datosInvestigacion.informacionFinanciera.seguros,
-      valorExtraido: `Se identifican menciones a coberturas patrimoniales y operativas. En la integración real, aquí se resumirían las pólizas, vigencias y riesgos cubiertos.${sufijoEspecificaciones}`,
-      onAplicar: () => actualizarInformacionFinanciera("seguros", `Se identifican menciones a coberturas patrimoniales y operativas. En la integración real, aquí se resumirían las pólizas, vigencias y riesgos cubiertos.${sufijoEspecificaciones}`),
-    });
-
-    toast.success(
-      alcance === "general"
-        ? "Demo aplicada: se completó la sección Información Financiera."
-        : "Se completó la sección Información Financiera.",
-      { id: toastId },
-    );
   };
 
   const permiteExtraccionSeccion = idSeccionActiva !== "balances";
@@ -1547,7 +1899,7 @@ function PantallaInvestigacionAnalista({
       variant="secondary"
       size="sm"
       className="border-blue-300 text-blue-600"
-      onClick={() => abrirModalExtraccionInformacion(idSeccionActiva === "informacion-financiera" ? "informacion-financiera" : "general", seccionActual.titulo)}
+      onClick={() => abrirModalExtraccionInformacion(idSeccionActiva, seccionActual.titulo)}
     >
       <Sparkles size={14} />
       Extraer Información
@@ -1615,8 +1967,8 @@ function PantallaInvestigacionAnalista({
       />
       <CampoInvestigacionAnalista etiqueta="Número de Teléfono" valor={datosInvestigacion.identificacion.numeroTelefono} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("numeroTelefono", valor)} />
       <CampoInvestigacionAnalista etiqueta="Número de Fax" valor={datosInvestigacion.identificacion.numeroFax} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("numeroFax", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Correo Electrónico" valor={datosInvestigacion.identificacion.correoElectronico} soloLectura={esSoloLectura} tipoEntrada="email" error={errorCorreoElectronico} onChange={(valor) => actualizarIdentificacion("correoElectronico", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Página Web" valor={datosInvestigacion.identificacion.paginaWeb} soloLectura={esSoloLectura} tipoEntrada="url" error={errorPaginaWeb} onChange={(valor) => actualizarIdentificacion("paginaWeb", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Correo Electrónico" valor={datosInvestigacion.identificacion.correoElectronico} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("correoElectronico", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Página Web" valor={datosInvestigacion.identificacion.paginaWeb} soloLectura={esSoloLectura} onChange={(valor) => actualizarIdentificacion("paginaWeb", valor)} />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Estado Actual"
         valor={datosInvestigacion.identificacion.estadoActual}
@@ -2558,8 +2910,9 @@ function PantallaInvestigacionAnalista({
         estaAbierto={estaAbiertoModalExtraccionInformacion}
         alcance={alcanceExtraccionInformacion}
         tituloSeccion={tituloSeccionExtraccion}
+        seccionesDisponibles={seccionesDisponiblesExtraccion}
         onCerrar={() => setEstaAbiertoModalExtraccionInformacion(false)}
-        onExtraer={extraerInformacionDemo}
+        onExtraer={extraerInformacionDocumento}
       />
 
       <CustomModalArchivosInvestigacionAnalista
@@ -2572,7 +2925,7 @@ function PantallaInvestigacionAnalista({
       />
 
       <CustomModalOperacionAnalista
-        key={`${pestanaRamoOperacionesVisible}-${indiceOperacionSeleccionada ?? "nuevo"}-${estaAbiertoModalOperacion ? "abierto" : "cerrado"}`}
+        key={`operacion-${pestanaRamoOperacionesVisible}-${indiceOperacionSeleccionada ?? "nuevo"}-${estaAbiertoModalOperacion ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalOperacion}
         titulo={pestanaRamoOperacionesVisible === "importaciones" ? "Nueva Importación" : "Nueva Exportación"}
         subtitulo="Registro de operaciones"
@@ -2585,7 +2938,7 @@ function PantallaInvestigacionAnalista({
       />
 
       <CustomModalLocalAnalista
-        key={`${indiceLocalSeleccionado ?? "nuevo"}-${estaAbiertoModalLocal ? "abierto" : "cerrado"}`}
+        key={`local-${indiceLocalSeleccionado ?? "nuevo"}-${estaAbiertoModalLocal ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalLocal}
         registroInicial={indiceLocalSeleccionado != null ? datosInvestigacion.locales[indiceLocalSeleccionado] : null}
         onCerrar={() => {
@@ -2596,7 +2949,7 @@ function PantallaInvestigacionAnalista({
       />
 
       <CustomModalBalanceAnalista
-        key={`${indiceBalanceSeleccionado ?? "nuevo"}-${estaAbiertoModalBalance ? "abierto" : "cerrado"}`}
+        key={`balance-${indiceBalanceSeleccionado ?? "nuevo"}-${estaAbiertoModalBalance ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalBalance}
         registroInicial={indiceBalanceSeleccionado != null ? datosInvestigacion.balances[indiceBalanceSeleccionado] : null}
         onCerrar={() => {
@@ -2718,19 +3071,10 @@ function PantallaInvestigacionAnalista({
           const cambio = cambiosExtraccionPendientes[idCambioExtraccionActivo];
           if (!cambio) return;
 
-          const acciones: Record<string, () => void> = {
-            "identificacion.nombreEmpresa": () => actualizarIdentificacion("nombreEmpresa", cambio.valorNuevo),
-            "identificacion.pais": () => actualizarIdentificacion("pais", cambio.valorNuevo),
-            "informacionFinanciera.contenido": () => actualizarInformacionFinanciera("contenido", cambio.valorNuevo),
-            "informacionFinanciera.comentariosFinancieros": () => actualizarInformacionFinanciera("comentariosFinancieros", cambio.valorNuevo),
-            "informacionFinanciera.activosFijos": () => actualizarInformacionFinanciera("activosFijos", cambio.valorNuevo),
-            "informacionFinanciera.seguros": () => actualizarInformacionFinanciera("seguros", cambio.valorNuevo),
-          };
-
-          const accion = acciones[idCambioExtraccionActivo];
-          if (!accion) return;
-
-          aplicarCambioExtraccion(idCambioExtraccionActivo, accion);
+          aplicarCambioExtraccion(
+            idCambioExtraccionActivo,
+            () => actualizarCampoInvestigacion(cambio.ruta, cambio.valorNuevo),
+          );
         }}
         title="Reemplazo de valor extraido"
         descripcion={`Desea reemplazar el valor del campo ${cambiosExtraccionPendientes[idCambioExtraccionActivo ?? ""]?.etiqueta ?? ""}?`}
@@ -2746,11 +3090,11 @@ function PantallaInvestigacionAnalista({
         estaAbierto={estaAbiertoModalFinalizarInvestigacion}
         estaGuardando={guardarInformeMutation.isPending}
         onCerrar={() => setEstaAbiertoModalFinalizarInvestigacion(false)}
-        onConfirmar={() => guardarInformeMutation.mutate(5)}
+        onConfirmar={() => guardarInformeMutation.mutate(ID_ESTADO_PEDIDO_FINALIZADO)}
       />
 
       <CustomModalRegistroEjecutivoAnalista
-        key={`${indiceEjecutivoSeleccionado ?? "nuevo"}-${personaDirectorioSeleccionada?.id ?? "sin-persona"}-${estaAbiertoModalEjecutivo ? "abierto" : "cerrado"}`}
+        key={`ejecutivo-${indiceEjecutivoSeleccionado ?? "nuevo"}-${personaDirectorioSeleccionada?.id ?? "sin-persona"}-${estaAbiertoModalEjecutivo ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalEjecutivo}
         registroInicial={indiceEjecutivoSeleccionado != null ? datosInvestigacion.directorioEjecutivo[indiceEjecutivoSeleccionado] : null}
         personaSeleccionada={personaDirectorioSeleccionada}

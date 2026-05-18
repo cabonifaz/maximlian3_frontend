@@ -1,17 +1,28 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FileText, Sparkles, Trash2, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import { CustomBloqueCargaArchivosAnalista } from "@maximilian/components/investigacion/CustomBloqueCargaArchivosAnalista";
-
-type AlcanceExtraccionAnalista = "general" | "informacion-financiera";
+import type {
+  AlcanceExtraccionInforme,
+  InformeConfiguracionExtraccion,
+  InformeSeccionExtraccionDisponible,
+} from "@maximilian/shared/types/informe.type";
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface PropsCustomModalExtraccionInformacionAnalista {
   estaAbierto: boolean;
-  alcance: AlcanceExtraccionAnalista;
+  alcance: AlcanceExtraccionInforme;
   tituloSeccion?: string;
+  seccionesDisponibles?: InformeSeccionExtraccionDisponible[];
   onCerrar: () => void;
-  onExtraer: (archivos: File[], alcance: AlcanceExtraccionAnalista, especificaciones: string) => Promise<void> | void;
+  onExtraer: (
+    archivos: File[],
+    alcance: AlcanceExtraccionInforme,
+    especificaciones: string,
+    configuracionSecciones: InformeConfiguracionExtraccion,
+  ) => Promise<void> | void;
 }
 
 function formatearTamanoArchivo(tamano: number) {
@@ -24,29 +35,72 @@ function obtenerExtensionArchivo(nombreArchivo: string) {
   return nombreArchivo.split(".").pop()?.toUpperCase() ?? "—";
 }
 
+function crearOpcionSelector(id: number, etiqueta: string): EntradaTablaMaestra {
+  return {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: "",
+    num1: id,
+    num2: null,
+    num3: null,
+    string1: etiqueta,
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  };
+}
+
 export function CustomModalExtraccionInformacionAnalista({
   estaAbierto,
   alcance,
   tituloSeccion,
+  seccionesDisponibles = [],
   onCerrar,
   onExtraer,
 }: PropsCustomModalExtraccionInformacionAnalista) {
   const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>([]);
   const [especificaciones, setEspecificaciones] = useState("");
   const [estaProcesando, setEstaProcesando] = useState(false);
+  const [camposSeleccionadosPorSeccion, setCamposSeleccionadosPorSeccion] = useState<Record<string, number[]>>({});
 
   const titulo = tituloSeccion
     ? `Extraer información para "${tituloSeccion}"`
     : alcance === "general"
       ? "Extraer información del pedido"
-      : "Extraer información financiera";
+      : "Extraer información de la sección";
   const descripcion = useMemo(() => {
     if (alcance === "general") {
-      return "En el flujo final, esta opción llenará todas las secciones. En esta demo, el documento solo completará la sección Información Financiera.";
+      return "Se procesarán los documentos para intentar completar todas las secciones del informe.";
     }
 
-    return "Para esta demo, puede subir cualquier documento y se completarán únicamente los campos de la sección Información Financiera.";
+    return "Se procesarán los documentos para completar únicamente los campos de la sección seleccionada.";
   }, [alcance]);
+
+  const seccionesConOpciones = useMemo(
+    () => seccionesDisponibles.map((seccion) => ({
+      ...seccion,
+      opciones: seccion.campos.map((campo) => crearOpcionSelector(campo.id, campo.etiquetaCampo)),
+    })),
+    [seccionesDisponibles],
+  );
+
+  const totalCamposSeleccionados = useMemo(
+    () => Object.values(camposSeleccionadosPorSeccion).reduce((total, campos) => total + campos.length, 0),
+    [camposSeleccionadosPorSeccion],
+  );
+
+  useEffect(() => {
+    if (!estaAbierto) return;
+
+    setCamposSeleccionadosPorSeccion(
+      Object.fromEntries(
+        seccionesDisponibles.map((seccion) => [seccion.claveSeccion, seccion.campos.map((campo) => campo.id)]),
+      ),
+    );
+  }, [estaAbierto, seccionesDisponibles]);
 
   if (!estaAbierto) return null;
 
@@ -54,17 +108,32 @@ export function CustomModalExtraccionInformacionAnalista({
     if (estaProcesando) return;
     setArchivosSeleccionados([]);
     setEspecificaciones("");
+    setCamposSeleccionadosPorSeccion({});
     onCerrar();
   };
 
   const manejarExtraer = async () => {
-    if (archivosSeleccionados.length === 0) return;
+    if (archivosSeleccionados.length === 0 || (seccionesConOpciones.length > 0 && totalCamposSeleccionados === 0)) return;
+
+    const configuracionSecciones = seccionesConOpciones.reduce<InformeConfiguracionExtraccion>((acumulado, seccion) => {
+      const idsSeleccionados = camposSeleccionadosPorSeccion[seccion.claveSeccion] ?? [];
+      const camposSeleccionados = seccion.campos
+        .filter((campo) => idsSeleccionados.includes(campo.id))
+        .map((campo) => campo.claveCampo);
+
+      if (camposSeleccionados.length > 0) {
+        acumulado[seccion.claveSeccion] = camposSeleccionados;
+      }
+
+      return acumulado;
+    }, {});
 
     setEstaProcesando(true);
     try {
-      await onExtraer(archivosSeleccionados, alcance, especificaciones);
+      await onExtraer(archivosSeleccionados, alcance, especificaciones, configuracionSecciones);
       setArchivosSeleccionados([]);
       setEspecificaciones("");
+      setCamposSeleccionadosPorSeccion({});
       onCerrar();
     } finally {
       setEstaProcesando(false);
@@ -79,7 +148,7 @@ export function CustomModalExtraccionInformacionAnalista({
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
-      <div className="flex w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+      <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex items-start justify-between border-b border-gray-100 px-7 py-6">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
@@ -93,7 +162,7 @@ export function CustomModalExtraccionInformacionAnalista({
           </CustomButton>
         </div>
 
-        <div className="space-y-4 px-6 py-1">
+        <div className="space-y-4 overflow-y-auto px-6 py-1">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
             <div className="shrink-0">
               <CustomBloqueCargaArchivosAnalista
@@ -110,7 +179,7 @@ export function CustomModalExtraccionInformacionAnalista({
 
               <div className="max-h-72 overflow-y-auto rounded-xl border border-gray-100">
                 {archivosSeleccionados.length === 0 ? (
-                  <div className="flex min-h-40 items-center justify-center text-sm text-gray-400">
+                  <div className="flex min-h-20 items-center justify-center text-sm text-gray-400">
                     No hay archivos adjuntos
                   </div>
                 ) : (
@@ -156,6 +225,44 @@ export function CustomModalExtraccionInformacionAnalista({
                   </table>
                 )}
               </div>
+
+              {seccionesConOpciones.length > 0 && (
+                <div className="space-y-2 rounded-xl border border-gray-100 bg-slate-50/40 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <CustomLabel>Campos a completar</CustomLabel>
+                    <span className="text-xs text-slate-400">
+                      {totalCamposSeleccionados} seleccionado{totalCamposSeleccionados === 1 ? "" : "s"}
+                    </span>
+                  </div>
+
+                  <div className="max-h-40 space-y-2 overflow-y-auto">
+                    {seccionesConOpciones.map((seccion) => (
+                      <div key={seccion.claveSeccion} className="grid gap-2 rounded-lg border border-gray-100 bg-white p-2 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-bold text-brand-black">{seccion.etiquetaSeccion}</p>
+                          <p className="text-[11px] text-slate-400">
+                            {seccion.campos.length} campo{seccion.campos.length === 1 ? "" : "s"}
+                          </p>
+                        </div>
+                        <MultiCustomSelectorBuscable
+                          label={`Campos de ${seccion.etiquetaSeccion}`}
+                          options={seccion.opciones}
+                          value={camposSeleccionadosPorSeccion[seccion.claveSeccion] ?? []}
+                          onChange={(valor) =>
+                            setCamposSeleccionadosPorSeccion((anterior) => ({
+                              ...anterior,
+                              [seccion.claveSeccion]: valor,
+                            }))
+                          }
+                          hideLabel
+                          resumirSelecciones
+                          placeholder="Seleccione campos"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -177,7 +284,7 @@ export function CustomModalExtraccionInformacionAnalista({
           <CustomButton
             size="sm"
             onClick={manejarExtraer}
-            disabled={archivosSeleccionados.length === 0}
+            disabled={archivosSeleccionados.length === 0 || (seccionesConOpciones.length > 0 && totalCamposSeleccionados === 0)}
             loading={estaProcesando}
             loadingText="Extrayendo..."
           >

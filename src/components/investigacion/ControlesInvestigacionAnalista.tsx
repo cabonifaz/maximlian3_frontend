@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Briefcase, Building2, Check, Eye, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
-import { CustomEntradaUrl } from "@maximilian/components/common/CustomEntradaUrl";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type { IdSeccionInvestigacionAnalista, ResumenInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
@@ -213,6 +212,22 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
     });
   }, [opcionesTablaMaestra, permiteAltaNueva]);
 
+  useEffect(() => {
+    if (!permiteAltaNueva) return;
+
+    const valorLimpio = valor.trim();
+    if (!valorLimpio) return;
+
+    setOpciones((anteriores) => {
+      if (anteriores.some((opcion) => opcion.string1?.trim().toLowerCase() === valorLimpio.toLowerCase())) {
+        return anteriores;
+      }
+
+      const siguienteId = anteriores.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
+      return [...anteriores, crearOpcionTablaMaestra(siguienteId, valorLimpio)];
+    });
+  }, [permiteAltaNueva, valor]);
+
   const opcionesDisponibles = opciones;
 
   const valorSeleccionado = useMemo(
@@ -326,21 +341,6 @@ export function CampoInvestigacionAnalista({
   const esCampoEntero = etiqueta === "N. de Empleados";
   const esCampoDecimal = tipoEntrada === "decimal";
   const clasesInput = `h-11 w-full rounded-xl border bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400 ${error ? "border-red-500" : "border-gray-200"}`;
-
-  if (tipoEntrada === "url" && !soloLectura) {
-    return (
-      <label className={`space-y-2 ${className ?? ""}`}>
-        <CustomLabel as="p" className={clasesEtiquetaCampoInvestigacion}>
-          <span className="inline-flex items-center gap-2">
-            <span>{etiqueta}</span>
-            {adicionalEtiqueta}
-          </span>
-        </CustomLabel>
-        <CustomEntradaUrl value={valor} onChange={(nuevoValor) => onChange?.(nuevoValor)} onBlur={onBlur} error={!!error} />
-        {error ? <p className="text-xs text-red-500">{error}</p> : null}
-      </label>
-    );
-  }
 
   return (
     <label className={`space-y-2 ${className ?? ""}`}>
