@@ -213,6 +213,22 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
     });
   }, [opcionesTablaMaestra, permiteAltaNueva]);
 
+  useEffect(() => {
+    if (!permiteAltaNueva) return;
+
+    const valorLimpio = valor.trim();
+    if (!valorLimpio) return;
+
+    setOpciones((anteriores) => {
+      if (anteriores.some((opcion) => opcion.string1?.trim().toLowerCase() === valorLimpio.toLowerCase())) {
+        return anteriores;
+      }
+
+      const siguienteId = anteriores.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
+      return [...anteriores, crearOpcionTablaMaestra(siguienteId, valorLimpio)];
+    });
+  }, [permiteAltaNueva, valor]);
+
   const opcionesDisponibles = opciones;
 
   const valorSeleccionado = useMemo(

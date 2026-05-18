@@ -185,6 +185,7 @@ function normalizarPedido(registro: unknown): AssignmentOrderEntry {
     pais: obtenerTexto(fila.pais, fila.Pais, fila.nombrePais, fila.NombrePais) || "-",
     fechaAsignacion: obtenerTexto(fila.fechaAsignacion, fila.FechaAsignacion, fila.fecha, fila.Fecha),
     idIdioma: obtenerNumero(fila.idIdioma, fila.IdIdioma),
+    idPlantilla: obtenerNumero(fila.idPlantilla, fila.IdPlantilla),
     cliente: obtenerTexto(fila.cliente, fila.nombreCliente, fila.Cliente) || "-",
     investigado: obtenerTexto(
       fila.investigado,

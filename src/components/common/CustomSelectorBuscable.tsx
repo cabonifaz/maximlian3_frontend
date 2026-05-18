@@ -57,6 +57,8 @@ export function CustomSelectorBuscable({
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLDivElement>(null);
+  const ALTURA_DROPDOWN = 260;
+  const MARGEN_VENTANA = 16;
 
   const { data: fetchedOptions, isLoading: isMasterLoading } = useQuery({
     queryKey: ["masterTable", idMaster],
@@ -85,12 +87,16 @@ export function CustomSelectorBuscable({
     if (!triggerRef.current) return;
 
     const rect = triggerRef.current.getBoundingClientRect();
+    const espacioInferior = window.innerHeight - rect.bottom - MARGEN_VENTANA;
+    const maxHeight = Math.max(120, espacioInferior - 8);
+
     setDropdownStyle({
       top: rect.bottom + 8,
       left: rect.left,
       width: rect.width,
+      maxHeight: Math.min(ALTURA_DROPDOWN, maxHeight),
     });
-  }, []);
+  }, [ALTURA_DROPDOWN, MARGEN_VENTANA]);
 
   useSeleccionAutomaticaOpcionUnica({
     activo: autoSeleccionarOpcionUnica,
@@ -167,7 +173,7 @@ export function CustomSelectorBuscable({
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
-            <div className="max-h-48 overflow-y-auto">
+            <div className="max-h-48 overflow-y-auto" style={{ maxHeight: dropdownStyle.maxHeight ? Number(dropdownStyle.maxHeight) - 56 : undefined }}>
               {showLoading ? (
                 <div className="px-4 py-6 flex justify-center">
                   <Loader2 size={16} className="animate-spin text-gray-400" />

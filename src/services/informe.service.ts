@@ -1,11 +1,16 @@
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
+  InformeAutocompletarRequest,
   InformeCrearRequest,
   InformeCrearResponse,
+  InformeExtraerDocumentoRequest,
+  InformeExtraccionResponse,
   InformeListEntry,
   InformeListParams,
   InformeListResponse,
+  InformeObtenerUrlPrefirmadaRequest,
+  InformeObtenerUrlPrefirmadaResponse,
   InformeObtenerResponse,
 } from "@maximilian/shared/types/informe.type";
 import type {
@@ -225,6 +230,51 @@ function normalizarRespuestaCrear(resultado: unknown): InformeCrearResponse {
   };
 }
 
+function normalizarRespuestaUrlPrefirmada(resultado: unknown): InformeObtenerUrlPrefirmadaResponse {
+  const registro = obtenerRegistro(resultado);
+
+  return {
+    uploadUrl: obtenerTexto(registro.uploadUrl, registro.UploadUrl, registro.url, registro.Url),
+    fileKey: obtenerTexto(registro.fileKey, registro.FileKey, registro.key, registro.Key),
+    expiresIn: obtenerNumeroOpcional(registro.expiresIn, registro.ExpiresIn),
+  };
+}
+
+function normalizarRespuestaExtraccion(resultado: unknown): InformeExtraccionResponse {
+  const registro = obtenerRegistro(resultado);
+  const contieneContenedorCamposExtraidos = [
+    registro.camposExtraidos,
+    registro.CamposExtraidos,
+    registro.extractedFields,
+    registro.ExtractedFields,
+    registro.secciones,
+    registro.Secciones,
+    registro.result,
+    registro.Result,
+  ].some((valor) => typeof valor === "object" && valor !== null && !Array.isArray(valor));
+  const camposExtraidos = obtenerRegistro(
+    registro.camposExtraidos,
+    registro.CamposExtraidos,
+    registro.extractedFields,
+    registro.ExtractedFields,
+    registro.secciones,
+    registro.Secciones,
+    registro.result,
+    registro.Result,
+    contieneContenedorCamposExtraidos ? undefined : registro,
+  );
+
+  return {
+    exito: typeof registro.exito === "boolean" ? registro.exito : typeof registro.success === "boolean" ? registro.success : undefined,
+    success: typeof registro.success === "boolean" ? registro.success : typeof registro.exito === "boolean" ? registro.exito : undefined,
+    mensaje: obtenerTexto(registro.mensaje, registro.Mensaje),
+    camposExtraidos: camposExtraidos as InformeExtraccionResponse["camposExtraidos"],
+    extractedFields: camposExtraidos as InformeExtraccionResponse["extractedFields"],
+    secciones: camposExtraidos as InformeExtraccionResponse["secciones"],
+    result: camposExtraidos as InformeExtraccionResponse["result"],
+  };
+}
+
 function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
   return {
     resumen: {
@@ -325,6 +375,11 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
 }
 
 function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse {
+  if (Array.isArray(resultado)) {
+    const primerRegistro = resultado[0];
+    return normalizarRespuestaObtener(primerRegistro);
+  }
+
   const contenedor = obtenerRegistro(resultado);
   const listaInformes = obtenerLista(
     contenedor.lstInformes,
@@ -692,5 +747,65 @@ export const informeService = {
     }
 
     return normalizarRespuestaObtener(data.result);
+  },
+
+  obtenerUrlPrefirmada: async (
+    payload: InformeObtenerUrlPrefirmadaRequest,
+  ): Promise<InformeObtenerUrlPrefirmadaResponse> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/obtenerUrlPrefirmada", payload);
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/obtenerUrlPrefirmada")) {
+      throw new Error(data.mensaje || "No se pudo obtener la URL prefirmada");
+    }
+
+    const respuesta = normalizarRespuestaUrlPrefirmada(data.result);
+    if (!respuesta.uploadUrl || !respuesta.fileKey) {
+      throw new Error("La respuesta de URL prefirmada es invalida");
+    }
+
+    return respuesta;
+  },
+
+  subirArchivoUrlPrefirmada: async (uploadUrl: string, archivo: File) => {
+    const respuesta = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": archivo.type || "application/octet-stream",
+      },
+      body: archivo,
+    });
+
+    if (!respuesta.ok) {
+      throw new Error("No se pudo subir el archivo al almacenamiento");
+    }
+  },
+
+  autocompletar: async (payload: InformeAutocompletarRequest): Promise<InformeExtraccionResponse> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/autocompletar", payload);
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/autocompletar")) {
+      throw new Error(data.mensaje || "No se pudo autocompletar el documento");
+    }
+
+    return normalizarRespuestaExtraccion(data.result);
+  },
+
+  extraerDocumento: async (payload: InformeExtraerDocumentoRequest): Promise<InformeExtraccionResponse> => {
+    const formulario = new FormData();
+    formulario.append("archivo", payload.archivo);
+    formulario.append("secciones", payload.secciones);
+    formulario.append("prompt", payload.prompt);
+
+    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/extraerDocumento", formulario, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/extraerDocumento")) {
+      throw new Error(data.mensaje || "No se pudo extraer la informacion del documento");
+    }
+
+    return normalizarRespuestaExtraccion(data.result);
   },
 };
