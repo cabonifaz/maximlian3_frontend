@@ -251,17 +251,21 @@ function construirCuentaBalance(detalle?: RegistroBalanceAnalista["detalleCuenta
 function construirPayloadCrearInforme({
   idPedido,
   idInforme,
-  idEstado,
+  idEstadoPedido,
+  idIdiomaPedido,
   datosInvestigacion,
   opcionesTipoPersona,
   opcionesPais,
+  opcionesEstadoCliente,
 }: {
   idPedido: number;
   idInforme?: number;
-  idEstado: number;
+  idEstadoPedido: number;
+  idIdiomaPedido: number;
   datosInvestigacion: DatosInvestigacionAnalista;
   opcionesTipoPersona: { num1: number | null; string1: string | null }[] | undefined;
   opcionesPais: { num1: number | null; string1: string | null }[] | undefined;
+  opcionesEstadoCliente: { num1: number | null; string1: string | null }[] | undefined;
 }): InformeCrearRequest {
   const { identificacion, aspectosLegales, operacionPrincipal, informacionFinanciera, referencias, datosGenerales } = datosInvestigacion;
   const esEdicion = typeof idInforme === "number" && idInforme > 0;
@@ -283,7 +287,7 @@ function construirPayloadCrearInforme({
     fax: identificacion.numeroFax,
     email: identificacion.correoElectronico,
     paginaWeb: identificacion.paginaWeb,
-    idEstado,
+    idEstado: obtenerIdPorTexto(opcionesEstadoCliente, identificacion.estadoActual),
     datosAdicionales: identificacion.datosAdicionales,
     observacionesIdentificacion: "",
     idTipoEmpresa: 0,
@@ -439,10 +443,10 @@ function construirPayloadCrearInforme({
       {
         ...(esEdicion ? { idInformePedido: 0 } : {}),
         idPedido,
-        idIdioma: 0,
+        idIdioma: idIdiomaPedido,
         documentoWord: "",
         documentoExcel: "",
-        idEstado,
+        idEstado: idEstadoPedido,
       },
     ],
   };
@@ -752,7 +756,7 @@ function PantallaInvestigacionAnalista({
   };
 
   const guardarInformeMutation = useMutation({
-    mutationFn: async (idEstado: number) => {
+    mutationFn: async (idEstadoPedido: number) => {
       const idPedidoNumerico = Number(idPedido);
 
       if (!Number.isFinite(idPedidoNumerico) || idPedidoNumerico <= 0) {
@@ -770,10 +774,12 @@ function PantallaInvestigacionAnalista({
       const payload = construirPayloadCrearInforme({
         idPedido: idPedidoNumerico,
         idInforme: idInformeActual,
-        idEstado,
+        idEstadoPedido,
+        idIdiomaPedido: registroPedidoSeleccionado?.idIdioma ?? 0,
         datosInvestigacion,
         opcionesTipoPersona,
         opcionesPais,
+        opcionesEstadoCliente,
       });
 
       if (idInformeActual && idInformeActual > 0) {
@@ -2572,7 +2578,7 @@ function PantallaInvestigacionAnalista({
       />
 
       <CustomModalOperacionAnalista
-        key={`${pestanaRamoOperacionesVisible}-${indiceOperacionSeleccionada ?? "nuevo"}-${estaAbiertoModalOperacion ? "abierto" : "cerrado"}`}
+        key={`operacion-${pestanaRamoOperacionesVisible}-${indiceOperacionSeleccionada ?? "nuevo"}-${estaAbiertoModalOperacion ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalOperacion}
         titulo={pestanaRamoOperacionesVisible === "importaciones" ? "Nueva Importación" : "Nueva Exportación"}
         subtitulo="Registro de operaciones"
@@ -2585,7 +2591,7 @@ function PantallaInvestigacionAnalista({
       />
 
       <CustomModalLocalAnalista
-        key={`${indiceLocalSeleccionado ?? "nuevo"}-${estaAbiertoModalLocal ? "abierto" : "cerrado"}`}
+        key={`local-${indiceLocalSeleccionado ?? "nuevo"}-${estaAbiertoModalLocal ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalLocal}
         registroInicial={indiceLocalSeleccionado != null ? datosInvestigacion.locales[indiceLocalSeleccionado] : null}
         onCerrar={() => {
@@ -2596,7 +2602,7 @@ function PantallaInvestigacionAnalista({
       />
 
       <CustomModalBalanceAnalista
-        key={`${indiceBalanceSeleccionado ?? "nuevo"}-${estaAbiertoModalBalance ? "abierto" : "cerrado"}`}
+        key={`balance-${indiceBalanceSeleccionado ?? "nuevo"}-${estaAbiertoModalBalance ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalBalance}
         registroInicial={indiceBalanceSeleccionado != null ? datosInvestigacion.balances[indiceBalanceSeleccionado] : null}
         onCerrar={() => {
@@ -2750,7 +2756,7 @@ function PantallaInvestigacionAnalista({
       />
 
       <CustomModalRegistroEjecutivoAnalista
-        key={`${indiceEjecutivoSeleccionado ?? "nuevo"}-${personaDirectorioSeleccionada?.id ?? "sin-persona"}-${estaAbiertoModalEjecutivo ? "abierto" : "cerrado"}`}
+        key={`ejecutivo-${indiceEjecutivoSeleccionado ?? "nuevo"}-${personaDirectorioSeleccionada?.id ?? "sin-persona"}-${estaAbiertoModalEjecutivo ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalEjecutivo}
         registroInicial={indiceEjecutivoSeleccionado != null ? datosInvestigacion.directorioEjecutivo[indiceEjecutivoSeleccionado] : null}
         personaSeleccionada={personaDirectorioSeleccionada}
