@@ -322,6 +322,11 @@ interface PropsResumenPedidoInvestigacionAnalista {
   onFinalizarInvestigacion?: () => void;
   onExtraerInformacion?: () => void;
   onAbrirArchivos?: () => void;
+  onVistaPrevia?: () => void;
+  accionesSecundarias?: ReactNode;
+  textoBotonArchivos?: string;
+  textoBotonAccionIa?: string;
+  textoBotonFinalizar?: string;
 }
 
 export function CampoInvestigacionAnalista({
@@ -554,6 +559,11 @@ export function ResumenPedidoInvestigacionAnalista({
   onFinalizarInvestigacion,
   onExtraerInformacion,
   onAbrirArchivos,
+  onVistaPrevia,
+  accionesSecundarias,
+  textoBotonArchivos = "Adjuntar archivos",
+  textoBotonAccionIa = "Extraer Información",
+  textoBotonFinalizar = "Finalizar Investigación",
 }: PropsResumenPedidoInvestigacionAnalista) {
   return (
     <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -596,8 +606,18 @@ export function ResumenPedidoInvestigacionAnalista({
             className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.02] hover:bg-slate-800 active:scale-[0.98]"
           >
             <Paperclip size={14} />
-            Adjuntar archivos
+            {textoBotonArchivos}
           </button>
+          {onVistaPrevia ? (
+            <CustomButton
+              variant="secondary"
+              size="sm"
+              onClick={onVistaPrevia}
+            >
+              <FileText size={14} />
+              Vista previa
+            </CustomButton>
+          ) : null}
           {onExtraerInformacion ? (
             <CustomButton
               size="sm"
@@ -606,11 +626,12 @@ export function ResumenPedidoInvestigacionAnalista({
               onClick={onExtraerInformacion}
             >
               <Sparkles size={14} />
-              Extraer Información
+              {textoBotonAccionIa}
             </CustomButton>
           ) : null}
+          {accionesSecundarias}
           {mostrarBotonFinalizar ? (
-            <CustomButton size="sm" onClick={onFinalizarInvestigacion}>Finalizar Investigación</CustomButton>
+            <CustomButton size="sm" onClick={onFinalizarInvestigacion}>{textoBotonFinalizar}</CustomButton>
           ) : null}
         </div>
       </div>

@@ -5,7 +5,7 @@ import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
-import { CustomModalExtraccionInformacionAnalista } from "@maximilian/components/investigacion/CustomModalExtraccionInformacionAnalista";
+import { CustomModalExtraccionInformacionAnalista } from "@maximilian/components/investigacion/CustomModalProcesamientoInforme";
 import { TablaTarifarioCorta } from "@maximilian/components/coordinador/TablaTarifarioCorta";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";

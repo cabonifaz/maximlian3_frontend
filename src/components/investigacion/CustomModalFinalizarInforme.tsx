@@ -5,6 +5,8 @@ interface PropsCustomModalFinalizarInvestigacionAnalista {
   estaGuardando?: boolean;
   onCerrar: () => void;
   onConfirmar: () => void;
+  tipoProceso?: string;
+  descripcionDestino?: string;
 }
 
 export function CustomModalFinalizarInvestigacionAnalista({
@@ -12,6 +14,8 @@ export function CustomModalFinalizarInvestigacionAnalista({
   estaGuardando = false,
   onCerrar,
   onConfirmar,
+  tipoProceso = "investigación",
+  descripcionDestino = "Al presionar confirmar este informe será enviado al coordinador para que sea revisado y aprobado.",
 }: PropsCustomModalFinalizarInvestigacionAnalista) {
   if (!estaAbierto) return null;
 
@@ -20,10 +24,10 @@ export function CustomModalFinalizarInvestigacionAnalista({
       <div className="w-full max-w-xl rounded-[28px] bg-white px-6 py-8 shadow-2xl sm:px-10">
         <div className="mx-auto max-w-md text-center">
           <h2 className="text-[18px] font-bold leading-tight text-slate-800 sm:text-[20px]">
-            ¿Estás seguro de finalizar la investigación?
+            {`¿Estás seguro de finalizar la ${tipoProceso}?`}
           </h2>
           <p className="mt-5 text-sm leading-6 text-[#7b8aa3]">
-            Al presionar confirmar este informe será enviado al coordinador para que sea revisado y aprobado.
+            {descripcionDestino}
           </p>
         </div>
 

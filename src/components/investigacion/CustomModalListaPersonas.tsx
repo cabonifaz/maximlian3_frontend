@@ -8,7 +8,7 @@ import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra
 import {
   CustomModalRegistroEmpresaRelacionadaAnalista,
   type RegistroPersonaAnalista,
-} from "./CustomModalRegistroEmpresaRelacionadaAnalista";
+} from "./CustomModalRegistroEmpresaRelacionada";
 
 function crearOpcionTablaMaestra(num1: number, string1: string): EntradaTablaMaestra {
   return {

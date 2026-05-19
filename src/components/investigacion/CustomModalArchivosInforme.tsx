@@ -2,8 +2,8 @@ import { Trash2, Upload, X } from "lucide-react";
 import { useMemo, useRef } from "react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
-import { CustomBloqueCargaArchivosAnalista } from "@maximilian/components/investigacion/CustomBloqueCargaArchivosAnalista";
-import type { ReferenciaBloqueCargaArchivosAnalista } from "@maximilian/components/investigacion/CustomBloqueCargaArchivosAnalista";
+import { CustomBloqueCargaArchivosAnalista } from "@maximilian/components/investigacion/CustomBloqueCargaArchivos";
+import type { ReferenciaBloqueCargaArchivosAnalista } from "@maximilian/components/investigacion/CustomBloqueCargaArchivos";
 import type { ArchivoInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
@@ -84,7 +84,7 @@ export function CustomModalArchivosInvestigacionAnalista({
       <div className="flex w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-8 py-6">
           <div>
-            <h2 className="text-2xl font-bold text-brand-black">Archivos de la investigación</h2>
+            <h2 className="text-2xl font-bold text-brand-black">Archivos del informe</h2>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
               Anexos de trabajo
             </p>

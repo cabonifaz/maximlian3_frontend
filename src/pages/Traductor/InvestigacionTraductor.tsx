@@ -8,12 +8,14 @@ import {
   ArrowRight,
   Check,
   GripVertical,
+  Info,
   Pencil,
   Plus,
   Search,
   Sparkles,
   Trash2,
 } from "lucide-react";
+import { CustomModalVistaPreviaTraductor } from "@maximilian/components/traductor/CustomModalVistaPreviaTraductor";
 import { CustomModalBalanceAnalista } from "@maximilian/components/investigacion/CustomModalBalanceInforme";
 import { CustomModalBancoAnalista } from "@maximilian/components/investigacion/CustomModalBancoInforme";
 import { CustomModalArchivosInvestigacionAnalista } from "@maximilian/components/investigacion/CustomModalArchivosInforme";
@@ -87,6 +89,44 @@ interface CambioExtraccionPendiente {
   valorOriginal: string;
   valorNuevo: string;
   alAplicar?: () => void;
+}
+
+function ReferenciaTraduccion({
+  textoOriginal,
+}: {
+  textoOriginal?: string;
+}) {
+  const textoReferencia = textoOriginal?.trim() || "Sin referencia disponible";
+
+  return (
+    <span className="group relative inline-flex">
+      <span className="inline-flex items-center text-sky-500">
+        <Info size={15} />
+      </span>
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-64 -translate-x-1/2 rounded-lg bg-brand-black px-3 py-2 text-center text-xs font-medium text-white shadow-lg group-hover:block">
+        {textoReferencia}
+      </span>
+    </span>
+  );
+}
+
+function combinarAyudasCampo({
+  textoOriginal,
+  indicadorCambio,
+  mostrarReferencia = true,
+}: {
+  textoOriginal?: string;
+  indicadorCambio?: ReactNode;
+  mostrarReferencia?: boolean;
+}) {
+  if (!mostrarReferencia && !indicadorCambio) return undefined;
+
+  return (
+    <>
+      {mostrarReferencia ? <ReferenciaTraduccion textoOriginal={textoOriginal} /> : null}
+      {indicadorCambio}
+    </>
+  );
 }
 
 const FILAS_POR_PAGINA_INVESTIGACION = 5;
@@ -762,6 +802,7 @@ function PantallaInvestigacionAnalista({
   const contenedorPantallaRef = useRef<HTMLDivElement>(null);
 
   const [datosInvestigacion, setDatosInvestigacion] = useState<DatosInvestigacionAnalista>(datosIniciales);
+  const [datosInvestigacionOriginales] = useState<DatosInvestigacionAnalista>(datosIniciales);
   const [idInformeActual, setIdInformeActual] = useState<number | undefined>(idInforme);
   const [idSeccionActiva, setIdSeccionActiva] = useState<IdSeccionInvestigacionAnalista>("identificacion");
   const [pestanaAspectosLegales, setPestanaAspectosLegales] = useState<PestanaAspectosLegales>("data");
@@ -807,6 +848,7 @@ function PantallaInvestigacionAnalista({
   const [estaAbiertoModalRegistroPersona, setEstaAbiertoModalRegistroPersona] = useState(false);
   const [estaAbiertoModalExtraccionInformacion, setEstaAbiertoModalExtraccionInformacion] = useState(false);
   const [estaAbiertoModalArchivosInvestigacion, setEstaAbiertoModalArchivosInvestigacion] = useState(false);
+  const [estaAbiertoModalVistaPrevia, setEstaAbiertoModalVistaPrevia] = useState(false);
   const [alcanceExtraccionInformacion, setAlcanceExtraccionInformacion] = useState<AlcanceExtraccionInforme>("general");
   const [tituloSeccionExtraccion, setTituloSeccionExtraccion] = useState("");
   const [cambiosExtraccionPendientes, setCambiosExtraccionPendientes] = useState<Record<string, CambioExtraccionPendiente>>({});
@@ -945,7 +987,7 @@ function PantallaInvestigacionAnalista({
   });
 
   const { data: registroPedidoSeleccionado } = useQuery({
-    queryKey: ["asignacion-resumen-analista", idPedido],
+    queryKey: ["asignacion-resumen-traductor", idPedido],
     queryFn: async () => {
       if (!idPedido?.trim()) {
         return null;
@@ -1007,26 +1049,26 @@ function PantallaInvestigacionAnalista({
       }
 
       queryClient.invalidateQueries({ queryKey: ["informes"] });
-      queryClient.invalidateQueries({ queryKey: ["asignaciones-bandeja-analista"] });
+      queryClient.invalidateQueries({ queryKey: ["asignaciones-bandeja-traductor"] });
       setEstaAbiertoModalFinalizarInvestigacion(false);
       setEstaAbiertoModalConfirmacionPrimerBorrador(false);
 
       if (idEstado === ID_ESTADO_PEDIDO_FINALIZADO) {
         setDebeVolverABandejaTrasGuardarBorrador(false);
-        navigate("/analista");
+        navigate("/traductor");
         return;
       }
 
       if (idEstado === ID_ESTADO_PEDIDO_BORRADOR && debeVolverABandejaTrasGuardarBorrador) {
         setDebeVolverABandejaTrasGuardarBorrador(false);
-        navigate("/analista/bandeja");
+        navigate("/traductor/bandeja");
         return;
       }
 
       setDebeVolverABandejaTrasGuardarBorrador(false);
 
       if (modo === "iniciar" && idInformeResultado && idPedido) {
-        navigate(`/analista/investigacion/${idPedido}?modo=continuar&idInforme=${idInformeResultado}`, { replace: true });
+        navigate(`/traductor/traduccion/${idPedido}?modo=continuar&idInforme=${idInformeResultado}`, { replace: true });
       }
     },
   });
@@ -1880,6 +1922,23 @@ function PantallaInvestigacionAnalista({
   };
 
   const permiteExtraccionSeccion = idSeccionActiva !== "balances";
+  const obtenerTextoOriginal = (ruta: string) => {
+    const valor = ruta.split(".").reduce<unknown>((acumulado, segmento) => {
+      if (typeof acumulado === "object" && acumulado !== null && segmento in acumulado) {
+        return (acumulado as Record<string, unknown>)[segmento];
+      }
+
+      return "";
+    }, datosInvestigacionOriginales as unknown);
+
+    return typeof valor === "string" ? valor : "";
+  };
+  const obtenerAyudaTraduccion = (ruta: string, mostrarReferencia = true) =>
+    combinarAyudasCampo({
+      textoOriginal: obtenerTextoOriginal(ruta),
+      indicadorCambio: obtenerIndicadorCambioExtraccion(ruta),
+      mostrarReferencia,
+    });
 
   const botonExtraSeccion = !esSoloLectura && permiteExtraccionSeccion ? (
     <CustomButton
@@ -1889,14 +1948,14 @@ function PantallaInvestigacionAnalista({
       onClick={() => abrirModalExtraccionInformacion(idSeccionActiva, seccionActual.titulo)}
     >
       <Sparkles size={14} />
-      Extraer Información
+      Traducir Sección
     </CustomButton>
   ) : undefined;
 
   const renderizarIdentificacion = () => (
     <div className="grid gap-5 md:grid-cols-2">
       <CustomSelectorBuscable
-        label={<span className="inline-flex items-center gap-2"><span>Tipo de Persona</span>{obtenerIndicadorCambioExtraccion("identificacion.tipoPersona")}</span>}
+        label={<span className="inline-flex items-center gap-2"><span>Tipo de Persona</span>{obtenerAyudaTraduccion("identificacion.tipoPersona")}</span>}
         options={opcionesTipoPersona}
         value={idTipoPersonaSeleccionado}
         displayValue={idTipoPersonaSeleccionado == null ? datosInvestigacion.identificacion.tipoPersona : undefined}
@@ -1916,7 +1975,7 @@ function PantallaInvestigacionAnalista({
       <CampoInvestigacionAnalista etiqueta="Nombre de la Empresa" valor={datosInvestigacion.identificacion.nombreEmpresa} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.nombreEmpresa")} onChange={(valor) => actualizarIdentificacion("nombreEmpresa", valor)} />
       <CampoInvestigacionAnalista etiqueta="Nombre Comercial" valor={datosInvestigacion.identificacion.nombreComercial} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.nombreComercial")} onChange={(valor) => actualizarIdentificacion("nombreComercial", valor)} />
       <CustomSelectorBuscable
-        label={<span className="inline-flex items-center gap-2"><span>País</span>{obtenerIndicadorCambioExtraccion("identificacion.pais")}</span>}
+        label={<span className="inline-flex items-center gap-2"><span>País</span>{obtenerAyudaTraduccion("identificacion.pais")}</span>}
         options={opcionesPais}
         value={idPaisSeleccionado}
         displayValue={idPaisSeleccionado == null ? datosInvestigacion.identificacion.pais : undefined}
@@ -1943,7 +2002,7 @@ function PantallaInvestigacionAnalista({
         onChange={(valor) => actualizarIdentificacion("tipoIdentificacionFiscal", valor)}
       />
       <CampoInvestigacionAnalista etiqueta="Número de Identificación Fiscal" valor={datosInvestigacion.identificacion.numeroIdentificacionFiscal} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.numeroIdentificacionFiscal")} onChange={(valor) => actualizarIdentificacion("numeroIdentificacionFiscal", valor)} />
-      <CampoInvestigacionAnalista etiqueta="Dirección Principal" valor={datosInvestigacion.identificacion.direccionPrincipal} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.direccionPrincipal")} onChange={(valor) => actualizarIdentificacion("direccionPrincipal", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Dirección Principal" valor={datosInvestigacion.identificacion.direccionPrincipal} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("identificacion.direccionPrincipal")} onChange={(valor) => actualizarIdentificacion("direccionPrincipal", valor)} />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Ciudad/Estado/Provincia"
         valor={datosInvestigacion.identificacion.ciudadEstadoProvincia}
@@ -1951,7 +2010,7 @@ function PantallaInvestigacionAnalista({
         opcionesTablaMaestra={opcionesCiudad}
         permiteAltaNueva
         marcador="Seleccione o agregue ciudad/estado/provincia"
-        adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.ciudadEstadoProvincia")}
+        adicionalEtiqueta={obtenerAyudaTraduccion("identificacion.ciudadEstadoProvincia")}
         onChange={(valor) => actualizarIdentificacion("ciudadEstadoProvincia", valor)}
       />
       <CampoInvestigacionAnalista etiqueta="Número de Teléfono" valor={datosInvestigacion.identificacion.numeroTelefono} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.numeroTelefono")} onChange={(valor) => actualizarIdentificacion("numeroTelefono", valor)} />
@@ -1965,10 +2024,10 @@ function PantallaInvestigacionAnalista({
         opcionesTablaMaestra={opcionesEstadoCliente}
         permiteAltaNueva
         marcador="Seleccione o agregue estado actual"
-        adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.estadoActual")}
+        adicionalEtiqueta={obtenerAyudaTraduccion("identificacion.estadoActual")}
         onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}
       />
-      <AreaInvestigacionAnalista etiqueta="Datos Adicionales" valor={datosInvestigacion.identificacion.datosAdicionales} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.datosAdicionales")} className="md:col-span-2" onChange={(valor) => actualizarIdentificacion("datosAdicionales", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Datos Adicionales" valor={datosInvestigacion.identificacion.datosAdicionales} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("identificacion.datosAdicionales")} className="md:col-span-2" onChange={(valor) => actualizarIdentificacion("datosAdicionales", valor)} />
     </div>
   );
 
@@ -2033,6 +2092,7 @@ function PantallaInvestigacionAnalista({
           opcionesTablaMaestra={opcionesTipoEmpresa}
           permiteAltaNueva
           marcador="Seleccione tipo de empresa"
+          adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.tipoEmpresa")}
           onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)}
         />
         <label className="space-y-2">
@@ -2052,12 +2112,13 @@ function PantallaInvestigacionAnalista({
           opcionesTablaMaestra={opcionesCiudad}
           permiteAltaNueva
           marcador="Seleccione ciudad de registro"
+          adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.ciudadRegistro")}
           onChange={(valor) => actualizarAspectosLegales("ciudadRegistro", valor)}
         />
-        <CampoInvestigacionAnalista etiqueta="Notaría" valor={datosInvestigacion.aspectosLegales.notaria} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("notaria", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Notario" valor={datosInvestigacion.aspectosLegales.notario} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("notario", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Notaría" valor={datosInvestigacion.aspectosLegales.notaria} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.notaria")} onChange={(valor) => actualizarAspectosLegales("notaria", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Notario" valor={datosInvestigacion.aspectosLegales.notario} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.notario")} onChange={(valor) => actualizarAspectosLegales("notario", valor)} />
         <CampoInvestigacionAnalista etiqueta="Registro" valor={datosInvestigacion.aspectosLegales.registro} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("registro", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Condiciones" valor={datosInvestigacion.aspectosLegales.condiciones} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("condiciones", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Condiciones" valor={datosInvestigacion.aspectosLegales.condiciones} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.condiciones")} onChange={(valor) => actualizarAspectosLegales("condiciones", valor)} />
         <SelectorMaestroConAltaInvestigacionAnalista
           etiqueta="Operaciones de Cambio Divisas"
           valor={datosInvestigacion.aspectosLegales.operacionesCambioDivisas}
@@ -2070,7 +2131,7 @@ function PantallaInvestigacionAnalista({
         <CampoInvestigacionAnalista etiqueta="Capital Desembolsado" valor={datosInvestigacion.aspectosLegales.capitalDesembolsado} soloLectura={esSoloLectura} tipoEntrada="decimal" onChange={(valor) => actualizarAspectosLegales("capitalDesembolsado", valor)} />
         <CampoInvestigacionAnalista etiqueta="Última Ampliación" valor={datosInvestigacion.aspectosLegales.ultimaAmpliacion} soloLectura={esSoloLectura} tipoEntrada="fecha" onChange={(valor) => actualizarAspectosLegales("ultimaAmpliacion", valor)} />
         <CampoInvestigacionAnalista etiqueta="Patrimonio Neto" valor={datosInvestigacion.aspectosLegales.patrimonioNeto} soloLectura={esSoloLectura} tipoEntrada="decimal" onChange={(valor) => actualizarAspectosLegales("patrimonioNeto", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Tipo de Acciones" valor={datosInvestigacion.aspectosLegales.tipoAcciones} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("tipoAcciones", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Tipo de Acciones" valor={datosInvestigacion.aspectosLegales.tipoAcciones} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.tipoAcciones")} onChange={(valor) => actualizarAspectosLegales("tipoAcciones", valor)} />
         <CampoInvestigacionAnalista etiqueta="Valor de las Acciones" valor={datosInvestigacion.aspectosLegales.valorAcciones} soloLectura={esSoloLectura} tipoEntrada="decimal" onChange={(valor) => actualizarAspectosLegales("valorAcciones", valor)} />
         <CustomSelectorBuscable
           label="Obligación en Bolsa"
@@ -2108,9 +2169,9 @@ function PantallaInvestigacionAnalista({
             />
           </div>
         </label>
-        <AreaInvestigacionAnalista etiqueta="Antecedentes" valor={datosInvestigacion.aspectosLegales.antecedentes} soloLectura={esSoloLectura} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("antecedentes", valor)} />
-        <AreaInvestigacionAnalista etiqueta="Aspectos Legales" valor={datosInvestigacion.aspectosLegales.aspectosLegales} soloLectura={esSoloLectura} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("aspectosLegales", valor)} />
-        <AreaInvestigacionAnalista etiqueta="Comentarios sobre Empresas Relacionadas" valor={datosInvestigacion.aspectosLegales.comentariosEmpresasRelacionadas} soloLectura={esSoloLectura} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("comentariosEmpresasRelacionadas", valor)} />
+        <AreaInvestigacionAnalista etiqueta="Antecedentes" valor={datosInvestigacion.aspectosLegales.antecedentes} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.antecedentes")} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("antecedentes", valor)} />
+        <AreaInvestigacionAnalista etiqueta="Aspectos Legales" valor={datosInvestigacion.aspectosLegales.aspectosLegales} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.aspectosLegales")} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("aspectosLegales", valor)} />
+        <AreaInvestigacionAnalista etiqueta="Comentarios sobre Empresas Relacionadas" valor={datosInvestigacion.aspectosLegales.comentariosEmpresasRelacionadas} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.comentariosEmpresasRelacionadas")} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("comentariosEmpresasRelacionadas", valor)} />
       </div>
     );
   };
@@ -2262,6 +2323,7 @@ function PantallaInvestigacionAnalista({
           opcionesTablaMaestra={opcionesSectorEconomico}
           permiteAltaNueva
           marcador="Seleccione sector"
+          adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.sector")}
           onChange={(valor) => actualizarOperacionPrincipal("sector", valor)}
         />
         <SelectorMaestroConAltaInvestigacionAnalista
@@ -2271,36 +2333,37 @@ function PantallaInvestigacionAnalista({
           opcionesTablaMaestra={opcionesActividadEconomica}
           permiteAltaNueva
           marcador="Seleccione actividad"
+          adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.actividad")}
           onChange={(valor) => actualizarOperacionPrincipal("actividad", valor)}
         />
         <CampoInvestigacionAnalista etiqueta="Categoría CIIU" valor={datosInvestigacion.operacionPrincipal.categoriaCiiu} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("categoriaCiiu", valor)} />
         <CampoInvestigacionAnalista etiqueta="Clase CIIU" valor={datosInvestigacion.operacionPrincipal.claseCiiu} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("claseCiiu", valor)} />
-        <AreaInvestigacionAnalista etiqueta="Actividad Principal" valor={datosInvestigacion.operacionPrincipal.actividadPrincipal} soloLectura={esSoloLectura} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("actividadPrincipal", valor)} />
+        <AreaInvestigacionAnalista etiqueta="Actividad Principal" valor={datosInvestigacion.operacionPrincipal.actividadPrincipal} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.actividadPrincipal")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("actividadPrincipal", valor)} />
         <CampoInvestigacionAnalista etiqueta="Ventas al Contado (%)" valor={datosInvestigacion.operacionPrincipal.ventasContadoPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarPorcentajesComplementarios("ventasContadoPorcentaje", "ventasCreditoPorcentaje", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Detalle Ventas al Contado" valor={datosInvestigacion.operacionPrincipal.ventasContadoDetalle} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("ventasContadoDetalle", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Detalle Ventas al Contado" valor={datosInvestigacion.operacionPrincipal.ventasContadoDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.ventasContadoDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasContadoDetalle", valor)} />
         <CampoInvestigacionAnalista etiqueta="Ventas a Crédito (%)" valor={datosInvestigacion.operacionPrincipal.ventasCreditoPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarPorcentajesComplementarios("ventasCreditoPorcentaje", "ventasContadoPorcentaje", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Detalle Ventas a Crédito" valor={datosInvestigacion.operacionPrincipal.ventasCreditoDetalle} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("ventasCreditoDetalle", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Territorio de Ventas" valor={datosInvestigacion.operacionPrincipal.territorioVentasPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasPorcentaje", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Detalle Territorio" valor={datosInvestigacion.operacionPrincipal.territorioVentasDetalle} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasDetalle", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Detalle Ventas a Crédito" valor={datosInvestigacion.operacionPrincipal.ventasCreditoDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.ventasCreditoDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasCreditoDetalle", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Territorio de Ventas" valor={datosInvestigacion.operacionPrincipal.territorioVentasPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.territorioVentasPorcentaje")} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasPorcentaje", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Detalle Territorio" valor={datosInvestigacion.operacionPrincipal.territorioVentasDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.territorioVentasDetalle")} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasDetalle", valor)} />
         <CampoInvestigacionAnalista etiqueta="(%) Ventas en el Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("ventasExtranjeroPorcentaje", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Detalle Ventas Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroDetalle} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("ventasExtranjeroDetalle", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Detalle Ventas Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.ventasExtranjeroDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasExtranjeroDetalle", valor)} />
         <CampoInvestigacionAnalista etiqueta="(%) Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarPorcentajesComplementarios("comprasNacionalesPorcentaje", "comprasExtranjeroPorcentaje", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Detalle Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesDetalle} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("comprasNacionalesDetalle", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Detalle Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasNacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasNacionalesDetalle", valor)} />
         <CampoInvestigacionAnalista etiqueta="(%) Compras en el Extranjero" valor={datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje} soloLectura={esSoloLectura} onChange={(valor) => actualizarPorcentajesComplementarios("comprasExtranjeroPorcentaje", "comprasNacionalesPorcentaje", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Detalle Compras Extranjero" valor={datosInvestigacion.operacionPrincipal.comprasExtranjeroDetalle} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("comprasExtranjeroDetalle", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Detalle Compras Extranjero" valor={datosInvestigacion.operacionPrincipal.comprasExtranjeroDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasExtranjeroDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasExtranjeroDetalle", valor)} />
         <CampoInvestigacionAnalista etiqueta="N. de Empleados" valor={datosInvestigacion.operacionPrincipal.numeroEmpleados} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("numeroEmpleados", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Detalle Empleados" valor={datosInvestigacion.operacionPrincipal.numeroEmpleadosDetalle} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("numeroEmpleadosDetalle", valor)} />
-        <AreaInvestigacionAnalista etiqueta="Comentarios sobre las Operaciones" valor={datosInvestigacion.operacionPrincipal.comentariosOperaciones} soloLectura={esSoloLectura} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("comentariosOperaciones", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Detalle Empleados" valor={datosInvestigacion.operacionPrincipal.numeroEmpleadosDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.numeroEmpleadosDetalle")} onChange={(valor) => actualizarOperacionPrincipal("numeroEmpleadosDetalle", valor)} />
+        <AreaInvestigacionAnalista etiqueta="Comentarios sobre las Operaciones" valor={datosInvestigacion.operacionPrincipal.comentariosOperaciones} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comentariosOperaciones")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("comentariosOperaciones", valor)} />
       </div>
     );
   };
 
   const renderizarInformacionFinanciera = () => (
     <div className="space-y-5">
-      <AreaInvestigacionAnalista etiqueta="Contenido" valor={datosInvestigacion.informacionFinanciera.contenido} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("informacionFinanciera.contenido")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("contenido", valor)} />
-      <AreaInvestigacionAnalista etiqueta="Comentarios Financieros" valor={datosInvestigacion.informacionFinanciera.comentariosFinancieros} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("informacionFinanciera.comentariosFinancieros")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("comentariosFinancieros", valor)} />
-      <AreaInvestigacionAnalista etiqueta="Activos" valor={datosInvestigacion.informacionFinanciera.activosFijos} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("informacionFinanciera.activosFijos")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("activosFijos", valor)} />
-      <AreaInvestigacionAnalista etiqueta="Seguros" valor={datosInvestigacion.informacionFinanciera.seguros} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("informacionFinanciera.seguros")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("seguros", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Contenido" valor={datosInvestigacion.informacionFinanciera.contenido} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("informacionFinanciera.contenido")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("contenido", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Comentarios Financieros" valor={datosInvestigacion.informacionFinanciera.comentariosFinancieros} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("informacionFinanciera.comentariosFinancieros")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("comentariosFinancieros", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Activos" valor={datosInvestigacion.informacionFinanciera.activosFijos} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("informacionFinanciera.activosFijos")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("activosFijos", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Seguros" valor={datosInvestigacion.informacionFinanciera.seguros} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("informacionFinanciera.seguros")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("seguros", valor)} />
     </div>
   );
 
@@ -2440,11 +2503,11 @@ function PantallaInvestigacionAnalista({
       />
       {pestanaBancosProveedores === "referencias" ? (
         <>
-          <AreaInvestigacionAnalista etiqueta="Comentarios de los Proveedores" valor={datosInvestigacion.referencias.comentariosProveedores} soloLectura={esSoloLectura} filas={4} onChange={(valor) => actualizarReferencias("comentariosProveedores", valor)} />
-          <AreaInvestigacionAnalista etiqueta="Referencias de Bancos" valor={datosInvestigacion.referencias.referenciasBancos} soloLectura={esSoloLectura} filas={4} onChange={(valor) => actualizarReferencias("referenciasBancos", valor)} />
-          <AreaInvestigacionAnalista etiqueta="Litigios" valor={datosInvestigacion.referencias.litigios} soloLectura={esSoloLectura} filas={4} onChange={(valor) => actualizarReferencias("litigios", valor)} />
-          <AreaInvestigacionAnalista etiqueta="Riesgo Principal" valor={datosInvestigacion.referencias.riesgoPrincipal} soloLectura={esSoloLectura} filas={4} onChange={(valor) => actualizarReferencias("riesgoPrincipal", valor)} />
-          <AreaInvestigacionAnalista etiqueta="Superintendencia" valor={datosInvestigacion.referencias.superintendencia} soloLectura={esSoloLectura} filas={4} onChange={(valor) => actualizarReferencias("superintendencia", valor)} />
+          <AreaInvestigacionAnalista etiqueta="Comentarios de los Proveedores" valor={datosInvestigacion.referencias.comentariosProveedores} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("referencias.comentariosProveedores")} filas={4} onChange={(valor) => actualizarReferencias("comentariosProveedores", valor)} />
+          <AreaInvestigacionAnalista etiqueta="Referencias de Bancos" valor={datosInvestigacion.referencias.referenciasBancos} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("referencias.referenciasBancos")} filas={4} onChange={(valor) => actualizarReferencias("referenciasBancos", valor)} />
+          <AreaInvestigacionAnalista etiqueta="Litigios" valor={datosInvestigacion.referencias.litigios} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("referencias.litigios")} filas={4} onChange={(valor) => actualizarReferencias("litigios", valor)} />
+          <AreaInvestigacionAnalista etiqueta="Riesgo Principal" valor={datosInvestigacion.referencias.riesgoPrincipal} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("referencias.riesgoPrincipal")} filas={4} onChange={(valor) => actualizarReferencias("riesgoPrincipal", valor)} />
+          <AreaInvestigacionAnalista etiqueta="Superintendencia" valor={datosInvestigacion.referencias.superintendencia} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("referencias.superintendencia")} filas={4} onChange={(valor) => actualizarReferencias("superintendencia", valor)} />
         </>
       ) : null}
 
@@ -2634,8 +2697,8 @@ function PantallaInvestigacionAnalista({
 
   const renderizarDatosGenerales = () => (
     <div className="space-y-5">
-      <AreaInvestigacionAnalista etiqueta="Información General" valor={datosInvestigacion.datosGenerales.informacionGeneral} soloLectura={esSoloLectura} filas={8} onChange={(valor) => actualizarDatosGenerales("informacionGeneral", valor)} />
-      <AreaInvestigacionAnalista etiqueta="Opinión de Crédito" valor={datosInvestigacion.datosGenerales.opinionCredito} soloLectura={esSoloLectura} filas={8} onChange={(valor) => actualizarDatosGenerales("opinionCredito", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Información General" valor={datosInvestigacion.datosGenerales.informacionGeneral} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("datosGenerales.informacionGeneral")} filas={8} onChange={(valor) => actualizarDatosGenerales("informacionGeneral", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Opinión de Crédito" valor={datosInvestigacion.datosGenerales.opinionCredito} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("datosGenerales.opinionCredito")} filas={8} onChange={(valor) => actualizarDatosGenerales("opinionCredito", valor)} />
     </div>
   );
 
@@ -2816,6 +2879,10 @@ function PantallaInvestigacionAnalista({
         onFinalizarInvestigacion={() => setEstaAbiertoModalFinalizarInvestigacion(true)}
         onExtraerInformacion={permiteExtraccionSeccion ? () => abrirModalExtraccionInformacion("general") : undefined}
         onAbrirArchivos={() => setEstaAbiertoModalArchivosInvestigacion(true)}
+        onVistaPrevia={() => setEstaAbiertoModalVistaPrevia(true)}
+        textoBotonArchivos={`Archivos (${archivosInvestigacion.length})`}
+        textoBotonAccionIa="Traducir con IA"
+        textoBotonFinalizar="Finalizar Traducción"
       />
 
       <div className="grid gap-6 xl:grid-cols-[240px_minmax(0,1fr)]">
@@ -2866,7 +2933,7 @@ function PantallaInvestigacionAnalista({
                   onClick={() => setEstaAbiertoModalFinalizarInvestigacion(true)}
                 >
                   <Check size={14} />
-                  Finalizar Reporte
+                  Finalizar Traducción
                 </CustomButton>
               ) : (
                 <CustomButton size="sm" onClick={() => irASeccion("siguiente")}>
@@ -2881,7 +2948,7 @@ function PantallaInvestigacionAnalista({
 
       <button
         type="button"
-        onClick={() => navigate("/analista/bandeja")}
+        onClick={() => navigate("/traductor/bandeja")}
         className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition-colors hover:text-slate-700"
       >
         <ArrowLeft size={16} />
@@ -2903,6 +2970,18 @@ function PantallaInvestigacionAnalista({
         seccionesDisponibles={seccionesDisponiblesExtraccion}
         onCerrar={() => setEstaAbiertoModalExtraccionInformacion(false)}
         onExtraer={extraerInformacionDocumento}
+        etiquetaContexto="Demo de traducción"
+        textoBotonAccion="Traducir sección"
+        textoBotonAccionCargando="Traduciendo..."
+        textoEspecificaciones="Instrucciones de traducción"
+        marcadorEspecificaciones="Ingrese instrucciones para la traducción"
+        verboAccion="Traducir"
+      />
+
+      <CustomModalVistaPreviaTraductor
+        estaAbierto={estaAbiertoModalVistaPrevia}
+        datosInvestigacion={datosInvestigacion}
+        onCerrar={() => setEstaAbiertoModalVistaPrevia(false)}
       />
 
       <CustomModalArchivosInvestigacionAnalista
@@ -3081,6 +3160,8 @@ function PantallaInvestigacionAnalista({
         estaGuardando={guardarInformeMutation.isPending}
         onCerrar={() => setEstaAbiertoModalFinalizarInvestigacion(false)}
         onConfirmar={() => guardarInformeMutation.mutate(ID_ESTADO_PEDIDO_FINALIZADO)}
+        tipoProceso="traducción"
+        descripcionDestino="Al confirmar, este informe traducido será enviado al coordinador para revisión y aprobación."
       />
 
       <CustomModalRegistroEjecutivoAnalista
@@ -3134,7 +3215,7 @@ function PantallaInvestigacionAnalista({
   );
 }
 
-export default function InvestigacionAnalista() {
+export default function InvestigacionTraductor() {
   const { idPedido } = useParams();
   const [searchParams] = useSearchParams();
   const modo = (searchParams.get("modo") as ModoInvestigacionAnalista | null) ?? "iniciar";
@@ -3146,7 +3227,7 @@ export default function InvestigacionAnalista() {
   const datosEjemploInvestigacion = useMemo(() => obtenerDatosInvestigacionAnalista(modo), [modo]);
 
   const { data: informeObtenido } = useQuery({
-    queryKey: ["informe-obtener-analista", idInformeNumerico],
+    queryKey: ["informe-obtener-traductor", idInformeNumerico],
     queryFn: () => informeService.obtener(idInformeNumerico),
     enabled: usaDatosBackend,
   });
