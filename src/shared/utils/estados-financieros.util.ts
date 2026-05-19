@@ -141,10 +141,16 @@ const configuracionEstadosFinancieros: Record<string, SeccionEstadoFinancieroAna
       campos: [
         { id: "ingresos-ordinarios-totalizado", etiqueta: "Ingresos de Actividades Ordinarias" },
         { id: "ganancia-neta-totalizado", etiqueta: "Ganancia (Perdida) Neta del Ejercicio" },
-        { id: "liquidity-ratio-totalizado", etiqueta: "Liquidity Ratio" },
-        { id: "working-capital-ratio-totalizado", etiqueta: "Working Capital Ratio" },
-        { id: "current-indebtedness-ratio-totalizado", etiqueta: "Current Indebtedness Ratio" },
-        { id: "profitability-ratio-totalizado", etiqueta: "Profitability Ratio" },
+      ],
+    },
+    {
+      id: "ratios-totalizado",
+      titulo: "Ratios",
+      campos: [
+        { id: "liquidity-ratio-totalizado", etiqueta: "Indice de Liquidez (Liquidity Index)" },
+        { id: "working-capital-ratio-totalizado", etiqueta: "Capital de Trabajo (Working Capital)" },
+        { id: "current-indebtedness-ratio-totalizado", etiqueta: "Ratio de Endeudamiento (Indebtedness Ratio)" },
+        { id: "profitability-ratio-totalizado", etiqueta: "Ratio de Rentabilidad (Profitability Ratio)" },
       ],
     },
   ],

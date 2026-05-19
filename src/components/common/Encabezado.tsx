@@ -64,6 +64,8 @@ export function Encabezado({ role: initialRole }: PropsEncabezado) {
         navigate("/administrador");
       } else if (roleNormalized === "ANALISTA") {
         navigate("/analista");
+      } else if (roleNormalized === "TRADUCTOR") {
+        navigate("/traductor");
       } else if (roleNormalized === "COORDINADOR") {
         navigate("/coordinador");
       } else {

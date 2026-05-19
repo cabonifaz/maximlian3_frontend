@@ -3,7 +3,7 @@ import { FileText, Sparkles, Trash2, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
-import { CustomBloqueCargaArchivosAnalista } from "@maximilian/components/investigacion/CustomBloqueCargaArchivosAnalista";
+import { CustomBloqueCargaArchivosAnalista } from "@maximilian/components/investigacion/CustomBloqueCargaArchivos";
 import type {
   AlcanceExtraccionInforme,
   InformeConfiguracionExtraccion,
@@ -23,6 +23,12 @@ interface PropsCustomModalExtraccionInformacionAnalista {
     especificaciones: string,
     configuracionSecciones: InformeConfiguracionExtraccion,
   ) => Promise<void> | void;
+  etiquetaContexto?: string;
+  textoBotonAccion?: string;
+  textoBotonAccionCargando?: string;
+  textoEspecificaciones?: string;
+  marcadorEspecificaciones?: string;
+  verboAccion?: string;
 }
 
 function formatearTamanoArchivo(tamano: number) {
@@ -60,6 +66,12 @@ export function CustomModalExtraccionInformacionAnalista({
   seccionesDisponibles = [],
   onCerrar,
   onExtraer,
+  etiquetaContexto = "Demo de extracción",
+  textoBotonAccion = "Extraer información",
+  textoBotonAccionCargando = "Extrayendo...",
+  textoEspecificaciones = "Especificaciones",
+  marcadorEspecificaciones = "Ingrese instrucciones para la IA",
+  verboAccion = "Extraer",
 }: PropsCustomModalExtraccionInformacionAnalista) {
   const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>([]);
   const [especificaciones, setEspecificaciones] = useState("");
@@ -67,10 +79,10 @@ export function CustomModalExtraccionInformacionAnalista({
   const [camposSeleccionadosPorSeccion, setCamposSeleccionadosPorSeccion] = useState<Record<string, number[]>>({});
 
   const titulo = tituloSeccion
-    ? `Extraer información para "${tituloSeccion}"`
+    ? `${verboAccion} información para "${tituloSeccion}"`
     : alcance === "general"
-      ? "Extraer información del pedido"
-      : "Extraer información de la sección";
+      ? `${verboAccion} información del pedido`
+      : `${verboAccion} información de la sección`;
   const descripcion = useMemo(() => {
     if (alcance === "general") {
       return "Se procesarán los documentos para intentar completar todas las secciones del informe.";
@@ -152,7 +164,7 @@ export function CustomModalExtraccionInformacionAnalista({
         <div className="flex items-start justify-between border-b border-gray-100 px-7 py-6">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
-              Demo de extracción
+              {etiquetaContexto}
             </p>
             <h2 className="mt-2 text-2xl font-bold text-brand-black">{titulo}</h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">{descripcion}</p>
@@ -268,11 +280,11 @@ export function CustomModalExtraccionInformacionAnalista({
           </div>
 
           <label className="space-y-2">
-            <CustomLabel>Especificaciones</CustomLabel>
+            <CustomLabel>{textoEspecificaciones}</CustomLabel>
             <input
               value={especificaciones}
               onChange={(event) => setEspecificaciones(event.target.value)}
-              placeholder="Ingrese instrucciones para la IA"
+              placeholder={marcadorEspecificaciones}
               className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
             />
           </label>
@@ -287,10 +299,10 @@ export function CustomModalExtraccionInformacionAnalista({
             onClick={manejarExtraer}
             disabled={archivosSeleccionados.length === 0 || (seccionesConOpciones.length > 0 && totalCamposSeleccionados === 0)}
             loading={estaProcesando}
-            loadingText="Extrayendo..."
+            loadingText={textoBotonAccionCargando}
           >
             <Sparkles size={14} />
-            Extraer información
+            {textoBotonAccion}
           </CustomButton>
         </div>
       </div>
