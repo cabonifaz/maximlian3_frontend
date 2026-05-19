@@ -501,7 +501,15 @@ export function CustomModalDetalleCuentasAnalista({
     </div>
   );
 
-  const renderizarCamposConfigurados = (secciones: typeof seccionesEstadoFinanciero) => (
+  const renderizarCamposConfigurados = ({
+    secciones,
+    bloquearTodos = false,
+    usarHabilitacionTotales = false,
+  }: {
+    secciones: typeof seccionesEstadoFinanciero;
+    bloquearTodos?: boolean;
+    usarHabilitacionTotales?: boolean;
+  }) => (
     <div className="space-y-5">
       {secciones.map((seccion) => (
         <div key={seccion.id} className="space-y-4 rounded-2xl border border-gray-100 p-4">
@@ -510,7 +518,11 @@ export function CustomModalDetalleCuentasAnalista({
             {seccion.campos.map((campo) => {
               const esTotal = esCampoTotalConfigurado(campo.etiqueta);
               const valorCampo = detalle.registrosEstadoFinanciero?.[campo.id] ?? "";
-              const deshabilitado = esTotal ? !totalesHabilitados : !registrosHabilitados;
+              const deshabilitado = bloquearTodos
+                ? true
+                : usarHabilitacionTotales
+                  ? (esTotal ? !totalesHabilitados : !registrosHabilitados)
+                  : false;
               const tipoEntradaCampo = obtenerTipoEntradaCampoEstadoFinanciero(campo);
 
               if (tipoEntradaCampo === "fecha") {
@@ -631,7 +643,10 @@ export function CustomModalDetalleCuentasAnalista({
               {renderizarControlesHabilitacion()}
 
               {seccionesBalanceConfiguradas.length > 0 ? (
-                renderizarCamposConfigurados(seccionesBalanceConfiguradas)
+                renderizarCamposConfigurados({
+                  secciones: seccionesBalanceConfiguradas,
+                  usarHabilitacionTotales: true,
+                })
               ) : (
                 <div className="grid gap-8 lg:grid-cols-2">
                   <div className="space-y-5">
@@ -677,13 +692,14 @@ export function CustomModalDetalleCuentasAnalista({
       label: "Estado de Ganancias y Pérdidas",
       content: (
         <div className="space-y-6">
-          {!esEstadoFinancieroTotalizado ? renderizarControlesHabilitacion() : null}
           {seccionesGananciasConfiguradas.length > 0 ? (
-            renderizarCamposConfigurados(seccionesGananciasConfiguradas)
+            renderizarCamposConfigurados({
+              secciones: seccionesGananciasConfiguradas,
+            })
           ) : (
             <div className="grid gap-8 md:grid-cols-2">
-              <CampoDetalle etiqueta="Ventas Netas" valor={detalle.estadoGananciasPerdidas.ventasNetas} onChange={(valor) => actualizarEstadoGanancias("ventasNetas", valor)} deshabilitado={!registrosHabilitados} />
-              <CampoDetalle etiqueta="Utilidad / Ganancia" valor={detalle.estadoGananciasPerdidas.utilidadGanancia} onChange={(valor) => actualizarEstadoGanancias("utilidadGanancia", valor)} permitirNegativo deshabilitado={!registrosHabilitados} />
+              <CampoDetalle etiqueta="Ventas Netas" valor={detalle.estadoGananciasPerdidas.ventasNetas} onChange={(valor) => actualizarEstadoGanancias("ventasNetas", valor)} />
+              <CampoDetalle etiqueta="Utilidad / Ganancia" valor={detalle.estadoGananciasPerdidas.utilidadGanancia} onChange={(valor) => actualizarEstadoGanancias("utilidadGanancia", valor)} permitirNegativo />
             </div>
           )}
         </div>
@@ -696,15 +712,17 @@ export function CustomModalDetalleCuentasAnalista({
       tooltip: "Los ratios se habilitan para estados financieros Desagregado, Totalizado o Turquía.",
       content: (
         <div className="space-y-6">
-          {!esEstadoFinancieroTotalizado ? renderizarControlesHabilitacion() : null}
           {seccionesRatiosConfiguradas.length > 0 ? (
-            renderizarCamposConfigurados(seccionesRatiosConfiguradas)
+            renderizarCamposConfigurados({
+              secciones: seccionesRatiosConfiguradas,
+              bloquearTodos: true,
+            })
           ) : (
             <div className="grid gap-8 md:grid-cols-2">
-              <CampoDetalle etiqueta="Índice de Liquidez" valor={detalle.ratios.liquidez} onChange={(valor) => actualizarRatios("liquidez", valor)} permitirNegativo deshabilitado={!registrosHabilitados} />
-              <CampoDetalle etiqueta="Capital de Trabajo" valor={detalle.ratios.capitalTrabajo} onChange={(valor) => actualizarRatios("capitalTrabajo", valor)} permitirNegativo deshabilitado={!registrosHabilitados} />
-              <CampoDetalle etiqueta="Ratio de Endeudamiento" valor={detalle.ratios.endeudamiento} onChange={(valor) => actualizarRatios("endeudamiento", valor)} permitirNegativo deshabilitado={!registrosHabilitados} />
-              <CampoDetalle etiqueta="Ratio de Rentabilidad" valor={detalle.ratios.rentabilidad} onChange={(valor) => actualizarRatios("rentabilidad", valor)} permitirNegativo deshabilitado={!registrosHabilitados} />
+              <CampoDetalle etiqueta="Índice de Liquidez" valor={detalle.ratios.liquidez} onChange={(valor) => actualizarRatios("liquidez", valor)} permitirNegativo deshabilitado />
+              <CampoDetalle etiqueta="Capital de Trabajo" valor={detalle.ratios.capitalTrabajo} onChange={(valor) => actualizarRatios("capitalTrabajo", valor)} permitirNegativo deshabilitado />
+              <CampoDetalle etiqueta="Ratio de Endeudamiento" valor={detalle.ratios.endeudamiento} onChange={(valor) => actualizarRatios("endeudamiento", valor)} permitirNegativo deshabilitado />
+              <CampoDetalle etiqueta="Ratio de Rentabilidad" valor={detalle.ratios.rentabilidad} onChange={(valor) => actualizarRatios("rentabilidad", valor)} permitirNegativo deshabilitado />
             </div>
           )}
         </div>
