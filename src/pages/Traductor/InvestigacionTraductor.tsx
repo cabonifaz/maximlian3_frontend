@@ -2392,8 +2392,8 @@ function PantallaInvestigacionAnalista({
           Agregar Balance
         </CustomButton>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-gray-100">
-        <table className="w-full text-left">
+      <div className="overflow-x-auto rounded-2xl border border-gray-100">
+        <table className="min-w-[960px] w-full text-left">
           <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
             <tr>
               <th className="px-4 py-3">Código</th>
@@ -2738,8 +2738,8 @@ function PantallaInvestigacionAnalista({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100">
-        <table className="w-full text-left">
+      <div className="overflow-x-auto rounded-2xl border border-gray-100">
+        <table className="min-w-[900px] w-full text-left">
           <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
             <tr>
               <th className="w-10 px-3 py-3" />
