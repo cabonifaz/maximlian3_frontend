@@ -12,16 +12,24 @@ export function GuardiaInvitado({ children }: GuardiaInvitadoProps) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const obtenerRutaRolSeleccionado = () => {
+      const rolSeleccionado = sessionStorage.getItem("selected_role");
+      const rolNormalizado = rolSeleccionado?.toUpperCase();
+
+      if (rolNormalizado === "ADMINISTRADOR") return "/administrador";
+      if (rolNormalizado === "ANALISTA") return "/analista";
+      if (rolNormalizado === "TRADUCTOR") return "/traductor";
+      if (rolNormalizado === "COORDINADOR") return "/coordinador";
+
+      return "/seleccionar-rol";
+    };
+
     const checkAuth = async () => {
       try {
         const user = await servicioAutenticacion.getCurrentUser();
         if (user) {
-          // Si el usuario ya está autenticado, regresa o usa la ruta protegida por defecto.
-          if (window.history.length > 1) {
-            navigate(-1);
-          } else {
-            navigate("/seleccionar-rol", { replace: true });
-          }
+          navigate(obtenerRutaRolSeleccionado(), { replace: true });
+          return;
         }
       } catch {
         // Not authenticated, allow access to guest pages
@@ -29,7 +37,7 @@ export function GuardiaInvitado({ children }: GuardiaInvitadoProps) {
       }
     };
 
-    checkAuth();
+    void checkAuth();
   }, [navigate]);
 
   if (isChecking) {

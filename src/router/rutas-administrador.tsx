@@ -1,4 +1,5 @@
 import { type RouteObject, Navigate } from "react-router";
+import { GuardiaRol } from "@maximilian/components/autenticacion/GuardiaRol";
 import { CustomLimiteErrorRuta } from "@maximilian/components/common/CustomLimiteErrorRuta";
 
 export const rutasAdministrador: RouteObject[] = [
@@ -7,7 +8,11 @@ export const rutasAdministrador: RouteObject[] = [
     errorElement: <CustomLimiteErrorRuta />,
     lazy: () =>
       import("@maximilian/components/administrador/DisenoAdministrador").then((m) => ({
-        Component: m.default,
+        Component: () => (
+          <GuardiaRol rolRequerido="ADMINISTRADOR">
+            <m.default />
+          </GuardiaRol>
+        ),
       })),
     children: [
       {

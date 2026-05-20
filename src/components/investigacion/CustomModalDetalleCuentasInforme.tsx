@@ -377,6 +377,10 @@ export function CustomModalDetalleCuentasAnalista({
   );
 
   const esCampoTotalConfigurado = (etiqueta: string) => /total/i.test(etiqueta);
+  const mostrarControlTotales = esEstadoFinancieroTotalizado || seccionesBalanceConfiguradas.some((seccion) => (
+    esCampoTotalConfigurado(seccion.titulo)
+    || seccion.campos.some((campo) => esCampoTotalConfigurado(`${campo.id} ${campo.etiqueta}`))
+  ));
   const opcionesConfiabilidad = useMemo(
     () => [
       { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 1, num2: null, num3: null, string1: "ACTUAL", string2: null, string3: null, date1: null, date2: null, date3: null },
@@ -404,21 +408,23 @@ export function CustomModalDetalleCuentasAnalista({
         Habilitar Registros
       </label>
 
-      <label className="flex items-center gap-3 rounded-xl border border-gray-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
-        <input
-          type="checkbox"
-          checked={totalesHabilitados}
-          onChange={(event) => {
-            const estaHabilitado = event.target.checked;
-            setDetalle((anterior) => ({
-              ...anterior,
-              totalesHabilitados: estaHabilitado,
-            }));
-          }}
-          className="h-4 w-4 accent-brand-wine"
-        />
-        Habilitar Totales
-      </label>
+      {mostrarControlTotales ? (
+        <label className="flex items-center gap-3 rounded-xl border border-gray-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+          <input
+            type="checkbox"
+            checked={totalesHabilitados}
+            onChange={(event) => {
+              const estaHabilitado = event.target.checked;
+              setDetalle((anterior) => ({
+                ...anterior,
+                totalesHabilitados: estaHabilitado,
+              }));
+            }}
+            className="h-4 w-4 accent-brand-wine"
+          />
+          Habilitar Totales
+        </label>
+      ) : null}
     </div>
   );
 

@@ -1,4 +1,5 @@
 import { type RouteObject } from "react-router";
+import { GuardiaAutenticacion } from "@maximilian/components/autenticacion/GuardiaAutenticacion";
 import { GuardiaInvitado } from "@maximilian/components/autenticacion/GuardiaInvitado";
 import { CustomLimiteErrorRuta } from "@maximilian/components/common/CustomLimiteErrorRuta";
 
@@ -32,7 +33,11 @@ export const rutasAutenticacion: RouteObject[] = [
         path: "seleccionar-rol",
         lazy: () =>
           import("@maximilian/pages/Autenticacion/PaginaSeleccionRol").then((m) => ({
-            Component: m.default,
+            Component: () => (
+              <GuardiaAutenticacion>
+                <m.default />
+              </GuardiaAutenticacion>
+            ),
           })),
       },
     ],
