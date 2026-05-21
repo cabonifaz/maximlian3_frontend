@@ -419,6 +419,44 @@ function humanizarClaveExtraccion(valor: string) {
   return texto ? texto.charAt(0).toUpperCase() + texto.slice(1) : valor;
 }
 
+const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
+  identificacion: [
+    "operacionesCambio",
+    "direccionPrincipal",
+    "ciudadEstadoProvincia",
+    "estadoActual",
+    "datosAdicionales",
+  ],
+  aspectosLegales: [
+    "condiciones",
+    "operacionesCambioDivisas",
+    "antecedentes",
+    "aspectosLegales",
+    "comentariosEmpresasRelacionadas",
+  ],
+  operacionPrincipal: [
+    "actividadPrincipal",
+    "ventasContadoDetalle",
+    "ventasCreditoDetalle",
+    "ventasCreditoSeleccion",
+    "territorioVentasDetalle",
+    "ventasExtranjeroDetalle",
+    "comprasNacionalesDetalle",
+    "comprasExtranjeroDetalle",
+    "numeroEmpleadosDetalle",
+    "comentariosOperaciones",
+  ],
+  importaciones: ["paises", "productos"],
+  exportaciones: ["paises", "productos"],
+  locales: ["direccion", "comentario"],
+  informacionFinanciera: ["contenido", "comentariosFinancieros", "activosFijos", "seguros"],
+  referencias: ["comentariosProveedores", "referenciasBancos", "litigios", "riesgoPrincipal", "superintendencia"],
+  proveedores: ["comienzoNegociaciones", "limiteCredito"],
+  bancos: ["sector", "sectoristaJefeCuenta"],
+  datosGenerales: ["informacionGeneral", "opinionCredito"],
+  directorioEjecutivo: ["cargo", "vinculadoDesde", "descripcionBusqueda"],
+};
+
 function construirSeccionesDisponiblesExtraccion(alcance: AlcanceExtraccionInforme): InformeSeccionExtraccionDisponible[] {
   const configuraciones = alcance === "general"
     ? Object.values(CONFIGURACION_EXTRACCION_POR_SECCION)
@@ -428,13 +466,16 @@ function construirSeccionesDisponiblesExtraccion(alcance: AlcanceExtraccionInfor
     Object.entries(configuracion).map(([claveSeccion, campos]) => ({
       claveSeccion,
       etiquetaSeccion: ETIQUETAS_SECCIONES_EXTRACCION[claveSeccion] ?? humanizarClaveExtraccion(claveSeccion),
-      campos: campos.map((campo, indice) => ({
-        id: indice + 1,
-        claveCampo: campo,
-        etiquetaCampo: humanizarClaveExtraccion(campo),
-      })),
+      campos: campos
+        .filter((campo) => (CAMPOS_TRADUCIBLES_POR_SECCION[claveSeccion] ?? []).includes(campo))
+        .map((campo, indice) => ({
+          id: indice + 1,
+          claveCampo: campo,
+          etiquetaCampo: humanizarClaveExtraccion(campo),
+          esTraducible: true,
+        })),
     })),
-  );
+  ).filter((seccion) => seccion.campos.length > 0);
 }
 
 function esRegistroPlano(valor: unknown): valor is Record<string, unknown> {
@@ -2968,6 +3009,9 @@ function PantallaInvestigacionAnalista({
         alcance={alcanceExtraccionInformacion}
         tituloSeccion={tituloSeccionExtraccion}
         seccionesDisponibles={seccionesDisponiblesExtraccion}
+        archivosDisponibles={archivosInvestigacion.map((archivo) => archivo.archivo)}
+        ocultarCargaArchivos
+        ocultarEspecificaciones
         onCerrar={() => setEstaAbiertoModalExtraccionInformacion(false)}
         onExtraer={extraerInformacionDocumento}
         etiquetaContexto="Demo de traducción"
