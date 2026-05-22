@@ -15,6 +15,7 @@ import type {
 } from "@maximilian/shared/types/informe.type";
 import type {
   AccionBandejaAnalista,
+  ArchivoInvestigacionAnalista,
   DatosInvestigacionAnalista,
   EstadoInvestigacionAnalista,
 } from "@maximilian/shared/types/investigacion.type";
@@ -66,6 +67,96 @@ function obtenerBooleano(...valores: unknown[]): boolean {
   }
 
   return false;
+}
+
+function obtenerTipoDocumentoArchivo(...valores: unknown[]): "" | "Informativo" | "Evidencia" {
+  for (const valor of valores) {
+    if (valor === 1 || valor === "1") return "Informativo";
+    if (valor === 2 || valor === "2") return "Evidencia";
+
+    if (typeof valor === "string") {
+      const texto = valor.trim().toLowerCase();
+      if (!texto) continue;
+      if (texto.includes("inform")) return "Informativo";
+      if (texto.includes("evid")) return "Evidencia";
+    }
+  }
+
+  return "";
+}
+
+function normalizarArchivosInvestigacion(
+  registro: Record<string, unknown>,
+): ArchivoInvestigacionAnalista[] {
+  return obtenerLista(registro.archivos, registro.Archivos).map((item, indice) => {
+    const archivo = obtenerRegistro(item);
+    const nombre = obtenerTexto(
+      archivo.nombreDocumento,
+      archivo.NombreDocumento,
+      archivo.nombre,
+      archivo.Nombre,
+      archivo.fileName,
+      archivo.FileName,
+    ) || `archivo-${indice + 1}`;
+    const urlDescarga = obtenerTexto(
+      archivo.downloadUrl,
+      archivo.DownloadUrl,
+      archivo.documentoURL,
+      archivo.DocumentoURL,
+      archivo.url,
+      archivo.Url,
+      archivo.imagenURL,
+      archivo.ImagenURL,
+    ) || undefined;
+    const mimeType = obtenerTexto(
+      archivo.mimeType,
+      archivo.MimeType,
+      archivo.tipoArchivo,
+      archivo.TipoArchivo,
+      archivo.contentType,
+      archivo.ContentType,
+    ) || undefined;
+    const faseVinculadaTexto = obtenerTexto(
+      archivo.faseVinculada,
+      archivo.FaseVinculada,
+      archivo.fase,
+      archivo.Fase,
+      archivo.seccion,
+      archivo.Seccion,
+    ) || undefined;
+
+    return {
+      id: String(
+        obtenerNumero(
+          archivo.idInformeArchivo,
+          archivo.IdInformeArchivo,
+          archivo.idPedidoArchivo,
+          archivo.IdPedidoArchivo,
+          indice + 1,
+        ),
+      ),
+      nombre,
+      extension: nombre.split(".").pop()?.toUpperCase() ?? "—",
+      tamano: obtenerNumero(
+        archivo.tamanoArchivo,
+        archivo.TamanoArchivo,
+        archivo.tamano,
+        archivo.Tamano,
+        archivo.size,
+        archivo.Size,
+      ),
+      tipoDocumento: obtenerTipoDocumentoArchivo(
+        archivo.idTipoArchivo,
+        archivo.IdTipoArchivo,
+        archivo.tipoDocumento,
+        archivo.TipoDocumento,
+      ),
+      esPersistido: true,
+      urlDescarga,
+      mimeType,
+      faseVinculadaTexto,
+    };
+  });
 }
 
 function obtenerRegistro(...valores: unknown[]): Record<string, unknown> {
@@ -393,6 +484,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     : contenedor;
   const resumen = obtenerRegistro(registro.resumen, registro.Resumen, registro.pedido, registro.Pedido);
   const cuentaArchivos = obtenerLista(registro.archivos, registro.Archivos).length;
+  const archivosInvestigacion = normalizarArchivosInvestigacion(registro);
   const datos = crearDatosInvestigacionVacios();
 
   datos.resumen = {
@@ -694,6 +786,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     idInforme: obtenerNumero(registro.idInforme, registro.IdInforme) || undefined,
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido) || undefined,
     datosInvestigacion: datos,
+    archivosInvestigacion,
   };
 }
 

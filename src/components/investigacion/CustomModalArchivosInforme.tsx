@@ -1,5 +1,5 @@
-import { Trash2, Upload, X } from "lucide-react";
-import { useMemo, useRef } from "react";
+import { Download, Trash2, Upload, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomBloqueCargaArchivosAnalista } from "@maximilian/components/investigacion/CustomBloqueCargaArchivos";
@@ -53,6 +53,7 @@ export function CustomModalArchivosInvestigacionAnalista({
   onArchivosChange,
 }: PropsCustomModalArchivosInvestigacionAnalista) {
   const bloqueCargaRef = useRef<ReferenciaBloqueCargaArchivosAnalista>(null);
+  const [idArchivoDescargando, setIdArchivoDescargando] = useState<string | null>(null);
   const opcionesTipoDocumento = useMemo(
     () => [crearOpcion(1, "Informativo"), crearOpcion(2, "Evidencia")],
     [],
@@ -63,6 +64,17 @@ export function CustomModalArchivosInvestigacionAnalista({
   );
 
   if (!estaAbierto) return null;
+
+  const descargarArchivo = async (archivo: ArchivoInvestigacionAnalista) => {
+    if (!archivo.urlDescarga) return;
+
+    setIdArchivoDescargando(archivo.id);
+    try {
+      window.open(archivo.urlDescarga, "_blank", "noopener,noreferrer");
+    } finally {
+      setIdArchivoDescargando(null);
+    }
+  };
 
   const agregarArchivos = (listaArchivos: File[]) => {
     if (!listaArchivos.length) return;
@@ -125,50 +137,62 @@ export function CustomModalArchivosInvestigacionAnalista({
                         <td className="px-3 py-2.5">
                           <div className="flex items-center gap-2">
                             <span title={archivo.nombre} className="max-w-32 truncate font-medium text-gray-700">{archivo.nombre}</span>
-                            <span className="shrink-0 rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
-                              Nuevo
+                            <span
+                              className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                                archivo.esPersistido
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-amber-200 text-amber-800"
+                              }`}
+                            >
+                              {archivo.esPersistido ? "Subido" : "Nuevo"}
                             </span>
                           </div>
                         </td>
                         <td className="px-3 py-2.5 text-gray-500">{archivo.extension}</td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-gray-500">{formatearTamanoArchivo(archivo.tamano)}</td>
                         <td className="px-3 py-2.5">
-                          <CustomSelectorBuscable
-                            options={opcionesTipoDocumento}
-                            value={archivo.tipoDocumento === "Informativo" ? 1 : archivo.tipoDocumento === "Evidencia" ? 2 : undefined}
-                            onChange={(valor) =>
-                              onArchivosChange(
-                                archivos.map((item) =>
-                                  item.id === archivo.id
-                                    ? {
-                                        ...item,
-                                        tipoDocumento: valor === 2 ? "Evidencia" : "Informativo",
-                                        faseVinculada: valor === 2 ? item.faseVinculada ?? faseActual : undefined,
-                                      }
-                                    : item,
-                                ),
-                              )
-                            }
-                            onClear={() =>
-                              onArchivosChange(
-                                archivos.map((item) =>
-                                  item.id === archivo.id
-                                    ? {
-                                        ...item,
-                                        tipoDocumento: "",
-                                        faseVinculada: undefined,
-                                      }
-                                    : item,
-                                ),
-                              )
-                            }
-                            optional
-                            mostrarTextoOpcionalEnLabel={false}
-                            placeholder="Seleccione"
-                          />
+                          {archivo.esPersistido ? (
+                            <span className="text-xs text-slate-500">{archivo.tipoDocumento || "-"}</span>
+                          ) : (
+                            <CustomSelectorBuscable
+                              options={opcionesTipoDocumento}
+                              value={archivo.tipoDocumento === "Informativo" ? 1 : archivo.tipoDocumento === "Evidencia" ? 2 : undefined}
+                              onChange={(valor) =>
+                                onArchivosChange(
+                                  archivos.map((item) =>
+                                    item.id === archivo.id
+                                      ? {
+                                          ...item,
+                                          tipoDocumento: valor === 2 ? "Evidencia" : "Informativo",
+                                          faseVinculada: valor === 2 ? item.faseVinculada ?? faseActual : undefined,
+                                        }
+                                      : item,
+                                  ),
+                                )
+                              }
+                              onClear={() =>
+                                onArchivosChange(
+                                  archivos.map((item) =>
+                                    item.id === archivo.id
+                                      ? {
+                                          ...item,
+                                          tipoDocumento: "",
+                                          faseVinculada: undefined,
+                                        }
+                                      : item,
+                                  ),
+                                )
+                              }
+                              optional
+                              mostrarTextoOpcionalEnLabel={false}
+                              placeholder="Seleccione"
+                            />
+                          )}
                         </td>
                         <td className="px-3 py-2.5">
-                          {archivo.tipoDocumento === "Evidencia" ? (
+                          {archivo.esPersistido ? (
+                            <span className="text-xs text-slate-500">{archivo.faseVinculadaTexto || "No aplica"}</span>
+                          ) : archivo.tipoDocumento === "Evidencia" ? (
                             <CustomSelectorBuscable
                               options={opcionesSecciones}
                               value={
@@ -201,13 +225,29 @@ export function CustomModalArchivosInvestigacionAnalista({
                           )}
                         </td>
                         <td className="px-3 py-2.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => onArchivosChange(archivos.filter((item) => item.id !== archivo.id))}
-                            className="rounded-lg p-1.5 text-gray-400 transition-all hover:bg-red-50 hover:text-red-500"
-                          >
-                            <Trash2 size={15} />
-                          </button>
+                          <div className="flex justify-end gap-1">
+                            {archivo.urlDescarga ? (
+                              <button
+                                type="button"
+                                onClick={() => descargarArchivo(archivo)}
+                                disabled={idArchivoDescargando === archivo.id}
+                                className="rounded-lg p-1.5 text-gray-400 transition-all hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                title="Descargar archivo"
+                              >
+                                <Download size={15} />
+                              </button>
+                            ) : null}
+                            {!archivo.esPersistido ? (
+                              <button
+                                type="button"
+                                onClick={() => onArchivosChange(archivos.filter((item) => item.id !== archivo.id))}
+                                className="rounded-lg p-1.5 text-gray-400 transition-all hover:bg-red-50 hover:text-red-500"
+                                title="Quitar archivo"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            ) : null}
+                          </div>
                         </td>
                       </tr>
                     ))}
