@@ -48,6 +48,9 @@ export interface RegistroBandejaAnalista {
   fecha: string;
   tipo: string;
   estado: EstadoInvestigacionAnalista;
+  estadoTexto?: string;
+  estadoColorLetra?: string;
+  estadoColorFondo?: string;
   accion: AccionBandejaAnalista;
 }
 
