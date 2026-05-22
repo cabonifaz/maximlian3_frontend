@@ -6,10 +6,6 @@ import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
-import {
-  obtenerColorEstadoAnalista,
-  obtenerTextoEstadoAnalista,
-} from "@maximilian/shared/utils/datos-simulados-investigacion";
 import type { AccionBandejaAnalista, RegistroBandejaAnalista, TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { AssignmentOrderEntry } from "@maximilian/shared/types/asignacion.type";
 
@@ -47,9 +43,9 @@ function formatearFechaAsignacion(valor?: string) {
 
 function normalizarEstadoDesdeAsignacion(registro: AssignmentOrderEntry): RegistroBandejaAnalista["estado"] {
   const estado = (registro.estado ?? "").trim().toLowerCase();
+  if (estado.includes("pend")) return "pendiente-aprobacion";
   if (estado.includes("rechaz")) return "rechazado";
   if (estado.includes("aprob")) return "aprobado";
-  if (estado.includes("pend")) return "pendiente-aprobacion";
   if (estado.includes("proceso") || estado.includes("curso") || (registro.idInforme ?? 0) > 0) return "en-proceso";
   return "asignado";
 }
@@ -61,6 +57,39 @@ function obtenerAccionDesdeAsignacion(registro: AssignmentOrderEntry): AccionBan
   if (estado === "asignado") return "iniciar";
   if (estado === "en-proceso" || estado === "rechazado") return "continuar";
   return "detalle";
+}
+
+function esColorTransparente(color?: string) {
+  const valor = color?.trim().toLowerCase();
+  return valor === "" || valor === "transparent" || valor === "#0000" || valor === "#00000000" || valor === "rgba(0,0,0,0)";
+}
+
+function esColorBlanco(color?: string) {
+  const valor = color?.trim().toLowerCase();
+  return valor === "#fff" || valor === "#ffff" || valor === "#ffffff" || valor === "#ffffffff" || valor === "white" || valor === "rgb(255,255,255)";
+}
+
+function obtenerEstiloEstado(estado: RegistroBandejaAnalista["estado"], colorLetra?: string, colorFondo?: string) {
+  const estilosPorEstado: Record<RegistroBandejaAnalista["estado"], { color: string; backgroundColor: string }> = {
+    asignado: { color: "#475569", backgroundColor: "#f1f5f9" },
+    "en-proceso": { color: "#ea580c", backgroundColor: "#fff7ed" },
+    "pendiente-aprobacion": { color: "#d97706", backgroundColor: "#fffbeb" },
+    aprobado: { color: "#16a34a", backgroundColor: "#f0fdf4" },
+    rechazado: { color: "#dc2626", backgroundColor: "#fef2f2" },
+  };
+
+  const estiloFallback = estilosPorEstado[estado];
+  const color = colorLetra?.trim() || estiloFallback.color;
+  const backgroundColor = colorFondo?.trim() || estiloFallback.backgroundColor;
+
+  if (esColorTransparente(backgroundColor) && esColorBlanco(color)) {
+    return estiloFallback;
+  }
+
+  return {
+    color,
+    backgroundColor: esColorTransparente(backgroundColor) ? estiloFallback.backgroundColor : backgroundColor,
+  };
 }
 
 export default function BandejaAnalista() {
@@ -97,6 +126,9 @@ export default function BandejaAnalista() {
         fecha: formatearFechaAsignacion(registro.fechaAsignacion),
         tipo: registro.tipoTramite || "-",
         estado: normalizarEstadoDesdeAsignacion(registro),
+        estadoTexto: registro.estado || "-",
+        estadoColorLetra: registro.estadoColorLetra,
+        estadoColorFondo: registro.estadoColorFondo,
         accion: obtenerAccionDesdeAsignacion(registro),
       })),
     [respuestaAsignaciones?.lstPedido],
@@ -221,9 +253,10 @@ export default function BandejaAnalista() {
               <td className="px-6 py-4 text-sm text-slate-500">{registro.tipo}</td>
               <td className="px-6 py-4 text-center">
                 <span
-                  className={`inline-flex rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wide ${obtenerColorEstadoAnalista(registro.estado)}`}
+                  className="inline-flex rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wide"
+                  style={obtenerEstiloEstado(registro.estado, registro.estadoColorLetra, registro.estadoColorFondo)}
                 >
-                  {obtenerTextoEstadoAnalista(registro.estado)}
+                  {registro.estadoTexto || "-"}
                 </span>
               </td>
               <td className="px-6 py-4">

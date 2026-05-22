@@ -23,6 +23,7 @@ import { CustomModalFinalizarInvestigacionAnalista } from "@maximilian/component
 import { CustomModalExtraccionInformacionAnalista } from "@maximilian/components/investigacion/CustomModalProcesamientoInforme";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { CustomModalListaPersonasAnalista } from "@maximilian/components/investigacion/CustomModalListaPersonas";
@@ -3360,7 +3361,7 @@ export default function InvestigacionAnalista() {
   const datosBaseInvestigacion = useMemo(() => obtenerDatosInvestigacionAnalista("iniciar"), []);
   const datosEjemploInvestigacion = useMemo(() => obtenerDatosInvestigacionAnalista(modo), [modo]);
 
-  const { data: informeObtenido } = useQuery({
+  const { data: informeObtenido, isLoading: estaCargandoInforme } = useQuery({
     queryKey: ["informe-obtener-analista", idPedidoNumerico, idInformeNumerico],
     queryFn: () => informeService.obtener({
       idPedido: idPedidoNumerico,
@@ -3377,6 +3378,10 @@ export default function InvestigacionAnalista() {
   })();
 
   const claveDatos = usaDatosBackend ? String(informeObtenido?.idInforme ?? "cargando") : "local";
+
+  if (usaDatosBackend && estaCargandoInforme) {
+    return <PantallaCarga message="Cargando informacion del informe..." />;
+  }
 
   return (
     <PantallaInvestigacionAnalista
