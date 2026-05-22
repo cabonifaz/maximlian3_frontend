@@ -51,12 +51,17 @@ export const rutasCoordinador: RouteObject[] = [
       },
       {
         path: "revision",
-        element: (
-          <div className="p-8">
-            <h1 className="text-2xl font-bold text-brand-black">Revisión y Aprobación</h1>
-            <p className="mt-4 text-gray-600">Página en construcción...</p>
-          </div>
-        ),
+        lazy: () =>
+          import("@maximilian/pages/Coordinador/GestionRevisionAprobacion").then((m) => ({
+            Component: m.default,
+          })),
+      },
+      {
+        path: "revision/:idPedido",
+        lazy: () =>
+          import("@maximilian/pages/Coordinador/RevisionInformeCoordinador").then((m) => ({
+            Component: m.default,
+          })),
       },
       {
         path: "facturacion",

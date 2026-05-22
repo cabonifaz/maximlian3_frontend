@@ -1,5 +1,6 @@
 import type {
   AccionBandejaAnalista,
+  ArchivoInvestigacionAnalista,
   DatosInvestigacionAnalista,
   EstadoInvestigacionAnalista,
   IdSeccionInvestigacionAnalista,
@@ -66,6 +67,7 @@ export interface InformeBancoRequest {
   idBanco: number;
   numeroCuenta: string;
   idSector: number;
+  sectorista: string;
   referenciaBanco: string;
 }
 
@@ -172,7 +174,8 @@ export interface InformeCrearRequest {
   fax: string;
   email: string;
   paginaWeb: string;
-  idEstado: number;
+  idEstadoManual: number;
+  idEstadoInforme: number;
   datosAdicionales: string;
   observacionesIdentificacion: string;
   idTipoEmpresa: number;
@@ -223,6 +226,7 @@ export interface InformeCrearRequest {
   superintendecia: string;
   informacionGeneral: string;
   opinionCredito: string;
+  flgTieneInformacion: boolean;
   balances: InformeBalanceRequest[];
   bancos: InformeBancoRequest[];
   companiasRelacionadas: InformeCompaniaRelacionadaRequest[];
@@ -242,6 +246,7 @@ export interface InformeObtenerResponse {
   idInforme?: number;
   idPedido?: number;
   datosInvestigacion: DatosInvestigacionAnalista;
+  archivosInvestigacion?: ArchivoInvestigacionAnalista[];
 }
 
 export type AlcanceExtraccionInforme = "general" | IdSeccionInvestigacionAnalista;

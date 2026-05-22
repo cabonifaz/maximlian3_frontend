@@ -283,7 +283,11 @@ export interface ArchivoInvestigacionAnalista {
   tamano: number;
   tipoDocumento: "" | "Informativo" | "Evidencia";
   faseVinculada?: IdSeccionInvestigacionAnalista;
-  archivo: File;
+  archivo?: File;
+  esPersistido?: boolean;
+  urlDescarga?: string;
+  mimeType?: string;
+  faseVinculadaTexto?: string;
 }
 
 export interface ResultadoBusquedaBancoAnalista {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Download, FileText, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import type { DatosInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
@@ -8,6 +8,8 @@ interface PropsCustomModalVistaPreviaTraductor {
   estaAbierto: boolean;
   datosInvestigacion: DatosInvestigacionAnalista;
   onCerrar: () => void;
+  indicadorReporteTraducido?: string;
+  footer?: ReactNode;
 }
 
 interface FilaVistaPreviaTraductor {
@@ -599,6 +601,8 @@ export function CustomModalVistaPreviaTraductor({
   estaAbierto,
   datosInvestigacion,
   onCerrar,
+  indicadorReporteTraducido = "En traducción",
+  footer,
 }: PropsCustomModalVistaPreviaTraductor) {
   const [idTabActiva, setIdTabActiva] = useState<IdTabVistaPreviaTraductor>("vista-general");
 
@@ -648,12 +652,12 @@ export function CustomModalVistaPreviaTraductor({
 
         <div className="overflow-y-auto bg-slate-50 px-6 py-6">
           <div className="space-y-6">
-            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white px-5 pt-4 shadow-sm">
-              <div className="flex min-w-max gap-0 border-b border-gray-200">
+            <div className="rounded-2xl border border-slate-200 bg-white px-5 pt-4 shadow-sm">
+              <div className="flex flex-wrap gap-0 border-b border-gray-200">
                 <button
                   type="button"
                   onClick={() => setIdTabActiva("vista-general")}
-                  className={`-mb-px border-b-2 px-6 py-3 text-sm font-bold whitespace-nowrap transition-all ${
+                  className={`-mb-px border-b-2 px-6 py-3 text-sm font-bold transition-all ${
                     idTabActiva === "vista-general"
                       ? "border-brand-black text-brand-black"
                       : "border-transparent text-gray-400 hover:text-gray-600"
@@ -666,7 +670,7 @@ export function CustomModalVistaPreviaTraductor({
                     key={seccion.id}
                     type="button"
                     onClick={() => setIdTabActiva(seccion.id)}
-                    className={`-mb-px border-b-2 px-6 py-3 text-sm font-bold whitespace-nowrap transition-all ${
+                    className={`-mb-px border-b-2 px-6 py-3 text-sm font-bold transition-all ${
                       idTabActiva === seccion.id
                         ? "border-brand-black text-brand-black"
                         : "border-transparent text-gray-400 hover:text-gray-600"
@@ -689,7 +693,7 @@ export function CustomModalVistaPreviaTraductor({
               />
               <TarjetaVistaPrevia
                 titulo="Reporte traducido (inglés)"
-                indicador="En traducción"
+                indicador={indicadorReporteTraducido}
                 encabezado={encabezado}
                 secciones={seccionesVisibles}
                 mostrarTituloSeccion={idTabActiva === "vista-general"}
@@ -700,13 +704,17 @@ export function CustomModalVistaPreviaTraductor({
         </div>
 
         <div className="flex justify-end gap-3 border-t border-gray-100 bg-white px-7 py-5">
-          <CustomButton variant="secondary" size="sm" onClick={onCerrar}>
-            Cerrar
-          </CustomButton>
-          <CustomButton size="sm" onClick={() => window.print()}>
-            <Download size={14} />
-            Descargar PDF
-          </CustomButton>
+          {footer ?? (
+            <>
+              <CustomButton variant="secondary" size="sm" onClick={onCerrar}>
+                Cerrar
+              </CustomButton>
+              <CustomButton size="sm" onClick={() => window.print()}>
+                <Download size={14} />
+                Descargar PDF
+              </CustomButton>
+            </>
+          )}
         </div>
       </div>
     </div>

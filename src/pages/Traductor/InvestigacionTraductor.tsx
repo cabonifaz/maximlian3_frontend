@@ -81,6 +81,7 @@ interface PropsPantallaInvestigacionAnalista {
 
 interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInvestigacionAnalista {
   datosIniciales: DatosInvestigacionAnalista;
+  archivosIniciales?: ArchivoInvestigacionAnalista[];
 }
 
 interface CambioExtraccionPendiente {
@@ -545,7 +546,7 @@ function construirCuentaBalance(detalle?: RegistroBalanceAnalista["detalleCuenta
 function construirPayloadCrearInforme({
   idPedido,
   idInforme,
-  idEstadoPedido,
+  idEstadoInforme,
   idIdiomaPedido,
   datosInvestigacion,
   opcionesTipoPersona,
@@ -554,7 +555,7 @@ function construirPayloadCrearInforme({
 }: {
   idPedido: number;
   idInforme?: number;
-  idEstadoPedido: number;
+  idEstadoInforme: number;
   idIdiomaPedido: number;
   datosInvestigacion: DatosInvestigacionAnalista;
   opcionesTipoPersona: { num1: number | null; string1: string | null }[] | undefined;
@@ -581,7 +582,8 @@ function construirPayloadCrearInforme({
     fax: identificacion.numeroFax,
     email: identificacion.correoElectronico,
     paginaWeb: identificacion.paginaWeb,
-    idEstado: obtenerIdPorTexto(opcionesEstadoCliente, identificacion.estadoActual),
+    idEstadoManual: obtenerIdPorTexto(opcionesEstadoCliente, identificacion.estadoActual),
+    idEstadoInforme,
     datosAdicionales: identificacion.datosAdicionales,
     observacionesIdentificacion: "",
     idTipoEmpresa: 0,
@@ -632,6 +634,7 @@ function construirPayloadCrearInforme({
     superintendecia: referencias.superintendencia,
     informacionGeneral: datosGenerales.informacionGeneral,
     opinionCredito: datosGenerales.opinionCredito,
+    flgTieneInformacion: true,
     balances: datosInvestigacion.balances.map((balance) => ({
       ...(esEdicion ? { idInformeBalance: 0 } : {}),
       fechaBalance: convertirFechaIso(balance.fechaInicio ?? balance.fecha),
@@ -647,7 +650,8 @@ function construirPayloadCrearInforme({
       idBanco: 0,
       numeroCuenta: banco.numeroCuenta,
       idSector: 0,
-      referenciaBanco: banco.sectoristaJefeCuenta ?? banco.telefono,
+      sectorista: banco.sectoristaJefeCuenta ?? "",
+      referenciaBanco: banco.telefono,
     })),
     companiasRelacionadas: datosInvestigacion.companiasRelacionadas.map(() => ({
       ...(esEdicion ? { idInformeCompaniaRelacionada: 0 } : {}),
@@ -740,7 +744,7 @@ function construirPayloadCrearInforme({
         idIdioma: idIdiomaPedido,
         documentoWord: "",
         documentoExcel: "",
-        idEstado: idEstadoPedido,
+        idEstado: 0,
       },
     ],
   };
@@ -836,6 +840,7 @@ function PantallaInvestigacionAnalista({
   idInforme,
   modo,
   datosIniciales,
+  archivosIniciales = [],
 }: PropsContenidoPantallaInvestigacionAnalista) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -894,7 +899,7 @@ function PantallaInvestigacionAnalista({
   const [tituloSeccionExtraccion, setTituloSeccionExtraccion] = useState("");
   const [cambiosExtraccionPendientes, setCambiosExtraccionPendientes] = useState<Record<string, CambioExtraccionPendiente>>({});
   const [idCambioExtraccionActivo, setIdCambioExtraccionActivo] = useState<string | null>(null);
-  const [archivosInvestigacion, setArchivosInvestigacion] = useState<ArchivoInvestigacionAnalista[]>([]);
+  const [archivosInvestigacion, setArchivosInvestigacion] = useState<ArchivoInvestigacionAnalista[]>(archivosIniciales);
   const [indiceEjecutivoSeleccionado, setIndiceEjecutivoSeleccionado] = useState<number | null>(null);
   const [indiceEjecutivoAEliminar, setIndiceEjecutivoAEliminar] = useState<number | null>(null);
   const [busquedaEjecutivo, setBusquedaEjecutivo] = useState("");
@@ -1058,7 +1063,7 @@ function PantallaInvestigacionAnalista({
   };
 
   const guardarInformeMutation = useMutation({
-    mutationFn: async (idEstadoPedido: number) => {
+    mutationFn: async (idEstadoInforme: number) => {
       const idPedidoNumerico = Number(idPedido);
 
       if (!Number.isFinite(idPedidoNumerico) || idPedidoNumerico <= 0) {
@@ -1068,7 +1073,7 @@ function PantallaInvestigacionAnalista({
       const payload = construirPayloadCrearInforme({
         idPedido: idPedidoNumerico,
         idInforme: idInformeActual,
-        idEstadoPedido,
+        idEstadoInforme,
         idIdiomaPedido: registroPedidoSeleccionado?.idIdioma ?? 0,
         datosInvestigacion,
         opcionesTipoPersona,
@@ -3009,7 +3014,7 @@ function PantallaInvestigacionAnalista({
         alcance={alcanceExtraccionInformacion}
         tituloSeccion={tituloSeccionExtraccion}
         seccionesDisponibles={seccionesDisponiblesExtraccion}
-        archivosDisponibles={archivosInvestigacion.map((archivo) => archivo.archivo)}
+        archivosDisponibles={archivosInvestigacion.flatMap((archivo) => (archivo.archivo ? [archivo.archivo] : []))}
         ocultarCargaArchivos
         ocultarEspecificaciones
         onCerrar={() => setEstaAbiertoModalExtraccionInformacion(false)}
@@ -3292,6 +3297,7 @@ export default function InvestigacionTraductor() {
       idInforme={Number.isFinite(idInformeNumerico) && idInformeNumerico > 0 ? idInformeNumerico : undefined}
       modo={modo}
       datosIniciales={datosIniciales}
+      archivosIniciales={informeObtenido?.archivosInvestigacion}
     />
   );
 }
