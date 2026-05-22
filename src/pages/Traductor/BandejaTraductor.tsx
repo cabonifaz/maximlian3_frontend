@@ -90,6 +90,7 @@ export default function BandejaTraductor() {
       (respuestaAsignaciones?.lstPedido ?? []).map((registro) => ({
         idInforme: registro.idInforme ?? 0,
         idPedido: registro.idPedido,
+        idPlantilla: registro.idPlantilla,
         codigo: String(registro.idPedido),
         investigado: registro.investigado,
         pais: registro.pais || "-",
@@ -120,7 +121,17 @@ export default function BandejaTraductor() {
       parametros.set("idInforme", String(registro.idInforme));
     }
 
-    navigate(`/traductor/traduccion/${registro.idPedido}?${parametros.toString()}`);
+    navigate(`/traductor/traduccion/${registro.idPedido}?${parametros.toString()}`, {
+      state: {
+        datosPedidoInvestigacion: {
+          idPedido: registro.idPedido,
+          idPlantilla: registro.idPlantilla,
+          investigado: registro.investigado,
+          pais: registro.pais,
+          tipoTramite: registro.tipo,
+        },
+      },
+    });
   };
 
   const columnas = [

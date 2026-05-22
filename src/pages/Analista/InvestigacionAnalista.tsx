@@ -1,7 +1,7 @@
-import { type ReactNode, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -42,6 +42,7 @@ import {
   SelectorMaestroConAltaInvestigacionAnalista,
 } from "@maximilian/components/investigacion/ControlesInforme";
 import { informeService } from "@maximilian/services/informe.service";
+import { pedidoService } from "@maximilian/services/pedido.service";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import {
@@ -56,6 +57,7 @@ import type {
 } from "@maximilian/shared/types/informe.type";
 import type {
   ArchivoInvestigacionAnalista,
+  DatosPedidoNavegacionInvestigacion,
   DatosInvestigacionAnalista,
   IdSeccionInvestigacionAnalista,
   ModoInvestigacionAnalista,
@@ -75,11 +77,20 @@ interface PropsPantallaInvestigacionAnalista {
   idPedido?: string;
   idInforme?: number;
   modo: ModoInvestigacionAnalista;
+  datosPedidoNavegacion?: DatosPedidoNavegacionInvestigacion;
 }
 
 interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInvestigacionAnalista {
   datosIniciales: DatosInvestigacionAnalista;
   archivosIniciales?: ArchivoInvestigacionAnalista[];
+  idTipoPersonaInicial?: number;
+  idPaisInicial?: number;
+  idTipoRegTributarioInicial?: number;
+  idEstadoActualInicial?: number;
+  idTipoEmpresaInicial?: number;
+  idCiudadRegistroInicial?: number;
+  idSectorInicial?: number;
+  idActividadInicial?: number;
 }
 
 interface CambioExtraccionPendiente {
@@ -471,6 +482,12 @@ function construirPayloadCrearInforme({
   opcionesTipoPersona,
   opcionesPais,
   opcionesEstadoCliente,
+  opcionesTipoRegTributario,
+  opcionesCiudad,
+  opcionesTipoEmpresa,
+  opcionesMoneda,
+  opcionesSectorEconomico,
+  opcionesActividadEconomica,
 }: {
   idPedido: number;
   idInforme?: number;
@@ -480,6 +497,12 @@ function construirPayloadCrearInforme({
   opcionesTipoPersona: { num1: number | null; string1: string | null }[] | undefined;
   opcionesPais: { num1: number | null; string1: string | null }[] | undefined;
   opcionesEstadoCliente: { num1: number | null; string1: string | null }[] | undefined;
+  opcionesTipoRegTributario: { num1: number | null; string1: string | null }[] | undefined;
+  opcionesCiudad: { num1: number | null; string1: string | null }[] | undefined;
+  opcionesTipoEmpresa: { num1: number | null; string1: string | null }[] | undefined;
+  opcionesMoneda: { num1: number | null; string1: string | null }[] | undefined;
+  opcionesSectorEconomico: { num1: number | null; string1: string | null }[] | undefined;
+  opcionesActividadEconomica: { num1: number | null; string1: string | null }[] | undefined;
 }): InformeCrearRequest {
   const { identificacion, aspectosLegales, operacionPrincipal, informacionFinanciera, referencias, datosGenerales } = datosInvestigacion;
   const esEdicion = typeof idInforme === "number" && idInforme > 0;
@@ -492,7 +515,7 @@ function construirPayloadCrearInforme({
     nombreComercial: identificacion.nombreComercial,
     idPais: obtenerIdPorTexto(opcionesPais, identificacion.pais),
     operacionesTCMoneda: 0,
-    taxIdType: 0,
+    taxIdType: obtenerIdPorTexto(opcionesTipoRegTributario, identificacion.tipoIdentificacionFiscal),
     taxNum: identificacion.numeroIdentificacionFiscal,
     direccion: identificacion.direccionPrincipal,
     ubigeo: identificacion.ciudadEstadoProvincia,
@@ -505,9 +528,9 @@ function construirPayloadCrearInforme({
     idEstadoInforme,
     datosAdicionales: identificacion.datosAdicionales,
     observacionesIdentificacion: "",
-    idTipoEmpresa: 0,
+    idTipoEmpresa: obtenerIdPorTexto(opcionesTipoEmpresa, aspectosLegales.tipoEmpresa),
     fechaConstitucion: convertirFechaIso(aspectosLegales.fechaConstitucion),
-    idCiudadRegistro: 0,
+    idCiudadRegistro: obtenerIdPorTexto(opcionesCiudad, aspectosLegales.ciudadRegistro),
     idNotaria: aspectosLegales.notaria,
     idNotario: aspectosLegales.notario,
     idRegistro: aspectosLegales.registro,
@@ -525,8 +548,8 @@ function construirPayloadCrearInforme({
     antecedentes: aspectosLegales.antecedentes,
     aspectosLegales: aspectosLegales.aspectosLegales,
     comentariosAspectoLegal: aspectosLegales.comentariosEmpresasRelacionadas,
-    idSector: 0,
-    idActividad: 0,
+    idSector: obtenerIdPorTexto(opcionesSectorEconomico, operacionPrincipal.sector),
+    idActividad: obtenerIdPorTexto(opcionesActividadEconomica, operacionPrincipal.actividad),
     idIsicCategoria: 0,
     idIsicClase: 0,
     actividadPrincipal: operacionPrincipal.actividadPrincipal,
@@ -560,7 +583,7 @@ function construirPayloadCrearInforme({
       fechaHasta: balance.esActual ? null : convertirFechaIso(balance.fechaFin),
       flgActualidad: balance.esActual ?? false,
       tipoCambio: obtenerNumeroDesdeTexto(balance.tipoCambio),
-      idMoneda: obtenerIdMoneda(balance.operacionCambio ?? ""),
+      idMoneda: obtenerIdPorTexto(opcionesMoneda, balance.operacionCambio ?? "") || obtenerIdMoneda(balance.operacionCambio ?? ""),
       tipoBalance: obtenerIdTipoBalance(balance.tipoBalance),
       cuentaBalance: construirCuentaBalance(balance.detalleCuentas),
     })),
@@ -582,7 +605,7 @@ function construirPayloadCrearInforme({
         anio: obtenerEnteroDesdeTexto(registro.anio),
         mesInicio: obtenerNumeroMes(registro.mes),
         mesFin: obtenerNumeroMes(registro.mes),
-        idMoneda: obtenerIdMoneda(registro.moneda),
+        idMoneda: obtenerIdPorTexto(opcionesMoneda, registro.moneda) || obtenerIdMoneda(registro.moneda),
         paises: registro.paises,
         monto: obtenerNumeroDesdeTexto(registro.monto),
         productos: registro.productos,
@@ -594,7 +617,7 @@ function construirPayloadCrearInforme({
         anio: obtenerEnteroDesdeTexto(registro.anio),
         mesInicio: obtenerNumeroMes(registro.mes),
         mesFin: obtenerNumeroMes(registro.mes),
-        idMoneda: obtenerIdMoneda(registro.moneda),
+        idMoneda: obtenerIdPorTexto(opcionesMoneda, registro.moneda) || obtenerIdMoneda(registro.moneda),
         paises: registro.paises,
         monto: obtenerNumeroDesdeTexto(registro.monto),
         productos: registro.productos,
@@ -610,7 +633,7 @@ function construirPayloadCrearInforme({
       idPais: obtenerIdPorTexto(opcionesPais, proveedor.pais),
       idTipoDocumento: 0,
       numeroDocumento: proveedor.taxIdNumber,
-      idMoneda: obtenerIdMoneda(proveedor.operacionCambioMoneda ?? ""),
+      idMoneda: obtenerIdPorTexto(opcionesMoneda, proveedor.operacionCambioMoneda ?? "") || obtenerIdMoneda(proveedor.operacionCambioMoneda ?? ""),
       fechaInicio: convertirFechaIso(proveedor.comienzoNegociaciones),
       idLimiteCredito: 0,
       promedioMensual: obtenerNumeroDesdeTexto(proveedor.promedioMensual),
@@ -758,8 +781,17 @@ function PantallaInvestigacionAnalista({
   idPedido,
   idInforme,
   modo,
+  datosPedidoNavegacion,
   datosIniciales,
   archivosIniciales = [],
+  idTipoPersonaInicial,
+  idPaisInicial,
+  idTipoRegTributarioInicial,
+  idEstadoActualInicial,
+  idTipoEmpresaInicial,
+  idCiudadRegistroInicial,
+  idSectorInicial,
+  idActividadInicial,
 }: PropsContenidoPantallaInvestigacionAnalista) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -950,11 +982,18 @@ function PantallaInvestigacionAnalista({
   });
 
   const { data: registroPedidoSeleccionado } = useQuery({
+    queryKey: ["pedido-obtener-analista", idPedido],
+    queryFn: async () => {
+      if (!idPedido?.trim()) return null;
+      return pedidoService.getById(Number(idPedido));
+    },
+    enabled: Boolean(idPedido),
+  });
+
+  const { data: registroAsignacionPedido } = useQuery({
     queryKey: ["asignacion-resumen-analista", idPedido],
     queryFn: async () => {
-      if (!idPedido?.trim()) {
-        return null;
-      }
+      if (!idPedido?.trim()) return null;
 
       const respuesta = await servicioAsignacion.bandeja({
         busqueda: idPedido,
@@ -962,6 +1001,16 @@ function PantallaInvestigacionAnalista({
       });
 
       return respuesta.lstPedido.find((registro) => String(registro.idPedido) === idPedido) ?? null;
+    },
+    enabled: Boolean(idPedido),
+  });
+
+  const { data: registroPedidoListado } = useQuery({
+    queryKey: ["pedido-lista-resumen-analista", idPedido],
+    queryFn: async () => {
+      if (!idPedido?.trim()) return null;
+      const respuesta = await pedidoService.list({ idPedido: Number(idPedido), numPag: 1 });
+      return respuesta.lstPedido.find((registro) => registro.idPedido === Number(idPedido)) ?? null;
     },
     enabled: Boolean(idPedido),
   });
@@ -996,9 +1045,15 @@ function PantallaInvestigacionAnalista({
         opcionesTipoPersona,
         opcionesPais,
         opcionesEstadoCliente,
+        opcionesTipoRegTributario,
+        opcionesCiudad,
+        opcionesTipoEmpresa,
+        opcionesMoneda,
+        opcionesSectorEconomico,
+        opcionesActividadEconomica,
       });
 
-      if (idInformeActual && idInformeActual > 0) {
+      if (modo === "continuar" || (idInformeActual && idInformeActual > 0)) {
         return informeService.editar(payload);
       }
 
@@ -1031,7 +1086,12 @@ function PantallaInvestigacionAnalista({
       setDebeVolverABandejaTrasGuardarBorrador(false);
 
       if (modo === "iniciar" && idInformeResultado && idPedido) {
-        navigate(`/analista/investigacion/${idPedido}?modo=continuar&idInforme=${idInformeResultado}`, { replace: true });
+        navigate(`/analista/investigacion/${idPedido}?modo=continuar&idInforme=${idInformeResultado}`, {
+          replace: true,
+          state: {
+            datosPedidoInvestigacion: datosPedidoNavegacion,
+          },
+        });
       }
     },
   });
@@ -1040,22 +1100,164 @@ function PantallaInvestigacionAnalista({
     (seccion) => seccion.id === idSeccionActiva,
   );
   const seccionActual = seccionesInvestigacionAnalista[indiceSeccionActiva];
+  const nombrePaisInforme = useMemo(
+    () => opcionesPais?.find((opcion) => opcion.num1 === idPaisInicial)?.string1 ?? "",
+    [idPaisInicial, opcionesPais],
+  );
   const resumenEncabezado = useMemo(
     () => ({
       ...datosInvestigacion.resumen,
-      nombreSolicitado: registroPedidoSeleccionado?.investigado ?? datosInvestigacion.resumen.nombreSolicitado,
-      pais: registroPedidoSeleccionado?.pais ?? datosInvestigacion.resumen.pais,
-      prioridad: registroPedidoSeleccionado?.tipoTramite ?? datosInvestigacion.resumen.prioridad,
+      nombreSolicitado:
+        datosPedidoNavegacion?.investigado
+        || registroPedidoSeleccionado?.investigarRazonSocialNombres
+        || registroAsignacionPedido?.investigado
+        || datosInvestigacion.resumen.nombreSolicitado,
+      pais:
+        datosPedidoNavegacion?.pais
+        || registroAsignacionPedido?.pais
+        || nombrePaisInforme
+        || datosInvestigacion.identificacion.pais
+        || datosInvestigacion.resumen.pais,
+      prioridad:
+        datosPedidoNavegacion?.tipoTramite
+        || registroAsignacionPedido?.tipoTramite
+        || registroPedidoListado?.tipoTramite
+        || datosInvestigacion.resumen.prioridad,
     }),
-    [datosInvestigacion.resumen, registroPedidoSeleccionado],
+    [datosInvestigacion.identificacion.pais, datosInvestigacion.resumen, datosPedidoNavegacion, nombrePaisInforme, registroAsignacionPedido, registroPedidoListado, registroPedidoSeleccionado],
   );
   const nombrePlantilla = useMemo(() => {
-    if (!registroPedidoSeleccionado?.idPlantilla) return "";
+    const idPlantilla = datosPedidoNavegacion?.idPlantilla ?? registroPedidoSeleccionado?.idPlantilla;
+    if (!idPlantilla) return "";
 
     return opcionesPlantillaInforme?.find(
-      (opcion) => opcion.num1 === registroPedidoSeleccionado.idPlantilla,
+      (opcion) => opcion.num1 === idPlantilla,
     )?.string1 ?? "";
-  }, [opcionesPlantillaInforme, registroPedidoSeleccionado?.idPlantilla]);
+  }, [datosPedidoNavegacion?.idPlantilla, opcionesPlantillaInforme, registroPedidoSeleccionado?.idPlantilla]);
+
+  useEffect(() => {
+    if (idTipoPersonaInicial && idTipoPersonaSeleccionado == null) {
+      setIdTipoPersonaSeleccionado(idTipoPersonaInicial);
+    }
+  }, [idTipoPersonaInicial, idTipoPersonaSeleccionado]);
+
+  useEffect(() => {
+    if (idPaisInicial && idPaisSeleccionado == null) {
+      setIdPaisSeleccionado(idPaisInicial);
+    }
+  }, [idPaisInicial, idPaisSeleccionado]);
+
+  useEffect(() => {
+    if (!idTipoPersonaInicial || datosInvestigacion.identificacion.tipoPersona || !opcionesTipoPersona) return;
+    const etiqueta = opcionesTipoPersona.find((opcion) => opcion.num1 === idTipoPersonaInicial)?.string1 ?? "";
+    if (!etiqueta) return;
+
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      identificacion: {
+        ...anterior.identificacion,
+        tipoPersona: etiqueta,
+      },
+    }));
+  }, [datosInvestigacion.identificacion.tipoPersona, idTipoPersonaInicial, opcionesTipoPersona]);
+
+  useEffect(() => {
+    if (!idPaisInicial || datosInvestigacion.identificacion.pais || !opcionesPais) return;
+    const etiqueta = opcionesPais.find((opcion) => opcion.num1 === idPaisInicial)?.string1 ?? "";
+    if (!etiqueta) return;
+
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      identificacion: {
+        ...anterior.identificacion,
+        pais: etiqueta,
+      },
+    }));
+  }, [datosInvestigacion.identificacion.pais, idPaisInicial, opcionesPais]);
+
+  useEffect(() => {
+    if (!idTipoRegTributarioInicial || datosInvestigacion.identificacion.tipoIdentificacionFiscal || !opcionesTipoRegTributario) return;
+    const etiqueta = opcionesTipoRegTributario.find((opcion) => opcion.num1 === idTipoRegTributarioInicial)?.string1 ?? "";
+    if (!etiqueta) return;
+
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      identificacion: {
+        ...anterior.identificacion,
+        tipoIdentificacionFiscal: etiqueta,
+      },
+    }));
+  }, [datosInvestigacion.identificacion.tipoIdentificacionFiscal, idTipoRegTributarioInicial, opcionesTipoRegTributario]);
+
+  useEffect(() => {
+    if (!idEstadoActualInicial || datosInvestigacion.identificacion.estadoActual || !opcionesEstadoCliente) return;
+    const etiqueta = opcionesEstadoCliente.find((opcion) => opcion.num1 === idEstadoActualInicial)?.string1 ?? "";
+    if (!etiqueta) return;
+
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      identificacion: {
+        ...anterior.identificacion,
+        estadoActual: etiqueta,
+      },
+    }));
+  }, [datosInvestigacion.identificacion.estadoActual, idEstadoActualInicial, opcionesEstadoCliente]);
+
+  useEffect(() => {
+    if (!idTipoEmpresaInicial || datosInvestigacion.aspectosLegales.tipoEmpresa || !opcionesTipoEmpresa) return;
+    const etiqueta = opcionesTipoEmpresa.find((opcion) => opcion.num1 === idTipoEmpresaInicial)?.string1 ?? "";
+    if (!etiqueta) return;
+
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      aspectosLegales: {
+        ...anterior.aspectosLegales,
+        tipoEmpresa: etiqueta,
+      },
+    }));
+  }, [datosInvestigacion.aspectosLegales.tipoEmpresa, idTipoEmpresaInicial, opcionesTipoEmpresa]);
+
+  useEffect(() => {
+    if (!idCiudadRegistroInicial || datosInvestigacion.aspectosLegales.ciudadRegistro || !opcionesCiudad) return;
+    const etiqueta = opcionesCiudad.find((opcion) => opcion.num1 === idCiudadRegistroInicial)?.string1 ?? "";
+    if (!etiqueta) return;
+
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      aspectosLegales: {
+        ...anterior.aspectosLegales,
+        ciudadRegistro: etiqueta,
+      },
+    }));
+  }, [datosInvestigacion.aspectosLegales.ciudadRegistro, idCiudadRegistroInicial, opcionesCiudad]);
+
+  useEffect(() => {
+    if (!idSectorInicial || datosInvestigacion.operacionPrincipal.sector || !opcionesSectorEconomico) return;
+    const etiqueta = opcionesSectorEconomico.find((opcion) => opcion.num1 === idSectorInicial)?.string1 ?? "";
+    if (!etiqueta) return;
+
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      operacionPrincipal: {
+        ...anterior.operacionPrincipal,
+        sector: etiqueta,
+      },
+    }));
+  }, [datosInvestigacion.operacionPrincipal.sector, idSectorInicial, opcionesSectorEconomico]);
+
+  useEffect(() => {
+    if (!idActividadInicial || datosInvestigacion.operacionPrincipal.actividad || !opcionesActividadEconomica) return;
+    const etiqueta = opcionesActividadEconomica.find((opcion) => opcion.num1 === idActividadInicial)?.string1 ?? "";
+    if (!etiqueta) return;
+
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      operacionPrincipal: {
+        ...anterior.operacionPrincipal,
+        actividad: etiqueta,
+      },
+    }));
+  }, [datosInvestigacion.operacionPrincipal.actividad, idActividadInicial, opcionesActividadEconomica]);
   const opcionesFiltroTipoProveedor = useMemo(
     () => [
       { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 0, num2: null, num3: null, string1: "Todos", string2: null, string3: null, date1: null, date2: null, date3: null },
@@ -1232,6 +1434,18 @@ function PantallaInvestigacionAnalista({
       }
 
       const opcionPorTexto = obtenerOpcionTablaMaestraPorTexto(opcionesEstadoCliente, valor);
+      if (opcionPorTexto?.string1) {
+        return { valor: opcionPorTexto.string1 };
+      }
+    }
+
+    if (rutaTexto === "identificacion.tipoIdentificacionFiscal") {
+      const opcionPorId = obtenerOpcionTablaMaestraPorId(opcionesTipoRegTributario, valor);
+      if (opcionPorId?.string1) {
+        return { valor: opcionPorId.string1 };
+      }
+
+      const opcionPorTexto = obtenerOpcionTablaMaestraPorTexto(opcionesTipoRegTributario, valor);
       if (opcionPorTexto?.string1) {
         return { valor: opcionPorTexto.string1 };
       }
@@ -2813,7 +3027,7 @@ function PantallaInvestigacionAnalista({
   return (
     <div ref={contenedorPantallaRef} className="space-y-6">
       <ResumenPedidoInvestigacionAnalista
-        idPedido={idPedido}
+        idPedido={String(datosPedidoNavegacion?.idPedido ?? idPedido ?? "")}
         plantilla={nombrePlantilla}
         resumen={resumenEncabezado}
         esSoloLectura={esSoloLectura}
@@ -2841,14 +3055,7 @@ function PantallaInvestigacionAnalista({
               variant="secondary"
               size="sm"
               disabled={esSoloLectura}
-              onClick={() => {
-                if (!idInformeActual || idInformeActual <= 0) {
-                  setEstaAbiertoModalConfirmacionPrimerBorrador(true);
-                  return;
-                }
-
-                guardarBorrador(false);
-              }}
+              onClick={() => setEstaAbiertoModalConfirmacionPrimerBorrador(true)}
             >
               Guardar Borrador
             </CustomButton>
@@ -3046,7 +3253,7 @@ function PantallaInvestigacionAnalista({
         isOpen={estaAbiertoModalConfirmacionPrimerBorrador}
         onClose={() => setEstaAbiertoModalConfirmacionPrimerBorrador(false)}
         onConfirm={() => guardarBorrador(true)}
-        title="Guardar primer borrador"
+        title="Guardar borrador"
         descripcion="Se registrará el informe como borrador y volverás a Mi Bandeja para retomarlo después."
         isSubmitting={guardarInformeMutation.isPending}
         textoConfirmar="Guardar y volver"
@@ -3141,18 +3348,24 @@ function PantallaInvestigacionAnalista({
 
 export default function InvestigacionAnalista() {
   const { idPedido } = useParams();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const modo = (searchParams.get("modo") as ModoInvestigacionAnalista | null) ?? "iniciar";
   const idInforme = searchParams.get("idInforme");
+  const datosPedidoNavegacion = (location.state as { datosPedidoInvestigacion?: DatosPedidoNavegacionInvestigacion } | null)?.datosPedidoInvestigacion;
+  const idPedidoNumerico = Number(idPedido);
   const idInformeClave = idInforme ?? "sin-informe";
   const idInformeNumerico = Number(idInforme);
-  const usaDatosBackend = modo !== "iniciar" && Number.isFinite(idInformeNumerico) && idInformeNumerico > 0;
+  const usaDatosBackend = modo !== "iniciar" && Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0;
   const datosBaseInvestigacion = useMemo(() => obtenerDatosInvestigacionAnalista("iniciar"), []);
   const datosEjemploInvestigacion = useMemo(() => obtenerDatosInvestigacionAnalista(modo), [modo]);
 
   const { data: informeObtenido } = useQuery({
-    queryKey: ["informe-obtener-analista", idInformeNumerico],
-    queryFn: () => informeService.obtener(idInformeNumerico),
+    queryKey: ["informe-obtener-analista", idPedidoNumerico, idInformeNumerico],
+    queryFn: () => informeService.obtener({
+      idPedido: idPedidoNumerico,
+      idInforme: Number.isFinite(idInformeNumerico) && idInformeNumerico > 0 ? idInformeNumerico : undefined,
+    }),
     enabled: usaDatosBackend,
   });
 
@@ -3169,10 +3382,23 @@ export default function InvestigacionAnalista() {
     <PantallaInvestigacionAnalista
       key={`${idPedido ?? "sin-id"}-${modo}-${idInformeClave}-${claveDatos}`}
       idPedido={idPedido}
-      idInforme={Number.isFinite(idInformeNumerico) && idInformeNumerico > 0 ? idInformeNumerico : undefined}
+      idInforme={
+        Number.isFinite(idInformeNumerico) && idInformeNumerico > 0
+          ? idInformeNumerico
+          : informeObtenido?.idInforme
+      }
       modo={modo}
+      datosPedidoNavegacion={datosPedidoNavegacion}
       datosIniciales={datosIniciales}
       archivosIniciales={informeObtenido?.archivosInvestigacion}
+      idTipoPersonaInicial={informeObtenido?.idTipoPersona}
+      idPaisInicial={informeObtenido?.idPais}
+      idTipoRegTributarioInicial={informeObtenido?.taxIdType}
+      idEstadoActualInicial={informeObtenido?.idEstadoManual}
+      idTipoEmpresaInicial={informeObtenido?.idTipoEmpresa}
+      idCiudadRegistroInicial={informeObtenido?.idCiudadRegistro}
+      idSectorInicial={informeObtenido?.idSector}
+      idActividadInicial={informeObtenido?.idActividad}
     />
   );
 }

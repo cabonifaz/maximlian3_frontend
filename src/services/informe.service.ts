@@ -9,6 +9,7 @@ import type {
   InformeListEntry,
   InformeListParams,
   InformeListResponse,
+  InformeObtenerParams,
   InformeObtenerUrlPrefirmadaRequest,
   InformeObtenerUrlPrefirmadaResponse,
   InformeObtenerResponse,
@@ -785,6 +786,14 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   return {
     idInforme: obtenerNumero(registro.idInforme, registro.IdInforme) || undefined,
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido) || undefined,
+    idTipoPersona: obtenerNumeroOpcional(registro.idTipoPersona, registro.IdTipoPersona),
+    idPais: obtenerNumeroOpcional(registro.idPais, registro.IdPais),
+    taxIdType: obtenerNumeroOpcional(registro.taxIdType, registro.TaxIdType),
+    idEstadoManual: obtenerNumeroOpcional(registro.idEstadoManual, registro.IdEstadoManual),
+    idTipoEmpresa: obtenerNumeroOpcional(registro.idTipoEmpresa, registro.IdTipoEmpresa),
+    idCiudadRegistro: obtenerNumeroOpcional(registro.idCiudadRegistro, registro.IdCiudadRegistro),
+    idSector: obtenerNumeroOpcional(registro.idSector, registro.IdSector),
+    idActividad: obtenerNumeroOpcional(registro.idActividad, registro.IdActividad),
     datosInvestigacion: datos,
     archivosInvestigacion,
   };
@@ -828,10 +837,11 @@ export const informeService = {
     return normalizarRespuestaCrear(data.result);
   },
 
-  obtener: async (idInforme: number): Promise<InformeObtenerResponse> => {
+  obtener: async ({ idInforme, idPedido }: InformeObtenerParams): Promise<InformeObtenerResponse> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Informe/obtener", {
       params: {
         IdInforme: idInforme,
+        IdPedido: idPedido,
       },
     });
 
