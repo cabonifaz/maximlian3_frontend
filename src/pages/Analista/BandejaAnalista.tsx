@@ -90,6 +90,7 @@ export default function BandejaAnalista() {
       (respuestaAsignaciones?.lstPedido ?? []).map((registro) => ({
         idInforme: registro.idInforme ?? 0,
         idPedido: registro.idPedido,
+        idPlantilla: registro.idPlantilla,
         codigo: String(registro.idPedido),
         investigado: registro.investigado,
         pais: registro.pais || "-",
@@ -120,7 +121,17 @@ export default function BandejaAnalista() {
       parametros.set("idInforme", String(registro.idInforme));
     }
 
-    navigate(`/analista/investigacion/${registro.idPedido}?${parametros.toString()}`);
+    navigate(`/analista/investigacion/${registro.idPedido}?${parametros.toString()}`, {
+      state: {
+        datosPedidoInvestigacion: {
+          idPedido: registro.idPedido,
+          idPlantilla: registro.idPlantilla,
+          investigado: registro.investigado,
+          pais: registro.pais,
+          tipoTramite: registro.tipo,
+        },
+      },
+    });
   };
 
   const columnas = [

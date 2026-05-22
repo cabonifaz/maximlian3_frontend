@@ -36,6 +36,7 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
   const esEndpointInformeGuardar =
     url.includes("/api/Informe/crear")
     || url.includes("/api/Informe/editar");
+  const esEndpointInformeObtener = url.includes("/api/Informe/obtener");
   const esEndpointInformeExtraccion =
     url.includes("/api/Informe/obtenerUrlPrefirmada")
     || url.includes("/api/Informe/autocompletar")
@@ -47,6 +48,10 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
 
   if (esEndpointInformeGuardar && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
     return data.mensaje === "Informe registrado correctamente." || data.mensaje === "Informe actualizado correctamente.";
+  }
+
+  if (esEndpointInformeObtener && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "OK" && Boolean(data.result);
   }
 
   if (esEndpointInformeExtraccion && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {

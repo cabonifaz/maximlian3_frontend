@@ -19,6 +19,14 @@ export type EstadoInvestigacionAnalista =
 
 export type AccionBandejaAnalista = "iniciar" | "continuar" | "detalle";
 
+export interface DatosPedidoNavegacionInvestigacion {
+  idPedido: number;
+  idPlantilla?: number;
+  investigado: string;
+  pais: string;
+  tipoTramite: string;
+}
+
 export type PestanaAspectosLegales = "data" | "companias";
 export type PestanaRamoOperaciones = "operaciones" | "importaciones" | "exportaciones" | "locales";
 export type PestanaBancosProveedores = "referencias" | "proveedores" | "bancos";
@@ -33,6 +41,7 @@ export interface TarjetaResumenAnalista {
 export interface RegistroBandejaAnalista {
   idInforme: number;
   idPedido: number;
+  idPlantilla?: number;
   codigo: string;
   investigado: string;
   pais: string;

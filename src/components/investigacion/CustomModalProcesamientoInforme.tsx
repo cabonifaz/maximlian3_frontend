@@ -195,65 +195,106 @@ export function CustomModalExtraccionInformacionAnalista({
                 />
               </div>
 
-              <div className="flex min-w-0 flex-1 flex-col gap-3 self-start">
-                <div className="space-y-1">
-                  <CustomLabel>Documentos</CustomLabel>
+              <div className="flex min-w-0 flex-1 flex-col gap-4 self-start">
+                <div className="flex min-w-0 flex-1 flex-col gap-3">
+                  <div className="space-y-1">
+                    <CustomLabel>Documentos</CustomLabel>
+                  </div>
+
+                  <div className="max-h-72 overflow-y-auto rounded-xl border border-gray-100">
+                    {archivosSeleccionados.length === 0 ? (
+                      <div className="flex min-h-20 items-center justify-center text-sm text-gray-400">
+                        No hay archivos adjuntos
+                      </div>
+                    ) : (
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0 z-10 bg-white">
+                          <tr className="border-b border-gray-100">
+                            <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Nombre</th>
+                            <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Formato</th>
+                            <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Tamaño</th>
+                            <th className="px-3 py-2" />
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {archivosSeleccionados.map((archivo, indice) => (
+                            <tr key={`${archivo.name}-${archivo.size}-${indice}`} className="bg-amber-50 transition-colors hover:bg-amber-100/60">
+                              <td className="px-3 py-2.5">
+                                <div className="flex items-center gap-2">
+                                  <FileText size={18} className="shrink-0 text-gray-400" />
+                                  <span className="max-w-64 truncate font-medium text-gray-700">{archivo.name}</span>
+                                  <span className="shrink-0 rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                                    Nuevo
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-3 py-2.5 text-gray-500">{obtenerExtensionArchivo(archivo.name)}</td>
+                              <td className="px-3 py-2.5 whitespace-nowrap text-gray-500">{formatearTamanoArchivo(archivo.size)}</td>
+                              <td className="px-3 py-2.5 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setArchivosSeleccionados((anteriores) =>
+                                      anteriores.filter((_, indiceActual) => indiceActual !== indice),
+                                    );
+                                  }}
+                                  className="rounded-lg p-1.5 text-gray-400 transition-all hover:bg-red-50 hover:text-red-500"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
                 </div>
 
-                <div className="max-h-72 overflow-y-auto rounded-xl border border-gray-100">
-                  {archivosSeleccionados.length === 0 ? (
-                    <div className="flex min-h-20 items-center justify-center text-sm text-gray-400">
-                      No hay archivos adjuntos
+                {seccionesConOpciones.length > 0 ? (
+                  <div className="space-y-2 rounded-xl border border-gray-100 bg-slate-50/40 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <CustomLabel>Campos a completar</CustomLabel>
+                      <span className="text-xs text-slate-400">
+                        {totalCamposSeleccionados} seleccionado{totalCamposSeleccionados === 1 ? "" : "s"}
+                      </span>
                     </div>
-                  ) : (
-                    <table className="w-full text-sm">
-                      <thead className="sticky top-0 z-10 bg-white">
-                        <tr className="border-b border-gray-100">
-                          <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Nombre</th>
-                          <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Formato</th>
-                          <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Tamaño</th>
-                          <th className="px-3 py-2" />
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {archivosSeleccionados.map((archivo, indice) => (
-                          <tr key={`${archivo.name}-${archivo.size}-${indice}`} className="bg-amber-50 transition-colors hover:bg-amber-100/60">
-                            <td className="px-3 py-2.5">
-                              <div className="flex items-center gap-2">
-                                <FileText size={18} className="shrink-0 text-gray-400" />
-                                <span className="max-w-64 truncate font-medium text-gray-700">{archivo.name}</span>
-                                <span className="shrink-0 rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
-                                  Nuevo
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-3 py-2.5 text-gray-500">{obtenerExtensionArchivo(archivo.name)}</td>
-                            <td className="px-3 py-2.5 whitespace-nowrap text-gray-500">{formatearTamanoArchivo(archivo.size)}</td>
-                            <td className="px-3 py-2.5 text-right">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setArchivosSeleccionados((anteriores) =>
-                                    anteriores.filter((_, indiceActual) => indiceActual !== indice),
-                                  );
-                                }}
-                                className="rounded-lg p-1.5 text-gray-400 transition-all hover:bg-red-50 hover:text-red-500"
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
+
+                    <div className="max-h-35 space-y-2 overflow-y-auto">
+                      {seccionesConOpciones.map((seccion) => (
+                        <div key={seccion.claveSeccion} className="grid gap-2 rounded-lg border border-gray-100 bg-white p-2 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-bold text-brand-black">{seccion.etiquetaSeccion}</p>
+                            <p className="text-[11px] text-slate-400">
+                              {seccion.campos.length} campo{seccion.campos.length === 1 ? "" : "s"}
+                            </p>
+                          </div>
+                          <MultiCustomSelectorBuscable
+                            label={`Campos de ${seccion.etiquetaSeccion}`}
+                            options={seccion.opciones}
+                            value={camposSeleccionadosPorSeccion[seccion.claveSeccion] ?? []}
+                            onChange={(valor) =>
+                              setCamposSeleccionadosPorSeccion((anterior) => ({
+                                ...anterior,
+                                [seccion.claveSeccion]: valor,
+                              }))
+                            }
+                            hideLabel
+                            resumirSelecciones
+                            mostrarAccionSeleccionarTodos
+                            placeholder="Seleccione campos"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           )}
 
-          {seccionesConOpciones.length > 0 ? (
-            <div className="space-y-2 rounded-xl border border-gray-100 bg-slate-50/40 p-3">
+          {ocultarCargaArchivos && seccionesConOpciones.length > 0 ? (
+            <div className="space-y-3 rounded-2xl border border-gray-100 bg-slate-50/60 p-4">
               <div className="flex items-center justify-between gap-3">
                 <CustomLabel>Campos a completar</CustomLabel>
                 <span className="text-xs text-slate-400">
@@ -261,12 +302,15 @@ export function CustomModalExtraccionInformacionAnalista({
                 </span>
               </div>
 
-              <div className="max-h-56 space-y-2 overflow-y-auto">
+              <div className="max-h-[26rem] space-y-3 overflow-y-auto">
                 {seccionesConOpciones.map((seccion) => (
-                  <div key={seccion.claveSeccion} className="grid gap-2 rounded-lg border border-gray-100 bg-white p-2 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                  <div
+                    key={seccion.claveSeccion}
+                    className="grid gap-3 rounded-xl border border-gray-100 bg-white p-3 md:grid-cols-[220px_minmax(0,1fr)] md:items-center"
+                  >
                     <div className="min-w-0">
-                      <p className="truncate text-xs font-bold text-brand-black">{seccion.etiquetaSeccion}</p>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="truncate text-sm font-bold text-brand-black">{seccion.etiquetaSeccion}</p>
+                      <p className="text-xs text-slate-400">
                         {seccion.campos.length} campo{seccion.campos.length === 1 ? "" : "s"}
                       </p>
                     </div>
@@ -294,11 +338,12 @@ export function CustomModalExtraccionInformacionAnalista({
           {ocultarEspecificaciones ? null : (
             <label className="space-y-2">
               <CustomLabel>{textoEspecificaciones}</CustomLabel>
-              <input
+              <textarea
                 value={especificaciones}
                 onChange={(event) => setEspecificaciones(event.target.value)}
                 placeholder={marcadorEspecificaciones}
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+                rows={5}
+                className="w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm leading-6 text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
               />
             </label>
           )}

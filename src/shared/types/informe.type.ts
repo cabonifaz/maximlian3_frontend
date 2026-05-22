@@ -245,8 +245,21 @@ export interface InformeCrearResponse {
 export interface InformeObtenerResponse {
   idInforme?: number;
   idPedido?: number;
+  idTipoPersona?: number;
+  idPais?: number;
+  taxIdType?: number;
+  idEstadoManual?: number;
+  idTipoEmpresa?: number;
+  idCiudadRegistro?: number;
+  idSector?: number;
+  idActividad?: number;
   datosInvestigacion: DatosInvestigacionAnalista;
   archivosInvestigacion?: ArchivoInvestigacionAnalista[];
+}
+
+export interface InformeObtenerParams {
+  idInforme?: number;
+  idPedido?: number;
 }
 
 export type AlcanceExtraccionInforme = "general" | IdSeccionInvestigacionAnalista;
