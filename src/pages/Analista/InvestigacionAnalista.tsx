@@ -475,6 +475,33 @@ function construirCuentaBalance(detalle?: RegistroBalanceAnalista["detalleCuenta
   };
 }
 
+function depurarPayloadInforme(valor: unknown): unknown {
+  if (Array.isArray(valor)) {
+    const lista = valor
+      .map((item) => depurarPayloadInforme(item))
+      .filter((item) => item !== undefined);
+    return lista.length > 0 ? lista : undefined;
+  }
+
+  if (valor && typeof valor === "object") {
+    const entradas = Object.entries(valor)
+      .map(([clave, contenido]) => [clave, depurarPayloadInforme(contenido)] as const)
+      .filter(([, contenido]) => contenido !== undefined);
+
+    if (entradas.length === 0) return undefined;
+    return Object.fromEntries(entradas);
+  }
+
+  if (typeof valor === "string") {
+    const texto = valor.trim();
+    return texto ? texto : undefined;
+  }
+
+  if (valor == null) return undefined;
+
+  return valor;
+}
+
 function construirPayloadCrearInforme({
   idPedido,
   idInforme,
@@ -509,7 +536,7 @@ function construirPayloadCrearInforme({
   const { identificacion, aspectosLegales, operacionPrincipal, informacionFinanciera, referencias, datosGenerales } = datosInvestigacion;
   const esEdicion = typeof idInforme === "number" && idInforme > 0;
 
-  return {
+  return depurarPayloadInforme({
     ...(esEdicion ? { idInforme } : {}),
     idPedido,
     idTipoPersona: obtenerIdPorTexto(opcionesTipoPersona, identificacion.tipoPersona),
@@ -598,7 +625,6 @@ function construirPayloadCrearInforme({
       referenciaBanco: banco.telefono,
     })),
     companiasRelacionadas: datosInvestigacion.companiasRelacionadas.map((empresa) => ({
-      ...(esEdicion ? { idInformeCompaniaRelacionada: 0 } : {}),
       idCompania: empresa.idCompania ?? 0,
     })),
     exportacionesImportaciones: [
@@ -691,7 +717,7 @@ function construirPayloadCrearInforme({
         idEstado: 0,
       },
     ],
-  };
+  }) as InformeCrearRequest;
 }
 
 function PaginacionInvestigacion({
