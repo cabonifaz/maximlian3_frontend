@@ -739,6 +739,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   datos.bancos = obtenerLista(registro.bancos, registro.Bancos).map((item) => {
     const banco = obtenerRegistro(item);
     return {
+      idBanco: obtenerNumero(banco.idBanco, banco.IdBanco),
+      idPais: obtenerNumero(banco.idPais, banco.IdPais),
+      pais: obtenerTexto(banco.pais, banco.Pais, banco.nombrePais, banco.NombrePais) || undefined,
       banco: obtenerTexto(banco.nombre, banco.Nombre, banco.banco, banco.Banco),
       numeroCuenta: obtenerTexto(banco.numeroCuenta, banco.NumeroCuenta),
       sector: obtenerTexto(banco.sector, banco.Sector),
