@@ -1,27 +1,14 @@
-import { useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Building2, Phone, UserRound, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { servicioCompania } from "@maximilian/services/compania.service";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import type { CompaniaCrearRequest, CompaniaEditarRequest, CompaniaListaItem } from "@maximilian/shared/types/compania.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-
-function crearOpcionTablaMaestra(num1: number, string1: string): EntradaTablaMaestra {
-  return {
-    idEmpresa: 0,
-    idTablaMaestra: null,
-    idMaestro: 0,
-    descripcion: "",
-    num1,
-    num2: null,
-    num3: null,
-    string1,
-    string2: null,
-    string3: null,
-    date1: null,
-    date2: null,
-    date3: null,
-  };
-}
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 
 export interface RegistroPersonaAnalista {
   id: number;
@@ -31,6 +18,11 @@ export interface RegistroPersonaAnalista {
   pais: string;
   telefono: string;
   existeInformacion: boolean;
+  idCompania?: number;
+  idTipoPersona?: number;
+  idTipoDocumento?: number;
+  idPais?: number;
+  numeroDocumento?: string;
 }
 
 interface PropsCustomModalRegistroEmpresaRelacionadaAnalista {
@@ -42,11 +34,9 @@ interface PropsCustomModalRegistroEmpresaRelacionadaAnalista {
   onGuardar: (registro: RegistroPersonaAnalista) => void;
 }
 
-const opcionesTipoDocumento: EntradaTablaMaestra[] = [
-  crearOpcionTablaMaestra(1, "RUC"),
-  crearOpcionTablaMaestra(2, "NIT"),
-  crearOpcionTablaMaestra(3, "RFC"),
-];
+function obtenerTextoPorId(opciones: EntradaTablaMaestra[] | undefined, id?: number) {
+  return opciones?.find((opcion) => opcion.num1 === id)?.string1 ?? "";
+}
 
 export function CustomModalRegistroEmpresaRelacionadaAnalista({
   estaAbierto,
@@ -56,179 +46,230 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
   onCerrar,
   onGuardar,
 }: PropsCustomModalRegistroEmpresaRelacionadaAnalista) {
-  const [idTipoPersona, setIdTipoPersona] = useState<number | undefined>(undefined);
-  const [idPais, setIdPais] = useState<number | undefined>(undefined);
-  const [idTipoDocumento, setIdTipoDocumento] = useState<number | undefined>(undefined);
-  const [nombreEmpresa, setNombreEmpresa] = useState(registroInicial?.nombres ?? "");
-  const [numeroIdentificacion, setNumeroIdentificacion] = useState(
-    registroInicial?.tipoDocumento.split(" - ")[1] ?? "",
-  );
+  const queryClient = useQueryClient();
+  const [idTipoPersona, setIdTipoPersona] = useState<number | undefined>(registroInicial?.idTipoPersona);
+  const [idPais, setIdPais] = useState<number | undefined>(registroInicial?.idPais);
+  const [idTipoDocumento, setIdTipoDocumento] = useState<number | undefined>(registroInicial?.idTipoDocumento);
+  const [nombreCompleto, setNombreCompleto] = useState(registroInicial?.nombres ?? "");
+  const [numeroDocumento, setNumeroDocumento] = useState(registroInicial?.numeroDocumento ?? "");
   const [telefono, setTelefono] = useState(registroInicial?.telefono ?? "");
   const [existeInformacion, setExisteInformacion] = useState(registroInicial?.existeInformacion ?? true);
 
-  const tipoPersonaActual = useMemo(() => {
-    if (registroInicial && idTipoPersona == null) {
-      return registroInicial.tipoPersona;
-    }
-    return opcionesTipoPersona?.find((opcion) => opcion.num1 === idTipoPersona)?.string1 ?? "";
-  }, [registroInicial, opcionesTipoPersona, idTipoPersona]);
+  const { data: opcionesTipoDocumento } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_DOCUMENTO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_DOCUMENTO),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
 
-  const paisActual = useMemo(() => {
-    if (registroInicial && idPais == null) {
-      return registroInicial.pais;
-    }
-    return opcionesPais?.find((opcion) => opcion.num1 === idPais)?.string1 ?? "";
-  }, [registroInicial, opcionesPais, idPais]);
+  useEffect(() => {
+    if (!estaAbierto) return;
 
-  const tipoDocumentoActual = useMemo(() => {
-    if (registroInicial && idTipoDocumento == null) {
-      return registroInicial.tipoDocumento.split(" - ")[0] ?? "";
-    }
-    return opcionesTipoDocumento.find((opcion) => opcion.num1 === idTipoDocumento)?.string1 ?? "";
-  }, [registroInicial, idTipoDocumento]);
+    setIdTipoPersona(registroInicial?.idTipoPersona);
+    setIdPais(registroInicial?.idPais);
+    setIdTipoDocumento(registroInicial?.idTipoDocumento);
+    setNombreCompleto(registroInicial?.nombres ?? "");
+    setNumeroDocumento(registroInicial?.numeroDocumento ?? registroInicial?.tipoDocumento.split(" - ")[1] ?? "");
+    setTelefono(registroInicial?.telefono ?? "");
+    setExisteInformacion(registroInicial?.existeInformacion ?? true);
+  }, [estaAbierto, registroInicial]);
+
+  const guardarCompaniaMutation = useMutation({
+    mutationFn: async () => {
+      const payloadBase = {
+        idTipoPersona: idTipoPersona ?? 0,
+        idTipoDocumento: idTipoDocumento ?? 0,
+        numeroDocumento: numeroDocumento.trim(),
+        nombreCompleto: nombreCompleto.trim(),
+        idPais: idPais ?? 0,
+        telefono: telefono.trim(),
+        existeInformacion,
+      };
+
+      const respuesta = registroInicial?.idCompania
+        ? await servicioCompania.editar({
+          idCompania: registroInicial.idCompania,
+          ...payloadBase,
+        } satisfies CompaniaEditarRequest)
+        : await servicioCompania.crear(payloadBase satisfies CompaniaCrearRequest);
+
+      await queryClient.invalidateQueries({ queryKey: ["companias-relacionadas-modal"] });
+
+      if (respuesta.idCompania) {
+        try {
+          const companiaActualizada = await servicioCompania.obtener({ idCompania: respuesta.idCompania });
+          if (companiaActualizada) return companiaActualizada;
+        } catch {
+          // Algunos roles no tienen permiso para obtener el detalle; en ese caso
+          // seguimos con los datos recién enviados para cerrar el modal correctamente.
+        }
+      }
+
+      return {
+        idCompania: respuesta.idCompania ?? registroInicial?.idCompania ?? 0,
+        idTipoPersona: payloadBase.idTipoPersona,
+        idTipoDocumento: payloadBase.idTipoDocumento,
+        idPais: payloadBase.idPais,
+        numeroDocumento: payloadBase.numeroDocumento,
+        nombreCompleto: payloadBase.nombreCompleto,
+        pais: obtenerTextoPorId(opcionesPais, payloadBase.idPais) || "-",
+        telefono: payloadBase.telefono || "-",
+        existeInformacion: payloadBase.existeInformacion,
+        tipoPersona: obtenerTextoPorId(opcionesTipoPersona, payloadBase.idTipoPersona) || undefined,
+        tipoDocumento: obtenerTextoPorId(opcionesTipoDocumento, payloadBase.idTipoDocumento) || undefined,
+      } satisfies CompaniaListaItem;
+    },
+    onSuccess: (companiaGuardada) => {
+      onGuardar({
+        id: companiaGuardada.idCompania,
+        idCompania: companiaGuardada.idCompania,
+        idTipoPersona: companiaGuardada.idTipoPersona,
+        idTipoDocumento: companiaGuardada.idTipoDocumento,
+        idPais: companiaGuardada.idPais,
+        numeroDocumento: companiaGuardada.numeroDocumento,
+        tipoPersona: companiaGuardada.tipoPersona ?? obtenerTextoPorId(opcionesTipoPersona, companiaGuardada.idTipoPersona),
+        nombres: companiaGuardada.nombreCompleto,
+        tipoDocumento: `${companiaGuardada.tipoDocumento ?? obtenerTextoPorId(opcionesTipoDocumento, companiaGuardada.idTipoDocumento)} - ${companiaGuardada.numeroDocumento}`,
+        pais: companiaGuardada.pais,
+        telefono: companiaGuardada.telefono,
+        existeInformacion: companiaGuardada.existeInformacion,
+      });
+      onCerrar();
+    },
+  });
+
   if (!estaAbierto) return null;
 
-  const manejarGuardar = () => {
-    const nombreNormalizado = nombreEmpresa.trim();
-    const documentoTipo = tipoDocumentoActual.trim();
-    const documentoNumero = numeroIdentificacion.trim();
-
-    if (!nombreNormalizado || !tipoPersonaActual || !paisActual || !documentoTipo || !documentoNumero) {
-      return;
-    }
-
-    onGuardar({
-      id: registroInicial?.id ?? Date.now(),
-      tipoPersona: tipoPersonaActual,
-      nombres: nombreNormalizado,
-      tipoDocumento: `${documentoTipo} - ${documentoNumero}`,
-      pais: paisActual,
-      telefono: telefono.trim(),
-      existeInformacion,
-    });
-    setIdTipoPersona(undefined);
-    setIdPais(undefined);
-    setIdTipoDocumento(undefined);
-    setNombreEmpresa("");
-    setNumeroIdentificacion("");
-    setTelefono("");
-    setExisteInformacion(true);
-  };
-
-  const manejarCerrar = () => {
-    setIdTipoPersona(undefined);
-    setIdPais(undefined);
-    setIdTipoDocumento(undefined);
-    setNombreEmpresa("");
-    setNumeroIdentificacion("");
-    setTelefono("");
-    setExisteInformacion(true);
-    onCerrar();
-  };
+  const formularioInvalido = !idTipoPersona || !idPais || !idTipoDocumento || !nombreCompleto.trim() || !numeroDocumento.trim();
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[22px] bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-gray-100 px-6 py-5 md:px-8">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
-              Registro de terceros
-            </p>
-            <h2 className="mt-1 text-[18px] font-bold text-slate-800">Empresas relacionadas</h2>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+      <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.25)]">
+        <div className="border-b border-slate-100 bg-[linear-gradient(135deg,#fff_0%,#f8fafc_100%)] px-6 py-6 md:px-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8ea0c0]">Base de datos de companias</p>
+              <h2 className="mt-2 text-[22px] font-bold text-slate-900">
+                {registroInicial ? "Editar Empresa o Persona" : "Nueva Empresa o Persona"}
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm text-slate-500">
+                Registre la empresa relacionada para reutilizarla en futuras investigaciones y mantener consistencia en la base de datos.
+              </p>
+            </div>
+            <CustomButton variant="ghost" size="icon" onClick={onCerrar} disabled={guardarCompaniaMutation.isPending}>
+              <X size={18} className="text-[#c2cad8]" />
+            </CustomButton>
           </div>
-          <CustomButton variant="ghost" size="icon" onClick={manejarCerrar}>
-            <X size={18} className="text-[#c2cad8]" />
-          </CustomButton>
         </div>
 
-        <div className="grid gap-5 overflow-y-auto px-6 py-5 md:grid-cols-2 md:px-8 md:py-7">
-          <div className="md:col-span-2">
-            <div className="grid gap-5 md:grid-cols-2">
-            <CustomSelectorBuscable
-              label="Tipo de Persona"
-              options={opcionesTipoPersona}
-              value={idTipoPersona}
-              displayValue={tipoPersonaActual}
-              onChange={setIdTipoPersona}
-              onClear={() => setIdTipoPersona(undefined)}
-              optional
-              mostrarTextoOpcionalEnLabel={false}
-              placeholder="Seleccione tipo persona"
-            />
-            <CustomSelectorBuscable
-              label="País"
-              options={opcionesPais}
-              value={idPais}
-              displayValue={paisActual}
-              onChange={setIdPais}
-              onClear={() => setIdPais(undefined)}
-              optional
-              mostrarTextoOpcionalEnLabel={false}
-              placeholder="Seleccione un país"
-            />
-          </div>
-          </div>
-
-          <div className="space-y-2">
-            <CustomLabel>Nombre de la Empresa</CustomLabel>
-            <input
-              value={nombreEmpresa}
-              onChange={(event) => setNombreEmpresa(event.target.value)}
-              placeholder="Razón Social completa"
-              className="h-11 w-full rounded-xl border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
-            />
-          </div>
-
-          <div className="space-y-3">
-            <CustomLabel>Identificación Fiscal</CustomLabel>
-            <div className="grid gap-3 md:grid-cols-[120px_minmax(0,1fr)]">
+        <div className="grid gap-5 overflow-y-auto bg-slate-50/35 px-6 py-6 md:grid-cols-2 md:px-8">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
+                <UserRound size={18} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-800">Identificacion</p>
+                <p className="text-xs text-slate-400">Datos base de la entidad</p>
+              </div>
+            </div>
+            <div className="space-y-4">
               <CustomSelectorBuscable
+                label="Tipo de Persona"
+                options={opcionesTipoPersona}
+                value={idTipoPersona}
+                onChange={setIdTipoPersona}
+                onClear={() => setIdTipoPersona(undefined)}
+                required
+                placeholder="Seleccione tipo persona"
+              />
+              <CustomSelectorBuscable
+                label="Tipo de Documento"
                 options={opcionesTipoDocumento}
                 value={idTipoDocumento}
-                displayValue={tipoDocumentoActual}
                 onChange={setIdTipoDocumento}
                 onClear={() => setIdTipoDocumento(undefined)}
-                optional
-                mostrarTextoOpcionalEnLabel={false}
+                required
                 placeholder="Seleccione tipo documento"
               />
-              <input
-                value={numeroIdentificacion}
-                onChange={(event) => setNumeroIdentificacion(event.target.value)}
-                placeholder="Número de identificación"
-                className="h-11 w-full rounded-xl border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
-              />
+              <div className="space-y-2">
+                <CustomLabel required>Número de Documento</CustomLabel>
+                <input
+                  value={numeroDocumento}
+                  onChange={(event) => setNumeroDocumento(event.target.value)}
+                  placeholder="Ingrese el número de documento"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+                />
+              </div>
+              <div className="space-y-2">
+                <CustomLabel required>Nombre Completo / Razón Social</CustomLabel>
+                <input
+                  value={nombreCompleto}
+                  onChange={(event) => setNombreCompleto(event.target.value)}
+                  placeholder="Ingrese el nombre completo o razón social"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-2">
-              <CustomLabel>Teléfono</CustomLabel>
-              <input
-                value={telefono}
-                onChange={(event) => setTelefono(event.target.value)}
-                placeholder="Número de teléfono"
-                className="h-11 w-full rounded-xl border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
-              />
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
+                <Building2 size={18} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-800">Ubicacion y contacto</p>
+                <p className="text-xs text-slate-400">Información complementaria para búsqueda</p>
+              </div>
             </div>
-
-            <label className="flex h-11 items-center gap-3 self-end rounded-xl border border-[#dbe4f0] px-4 text-sm font-semibold text-slate-600">
-              <input
-                type="checkbox"
-                checked={existeInformacion}
-                onChange={(event) => setExisteInformacion(event.target.checked)}
-                className="h-4 w-4 accent-brand-wine"
+            <div className="space-y-4">
+              <CustomSelectorBuscable
+                label="Pais"
+                options={opcionesPais}
+                value={idPais}
+                onChange={setIdPais}
+                onClear={() => setIdPais(undefined)}
+                required
+                placeholder="Seleccione un país"
               />
-              Existe información
-            </label>
+              <div className="space-y-2">
+                <CustomLabel>Telefono</CustomLabel>
+                <div className="relative">
+                  <Phone size={15} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input
+                    value={telefono}
+                    onChange={(event) => setTelefono(event.target.value)}
+                    placeholder="Ingrese el teléfono"
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+                  />
+                </div>
+              </div>
+              <label className="flex min-h-11 items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={existeInformacion}
+                  onChange={(event) => setExisteInformacion(event.target.checked)}
+                  className="h-4 w-4 accent-brand-wine"
+                />
+                Existe información disponible
+              </label>
+              
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-gray-100 bg-gray-50/50 px-6 py-5 md:px-8">
-          <CustomButton variant="secondary" size="sm" onClick={manejarCerrar}>
+        <div className="flex justify-end gap-3 border-t border-gray-100 bg-white px-6 py-5 md:px-8">
+          <CustomButton variant="secondary" size="sm" onClick={onCerrar} disabled={guardarCompaniaMutation.isPending}>
             Cancelar
           </CustomButton>
-          <CustomButton size="sm" onClick={manejarGuardar}>
+          <CustomButton
+            size="sm"
+            onClick={() => guardarCompaniaMutation.mutate()}
+            disabled={formularioInvalido}
+            loading={guardarCompaniaMutation.isPending}
+            loadingText="Guardando..."
+          >
             Guardar
           </CustomButton>
         </div>

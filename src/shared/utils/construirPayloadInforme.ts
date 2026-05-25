@@ -217,9 +217,9 @@ export function construirPayloadInforme({
       sectorista: banco.sectoristaJefeCuenta ?? "",
       referenciaBanco: banco.telefono,
     })),
-    companiasRelacionadas: datosInvestigacion.companiasRelacionadas.map(() => ({
+    companiasRelacionadas: datosInvestigacion.companiasRelacionadas.map((empresa) => ({
       ...(esEdicion ? { idInformeCompaniaRelacionada: 0 } : {}),
-      idCompania: 0,
+      idCompania: empresa.idCompania ?? 0,
     })),
     exportacionesImportaciones: [
       ...datosInvestigacion.importaciones.map((registro) => ({

@@ -55,6 +55,7 @@ export interface RegistroBandejaAnalista {
 }
 
 export interface EmpresaRelacionadaAnalista {
+  idCompania?: number;
   empresa: string;
   idFiscal: string;
   pais: string;
