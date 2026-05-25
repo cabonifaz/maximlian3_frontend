@@ -211,7 +211,7 @@ export function construirPayloadInforme({
     })),
     bancos: datosInvestigacion.bancos.map((banco) => ({
       ...(esEdicion ? { idInformeBanco: 0 } : {}),
-      idBanco: 0,
+      idBanco: banco.idBanco ?? 0,
       numeroCuenta: banco.numeroCuenta,
       idSector: 0,
       sectorista: banco.sectoristaJefeCuenta ?? "",

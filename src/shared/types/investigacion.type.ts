@@ -281,6 +281,9 @@ export interface RegistroProveedorAnalista {
 }
 
 export interface RegistroBancoAnalista {
+  idBanco?: number;
+  idPais?: number;
+  pais?: string;
   banco: string;
   numeroCuenta: string;
   sector: string;

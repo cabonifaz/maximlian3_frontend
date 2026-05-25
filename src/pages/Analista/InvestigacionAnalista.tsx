@@ -70,7 +70,6 @@ import type {
   RegistroDirectorioEjecutivoAnalista,
   RegistroPersonaDirectorioAnalista,
   RegistroProveedorAnalista,
-  ResultadoBusquedaBancoAnalista,
 } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 
@@ -590,7 +589,7 @@ function construirPayloadCrearInforme({
     })),
     bancos: datosInvestigacion.bancos.map((banco) => ({
       ...(esEdicion ? { idInformeBanco: 0 } : {}),
-      idBanco: 0,
+      idBanco: banco.idBanco ?? 0,
       numeroCuenta: banco.numeroCuenta,
       idSector: 0,
       sectorista: banco.sectoristaJefeCuenta ?? "",
@@ -891,30 +890,6 @@ function PantallaInvestigacionAnalista({
       referenciaAdicional: "",
     },
   ]);
-
-  const resultadosBusquedaBanco: ResultadoBusquedaBancoAnalista[] = [
-    {
-      nombres: "BBVA MEXICO SA, INSTITUCION DE BANCA MULTIPLE",
-      tipoDocumento: "-",
-      pais: "México",
-      telefono: "(52-55) 2624.2007",
-      existeInforme: "N",
-    },
-    {
-      nombres: "BBVA MEXICO SA, INSTITUCION DE BANCA MULTIPLE, GRUPO FINANCIERO",
-      tipoDocumento: "-",
-      pais: "México",
-      telefono: "(52-55) 5621-3434",
-      existeInforme: "N",
-    },
-    {
-      nombres: "BBVA MEXICO SA",
-      tipoDocumento: "-",
-      pais: "México",
-      telefono: "(52-55) 2624.2007/5621.3434",
-      existeInforme: "N",
-    },
-  ];
 
   const { data: opcionesTipoPersona } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
@@ -2787,7 +2762,7 @@ function PantallaInvestigacionAnalista({
                   }}
                 >
                   <Plus size={14} />
-                  Agregar Banco
+                  Agregar Cuenta Bancaria
                 </CustomButton>
               </div>
             </div>
@@ -3206,14 +3181,9 @@ function PantallaInvestigacionAnalista({
         key={`banco-${indiceBancoSeleccionado ?? "nuevo"}-${estaAbiertoModalBanco ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalBanco}
         registroInicial={indiceBancoSeleccionado != null ? datosInvestigacion.bancos[indiceBancoSeleccionado] : null}
-        resultadosBusqueda={resultadosBusquedaBanco}
         onCerrar={() => {
           setIndiceBancoSeleccionado(null);
           setEstaAbiertoModalBanco(false);
-        }}
-        onAgregarNuevoBanco={() => {
-          setIndiceBancoSeleccionado(null);
-          setEstaAbiertoModalBanco(true);
         }}
         onGuardar={guardarBanco}
       />
