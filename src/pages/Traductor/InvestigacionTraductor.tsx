@@ -2270,6 +2270,7 @@ function PantallaInvestigacionAnalista({
         valor={datosInvestigacion.identificacion.tipoIdentificacionFiscal}
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesTipoRegTributario}
+        idMaestro={TablaMaestraId.TIPO_REG_TRIBUTARIO}
         marcador="Seleccione tipo de identificacion fiscal"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.tipoIdentificacionFiscal")}
         onChange={(valor) => actualizarIdentificacion("tipoIdentificacionFiscal", valor)}
@@ -2281,6 +2282,7 @@ function PantallaInvestigacionAnalista({
         valor={datosInvestigacion.identificacion.ciudadEstadoProvincia}
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesCiudad}
+        idMaestro={TablaMaestraId.CIUDAD}
         permiteAltaNueva
         marcador="Seleccione o agregue ciudad/estado/provincia"
         adicionalEtiqueta={obtenerAyudaTraduccion("identificacion.ciudadEstadoProvincia")}
@@ -2295,6 +2297,7 @@ function PantallaInvestigacionAnalista({
         valor={datosInvestigacion.identificacion.estadoActual}
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesEstadoCliente}
+        idMaestro={TablaMaestraId.ESTADO_CLIENTE}
         permiteAltaNueva
         marcador="Seleccione o agregue estado actual"
         adicionalEtiqueta={obtenerAyudaTraduccion("identificacion.estadoActual")}
@@ -2368,16 +2371,17 @@ function PantallaInvestigacionAnalista({
 
     return (
       <div className="grid gap-5 md:grid-cols-2">
-        <SelectorMaestroConAltaInvestigacionAnalista
-          etiqueta="Tipo de Empresa"
-          valor={datosInvestigacion.aspectosLegales.tipoEmpresa}
-          soloLectura={esSoloLectura}
-          opcionesTablaMaestra={opcionesTipoEmpresa}
-          permiteAltaNueva
-          marcador="Seleccione tipo de empresa"
-          adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.tipoEmpresa")}
-          onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)}
-        />
+      <SelectorMaestroConAltaInvestigacionAnalista
+        etiqueta="Tipo de Empresa"
+        valor={datosInvestigacion.aspectosLegales.tipoEmpresa}
+        soloLectura={esSoloLectura}
+        opcionesTablaMaestra={opcionesTipoEmpresa}
+        idMaestro={TablaMaestraId.TIPO_EMPRESA}
+        permiteAltaNueva
+        marcador="Seleccione tipo de empresa"
+        adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.tipoEmpresa")}
+        onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)}
+      />
         <label className="space-y-2">
           <CustomLabel as="p" className="text-sm font-bold text-gray-700">Fecha de Constitucion</CustomLabel>
           <input
@@ -2388,16 +2392,17 @@ function PantallaInvestigacionAnalista({
             className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400"
           />
         </label>
-        <SelectorMaestroConAltaInvestigacionAnalista
-          etiqueta="Ciudad de Registro"
-          valor={datosInvestigacion.aspectosLegales.ciudadRegistro}
-          soloLectura={esSoloLectura}
-          opcionesTablaMaestra={opcionesCiudad}
-          permiteAltaNueva
-          marcador="Seleccione ciudad de registro"
-          adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.ciudadRegistro")}
-          onChange={(valor) => actualizarAspectosLegales("ciudadRegistro", valor)}
-        />
+      <SelectorMaestroConAltaInvestigacionAnalista
+        etiqueta="Ciudad de Registro"
+        valor={datosInvestigacion.aspectosLegales.ciudadRegistro}
+        soloLectura={esSoloLectura}
+        opcionesTablaMaestra={opcionesCiudad}
+        idMaestro={TablaMaestraId.CIUDAD}
+        permiteAltaNueva
+        marcador="Seleccione ciudad de registro"
+        adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.ciudadRegistro")}
+        onChange={(valor) => actualizarAspectosLegales("ciudadRegistro", valor)}
+      />
         <CampoInvestigacionAnalista etiqueta="Notaría" valor={datosInvestigacion.aspectosLegales.notaria} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.notaria")} onChange={(valor) => actualizarAspectosLegales("notaria", valor)} />
         <CampoInvestigacionAnalista etiqueta="Notario" valor={datosInvestigacion.aspectosLegales.notario} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.notario")} onChange={(valor) => actualizarAspectosLegales("notario", valor)} />
         <CampoInvestigacionAnalista etiqueta="Registro" valor={datosInvestigacion.aspectosLegales.registro} soloLectura={esSoloLectura} onChange={(valor) => actualizarAspectosLegales("registro", valor)} />
@@ -2599,26 +2604,28 @@ function PantallaInvestigacionAnalista({
 
     return (
       <div className="grid gap-5 md:grid-cols-2">
-        <SelectorMaestroConAltaInvestigacionAnalista
-          etiqueta="Sector"
-          valor={datosInvestigacion.operacionPrincipal.sector}
-          soloLectura={esSoloLectura}
-          opcionesTablaMaestra={opcionesSectorEconomico}
-          permiteAltaNueva
-          marcador="Seleccione sector"
-          adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.sector")}
-          onChange={(valor) => actualizarOperacionPrincipal("sector", valor)}
-        />
-        <SelectorMaestroConAltaInvestigacionAnalista
-          etiqueta="Actividad"
-          valor={datosInvestigacion.operacionPrincipal.actividad}
-          soloLectura={esSoloLectura}
-          opcionesTablaMaestra={opcionesActividadEconomica}
-          permiteAltaNueva
-          marcador="Seleccione actividad"
-          adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.actividad")}
-          onChange={(valor) => actualizarOperacionPrincipal("actividad", valor)}
-        />
+      <SelectorMaestroConAltaInvestigacionAnalista
+        etiqueta="Sector"
+        valor={datosInvestigacion.operacionPrincipal.sector}
+        soloLectura={esSoloLectura}
+        opcionesTablaMaestra={opcionesSectorEconomico}
+        idMaestro={TablaMaestraId.SECTOR_ECONOMICO}
+        permiteAltaNueva
+        marcador="Seleccione sector"
+        adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.sector")}
+        onChange={(valor) => actualizarOperacionPrincipal("sector", valor)}
+      />
+      <SelectorMaestroConAltaInvestigacionAnalista
+        etiqueta="Actividad"
+        valor={datosInvestigacion.operacionPrincipal.actividad}
+        soloLectura={esSoloLectura}
+        opcionesTablaMaestra={opcionesActividadEconomica}
+        idMaestro={TablaMaestraId.ACTIVIDAD_ECONOMICA}
+        permiteAltaNueva
+        marcador="Seleccione actividad"
+        adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.actividad")}
+        onChange={(valor) => actualizarOperacionPrincipal("actividad", valor)}
+      />
         <CampoInvestigacionAnalista etiqueta="Categoría CIIU" valor={datosInvestigacion.operacionPrincipal.categoriaCiiu} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("categoriaCiiu", valor)} />
         <CampoInvestigacionAnalista etiqueta="Clase CIIU" valor={datosInvestigacion.operacionPrincipal.claseCiiu} soloLectura={esSoloLectura} onChange={(valor) => actualizarOperacionPrincipal("claseCiiu", valor)} />
         <AreaInvestigacionAnalista etiqueta="Actividad Principal" valor={datosInvestigacion.operacionPrincipal.actividadPrincipal} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.actividadPrincipal")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("actividadPrincipal", valor)} />

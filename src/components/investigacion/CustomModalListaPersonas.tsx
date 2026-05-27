@@ -198,7 +198,7 @@ export function CustomModalListaPersonasAnalista({
   return (
     <>
       <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
-        <div className="w-full max-w-6xl overflow-hidden rounded-[30px] bg-white shadow-[0_40px_100px_rgba(15,23,42,0.28)]">
+        <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[30px] bg-white shadow-[0_40px_100px_rgba(15,23,42,0.28)]">
           <div className="border-b border-slate-100 bg-[radial-gradient(circle_at_top_left,#f8fafc,white_55%)] px-8 py-7">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-4">
@@ -217,7 +217,7 @@ export function CustomModalListaPersonasAnalista({
             </div>
           </div>
 
-          <div className="space-y-6 px-8 py-">
+          <div className="space-y-6 overflow-y-auto px-8 py-6">
             <div className="grid gap-5 rounded-3xl border border-slate-100 bg-slate-50/70 p-5 md:grid-cols-4">
               <CustomSelectorBuscable
                 label="Tipo Persona"

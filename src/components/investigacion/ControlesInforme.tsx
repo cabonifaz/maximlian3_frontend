@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Briefcase, Building2, Check, Eye, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
-import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import {
+  obtenerDescripcionTablaMaestra,
+  obtenerSiguienteNumTablaMaestra,
+  type EntradaTablaMaestra,
+  type TablaMaestraCrearRequest,
+  type TablaMaestraGuardarResponse,
+} from "@maximilian/shared/types/tabla-maestra.type";
 import type { IdSeccionInvestigacionAnalista, ResumenInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 
 const clasesEtiquetaCampoInvestigacion =
@@ -171,12 +179,17 @@ function crearOpcionTablaMaestra(num1: number, string1: string): EntradaTablaMae
   };
 }
 
+function normalizarTexto(valor: string) {
+  return valor.trim().toLowerCase();
+}
+
 export function SelectorMaestroConAltaInvestigacionAnalista({
   etiqueta,
   valor,
   soloLectura,
   opcionesIniciales,
   opcionesTablaMaestra,
+  idMaestro,
   marcador,
   onChange,
   adicionalEtiqueta,
@@ -187,14 +200,64 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   soloLectura: boolean;
   opcionesIniciales?: string[];
   opcionesTablaMaestra?: EntradaTablaMaestra[];
+  idMaestro?: number;
   marcador?: string;
   onChange?: (valor: string) => void;
   adicionalEtiqueta?: ReactNode;
   permiteAltaNueva?: boolean;
 }) {
+  const queryClient = useQueryClient();
   const [opciones, setOpciones] = useState<EntradaTablaMaestra[]>(() =>
     opcionesTablaMaestra ?? (opcionesIniciales ?? []).map((opcion, indice) => crearOpcionTablaMaestra(indice + 1, opcion)),
   );
+  const altaNuevaMutation = useMutation({
+    mutationFn: async (termino: string): Promise<{
+      opcion?: EntradaTablaMaestra;
+      respuesta: TablaMaestraGuardarResponse | null;
+      termino: string;
+    }> => {
+      if (!idMaestro) {
+        return {
+          opcion: undefined,
+          respuesta: null,
+          termino,
+        };
+      }
+
+      const payload: TablaMaestraCrearRequest = {
+        idMaestro,
+        descripcion: obtenerDescripcionTablaMaestra(idMaestro),
+        string1: termino,
+        num1: obtenerSiguienteNumTablaMaestra(opciones),
+        num2: null,
+        num3: null,
+        string2: null,
+        string3: null,
+        date1: null,
+        date2: null,
+        date3: null,
+      };
+
+      const respuesta = await servicioTablaMaestra.crear(payload);
+      await queryClient.invalidateQueries({ queryKey: ["masterTable", idMaestro] });
+      const opcionesActualizadas = await queryClient.fetchQuery({
+        queryKey: ["masterTable", idMaestro],
+        queryFn: () => servicioTablaMaestra.list(idMaestro),
+        staleTime: 0,
+      });
+
+      const terminoNormalizado = normalizarTexto(termino);
+      const opcion =
+        opcionesActualizadas.find((opcionActual) => normalizarTexto(opcionActual.string1 ?? "") === terminoNormalizado) ??
+        opcionesActualizadas.find((opcionActual) => normalizarTexto(opcionActual.descripcion ?? "") === terminoNormalizado);
+
+      return {
+        opcion,
+        respuesta,
+        termino,
+      };
+    },
+  });
 
   useEffect(() => {
     if (!opcionesTablaMaestra) return;
@@ -241,14 +304,43 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   };
 
   const manejarAltaNuevo = (termino: string) => {
-    setOpciones((anteriores) => {
-      if (anteriores.some((opcion) => opcion.string1 === termino)) {
-        return anteriores;
+    const terminoLimpio = termino.trim();
+    if (!terminoLimpio) return;
+
+    if (!idMaestro) {
+      setOpciones((anteriores) => {
+        if (anteriores.some((opcion) => opcion.string1 === terminoLimpio)) {
+          return anteriores;
+        }
+        const siguienteId = anteriores.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
+        return [...anteriores, crearOpcionTablaMaestra(siguienteId, terminoLimpio)];
+      });
+      onChange?.(terminoLimpio);
+      return;
+    }
+
+    void altaNuevaMutation.mutateAsync(terminoLimpio).then(({ opcion, respuesta, termino }) => {
+      if (opcion) {
+        setOpciones((anteriores) => {
+          if (anteriores.some((opcionAnterior) => opcionAnterior.num1 === opcion.num1)) {
+            return anteriores;
+          }
+          return [...anteriores, opcion];
+        });
+      } else {
+        setOpciones((anteriores) => {
+          if (anteriores.some((opcionAnterior) => normalizarTexto(opcionAnterior.string1 ?? "") === normalizarTexto(termino))) {
+            return anteriores;
+          }
+
+          const siguienteId = respuesta?.idTablaMaestra ?? (anteriores.reduce((maximo, opcionAnterior) => Math.max(maximo, opcionAnterior.num1 ?? 0), 0) + 1);
+          return [...anteriores, crearOpcionTablaMaestra(siguienteId, termino)];
+        });
       }
-      const siguienteId = anteriores.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
-      return [...anteriores, crearOpcionTablaMaestra(siguienteId, termino)];
+      onChange?.(opcion?.string1?.trim() || opcion?.descripcion?.trim() || termino);
+    }).catch(() => {
+      // La notificacion de error la maneja el interceptor global.
     });
-    onChange?.(termino);
   };
 
   return (

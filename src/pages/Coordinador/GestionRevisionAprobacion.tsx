@@ -14,6 +14,7 @@ import {
 } from "@maximilian/shared/utils/datos-simulados-investigacion";
 
 interface RegistroRevisionCoordinador {
+  idRegistro: number;
   idPedido: number;
   idInforme: number;
   idIdioma?: number;
@@ -26,9 +27,10 @@ interface RegistroRevisionCoordinador {
 }
 
 const REGISTRO_EJEMPLO: RegistroRevisionCoordinador = {
+  idRegistro: -1,
   idPedido: 2024001,
   idInforme: 2024001,
-  investigado: "Compania Siderurgica Nacional",
+  investigado: "Generation & Power SA",
   vigencia: "3 dias",
   vigenciaColor: "#334155",
   tipo: "Normal",
@@ -79,6 +81,7 @@ export default function GestionRevisionAprobacion() {
     const registrosApi = (respuestaAsignaciones?.lstPedido ?? [])
       .filter((registro) => (registro.idInforme ?? 0) > 0)
       .map((registro) => ({
+        idRegistro: registro.idPedido,
         idPedido: registro.idPedido,
         idInforme: registro.idInforme ?? 0,
         idIdioma: registro.idIdioma,
@@ -121,6 +124,8 @@ export default function GestionRevisionAprobacion() {
 
     navigate(`/coordinador/revision/${registro.idPedido}?${parametros.toString()}`);
   };
+
+  const abrirEjemploInforme = () => abrirRevision(REGISTRO_EJEMPLO);
 
   const columnas = [
     { label: "ID Pedido" },
@@ -185,15 +190,23 @@ export default function GestionRevisionAprobacion() {
               <SlidersHorizontal size={16} />
               Filtros
             </CustomButton>
+
+            
           </div>
         </div>
+
+        {isError ? (
+          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+            No se pudo cargar la bandeja del backend. Se muestra el informe de ejemplo para revisión.
+          </div>
+        ) : null}
 
         <CustomTabla
           columns={columnas}
           data={registros}
-          getId={(registro) => registro.idPedido}
+          getId={(registro) => registro.idRegistro}
           isLoading={isLoading}
-          isError={isError}
+          isError={false}
           onRetry={() => void refetch()}
           paginaActual={paginaActual}
           totalPages={respuestaAsignaciones?.totalPaginas ?? 1}

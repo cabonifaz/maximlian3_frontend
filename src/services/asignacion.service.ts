@@ -22,8 +22,8 @@ const ESTADO_ASIGNACION_TRADUCTOR = 2;
 const ESTADO_REASIGNACION_ANALISTA = 4;
 const ESTADO_REASIGNACION_TRADUCTOR = 5;
 const IDS_ROL_POR_TIPO: Record<AssignmentRole, number> = {
-  translator: 3,
-  analyst: 4,
+  translator: 4,
+  analyst: 3,
 };
 
 function esRespuestaOkCompatibilidad(respuesta: ApiResponse<unknown>) {

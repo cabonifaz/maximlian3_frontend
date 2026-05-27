@@ -17,12 +17,12 @@ export const esquemaUsuario = z
   })
   .refine(
     (data) => {
-      // Check for Traductor by string (case-insensitive) or ID 3
+      // Check for Traductor by string (case-insensitive) or ID 4
       const isTraductor = data.roles.some((role) => {
         if (typeof role === "string") {
           return role.toUpperCase() === "TRADUCTOR";
         }
-        return role === 3;
+        return role === 4;
       });
 
       if (isTraductor) {

@@ -150,7 +150,7 @@ export const servicioCompania = {
   },
 
   crear: async (payload: CompaniaCrearRequest): Promise<CompaniaGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/crear", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/crear", [payload]);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/crear")) {
       throw new Error(data.mensaje || "Error al crear la compañía");

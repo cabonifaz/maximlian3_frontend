@@ -22,8 +22,8 @@ const ASSIGNMENT_COLUMNS = [
   { label: "Acciones", className: "text-right" },
 ];
 
-const ID_ROL_TRADUCTOR = 3;
-const ID_ROL_ANALISTA = 4;
+const ID_ROL_TRADUCTOR = 4;
+const ID_ROL_ANALISTA = 3;
 
 function tieneAsignado(nombre?: string) {
   return !!nombre && nombre !== "-" && nombre !== "Sin Asignacion";

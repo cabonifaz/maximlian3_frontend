@@ -2170,6 +2170,7 @@ function PantallaInvestigacionAnalista({
         valor={datosInvestigacion.identificacion.tipoIdentificacionFiscal}
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesTipoRegTributario}
+        idMaestro={TablaMaestraId.TIPO_REG_TRIBUTARIO}
         marcador="Seleccione tipo de identificacion fiscal"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.tipoIdentificacionFiscal")}
         onChange={(valor) => actualizarIdentificacion("tipoIdentificacionFiscal", valor)}
@@ -2181,6 +2182,7 @@ function PantallaInvestigacionAnalista({
         valor={datosInvestigacion.identificacion.ciudadEstadoProvincia}
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesCiudad}
+        idMaestro={TablaMaestraId.CIUDAD}
         permiteAltaNueva
         marcador="Seleccione o agregue ciudad/estado/provincia"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.ciudadEstadoProvincia")}
@@ -2195,6 +2197,7 @@ function PantallaInvestigacionAnalista({
         valor={datosInvestigacion.identificacion.estadoActual}
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesEstadoCliente}
+        idMaestro={TablaMaestraId.ESTADO_CLIENTE}
         permiteAltaNueva
         marcador="Seleccione o agregue estado actual"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.estadoActual")}
@@ -2273,6 +2276,7 @@ function PantallaInvestigacionAnalista({
           valor={datosInvestigacion.aspectosLegales.tipoEmpresa}
           soloLectura={esSoloLectura}
           opcionesTablaMaestra={opcionesTipoEmpresa}
+          idMaestro={TablaMaestraId.TIPO_EMPRESA}
           permiteAltaNueva
           marcador="Seleccione tipo de empresa"
           onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)}
@@ -2292,6 +2296,7 @@ function PantallaInvestigacionAnalista({
           valor={datosInvestigacion.aspectosLegales.ciudadRegistro}
           soloLectura={esSoloLectura}
           opcionesTablaMaestra={opcionesCiudad}
+          idMaestro={TablaMaestraId.CIUDAD}
           permiteAltaNueva
           marcador="Seleccione ciudad de registro"
           onChange={(valor) => actualizarAspectosLegales("ciudadRegistro", valor)}
@@ -2502,6 +2507,7 @@ function PantallaInvestigacionAnalista({
           valor={datosInvestigacion.operacionPrincipal.sector}
           soloLectura={esSoloLectura}
           opcionesTablaMaestra={opcionesSectorEconomico}
+          idMaestro={TablaMaestraId.SECTOR_ECONOMICO}
           permiteAltaNueva
           marcador="Seleccione sector"
           onChange={(valor) => actualizarOperacionPrincipal("sector", valor)}
@@ -2511,6 +2517,7 @@ function PantallaInvestigacionAnalista({
           valor={datosInvestigacion.operacionPrincipal.actividad}
           soloLectura={esSoloLectura}
           opcionesTablaMaestra={opcionesActividadEconomica}
+          idMaestro={TablaMaestraId.ACTIVIDAD_ECONOMICA}
           permiteAltaNueva
           marcador="Seleccione actividad"
           onChange={(valor) => actualizarOperacionPrincipal("actividad", valor)}
