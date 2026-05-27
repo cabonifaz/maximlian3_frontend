@@ -573,6 +573,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   ).map((item) => {
     const compania = obtenerRegistro(item);
     return {
+      idCompania: obtenerNumero(compania.idCompania, compania.IdCompania),
       empresa: obtenerTexto(compania.nombre, compania.Nombre, compania.empresa, compania.Empresa),
       idFiscal: obtenerTexto(compania.taxNum, compania.TaxNum, compania.idFiscal, compania.IdFiscal),
       pais: obtenerTexto(compania.pais, compania.Pais, compania.nombrePais, compania.NombrePais),

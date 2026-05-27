@@ -226,6 +226,7 @@ export function CustomModalLocalAnalista({
               valor={tipoLocal}
               soloLectura={false}
               opcionesTablaMaestra={opcionesTipoLocal}
+              idMaestro={TablaMaestraId.TIPO_LOCAL}
               permiteAltaNueva
               marcador="Seleccione tipo de local"
               onChange={setTipoLocal}

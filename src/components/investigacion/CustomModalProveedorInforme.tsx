@@ -102,6 +102,7 @@ export function CustomModalProveedorAnalista({
             valor={tipoProveedor}
             soloLectura={false}
             opcionesTablaMaestra={opcionesTipoProveedor}
+            idMaestro={TablaMaestraId.TIPO_PROVEEDOR}
             permiteAltaNueva
             marcador="Seleccione tipo de proveedor"
             onChange={setTipoProveedor}

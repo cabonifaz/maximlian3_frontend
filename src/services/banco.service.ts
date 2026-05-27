@@ -129,7 +129,7 @@ export const servicioBanco = {
   },
 
   crear: async (payload: BancoCrearRequest): Promise<BancoGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Banco/crear", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Banco/crear", [payload]);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Banco/crear")) {
       throw new Error(data.mensaje || "Error al crear el banco");

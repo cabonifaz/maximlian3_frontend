@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, Search, X } from "lucide-react";
+import { Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
@@ -300,7 +300,7 @@ function CustomModalBusquedaBancoAnalista({
                     <th className="px-4 py-3">Banco</th>
                     <th className="px-4 py-3">Pais</th>
                     <th className="px-4 py-3">Telefono</th>
-                    <th className="px-4 py-3 text-right">Accion</th>
+                    <th className="px-4 py-3 text-right">Opciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
@@ -347,28 +347,25 @@ function CustomModalBusquedaBancoAnalista({
                             <div className="flex items-center justify-end gap-3 text-sm font-semibold">
                               <button
                                 type="button"
-                                className="text-blue-600 hover:text-blue-700"
+                                className="inline-flex text-blue-600 hover:text-blue-700"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   setBancoEnEdicion(banco);
                                   setEstaAbiertoModalCrearBanco(true);
                                 }}
                               >
-                                Editar
+                                <Pencil size={16} />
                               </button>
                               <button
                                 type="button"
-                                className="text-red-600 hover:text-red-700"
+                                className="inline-flex text-red-600 hover:text-red-700"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   setBancoAEliminar(banco);
                                 }}
                               >
-                                Eliminar
+                                <Trash2 size={16} />
                               </button>
-                              <span className="text-blue-600">
-                                {estaSeleccionado ? "Seleccionado" : "Seleccionar"}
-                              </span>
                             </div>
                           </td>
                         </tr>
@@ -413,7 +410,7 @@ function CustomModalBusquedaBancoAnalista({
               Cancelar
             </CustomButton>
             <CustomButton size="sm" onClick={() => bancoSeleccionado && onSeleccionar(bancoSeleccionado)} disabled={!bancoSeleccionado}>
-              Seleccionar
+              Usar banco
             </CustomButton>
           </div>
         </div>
@@ -429,7 +426,9 @@ function CustomModalBusquedaBancoAnalista({
         onBancoCreado={(bancoCreado) => {
           setEstaAbiertoModalCrearBanco(false);
           setBancoEnEdicion(null);
-          onSeleccionar(bancoCreado);
+          setIdBancoSeleccionado(bancoCreado.idBanco);
+          setBusqueda("");
+          setPaginaActual(1);
         }}
       />
 
@@ -457,27 +456,42 @@ export function CustomModalBancoAnalista({
   onCerrar,
   onGuardar,
 }: PropsCustomModalBancoAnalista) {
+  const { data: opcionesSector } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.SECTOR_ECONOMICO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.SECTOR_ECONOMICO),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
   const [idBanco, setIdBanco] = useState<number | undefined>(registroInicial?.idBanco);
   const [idPais, setIdPais] = useState<number | undefined>(registroInicial?.idPais);
   const [pais, setPais] = useState(registroInicial?.pais ?? "");
   const [banco, setBanco] = useState(registroInicial?.banco ?? "");
+  const [idSectorSeleccionado, setIdSectorSeleccionado] = useState<number | undefined>(undefined);
   const [sector, setSector] = useState(registroInicial?.sector ?? "");
   const [telefono, setTelefono] = useState(registroInicial?.telefono ?? "");
   const [numeroCuenta, setNumeroCuenta] = useState(registroInicial?.numeroCuenta ?? "");
   const [sectoristaJefeCuenta, setSectoristaJefeCuenta] = useState(registroInicial?.sectoristaJefeCuenta ?? "");
   const [estaAbiertoModalBusqueda, setEstaAbiertoModalBusqueda] = useState(false);
 
+  useEffect(() => {
+    if (!estaAbierto || !opcionesSector) return;
+
+    const opcionSector = opcionesSector.find((opcion) => opcion.string1 === (registroInicial?.sector ?? ""));
+    setIdSectorSeleccionado(opcionSector?.num1 ?? undefined);
+  }, [estaAbierto, opcionesSector, registroInicial?.sector]);
+
   if (!estaAbierto) return null;
 
   const manejarGuardar = () => {
-    if (!banco.trim() || !sector.trim() || !telefono.trim() || !numeroCuenta.trim()) return;
+    const sectorSeleccionado = opcionesSector?.find((opcion) => opcion.num1 === idSectorSeleccionado)?.string1 ?? sector;
+    if (!banco.trim() || !sectorSeleccionado.trim() || !telefono.trim() || !numeroCuenta.trim()) return;
 
     onGuardar({
       idBanco,
       idPais,
       pais: pais.trim() || undefined,
       banco: banco.trim(),
-      sector: sector.trim(),
+      sector: sectorSeleccionado.trim(),
       telefono: telefono.trim(),
       numeroCuenta: numeroCuenta.trim(),
       sectoristaJefeCuenta: sectoristaJefeCuenta.trim(),
@@ -522,7 +536,20 @@ export function CustomModalBancoAnalista({
 
             <div className="space-y-2">
               <CustomLabel>Lista de Sectores</CustomLabel>
-              <input value={sector} onChange={(event) => setSector(event.target.value)} placeholder="Ingrese el sector" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+              <CustomSelectorBuscable
+                label={null}
+                idMaster={TablaMaestraId.SECTOR_ECONOMICO}
+                value={idSectorSeleccionado}
+                onChange={(valor) => {
+                  setIdSectorSeleccionado(valor);
+                  setSector(opcionesSector?.find((opcion) => opcion.num1 === valor)?.string1 ?? "");
+                }}
+                onClear={() => {
+                  setIdSectorSeleccionado(undefined);
+                  setSector("");
+                }}
+                placeholder="Seleccione un sector"
+              />
             </div>
 
             <div className="space-y-2">

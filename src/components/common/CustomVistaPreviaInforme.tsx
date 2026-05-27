@@ -5,6 +5,7 @@ import { seccionesInvestigacionAnalista } from "@maximilian/shared/utils/datos-s
 
 interface FilaVistaPreviaInforme {
   etiqueta: string;
+  etiquetaTraducida: string;
   valorOriginal: string;
   valorTraducido: string;
 }
@@ -84,13 +85,85 @@ function formatearValorVistaPrevia(valor: unknown): string {
   return String(valor);
 }
 
+const traduccionesVistaPreviaInforme: Record<string, string> = {
+  "Aprobado": "Approved",
+  "Activo": "Active",
+  "Ano": "Year",
+  "Aspectos Legales": "Legal Aspects",
+  "Balance general": "Balance sheet",
+  "Bancos-Proveedores": "Banks-Suppliers",
+  "Categoria CIIU": "ISIC category",
+  "Ciudad / Estado / Provincia": "City / State / Province",
+  "Codigo": "Code",
+  "Comentario": "Comment",
+  "Comentarios legales": "Legal comments",
+  "Comentarios operaciones": "Operations comments",
+  "Compania relacionada": "Related company",
+  "Contacto": "Contact",
+  "Correo electronico": "Email",
+  "Datos Generales": "General Data",
+  "Datos de identificación": "Identification data",
+  "Detalle": "Detail",
+  "Direccion": "Address",
+  "Direccion principal": "Main address",
+  "Ejecutivo": "Executive",
+  "Empresa": "Company",
+  "Estado actual": "Current status",
+  "Estados Unidos": "United States",
+  "Fecha": "Date",
+  "Fecha de constitucion": "Date of incorporation",
+  "Identificación": "Identification",
+  "Imagen principal": "Main image",
+  "Importacion": "Import",
+  "Información Financiera": "Financial Information",
+  "Informacion financiera": "Financial information",
+  "Investigación Normal": "Standard Investigation",
+  "Jurídica": "Legal entity",
+  "Mes": "Month",
+  "Moneda": "Currency",
+  "Nacional": "Domestic",
+  "Nombre comercial": "Trade name",
+  "Nombre de empresa": "Company name",
+  "Numero de cuenta": "Account number",
+  "Numero de empleados": "Number of employees",
+  "Numero de identificacion fiscal": "Tax identification number",
+  "Operación principal": "Main operation",
+  "Operacion principal": "Main operation",
+  "Pais": "Country",
+  "Paises": "Countries",
+  "Periodo": "Period",
+  "Proveedor": "Supplier",
+  "Ramo Operaciones": "Line of Business",
+  "Referencias": "References",
+  "Sector": "Sector",
+  "Sede Principal": "Headquarters",
+  "Si": "Yes",
+  "Sin balances registrados.": "No balances registered.",
+  "Sin datos de productos": "No product data",
+  "Sin registros.": "No records.",
+  "Telefono": "Phone",
+  "Tipo": "Type",
+  "Tipo de empresa": "Company type",
+  "Tipo de identificacion fiscal": "Tax identification type",
+  "Tipo de local": "Premises type",
+  "Tipo de persona": "Person type",
+  "Tipo de proveedor": "Supplier type",
+  "Total de imagenes": "Total images",
+  "Ventas netas": "Net sales",
+};
+
+function traducirTextoVistaPrevia(texto: string): string {
+  return traduccionesVistaPreviaInforme[texto] ?? texto;
+}
+
 function crearFilaVistaPrevia(etiqueta: string, valor: unknown): FilaVistaPreviaInforme {
   const valorTexto = formatearValorVistaPrevia(valor);
 
   return {
     etiqueta,
+    etiquetaTraducida: traducirTextoVistaPrevia(etiqueta),
     valorOriginal: valorTexto,
-    valorTraducido: valorTexto,
+    valorTraducido: traducirTextoVistaPrevia(valorTexto),
   };
 }
 
@@ -613,7 +686,9 @@ function CustomTarjetaVistaPreviaInforme({
                   <div className="space-y-3 text-[11px] leading-5 text-slate-600">
                     {bloque.filas.map((fila) => (
                       <div key={`${bloque.id}-${fila.etiqueta}`} className="grid gap-2 border-b border-gray-50 pb-3 md:grid-cols-[180px_minmax(0,1fr)]">
-                        <p className="font-bold uppercase tracking-[0.14em] text-slate-400">{fila.etiqueta}</p>
+                        <p className="font-bold uppercase tracking-[0.14em] text-slate-400">
+                          {mostrarValorTraducido ? fila.etiquetaTraducida : fila.etiqueta}
+                        </p>
                         <p>{mostrarValorTraducido ? fila.valorTraducido : fila.valorOriginal}</p>
                       </div>
                     ))}

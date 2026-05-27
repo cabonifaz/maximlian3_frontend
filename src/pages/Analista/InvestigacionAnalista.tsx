@@ -10,6 +10,7 @@ import {
   GripVertical,
   Pencil,
   Plus,
+  RotateCcw,
   Search,
   Sparkles,
   Trash2,
@@ -33,6 +34,7 @@ import { CustomModalProveedorAnalista } from "@maximilian/components/investigaci
 import { CustomModalRegistroEjecutivoAnalista } from "@maximilian/components/investigacion/CustomModalRegistroEjecutivo";
 import { CustomModalRegistroPersonaDirectorioAnalista } from "@maximilian/components/investigacion/CustomModalRegistroPersonaDirectorio";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import {
   AreaInvestigacionAnalista,
   CampoInvestigacionAnalista,
@@ -473,6 +475,33 @@ function construirCuentaBalance(detalle?: RegistroBalanceAnalista["detalleCuenta
   };
 }
 
+function depurarPayloadInforme(valor: unknown): unknown {
+  if (Array.isArray(valor)) {
+    const lista = valor
+      .map((item) => depurarPayloadInforme(item))
+      .filter((item) => item !== undefined);
+    return lista.length > 0 ? lista : undefined;
+  }
+
+  if (valor && typeof valor === "object") {
+    const entradas = Object.entries(valor)
+      .map(([clave, contenido]) => [clave, depurarPayloadInforme(contenido)] as const)
+      .filter(([, contenido]) => contenido !== undefined);
+
+    if (entradas.length === 0) return undefined;
+    return Object.fromEntries(entradas);
+  }
+
+  if (typeof valor === "string") {
+    const texto = valor.trim();
+    return texto ? texto : undefined;
+  }
+
+  if (valor == null) return undefined;
+
+  return valor;
+}
+
 function construirPayloadCrearInforme({
   idPedido,
   idInforme,
@@ -507,7 +536,7 @@ function construirPayloadCrearInforme({
   const { identificacion, aspectosLegales, operacionPrincipal, informacionFinanciera, referencias, datosGenerales } = datosInvestigacion;
   const esEdicion = typeof idInforme === "number" && idInforme > 0;
 
-  return {
+  return depurarPayloadInforme({
     ...(esEdicion ? { idInforme } : {}),
     idPedido,
     idTipoPersona: obtenerIdPorTexto(opcionesTipoPersona, identificacion.tipoPersona),
@@ -595,9 +624,8 @@ function construirPayloadCrearInforme({
       sectorista: banco.sectoristaJefeCuenta ?? "",
       referenciaBanco: banco.telefono,
     })),
-    companiasRelacionadas: datosInvestigacion.companiasRelacionadas.map(() => ({
-      ...(esEdicion ? { idInformeCompaniaRelacionada: 0 } : {}),
-      idCompania: 0,
+    companiasRelacionadas: datosInvestigacion.companiasRelacionadas.map((empresa) => ({
+      idCompania: empresa.idCompania ?? 0,
     })),
     exportacionesImportaciones: [
       ...datosInvestigacion.importaciones.map((registro) => ({
@@ -689,7 +717,7 @@ function construirPayloadCrearInforme({
         idEstado: 0,
       },
     ],
-  };
+  }) as InformeCrearRequest;
 }
 
 function PaginacionInvestigacion({
@@ -822,6 +850,7 @@ function PantallaInvestigacionAnalista({
   const [indiceProveedorAEliminar, setIndiceProveedorAEliminar] = useState<number | null>(null);
   const [indiceBancoSeleccionado, setIndiceBancoSeleccionado] = useState<number | null>(null);
   const [indiceBancoAEliminar, setIndiceBancoAEliminar] = useState<number | null>(null);
+  const [indiceCompaniaAEliminar, setIndiceCompaniaAEliminar] = useState<number | null>(null);
   const [busquedaBalances, setBusquedaBalances] = useState("");
   const [paginaCompanias, setPaginaCompanias] = useState(1);
   const [paginaOperaciones, setPaginaOperaciones] = useState(1);
@@ -836,7 +865,7 @@ function PantallaInvestigacionAnalista({
   const [filtroBancoNombre, setFiltroBancoNombre] = useState("");
   const [filtroBancoCuenta, setFiltroBancoCuenta] = useState("");
   const [filtroBancoTelefono, setFiltroBancoTelefono] = useState("");
-  const [filtroBancoSector] = useState("");
+  const [idsFiltroBancoSector, setIdsFiltroBancoSector] = useState<number[]>([]);
   const [estaAbiertoModalFinalizarInvestigacion, setEstaAbiertoModalFinalizarInvestigacion] = useState(false);
   const [estaAbiertoModalConfirmacionPrimerBorrador, setEstaAbiertoModalConfirmacionPrimerBorrador] = useState(false);
   const [estaAbiertoModalEjecutivo, setEstaAbiertoModalEjecutivo] = useState(false);
@@ -1544,7 +1573,10 @@ function PantallaInvestigacionAnalista({
   const agregarCompaniaRelacionada = (empresaNueva: DatosInvestigacionAnalista["companiasRelacionadas"][number]) => {
     setDatosInvestigacion((anterior) => {
       const indiceExistente = anterior.companiasRelacionadas.findIndex(
-        (empresa) => empresa.empresa === empresaNueva.empresa,
+        (empresa) => (
+          (empresa.idCompania != null && empresaNueva.idCompania != null && empresa.idCompania === empresaNueva.idCompania)
+          || empresa.empresa === empresaNueva.empresa
+        ),
       );
 
       if (indiceExistente >= 0) {
@@ -1795,7 +1827,12 @@ function PantallaInvestigacionAnalista({
     const coincideNombre = !filtroBancoNombre.trim() || banco.banco.toLowerCase().includes(filtroBancoNombre.trim().toLowerCase());
     const coincideCuenta = !filtroBancoCuenta.trim() || banco.numeroCuenta.toLowerCase().includes(filtroBancoCuenta.trim().toLowerCase());
     const coincideTelefono = !filtroBancoTelefono.trim() || banco.telefono.toLowerCase().includes(filtroBancoTelefono.trim().toLowerCase());
-    const coincideSector = !filtroBancoSector.trim() || banco.sector.toLowerCase().includes(filtroBancoSector.trim().toLowerCase());
+    const sectoresSeleccionados = (opcionesSectorEconomico ?? [])
+      .filter((opcion) => opcion.num1 != null && idsFiltroBancoSector.includes(opcion.num1))
+      .map((opcion) => opcion.string1?.toLowerCase() ?? "")
+      .filter(Boolean);
+    const coincideSector = sectoresSeleccionados.length === 0
+      || sectoresSeleccionados.some((sectorSeleccionado) => banco.sector.toLowerCase() === sectorSeleccionado);
 
     return coincideNombre && coincideCuenta && coincideTelefono && coincideSector;
   });
@@ -2133,6 +2170,7 @@ function PantallaInvestigacionAnalista({
         valor={datosInvestigacion.identificacion.tipoIdentificacionFiscal}
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesTipoRegTributario}
+        idMaestro={TablaMaestraId.TIPO_REG_TRIBUTARIO}
         marcador="Seleccione tipo de identificacion fiscal"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.tipoIdentificacionFiscal")}
         onChange={(valor) => actualizarIdentificacion("tipoIdentificacionFiscal", valor)}
@@ -2144,6 +2182,7 @@ function PantallaInvestigacionAnalista({
         valor={datosInvestigacion.identificacion.ciudadEstadoProvincia}
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesCiudad}
+        idMaestro={TablaMaestraId.CIUDAD}
         permiteAltaNueva
         marcador="Seleccione o agregue ciudad/estado/provincia"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.ciudadEstadoProvincia")}
@@ -2158,6 +2197,7 @@ function PantallaInvestigacionAnalista({
         valor={datosInvestigacion.identificacion.estadoActual}
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesEstadoCliente}
+        idMaestro={TablaMaestraId.ESTADO_CLIENTE}
         permiteAltaNueva
         marcador="Seleccione o agregue estado actual"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.estadoActual")}
@@ -2185,8 +2225,8 @@ function PantallaInvestigacionAnalista({
               + Agregar Compañía
             </button>
           </div>
-          <div className="overflow-hidden rounded-2xl border border-gray-100">
-            <table className="w-full text-left">
+          <div className="overflow-x-auto rounded-2xl border border-gray-100">
+            <table className="min-w-[720px] w-full text-left">
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
                 <tr>
                   <th className="px-4 py-3">Empresa</th>
@@ -2196,16 +2236,26 @@ function PantallaInvestigacionAnalista({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
-                {companiasPaginadas.map((empresa) => (
-                  <tr key={`${empresa.empresa}-${empresa.idFiscal}`} className="cursor-pointer transition-colors hover:bg-slate-50">
+                {companiasPaginadas.map((empresa, indicePagina) => {
+                  const indiceReal = (paginaCompanias - 1) * FILAS_POR_PAGINA_INVESTIGACION + indicePagina;
+                  return (
+                  <tr key={`${empresa.idCompania ?? empresa.empresa}-${empresa.idFiscal}`} className="transition-colors hover:bg-slate-50">
                     <td className="px-4 py-4 text-sm font-semibold text-slate-700">{empresa.empresa}</td>
                     <td className="px-4 py-4 text-sm text-slate-400">{empresa.idFiscal}</td>
                     <td className="px-4 py-4 text-sm text-slate-500">{empresa.pais}</td>
                     <td className="px-4 py-4 text-right text-slate-400">
-                      <Pencil size={14} className="ml-auto" />
+                      <button
+                        type="button"
+                        disabled={esSoloLectura}
+                        onClick={() => setIndiceCompaniaAEliminar(indiceReal)}
+                        className="ml-auto inline-flex text-red-600 transition-colors hover:text-red-700 disabled:cursor-not-allowed disabled:text-slate-300"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -2226,6 +2276,7 @@ function PantallaInvestigacionAnalista({
           valor={datosInvestigacion.aspectosLegales.tipoEmpresa}
           soloLectura={esSoloLectura}
           opcionesTablaMaestra={opcionesTipoEmpresa}
+          idMaestro={TablaMaestraId.TIPO_EMPRESA}
           permiteAltaNueva
           marcador="Seleccione tipo de empresa"
           onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)}
@@ -2245,6 +2296,7 @@ function PantallaInvestigacionAnalista({
           valor={datosInvestigacion.aspectosLegales.ciudadRegistro}
           soloLectura={esSoloLectura}
           opcionesTablaMaestra={opcionesCiudad}
+          idMaestro={TablaMaestraId.CIUDAD}
           permiteAltaNueva
           marcador="Seleccione ciudad de registro"
           onChange={(valor) => actualizarAspectosLegales("ciudadRegistro", valor)}
@@ -2372,8 +2424,8 @@ function PantallaInvestigacionAnalista({
             </label>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-gray-100">
-            <table className="w-full text-left">
+          <div className="overflow-x-auto rounded-2xl border border-gray-100">
+            <table className={`${pestanaRamoOperacionesVisible === "locales" ? "min-w-[720px]" : "min-w-[980px]"} w-full text-left`}>
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
                 {pestanaRamoOperacionesVisible === "locales" ? (
                   <tr>
@@ -2455,6 +2507,7 @@ function PantallaInvestigacionAnalista({
           valor={datosInvestigacion.operacionPrincipal.sector}
           soloLectura={esSoloLectura}
           opcionesTablaMaestra={opcionesSectorEconomico}
+          idMaestro={TablaMaestraId.SECTOR_ECONOMICO}
           permiteAltaNueva
           marcador="Seleccione sector"
           onChange={(valor) => actualizarOperacionPrincipal("sector", valor)}
@@ -2464,6 +2517,7 @@ function PantallaInvestigacionAnalista({
           valor={datosInvestigacion.operacionPrincipal.actividad}
           soloLectura={esSoloLectura}
           opcionesTablaMaestra={opcionesActividadEconomica}
+          idMaestro={TablaMaestraId.ACTIVIDAD_ECONOMICA}
           permiteAltaNueva
           marcador="Seleccione actividad"
           onChange={(valor) => actualizarOperacionPrincipal("actividad", valor)}
@@ -2645,14 +2699,53 @@ function PantallaInvestigacionAnalista({
 
       {pestanaBancosProveedores === "proveedores" ? (
         <div className="space-y-5">
-          <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="grid gap-4 md:grid-cols-[1.25fr_0.85fr_1fr_0.7fr]">
+          <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+            <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-5 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Búsqueda y filtros</p>
+                <h3 className="mt-1 text-lg font-bold text-slate-900">Proveedores registrados</h3>
+                
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <CustomButton
+                  variant="secondary"
+                  size="sm"
+                  className="h-9 rounded-xl px-4"
+                  onClick={() => {
+                    setFiltroProveedorNombre("");
+                    setFiltroProveedorTipo("Todos");
+                    setFiltroProveedorContacto("");
+                    setFiltroProveedorTelefono("");
+                  }}
+                >
+                  <RotateCcw size={14} />
+                  Limpiar filtros
+                </CustomButton>
+                <CustomButton
+                  size="sm"
+                  disabled={esSoloLectura}
+                  className="h-9 rounded-xl px-4"
+                  onClick={() => {
+                    setIndiceProveedorSeleccionado(null);
+                    setEstaAbiertoModalProveedor(true);
+                  }}
+                >
+                  <Plus size={14} />
+                  Agregar Proveedor
+                </CustomButton>
+              </div>
+            </div>
+
+            <div className="grid gap-4 px-5 py-5 md:grid-cols-[1.25fr_0.85fr_1fr_0.7fr]">
               <div className="space-y-2">
-                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-300">Nombre de Proveedor</CustomLabel>
-                <input value={filtroProveedorNombre} onChange={(event) => setFiltroProveedorNombre(event.target.value)} placeholder="Ej. Schneider El" className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm text-slate-600 outline-none placeholder:text-slate-300" />
+                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Nombre de Proveedor</CustomLabel>
+                <div className="relative">
+                  <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input value={filtroProveedorNombre} onChange={(event) => setFiltroProveedorNombre(event.target.value)} placeholder="Ej. Schneider Electric" className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5" />
+                </div>
               </div>
               <div className="space-y-2">
-                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-300">Tipo de Proveedor</CustomLabel>
+                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Tipo de Proveedor</CustomLabel>
                 <CustomSelectorBuscable
                   options={opcionesFiltroTipoProveedor}
                   value={opcionesFiltroTipoProveedor.find((opcion) => opcion.string1 === filtroProveedorTipo)?.num1 ?? undefined}
@@ -2660,36 +2753,28 @@ function PantallaInvestigacionAnalista({
                   onClear={() => setFiltroProveedorTipo("")}
                   optional
                   mostrarTextoOpcionalEnLabel={false}
-                  placeholder="Tipo"
+                  placeholder="Todos los tipos"
                 />
               </div>
               <div className="space-y-2">
-                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-300">Nombre de Contacto</CustomLabel>
-                <input value={filtroProveedorContacto} onChange={(event) => setFiltroProveedorContacto(event.target.value)} placeholder="Nombre completo" className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm text-slate-600 outline-none placeholder:text-slate-300" />
+                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Nombre de Contacto</CustomLabel>
+                <div className="relative">
+                  <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input value={filtroProveedorContacto} onChange={(event) => setFiltroProveedorContacto(event.target.value)} placeholder="Nombre completo" className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5" />
+                </div>
               </div>
               <div className="space-y-2">
-                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-300">Teléfono</CustomLabel>
-                <input value={filtroProveedorTelefono} onChange={(event) => setFiltroProveedorTelefono(event.target.value)} placeholder="+52..." className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm text-slate-600 outline-none placeholder:text-slate-300" />
+                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Teléfono</CustomLabel>
+                <div className="relative">
+                  <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input value={filtroProveedorTelefono} onChange={(event) => setFiltroProveedorTelefono(event.target.value)} placeholder="+52..." className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5" />
+                </div>
               </div>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <CustomButton
-                size="sm"
-                disabled={esSoloLectura}
-                className="h-8 rounded-lg px-4 text-xs"
-                onClick={() => {
-                  setIndiceProveedorSeleccionado(null);
-                  setEstaAbiertoModalProveedor(true);
-                }}
-              >
-                <Plus size={14} />
-                Agregar Proveedor
-              </CustomButton>
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
-            <table className="w-full text-left">
+          <div className="overflow-x-auto rounded-3xl border border-gray-100 bg-white shadow-sm">
+            <table className="min-w-[860px] w-full text-left">
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
                 <tr>
                   <th className="px-4 py-3">Nombre Proveedor</th>
@@ -2735,27 +2820,32 @@ function PantallaInvestigacionAnalista({
 
       {pestanaBancosProveedores === "bancos" ? (
         <div className="space-y-5">
-          <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="grid gap-4 md:grid-cols-[1.2fr_0.7fr]">
-              <div className="space-y-2">
-                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-300">Nombre del Banco</CustomLabel>
-                <input value={filtroBancoNombre} onChange={(event) => setFiltroBancoNombre(event.target.value)} placeholder="Buscar banco..." className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm text-slate-600 outline-none placeholder:text-slate-300" />
+          <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+            <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-5 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Búsqueda y filtros</p>
+                <h3 className="mt-1 text-lg font-bold text-slate-900">Cuentas bancarias</h3>
+                
               </div>
-              <div className="space-y-2">
-                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-300">Número de Cuenta</CustomLabel>
-                <input value={filtroBancoCuenta} onChange={(event) => setFiltroBancoCuenta(event.target.value)} placeholder="0000 0000 0..." className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm text-slate-600 outline-none placeholder:text-slate-300" />
-              </div>
-            </div>
-            <div className="mt-4 grid gap-4 md:grid-cols-[0.7fr_auto] md:items-end">
-              <div className="space-y-2">
-                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-300">Teléfono</CustomLabel>
-                <input value={filtroBancoTelefono} onChange={(event) => setFiltroBancoTelefono(event.target.value)} placeholder="Número..." className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm text-slate-600 outline-none placeholder:text-slate-300" />
-              </div>
-              <div className="flex justify-start md:justify-end">
+              <div className="flex flex-wrap gap-2">
+                <CustomButton
+                  variant="secondary"
+                  size="sm"
+                  className="h-9 rounded-xl px-4"
+                  onClick={() => {
+                    setFiltroBancoNombre("");
+                    setFiltroBancoCuenta("");
+                    setFiltroBancoTelefono("");
+                    setIdsFiltroBancoSector([]);
+                  }}
+                >
+                  <RotateCcw size={14} />
+                  Limpiar filtros
+                </CustomButton>
                 <CustomButton
                   size="sm"
                   disabled={esSoloLectura}
-                  className="h-8 rounded-lg px-4 text-xs"
+                  className="h-9 rounded-xl px-4"
                   onClick={() => {
                     setIndiceBancoSeleccionado(null);
                     setEstaAbiertoModalBanco(true);
@@ -2766,22 +2856,53 @@ function PantallaInvestigacionAnalista({
                 </CustomButton>
               </div>
             </div>
-            <div className="mt-4 min-w-0">
-              <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-300">Sectores</CustomLabel>
-              <p className="mt-2 text-xs leading-5 text-slate-500">{filtroBancoSector || "Finanzas, Construcción, Manufactura, Energía, Telecomunicaciones, Comercio Exterior"}</p>
+
+            <div className="grid gap-4 px-5 py-5 md:grid-cols-[1.2fr_0.7fr_0.7fr]">
+              <div className="space-y-2">
+                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Nombre del Banco</CustomLabel>
+                <div className="relative">
+                  <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input value={filtroBancoNombre} onChange={(event) => setFiltroBancoNombre(event.target.value)} placeholder="Buscar banco..." className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Número de Cuenta</CustomLabel>
+                <div className="relative">
+                  <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input value={filtroBancoCuenta} onChange={(event) => setFiltroBancoCuenta(event.target.value)} placeholder="0000 0000 0..." className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Teléfono</CustomLabel>
+                <div className="relative">
+                  <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input value={filtroBancoTelefono} onChange={(event) => setFiltroBancoTelefono(event.target.value)} placeholder="Número..." className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5" />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-100 px-5 pb-2">
+              <MultiCustomSelectorBuscable
+                label="Sectores"
+                idMaster={TablaMaestraId.SECTOR_ECONOMICO}
+                value={idsFiltroBancoSector}
+                onChange={setIdsFiltroBancoSector}
+                placeholder="Filtrar por sectores"
+                resumirSelecciones
+              />
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
-            <table className="w-full text-left">
+          <div className="overflow-x-auto rounded-3xl border border-gray-100 bg-white shadow-sm">
+            <table className="min-w-[980px] w-full table-fixed text-left">
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
                 <tr>
-                  <th className="px-4 py-3">Banco</th>
-                  <th className="px-4 py-3">Número de Cuenta</th>
-                  <th className="px-4 py-3 text-center">Sector</th>
-                  <th className="px-4 py-3">Sectorista / Jefe de Cuenta</th>
-                  <th className="px-4 py-3">Teléfono</th>
-                  <th className="px-4 py-3 text-right">Acciones</th>
+                  <th className="w-[220px] px-4 py-3">Banco</th>
+                  <th className="w-[180px] px-4 py-3">Número de Cuenta</th>
+                  <th className="w-[170px] px-4 py-3 text-center">Sector</th>
+                  <th className="w-[220px] px-4 py-3">Sectorista / Jefe de Cuenta</th>
+                  <th className="w-[130px] px-4 py-3">Teléfono</th>
+                  <th className="w-[120px] px-4 py-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
@@ -2789,10 +2910,10 @@ function PantallaInvestigacionAnalista({
                   const indiceReal = datosInvestigacion.bancos.findIndex((item) => item.banco === banco.banco && item.numeroCuenta === banco.numeroCuenta);
                   return (
                     <tr key={`${banco.banco}-${banco.numeroCuenta}`}>
-                      <td className="px-4 py-4 text-sm font-semibold leading-4 text-slate-700">{banco.banco}</td>
-                      <td className="px-4 py-4 text-sm leading-4 text-slate-500">{banco.numeroCuenta}</td>
+                      <td className="px-4 py-4 text-sm font-semibold leading-4 text-slate-700"><span className="block truncate">{banco.banco}</span></td>
+                      <td className="px-4 py-4 text-sm leading-4 text-slate-500"><span className="block truncate">{banco.numeroCuenta}</span></td>
                       <td className="px-4 py-4 text-center text-sm">
-                        <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
+                        <span className={`inline-flex max-w-full items-center overflow-hidden rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
                           banco.sector.toLowerCase().includes("finanzas")
                             ? "bg-blue-50 text-blue-600"
                             : banco.sector.toLowerCase().includes("comercio")
@@ -2800,10 +2921,12 @@ function PantallaInvestigacionAnalista({
                               : banco.sector.toLowerCase().includes("energia")
                                 ? "bg-green-50 text-green-600"
                                 : "bg-orange-50 text-orange-600"
-                        }`}>{banco.sector}</span>
+                        }`} title={banco.sector}>
+                          <span className="block truncate">{banco.sector}</span>
+                        </span>
                       </td>
-                      <td className="px-4 py-4 text-sm leading-4 text-slate-500">{banco.sectoristaJefeCuenta || "-"}</td>
-                      <td className="px-4 py-4 text-sm leading-4 text-slate-500">{banco.telefono}</td>
+                      <td className="px-4 py-4 text-sm leading-4 text-slate-500"><span className="block truncate">{banco.sectoristaJefeCuenta || "-"}</span></td>
+                      <td className="px-4 py-4 text-sm leading-4 text-slate-500"><span className="block truncate">{banco.telefono}</span></td>
                       <td className="px-4 py-4 text-right text-slate-400">
                         <div className="flex justify-end gap-3">
                           <button type="button" onClick={() => { setIndiceBancoSeleccionado(indiceReal); setEstaAbiertoModalBanco(true); }}><Pencil size={14} /></button>
@@ -3218,6 +3341,23 @@ function PantallaInvestigacionAnalista({
         title="Eliminar Banco"
       >
         <p><span className="font-bold">Banco:</span> {indiceBancoAEliminar != null ? datosInvestigacion.bancos[indiceBancoAEliminar]?.banco ?? "-" : "-"}</p>
+      </CustomModalConfirmacionEliminacion>
+
+      <CustomModalConfirmacionEliminacion
+        isOpen={indiceCompaniaAEliminar !== null}
+        onClose={() => setIndiceCompaniaAEliminar(null)}
+        onConfirm={() => {
+          if (indiceCompaniaAEliminar == null) return;
+          setDatosInvestigacion((anterior) => ({
+            ...anterior,
+            companiasRelacionadas: anterior.companiasRelacionadas.filter((_, indice) => indice !== indiceCompaniaAEliminar),
+          }));
+          setIndiceCompaniaAEliminar(null);
+        }}
+        title="Eliminar Compañía Relacionada"
+      >
+        <p><span className="font-bold">Empresa:</span> {indiceCompaniaAEliminar != null ? datosInvestigacion.companiasRelacionadas[indiceCompaniaAEliminar]?.empresa ?? "-" : "-"}</p>
+        <p><span className="font-bold">ID Fiscal:</span> {indiceCompaniaAEliminar != null ? datosInvestigacion.companiasRelacionadas[indiceCompaniaAEliminar]?.idFiscal ?? "-" : "-"}</p>
       </CustomModalConfirmacionEliminacion>
 
       <CustomModalConfirmacionAccion

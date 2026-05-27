@@ -48,3 +48,73 @@ export type EntradaTablaMaestra = {
 };
 
 export type MasterTableResponse = EntradaTablaMaestra[];
+
+export interface TablaMaestraCrearRequest {
+  idMaestro: number;
+  descripcion?: string;
+  num1?: number | null;
+  num2?: number | null;
+  num3?: number | null;
+  string1?: string | null;
+  string2?: string | null;
+  string3?: string | null;
+  date1?: string | null;
+  date2?: string | null;
+  date3?: string | null;
+}
+
+export interface TablaMaestraEditarRequest extends TablaMaestraCrearRequest {
+  idTablaMaestra?: number;
+}
+
+export interface TablaMaestraGuardarResponse {
+  idTablaMaestra?: number;
+  idMaestro?: number;
+  descripcion?: string;
+  num1?: number | null;
+  num2?: number | null;
+  num3?: number | null;
+  string1?: string | null;
+  string2?: string | null;
+  string3?: string | null;
+  date1?: string | null;
+  date2?: string | null;
+  date3?: string | null;
+}
+
+const descripcionesTablaMaestraPorId: Partial<Record<TablaMaestraId, string>> = {
+  [TablaMaestraId.TIPO_PERSONA]: "TIPO PERSONA",
+  [TablaMaestraId.PAIS]: "PAIS",
+  [TablaMaestraId.IDIOMA]: "IDIOMA",
+  [TablaMaestraId.TIPO_TRAMITE]: "TIPO DE TRAMITE",
+  [TablaMaestraId.ROLES]: "ROLES",
+  [TablaMaestraId.TIPO_REG_TRIBUTARIO]: "TIPO REG TRIBUTARIO",
+  [TablaMaestraId.MONEDA]: "MONEDA",
+  [TablaMaestraId.TIPO_CONTACTO]: "TIPO CONTACTO",
+  [TablaMaestraId.AREA_TRABAJO]: "AREA TRABAJO",
+  [TablaMaestraId.ESTADO_CLIENTE]: "ESTADO DEL CLIENTE",
+  [TablaMaestraId.EMPRESA_ATENCION]: "EMPRESA ATENCION",
+  [TablaMaestraId.PLANTILLA_INFORME]: "PLANTILLA DOCUMENTO",
+  [TablaMaestraId.TIPO_DOCUMENTO]: "TIPO DOCUMENTO",
+  [TablaMaestraId.TIPO_PLAZO_CREDITO]: "TIPO PLAZO CREDITO",
+  [TablaMaestraId.TIPO_EMPRESA]: "TIPO EMPRESA",
+  [TablaMaestraId.CIUDAD]: "CIUDAD",
+  [TablaMaestraId.MES]: "MES",
+  [TablaMaestraId.SECTOR_ECONOMICO]: "SECTOR ECONOMICO",
+  [TablaMaestraId.ACTIVIDAD_ECONOMICA]: "ACTIVIDAD ECONOMICA",
+  [TablaMaestraId.TIPO_LOCAL]: "TIPO DE LOCAL",
+  [TablaMaestraId.TIPO_BALANCE]: "TIPO DE BALANCE",
+  [TablaMaestraId.ESTADO_FINANCIERO]: "ESTADO FINANCIERO",
+  [TablaMaestraId.TIPO_PROVEEDOR]: "TIPO DE PROVEEDOR",
+  [TablaMaestraId.ETAPA_ASIGNACION]: "FASE ASIGNACION",
+  [TablaMaestraId.PAGINACION_FRACTAL]: "PAGINACION FRACTAL",
+};
+
+export function obtenerDescripcionTablaMaestra(idMaestro: number, descripcionBase?: string) {
+  const descripcion = descripcionesTablaMaestraPorId[idMaestro as TablaMaestraId];
+  return descripcion ?? descripcionBase?.trim().toUpperCase() ?? "";
+}
+
+export function obtenerSiguienteNumTablaMaestra(opciones: EntradaTablaMaestra[]) {
+  return opciones.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
+}

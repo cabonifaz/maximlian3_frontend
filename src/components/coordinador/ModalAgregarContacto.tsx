@@ -1,12 +1,20 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { useForm, type Resolver } from "react-hook-form";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { esquemaContacto, type DatosFormularioContacto } from "@maximilian/schemas";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import {
+  obtenerDescripcionTablaMaestra,
+  obtenerSiguienteNumTablaMaestra,
+  type EntradaTablaMaestra,
+  type TablaMaestraCrearRequest,
+  TablaMaestraId,
+} from "@maximilian/shared/types/tabla-maestra.type";
 
 const contactResolver: Resolver<DatosFormularioContacto> = async (...args) => {
   const result = await zodResolver(esquemaContacto)(...args);
@@ -39,6 +47,41 @@ export function ModalAgregarContacto({ isOpen, onClose, onConfirm, defaultValues
   } = useForm<DatosFormularioContacto>({
     resolver: contactResolver,
     mode: "onTouched",
+  });
+  const queryClient = useQueryClient();
+  const crearTipoContactoMutation = useMutation({
+    mutationFn: async (termino: string) => {
+      const terminoLimpio = termino.trim();
+      const opcionesActuales = await queryClient.fetchQuery<EntradaTablaMaestra[]>({
+        queryKey: ["masterTable", TablaMaestraId.TIPO_CONTACTO],
+        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_CONTACTO),
+        staleTime: 0,
+      });
+      const payload: TablaMaestraCrearRequest = {
+        idMaestro: TablaMaestraId.TIPO_CONTACTO,
+        descripcion: obtenerDescripcionTablaMaestra(TablaMaestraId.TIPO_CONTACTO),
+        string1: terminoLimpio,
+        num1: obtenerSiguienteNumTablaMaestra(opcionesActuales),
+        num2: null,
+        num3: null,
+        string2: null,
+        string3: null,
+        date1: null,
+        date2: null,
+        date3: null,
+      };
+
+      await servicioTablaMaestra.crear(payload);
+      await queryClient.invalidateQueries({ queryKey: ["masterTable", TablaMaestraId.TIPO_CONTACTO] });
+      const opcionesActualizadas = await queryClient.fetchQuery({
+        queryKey: ["masterTable", TablaMaestraId.TIPO_CONTACTO],
+        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_CONTACTO),
+        staleTime: 0,
+      });
+
+      const terminoNormalizado = terminoLimpio.toLowerCase();
+      return opcionesActualizadas.find((opcion) => (opcion.string1 ?? "").trim().toLowerCase() === terminoNormalizado);
+    },
   });
 
   useEffect(() => {
@@ -98,6 +141,11 @@ export function ModalAgregarContacto({ isOpen, onClose, onConfirm, defaultValues
               onAddNew={(term) => {
                 setValue("tipoContacto", 0, { shouldValidate: true });
                 setValue("tipoContactoNuevo", term, { shouldValidate: true });
+                void crearTipoContactoMutation.mutateAsync(term).then((opcion) => {
+                  if (!opcion?.num1) return;
+                  setValue("tipoContacto", opcion.num1, { shouldValidate: true });
+                  setValue("tipoContactoNuevo", undefined, { shouldValidate: true });
+                });
               }}
               displayValue={watchedTipoContacto === 0 ? watchedTipoContactoNuevo : undefined}
               error={errors.tipoContacto?.message}
