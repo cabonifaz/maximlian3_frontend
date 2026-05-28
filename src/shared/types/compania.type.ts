@@ -14,6 +14,9 @@ export interface CompaniaListaItem {
   idTipoPersona?: number;
   idTipoDocumento?: number;
   idPais?: number;
+  direccion?: string;
+  ubigeo?: string;
+  codigoPostal?: string;
   numeroDocumento: string;
   nombreCompleto: string;
   pais: string;
@@ -37,6 +40,24 @@ export interface CompaniaCrearRequest {
   idPais: number;
   telefono: string;
   existeInformacion: boolean;
+}
+
+export interface DirectorioEjecutivoCrearRequest {
+  idTipoPersona: number;
+  nombreCompleto: string;
+  idPais: number;
+  direccion: string;
+  ubigeo: string;
+  codigoPostal: string;
+  idTipoDocumento: number;
+  numeroDocumento: string;
+  taxIdType: number;
+  taxNum: string;
+  idNacionalidad: number;
+  fechaNacimiento: string | null;
+  idEstadoCivil: number;
+  idProfesion: number;
+  referencias: string;
 }
 
 export interface CompaniaEditarRequest extends CompaniaCrearRequest {

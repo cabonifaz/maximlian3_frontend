@@ -2,6 +2,7 @@ import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianServ
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   CompaniaCrearRequest,
+  DirectorioEjecutivoCrearRequest,
   CompaniaEditarRequest,
   CompaniaEliminarRequest,
   CompaniaGuardarResponse,
@@ -70,6 +71,9 @@ function normalizarCompania(item: unknown): CompaniaListaItem {
     idTipoPersona: obtenerNumero(registro.idTipoPersona, registro.IdTipoPersona),
     idTipoDocumento: obtenerNumero(registro.idTipoDocumento, registro.IdTipoDocumento),
     idPais: obtenerNumero(registro.idPais, registro.IdPais),
+    direccion: obtenerTexto(registro.direccion, registro.Direccion) || undefined,
+    ubigeo: obtenerTexto(registro.ubigeo, registro.Ubigeo) || undefined,
+    codigoPostal: obtenerTexto(registro.codigoPostal, registro.CodigoPostal) || undefined,
     numeroDocumento: obtenerTexto(registro.numeroDocumento, registro.NumeroDocumento, registro.taxNum, registro.TaxNum),
     nombreCompleto: obtenerTexto(registro.nombreCompleto, registro.NombreCompleto, registro.nombre, registro.Nombre),
     pais: obtenerTexto(registro.pais, registro.Pais, registro.nombrePais, registro.NombrePais) || "-",
@@ -113,7 +117,14 @@ function normalizarGuardado(resultado: unknown): CompaniaGuardarResponse {
   const registro = obtenerRegistro(resultado);
 
   return {
-    idCompania: obtenerNumero(registro.idCompania, registro.IdCompania),
+    idCompania: obtenerNumero(
+      registro.idCompania,
+      registro.IdCompania,
+      registro.idDirectorioEjecutivo,
+      registro.IdDirectorioEjecutivo,
+      registro.id,
+      registro.Id,
+    ),
   };
 }
 
@@ -154,6 +165,16 @@ export const servicioCompania = {
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/crear")) {
       throw new Error(data.mensaje || "Error al crear la compañía");
+    }
+
+    return normalizarGuardado(data.result);
+  },
+
+  crearDirectorioEjecutivo: async (payload: DirectorioEjecutivoCrearRequest): Promise<CompaniaGuardarResponse> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/DirectorioEjecutivo/crear", [payload]);
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/crear")) {
+      throw new Error(data.mensaje || "Error al crear el registro de terceros");
     }
 
     return normalizarGuardado(data.result);

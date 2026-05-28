@@ -6,7 +6,7 @@ import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
-import type { CompaniaCrearRequest, CompaniaEditarRequest, CompaniaListaItem } from "@maximilian/shared/types/compania.type";
+import type { CompaniaEditarRequest, CompaniaListaItem, DirectorioEjecutivoCrearRequest } from "@maximilian/shared/types/compania.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 
@@ -22,6 +22,9 @@ export interface RegistroPersonaAnalista {
   idTipoPersona?: number;
   idTipoDocumento?: number;
   idPais?: number;
+  direccion?: string;
+  ubigeo?: string;
+  codigoPostal?: string;
   numeroDocumento?: string;
 }
 
@@ -52,6 +55,9 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
   const [idTipoDocumento, setIdTipoDocumento] = useState<number | undefined>(registroInicial?.idTipoDocumento);
   const [nombreCompleto, setNombreCompleto] = useState(registroInicial?.nombres ?? "");
   const [numeroDocumento, setNumeroDocumento] = useState(registroInicial?.numeroDocumento ?? "");
+  const [direccion, setDireccion] = useState(registroInicial?.direccion ?? "");
+  const [ciudadProvinciaEstado, setCiudadProvinciaEstado] = useState(registroInicial?.ubigeo ?? "");
+  const [codigoPostal, setCodigoPostal] = useState(registroInicial?.codigoPostal ?? "");
   const [telefono, setTelefono] = useState(registroInicial?.telefono ?? "");
   const [existeInformacion, setExisteInformacion] = useState(registroInicial?.existeInformacion ?? true);
 
@@ -70,6 +76,9 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
     setIdTipoDocumento(registroInicial?.idTipoDocumento);
     setNombreCompleto(registroInicial?.nombres ?? "");
     setNumeroDocumento(registroInicial?.numeroDocumento ?? registroInicial?.tipoDocumento.split(" - ")[1] ?? "");
+    setDireccion(registroInicial?.direccion ?? "");
+    setCiudadProvinciaEstado(registroInicial?.ubigeo ?? "");
+    setCodigoPostal(registroInicial?.codigoPostal ?? "");
     setTelefono(registroInicial?.telefono ?? "");
     setExisteInformacion(registroInicial?.existeInformacion ?? true);
   }, [estaAbierto, registroInicial]);
@@ -82,6 +91,9 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
         numeroDocumento: numeroDocumento.trim(),
         nombreCompleto: nombreCompleto.trim(),
         idPais: idPais ?? 0,
+        direccion: direccion.trim(),
+        ubigeo: ciudadProvinciaEstado.trim(),
+        codigoPostal: codigoPostal.trim(),
         telefono: telefono.trim(),
         existeInformacion,
       };
@@ -89,9 +101,31 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
       const respuesta = registroInicial?.idCompania
         ? await servicioCompania.editar({
           idCompania: registroInicial.idCompania,
-          ...payloadBase,
+          idTipoPersona: payloadBase.idTipoPersona,
+          idTipoDocumento: payloadBase.idTipoDocumento,
+          numeroDocumento: payloadBase.numeroDocumento,
+          nombreCompleto: payloadBase.nombreCompleto,
+          idPais: payloadBase.idPais,
+          telefono: payloadBase.telefono,
+          existeInformacion: payloadBase.existeInformacion,
         } satisfies CompaniaEditarRequest)
-        : await servicioCompania.crear(payloadBase satisfies CompaniaCrearRequest);
+        : await servicioCompania.crearDirectorioEjecutivo({
+          idTipoPersona: payloadBase.idTipoPersona,
+          nombreCompleto: payloadBase.nombreCompleto,
+          idPais: payloadBase.idPais,
+          direccion: payloadBase.direccion,
+          ubigeo: payloadBase.ubigeo,
+          codigoPostal: payloadBase.codigoPostal,
+          idTipoDocumento: payloadBase.idTipoDocumento,
+          numeroDocumento: payloadBase.numeroDocumento,
+          taxIdType: payloadBase.idTipoDocumento,
+          taxNum: payloadBase.numeroDocumento,
+          idNacionalidad: 0,
+          fechaNacimiento: null,
+          idEstadoCivil: 0,
+          idProfesion: 0,
+          referencias: "",
+        } satisfies DirectorioEjecutivoCrearRequest);
 
       await queryClient.invalidateQueries({ queryKey: ["companias-relacionadas-modal"] });
 
@@ -110,6 +144,9 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
         idTipoPersona: payloadBase.idTipoPersona,
         idTipoDocumento: payloadBase.idTipoDocumento,
         idPais: payloadBase.idPais,
+        direccion: payloadBase.direccion,
+        ubigeo: payloadBase.ubigeo,
+        codigoPostal: payloadBase.codigoPostal,
         numeroDocumento: payloadBase.numeroDocumento,
         nombreCompleto: payloadBase.nombreCompleto,
         pais: obtenerTextoPorId(opcionesPais, payloadBase.idPais) || "-",
@@ -126,6 +163,9 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
         idTipoPersona: companiaGuardada.idTipoPersona,
         idTipoDocumento: companiaGuardada.idTipoDocumento,
         idPais: companiaGuardada.idPais,
+        direccion: companiaGuardada.direccion,
+        ubigeo: companiaGuardada.ubigeo,
+        codigoPostal: companiaGuardada.codigoPostal,
         numeroDocumento: companiaGuardada.numeroDocumento,
         tipoPersona: companiaGuardada.tipoPersona ?? obtenerTextoPorId(opcionesTipoPersona, companiaGuardada.idTipoPersona),
         nombres: companiaGuardada.nombreCompleto,
@@ -233,6 +273,35 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
                 required
                 placeholder="Seleccione un país"
               />
+              <div className="space-y-2">
+                <CustomLabel>Direccion</CustomLabel>
+                <input
+                  value={direccion}
+                  onChange={(event) => setDireccion(event.target.value)}
+                  placeholder="Ingrese la dirección"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-[1fr_0.75fr]">
+                <div className="space-y-2">
+                  <CustomLabel>Ciudad / Provincia / Estado</CustomLabel>
+                  <input
+                    value={ciudadProvinciaEstado}
+                    onChange={(event) => setCiudadProvinciaEstado(event.target.value)}
+                    placeholder="Ingrese ciudad, provincia o estado"
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <CustomLabel>Codigo Postal</CustomLabel>
+                  <input
+                    value={codigoPostal}
+                    onChange={(event) => setCodigoPostal(event.target.value)}
+                    placeholder="Ingrese codigo postal"
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+                  />
+                </div>
+              </div>
               <div className="space-y-2">
                 <CustomLabel>Telefono</CustomLabel>
                 <div className="relative">

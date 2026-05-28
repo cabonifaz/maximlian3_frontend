@@ -159,18 +159,27 @@ export interface RegistroDirectorioEjecutivoAnalista {
 
 export interface RegistroPersonaDirectorioAnalista {
   id: number;
+  idDirectorioEjecutivo?: number;
+  idTipoPersona?: number;
   tipoPersona: string;
   nombres: string;
+  idPais?: number;
   pais: string;
   direccionPrincipal: string;
   ciudadProvinciaEstado: string;
+  codigoPostal: string;
+  idNacionalidad?: number;
   nacionalidad: string;
+  idTipoDocumento?: number;
   tipoDocumentoIdentidad: string;
   numeroDocumentoIdentidad: string;
+  taxIdType?: number;
   tipoIdFiscal: string;
   numeroIdFiscal: string;
   fechaNacimiento: string;
+  idEstadoCivil?: number;
   estadoCivil: string;
+  idProfesion?: number;
   profesion: string;
   referenciaAdicional: string;
 }

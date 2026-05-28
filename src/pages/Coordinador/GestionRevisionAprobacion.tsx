@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
-import { BadgeCheck, CheckCircle2, CircleX, ClipboardList, Search, SlidersHorizontal, TriangleAlert } from "lucide-react";
+import { BadgeCheck, CheckCircle2, CircleX, ClipboardList, FileSearch, Search, SlidersHorizontal, TriangleAlert } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
@@ -191,7 +191,15 @@ export default function GestionRevisionAprobacion() {
               Filtros
             </CustomButton>
 
-            
+            <CustomButton
+              variant="wine"
+              size="md"
+              className="h-12 min-w-40 text-sm font-semibold"
+              onClick={abrirEjemploInforme}
+            >
+              <FileSearch size={16} />
+              Ver ejemplo
+            </CustomButton>
           </div>
         </div>
 

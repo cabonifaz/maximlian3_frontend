@@ -1,15 +1,19 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { servicioDirectorioEjecutivo } from "@maximilian/services/directorioEjecutivo.service";
+import type { DirectorioEjecutivoGuardarRequest } from "@maximilian/shared/types/directorio-ejecutivo.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalRegistroPersonaDirectorioAnalista {
   estaAbierto: boolean;
+  registroInicial?: RegistroPersonaDirectorioAnalista | null;
   onCerrar: () => void;
-  onGuardar: (registro: Omit<RegistroPersonaDirectorioAnalista, "id">) => void;
+  onGuardar: (registro: RegistroPersonaDirectorioAnalista) => void;
 }
 
 const opcionesTipoPersona = ["Natural", "Jurídica"];
@@ -46,31 +50,92 @@ const opcionesIdFiscalSelector = opcionesIdFiscal.map((opcion, indice) => crearO
 const opcionesEstadoCivilSelector = opcionesEstadoCivil.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 const opcionesProfesionSelector = opcionesProfesion.slice(1).map((opcion, indice) => crearOpcion(indice + 1, opcion));
 
+function obtenerTextoFormulario(formData: FormData, nombre: string) {
+  return String(formData.get(nombre) ?? "").trim();
+}
+
+function obtenerIdPorTexto(opciones: EntradaTablaMaestra[], texto: string) {
+  return opciones.find((opcion) => opcion.string1 === texto)?.num1 ?? 0;
+}
+
+function normalizarFechaApi(fecha: string) {
+  return fecha ? `${fecha}T00:00:00.000Z` : null;
+}
+
 export function CustomModalRegistroPersonaDirectorioAnalista({
   estaAbierto,
+  registroInicial,
   onCerrar,
   onGuardar,
 }: PropsCustomModalRegistroPersonaDirectorioAnalista) {
-  if (!estaAbierto) return null;
+  const crearRegistroMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const registro: RegistroPersonaDirectorioAnalista = {
+        id: registroInicial?.id ?? 0,
+        idDirectorioEjecutivo: registroInicial?.idDirectorioEjecutivo,
+        tipoPersona: obtenerTextoFormulario(formData, "tipoPersona"),
+        nombres: obtenerTextoFormulario(formData, "nombres"),
+        pais: obtenerTextoFormulario(formData, "pais"),
+        direccionPrincipal: obtenerTextoFormulario(formData, "direccionPrincipal"),
+        ciudadProvinciaEstado: obtenerTextoFormulario(formData, "ciudadProvinciaEstado"),
+        codigoPostal: obtenerTextoFormulario(formData, "codigoPostal"),
+        nacionalidad: obtenerTextoFormulario(formData, "nacionalidad"),
+        tipoDocumentoIdentidad: obtenerTextoFormulario(formData, "tipoDocumentoIdentidad"),
+        numeroDocumentoIdentidad: obtenerTextoFormulario(formData, "numeroDocumentoIdentidad"),
+        tipoIdFiscal: obtenerTextoFormulario(formData, "tipoIdFiscal"),
+        numeroIdFiscal: obtenerTextoFormulario(formData, "numeroIdFiscal"),
+        fechaNacimiento: obtenerTextoFormulario(formData, "fechaNacimiento"),
+        estadoCivil: obtenerTextoFormulario(formData, "estadoCivil"),
+        profesion: obtenerTextoFormulario(formData, "profesion"),
+        referenciaAdicional: obtenerTextoFormulario(formData, "referenciaAdicional"),
+      };
 
-  const manejarEnvio = (formData: FormData) => {
-    onGuardar({
-      tipoPersona: String(formData.get("tipoPersona") ?? ""),
-      nombres: String(formData.get("nombres") ?? ""),
-      pais: String(formData.get("pais") ?? ""),
-      direccionPrincipal: String(formData.get("direccionPrincipal") ?? ""),
-      ciudadProvinciaEstado: String(formData.get("ciudadProvinciaEstado") ?? ""),
-      nacionalidad: String(formData.get("nacionalidad") ?? ""),
-      tipoDocumentoIdentidad: String(formData.get("tipoDocumentoIdentidad") ?? ""),
-      numeroDocumentoIdentidad: String(formData.get("numeroDocumentoIdentidad") ?? ""),
-      tipoIdFiscal: String(formData.get("tipoIdFiscal") ?? ""),
-      numeroIdFiscal: String(formData.get("numeroIdFiscal") ?? ""),
-      fechaNacimiento: String(formData.get("fechaNacimiento") ?? ""),
-      estadoCivil: String(formData.get("estadoCivil") ?? ""),
-      profesion: String(formData.get("profesion") ?? ""),
-      referenciaAdicional: String(formData.get("referenciaAdicional") ?? ""),
-    });
-  };
+      const payload: DirectorioEjecutivoGuardarRequest = {
+        idTipoPersona: obtenerIdPorTexto(opcionesTipoPersonaSelector, registro.tipoPersona),
+        nombreCompleto: registro.nombres,
+        idPais: obtenerIdPorTexto(opcionesPaisSelector, registro.pais),
+        direccion: registro.direccionPrincipal,
+        ubigeo: registro.ciudadProvinciaEstado,
+        codigoPostal: registro.codigoPostal,
+        idTipoDocumento: obtenerIdPorTexto(opcionesDocumentoSelector, registro.tipoDocumentoIdentidad),
+        numeroDocumento: registro.numeroDocumentoIdentidad,
+        taxIdType: obtenerIdPorTexto(opcionesIdFiscalSelector, registro.tipoIdFiscal),
+        taxNum: registro.numeroIdFiscal,
+        idNacionalidad: obtenerIdPorTexto(opcionesNacionalidadSelector, registro.nacionalidad),
+        fechaNacimiento: normalizarFechaApi(registro.fechaNacimiento),
+        idEstadoCivil: obtenerIdPorTexto(opcionesEstadoCivilSelector, registro.estadoCivil),
+        idProfesion: obtenerIdPorTexto(opcionesProfesionSelector, registro.profesion),
+        referencias: registro.referenciaAdicional,
+      };
+
+      const respuesta = registroInicial?.idDirectorioEjecutivo
+        ? await servicioDirectorioEjecutivo.editar({
+          ...payload,
+          idDirectorioEjecutivo: registroInicial.idDirectorioEjecutivo,
+        })
+        : await servicioDirectorioEjecutivo.crear(payload);
+
+      const idDirectorioEjecutivo = respuesta.idDirectorioEjecutivo ?? registroInicial?.idDirectorioEjecutivo ?? registroInicial?.id ?? Date.now();
+
+      return {
+        ...registro,
+        id: idDirectorioEjecutivo,
+        idDirectorioEjecutivo,
+        idTipoPersona: payload.idTipoPersona,
+        idPais: payload.idPais,
+        idTipoDocumento: payload.idTipoDocumento,
+        taxIdType: payload.taxIdType,
+        idNacionalidad: payload.idNacionalidad,
+        idEstadoCivil: payload.idEstadoCivil,
+        idProfesion: payload.idProfesion,
+      };
+    },
+    onSuccess: (registro) => {
+      onGuardar(registro);
+    },
+  });
+
+  if (!estaAbierto) return null;
 
   return (
     <div className="fixed inset-0 z-[98] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
@@ -91,47 +156,49 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
           className="flex min-h-0 flex-1 flex-col"
           onSubmit={(event) => {
             event.preventDefault();
-            manejarEnvio(new FormData(event.currentTarget));
+            crearRegistroMutation.mutate(new FormData(event.currentTarget));
           }}
         >
           <div className="space-y-4 overflow-y-auto px-6 py-5">
             <div className="grid gap-4 md:grid-cols-[0.9fr_2fr_1fr]">
-              <CampoSelector nombre="tipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersonaSelector} valorDefecto="Natural" />
-              <CampoInput nombre="nombres" etiqueta="Nombres" marcador="Ingrese nombres completos" />
-              <CampoSelector nombre="pais" etiqueta="País" opciones={opcionesPaisSelector} marcadorVacio="Seleccione un país" />
+              <CampoSelector nombre="tipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersonaSelector} valorDefecto={registroInicial?.tipoPersona ?? "Natural"} />
+              <CampoInput nombre="nombres" etiqueta="Nombres" marcador="Ingrese nombres completos" valorInicial={registroInicial?.nombres} />
+              <CampoSelector nombre="pais" etiqueta="País" opciones={opcionesPaisSelector} valorDefecto={registroInicial?.pais} marcadorVacio="Seleccione un país" />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-[1.35fr_1fr_1fr]">
-              <CampoInput nombre="direccionPrincipal" etiqueta="Dirección Principal" marcador="Ingrese dirección" />
-              <CampoInput nombre="ciudadProvinciaEstado" etiqueta="Ciudad / Provincia / Estado" marcador="Ingrese ciudad" />
-              <CampoSelector nombre="nacionalidad" etiqueta="Nacionalidad" opciones={opcionesNacionalidadSelector} marcadorVacio="Seleccione nacionalidad" />
+            <div className="grid gap-4 md:grid-cols-[1.35fr_1fr_0.75fr_1fr]">
+              <CampoInput nombre="direccionPrincipal" etiqueta="Dirección Principal" marcador="Ingrese dirección" valorInicial={registroInicial?.direccionPrincipal} />
+              <CampoInput nombre="ciudadProvinciaEstado" etiqueta="Ciudad / Provincia / Estado" marcador="Ingrese ciudad" valorInicial={registroInicial?.ciudadProvinciaEstado} />
+              <CampoInput nombre="codigoPostal" etiqueta="Código Postal" marcador="Ingrese código postal" valorInicial={registroInicial?.codigoPostal} />
+              <CampoSelector nombre="nacionalidad" etiqueta="Nacionalidad" opciones={opcionesNacionalidadSelector} valorDefecto={registroInicial?.nacionalidad} marcadorVacio="Seleccione nacionalidad" />
             </div>
 
             <div className="grid gap-4 md:grid-cols-[0.9fr_1fr_1fr_1fr]">
-              <CampoSelector nombre="tipoDocumentoIdentidad" etiqueta="Tipo Doc. Identidad" opciones={opcionesDocumentoSelector} valorDefecto="DNI" />
-              <CampoInput nombre="numeroDocumentoIdentidad" etiqueta="Nro. Doc. Identidad" marcador="Ingrese nro. documento" />
-              <CampoSelector nombre="tipoIdFiscal" etiqueta="Tipo de ID Fiscal" opciones={opcionesIdFiscalSelector} valorDefecto="RUC" />
-              <CampoInput nombre="numeroIdFiscal" etiqueta="Nro ID Fiscal" marcador="Ingrese id fiscal" />
+              <CampoSelector nombre="tipoDocumentoIdentidad" etiqueta="Tipo Doc. Identidad" opciones={opcionesDocumentoSelector} valorDefecto={registroInicial?.tipoDocumentoIdentidad ?? "DNI"} />
+              <CampoInput nombre="numeroDocumentoIdentidad" etiqueta="Nro. Doc. Identidad" marcador="Ingrese nro. documento" valorInicial={registroInicial?.numeroDocumentoIdentidad} />
+              <CampoSelector nombre="tipoIdFiscal" etiqueta="Tipo de ID Fiscal" opciones={opcionesIdFiscalSelector} valorDefecto={registroInicial?.tipoIdFiscal ?? "RUC"} />
+              <CampoInput nombre="numeroIdFiscal" etiqueta="Nro ID Fiscal" marcador="Ingrese id fiscal" valorInicial={registroInicial?.numeroIdFiscal} />
             </div>
 
             <div className="grid gap-4 md:grid-cols-[1fr_1fr_1fr]">
-              <CampoInput nombre="fechaNacimiento" etiqueta="Fecha de Nacimiento" marcador="mm/dd/yyyy" tipo="date" />
-              <CampoSelector nombre="estadoCivil" etiqueta="Estado Civil" opciones={opcionesEstadoCivilSelector} valorDefecto="Soltero/a" />
-              <CampoSelector nombre="profesion" etiqueta="Profesión" opciones={opcionesProfesionSelector} marcadorVacio="Seleccione profesión" permiteAltaNueva />
+              <CampoInput nombre="fechaNacimiento" etiqueta="Fecha de Nacimiento" marcador="mm/dd/yyyy" valorInicial={registroInicial?.fechaNacimiento} tipo="date" />
+              <CampoSelector nombre="estadoCivil" etiqueta="Estado Civil" opciones={opcionesEstadoCivilSelector} valorDefecto={registroInicial?.estadoCivil ?? "Soltero/a"} />
+              <CampoSelector nombre="profesion" etiqueta="Profesión" opciones={opcionesProfesionSelector} valorDefecto={registroInicial?.profesion} marcadorVacio="Seleccione profesión" permiteAltaNueva />
             </div>
 
             <CampoArea
               nombre="referenciaAdicional"
               etiqueta="Referencia Adicional"
               marcador="Ingrese notas o referencias adicionales pertinentes para este registro..."
+              valorInicial={registroInicial?.referenciaAdicional}
             />
           </div>
 
           <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
-            <CustomButton type="button" variant="secondary" size="sm" onClick={onCerrar}>
+            <CustomButton type="button" variant="secondary" size="sm" onClick={onCerrar} disabled={crearRegistroMutation.isPending}>
               Cancelar
             </CustomButton>
-            <CustomButton type="submit" size="sm">
+            <CustomButton type="submit" size="sm" loading={crearRegistroMutation.isPending} loadingText="Guardando...">
               Guardar
             </CustomButton>
           </div>
@@ -146,11 +213,13 @@ function CampoInput({
   etiqueta,
   marcador,
   tipo = "text",
+  valorInicial,
 }: {
   nombre: string;
   etiqueta: string;
   marcador: string;
   tipo?: "text" | "date";
+  valorInicial?: string;
 }) {
   return (
     <label className="space-y-2">
@@ -158,6 +227,7 @@ function CampoInput({
       <input
         name={nombre}
         type={tipo}
+        defaultValue={valorInicial}
         placeholder={marcador}
         className="h-11 w-full rounded-lg border border-[#dbe4f0] bg-white px-4 text-sm text-slate-700 outline-none"
       />
@@ -217,10 +287,12 @@ function CampoArea({
   nombre,
   etiqueta,
   marcador,
+  valorInicial,
 }: {
   nombre: string;
   etiqueta: string;
   marcador: string;
+  valorInicial?: string;
 }) {
   return (
     <label className="space-y-2">
@@ -228,6 +300,7 @@ function CampoArea({
       <textarea
         name={nombre}
         rows={5}
+        defaultValue={valorInicial}
         placeholder={marcador}
         className="w-full rounded-lg border border-[#dbe4f0] bg-white px-4 py-3 text-sm text-slate-700 outline-none"
       />
