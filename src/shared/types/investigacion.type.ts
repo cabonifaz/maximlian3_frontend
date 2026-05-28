@@ -142,6 +142,7 @@ export interface DetalleCuentasBalanceAnalista {
 
 export interface RegistroDirectorioEjecutivoAnalista {
   id: number;
+  idDirectorioEjecutivo?: number;
   ejecutivo: string;
   cargo: string;
   porcentaje: string;

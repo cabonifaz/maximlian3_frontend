@@ -228,11 +228,17 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
         };
       }
 
+      const opcionesActuales = await queryClient.fetchQuery({
+        queryKey: ["masterTable", idMaestro],
+        queryFn: () => servicioTablaMaestra.list(idMaestro),
+        staleTime: 0,
+      });
+
       const payload: TablaMaestraCrearRequest = {
         idMaestro,
         descripcion: obtenerDescripcionTablaMaestra(idMaestro),
         string1: termino,
-        num1: obtenerSiguienteNumTablaMaestra(opciones),
+        num1: obtenerSiguienteNumTablaMaestra(opcionesActuales),
         num2: num2AltaNueva,
         num3: null,
         string2: null,

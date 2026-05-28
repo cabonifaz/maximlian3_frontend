@@ -25,7 +25,6 @@ export default function RevisionInformeCoordinador() {
   const { idPedido } = useParams();
   const [searchParams] = useSearchParams();
   const idInforme = Number(searchParams.get("idInforme"));
-  const idIdioma = Number(searchParams.get("idIdioma"));
   const esEjemplo = searchParams.get("ejemplo") === "1";
   const [estaAbiertoModalRechazo, setEstaAbiertoModalRechazo] = useState(false);
   const [motivoRechazo, setMotivoRechazo] = useState("");
@@ -78,7 +77,6 @@ export default function RevisionInformeCoordinador() {
         idPedido: Number.isFinite(idPedidoNumerico) ? idPedidoNumerico : 0,
         idInforme: idInformeSeguro,
         idEstadoInforme,
-        idIdiomaPedido: Number.isFinite(idIdioma) ? idIdioma : 0,
         datosInvestigacion: datosInvestigacion!,
         opcionesTipoPersona,
         opcionesPais,

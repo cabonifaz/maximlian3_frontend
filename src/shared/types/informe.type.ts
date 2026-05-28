@@ -109,23 +109,9 @@ export interface InformeProveedorRequest {
 
 export interface InformeDirectorioEjecutivoRequest {
   idInformeDirectorioEjecutivo?: number;
-  idTipoPersona: number;
-  nombreCompleto: string;
-  idPais: number;
-  direccion: string;
-  ubigeo: string;
-  codigoPostal: string;
-  idTipoDocumento: number;
-  numeroDocumento: string;
-  taxIdType: number;
-  taxNum: string;
-  idNacionalidad: number;
-  fechaNacimiento: string | null;
-  idEstadoCivil: number;
-  idProfesion: number;
-  referencias: string;
-  cargos: string;
-  formularioVinculado: string;
+  idDirectorioEjecutivo: number;
+  idCargo: number;
+  vinculadoDesde: string | null;
   companiaAnterior: string;
   participacion: number;
   orden: number;
@@ -227,14 +213,13 @@ export interface InformeCrearRequest {
   informacionGeneral: string;
   opinionCredito: string;
   flgTieneInformacion: boolean;
-  balances: InformeBalanceRequest[];
-  bancos: InformeBancoRequest[];
-  companiasRelacionadas: InformeCompaniaRelacionadaRequest[];
-  exportacionesImportaciones: InformeOperacionExteriorRequest[];
-  proveedores: InformeProveedorRequest[];
-  directoriosEjecutivos: InformeDirectorioEjecutivoRequest[];
-  locales: InformeLocalRequest[];
-  pedidos: InformePedidoRequest[];
+  lstBalances: InformeBalanceRequest[];
+  lstBancos: InformeBancoRequest[];
+  lstCompaniasRelacionadas: InformeCompaniaRelacionadaRequest[];
+  lstExportacionesImportaciones: InformeOperacionExteriorRequest[];
+  lstProveedores: InformeProveedorRequest[];
+  lstDirectoriosEjecutivos: InformeDirectorioEjecutivoRequest[];
+  lstLocales: InformeLocalRequest[];
 }
 
 export interface InformeCrearResponse {
