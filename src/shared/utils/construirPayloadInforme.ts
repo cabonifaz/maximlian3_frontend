@@ -138,7 +138,6 @@ export function construirPayloadInforme({
   idPedido,
   idInforme,
   idEstadoInforme,
-  idIdiomaPedido,
   datosInvestigacion,
   opcionesTipoPersona,
   opcionesPais,
@@ -147,7 +146,6 @@ export function construirPayloadInforme({
   idPedido: number;
   idInforme?: number;
   idEstadoInforme: number;
-  idIdiomaPedido: number;
   datosInvestigacion: DatosInvestigacionAnalista;
   opcionesTipoPersona: EntradaTablaMaestra[] | undefined;
   opcionesPais: EntradaTablaMaestra[] | undefined;
@@ -163,7 +161,7 @@ export function construirPayloadInforme({
     nombre: identificacion.nombreEmpresa,
     nombreComercial: identificacion.nombreComercial,
     idPais: obtenerIdPorTexto(opcionesPais, identificacion.pais),
-    operacionesTCMoneda: 0,
+    operacionesTCMoneda: obtenerNumeroDesdeTexto(identificacion.operacionesCambio),
     taxIdType: 0,
     taxNum: identificacion.numeroIdentificacionFiscal,
     direccion: identificacion.direccionPrincipal,
@@ -184,7 +182,7 @@ export function construirPayloadInforme({
     idNotario: aspectosLegales.notario,
     idRegistro: aspectosLegales.registro,
     idPlazo: aspectosLegales.condiciones,
-    idOperacionesCambioDivisas: 0,
+    idOperacionesCambioDivisas: obtenerEnteroDesdeTexto(aspectosLegales.operacionesCambioDivisas),
     capitalInicial: obtenerNumeroDesdeTexto(aspectosLegales.capitalInicial),
     capitalPagado: obtenerNumeroDesdeTexto(aspectosLegales.capitalDesembolsado),
     fechaUltimoIncremento: convertirFechaIso(aspectosLegales.ultimaAmpliacion),
@@ -199,14 +197,14 @@ export function construirPayloadInforme({
     comentariosAspectoLegal: aspectosLegales.comentariosEmpresasRelacionadas,
     idSector: 0,
     idActividad: 0,
-    idIsicCategoria: 0,
-    idIsicClase: 0,
+    idIsicCategoria: obtenerEnteroDesdeTexto(operacionPrincipal.categoriaCiiu),
+    idIsicClase: obtenerEnteroDesdeTexto(operacionPrincipal.claseCiiu),
     actividadPrincipal: operacionPrincipal.actividadPrincipal,
     ventasContado: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasContadoPorcentaje),
     ventasContadoText: operacionPrincipal.ventasContadoDetalle,
     ventasCredito: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasCreditoPorcentaje),
     ventasCreditoText: operacionPrincipal.ventasCreditoDetalle,
-    idVentasCreditoTiempo: 0,
+    idVentasCreditoTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.ventasCreditoSeleccion),
     ventasNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.territorioVentasPorcentaje),
     ventasNacionalesText: operacionPrincipal.territorioVentasDetalle,
     ventasInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasExtranjeroPorcentaje),
@@ -226,7 +224,7 @@ export function construirPayloadInforme({
     informacionGeneral: datosGenerales.informacionGeneral,
     opinionCredito: datosGenerales.opinionCredito,
     flgTieneInformacion: true,
-    balances: datosInvestigacion.balances.map((balance) => ({
+    lstBalances: datosInvestigacion.balances.map((balance) => ({
       ...(esEdicion ? { idInformeBalance: 0 } : {}),
       fechaBalance: convertirFechaIso(balance.fechaInicio ?? balance.fecha),
       fechaHasta: balance.esActual ? null : convertirFechaIso(balance.fechaFin),
@@ -236,7 +234,7 @@ export function construirPayloadInforme({
       tipoBalance: obtenerIdTipoBalance(balance.tipoBalance),
       cuentaBalance: construirCuentaBalance(balance.detalleCuentas),
     })),
-    bancos: datosInvestigacion.bancos.map((banco) => ({
+    lstBancos: datosInvestigacion.bancos.map((banco) => ({
       ...(esEdicion ? { idInformeBanco: 0 } : {}),
       idBanco: banco.idBanco ?? 0,
       numeroCuenta: banco.numeroCuenta,
@@ -244,10 +242,11 @@ export function construirPayloadInforme({
       sectorista: banco.sectoristaJefeCuenta ?? "",
       referenciaBanco: banco.telefono,
     })),
-    companiasRelacionadas: datosInvestigacion.companiasRelacionadas.map((empresa) => ({
+    lstCompaniasRelacionadas: datosInvestigacion.companiasRelacionadas.map((empresa) => ({
+      ...(esEdicion ? { idInformeCompaniaRelacionada: 0 } : {}),
       idCompania: empresa.idCompania ?? 0,
     })),
-    exportacionesImportaciones: [
+    lstExportacionesImportaciones: [
       ...datosInvestigacion.importaciones.map((registro) => ({
         ...(esEdicion ? { idInformeExportacionImportacion: 0 } : {}),
         anio: obtenerEnteroDesdeTexto(registro.anio),
@@ -273,7 +272,7 @@ export function construirPayloadInforme({
         numOperaciones: obtenerEnteroDesdeTexto(registro.operaciones),
       })),
     ],
-    proveedores: datosInvestigacion.proveedores.map((proveedor) => ({
+    lstProveedores: datosInvestigacion.proveedores.map((proveedor) => ({
       ...(esEdicion ? { idInformeProveedor: 0 } : {}),
       idBancoProveedor: 0,
       idTipoPersona: obtenerIdPorTexto(opcionesTipoPersona, proveedor.tipoPersona),
@@ -290,25 +289,11 @@ export function construirPayloadInforme({
       idCalificacion: 0,
       comentarios: [proveedor.contacto, proveedor.telefono].filter(Boolean).join(" - "),
     })),
-    directoriosEjecutivos: datosInvestigacion.directorioEjecutivo.map((ejecutivo) => ({
+    lstDirectoriosEjecutivos: datosInvestigacion.directorioEjecutivo.map((ejecutivo) => ({
       ...(esEdicion ? { idInformeDirectorioEjecutivo: 0 } : {}),
-      idTipoPersona: obtenerIdPorTexto(opcionesTipoPersona, ejecutivo.tipoPersona),
-      nombreCompleto: ejecutivo.nombreCompleto,
-      idPais: obtenerIdPorTexto(opcionesPais, ejecutivo.pais),
-      direccion: "",
-      ubigeo: "",
-      codigoPostal: "",
-      idTipoDocumento: 0,
-      numeroDocumento: "",
-      taxIdType: 0,
-      taxNum: "",
-      idNacionalidad: 0,
-      fechaNacimiento: null,
-      idEstadoCivil: 0,
-      idProfesion: 0,
-      referencias: ejecutivo.descripcionBusqueda,
-      cargos: ejecutivo.cargo,
-      formularioVinculado: ejecutivo.vinculadoDesde,
+      idDirectorioEjecutivo: ejecutivo.idDirectorioEjecutivo ?? ejecutivo.id,
+      idCargo: 0,
+      vinculadoDesde: convertirFechaIso(ejecutivo.vinculadoDesde),
       companiaAnterior: ejecutivo.companiaAnterior,
       participacion: obtenerNumeroDesdeTexto(ejecutivo.porcentaje),
       orden: obtenerEnteroDesdeTexto(ejecutivo.orden),
@@ -316,7 +301,7 @@ export function construirPayloadInforme({
       apareceImpresoLista: ejecutivo.lista,
       imprimeDatosEjecutivos: ejecutivo.detalleEjecutivo,
     })),
-    locales: datosInvestigacion.locales.map((local) => ({
+    lstLocales: datosInvestigacion.locales.map((local) => ({
       ...(esEdicion ? { idInformeLocal: 0 } : {}),
       idTipoLocal: 0,
       comentario: local.comentario,
@@ -327,15 +312,5 @@ export function construirPayloadInforme({
         idTipoArchivo: obtenerIdTipoArchivo(imagen.tipo ?? local.imagenTipo),
       })),
     })),
-    pedidos: [
-      {
-        ...(esEdicion ? { idInformePedido: 0 } : {}),
-        idPedido,
-        idIdioma: idIdiomaPedido,
-        documentoWord: "",
-        documentoExcel: "",
-        idEstado: 0,
-      },
-    ],
   }) as InformeCrearRequest;
 }

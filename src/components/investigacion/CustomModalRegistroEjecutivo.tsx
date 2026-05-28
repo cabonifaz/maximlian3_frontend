@@ -48,6 +48,7 @@ export function CustomModalRegistroEjecutivoAnalista({
     const esParteDirectorio = formData.get("esParteDirectorio") === "si";
 
     onGuardar({
+      idDirectorioEjecutivo: registroInicial?.idDirectorioEjecutivo ?? personaSeleccionada?.idDirectorioEjecutivo ?? personaSeleccionada?.id,
       ejecutivo: ejecutivo.length > 13 ? `${ejecutivo.slice(0, 13)}...` : ejecutivo,
       cargo: cargo.length > 10 ? `${cargo.slice(0, 10)}...` : cargo,
       porcentaje,
