@@ -1194,6 +1194,19 @@ function PantallaInvestigacionAnalista({
     () => opcionesPais?.find((opcion) => opcion.num1 === idPaisInicial)?.string1 ?? "",
     [idPaisInicial, opcionesPais],
   );
+  const paisPedido = useMemo(
+    () => (
+      datosPedidoNavegacion?.pais
+      || registroAsignacionPedido?.pais
+      || nombrePaisInforme
+      || ""
+    ).trim(),
+    [datosPedidoNavegacion?.pais, nombrePaisInforme, registroAsignacionPedido?.pais],
+  );
+  const opcionesCiudadIdentificacion = useMemo(() => {
+    if (!idPaisSeleccionado) return opcionesCiudad;
+    return opcionesCiudad?.filter((opcion) => opcion.num2 === idPaisSeleccionado);
+  }, [idPaisSeleccionado, opcionesCiudad]);
   const resumenEncabezado = useMemo(
     () => ({
       ...datosInvestigacion.resumen,
@@ -1238,6 +1251,22 @@ function PantallaInvestigacionAnalista({
   }, [idPaisInicial, idPaisSeleccionado]);
 
   useEffect(() => {
+    if (idPaisInicial || idPaisSeleccionado != null || !paisPedido || !opcionesPais) return;
+
+    const opcionPaisPedido = obtenerOpcionTablaMaestraPorTexto(opcionesPais, paisPedido);
+    if (!opcionPaisPedido?.num1) return;
+
+    setIdPaisSeleccionado(opcionPaisPedido.num1);
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      identificacion: {
+        ...anterior.identificacion,
+        pais: opcionPaisPedido.string1 ?? paisPedido,
+      },
+    }));
+  }, [idPaisInicial, idPaisSeleccionado, opcionesPais, paisPedido]);
+
+  useEffect(() => {
     if (!idTipoPersonaInicial || datosInvestigacion.identificacion.tipoPersona || !opcionesTipoPersona) return;
     const etiqueta = opcionesTipoPersona.find((opcion) => opcion.num1 === idTipoPersonaInicial)?.string1 ?? "";
     if (!etiqueta) return;
@@ -1252,8 +1281,10 @@ function PantallaInvestigacionAnalista({
   }, [datosInvestigacion.identificacion.tipoPersona, idTipoPersonaInicial, opcionesTipoPersona]);
 
   useEffect(() => {
-    if (!idPaisInicial || datosInvestigacion.identificacion.pais || !opcionesPais) return;
-    const etiqueta = opcionesPais.find((opcion) => opcion.num1 === idPaisInicial)?.string1 ?? "";
+    if (datosInvestigacion.identificacion.pais || !opcionesPais) return;
+    const etiqueta = idPaisInicial
+      ? opcionesPais.find((opcion) => opcion.num1 === idPaisInicial)?.string1 ?? ""
+      : paisPedido;
     if (!etiqueta) return;
 
     setDatosInvestigacion((anterior) => ({
@@ -1263,7 +1294,7 @@ function PantallaInvestigacionAnalista({
         pais: etiqueta,
       },
     }));
-  }, [datosInvestigacion.identificacion.pais, idPaisInicial, opcionesPais]);
+  }, [datosInvestigacion.identificacion.pais, idPaisInicial, opcionesPais, paisPedido]);
 
   useEffect(() => {
     if (!idTipoRegTributarioInicial || datosInvestigacion.identificacion.tipoIdentificacionFiscal || !opcionesTipoRegTributario) return;
@@ -2258,11 +2289,25 @@ function PantallaInvestigacionAnalista({
         onChange={(valor) => {
           setIdPaisSeleccionado(valor);
           const etiqueta = opcionesPais?.find((opcion) => opcion.num1 === valor)?.string1 ?? "";
-          actualizarIdentificacion("pais", etiqueta);
+          setDatosInvestigacion((anterior) => ({
+            ...anterior,
+            identificacion: {
+              ...anterior.identificacion,
+              pais: etiqueta,
+              ciudadEstadoProvincia: "",
+            },
+          }));
         }}
         onClear={() => {
           setIdPaisSeleccionado(undefined);
-          actualizarIdentificacion("pais", "");
+          setDatosInvestigacion((anterior) => ({
+            ...anterior,
+            identificacion: {
+              ...anterior.identificacion,
+              pais: "",
+              ciudadEstadoProvincia: "",
+            },
+          }));
         }}
         optional
         mostrarTextoOpcionalEnLabel={false}
@@ -2284,9 +2329,11 @@ function PantallaInvestigacionAnalista({
         etiqueta="Ciudad/Estado/Provincia"
         valor={datosInvestigacion.identificacion.ciudadEstadoProvincia}
         soloLectura={esSoloLectura}
-        opcionesTablaMaestra={opcionesCiudad}
+        opcionesTablaMaestra={opcionesCiudadIdentificacion}
         idMaestro={TablaMaestraId.CIUDAD}
         permiteAltaNueva
+        num2AltaNueva={idPaisSeleccionado ?? null}
+        conservarOpcionesLocales={false}
         marcador="Seleccione o agregue ciudad/estado/provincia"
         adicionalEtiqueta={obtenerAyudaTraduccion("identificacion.ciudadEstadoProvincia")}
         onChange={(valor) => actualizarIdentificacion("ciudadEstadoProvincia", valor)}

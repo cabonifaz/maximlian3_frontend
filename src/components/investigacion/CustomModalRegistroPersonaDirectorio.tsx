@@ -1,12 +1,14 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { BadgeCheck, FileText, MapPin, UserRound, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { servicioDirectorioEjecutivo } from "@maximilian/services/directorioEjecutivo.service";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { DirectorioEjecutivoGuardarRequest } from "@maximilian/shared/types/directorio-ejecutivo.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalRegistroPersonaDirectorioAnalista {
@@ -16,46 +18,17 @@ interface PropsCustomModalRegistroPersonaDirectorioAnalista {
   onGuardar: (registro: RegistroPersonaDirectorioAnalista) => void;
 }
 
-const opcionesTipoPersona = ["Natural", "Jurídica"];
-const opcionesPais = ["México", "Perú", "Colombia", "Estados Unidos", "Chile"];
-const opcionesNacionalidad = ["Mexicana", "Peruana", "Colombiana", "Estadounidense", "Chilena"];
-const opcionesDocumento = ["DNI", "Pasaporte", "RFC", "NIT"];
-const opcionesIdFiscal = ["RUC", "RFC", "NIT", "Tax ID"];
-const opcionesEstadoCivil = ["Soltero/a", "Casado/a", "Divorciado/a", "Viudo/a"];
-const opcionesProfesion = ["Seleccione profesión", "Administrador", "Abogado", "Contador", "Ingeniero"];
-
-function crearOpcion(num1: number, string1: string): EntradaTablaMaestra {
-  return {
-    idEmpresa: 0,
-    idTablaMaestra: null,
-    idMaestro: 0,
-    descripcion: "",
-    num1,
-    num2: null,
-    num3: null,
-    string1,
-    string2: null,
-    string3: null,
-    date1: null,
-    date2: null,
-    date3: null,
-  };
-}
-
-const opcionesTipoPersonaSelector = opcionesTipoPersona.map((opcion, indice) => crearOpcion(indice + 1, opcion));
-const opcionesPaisSelector = opcionesPais.map((opcion, indice) => crearOpcion(indice + 1, opcion));
-const opcionesNacionalidadSelector = opcionesNacionalidad.map((opcion, indice) => crearOpcion(indice + 1, opcion));
-const opcionesDocumentoSelector = opcionesDocumento.map((opcion, indice) => crearOpcion(indice + 1, opcion));
-const opcionesIdFiscalSelector = opcionesIdFiscal.map((opcion, indice) => crearOpcion(indice + 1, opcion));
-const opcionesEstadoCivilSelector = opcionesEstadoCivil.map((opcion, indice) => crearOpcion(indice + 1, opcion));
-const opcionesProfesionSelector = opcionesProfesion.slice(1).map((opcion, indice) => crearOpcion(indice + 1, opcion));
+const ID_MAESTRO_ESTADO_CIVIL = 55;
+const ID_MAESTRO_PROFESION = 56;
+const ID_MAESTRO_TIPO_DOCUMENTO = 54;
 
 function obtenerTextoFormulario(formData: FormData, nombre: string) {
   return String(formData.get(nombre) ?? "").trim();
 }
 
-function obtenerIdPorTexto(opciones: EntradaTablaMaestra[], texto: string) {
-  return opciones.find((opcion) => opcion.string1 === texto)?.num1 ?? 0;
+function obtenerIdFormulario(formData: FormData, nombre: string) {
+  const valor = Number(formData.get(nombre));
+  return Number.isFinite(valor) ? valor : 0;
 }
 
 function normalizarFechaApi(fecha: string) {
@@ -68,43 +41,100 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
   onCerrar,
   onGuardar,
 }: PropsCustomModalRegistroPersonaDirectorioAnalista) {
+  const { data: opcionesTipoPersona } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesPais } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.PAIS],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesTipoDocumento } = useQuery({
+    queryKey: ["masterTable", ID_MAESTRO_TIPO_DOCUMENTO],
+    queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_TIPO_DOCUMENTO),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesTipoIdFiscal } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_REG_TRIBUTARIO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_REG_TRIBUTARIO),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesEstadoCivil } = useQuery({
+    queryKey: ["masterTable", ID_MAESTRO_ESTADO_CIVIL],
+    queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_ESTADO_CIVIL),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesProfesion } = useQuery({
+    queryKey: ["masterTable", ID_MAESTRO_PROFESION],
+    queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_PROFESION),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
+
+  const opcionesNacionalidad = useMemo(
+    () => opcionesPais?.map((opcion) => ({
+      ...opcion,
+      string1: opcion.string3 || opcion.string1,
+    })),
+    [opcionesPais],
+  );
+
   const crearRegistroMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const registro: RegistroPersonaDirectorioAnalista = {
         id: registroInicial?.id ?? 0,
         idDirectorioEjecutivo: registroInicial?.idDirectorioEjecutivo,
+        idTipoPersona: obtenerIdFormulario(formData, "idTipoPersona"),
         tipoPersona: obtenerTextoFormulario(formData, "tipoPersona"),
         nombres: obtenerTextoFormulario(formData, "nombres"),
+        idPais: obtenerIdFormulario(formData, "idPais"),
         pais: obtenerTextoFormulario(formData, "pais"),
         direccionPrincipal: obtenerTextoFormulario(formData, "direccionPrincipal"),
         ciudadProvinciaEstado: obtenerTextoFormulario(formData, "ciudadProvinciaEstado"),
         codigoPostal: obtenerTextoFormulario(formData, "codigoPostal"),
+        idNacionalidad: obtenerIdFormulario(formData, "idNacionalidad"),
         nacionalidad: obtenerTextoFormulario(formData, "nacionalidad"),
+        idTipoDocumento: obtenerIdFormulario(formData, "idTipoDocumento"),
         tipoDocumentoIdentidad: obtenerTextoFormulario(formData, "tipoDocumentoIdentidad"),
         numeroDocumentoIdentidad: obtenerTextoFormulario(formData, "numeroDocumentoIdentidad"),
+        taxIdType: obtenerIdFormulario(formData, "taxIdType"),
         tipoIdFiscal: obtenerTextoFormulario(formData, "tipoIdFiscal"),
         numeroIdFiscal: obtenerTextoFormulario(formData, "numeroIdFiscal"),
         fechaNacimiento: obtenerTextoFormulario(formData, "fechaNacimiento"),
+        idEstadoCivil: obtenerIdFormulario(formData, "idEstadoCivil"),
         estadoCivil: obtenerTextoFormulario(formData, "estadoCivil"),
+        idProfesion: obtenerIdFormulario(formData, "idProfesion"),
         profesion: obtenerTextoFormulario(formData, "profesion"),
         referenciaAdicional: obtenerTextoFormulario(formData, "referenciaAdicional"),
       };
 
       const payload: DirectorioEjecutivoGuardarRequest = {
-        idTipoPersona: obtenerIdPorTexto(opcionesTipoPersonaSelector, registro.tipoPersona),
+        idTipoPersona: registro.idTipoPersona ?? 0,
         nombreCompleto: registro.nombres,
-        idPais: obtenerIdPorTexto(opcionesPaisSelector, registro.pais),
+        idPais: registro.idPais ?? 0,
         direccion: registro.direccionPrincipal,
         ubigeo: registro.ciudadProvinciaEstado,
         codigoPostal: registro.codigoPostal,
-        idTipoDocumento: obtenerIdPorTexto(opcionesDocumentoSelector, registro.tipoDocumentoIdentidad),
+        idTipoDocumento: registro.idTipoDocumento ?? 0,
         numeroDocumento: registro.numeroDocumentoIdentidad,
-        taxIdType: obtenerIdPorTexto(opcionesIdFiscalSelector, registro.tipoIdFiscal),
+        taxIdType: registro.taxIdType ?? 0,
         taxNum: registro.numeroIdFiscal,
-        idNacionalidad: obtenerIdPorTexto(opcionesNacionalidadSelector, registro.nacionalidad),
+        idNacionalidad: registro.idNacionalidad ?? 0,
         fechaNacimiento: normalizarFechaApi(registro.fechaNacimiento),
-        idEstadoCivil: obtenerIdPorTexto(opcionesEstadoCivilSelector, registro.estadoCivil),
-        idProfesion: obtenerIdPorTexto(opcionesProfesionSelector, registro.profesion),
+        idEstadoCivil: registro.idEstadoCivil ?? 0,
+        idProfesion: registro.idProfesion ?? 0,
         referencias: registro.referenciaAdicional,
       };
 
@@ -137,19 +167,24 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
 
   if (!estaAbierto) return null;
 
+  const tituloModal = registroInicial ? "Editar Empresa o Persona" : "Agregar Empresa o Persona";
+
   return (
-    <div className="fixed inset-0 z-[98] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[22px] bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-slate-100 px-6 py-5">
-          <div>
-            <h2 className="text-[18px] font-bold text-slate-800">Agregar Empresa o Persona</h2>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#9aa8bd]">
-              Registro de terceros
-            </p>
+    <div className="fixed inset-0 z-[98] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+      <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[30px] bg-white shadow-[0_40px_100px_rgba(15,23,42,0.28)]">
+        <div className="border-b border-slate-100 bg-[radial-gradient(circle_at_top_left,#f8fafc,white_55%)] px-6 py-6 md:px-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">Registro de terceros</p>
+              <h2 className="mt-2 text-2xl font-bold text-slate-900">{tituloModal}</h2>
+              <p className="mt-2 max-w-2xl text-sm text-slate-500">
+                Registre los datos base de la persona o empresa para reutilizarlos en el directorio ejecutivo.
+              </p>
+            </div>
+            <CustomButton variant="ghost" size="icon" onClick={onCerrar} disabled={crearRegistroMutation.isPending}>
+              <X size={20} className="text-[#8ea0c0]" />
+            </CustomButton>
           </div>
-          <CustomButton variant="ghost" size="icon" onClick={onCerrar}>
-            <X size={18} className="text-[#c2cad8]" />
-          </CustomButton>
         </div>
 
         <form
@@ -159,42 +194,57 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
             crearRegistroMutation.mutate(new FormData(event.currentTarget));
           }}
         >
-          <div className="space-y-4 overflow-y-auto px-6 py-5">
-            <div className="grid gap-4 md:grid-cols-[0.9fr_2fr_1fr]">
-              <CampoSelector nombre="tipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersonaSelector} valorDefecto={registroInicial?.tipoPersona ?? "Natural"} />
-              <CampoInput nombre="nombres" etiqueta="Nombres" marcador="Ingrese nombres completos" valorInicial={registroInicial?.nombres} />
-              <CampoSelector nombre="pais" etiqueta="País" opciones={opcionesPaisSelector} valorDefecto={registroInicial?.pais} marcadorVacio="Seleccione un país" />
-            </div>
+          <div className="space-y-5 overflow-y-auto bg-slate-50/35 px-6 py-6 md:px-8">
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <EncabezadoSeccion icono={<UserRound size={18} />} titulo="Identificacion" subtitulo="Datos principales del registro" />
+              <div className="grid gap-4 md:grid-cols-[0.9fr_2fr_1fr]">
+                <CampoSelector nombre="tipoPersona" nombreId="idTipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersona} valorDefecto={registroInicial?.tipoPersona} valorDefectoId={registroInicial?.idTipoPersona} marcadorVacio="Seleccione tipo persona" />
+                <CampoInput nombre="nombres" etiqueta="Nombre Completo / Razón Social" marcador="Ingrese nombres completos" valorInicial={registroInicial?.nombres} />
+                <CampoInput nombre="fechaNacimiento" etiqueta="Fecha de Nacimiento" marcador="mm/dd/yyyy" valorInicial={registroInicial?.fechaNacimiento} tipo="date" />
+              </div>
+            </section>
 
-            <div className="grid gap-4 md:grid-cols-[1.35fr_1fr_0.75fr_1fr]">
-              <CampoInput nombre="direccionPrincipal" etiqueta="Dirección Principal" marcador="Ingrese dirección" valorInicial={registroInicial?.direccionPrincipal} />
-              <CampoInput nombre="ciudadProvinciaEstado" etiqueta="Ciudad / Provincia / Estado" marcador="Ingrese ciudad" valorInicial={registroInicial?.ciudadProvinciaEstado} />
-              <CampoInput nombre="codigoPostal" etiqueta="Código Postal" marcador="Ingrese código postal" valorInicial={registroInicial?.codigoPostal} />
-              <CampoSelector nombre="nacionalidad" etiqueta="Nacionalidad" opciones={opcionesNacionalidadSelector} valorDefecto={registroInicial?.nacionalidad} marcadorVacio="Seleccione nacionalidad" />
-            </div>
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <EncabezadoSeccion icono={<MapPin size={18} />} titulo="Ubicacion" subtitulo="Pais, nacionalidad y direccion" />
+              <div className="grid gap-4 md:grid-cols-2">
+                <CampoSelector nombre="pais" nombreId="idPais" etiqueta="País" opciones={opcionesPais} valorDefecto={registroInicial?.pais} valorDefectoId={registroInicial?.idPais} marcadorVacio="Seleccione un país" />
+                <CampoSelector nombre="nacionalidad" nombreId="idNacionalidad" etiqueta="Nacionalidad" opciones={opcionesNacionalidad} valorDefecto={registroInicial?.nacionalidad} valorDefectoId={registroInicial?.idNacionalidad} marcadorVacio="Seleccione nacionalidad" />
+              </div>
+              <div className="mt-4 grid gap-4 md:grid-cols-[1.4fr_1fr_0.75fr]">
+                <CampoInput nombre="direccionPrincipal" etiqueta="Dirección Principal" marcador="Ingrese dirección" valorInicial={registroInicial?.direccionPrincipal} />
+                <CampoInput nombre="ciudadProvinciaEstado" etiqueta="Ciudad / Provincia / Estado" marcador="Ingrese ciudad" valorInicial={registroInicial?.ciudadProvinciaEstado} />
+                <CampoInput nombre="codigoPostal" etiqueta="Código Postal" marcador="Ingrese código postal" valorInicial={registroInicial?.codigoPostal} />
+              </div>
+            </section>
 
-            <div className="grid gap-4 md:grid-cols-[0.9fr_1fr_1fr_1fr]">
-              <CampoSelector nombre="tipoDocumentoIdentidad" etiqueta="Tipo Doc. Identidad" opciones={opcionesDocumentoSelector} valorDefecto={registroInicial?.tipoDocumentoIdentidad ?? "DNI"} />
-              <CampoInput nombre="numeroDocumentoIdentidad" etiqueta="Nro. Doc. Identidad" marcador="Ingrese nro. documento" valorInicial={registroInicial?.numeroDocumentoIdentidad} />
-              <CampoSelector nombre="tipoIdFiscal" etiqueta="Tipo de ID Fiscal" opciones={opcionesIdFiscalSelector} valorDefecto={registroInicial?.tipoIdFiscal ?? "RUC"} />
-              <CampoInput nombre="numeroIdFiscal" etiqueta="Nro ID Fiscal" marcador="Ingrese id fiscal" valorInicial={registroInicial?.numeroIdFiscal} />
-            </div>
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <EncabezadoSeccion icono={<FileText size={18} />} titulo="Documentos" subtitulo="Identificacion personal y fiscal" />
+              <div className="grid gap-4 md:grid-cols-[0.9fr_1fr_1fr_1fr]">
+                <CampoSelector nombre="tipoDocumentoIdentidad" nombreId="idTipoDocumento" etiqueta="Tipo Doc. Identidad" opciones={opcionesTipoDocumento} valorDefecto={registroInicial?.tipoDocumentoIdentidad} valorDefectoId={registroInicial?.idTipoDocumento} marcadorVacio="Seleccione tipo documento" />
+                <CampoInput nombre="numeroDocumentoIdentidad" etiqueta="Nro. Doc. Identidad" marcador="Ingrese nro. documento" valorInicial={registroInicial?.numeroDocumentoIdentidad} />
+                <CampoSelector nombre="tipoIdFiscal" nombreId="taxIdType" etiqueta="Tipo de ID Fiscal" opciones={opcionesTipoIdFiscal} valorDefecto={registroInicial?.tipoIdFiscal} valorDefectoId={registroInicial?.taxIdType} marcadorVacio="Seleccione tipo fiscal" />
+                <CampoInput nombre="numeroIdFiscal" etiqueta="Nro ID Fiscal" marcador="Ingrese id fiscal" valorInicial={registroInicial?.numeroIdFiscal} />
+              </div>
+            </section>
 
-            <div className="grid gap-4 md:grid-cols-[1fr_1fr_1fr]">
-              <CampoInput nombre="fechaNacimiento" etiqueta="Fecha de Nacimiento" marcador="mm/dd/yyyy" valorInicial={registroInicial?.fechaNacimiento} tipo="date" />
-              <CampoSelector nombre="estadoCivil" etiqueta="Estado Civil" opciones={opcionesEstadoCivilSelector} valorDefecto={registroInicial?.estadoCivil ?? "Soltero/a"} />
-              <CampoSelector nombre="profesion" etiqueta="Profesión" opciones={opcionesProfesionSelector} valorDefecto={registroInicial?.profesion} marcadorVacio="Seleccione profesión" permiteAltaNueva />
-            </div>
-
-            <CampoArea
-              nombre="referenciaAdicional"
-              etiqueta="Referencia Adicional"
-              marcador="Ingrese notas o referencias adicionales pertinentes para este registro..."
-              valorInicial={registroInicial?.referenciaAdicional}
-            />
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <EncabezadoSeccion icono={<BadgeCheck size={18} />} titulo="Perfil" subtitulo="Informacion complementaria" />
+              <div className="grid gap-4 md:grid-cols-2">
+                <CampoSelector nombre="estadoCivil" nombreId="idEstadoCivil" etiqueta="Estado Civil" opciones={opcionesEstadoCivil} valorDefecto={registroInicial?.estadoCivil} valorDefectoId={registroInicial?.idEstadoCivil} marcadorVacio="Seleccione estado civil" />
+                <CampoSelector nombre="profesion" nombreId="idProfesion" etiqueta="Profesión" opciones={opcionesProfesion} valorDefecto={registroInicial?.profesion} valorDefectoId={registroInicial?.idProfesion} marcadorVacio="Seleccione profesión" />
+              </div>
+              <div className="mt-4">
+                <CampoArea
+                  nombre="referenciaAdicional"
+                  etiqueta="Referencia Adicional"
+                  marcador="Ingrese notas o referencias adicionales pertinentes para este registro..."
+                  valorInicial={registroInicial?.referenciaAdicional}
+                />
+              </div>
+            </section>
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
+          <div className="flex justify-end gap-3 border-t border-gray-100 bg-white px-6 py-5 md:px-8">
             <CustomButton type="button" variant="secondary" size="sm" onClick={onCerrar} disabled={crearRegistroMutation.isPending}>
               Cancelar
             </CustomButton>
@@ -235,50 +285,74 @@ function CampoInput({
   );
 }
 
+function EncabezadoSeccion({
+  icono,
+  titulo,
+  subtitulo,
+}: {
+  icono: React.ReactNode;
+  titulo: string;
+  subtitulo: string;
+}) {
+  return (
+    <div className="mb-4 flex items-center gap-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
+        {icono}
+      </div>
+      <div>
+        <p className="text-sm font-bold text-slate-800">{titulo}</p>
+        <p className="text-xs text-slate-400">{subtitulo}</p>
+      </div>
+    </div>
+  );
+}
+
 function CampoSelector({
   nombre,
+  nombreId,
   etiqueta,
   opciones,
   valorDefecto,
+  valorDefectoId,
   marcadorVacio = "Seleccione",
-  permiteAltaNueva = false,
 }: {
   nombre: string;
+  nombreId: string;
   etiqueta: string;
-  opciones: EntradaTablaMaestra[];
+  opciones: EntradaTablaMaestra[] | undefined;
   valorDefecto?: string;
+  valorDefectoId?: number;
   marcadorVacio?: string;
-  permiteAltaNueva?: boolean;
 }) {
-  const [valorSeleccionado, setValorSeleccionado] = useState(valorDefecto ?? "");
-  const [opcionesLocales, setOpcionesLocales] = useState(opciones);
+  const [idSeleccionado, setIdSeleccionado] = useState<number | undefined>(valorDefectoId);
 
-  const manejarAltaNueva = (terminoBusqueda: string) => {
-    setOpcionesLocales((anteriores) => {
-      if (anteriores.some((opcion) => opcion.string1 === terminoBusqueda)) {
-        return anteriores;
-      }
-      const siguienteId = anteriores.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
-      return [...anteriores, crearOpcion(siguienteId, terminoBusqueda)];
-    });
-    setValorSeleccionado(terminoBusqueda);
-  };
+  useEffect(() => {
+    setIdSeleccionado(valorDefectoId);
+  }, [valorDefectoId]);
+
+  useEffect(() => {
+    if (idSeleccionado != null || !valorDefecto || !opciones?.length) return;
+    const opcionPorTexto = opciones.find((opcion) => opcion.string1 === valorDefecto);
+    setIdSeleccionado(opcionPorTexto?.num1 ?? undefined);
+  }, [idSeleccionado, opciones, valorDefecto]);
+
+  const textoSeleccionado = opciones?.find((opcion) => opcion.num1 === idSeleccionado)?.string1 ?? valorDefecto ?? "";
 
   return (
     <div className="space-y-2">
       <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8ea0c0]">{etiqueta}</CustomLabel>
       <CustomSelectorBuscable
-        options={opcionesLocales}
-        value={opcionesLocales.find((opcion) => opcion.string1 === valorSeleccionado)?.num1 ?? undefined}
-        displayValue={valorSeleccionado}
-        onChange={(valor) => setValorSeleccionado(opcionesLocales.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
-        onClear={() => setValorSeleccionado("")}
+        options={opciones}
+        value={idSeleccionado}
+        displayValue={textoSeleccionado}
+        onChange={setIdSeleccionado}
+        onClear={() => setIdSeleccionado(undefined)}
         optional
         mostrarTextoOpcionalEnLabel={false}
         placeholder={marcadorVacio}
-        onAddNew={permiteAltaNueva ? manejarAltaNueva : undefined}
       />
-      <input type="hidden" name={nombre} value={valorSeleccionado} />
+      <input type="hidden" name={nombre} value={textoSeleccionado} />
+      <input type="hidden" name={nombreId} value={idSeleccionado ?? ""} />
     </div>
   );
 }

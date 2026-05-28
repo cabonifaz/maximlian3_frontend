@@ -106,6 +106,8 @@ function normalizarListadoDirectorio(resultado: unknown): DirectorioEjecutivoLis
     registro.LstDirectorioEjecutivo,
     registro.lstDirectorioEjecutivos,
     registro.LstDirectorioEjecutivos,
+    registro.lstDirectoriosEjecutivos,
+    registro.LstDirectoriosEjecutivos,
     registro.directorioEjecutivo,
     registro.DirectorioEjecutivo,
     registro.directoriosEjecutivos,

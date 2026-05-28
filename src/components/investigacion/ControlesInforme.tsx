@@ -161,14 +161,14 @@ function sanitizarNumeroDosDecimales(valor: string) {
   return partes.length > 1 ? `${entero}.${decimal.slice(0, 2)}` : entero;
 }
 
-function crearOpcionTablaMaestra(num1: number, string1: string): EntradaTablaMaestra {
+function crearOpcionTablaMaestra(num1: number, string1: string, num2: number | null = null): EntradaTablaMaestra {
   return {
     idEmpresa: 0,
     idTablaMaestra: null,
     idMaestro: 0,
     descripcion: "",
     num1,
-    num2: null,
+    num2,
     num3: null,
     string1,
     string2: null,
@@ -194,6 +194,8 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   onChange,
   adicionalEtiqueta,
   permiteAltaNueva = false,
+  num2AltaNueva = null,
+  conservarOpcionesLocales = true,
 }: {
   etiqueta: string;
   valor: string;
@@ -205,6 +207,8 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   onChange?: (valor: string) => void;
   adicionalEtiqueta?: ReactNode;
   permiteAltaNueva?: boolean;
+  num2AltaNueva?: number | null;
+  conservarOpcionesLocales?: boolean;
 }) {
   const queryClient = useQueryClient();
   const [opciones, setOpciones] = useState<EntradaTablaMaestra[]>(() =>
@@ -229,7 +233,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
         descripcion: obtenerDescripcionTablaMaestra(idMaestro),
         string1: termino,
         num1: obtenerSiguienteNumTablaMaestra(opciones),
-        num2: null,
+        num2: num2AltaNueva,
         num3: null,
         string2: null,
         string3: null,
@@ -248,6 +252,10 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
 
       const terminoNormalizado = normalizarTexto(termino);
       const opcion =
+        opcionesActualizadas.find((opcionActual) =>
+          normalizarTexto(opcionActual.string1 ?? "") === terminoNormalizado
+          && (num2AltaNueva == null || opcionActual.num2 === num2AltaNueva)
+        ) ??
         opcionesActualizadas.find((opcionActual) => normalizarTexto(opcionActual.string1 ?? "") === terminoNormalizado) ??
         opcionesActualizadas.find((opcionActual) => normalizarTexto(opcionActual.descripcion ?? "") === terminoNormalizado);
 
@@ -263,7 +271,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
     if (!opcionesTablaMaestra) return;
 
     setOpciones((anteriores) => {
-      if (!permiteAltaNueva) {
+      if (!permiteAltaNueva || !conservarOpcionesLocales) {
         return opcionesTablaMaestra;
       }
 
@@ -273,10 +281,10 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
 
       return [...opcionesTablaMaestra, ...opcionesExtras];
     });
-  }, [opcionesTablaMaestra, permiteAltaNueva]);
+  }, [conservarOpcionesLocales, opcionesTablaMaestra, permiteAltaNueva]);
 
   useEffect(() => {
-    if (!permiteAltaNueva) return;
+    if (!permiteAltaNueva || !conservarOpcionesLocales) return;
 
     const valorLimpio = valor.trim();
     if (!valorLimpio) return;
@@ -289,7 +297,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
       const siguienteId = anteriores.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
       return [...anteriores, crearOpcionTablaMaestra(siguienteId, valorLimpio)];
     });
-  }, [permiteAltaNueva, valor]);
+  }, [conservarOpcionesLocales, permiteAltaNueva, valor]);
 
   const opcionesDisponibles = opciones;
 
@@ -313,7 +321,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
           return anteriores;
         }
         const siguienteId = anteriores.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
-        return [...anteriores, crearOpcionTablaMaestra(siguienteId, terminoLimpio)];
+        return [...anteriores, crearOpcionTablaMaestra(siguienteId, terminoLimpio, num2AltaNueva)];
       });
       onChange?.(terminoLimpio);
       return;
@@ -334,7 +342,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
           }
 
           const siguienteId = respuesta?.idTablaMaestra ?? (anteriores.reduce((maximo, opcionAnterior) => Math.max(maximo, opcionAnterior.num1 ?? 0), 0) + 1);
-          return [...anteriores, crearOpcionTablaMaestra(siguienteId, termino)];
+          return [...anteriores, crearOpcionTablaMaestra(siguienteId, termino, num2AltaNueva)];
         });
       }
       onChange?.(opcion?.string1?.trim() || opcion?.descripcion?.trim() || termino);
