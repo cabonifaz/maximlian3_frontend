@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { servicioDirectorioEjecutivo } from "@maximilian/services/directorioEjecutivo.service";
 import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalBuscarEjecutivoAnalista {
@@ -37,9 +39,21 @@ function crearOpcion(num1: number, string1: string) {
 const opcionesTipoPersonaSelector = opcionesTipoPersona.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 const opcionesPaisSelector = opcionesPais.map((opcion, indice) => crearOpcion(indice + 1, opcion));
 
+function obtenerTextoPorId(opciones: ReturnType<typeof crearOpcion>[], id?: number) {
+  return opciones.find((opcion) => opcion.num1 === id)?.string1 ?? "";
+}
+
+function completarEtiquetasRegistro(registro: RegistroPersonaDirectorioAnalista): RegistroPersonaDirectorioAnalista {
+  return {
+    ...registro,
+    tipoPersona: registro.tipoPersona || obtenerTextoPorId(opcionesTipoPersonaSelector, registro.idTipoPersona),
+    pais: registro.pais || obtenerTextoPorId(opcionesPaisSelector, registro.idPais),
+  };
+}
+
 export function CustomModalBuscarEjecutivoAnalista({
   estaAbierto,
-  registros,
+  registros: _registros,
   onCerrar,
   onSeleccionar,
   onAgregarEmpresaPersona,
@@ -49,10 +63,30 @@ export function CustomModalBuscarEjecutivoAnalista({
   const [descripcion, setDescripcion] = useState("");
   const [busquedaActiva, setBusquedaActiva] = useState("");
 
+  const {
+    data: respuestaDirectorio,
+    isFetching,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["directorio-ejecutivo", "buscar", busquedaActiva],
+    queryFn: () => servicioDirectorioEjecutivo.listar({
+      busqueda: busquedaActiva.trim() || undefined,
+      numPag: 1,
+    }),
+    enabled: estaAbierto,
+    retry: false,
+  });
+
+  const registrosFuente = useMemo(
+    () => (respuestaDirectorio?.registros ?? []).map(completarEtiquetasRegistro),
+    [respuestaDirectorio?.registros],
+  );
+
   const resultados = useMemo(() => {
     const termino = busquedaActiva.trim().toLowerCase();
 
-    return registros.filter((registro) => {
+    return registrosFuente.filter((registro) => {
       const coincideTipo = !tipoPersona || registro.tipoPersona === tipoPersona;
       const coincidePais = !pais || registro.pais === pais;
       const coincideDescripcion =
@@ -63,7 +97,7 @@ export function CustomModalBuscarEjecutivoAnalista({
 
       return coincideTipo && coincidePais && coincideDescripcion;
     });
-  }, [busquedaActiva, pais, registros, tipoPersona]);
+  }, [busquedaActiva, pais, registrosFuente, tipoPersona]);
 
   if (!estaAbierto) return null;
 
@@ -123,6 +157,8 @@ export function CustomModalBuscarEjecutivoAnalista({
                 type="button"
                 size="sm"
                 className="h-11 rounded-lg px-5"
+                loading={isFetching}
+                loadingText="Buscando..."
                 onClick={() => setBusquedaActiva(descripcion)}
               >
                 <Search size={14} />
@@ -141,7 +177,14 @@ export function CustomModalBuscarEjecutivoAnalista({
 
           <div className="overflow-hidden rounded-xl border border-[#e6eef7]">
             <div className="max-h-[340px] overflow-y-auto bg-white">
-              {resultados.length === 0 ? (
+              {isError ? (
+                <div className="flex h-[190px] flex-col items-center justify-center gap-3 text-sm text-red-500">
+                  No se pudo cargar el directorio ejecutivo.
+                  <CustomButton type="button" variant="secondary" size="sm" onClick={() => void refetch()}>
+                    Reintentar
+                  </CustomButton>
+                </div>
+              ) : resultados.length === 0 ? (
                 <div className="flex h-[190px] items-center justify-center text-sm text-[#a3afc2]">
                   TOTAL REGISTROS
                 </div>

@@ -974,6 +974,7 @@ function PantallaInvestigacionAnalista({
       pais: "México",
       direccionPrincipal: "Saltillo Centro",
       ciudadProvinciaEstado: "Coahuila",
+      codigoPostal: "",
       nacionalidad: "Mexicana",
       tipoDocumentoIdentidad: "DNI",
       numeroDocumentoIdentidad: "48752145",
@@ -991,6 +992,7 @@ function PantallaInvestigacionAnalista({
       pais: "México",
       direccionPrincipal: "Monterrey",
       ciudadProvinciaEstado: "Nuevo León",
+      codigoPostal: "",
       nacionalidad: "Mexicana",
       tipoDocumentoIdentidad: "DNI",
       numeroDocumentoIdentidad: "45871239",
@@ -2050,10 +2052,11 @@ function PantallaInvestigacionAnalista({
     });
   };
 
-  const guardarPersonaDirectorio = (registro: Omit<RegistroPersonaDirectorioAnalista, "id">) => {
+  const guardarPersonaDirectorio = (registro: RegistroPersonaDirectorioAnalista) => {
     const nuevoRegistro = {
-      id: Date.now(),
       ...registro,
+      id: registro.id || registro.idDirectorioEjecutivo || Date.now(),
+      idDirectorioEjecutivo: registro.idDirectorioEjecutivo || registro.id,
     };
 
     setRegistrosPersonaDirectorio((anterior) => [nuevoRegistro, ...anterior]);
