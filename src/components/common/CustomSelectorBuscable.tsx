@@ -28,6 +28,7 @@ export interface CustomSelectorBuscableProps {
   dropdownZIndexClassName?: string;
   overlayZIndexClassName?: string;
   etiquetaOpcionVacia?: string;
+  ordenarOpciones?: boolean;
 }
 
 export function CustomSelectorBuscable({
@@ -51,6 +52,7 @@ export function CustomSelectorBuscable({
   dropdownZIndexClassName = "z-[101]",
   overlayZIndexClassName = "z-[100]",
   etiquetaOpcionVacia = "Seleccione",
+  ordenarOpciones = true,
   onClear,
 }: CustomSelectorBuscableProps) {
   const [terminoBusqueda, setSearchTerm] = useState("");
@@ -72,12 +74,14 @@ export function CustomSelectorBuscable({
 
   const filteredOptions = useMemo(() => {
     if (!resolvedOptions) return [];
-    return resolvedOptions
-      .filter((opt) =>
+    const opcionesFiltradas = resolvedOptions.filter((opt) =>
         opt.string1?.toLowerCase().includes(terminoBusqueda.toLowerCase()),
-      )
-      .sort((a, b) => (a.string1 || "").localeCompare(b.string1 || ""));
-  }, [resolvedOptions, terminoBusqueda]);
+      );
+
+    if (!ordenarOpciones) return opcionesFiltradas;
+
+    return [...opcionesFiltradas].sort((a, b) => (a.string1 || "").localeCompare(b.string1 || ""));
+  }, [ordenarOpciones, resolvedOptions, terminoBusqueda]);
 
   const selectedOption = resolvedOptions?.find((opt) => opt.num1 === value);
   const displayText = selectedOption?.string1 ?? (typeof displayValue === "string" ? displayValue.trim() : displayValue);

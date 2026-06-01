@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { Landmark, Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
@@ -105,52 +105,69 @@ function CustomModalCrearBancoAnalista({
 
   return (
     <div className="fixed inset-0 z-[115] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-7 py-6">
-          <div>
-            <h2 className="text-2xl font-bold text-brand-black">{bancoInicial ? "Editar Banco" : "Nuevo Banco"}</h2>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
-              {bancoInicial ? "Actualizacion en base de datos" : "Registro en base de datos"}
-            </p>
+      <div className="flex w-full max-w-3xl flex-col overflow-hidden rounded-[30px] bg-white shadow-[0_40px_100px_rgba(15,23,42,0.22)]">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-100 bg-[radial-gradient(circle_at_top_left,rgba(130,21,51,0.10),transparent_36%),linear-gradient(180deg,#ffffff,#f8fafc)] px-6 py-6 md:px-8">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-wine/10 text-brand-wine">
+              <Landmark size={22} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
+                {bancoInicial ? "Actualizacion en base de datos" : "Registro en base de datos"}
+              </p>
+              <h2 className="mt-1 text-2xl font-bold text-brand-black">{bancoInicial ? "Editar Banco" : "Nuevo Banco"}</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {bancoInicial ? "Actualice la informacion del banco seleccionado." : "Complete los datos principales para registrar el banco."}
+              </p>
+            </div>
           </div>
           <CustomButton variant="ghost" size="icon" onClick={onCerrar} disabled={guardarBancoMutation.isPending}>
             <X size={18} className="text-[#8ea0c0]" />
           </CustomButton>
         </div>
 
-        <div className="space-y-4 px-7 py-6">
-          <CustomSelectorBuscable
-            label="Pais"
-            options={opcionesPais}
-            value={idPais}
-            onChange={setIdPais}
-            onClear={() => setIdPais(undefined)}
-            required
-            placeholder="Seleccione un país"
-          />
+        <div className="bg-slate-50/50 px-6 py-6 md:px-8">
+          <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+            <div className="mb-5">
+              <p className="text-sm font-bold text-brand-black">Datos del banco</p>
+              <p className="mt-1 text-xs text-slate-400">Pais, nombre comercial y telefono de contacto.</p>
+            </div>
 
-          <div className="space-y-2">
-            <CustomLabel required>Nombre del Banco</CustomLabel>
-            <input
-              value={nombre}
-              onChange={(event) => setNombre(event.target.value)}
-              placeholder="Ingrese el nombre del banco"
-              className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none focus:border-brand-black"
-            />
-          </div>
+            <div className="grid gap-4 md:grid-cols-[1fr_1.25fr_1fr]">
+              <CustomSelectorBuscable
+                label="Pais"
+                options={opcionesPais}
+                value={idPais}
+                onChange={setIdPais}
+                onClear={() => setIdPais(undefined)}
+                required
+                placeholder="Seleccione un país"
+              />
 
-          <div className="space-y-2">
-            <CustomLabel required>Telefono</CustomLabel>
-            <input
-              value={telefono}
-              onChange={(event) => setTelefono(event.target.value)}
-              placeholder="Ingrese el teléfono del banco"
-              className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none focus:border-brand-black"
-            />
+              <div className="space-y-2">
+                <CustomLabel required>Nombre del Banco</CustomLabel>
+                <input
+                  value={nombre}
+                  onChange={(event) => setNombre(event.target.value)}
+                  placeholder="Ingrese el nombre del banco"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <CustomLabel required>Telefono</CustomLabel>
+                <input
+                  value={telefono}
+                  onChange={(event) => setTelefono(event.target.value)}
+                  placeholder="Ingrese el teléfono"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-gray-100 px-7 py-5">
+        <div className="flex justify-end gap-3 border-t border-gray-100 bg-white px-6 py-5 md:px-8">
           <CustomButton variant="secondary" size="sm" onClick={onCerrar} disabled={guardarBancoMutation.isPending}>
             Cancelar
           </CustomButton>
@@ -251,21 +268,27 @@ function CustomModalBusquedaBancoAnalista({
 
   return (
     <>
-      <div className="fixed inset-0 z-[105] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
-        <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-gray-100 px-8 py-6">
-            <div>
-              <h2 className="text-2xl font-bold text-brand-black">Busqueda de Banco</h2>
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">Seleccione un banco registrado</p>
+      <div className="fixed inset-0 z-[105] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+        <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[30px] bg-white shadow-[0_40px_100px_rgba(15,23,42,0.22)]">
+          <div className="flex items-start justify-between gap-4 border-b border-gray-100 bg-[radial-gradient(circle_at_top_left,rgba(130,21,51,0.10),transparent_36%),linear-gradient(180deg,#ffffff,#f8fafc)] px-6 py-6 md:px-8 md:py-7">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-wine/10 text-brand-wine">
+                <Landmark size={22} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">Bancos registrados</p>
+                <h2 className="mt-1 text-2xl font-bold text-brand-black">Busqueda de Banco</h2>
+                <p className="mt-1 text-sm text-slate-500">Seleccione un banco de la base de datos o registre uno nuevo.</p>
+              </div>
             </div>
             <CustomButton variant="ghost" size="icon" onClick={onCerrar}>
               <X size={18} className="text-[#8ea0c0]" />
             </CustomButton>
           </div>
 
-          <div className="space-y-5 overflow-y-auto px-8 py-6">
-            <div className="flex flex-col gap-3 md:flex-row">
-              <div className="flex-1 space-y-2">
+          <div className="space-y-5 overflow-y-auto bg-slate-50/40 px-6 py-6 md:px-8">
+            <div className="grid gap-4 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm md:grid-cols-[minmax(0,1fr)_auto]">
+              <div className="space-y-2">
                 <CustomLabel>Busqueda</CustomLabel>
                 <div className="relative">
                   <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
@@ -273,7 +296,7 @@ function CustomModalBusquedaBancoAnalista({
                     value={busqueda}
                     onChange={(event) => setBusqueda(event.target.value)}
                     placeholder="Buscar por nombre del banco..."
-                    className="h-11 w-full rounded-xl border border-gray-200 pl-11 pr-4 text-sm text-slate-600 outline-none focus:border-brand-black"
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
                   />
                 </div>
               </div>
@@ -285,28 +308,28 @@ function CustomModalBusquedaBancoAnalista({
                     setBancoEnEdicion(null);
                     setEstaAbiertoModalCrearBanco(true);
                   }}
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-[#2764ff] transition-colors hover:text-[#1d4ed8]"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-wine px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-wine/90"
                 >
                   <Plus size={16} />
-                  Agregar nuevo banco
+                  Nuevo Banco
                 </button>
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-gray-100">
+            <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
               <table className="w-full text-left">
-                <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
+                <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9aa9c2]">
                   <tr>
-                    <th className="px-4 py-3">Banco</th>
-                    <th className="px-4 py-3">Pais</th>
-                    <th className="px-4 py-3">Telefono</th>
-                    <th className="px-4 py-3 text-right">Opciones</th>
+                    <th className="px-5 py-4">Banco</th>
+                    <th className="px-5 py-4">Pais</th>
+                    <th className="px-5 py-4">Telefono</th>
+                    <th className="px-5 py-4 text-center">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 bg-white">
+                <tbody className="divide-y divide-slate-100 bg-white">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={4} className="px-4 py-10 text-center">
+                      <td colSpan={4} className="px-5 py-12 text-center">
                         <div className="inline-flex items-center gap-2 text-sm text-slate-400">
                           <Loader2 size={16} className="animate-spin" />
                           Cargando bancos...
@@ -315,7 +338,7 @@ function CustomModalBusquedaBancoAnalista({
                     </tr>
                   ) : isError ? (
                     <tr>
-                      <td colSpan={4} className="px-4 py-10 text-center">
+                      <td colSpan={4} className="px-5 py-12 text-center">
                         <div className="space-y-3">
                           <p className="text-sm text-red-500">No se pudo cargar la lista de bancos.</p>
                           <CustomButton variant="secondary" size="sm" onClick={() => void refetch()}>
@@ -326,7 +349,7 @@ function CustomModalBusquedaBancoAnalista({
                     </tr>
                   ) : bancos.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-4 py-10 text-center text-sm text-slate-400">
+                      <td colSpan={4} className="px-5 py-12 text-center text-sm text-slate-400">
                         No se encontraron bancos registrados.
                       </td>
                     </tr>
@@ -337,32 +360,41 @@ function CustomModalBusquedaBancoAnalista({
                       return (
                         <tr
                           key={banco.idBanco}
-                          className={`cursor-pointer ${estaSeleccionado ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
+                          className={`cursor-pointer transition-colors ${estaSeleccionado ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
                           onClick={() => setIdBancoSeleccionado(banco.idBanco)}
                         >
-                          <td className="px-4 py-4 text-sm font-semibold text-slate-700">{banco.nombre}</td>
-                          <td className="px-4 py-4 text-sm text-slate-500">{banco.pais}</td>
-                          <td className="px-4 py-4 text-sm text-slate-500">{banco.telefono}</td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center justify-end gap-3 text-sm font-semibold">
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${estaSeleccionado ? "bg-brand-wine text-white" : "bg-slate-100 text-slate-400"}`}>
+                                <Landmark size={16} />
+                              </div>
+                              <span className="text-sm font-semibold text-slate-700">{banco.nombre}</span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4 text-sm text-slate-500">{banco.pais}</td>
+                          <td className="px-5 py-4 text-sm text-slate-500">{banco.telefono}</td>
+                          <td className="px-5 py-4">
+                            <div className="flex items-center justify-center gap-3 text-sm font-semibold">
                               <button
                                 type="button"
-                                className="inline-flex text-blue-600 hover:text-blue-700"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   setBancoEnEdicion(banco);
                                   setEstaAbiertoModalCrearBanco(true);
                                 }}
+                                aria-label="Editar banco"
                               >
                                 <Pencil size={16} />
                               </button>
                               <button
                                 type="button"
-                                className="inline-flex text-red-600 hover:text-red-700"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   setBancoAEliminar(banco);
                                 }}
+                                aria-label="Eliminar banco"
                               >
                                 <Trash2 size={16} />
                               </button>
@@ -376,8 +408,8 @@ function CustomModalBusquedaBancoAnalista({
               </table>
             </div>
 
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-slate-400">
+            <div className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs font-medium text-slate-400">
                 {respuestaBancos?.totalRegistros ?? 0} banco(s) encontrado(s)
               </p>
 
@@ -390,7 +422,7 @@ function CustomModalBusquedaBancoAnalista({
                 >
                   Anterior
                 </CustomButton>
-                <span className="text-sm font-medium text-slate-500">
+                <span className="min-w-28 text-center text-sm font-semibold text-slate-500">
                   Pagina {paginaActual} de {respuestaBancos?.totalPaginas ?? 1}
                 </span>
                 <CustomButton
@@ -405,12 +437,12 @@ function CustomModalBusquedaBancoAnalista({
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-gray-100 px-8 py-5">
+          <div className="flex justify-end gap-3 border-t border-gray-100 bg-white px-6 py-5 md:px-8">
             <CustomButton variant="secondary" size="sm" onClick={onCerrar}>
               Cancelar
             </CustomButton>
             <CustomButton size="sm" onClick={() => bancoSeleccionado && onSeleccionar(bancoSeleccionado)} disabled={!bancoSeleccionado}>
-              Usar banco
+              Seleccionar
             </CustomButton>
           </div>
         </div>
@@ -487,6 +519,7 @@ export function CustomModalBancoAnalista({
     if (!banco.trim() || !sectorSeleccionado.trim() || !telefono.trim() || !numeroCuenta.trim()) return;
 
     onGuardar({
+      idInformeBanco: registroInicial?.idInformeBanco,
       idBanco,
       idPais,
       pais: pais.trim() || undefined,

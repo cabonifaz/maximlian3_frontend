@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { CheckCircle2, CircleX, Clock3, Search, SlidersHorizontal, ClipboardList } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -94,6 +94,7 @@ function obtenerEstiloEstado(estado: RegistroBandejaAnalista["estado"], colorLet
 
 export default function BandejaTraductor() {
   const navigate = useNavigate();
+  const clienteConsulta = useQueryClient();
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
   const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
@@ -147,7 +148,9 @@ export default function BandejaTraductor() {
 
   const irADetalle = (registro: RegistroBandejaAnalista) => {
     const modo = obtenerModoPorAccion(registro.accion);
-    const parametros = new URLSearchParams({ modo });
+    const parametros = new URLSearchParams({ modo, carga: String(Date.now()) });
+
+    clienteConsulta.removeQueries({ queryKey: ["informe-obtener-traductor", registro.idPedido] });
 
     if (registro.idInforme > 0) {
       parametros.set("idInforme", String(registro.idInforme));

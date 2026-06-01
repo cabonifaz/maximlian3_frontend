@@ -204,7 +204,19 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
               </div>
             </section>
 
+          
+
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <EncabezadoSeccion icono={<FileText size={18} />} titulo="Documentos" subtitulo="Identificacion personal y fiscal" />
+              <div className="grid gap-4 md:grid-cols-[0.9fr_1fr_1fr_1fr]">
+                <CampoSelector nombre="tipoDocumentoIdentidad" nombreId="idTipoDocumento" etiqueta="Tipo Doc. Identidad" opciones={opcionesTipoDocumento} valorDefecto={registroInicial?.tipoDocumentoIdentidad} valorDefectoId={registroInicial?.idTipoDocumento} marcadorVacio="Seleccione tipo documento" />
+                <CampoInput nombre="numeroDocumentoIdentidad" etiqueta="Nro. Doc. Identidad" marcador="Ingrese nro. documento" valorInicial={registroInicial?.numeroDocumentoIdentidad} />
+                <CampoSelector nombre="tipoIdFiscal" nombreId="taxIdType" etiqueta="Tipo de ID Fiscal" opciones={opcionesTipoIdFiscal} valorDefecto={registroInicial?.tipoIdFiscal} valorDefectoId={registroInicial?.taxIdType} marcadorVacio="Seleccione tipo fiscal" />
+                <CampoInput nombre="numeroIdFiscal" etiqueta="Nro ID Fiscal" marcador="Ingrese id fiscal" valorInicial={registroInicial?.numeroIdFiscal} />
+              </div>
+            </section>
+
+  <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <EncabezadoSeccion icono={<MapPin size={18} />} titulo="Ubicacion" subtitulo="Pais, nacionalidad y direccion" />
               <div className="grid gap-4 md:grid-cols-2">
                 <CampoSelector nombre="pais" nombreId="idPais" etiqueta="País" opciones={opcionesPais} valorDefecto={registroInicial?.pais} valorDefectoId={registroInicial?.idPais} marcadorVacio="Seleccione un país" />
@@ -214,16 +226,6 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
                 <CampoInput nombre="direccionPrincipal" etiqueta="Dirección Principal" marcador="Ingrese dirección" valorInicial={registroInicial?.direccionPrincipal} />
                 <CampoInput nombre="ciudadProvinciaEstado" etiqueta="Ciudad / Provincia / Estado" marcador="Ingrese ciudad" valorInicial={registroInicial?.ciudadProvinciaEstado} />
                 <CampoInput nombre="codigoPostal" etiqueta="Código Postal" marcador="Ingrese código postal" valorInicial={registroInicial?.codigoPostal} />
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <EncabezadoSeccion icono={<FileText size={18} />} titulo="Documentos" subtitulo="Identificacion personal y fiscal" />
-              <div className="grid gap-4 md:grid-cols-[0.9fr_1fr_1fr_1fr]">
-                <CampoSelector nombre="tipoDocumentoIdentidad" nombreId="idTipoDocumento" etiqueta="Tipo Doc. Identidad" opciones={opcionesTipoDocumento} valorDefecto={registroInicial?.tipoDocumentoIdentidad} valorDefectoId={registroInicial?.idTipoDocumento} marcadorVacio="Seleccione tipo documento" />
-                <CampoInput nombre="numeroDocumentoIdentidad" etiqueta="Nro. Doc. Identidad" marcador="Ingrese nro. documento" valorInicial={registroInicial?.numeroDocumentoIdentidad} />
-                <CampoSelector nombre="tipoIdFiscal" nombreId="taxIdType" etiqueta="Tipo de ID Fiscal" opciones={opcionesTipoIdFiscal} valorDefecto={registroInicial?.tipoIdFiscal} valorDefectoId={registroInicial?.taxIdType} marcadorVacio="Seleccione tipo fiscal" />
-                <CampoInput nombre="numeroIdFiscal" etiqueta="Nro ID Fiscal" marcador="Ingrese id fiscal" valorInicial={registroInicial?.numeroIdFiscal} />
               </div>
             </section>
 
