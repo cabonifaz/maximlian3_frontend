@@ -11,9 +11,11 @@ export interface BancoObtenerParams {
 export interface BancoListaItem {
   idBanco: number;
   idPais?: number;
+  idSector?: number;
   nombre: string;
   telefono: string;
   pais: string;
+  sector?: string;
 }
 
 export interface BancoListResponse {

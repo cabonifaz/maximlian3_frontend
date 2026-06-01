@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  GripVertical,
   Info,
   Pencil,
   Plus,
@@ -146,6 +145,7 @@ function combinarAyudasCampo({
 const FILAS_POR_PAGINA_INVESTIGACION = 5;
 const ID_ESTADO_PEDIDO_BORRADOR = 3;
 const ID_ESTADO_PEDIDO_FINALIZADO = 5;
+const ID_MAESTRO_CARGO_DIRECTORIO = 14;
 
 function obtenerTotalPaginas(totalRegistros: number) {
   return Math.max(1, Math.ceil(totalRegistros / FILAS_POR_PAGINA_INVESTIGACION));
@@ -216,6 +216,11 @@ function convertirFechaIso(valor?: string) {
 
 function obtenerIdPorTexto(opciones: { num1: number | null; string1: string | null }[] | undefined, valor: string) {
   return opciones?.find((opcion) => opcion.string1?.trim().toLowerCase() === valor.trim().toLowerCase())?.num1 ?? 0;
+}
+
+function obtenerTextoPorId(opciones: { num1: number | null; string1: string | null }[] | undefined, id?: number) {
+  if (!id) return "";
+  return opciones?.find((opcion) => opcion.num1 === id)?.string1?.trim() ?? "";
 }
 
 function obtenerIdMoneda(valor: string) {
@@ -672,6 +677,10 @@ function construirPayloadCrearInforme({
     ventasNacionalesText: operacionPrincipal.territorioVentasDetalle,
     ventasInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasExtranjeroPorcentaje),
     ventasInternacionalesText: operacionPrincipal.ventasExtranjeroDetalle,
+    comprasNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasNacionalesPorcentaje),
+    comprasNacionalesText: operacionPrincipal.comprasNacionalesDetalle,
+    comprasInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasExtranjeroPorcentaje),
+    comprasInternacionalesText: operacionPrincipal.comprasExtranjeroDetalle,
     numeroEmpleados: obtenerEnteroDesdeTexto(operacionPrincipal.numeroEmpleados),
     numeroEmpleadosText: operacionPrincipal.numeroEmpleadosDetalle,
     comentariosOperaciones: operacionPrincipal.comentariosOperaciones,
@@ -698,10 +707,10 @@ function construirPayloadCrearInforme({
       cuentaBalance: construirCuentaBalance(balance.detalleCuentas),
     })),
     lstBancos: datosInvestigacion.bancos.map((banco) => ({
-      ...(esEdicion ? { idInformeBanco: 0 } : {}),
+      ...(esEdicion ? { idInformeBanco: banco.idInformeBanco ?? 0 } : {}),
       idBanco: banco.idBanco ?? 0,
       numeroCuenta: banco.numeroCuenta,
-      idSector: 0,
+      idSector: banco.idSector ?? obtenerIdPorTexto(opcionesSectorEconomico, banco.sector),
       sectorista: banco.sectoristaJefeCuenta ?? "",
       referenciaBanco: banco.telefono,
     })),
@@ -713,9 +722,9 @@ function construirPayloadCrearInforme({
       ...datosInvestigacion.importaciones.map((registro) => ({
         ...(esEdicion ? { idInformeExportacionImportacion: 0 } : {}),
         anio: obtenerEnteroDesdeTexto(registro.anio),
-        mesInicio: obtenerNumeroMes(registro.mes),
-        mesFin: obtenerNumeroMes(registro.mes),
-        idMoneda: obtenerIdPorTexto(opcionesMoneda, registro.moneda) || obtenerIdMoneda(registro.moneda),
+        mesInicio: registro.idMesInicio ?? obtenerNumeroMes(registro.mes),
+        mesFin: registro.idMesFin ?? registro.idMesInicio ?? obtenerNumeroMes(registro.mes),
+        idMoneda: (registro.idMoneda ?? obtenerIdPorTexto(opcionesMoneda, registro.moneda)) || obtenerIdMoneda(registro.moneda),
         paises: registro.paises,
         monto: obtenerNumeroDesdeTexto(registro.monto),
         productos: registro.productos,
@@ -725,9 +734,9 @@ function construirPayloadCrearInforme({
       ...datosInvestigacion.exportaciones.map((registro) => ({
         ...(esEdicion ? { idInformeExportacionImportacion: 0 } : {}),
         anio: obtenerEnteroDesdeTexto(registro.anio),
-        mesInicio: obtenerNumeroMes(registro.mes),
-        mesFin: obtenerNumeroMes(registro.mes),
-        idMoneda: obtenerIdPorTexto(opcionesMoneda, registro.moneda) || obtenerIdMoneda(registro.moneda),
+        mesInicio: registro.idMesInicio ?? obtenerNumeroMes(registro.mes),
+        mesFin: registro.idMesFin ?? registro.idMesInicio ?? obtenerNumeroMes(registro.mes),
+        idMoneda: (registro.idMoneda ?? obtenerIdPorTexto(opcionesMoneda, registro.moneda)) || obtenerIdMoneda(registro.moneda),
         paises: registro.paises,
         monto: obtenerNumeroDesdeTexto(registro.monto),
         productos: registro.productos,
@@ -755,7 +764,7 @@ function construirPayloadCrearInforme({
     lstDirectoriosEjecutivos: datosInvestigacion.directorioEjecutivo.map((ejecutivo) => ({
       ...(esEdicion ? { idInformeDirectorioEjecutivo: 0 } : {}),
       idDirectorioEjecutivo: ejecutivo.idDirectorioEjecutivo ?? ejecutivo.id,
-      idCargo: 0,
+      idCargo: ejecutivo.idCargo ?? 0,
       vinculadoDesde: convertirFechaIso(ejecutivo.vinculadoDesde),
       companiaAnterior: ejecutivo.companiaAnterior,
       participacion: obtenerNumeroDesdeTexto(ejecutivo.porcentaje),
@@ -1024,6 +1033,12 @@ function PantallaInvestigacionAnalista({
     staleTime: Infinity,
   });
 
+  const { data: opcionesMes } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.MES],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MES),
+    staleTime: Infinity,
+  });
+
   const { data: opcionesSectorEconomico } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.SECTOR_ECONOMICO],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.SECTOR_ECONOMICO),
@@ -1051,6 +1066,13 @@ function PantallaInvestigacionAnalista({
   const { data: opcionesPlantillaInforme } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.PLANTILLA_INFORME],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLANTILLA_INFORME),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesCargoDirectorio } = useQuery({
+    queryKey: ["masterTable", ID_MAESTRO_CARGO_DIRECTORIO],
+    queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_CARGO_DIRECTORIO),
+    enabled: idSeccionActiva === "directorio-ejecutivo" || datosInvestigacion.directorioEjecutivo.length > 0,
     staleTime: Infinity,
   });
 
@@ -1863,7 +1885,9 @@ function PantallaInvestigacionAnalista({
     setDatosInvestigacion((anterior) => {
       const bancos = [...anterior.bancos];
       if (indiceBancoSeleccionado != null) {
+        const idInformeBancoExistente = bancos[indiceBancoSeleccionado]?.idInformeBanco;
         bancos[indiceBancoSeleccionado] = registro;
+        bancos[indiceBancoSeleccionado].idInformeBanco = registro.idInformeBanco ?? idInformeBancoExistente;
       } else {
         bancos.unshift(registro);
       }
@@ -1926,12 +1950,13 @@ function PantallaInvestigacionAnalista({
     const coincideNombre = !filtroBancoNombre.trim() || banco.banco.toLowerCase().includes(filtroBancoNombre.trim().toLowerCase());
     const coincideCuenta = !filtroBancoCuenta.trim() || banco.numeroCuenta.toLowerCase().includes(filtroBancoCuenta.trim().toLowerCase());
     const coincideTelefono = !filtroBancoTelefono.trim() || banco.telefono.toLowerCase().includes(filtroBancoTelefono.trim().toLowerCase());
+    const sectorBanco = banco.sector || opcionesSectorEconomico?.find((opcion) => opcion.num1 === banco.idSector)?.string1 || "";
     const sectoresSeleccionados = (opcionesSectorEconomico ?? [])
       .filter((opcion) => opcion.num1 != null && idsFiltroBancoSector.includes(opcion.num1))
       .map((opcion) => opcion.string1?.toLowerCase() ?? "")
       .filter(Boolean);
     const coincideSector = sectoresSeleccionados.length === 0
-      || sectoresSeleccionados.some((sectorSeleccionado) => banco.sector.toLowerCase() === sectorSeleccionado);
+      || sectoresSeleccionados.some((sectorSeleccionado) => sectorBanco.toLowerCase() === sectorSeleccionado);
 
     return coincideNombre && coincideCuenta && coincideTelefono && coincideSector;
   });
@@ -2089,6 +2114,7 @@ function PantallaInvestigacionAnalista({
     return [
       ejecutivo.ejecutivo,
       ejecutivo.cargo,
+      obtenerTextoPorId(opcionesCargoDirectorio, ejecutivo.idCargo),
       ejecutivo.nombreCompleto,
       ejecutivo.descripcionBusqueda,
     ].some((valor) => valor.toLowerCase().includes(termino));
@@ -2608,21 +2634,33 @@ function PantallaInvestigacionAnalista({
                     </tr>
                   ))
                 ) : (
-                  registrosImportacionExportacionPaginados.map((registro) => (
-                    <tr
-                      key={`${registro.anio}-${registro.mes}-${registro.paises}-${registro.monto}`}
-                      className={`cursor-pointer transition-colors ${indiceOperacionSeleccionada === registrosOperacionActivos.findIndex((item) => item.anio === registro.anio && item.mes === registro.mes && item.paises === registro.paises && item.monto === registro.monto) ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
-                      onClick={() => setIndiceOperacionSeleccionada(registrosOperacionActivos.findIndex((item) => item.anio === registro.anio && item.mes === registro.mes && item.paises === registro.paises && item.monto === registro.monto))}
-                    >
-                      <td className="px-4 py-4 text-sm text-slate-500">{registro.anio}</td>
-                      <td className="px-4 py-4 text-sm text-slate-500">{registro.mes || "-"}</td>
-                      <td className="px-4 py-4 text-sm text-slate-500">{registro.moneda}</td>
-                      <td className="px-4 py-4 text-sm text-slate-500">{registro.paises}</td>
-                      <td className="px-4 py-4 text-sm italic text-slate-300">{registro.productos}</td>
-                      <td className="px-4 py-4 text-sm text-slate-500">{registro.monto}</td>
-                      <td className="px-4 py-4 text-sm text-slate-500">{registro.operaciones}</td>
-                    </tr>
-                  ))
+                  registrosImportacionExportacionPaginados.map((registro) => {
+                    const mesRegistro = obtenerTextoPorId(opcionesMes, registro.idMesInicio) || registro.mes;
+                    const monedaRegistro = obtenerTextoPorId(opcionesMoneda, registro.idMoneda) || registro.moneda;
+                    const indiceRegistro = registrosOperacionActivos.findIndex((item) =>
+                      item.anio === registro.anio
+                      && (item.idMesInicio ?? 0) === (registro.idMesInicio ?? 0)
+                      && item.mes === registro.mes
+                      && item.paises === registro.paises
+                      && item.monto === registro.monto
+                    );
+
+                    return (
+                      <tr
+                        key={`${registro.anio}-${registro.idMesInicio ?? registro.mes}-${registro.paises}-${registro.monto}`}
+                        className={`cursor-pointer transition-colors ${indiceOperacionSeleccionada === indiceRegistro ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
+                        onClick={() => setIndiceOperacionSeleccionada(indiceRegistro)}
+                      >
+                        <td className="px-4 py-4 text-sm text-slate-500">{registro.anio}</td>
+                        <td className="px-4 py-4 text-sm text-slate-500">{mesRegistro || "-"}</td>
+                        <td className="px-4 py-4 text-sm text-slate-500">{monedaRegistro || "-"}</td>
+                        <td className="px-4 py-4 text-sm text-slate-500">{registro.paises}</td>
+                        <td className="px-4 py-4 text-sm italic text-slate-300">{registro.productos}</td>
+                        <td className="px-4 py-4 text-sm text-slate-500">{registro.monto}</td>
+                        <td className="px-4 py-4 text-sm text-slate-500">{registro.operaciones}</td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -3047,21 +3085,22 @@ function PantallaInvestigacionAnalista({
               <tbody className="divide-y divide-gray-100 bg-white">
                 {bancosPaginados.map((banco) => {
                   const indiceReal = datosInvestigacion.bancos.findIndex((item) => item.banco === banco.banco && item.numeroCuenta === banco.numeroCuenta);
+                  const sectorBanco = banco.sector || opcionesSectorEconomico?.find((opcion) => opcion.num1 === banco.idSector)?.string1 || "";
                   return (
                     <tr key={`${banco.banco}-${banco.numeroCuenta}`}>
                       <td className="px-4 py-4 text-sm font-semibold leading-4 text-slate-700"><span className="block truncate">{banco.banco}</span></td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500"><span className="block truncate">{banco.numeroCuenta}</span></td>
                       <td className="px-4 py-4 text-center text-sm">
                         <span className={`inline-flex max-w-full items-center overflow-hidden rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
-                          banco.sector.toLowerCase().includes("finanzas")
+                          sectorBanco.toLowerCase().includes("finanzas")
                             ? "bg-blue-50 text-blue-600"
-                            : banco.sector.toLowerCase().includes("comercio")
+                            : sectorBanco.toLowerCase().includes("comercio")
                               ? "bg-slate-100 text-slate-600"
-                              : banco.sector.toLowerCase().includes("energia")
+                              : sectorBanco.toLowerCase().includes("energia")
                                 ? "bg-green-50 text-green-600"
                                 : "bg-orange-50 text-orange-600"
-                        }`} title={banco.sector}>
-                          <span className="block truncate">{banco.sector}</span>
+                        }`} title={sectorBanco || "-"}>
+                          <span className="block truncate">{sectorBanco || "-"}</span>
                         </span>
                       </td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500"><span className="block truncate">{banco.sectoristaJefeCuenta || "-"}</span></td>
@@ -3133,10 +3172,9 @@ function PantallaInvestigacionAnalista({
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-gray-100">
-        <table className="min-w-[900px] w-full text-left">
+        <table className="min-w-[860px] w-full text-left">
           <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
             <tr>
-              <th className="w-10 px-3 py-3" />
               <th className="px-4 py-3">Ejecutivo</th>
               <th className="px-4 py-3">Cargo</th>
               <th className="px-4 py-3">% Part.</th>
@@ -3149,20 +3187,18 @@ function PantallaInvestigacionAnalista({
           <tbody className="divide-y divide-gray-100 bg-white">
             {ejecutivosFiltrados.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-300">
+                <td colSpan={7} className="px-4 py-10 text-center text-sm text-slate-300">
                   Sin ejecutivos registrados.
                 </td>
               </tr>
             ) : ejecutivosPaginados.map((ejecutivo) => {
               const indiceReal = datosInvestigacion.directorioEjecutivo.findIndex((item) => item.id === ejecutivo.id);
+              const cargoDirectorio = obtenerTextoPorId(opcionesCargoDirectorio, ejecutivo.idCargo) || ejecutivo.cargo;
 
               return (
                 <tr key={ejecutivo.id} className="hover:bg-slate-50">
-                  <td className="px-3 py-4 text-slate-300">
-                    <GripVertical size={14} />
-                  </td>
                   <td className="px-4 py-4 text-sm font-semibold text-slate-700">{ejecutivo.ejecutivo}</td>
-                  <td className="px-4 py-4 text-sm text-slate-500">{ejecutivo.cargo}</td>
+                  <td className="px-4 py-4 text-sm text-slate-500">{cargoDirectorio}</td>
                   <td className="px-4 py-4 text-sm text-slate-400">{ejecutivo.porcentaje || "0.00000000%"}</td>
                   <td className="px-4 py-4">
                     {ejecutivo.lista ? <Check size={16} className="text-green-500" /> : <span className="text-slate-300">-</span>}
@@ -3386,7 +3422,11 @@ function PantallaInvestigacionAnalista({
       <CustomModalOperacionAnalista
         key={`operacion-${pestanaRamoOperacionesVisible}-${indiceOperacionSeleccionada ?? "nuevo"}-${estaAbiertoModalOperacion ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalOperacion}
-        titulo={pestanaRamoOperacionesVisible === "importaciones" ? "Nueva Importación" : "Nueva Exportación"}
+        titulo={
+          indiceOperacionSeleccionada != null
+            ? (pestanaRamoOperacionesVisible === "importaciones" ? "Editar Importación" : "Editar Exportación")
+            : (pestanaRamoOperacionesVisible === "importaciones" ? "Nueva Importación" : "Nueva Exportación")
+        }
         subtitulo="Registro de operaciones"
         registroInicial={indiceOperacionSeleccionada != null ? registrosOperacionActivos[indiceOperacionSeleccionada] : null}
         onCerrar={() => {
@@ -3623,6 +3663,7 @@ export default function InvestigacionTraductor() {
   const [searchParams] = useSearchParams();
   const modo = (searchParams.get("modo") as ModoInvestigacionAnalista | null) ?? "iniciar";
   const idInforme = searchParams.get("idInforme");
+  const idCarga = searchParams.get("carga") ?? "sin-carga";
   const datosPedidoNavegacion = (location.state as { datosPedidoInvestigacion?: DatosPedidoNavegacionInvestigacion } | null)?.datosPedidoInvestigacion;
   const idPedidoNumerico = Number(idPedido);
   const idInformeClave = idInforme ?? "sin-informe";
@@ -3632,12 +3673,15 @@ export default function InvestigacionTraductor() {
   const datosEjemploInvestigacion = useMemo(() => obtenerDatosInvestigacionAnalista(modo), [modo]);
 
   const { data: informeObtenido, isLoading: estaCargandoInforme } = useQuery({
-    queryKey: ["informe-obtener-traductor", idPedidoNumerico, idInformeNumerico],
+    queryKey: ["informe-obtener-traductor", idPedidoNumerico, idInformeNumerico, idCarga],
     queryFn: () => informeService.obtener({
       idPedido: idPedidoNumerico,
       idInforme: Number.isFinite(idInformeNumerico) && idInformeNumerico > 0 ? idInformeNumerico : undefined,
     }),
     enabled: usaDatosBackend,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
   });
 
   const datosIniciales = (() => {
@@ -3655,7 +3699,7 @@ export default function InvestigacionTraductor() {
 
   return (
     <PantallaInvestigacionAnalista
-      key={`${idPedido ?? "sin-id"}-${modo}-${idInformeClave}-${claveDatos}`}
+      key={`${idPedido ?? "sin-id"}-${modo}-${idInformeClave}-${idCarga}-${claveDatos}`}
       idPedido={idPedido}
       idInforme={
         Number.isFinite(idInformeNumerico) && idInformeNumerico > 0

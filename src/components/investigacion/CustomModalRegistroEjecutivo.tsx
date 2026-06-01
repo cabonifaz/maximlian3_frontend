@@ -1,12 +1,16 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type {
   RegistroDirectorioEjecutivoAnalista,
   RegistroPersonaDirectorioAnalista,
 } from "@maximilian/shared/types/investigacion.type";
+
+const ID_MAESTRO_CARGO_DIRECTORIO = 14;
 
 interface PropsCustomModalRegistroEjecutivoAnalista {
   estaAbierto: boolean;
@@ -29,18 +33,28 @@ export function CustomModalRegistroEjecutivoAnalista({
   const tipoPersonaDefecto = registroInicial?.tipoPersona ?? personaSeleccionada?.tipoPersona ?? "Natural";
   const paisDefecto = registroInicial?.pais ?? personaSeleccionada?.pais ?? "";
   const vinculadoDesdeDefecto = convertirFechaParaInput(registroInicial?.vinculadoDesde ?? "");
-  const cargoDefecto = limpiarTextoCargo(registroInicial?.cargo ?? "");
+  const cargoDefecto = registroInicial?.idCargo ? "" : limpiarTextoCargo(registroInicial?.cargo ?? "");
   const [cargo, setCargo] = useState(cargoDefecto);
   const [porcentajeParticipacion, setPorcentajeParticipacion] = useState(
     limpiarPorcentaje(registroInicial?.porcentaje),
   );
+  const { data: opcionesCargo } = useQuery({
+    queryKey: ["masterTable", ID_MAESTRO_CARGO_DIRECTORIO],
+    queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_CARGO_DIRECTORIO),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
+
+  const cargoMaestroRegistro = opcionesCargo?.find((opcion) => opcion.num1 === registroInicial?.idCargo)?.string1?.trim() ?? "";
+  const cargoActual = cargo || cargoMaestroRegistro || cargoDefecto;
 
   if (!estaAbierto) return null;
 
   const manejarEnvio = (formData: FormData) => {
     const ejecutivo = String(formData.get("ejecutivo") ?? "").trim();
+    const idCargo = obtenerIdCargo(opcionesCargo, cargoActual) || registroInicial?.idCargo || 0;
 
-    if (!ejecutivo || !cargo) return;
+    if (!ejecutivo || !cargoActual || !idCargo) return;
 
     const porcentaje = formatearPorcentajeParticipacion(porcentajeParticipacion);
     const imprimirListado = formData.get("imprimirListado") === "si";
@@ -50,7 +64,8 @@ export function CustomModalRegistroEjecutivoAnalista({
     onGuardar({
       idDirectorioEjecutivo: registroInicial?.idDirectorioEjecutivo ?? personaSeleccionada?.idDirectorioEjecutivo ?? personaSeleccionada?.id,
       ejecutivo: ejecutivo.length > 13 ? `${ejecutivo.slice(0, 13)}...` : ejecutivo,
-      cargo: cargo.length > 10 ? `${cargo.slice(0, 10)}...` : cargo,
+      idCargo,
+      cargo: cargoActual,
       porcentaje,
       lista: imprimirListado,
       detalleEjecutivo: imprimirDetalle,
@@ -109,11 +124,14 @@ export function CustomModalRegistroEjecutivoAnalista({
             <div className="pt-1">
               <SelectorMaestroConAltaInvestigacionAnalista
                 etiqueta="Cargo"
-                valor={cargo}
+                valor={cargoActual}
                 soloLectura={false}
-                opcionesIniciales={["Presidente", "Director", "Gerente General", "Apoderado", "Vicepresidente", "Secretario"]}
+                opcionesTablaMaestra={opcionesCargo}
+                idMaestro={ID_MAESTRO_CARGO_DIRECTORIO}
                 marcador="Seleccione o agregue cargo"
                 onChange={setCargo}
+                permiteAltaNueva
+                conservarOpcionesLocales={false}
               />
             </div>
 
@@ -156,6 +174,10 @@ export function CustomModalRegistroEjecutivoAnalista({
 
 function limpiarTextoCargo(valor: string) {
   return valor.replace("...", "").trim();
+}
+
+function obtenerIdCargo(opciones: { num1: number | null; string1: string | null }[] | undefined, valor: string) {
+  return opciones?.find((opcion) => opcion.string1?.trim().toLowerCase() === valor.trim().toLowerCase())?.num1 ?? 0;
 }
 
 function CampoInput({

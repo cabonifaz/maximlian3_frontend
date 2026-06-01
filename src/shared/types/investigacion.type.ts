@@ -55,6 +55,7 @@ export interface RegistroBandejaAnalista {
 }
 
 export interface EmpresaRelacionadaAnalista {
+  idInformeCompaniaRelacionada?: number;
   idCompania?: number;
   empresa: string;
   idFiscal: string;
@@ -62,6 +63,10 @@ export interface EmpresaRelacionadaAnalista {
 }
 
 export interface RegistroImportacionExportacionAnalista {
+  idInformeExportacionImportacion?: number;
+  idMesInicio?: number;
+  idMesFin?: number;
+  idMoneda?: number;
   anio: string;
   mes: string;
   moneda: string;
@@ -141,8 +146,10 @@ export interface DetalleCuentasBalanceAnalista {
 }
 
 export interface RegistroDirectorioEjecutivoAnalista {
+  idInformeDirectorioEjecutivo?: number;
   id: number;
   idDirectorioEjecutivo?: number;
+  idCargo?: number;
   ejecutivo: string;
   cargo: string;
   porcentaje: string;
@@ -292,8 +299,10 @@ export interface RegistroProveedorAnalista {
 }
 
 export interface RegistroBancoAnalista {
+  idInformeBanco?: number;
   idBanco?: number;
   idPais?: number;
+  idSector?: number;
   pais?: string;
   banco: string;
   numeroCuenta: string;

@@ -54,9 +54,11 @@ function normalizarBanco(item: unknown): BancoListaItem {
   return {
     idBanco: obtenerNumero(registro.idBanco, registro.IdBanco) ?? 0,
     idPais: obtenerNumero(registro.idPais, registro.IdPais),
+    idSector: obtenerNumero(registro.idSector, registro.IdSector),
     nombre: obtenerTexto(registro.nombre, registro.Nombre, registro.banco, registro.Banco) || "-",
     telefono: obtenerTexto(registro.telefono, registro.Telefono) || "-",
     pais: obtenerTexto(registro.pais, registro.Pais, registro.nombrePais, registro.NombrePais) || "-",
+    sector: obtenerTexto(registro.sector, registro.Sector) || undefined,
   };
 }
 

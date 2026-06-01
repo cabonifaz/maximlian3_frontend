@@ -65,6 +65,26 @@ function formatearNumero(valor: number) {
   return valor.toFixed(2);
 }
 
+function dividirSeguro(numerador: number, denominador: number) {
+  return Math.abs(denominador) < 0.000001 ? 0 : numerador / denominador;
+}
+
+function sumarRegistros(registros: Record<string, string>, campos: string[]) {
+  return campos.reduce((total, campo) => total + obtenerNumero(registros[campo] ?? ""), 0);
+}
+
+function sonRegistrosIguales(registrosActuales: Record<string, string>, registrosSiguientes: Record<string, string>) {
+  const claves = new Set([...Object.keys(registrosActuales), ...Object.keys(registrosSiguientes)]);
+
+  for (const clave of claves) {
+    if ((registrosActuales[clave] ?? "") !== (registrosSiguientes[clave] ?? "")) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function sanitizarNumero(valor: string, permitirNegativo = false) {
   let valorNormalizado = valor.replace(",", ".").replace(permitirNegativo ? /[^0-9.-]/g : /[^0-9.]/g, "");
 
@@ -97,6 +117,7 @@ function CampoDetalle({
   valor,
   onChange,
   negrita = false,
+  destacado = false,
   deshabilitado = false,
   permitirNegativo = false,
 }: {
@@ -104,12 +125,13 @@ function CampoDetalle({
   valor: string;
   onChange: (valor: string) => void;
   negrita?: boolean;
+  destacado?: boolean;
   deshabilitado?: boolean;
   permitirNegativo?: boolean;
 }) {
   return (
-    <div className="space-y-2">
-      <CustomLabel as="p" className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+    <div className={`space-y-2 rounded-lg ${destacado ? "border border-emerald-200 bg-emerald-50/70 p-3" : ""}`}>
+      <CustomLabel as="p" className={`text-[10px] font-bold uppercase tracking-[0.12em] ${destacado ? "text-emerald-700" : "text-slate-600"}`}>
         {etiqueta}
       </CustomLabel>
       <input
@@ -125,7 +147,7 @@ function CampoDetalle({
           onChange(formatearNumero(obtenerNumero(texto)));
         }}
         placeholder="0.00"
-        className={`h-10 w-full rounded-md border border-gray-200 bg-slate-50 px-3 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 ${negrita ? "font-bold text-brand-black" : ""}`}
+        className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:text-slate-500 ${destacado ? "border-emerald-200 bg-white text-emerald-800 disabled:bg-emerald-50" : "border-gray-200 bg-slate-50 text-slate-600 disabled:bg-slate-100 disabled:text-slate-400"} ${negrita || destacado ? "font-bold" : ""}`}
       />
     </div>
   );
@@ -207,6 +229,238 @@ function normalizarTexto(valor?: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
+}
+
+const camposCalculadosEstadoFinanciero = new Set([
+  "total-activo-corriente",
+  "total-activo-no-corriente",
+  "total-activo",
+  "total-pasivo-corriente",
+  "total-pasivo-no-corriente",
+  "total-pasivos",
+  "total-patrimonio",
+  "total-pasivo-patrimonio",
+  "ganancia-bruta",
+  "ganancia-operativa",
+  "ganancia-antes-impuestos",
+  "ganancia-neta",
+  "liquidity-ratio",
+  "working-capital-ratio",
+  "current-indebtedness-ratio",
+  "profitability-ratio",
+  "liquidity-ratio-totalizado",
+  "working-capital-ratio-totalizado",
+  "current-indebtedness-ratio-totalizado",
+  "profitability-ratio-totalizado",
+  "total-activos-bancos",
+  "total-pasivo-bancos",
+  "total-patrimonio-bancos",
+  "total-pasivo-patrimonio-bancos",
+  "total-activos-seguros",
+  "total-pasivo-seguros",
+  "total-patrimonio-seguros",
+  "total-pasivo-patrimonio-seguros",
+  "current-total",
+  "net-fixed",
+  "total-assets-turquia",
+  "current-liabilities",
+  "total-non-current-liabilities",
+  "total-liabilities",
+  "total-equity",
+  "total-liabilities-equity",
+  "gross-profit",
+  "financial-pl",
+  "extra-other-pl",
+  "profit-loss-before-taxes",
+  "profit-loss-after-taxes",
+  "profit",
+  "liquidity-index",
+  "working-capital",
+  "indebtedness-ratio",
+  "profitability-ratio-turquia",
+]);
+
+function calcularRegistrosEstadoFinanciero(tipoEstadoFinanciero: string | undefined, registros: Record<string, string>, permiteEditarTotales: boolean) {
+  const clave = normalizarTexto(tipoEstadoFinanciero);
+  const siguiente = { ...registros };
+  const n = (campo: string) => obtenerNumero(siguiente[campo] ?? "");
+  const asignar = (campo: string, valor: number, forzar = true) => {
+    if (!forzar) return;
+    siguiente[campo] = formatearNumero(valor);
+  };
+
+  if (clave.includes("desagregado")) {
+    asignar("total-activo-corriente", sumarRegistros(siguiente, [
+      "efectivo-equivalente",
+      "otros-activos-financieros-corriente",
+      "cuentas-cobrar-corriente",
+      "inventarios-corriente",
+      "activos-biologicos-corriente",
+      "activos-impuestos-ganancias",
+      "otros-activos-no-financieros-corriente",
+    ]), !permiteEditarTotales);
+    asignar("total-activo-no-corriente", sumarRegistros(siguiente, [
+      "otros-activos-financieros-no-corriente",
+      "inversiones-subsidiarias",
+      "cuentas-cobrar-no-corriente",
+      "inventarios-no-corriente",
+      "activos-biologicos-no-corriente",
+      "propiedades-inversion",
+      "propiedades-planta-equipo",
+      "intangibles",
+      "activos-impuestos-diferidos",
+      "activos-impuestos-corrientes",
+      "plusvalia",
+      "otros-activos-no-financieros-no-corriente",
+    ]), !permiteEditarTotales);
+    asignar("total-activo", n("total-activo-corriente") + n("total-activo-no-corriente"), !permiteEditarTotales);
+    asignar("total-pasivo-corriente", sumarRegistros(siguiente, [
+      "otros-pasivos-financieros-corriente",
+      "cuentas-pagar-corriente",
+      "beneficios-empleados-corriente",
+      "otras-provisiones-corriente",
+      "impuestos-ganancias-corriente",
+      "otros-pasivos-no-financieros-corriente",
+    ]), !permiteEditarTotales);
+    asignar("total-pasivo-no-corriente", sumarRegistros(siguiente, [
+      "otros-pasivos-financieros-no-corriente",
+      "cuentas-pagar-no-corriente",
+      "beneficios-empleados-no-corriente",
+      "otras-provisiones-no-corriente",
+      "impuestos-diferidos-no-corriente",
+      "impuestos-corrientes-no-corriente",
+      "otros-pasivos-no-financieros-no-corriente",
+    ]), !permiteEditarTotales);
+    asignar("total-pasivos", n("total-pasivo-corriente") + n("total-pasivo-no-corriente"), !permiteEditarTotales);
+    asignar("total-patrimonio", sumarRegistros(siguiente, [
+      "capital-emitido",
+      "primas-emision",
+      "acciones-inversion",
+      "acciones-cartera",
+      "otras-reservas-capital",
+      "resultados-acumulados",
+      "otras-reservas-patrimonio",
+    ]), !permiteEditarTotales);
+    asignar("total-pasivo-patrimonio", n("total-pasivos") + n("total-patrimonio"), !permiteEditarTotales);
+    asignar("ganancia-bruta", n("ingresos-ordinarios") + n("costo-ventas"));
+    asignar("ganancia-operativa", n("ganancia-bruta") + sumarRegistros(siguiente, [
+      "gastos-ventas",
+      "gastos-administracion",
+      "otros-ingresos-operativos",
+      "otros-gastos-operativos",
+      "otras-ganancias-perdidas",
+    ]));
+    asignar("ganancia-antes-impuestos", n("ganancia-operativa") + sumarRegistros(siguiente, [
+      "ingresos-financieros",
+      "gastos-financieros",
+      "diferencias-cambio",
+    ]));
+    asignar("ganancia-neta", n("ganancia-antes-impuestos") + n("ingreso-gasto-impuesto"));
+    asignar("liquidity-ratio", dividirSeguro(n("total-activo-corriente"), n("total-pasivo-corriente")));
+    asignar("working-capital-ratio", n("total-activo-corriente") - n("total-pasivo-corriente"));
+    asignar("current-indebtedness-ratio", dividirSeguro(n("total-pasivo-corriente"), n("total-patrimonio")));
+    asignar("profitability-ratio", dividirSeguro(n("ganancia-neta"), n("ingresos-ordinarios")));
+  }
+
+  if (clave.includes("totalizado")) {
+    asignar("total-activo", n("total-activo-corriente") + n("total-activo-no-corriente"), !permiteEditarTotales);
+    asignar("total-pasivos", n("total-pasivo-corriente") + n("total-pasivo-no-corriente"), !permiteEditarTotales);
+    asignar("total-pasivo-patrimonio", n("total-pasivos") + n("total-patrimonio"), !permiteEditarTotales);
+    asignar("liquidity-ratio-totalizado", dividirSeguro(n("total-activo-corriente"), n("total-pasivo-corriente")));
+    asignar("working-capital-ratio-totalizado", n("total-activo-corriente") - n("total-pasivo-corriente"));
+    asignar("current-indebtedness-ratio-totalizado", dividirSeguro(n("total-pasivo-corriente"), n("total-patrimonio")));
+    asignar("profitability-ratio-totalizado", dividirSeguro(n("ganancia-neta-totalizado"), n("ingresos-ordinarios-totalizado")));
+  }
+
+  if (clave.includes("banco")) {
+    asignar("total-activos-bancos", sumarRegistros(siguiente, [
+      "disponible",
+      "fondos-interbancarios-activo",
+      "inversiones-valor-razonable",
+      "cartera-creditos",
+      "derivados-negociacion-activo",
+      "derivados-cobertura-activo",
+      "bienes-realizables",
+      "participaciones-subsidiarias",
+      "inmueble-mobiliario-equipo",
+      "impuesto-renta-diferido",
+      "otros-activos-bancos",
+    ]), !permiteEditarTotales);
+    asignar("total-pasivo-bancos", sumarRegistros(siguiente, [
+      "obligaciones-publico",
+      "fondos-interbancarios-pasivo",
+      "adeudos-financieras",
+      "derivados-negociacion-pasivo",
+      "derivados-cobertura-pasivo",
+      "cuentas-pagar-provisiones",
+    ]), !permiteEditarTotales);
+    asignar("total-patrimonio-bancos", sumarRegistros(siguiente, [
+      "capital-social-bancos",
+      "reservas-bancos",
+      "resultados-no-realizados",
+      "resultado-ejercicio-bancos",
+    ]), !permiteEditarTotales);
+    asignar("total-pasivo-patrimonio-bancos", n("total-pasivo-bancos") + n("total-patrimonio-bancos"), !permiteEditarTotales);
+  }
+
+  if (clave.includes("seguro")) {
+    asignar("total-activos-seguros", sumarRegistros(siguiente, [
+      "efectivo-disponible",
+      "inversiones-financieras-seguros",
+      "prestamos-intereses-netos",
+      "primas-cobrar",
+      "deudas-reaseguradores",
+      "activos-venta",
+      "propiedades-inversion-seguros",
+      "propiedad-planta-equipo-seguros",
+      "otros-activos-seguros",
+    ]), !permiteEditarTotales);
+    asignar("total-pasivo-seguros", sumarRegistros(siguiente, [
+      "obligaciones-asegurados",
+      "reservas-siniestros",
+      "reservas-tecnicas",
+      "obligaciones-reaseguradores",
+      "obligaciones-financieras-seguros",
+      "cuentas-pagar-seguros",
+      "otros-pasivos-seguros",
+    ]), !permiteEditarTotales);
+    asignar("total-patrimonio-seguros", sumarRegistros(siguiente, [
+      "capital-social-seguros",
+      "aportes-capital-no-capitalizados",
+      "resultados-acumulados-seguros",
+      "patrimonio-restringido",
+    ]), !permiteEditarTotales);
+    asignar("total-pasivo-patrimonio-seguros", n("total-pasivo-seguros") + n("total-patrimonio-seguros"), !permiteEditarTotales);
+  }
+
+  if (clave.includes("turquia")) {
+    asignar("current-total", n("cash") + n("stocks") + n("creditors"), !permiteEditarTotales);
+    asignar("net-fixed", n("tangible-assets") + n("intangible-assets"), !permiteEditarTotales);
+    asignar("total-assets-turquia", n("current-total") + n("net-fixed"), !permiteEditarTotales);
+    asignar("current-liabilities", n("loans") + n("debtors"), !permiteEditarTotales);
+    asignar("total-non-current-liabilities", n("non-current-liabilities") + n("long-term-liabilities"), !permiteEditarTotales);
+    asignar("total-liabilities", n("current-liabilities") + n("total-non-current-liabilities"), !permiteEditarTotales);
+    asignar("total-equity", n("equity"), !permiteEditarTotales);
+    asignar("total-liabilities-equity", n("total-liabilities") + n("total-equity"), !permiteEditarTotales);
+    asignar("gross-profit", n("turnover") + n("costs-goods-sold") + n("material-costs"));
+    asignar("financial-pl", n("financial-revenue") + n("financial-expenses") + n("interest-paid"));
+    asignar("extra-other-pl", n("extra-other-revenue") + n("extra-other-expenses"));
+    asignar("profit-loss-before-taxes", n("gross-profit") + sumarRegistros(siguiente, [
+      "other-operating-expenses",
+      "costs-employees",
+      "depreciation",
+      "financial-pl",
+      "extra-other-pl",
+    ]));
+    asignar("profit-loss-after-taxes", n("profit-loss-before-taxes") + n("taxation"));
+    asignar("profit", n("profit-loss-after-taxes"));
+    asignar("liquidity-index", dividirSeguro(n("current-total"), n("current-liabilities")));
+    asignar("working-capital", n("current-total") - n("current-liabilities"));
+    asignar("indebtedness-ratio", dividirSeguro(n("current-liabilities"), n("total-equity")));
+    asignar("profitability-ratio-turquia", dividirSeguro(n("profit-loss-after-taxes"), n("turnover")));
+  }
+
+  return siguiente;
 }
 
 export function CustomModalDetalleCuentasAnalista({
@@ -321,6 +575,52 @@ export function CustomModalDetalleCuentasAnalista({
     detalle.balanceGeneral.otrosPasivos,
     detalle.balanceGeneral.totalPasivos,
     detalle.balanceGeneral.patrimonio,
+    totalesHabilitados,
+  ]);
+
+  useEffect(() => {
+    setDetalle((anterior) => {
+      const registrosActuales = anterior.registrosEstadoFinanciero ?? {};
+      const registrosBase = esEstadoFinancieroTotalizado
+        ? {
+            ...registrosActuales,
+            "total-activo-corriente": anterior.balanceGeneral.totalCorrientes,
+            "total-activo-no-corriente": anterior.balanceGeneral.totalNoCorrientes,
+            "total-activo": anterior.balanceGeneral.totalActivos,
+            "total-pasivo-corriente": anterior.balanceGeneral.totalPasivosCorrientes,
+            "total-pasivo-no-corriente": anterior.balanceGeneral.totalPasivosNoCorrientes,
+            "total-pasivos": anterior.balanceGeneral.totalPasivos,
+            "total-patrimonio": anterior.balanceGeneral.patrimonio,
+            "total-pasivo-patrimonio": anterior.balanceGeneral.totalPasivoPatrimonio,
+          }
+        : registrosActuales;
+      const registrosCalculados = calcularRegistrosEstadoFinanciero(
+        tipoEstadoFinanciero,
+        registrosBase,
+        anterior.totalesHabilitados ?? false,
+      );
+
+      if (sonRegistrosIguales(registrosActuales, registrosCalculados)) {
+        return anterior;
+      }
+
+      return {
+        ...anterior,
+        registrosEstadoFinanciero: registrosCalculados,
+      };
+    });
+  }, [
+    detalle.balanceGeneral.patrimonio,
+    detalle.balanceGeneral.totalActivos,
+    detalle.balanceGeneral.totalCorrientes,
+    detalle.balanceGeneral.totalNoCorrientes,
+    detalle.balanceGeneral.totalPasivoPatrimonio,
+    detalle.balanceGeneral.totalPasivos,
+    detalle.balanceGeneral.totalPasivosCorrientes,
+    detalle.balanceGeneral.totalPasivosNoCorrientes,
+    detalle.registrosEstadoFinanciero,
+    esEstadoFinancieroTotalizado,
+    tipoEstadoFinanciero,
     totalesHabilitados,
   ]);
 
@@ -452,6 +752,7 @@ export function CustomModalDetalleCuentasAnalista({
             valor={detalle.balanceGeneral.totalActivos}
             onChange={(valor) => actualizarBalanceGeneral("totalActivos", valor)}
             negrita
+            destacado
             deshabilitado={!totalesHabilitados}
           />
         </div>
@@ -475,6 +776,7 @@ export function CustomModalDetalleCuentasAnalista({
             valor={detalle.balanceGeneral.totalPasivos}
             onChange={(valor) => actualizarBalanceGeneral("totalPasivos", valor)}
             negrita
+            destacado
             deshabilitado={!totalesHabilitados}
           />
           <CampoDetalle
@@ -483,6 +785,7 @@ export function CustomModalDetalleCuentasAnalista({
             onChange={(valor) => actualizarBalanceGeneral("patrimonio", valor)}
             permitirNegativo
             negrita
+            destacado
             deshabilitado={!registrosHabilitados}
           />
           <CampoDetalle
@@ -490,6 +793,7 @@ export function CustomModalDetalleCuentasAnalista({
             valor={detalle.balanceGeneral.totalPasivoPatrimonio}
             onChange={(valor) => actualizarBalanceGeneral("totalPasivoPatrimonio", valor)}
             negrita
+            destacado
             deshabilitado={!totalesHabilitados}
           />
         </div>
@@ -523,12 +827,15 @@ export function CustomModalDetalleCuentasAnalista({
           <div className="grid gap-4 md:grid-cols-2">
             {seccion.campos.map((campo) => {
               const esTotal = esCampoTotalConfigurado(campo.etiqueta);
+              const esCalculado = camposCalculadosEstadoFinanciero.has(campo.id);
+              const esDestacado = esTotal || esCalculado;
               const valorCampo = detalle.registrosEstadoFinanciero?.[campo.id] ?? "";
-              const deshabilitado = bloquearTodos
+              const deshabilitadoBase = bloquearTodos
                 ? true
                 : usarHabilitacionTotales
                   ? (esTotal ? !totalesHabilitados : !registrosHabilitados)
                   : false;
+              const deshabilitado = deshabilitadoBase || (esCalculado && !esTotal);
               const tipoEntradaCampo = obtenerTipoEntradaCampoEstadoFinanciero(campo);
 
               if (tipoEntradaCampo === "fecha") {
@@ -626,7 +933,8 @@ export function CustomModalDetalleCuentasAnalista({
                   valor={valorCampo}
                   onChange={(valor) => actualizarRegistroEstadoFinanciero(campo.id, valor)}
                   permitirNegativo
-                  negrita={esTotal}
+                  negrita={esDestacado}
+                  destacado={esDestacado}
                   deshabilitado={deshabilitado}
                 />
               );
@@ -660,7 +968,7 @@ export function CustomModalDetalleCuentasAnalista({
                     <CampoDetalle etiqueta="Total Corrientes" valor={detalle.balanceGeneral.totalCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalCorrientes", valor)} deshabilitado={!registrosHabilitados} />
                     <CampoDetalle etiqueta="Total No Corrientes" valor={detalle.balanceGeneral.totalNoCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalNoCorrientes", valor)} deshabilitado={!registrosHabilitados} />
                     <CampoDetalle etiqueta="Otros Activos" valor={detalle.balanceGeneral.otrosActivos} onChange={(valor) => actualizarBalanceGeneral("otrosActivos", valor)} deshabilitado={!registrosHabilitados} />
-                    <CampoDetalle etiqueta="Total Activos" valor={detalle.balanceGeneral.totalActivos} onChange={(valor) => actualizarBalanceGeneral("totalActivos", valor)} negrita deshabilitado={!totalesHabilitados} />
+                    <CampoDetalle etiqueta="Total Activos" valor={detalle.balanceGeneral.totalActivos} onChange={(valor) => actualizarBalanceGeneral("totalActivos", valor)} negrita destacado deshabilitado={!totalesHabilitados} />
                     {totalesHabilitados && advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Activos")) ? (
                       <p className="text-sm text-amber-700">
                         {advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Activos"))}
@@ -673,14 +981,14 @@ export function CustomModalDetalleCuentasAnalista({
                     <CampoDetalle etiqueta="Total Pasivos Corrientes" valor={detalle.balanceGeneral.totalPasivosCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalPasivosCorrientes", valor)} deshabilitado={!registrosHabilitados} />
                     <CampoDetalle etiqueta="Total Pasivos No Corrientes" valor={detalle.balanceGeneral.totalPasivosNoCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalPasivosNoCorrientes", valor)} deshabilitado={!registrosHabilitados} />
                     <CampoDetalle etiqueta="Otros Pasivos" valor={detalle.balanceGeneral.otrosPasivos} onChange={(valor) => actualizarBalanceGeneral("otrosPasivos", valor)} deshabilitado={!registrosHabilitados} />
-                    <CampoDetalle etiqueta="Total Pasivos" valor={detalle.balanceGeneral.totalPasivos} onChange={(valor) => actualizarBalanceGeneral("totalPasivos", valor)} negrita deshabilitado={!totalesHabilitados} />
+                    <CampoDetalle etiqueta="Total Pasivos" valor={detalle.balanceGeneral.totalPasivos} onChange={(valor) => actualizarBalanceGeneral("totalPasivos", valor)} negrita destacado deshabilitado={!totalesHabilitados} />
                     {totalesHabilitados && advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivos")) ? (
                       <p className="text-sm text-amber-700">
                         {advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivos"))}
                       </p>
                     ) : null}
                     <CampoDetalle etiqueta="Patrimonio" valor={detalle.balanceGeneral.patrimonio} onChange={(valor) => actualizarBalanceGeneral("patrimonio", valor)} permitirNegativo deshabilitado={!registrosHabilitados} />
-                    <CampoDetalle etiqueta="Total Pasivo y Patrimonio" valor={detalle.balanceGeneral.totalPasivoPatrimonio} onChange={(valor) => actualizarBalanceGeneral("totalPasivoPatrimonio", valor)} negrita deshabilitado={!totalesHabilitados} />
+                    <CampoDetalle etiqueta="Total Pasivo y Patrimonio" valor={detalle.balanceGeneral.totalPasivoPatrimonio} onChange={(valor) => actualizarBalanceGeneral("totalPasivoPatrimonio", valor)} negrita destacado deshabilitado={!totalesHabilitados} />
                     {totalesHabilitados && advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivo y Patrimonio")) ? (
                       <p className="text-sm text-amber-700">
                         {advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivo y Patrimonio"))}
@@ -725,10 +1033,10 @@ export function CustomModalDetalleCuentasAnalista({
             })
           ) : (
             <div className="grid gap-8 md:grid-cols-2">
-              <CampoDetalle etiqueta="Índice de Liquidez" valor={detalle.ratios.liquidez} onChange={(valor) => actualizarRatios("liquidez", valor)} permitirNegativo deshabilitado />
-              <CampoDetalle etiqueta="Capital de Trabajo" valor={detalle.ratios.capitalTrabajo} onChange={(valor) => actualizarRatios("capitalTrabajo", valor)} permitirNegativo deshabilitado />
-              <CampoDetalle etiqueta="Ratio de Endeudamiento" valor={detalle.ratios.endeudamiento} onChange={(valor) => actualizarRatios("endeudamiento", valor)} permitirNegativo deshabilitado />
-              <CampoDetalle etiqueta="Ratio de Rentabilidad" valor={detalle.ratios.rentabilidad} onChange={(valor) => actualizarRatios("rentabilidad", valor)} permitirNegativo deshabilitado />
+              <CampoDetalle etiqueta="Índice de Liquidez" valor={detalle.ratios.liquidez} onChange={(valor) => actualizarRatios("liquidez", valor)} permitirNegativo destacado deshabilitado />
+              <CampoDetalle etiqueta="Capital de Trabajo" valor={detalle.ratios.capitalTrabajo} onChange={(valor) => actualizarRatios("capitalTrabajo", valor)} permitirNegativo destacado deshabilitado />
+              <CampoDetalle etiqueta="Ratio de Endeudamiento" valor={detalle.ratios.endeudamiento} onChange={(valor) => actualizarRatios("endeudamiento", valor)} permitirNegativo destacado deshabilitado />
+              <CampoDetalle etiqueta="Ratio de Rentabilidad" valor={detalle.ratios.rentabilidad} onChange={(valor) => actualizarRatios("rentabilidad", valor)} permitirNegativo destacado deshabilitado />
             </div>
           )}
         </div>

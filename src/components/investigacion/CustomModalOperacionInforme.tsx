@@ -49,9 +49,9 @@ export function CustomModalOperacionAnalista({
   onGuardar,
 }: PropsCustomModalOperacionAnalista) {
   const [anio, setAnio] = useState(registroInicial?.anio ?? "2025");
-  const [mes, setMes] = useState(registroInicial?.mes ?? "");
+  const [idMes, setIdMes] = useState<number | undefined>(registroInicial?.idMesInicio);
   const [idMoneda, setIdMoneda] = useState<number | undefined>(
-    undefined,
+    registroInicial?.idMoneda,
   );
   const [monto, setMonto] = useState(registroInicial?.monto ?? "");
   const [paises, setPaises] = useState(registroInicial?.paises ?? "");
@@ -68,6 +68,9 @@ export function CustomModalOperacionAnalista({
     staleTime: Infinity,
   });
 
+  const opcionesMesesOrdenadas = [...(opcionesMeses ?? [])].sort((a, b) => (a.num1 ?? 0) - (b.num1 ?? 0));
+  const idMesActual = idMes ?? opcionesMesesOrdenadas.find((opcion) => opcion.string1 === registroInicial?.mes)?.num1 ?? undefined;
+  const mesActual = opcionesMesesOrdenadas.find((opcion) => opcion.num1 === idMesActual)?.string1 ?? registroInicial?.mes ?? "";
   const monedaActual =
     opcionesMoneda?.find((opcion) => opcion.num1 === idMoneda)?.string1 ?? registroInicial?.moneda ?? "";
 
@@ -79,8 +82,11 @@ export function CustomModalOperacionAnalista({
     }
 
     onGuardar({
+      idMesInicio: idMesActual,
+      idMesFin: idMesActual,
+      idMoneda,
       anio: anio.trim(),
-      mes: mes.trim(),
+      mes: mesActual.trim(),
       moneda: monedaActual.trim(),
       paises: paises.trim(),
       productos: productos.trim(),
@@ -116,13 +122,14 @@ export function CustomModalOperacionAnalista({
 
           <CustomSelectorBuscable
             label="Mes"
-            options={opcionesMeses}
-            value={opcionesMeses?.find((opcion) => opcion.string1 === mes)?.num1 ?? undefined}
-            displayValue={mes}
-            onChange={(valor) => setMes(opcionesMeses?.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
-            onClear={() => setMes("")}
+            options={opcionesMesesOrdenadas}
+            value={idMesActual}
+            displayValue={mesActual}
+            onChange={setIdMes}
+            onClear={() => setIdMes(undefined)}
             optional
             mostrarTextoOpcionalEnLabel={false}
+            ordenarOpciones={false}
             placeholder="Seleccione mes"
           />
 

@@ -198,6 +198,10 @@ export interface InformeCrearRequest {
   ventasNacionalesText: string;
   ventasInternacionales: number | null;
   ventasInternacionalesText: string;
+  comprasNacionales: number | null;
+  comprasNacionalesText: string;
+  comprasInternacionales: number | null;
+  comprasInternacionalesText: string;
   numeroEmpleados: number;
   numeroEmpleadosText: string;
   comentariosOperaciones: string;

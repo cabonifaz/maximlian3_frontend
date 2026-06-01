@@ -57,6 +57,12 @@ export default function RevisionInformeCoordinador() {
     staleTime: Infinity,
   });
 
+  const { data: opcionesSectorEconomico } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.SECTOR_ECONOMICO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.SECTOR_ECONOMICO),
+    staleTime: Infinity,
+  });
+
   const datosInvestigacion = informeObtenido?.datosInvestigacion ?? (esEjemplo ? datosEjemplo : undefined);
   const idPedidoNumerico = Number(idPedido);
   const idInformeSeguro = Number.isFinite(idInforme) ? idInforme : 0;
@@ -81,6 +87,7 @@ export default function RevisionInformeCoordinador() {
         opcionesTipoPersona,
         opcionesPais,
         opcionesEstadoCliente,
+        opcionesSectorEconomico,
       });
 
       await informeService.editar(payload);

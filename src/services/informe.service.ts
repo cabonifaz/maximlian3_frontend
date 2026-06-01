@@ -1,5 +1,11 @@
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
+import { servicioBanco } from "./banco.service";
+import { servicioCompania } from "./compania.service";
+import { servicioDirectorioEjecutivo } from "./directorioEjecutivo.service";
+import { servicioTablaMaestra } from "./tablaMaestra.service";
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   InformeAutocompletarRequest,
   InformeCrearRequest,
@@ -20,6 +26,10 @@ import type {
   DatosInvestigacionAnalista,
   EstadoInvestigacionAnalista,
 } from "@maximilian/shared/types/investigacion.type";
+
+type RegistroCompaniaInvestigacion = DatosInvestigacionAnalista["companiasRelacionadas"][number];
+type RegistroBancoInvestigacion = DatosInvestigacionAnalista["bancos"][number];
+type RegistroDirectorioInvestigacion = DatosInvestigacionAnalista["directorioEjecutivo"][number];
 
 function obtenerNumero(...valores: unknown[]): number {
   for (const valor of valores) {
@@ -573,8 +583,12 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   ).map((item) => {
     const compania = obtenerRegistro(item);
     return {
+      idInformeCompaniaRelacionada: obtenerNumeroOpcional(
+        compania.idInformeCompaniaRelacionada,
+        compania.IdInformeCompaniaRelacionada,
+      ),
       idCompania: obtenerNumero(compania.idCompania, compania.IdCompania),
-      empresa: obtenerTexto(compania.nombre, compania.Nombre, compania.empresa, compania.Empresa),
+      empresa: obtenerTexto(compania.nombreCompleto, compania.NombreCompleto, compania.nombre, compania.Nombre, compania.empresa, compania.Empresa),
       idFiscal: obtenerTexto(compania.taxNum, compania.TaxNum, compania.idFiscal, compania.IdFiscal),
       pais: obtenerTexto(compania.pais, compania.Pais, compania.nombrePais, compania.NombrePais),
     };
@@ -595,10 +609,21 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     territorioVentasDetalle: obtenerTexto(registro.ventasNacionalesText, registro.VentasNacionalesText),
     ventasExtranjeroPorcentaje: formatearNumero(registro.ventasInternacionales, 2),
     ventasExtranjeroDetalle: obtenerTexto(registro.ventasInternacionalesText, registro.VentasInternacionalesText),
-    comprasNacionalesPorcentaje: formatearNumero(registro.comprasNacionales, 2),
+    comprasNacionalesPorcentaje: formatearNumero(registro.comprasNacionales ?? registro.ComprasNacionales, 2),
     comprasNacionalesDetalle: obtenerTexto(registro.comprasNacionalesText, registro.ComprasNacionalesText),
-    comprasExtranjeroPorcentaje: formatearNumero(registro.comprasExtranjero, 2),
-    comprasExtranjeroDetalle: obtenerTexto(registro.comprasExtranjeroText, registro.ComprasExtranjeroText),
+    comprasExtranjeroPorcentaje: formatearNumero(
+      registro.comprasInternacionales
+        ?? registro.ComprasInternacionales
+        ?? registro.comprasExtranjero
+        ?? registro.ComprasExtranjero,
+      2,
+    ),
+    comprasExtranjeroDetalle: obtenerTexto(
+      registro.comprasInternacionalesText,
+      registro.ComprasInternacionalesText,
+      registro.comprasExtranjeroText,
+      registro.ComprasExtranjeroText,
+    ),
     numeroEmpleados: formatearEntero(registro.numeroEmpleados),
     numeroEmpleadosDetalle: obtenerTexto(registro.numeroEmpleadosText, registro.NumeroEmpleadosText),
     comentariosOperaciones: obtenerTexto(registro.comentariosOperaciones, registro.ComentariosOperaciones),
@@ -612,6 +637,10 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   datos.importaciones = operaciones
     .filter((item) => obtenerNumero(item.idTipoOperacion, item.IdTipoOperacion) === 1)
     .map((item) => ({
+      idInformeExportacionImportacion: obtenerNumeroOpcional(item.idInformeExportacionImportacion, item.IdInformeExportacionImportacion),
+      idMesInicio: obtenerNumeroOpcional(item.mesInicio, item.MesInicio),
+      idMesFin: obtenerNumeroOpcional(item.mesFin, item.MesFin),
+      idMoneda: obtenerNumeroOpcional(item.idMoneda, item.IdMoneda),
       anio: formatearEntero(item.anio ?? item.Anio),
       mes: obtenerTexto(item.mesInicioDescripcion, item.MesInicioDescripcion, item.mes, item.Mes),
       moneda: obtenerTexto(item.moneda, item.Moneda),
@@ -624,6 +653,10 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   datos.exportaciones = operaciones
     .filter((item) => obtenerNumero(item.idTipoOperacion, item.IdTipoOperacion) === 2)
     .map((item) => ({
+      idInformeExportacionImportacion: obtenerNumeroOpcional(item.idInformeExportacionImportacion, item.IdInformeExportacionImportacion),
+      idMesInicio: obtenerNumeroOpcional(item.mesInicio, item.MesInicio),
+      idMesFin: obtenerNumeroOpcional(item.mesFin, item.MesFin),
+      idMoneda: obtenerNumeroOpcional(item.idMoneda, item.IdMoneda),
       anio: formatearEntero(item.anio ?? item.Anio),
       mes: obtenerTexto(item.mesInicioDescripcion, item.MesInicioDescripcion, item.mes, item.Mes),
       moneda: obtenerTexto(item.moneda, item.Moneda),
@@ -740,14 +773,21 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   datos.bancos = obtenerLista(registro.bancos, registro.Bancos).map((item) => {
     const banco = obtenerRegistro(item);
     return {
+      idInformeBanco: obtenerNumeroOpcional(
+        banco.idInformeBanco,
+        banco.IdInformeBanco,
+        banco.idIformeBanco,
+        banco.IdIformeBanco,
+      ),
       idBanco: obtenerNumero(banco.idBanco, banco.IdBanco),
       idPais: obtenerNumero(banco.idPais, banco.IdPais),
+      idSector: obtenerNumeroOpcional(banco.idSector, banco.IdSector),
       pais: obtenerTexto(banco.pais, banco.Pais, banco.nombrePais, banco.NombrePais) || undefined,
       banco: obtenerTexto(banco.nombre, banco.Nombre, banco.banco, banco.Banco),
       numeroCuenta: obtenerTexto(banco.numeroCuenta, banco.NumeroCuenta),
       sector: obtenerTexto(banco.sector, banco.Sector),
-      telefono: obtenerTexto(banco.telefono, banco.Telefono),
-      sectoristaJefeCuenta: obtenerTexto(banco.referenciaBanco, banco.ReferenciaBanco, banco.sectoristaJefeCuenta, banco.SectoristaJefeCuenta) || undefined,
+      telefono: obtenerTexto(banco.telefono, banco.Telefono, banco.referenciaBanco, banco.ReferenciaBanco),
+      sectoristaJefeCuenta: obtenerTexto(banco.sectorista, banco.Sectorista, banco.sectoristaJefeCuenta, banco.SectoristaJefeCuenta) || undefined,
     };
   });
 
@@ -761,7 +801,11 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     registro.DirectoriosEjecutivos,
   ).map((item, indice) => {
     const ejecutivo = obtenerRegistro(item);
-    const id = obtenerNumero(ejecutivo.id, ejecutivo.Id, indice + 1);
+    const idDirectorioEjecutivo = obtenerNumeroOpcional(
+      ejecutivo.idDirectorioEjecutivo,
+      ejecutivo.IdDirectorioEjecutivo,
+    );
+    const id = idDirectorioEjecutivo ?? obtenerNumero(ejecutivo.id, ejecutivo.Id, indice + 1);
     const nombreCompleto = obtenerTexto(
       ejecutivo.nombreCompleto,
       ejecutivo.NombreCompleto,
@@ -770,14 +814,20 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     );
 
     return {
+      idInformeDirectorioEjecutivo: obtenerNumeroOpcional(
+        ejecutivo.idInformeDirectorioEjecutivo,
+        ejecutivo.IdInformeDirectorioEjecutivo,
+      ),
       id,
+      idDirectorioEjecutivo,
+      idCargo: obtenerNumeroOpcional(ejecutivo.idCargo, ejecutivo.IdCargo),
       ejecutivo: nombreCompleto,
-      cargo: obtenerTexto(ejecutivo.cargos, ejecutivo.Cargos, ejecutivo.cargo, ejecutivo.Cargo),
+      cargo: obtenerTexto(ejecutivo.cargos, ejecutivo.Cargos, ejecutivo.cargo, ejecutivo.Cargo, ejecutivo.idCargo, ejecutivo.IdCargo),
       porcentaje: formatearNumero(ejecutivo.participacion, 2),
       lista: obtenerBooleano(ejecutivo.apareceImpresoLista, ejecutivo.ApareceImpresoLista),
       detalleEjecutivo: obtenerBooleano(ejecutivo.imprimeDatosEjecutivos, ejecutivo.ImprimeDatosEjecutivos),
       orden: formatearEntero(ejecutivo.orden),
-      vinculadoDesde: obtenerTexto(ejecutivo.formularioVinculado, ejecutivo.FormularioVinculado),
+      vinculadoDesde: formatearFechaEntrada(obtenerTexto(ejecutivo.vinculadoDesde, ejecutivo.VinculadoDesde, ejecutivo.formularioVinculado, ejecutivo.FormularioVinculado)),
       companiaAnterior: obtenerTexto(ejecutivo.companiaAnterior, ejecutivo.CompaniaAnterior),
       esParteDirectorio: obtenerBooleano(ejecutivo.esParticipanteDirectiva, ejecutivo.EsParticipanteDirectiva),
       pais: obtenerTexto(ejecutivo.pais, ejecutivo.Pais),
@@ -802,6 +852,88 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     archivosInvestigacion,
   };
 }
+
+async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Promise<InformeObtenerResponse> {
+  const sectores: EntradaTablaMaestra[] = await servicioTablaMaestra.list(TablaMaestraId.SECTOR_ECONOMICO)
+    .catch(() => []);
+
+  const companias: RegistroCompaniaInvestigacion[] = await Promise.all(
+    respuesta.datosInvestigacion.companiasRelacionadas.map(async (compania): Promise<RegistroCompaniaInvestigacion> => {
+      if (!compania.idCompania || (compania.empresa && compania.idFiscal && compania.pais)) return compania;
+
+      try {
+        const detalle = await servicioCompania.obtener({ idCompania: compania.idCompania });
+        if (!detalle) return compania;
+
+        return {
+          ...compania,
+          empresa: compania.empresa || detalle.nombreCompleto,
+          idFiscal: compania.idFiscal || detalle.numeroDocumento,
+          pais: compania.pais || detalle.pais,
+        };
+      } catch {
+        return compania;
+      }
+    }),
+  );
+
+  const bancos: RegistroBancoInvestigacion[] = await Promise.all(
+    respuesta.datosInvestigacion.bancos.map(async (banco): Promise<RegistroBancoInvestigacion> => {
+      if (!banco.idBanco) return banco;
+
+      try {
+        const detalle = await servicioBanco.obtener({ idBanco: banco.idBanco });
+        if (!detalle) return banco;
+
+        const idSector = banco.idSector ?? detalle.idSector;
+
+        return {
+          ...banco,
+          idPais: banco.idPais ?? detalle.idPais,
+          pais: banco.pais || detalle.pais,
+          banco: banco.banco || detalle.nombre,
+          telefono: banco.telefono || detalle.telefono,
+          idSector,
+          sector: banco.sector || sectores.find((sector) => sector.num1 === idSector)?.string1 || "",
+        };
+      } catch {
+        return banco;
+      }
+    }),
+  );
+
+  const directorios: RegistroDirectorioInvestigacion[] = await Promise.all(
+    respuesta.datosInvestigacion.directorioEjecutivo.map(async (ejecutivo): Promise<RegistroDirectorioInvestigacion> => {
+      if (!ejecutivo.idDirectorioEjecutivo || (ejecutivo.pais && ejecutivo.tipoPersona && ejecutivo.descripcionBusqueda)) return ejecutivo;
+
+      try {
+        const detalle = await servicioDirectorioEjecutivo.obtener({ idDirectorioEjecutivo: ejecutivo.idDirectorioEjecutivo });
+        if (!detalle) return ejecutivo;
+
+        return {
+          ...ejecutivo,
+          pais: ejecutivo.pais || detalle.pais,
+          tipoPersona: ejecutivo.tipoPersona || detalle.tipoPersona,
+          descripcionBusqueda: ejecutivo.descripcionBusqueda || detalle.referenciaAdicional,
+          nombreCompleto: ejecutivo.nombreCompleto || detalle.nombres,
+          ejecutivo: ejecutivo.ejecutivo || detalle.nombres,
+        };
+      } catch {
+        return ejecutivo;
+      }
+    }),
+  );
+
+  return {
+    ...respuesta,
+      datosInvestigacion: {
+        ...respuesta.datosInvestigacion,
+        companiasRelacionadas: companias,
+        bancos,
+        directorioEjecutivo: directorios,
+      },
+    };
+  }
 
 export const informeService = {
   list: async (params: InformeListParams): Promise<InformeListResponse> => {
@@ -853,7 +985,7 @@ export const informeService = {
       throw new Error(data.mensaje || "Error al obtener el informe");
     }
 
-    return normalizarRespuestaObtener(data.result);
+    return enriquecerRespuestaObtener(normalizarRespuestaObtener(data.result));
   },
 
   obtenerUrlPrefirmada: async (

@@ -142,6 +142,7 @@ export function construirPayloadInforme({
   opcionesTipoPersona,
   opcionesPais,
   opcionesEstadoCliente,
+  opcionesSectorEconomico,
 }: {
   idPedido: number;
   idInforme?: number;
@@ -150,6 +151,7 @@ export function construirPayloadInforme({
   opcionesTipoPersona: EntradaTablaMaestra[] | undefined;
   opcionesPais: EntradaTablaMaestra[] | undefined;
   opcionesEstadoCliente: EntradaTablaMaestra[] | undefined;
+  opcionesSectorEconomico: EntradaTablaMaestra[] | undefined;
 }): InformeCrearRequest {
   const { identificacion, aspectosLegales, operacionPrincipal, informacionFinanciera, referencias, datosGenerales } = datosInvestigacion;
   const esEdicion = typeof idInforme === "number" && idInforme > 0;
@@ -209,6 +211,10 @@ export function construirPayloadInforme({
     ventasNacionalesText: operacionPrincipal.territorioVentasDetalle,
     ventasInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasExtranjeroPorcentaje),
     ventasInternacionalesText: operacionPrincipal.ventasExtranjeroDetalle,
+    comprasNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasNacionalesPorcentaje),
+    comprasNacionalesText: operacionPrincipal.comprasNacionalesDetalle,
+    comprasInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasExtranjeroPorcentaje),
+    comprasInternacionalesText: operacionPrincipal.comprasExtranjeroDetalle,
     numeroEmpleados: obtenerEnteroDesdeTexto(operacionPrincipal.numeroEmpleados),
     numeroEmpleadosText: operacionPrincipal.numeroEmpleadosDetalle,
     comentariosOperaciones: operacionPrincipal.comentariosOperaciones,
@@ -235,10 +241,10 @@ export function construirPayloadInforme({
       cuentaBalance: construirCuentaBalance(balance.detalleCuentas),
     })),
     lstBancos: datosInvestigacion.bancos.map((banco) => ({
-      ...(esEdicion ? { idInformeBanco: 0 } : {}),
+      ...(esEdicion ? { idInformeBanco: banco.idInformeBanco ?? 0 } : {}),
       idBanco: banco.idBanco ?? 0,
       numeroCuenta: banco.numeroCuenta,
-      idSector: 0,
+      idSector: banco.idSector ?? obtenerIdPorTexto(opcionesSectorEconomico, banco.sector ?? ""),
       sectorista: banco.sectoristaJefeCuenta ?? "",
       referenciaBanco: banco.telefono,
     })),
@@ -250,9 +256,9 @@ export function construirPayloadInforme({
       ...datosInvestigacion.importaciones.map((registro) => ({
         ...(esEdicion ? { idInformeExportacionImportacion: 0 } : {}),
         anio: obtenerEnteroDesdeTexto(registro.anio),
-        mesInicio: obtenerNumeroMes(registro.mes),
-        mesFin: obtenerNumeroMes(registro.mes),
-        idMoneda: obtenerIdMoneda(registro.moneda),
+        mesInicio: registro.idMesInicio ?? obtenerNumeroMes(registro.mes),
+        mesFin: registro.idMesFin ?? registro.idMesInicio ?? obtenerNumeroMes(registro.mes),
+        idMoneda: registro.idMoneda ?? obtenerIdMoneda(registro.moneda),
         paises: registro.paises,
         monto: obtenerNumeroDesdeTexto(registro.monto),
         productos: registro.productos,
@@ -262,9 +268,9 @@ export function construirPayloadInforme({
       ...datosInvestigacion.exportaciones.map((registro) => ({
         ...(esEdicion ? { idInformeExportacionImportacion: 0 } : {}),
         anio: obtenerEnteroDesdeTexto(registro.anio),
-        mesInicio: obtenerNumeroMes(registro.mes),
-        mesFin: obtenerNumeroMes(registro.mes),
-        idMoneda: obtenerIdMoneda(registro.moneda),
+        mesInicio: registro.idMesInicio ?? obtenerNumeroMes(registro.mes),
+        mesFin: registro.idMesFin ?? registro.idMesInicio ?? obtenerNumeroMes(registro.mes),
+        idMoneda: registro.idMoneda ?? obtenerIdMoneda(registro.moneda),
         paises: registro.paises,
         monto: obtenerNumeroDesdeTexto(registro.monto),
         productos: registro.productos,
@@ -292,7 +298,7 @@ export function construirPayloadInforme({
     lstDirectoriosEjecutivos: datosInvestigacion.directorioEjecutivo.map((ejecutivo) => ({
       ...(esEdicion ? { idInformeDirectorioEjecutivo: 0 } : {}),
       idDirectorioEjecutivo: ejecutivo.idDirectorioEjecutivo ?? ejecutivo.id,
-      idCargo: 0,
+      idCargo: ejecutivo.idCargo ?? 0,
       vinculadoDesde: convertirFechaIso(ejecutivo.vinculadoDesde),
       companiaAnterior: ejecutivo.companiaAnterior,
       participacion: obtenerNumeroDesdeTexto(ejecutivo.porcentaje),
