@@ -118,6 +118,8 @@ function CampoDetalle({
   onChange,
   negrita = false,
   destacado = false,
+  claseContenedor = "",
+  mostrarComoPorcentaje = false,
   deshabilitado = false,
   permitirNegativo = false,
 }: {
@@ -126,16 +128,20 @@ function CampoDetalle({
   onChange: (valor: string) => void;
   negrita?: boolean;
   destacado?: boolean;
+  claseContenedor?: string;
+  mostrarComoPorcentaje?: boolean;
   deshabilitado?: boolean;
   permitirNegativo?: boolean;
 }) {
+  const valorMostrado = mostrarComoPorcentaje ? `${formatearNumero(obtenerNumero(valor) * 100)}%` : valor;
+
   return (
-    <div className={`space-y-2 rounded-lg ${destacado ? "border border-emerald-200 bg-emerald-50/70 p-3" : ""}`}>
+    <div className={`space-y-2 rounded-lg ${destacado ? "border border-emerald-200 bg-emerald-50/70 p-3" : ""} ${claseContenedor}`}>
       <CustomLabel as="p" className={`text-[10px] font-bold uppercase tracking-[0.12em] ${destacado ? "text-emerald-700" : "text-slate-600"}`}>
         {etiqueta}
       </CustomLabel>
       <input
-        value={valor}
+        value={valorMostrado}
         disabled={deshabilitado}
         onChange={(event) => onChange(sanitizarNumero(event.target.value, permitirNegativo))}
         onBlur={(event) => {
@@ -276,6 +282,15 @@ const camposCalculadosEstadoFinanciero = new Set([
   "profit",
   "liquidity-index",
   "working-capital",
+  "indebtedness-ratio",
+  "profitability-ratio-turquia",
+]);
+
+const camposRatioPorcentaje = new Set([
+  "current-indebtedness-ratio",
+  "profitability-ratio",
+  "current-indebtedness-ratio-totalizado",
+  "profitability-ratio-totalizado",
   "indebtedness-ratio",
   "profitability-ratio-turquia",
 ]);
@@ -759,6 +774,7 @@ export function CustomModalDetalleCuentasAnalista({
             onChange={(valor) => actualizarBalanceGeneral("totalActivos", valor)}
             negrita
             destacado
+            claseContenedor="my-2"
             deshabilitado={!totalesHabilitados}
           />
         </div>
@@ -783,6 +799,7 @@ export function CustomModalDetalleCuentasAnalista({
             onChange={(valor) => actualizarBalanceGeneral("totalPasivos", valor)}
             negrita
             destacado
+            claseContenedor="my-2"
             deshabilitado={!totalesHabilitados}
           />
           <CampoDetalle
@@ -792,6 +809,7 @@ export function CustomModalDetalleCuentasAnalista({
             permitirNegativo
             negrita
             destacado
+            claseContenedor="my-2"
             deshabilitado={!registrosHabilitados}
           />
           <CampoDetalle
@@ -800,6 +818,7 @@ export function CustomModalDetalleCuentasAnalista({
             onChange={(valor) => actualizarBalanceGeneral("totalPasivoPatrimonio", valor)}
             negrita
             destacado
+            claseContenedor="my-2"
             deshabilitado={!totalesHabilitados}
           />
         </div>
@@ -835,6 +854,8 @@ export function CustomModalDetalleCuentasAnalista({
               const esTotal = esCampoTotalConfigurado(campo.etiqueta);
               const esCalculado = camposCalculadosEstadoFinanciero.has(campo.id);
               const esDestacado = esTotal || esCalculado;
+              const esSeccionRatios = /ratio/i.test(`${seccion.id} ${seccion.titulo}`);
+              const esRatioPorcentaje = camposRatioPorcentaje.has(campo.id);
               const valorCampo = detalle.registrosEstadoFinanciero?.[campo.id] ?? "";
               const deshabilitadoBase = bloquearTodos
                 ? true
@@ -941,6 +962,8 @@ export function CustomModalDetalleCuentasAnalista({
                   permitirNegativo
                   negrita={esDestacado}
                   destacado={esDestacado}
+                  claseContenedor={esDestacado && !esSeccionRatios ? "md:col-span-2 my-2" : ""}
+                  mostrarComoPorcentaje={esRatioPorcentaje}
                   deshabilitado={deshabilitado}
                 />
               );
@@ -974,7 +997,7 @@ export function CustomModalDetalleCuentasAnalista({
                     <CampoDetalle etiqueta="Total Corrientes" valor={detalle.balanceGeneral.totalCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalCorrientes", valor)} deshabilitado={!registrosHabilitados} />
                     <CampoDetalle etiqueta="Total No Corrientes" valor={detalle.balanceGeneral.totalNoCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalNoCorrientes", valor)} deshabilitado={!registrosHabilitados} />
                     <CampoDetalle etiqueta="Otros Activos" valor={detalle.balanceGeneral.otrosActivos} onChange={(valor) => actualizarBalanceGeneral("otrosActivos", valor)} deshabilitado={!registrosHabilitados} />
-                    <CampoDetalle etiqueta="Total Activos" valor={detalle.balanceGeneral.totalActivos} onChange={(valor) => actualizarBalanceGeneral("totalActivos", valor)} negrita destacado deshabilitado={!totalesHabilitados} />
+                    <CampoDetalle etiqueta="Total Activos" valor={detalle.balanceGeneral.totalActivos} onChange={(valor) => actualizarBalanceGeneral("totalActivos", valor)} negrita destacado claseContenedor="my-2" deshabilitado={!totalesHabilitados} />
                     {totalesHabilitados && advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Activos")) ? (
                       <p className="text-sm text-amber-700">
                         {advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Activos"))}
@@ -987,14 +1010,14 @@ export function CustomModalDetalleCuentasAnalista({
                     <CampoDetalle etiqueta="Total Pasivos Corrientes" valor={detalle.balanceGeneral.totalPasivosCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalPasivosCorrientes", valor)} deshabilitado={!registrosHabilitados} />
                     <CampoDetalle etiqueta="Total Pasivos No Corrientes" valor={detalle.balanceGeneral.totalPasivosNoCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalPasivosNoCorrientes", valor)} deshabilitado={!registrosHabilitados} />
                     <CampoDetalle etiqueta="Otros Pasivos" valor={detalle.balanceGeneral.otrosPasivos} onChange={(valor) => actualizarBalanceGeneral("otrosPasivos", valor)} deshabilitado={!registrosHabilitados} />
-                    <CampoDetalle etiqueta="Total Pasivos" valor={detalle.balanceGeneral.totalPasivos} onChange={(valor) => actualizarBalanceGeneral("totalPasivos", valor)} negrita destacado deshabilitado={!totalesHabilitados} />
+                    <CampoDetalle etiqueta="Total Pasivos" valor={detalle.balanceGeneral.totalPasivos} onChange={(valor) => actualizarBalanceGeneral("totalPasivos", valor)} negrita destacado claseContenedor="my-2" deshabilitado={!totalesHabilitados} />
                     {totalesHabilitados && advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivos")) ? (
                       <p className="text-sm text-amber-700">
                         {advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivos"))}
                       </p>
                     ) : null}
                     <CampoDetalle etiqueta="Patrimonio" valor={detalle.balanceGeneral.patrimonio} onChange={(valor) => actualizarBalanceGeneral("patrimonio", valor)} permitirNegativo deshabilitado={!registrosHabilitados} />
-                    <CampoDetalle etiqueta="Total Pasivo y Patrimonio" valor={detalle.balanceGeneral.totalPasivoPatrimonio} onChange={(valor) => actualizarBalanceGeneral("totalPasivoPatrimonio", valor)} negrita destacado deshabilitado={!totalesHabilitados} />
+                    <CampoDetalle etiqueta="Total Pasivo y Patrimonio" valor={detalle.balanceGeneral.totalPasivoPatrimonio} onChange={(valor) => actualizarBalanceGeneral("totalPasivoPatrimonio", valor)} negrita destacado claseContenedor="my-2" deshabilitado={!totalesHabilitados} />
                     {totalesHabilitados && advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivo y Patrimonio")) ? (
                       <p className="text-sm text-amber-700">
                         {advertenciasTotales.find((advertencia) => advertencia.startsWith("Total Pasivo y Patrimonio"))}
@@ -1041,8 +1064,8 @@ export function CustomModalDetalleCuentasAnalista({
             <div className="grid gap-8 md:grid-cols-2">
               <CampoDetalle etiqueta="Índice de Liquidez" valor={detalle.ratios.liquidez} onChange={(valor) => actualizarRatios("liquidez", valor)} permitirNegativo destacado deshabilitado />
               <CampoDetalle etiqueta="Capital de Trabajo" valor={detalle.ratios.capitalTrabajo} onChange={(valor) => actualizarRatios("capitalTrabajo", valor)} permitirNegativo destacado deshabilitado />
-              <CampoDetalle etiqueta="Ratio de Endeudamiento" valor={detalle.ratios.endeudamiento} onChange={(valor) => actualizarRatios("endeudamiento", valor)} permitirNegativo destacado deshabilitado />
-              <CampoDetalle etiqueta="Ratio de Rentabilidad" valor={detalle.ratios.rentabilidad} onChange={(valor) => actualizarRatios("rentabilidad", valor)} permitirNegativo destacado deshabilitado />
+              <CampoDetalle etiqueta="Ratio de Endeudamiento" valor={detalle.ratios.endeudamiento} onChange={(valor) => actualizarRatios("endeudamiento", valor)} permitirNegativo destacado mostrarComoPorcentaje deshabilitado />
+              <CampoDetalle etiqueta="Ratio de Rentabilidad" valor={detalle.ratios.rentabilidad} onChange={(valor) => actualizarRatios("rentabilidad", valor)} permitirNegativo destacado mostrarComoPorcentaje deshabilitado />
             </div>
           )}
         </div>
