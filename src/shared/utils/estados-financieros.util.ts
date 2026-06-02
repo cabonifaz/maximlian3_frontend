@@ -30,6 +30,7 @@ const configuracionEstadosFinancieros: Record<string, SeccionEstadoFinancieroAna
         { id: "activos-biologicos-corriente", etiqueta: "Activos Biologicos" },
         { id: "activos-impuestos-ganancias", etiqueta: "Activos por Impuestos a las Ganancias" },
         { id: "otros-activos-no-financieros-corriente", etiqueta: "Otros Activos No Financieros" },
+        { id: "total-activo-corriente", etiqueta: "Total Activo Corriente" },
       ],
     },
     {
@@ -48,6 +49,8 @@ const configuracionEstadosFinancieros: Record<string, SeccionEstadoFinancieroAna
         { id: "activos-impuestos-corrientes", etiqueta: "Activos por Impuestos Corrientes, No Corrientes" },
         { id: "plusvalia", etiqueta: "Plusvalia" },
         { id: "otros-activos-no-financieros-no-corriente", etiqueta: "Otros Activos No Financieros" },
+        { id: "total-activo-no-corriente", etiqueta: "Total Activo No Corriente" },
+        { id: "total-activo", etiqueta: "Total Activo" },
       ],
     },
     {
@@ -60,6 +63,7 @@ const configuracionEstadosFinancieros: Record<string, SeccionEstadoFinancieroAna
         { id: "otras-provisiones-corriente", etiqueta: "Otras Provisiones" },
         { id: "impuestos-ganancias-corriente", etiqueta: "Pasivos por Impuestos a las Ganancias" },
         { id: "otros-pasivos-no-financieros-corriente", etiqueta: "Otros Pasivos No Financieros" },
+        { id: "total-pasivo-corriente", etiqueta: "Total Pasivo Corriente" },
       ],
     },
     {
@@ -73,6 +77,8 @@ const configuracionEstadosFinancieros: Record<string, SeccionEstadoFinancieroAna
         { id: "impuestos-diferidos-no-corriente", etiqueta: "Pasivos por Impuestos Diferidos" },
         { id: "impuestos-corrientes-no-corriente", etiqueta: "Pasivos por Impuestos Corrientes, No Corrientes" },
         { id: "otros-pasivos-no-financieros-no-corriente", etiqueta: "Otros Pasivos No Financieros" },
+        { id: "total-pasivo-no-corriente", etiqueta: "Total Pasivo No Corriente" },
+        { id: "total-pasivos", etiqueta: "Total Pasivos" },
       ],
     },
     {
@@ -86,6 +92,8 @@ const configuracionEstadosFinancieros: Record<string, SeccionEstadoFinancieroAna
         { id: "otras-reservas-capital", etiqueta: "Otras Reservas de Capital" },
         { id: "resultados-acumulados", etiqueta: "Resultados Acumulados" },
         { id: "otras-reservas-patrimonio", etiqueta: "Otras Reservas de Patrimonio" },
+        { id: "total-patrimonio", etiqueta: "Total Patrimonio" },
+        { id: "total-pasivo-patrimonio", etiqueta: "Total Pasivos + Patrimonio" },
       ],
     },
     {
@@ -102,10 +110,14 @@ const configuracionEstadosFinancieros: Record<string, SeccionEstadoFinancieroAna
         { id: "otras-ganancias-perdidas", etiqueta: "Otras Ganancias (Perdidas)" },
         { id: "ganancia-operativa", etiqueta: "Ganancia (Perdida) Operativa" },
         { id: "ingresos-financieros", etiqueta: "Ingresos Financieros" },
+        { id: "ingresos-intereses", etiqueta: "Ingresos por Intereses" },
         { id: "gastos-financieros", etiqueta: "Gastos Financieros" },
+        { id: "deterioro-valor", etiqueta: "Ganancia (Perdida) por Deterioro de Valor" },
+        { id: "otros-ingresos-subsidiarias", etiqueta: "Otros Ingresos (Gastos) de las Subsidiarias, Asociadas y Negocios Conjuntos" },
         { id: "diferencias-cambio", etiqueta: "Diferencias de Cambio Neto" },
         { id: "ganancia-antes-impuestos", etiqueta: "Ganancia (Perdida) Antes de Impuestos" },
         { id: "ingreso-gasto-impuesto", etiqueta: "Ingreso (Gasto) por Impuesto" },
+        { id: "operaciones-descontinuadas", etiqueta: "Ganancia (Perdida) Procedente de Operaciones Descontinuadas, Neta de Impuesto" },
         { id: "ganancia-neta", etiqueta: "Ganancia (Perdida) Neta del Ejercicio" },
       ],
     },

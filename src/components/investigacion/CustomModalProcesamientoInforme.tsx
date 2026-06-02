@@ -140,13 +140,17 @@ export function CustomModalExtraccionInformacionAnalista({
 
     const configuracionSecciones = seccionesConOpciones.reduce<InformeConfiguracionExtraccion>((acumulado, seccion) => {
       const idsSeleccionados = camposSeleccionadosPorSeccion[seccion.claveSeccion] ?? [];
-      const camposSeleccionados = seccion.campos
+      seccion.campos
         .filter((campo) => idsSeleccionados.includes(campo.id))
-        .map((campo) => campo.claveCampo);
+        .forEach((campo) => {
+          const claveSeccionExtraccion = campo.claveSeccionExtraccion ?? seccion.claveSeccion;
+          const camposSeleccionados = campo.clavesCamposExtraccion ?? [campo.claveCampo];
 
-      if (camposSeleccionados.length > 0) {
-        acumulado[seccion.claveSeccion] = camposSeleccionados;
-      }
+          acumulado[claveSeccionExtraccion] = [
+            ...(acumulado[claveSeccionExtraccion] ?? []),
+            ...camposSeleccionados,
+          ];
+        });
 
       return acumulado;
     }, {});

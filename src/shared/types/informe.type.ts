@@ -258,6 +258,8 @@ export interface InformeCampoExtraccionDisponible {
   id: number;
   claveCampo: string;
   etiquetaCampo: string;
+  claveSeccionExtraccion?: string;
+  clavesCamposExtraccion?: string[];
   esTraducible?: boolean;
 }
 
