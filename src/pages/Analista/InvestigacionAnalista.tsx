@@ -389,6 +389,14 @@ const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacionAnalist
   },
 };
 
+const SECCIONES_LISTA_EXTRACCION = new Set([
+  "companiasRelacionadas",
+  "importaciones",
+  "exportaciones",
+  "proveedores",
+  "bancos",
+]);
+
 function humanizarClaveExtraccion(valor: string) {
   const texto = valor
     .replace(/([a-z])([A-Z])/g, "$1 $2")
@@ -399,21 +407,41 @@ function humanizarClaveExtraccion(valor: string) {
 }
 
 function construirSeccionesDisponiblesExtraccion(alcance: AlcanceExtraccionInforme): InformeSeccionExtraccionDisponible[] {
-  const configuraciones = alcance === "general"
-    ? Object.values(CONFIGURACION_EXTRACCION_POR_SECCION)
-    : [CONFIGURACION_EXTRACCION_POR_SECCION[alcance]];
+  const entradasConfiguracion = alcance === "general"
+    ? Object.entries(CONFIGURACION_EXTRACCION_POR_SECCION)
+    : [[alcance, CONFIGURACION_EXTRACCION_POR_SECCION[alcance]]] as [IdSeccionInvestigacionAnalista, Record<string, string[]>][];
 
-  return configuraciones.flatMap((configuracion) =>
-    Object.entries(configuracion).map(([claveSeccion, campos]) => ({
-      claveSeccion,
-      etiquetaSeccion: ETIQUETAS_SECCIONES_EXTRACCION[claveSeccion] ?? humanizarClaveExtraccion(claveSeccion),
-      campos: campos.map((campo, indice) => ({
-        id: indice + 1,
+  return entradasConfiguracion.map(([claveGrupo, configuracion]) => {
+    const campos = Object.entries(configuracion).flatMap(([claveSeccion, camposSeccion]) => {
+      const etiquetaSeccion = ETIQUETAS_SECCIONES_EXTRACCION[claveSeccion] ?? humanizarClaveExtraccion(claveSeccion);
+
+      if (SECCIONES_LISTA_EXTRACCION.has(claveSeccion)) {
+        return [{
+          id: 0,
+          claveCampo: claveSeccion,
+          etiquetaCampo: etiquetaSeccion,
+          claveSeccionExtraccion: claveSeccion,
+          clavesCamposExtraccion: camposSeccion,
+        }];
+      }
+
+      return camposSeccion.map((campo) => ({
+        id: 0,
         claveCampo: campo,
         etiquetaCampo: humanizarClaveExtraccion(campo),
+        claveSeccionExtraccion: claveSeccion,
+      }));
+    });
+
+    return {
+      claveSeccion: claveGrupo,
+      etiquetaSeccion: ETIQUETAS_SECCIONES_EXTRACCION[claveGrupo] ?? humanizarClaveExtraccion(claveGrupo),
+      campos: campos.map((campo, indice) => ({
+        ...campo,
+        id: indice + 1,
       })),
-    })),
-  );
+    };
+  });
 }
 
 function esRegistroPlano(valor: unknown): valor is Record<string, unknown> {

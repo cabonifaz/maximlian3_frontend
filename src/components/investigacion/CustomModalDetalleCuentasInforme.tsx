@@ -352,10 +352,16 @@ function calcularRegistrosEstadoFinanciero(tipoEstadoFinanciero: string | undefi
     ]));
     asignar("ganancia-antes-impuestos", n("ganancia-operativa") + sumarRegistros(siguiente, [
       "ingresos-financieros",
+      "ingresos-intereses",
       "gastos-financieros",
+      "deterioro-valor",
+      "otros-ingresos-subsidiarias",
       "diferencias-cambio",
     ]));
-    asignar("ganancia-neta", n("ganancia-antes-impuestos") + n("ingreso-gasto-impuesto"));
+    asignar("ganancia-neta", n("ganancia-antes-impuestos") + sumarRegistros(siguiente, [
+      "ingreso-gasto-impuesto",
+      "operaciones-descontinuadas",
+    ]));
     asignar("liquidity-ratio", dividirSeguro(n("total-activo-corriente"), n("total-pasivo-corriente")));
     asignar("working-capital-ratio", n("total-activo-corriente") - n("total-pasivo-corriente"));
     asignar("current-indebtedness-ratio", dividirSeguro(n("total-pasivo-corriente"), n("total-patrimonio")));
