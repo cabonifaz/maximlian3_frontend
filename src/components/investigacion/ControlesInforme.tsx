@@ -390,6 +390,7 @@ interface PropsCampoInvestigacionAnalista {
   tipoEntrada?: "texto" | "email" | "url" | "fecha" | "decimal";
   error?: string;
   onBlur?: () => void;
+  adornoFinal?: string;
 }
 
 interface PropsAreaInvestigacionAnalista extends PropsCampoInvestigacionAnalista {
@@ -446,12 +447,13 @@ export function CampoInvestigacionAnalista({
   tipoEntrada = "texto",
   error,
   onBlur,
+  adornoFinal,
 }: PropsCampoInvestigacionAnalista) {
   const marcadorFinal = marcador ?? obtenerMarcadorInvestigacion(etiqueta);
   const esCampoPorcentaje = etiqueta.includes("%");
   const esCampoEntero = etiqueta === "N. de Empleados";
   const esCampoDecimal = tipoEntrada === "decimal";
-  const clasesInput = `h-11 w-full rounded-xl border bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400 ${error ? "border-red-500" : "border-gray-200"}`;
+  const clasesInput = `h-11 w-full rounded-xl border bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400 ${adornoFinal ? "pr-20" : ""} ${error ? "border-red-500" : "border-gray-200"}`;
 
   return (
     <label className={`space-y-2 ${className ?? ""}`}>
@@ -461,42 +463,49 @@ export function CampoInvestigacionAnalista({
           {adicionalEtiqueta}
         </span>
       </CustomLabel>
-      <input
-        type={tipoEntrada === "email" ? "email" : tipoEntrada === "fecha" ? "date" : "text"}
-        value={valor}
-        readOnly={soloLectura}
-        onChange={(event) => {
-          if (esCampoPorcentaje) {
-            onChange?.(sanitizarPorcentajeDosDecimales(event.target.value));
-            return;
-          }
+      <div className="relative">
+        <input
+          type={tipoEntrada === "email" ? "email" : tipoEntrada === "fecha" ? "date" : "text"}
+          value={valor}
+          readOnly={soloLectura}
+          onChange={(event) => {
+            if (esCampoPorcentaje) {
+              onChange?.(sanitizarPorcentajeDosDecimales(event.target.value));
+              return;
+            }
 
-          if (esCampoEntero) {
-            onChange?.(sanitizarNumeroEntero(event.target.value));
-            return;
-          }
+            if (esCampoEntero) {
+              onChange?.(sanitizarNumeroEntero(event.target.value));
+              return;
+            }
 
-          if (esCampoDecimal) {
-            onChange?.(sanitizarNumeroDosDecimales(event.target.value));
-            return;
-          }
+            if (esCampoDecimal) {
+              onChange?.(sanitizarNumeroDosDecimales(event.target.value));
+              return;
+            }
 
-          onChange?.(event.target.value);
-        }}
-        onBlur={(event) => {
-          if (soloLectura || !onChange) return;
+            onChange?.(event.target.value);
+          }}
+          onBlur={(event) => {
+            if (soloLectura || !onChange) return;
 
-          if (esCampoPorcentaje) {
-            onChange(normalizarPorcentajeDosDecimales(event.target.value));
-          } else if (esCampoDecimal) {
-            onChange(normalizarNumeroDosDecimales(event.target.value));
-          }
+            if (esCampoPorcentaje) {
+              onChange(normalizarPorcentajeDosDecimales(event.target.value));
+            } else if (esCampoDecimal) {
+              onChange(normalizarNumeroDosDecimales(event.target.value));
+            }
 
-          onBlur?.();
-        }}
-        placeholder={marcadorFinal}
-        className={clasesInput}
-      />
+            onBlur?.();
+          }}
+          placeholder={marcadorFinal}
+          className={clasesInput}
+        />
+        {adornoFinal ? (
+          <span className="pointer-events-none absolute right-2 top-1/2 flex h-7 -translate-y-1/2 items-center rounded-md bg-slate-900 px-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
+            {adornoFinal}
+          </span>
+        ) : null}
+      </div>
       {error ? <p className="text-xs text-red-500">{error}</p> : null}
     </label>
   );
