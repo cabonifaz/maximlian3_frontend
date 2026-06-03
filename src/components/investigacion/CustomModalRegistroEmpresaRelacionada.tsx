@@ -33,6 +33,8 @@ interface PropsCustomModalRegistroEmpresaRelacionadaAnalista {
   opcionesTipoPersona?: EntradaTablaMaestra[];
   opcionesPais?: EntradaTablaMaestra[];
   registroInicial?: RegistroPersonaAnalista | null;
+  tipoCreacion?: "compania" | "directorioEjecutivo";
+  soloEdicionLocal?: boolean;
   onCerrar: () => void;
   onGuardar: (registro: RegistroPersonaAnalista) => void;
 }
@@ -46,6 +48,8 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
   opcionesTipoPersona,
   opcionesPais,
   registroInicial,
+  tipoCreacion = "directorioEjecutivo",
+  soloEdicionLocal = false,
   onCerrar,
   onGuardar,
 }: PropsCustomModalRegistroEmpresaRelacionadaAnalista) {
@@ -98,6 +102,25 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
         existeInformacion,
       };
 
+      if (soloEdicionLocal && !registroInicial?.idCompania) {
+        return {
+          idCompania: 0,
+          idTipoPersona: payloadBase.idTipoPersona,
+          idTipoDocumento: payloadBase.idTipoDocumento,
+          idPais: payloadBase.idPais,
+          direccion: payloadBase.direccion,
+          ubigeo: payloadBase.ubigeo,
+          codigoPostal: payloadBase.codigoPostal,
+          numeroDocumento: payloadBase.numeroDocumento,
+          nombreCompleto: payloadBase.nombreCompleto,
+          pais: obtenerTextoPorId(opcionesPais, payloadBase.idPais) || "-",
+          telefono: payloadBase.telefono || "-",
+          existeInformacion: payloadBase.existeInformacion,
+          tipoPersona: obtenerTextoPorId(opcionesTipoPersona, payloadBase.idTipoPersona) || undefined,
+          tipoDocumento: obtenerTextoPorId(opcionesTipoDocumento, payloadBase.idTipoDocumento) || undefined,
+        } satisfies CompaniaListaItem;
+      }
+
       const respuesta = registroInicial?.idCompania
         ? await servicioCompania.editar({
           idCompania: registroInicial.idCompania,
@@ -109,7 +132,17 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
           telefono: payloadBase.telefono,
           existeInformacion: payloadBase.existeInformacion,
         } satisfies CompaniaEditarRequest)
-        : await servicioCompania.crearDirectorioEjecutivo({
+        : tipoCreacion === "compania"
+          ? await servicioCompania.crear({
+            idTipoPersona: payloadBase.idTipoPersona,
+            idTipoDocumento: payloadBase.idTipoDocumento,
+            numeroDocumento: payloadBase.numeroDocumento,
+            nombreCompleto: payloadBase.nombreCompleto,
+            idPais: payloadBase.idPais,
+            telefono: payloadBase.telefono,
+            existeInformacion: payloadBase.existeInformacion,
+          })
+          : await servicioCompania.crearDirectorioEjecutivo({
           idTipoPersona: payloadBase.idTipoPersona,
           nombreCompleto: payloadBase.nombreCompleto,
           idPais: payloadBase.idPais,
@@ -183,7 +216,7 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
   const formularioInvalido = !idTipoPersona || !idPais || !idTipoDocumento || !nombreCompleto.trim() || !numeroDocumento.trim();
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
       <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.25)]">
         <div className="border-b border-slate-100 bg-[linear-gradient(135deg,#fff_0%,#f8fafc_100%)] px-6 py-6 md:px-8">
           <div className="flex items-start justify-between gap-4">

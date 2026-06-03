@@ -31,6 +31,8 @@ type RegistroCompaniaInvestigacion = DatosInvestigacionAnalista["companiasRelaci
 type RegistroBancoInvestigacion = DatosInvestigacionAnalista["bancos"][number];
 type RegistroDirectorioInvestigacion = DatosInvestigacionAnalista["directorioEjecutivo"][number];
 
+const TIMEOUT_EXTRACCION_MS = 10 * 60 * 1000;
+
 function obtenerNumero(...valores: unknown[]): number {
   for (const valor of valores) {
     if (typeof valor === "number" && Number.isFinite(valor)) return valor;
@@ -1020,7 +1022,9 @@ export const informeService = {
   },
 
   autocompletar: async (payload: InformeAutocompletarRequest): Promise<InformeExtraccionResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/autocompletar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/autocompletar", payload, {
+      timeout: TIMEOUT_EXTRACCION_MS,
+    });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Informe/autocompletar")) {
       throw new Error(data.mensaje || "No se pudo autocompletar el documento");
@@ -1039,6 +1043,7 @@ export const informeService = {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      timeout: TIMEOUT_EXTRACCION_MS,
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Informe/extraerDocumento")) {
