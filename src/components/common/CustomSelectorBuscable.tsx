@@ -29,6 +29,9 @@ export interface CustomSelectorBuscableProps {
   overlayZIndexClassName?: string;
   etiquetaOpcionVacia?: string;
   ordenarOpciones?: boolean;
+  obtenerEtiquetaOpcion?: (opcion: EntradaTablaMaestra) => string;
+  renderizarVistaPreviaAltaNueva?: (terminoBusqueda: string) => ReactNode;
+  puedeAgregarNuevo?: (terminoBusqueda: string) => boolean;
 }
 
 export function CustomSelectorBuscable({
@@ -53,6 +56,9 @@ export function CustomSelectorBuscable({
   overlayZIndexClassName = "z-[100]",
   etiquetaOpcionVacia = "Seleccione",
   ordenarOpciones = true,
+  obtenerEtiquetaOpcion,
+  renderizarVistaPreviaAltaNueva,
+  puedeAgregarNuevo,
   onClear,
 }: CustomSelectorBuscableProps) {
   const [terminoBusqueda, setSearchTerm] = useState("");
@@ -74,17 +80,24 @@ export function CustomSelectorBuscable({
 
   const filteredOptions = useMemo(() => {
     if (!resolvedOptions) return [];
+    const terminoNormalizado = terminoBusqueda.toLowerCase();
     const opcionesFiltradas = resolvedOptions.filter((opt) =>
-        opt.string1?.toLowerCase().includes(terminoBusqueda.toLowerCase()),
+        (opt.string1?.toLowerCase().includes(terminoNormalizado) ?? false)
+        || (opt.string2?.toLowerCase().includes(terminoNormalizado) ?? false)
+        || (obtenerEtiquetaOpcion?.(opt).toLowerCase().includes(terminoNormalizado) ?? false),
       );
 
     if (!ordenarOpciones) return opcionesFiltradas;
 
-    return [...opcionesFiltradas].sort((a, b) => (a.string1 || "").localeCompare(b.string1 || ""));
-  }, [ordenarOpciones, resolvedOptions, terminoBusqueda]);
+    return [...opcionesFiltradas].sort((a, b) =>
+      (obtenerEtiquetaOpcion?.(a) || a.string1 || "").localeCompare(obtenerEtiquetaOpcion?.(b) || b.string1 || ""),
+    );
+  }, [obtenerEtiquetaOpcion, ordenarOpciones, resolvedOptions, terminoBusqueda]);
 
   const selectedOption = resolvedOptions?.find((opt) => opt.num1 === value);
-  const displayText = selectedOption?.string1 ?? (typeof displayValue === "string" ? displayValue.trim() : displayValue);
+  const displayText = selectedOption
+    ? (obtenerEtiquetaOpcion?.(selectedOption) || selectedOption.string1)
+    : (typeof displayValue === "string" ? displayValue.trim() : displayValue);
   const mostrarPlaceholder = !displayText;
 
   const actualizarPosicionDropdown = useCallback(() => {
@@ -208,7 +221,7 @@ export function CustomSelectorBuscable({
                           setSearchTerm("");
                         }}
                       >
-                        {opt.string1}
+                        {obtenerEtiquetaOpcion?.(opt) || opt.string1}
                       </div>
                     ))
                   ) : (
@@ -221,17 +234,21 @@ export function CustomSelectorBuscable({
             </div>
             {onAddNew && (
               <div
-                className={`border-t border-gray-100 px-4 py-2.5 flex items-center gap-2 text-sm transition-colors font-medium ${terminoBusqueda.trim() ? "cursor-pointer hover:bg-brand-wine/5 text-brand-wine" : "cursor-not-allowed text-gray-300"}`}
+                className={`border-t border-gray-100 px-4 py-2.5 text-sm transition-colors font-medium ${terminoBusqueda.trim() && (puedeAgregarNuevo?.(terminoBusqueda.trim()) ?? true) ? "cursor-pointer hover:bg-brand-wine/5 text-brand-wine" : "cursor-not-allowed text-gray-300"}`}
                 onClick={(e) => {
-                  if (!terminoBusqueda.trim()) return;
+                  const terminoLimpio = terminoBusqueda.trim();
+                  if (!terminoLimpio || !(puedeAgregarNuevo?.(terminoLimpio) ?? true)) return;
                   e.stopPropagation();
-                  onAddNew(terminoBusqueda.trim());
+                  onAddNew(terminoLimpio);
                   setIsOpen(false);
                   setSearchTerm("");
                 }}
               >
-                <Plus size={14} />
-                Agregar nuevo tipo
+                {renderizarVistaPreviaAltaNueva?.(terminoBusqueda.trim())}
+                <div className="flex items-center gap-2">
+                  <Plus size={14} />
+                  Agregar nuevo tipo
+                </div>
               </div>
             )}
           </div>

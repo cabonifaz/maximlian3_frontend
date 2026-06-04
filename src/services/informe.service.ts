@@ -554,12 +554,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     notario: obtenerTexto(registro.idNotario, registro.IdNotario, registro.notario, registro.Notario),
     registro: obtenerTexto(registro.idRegistro, registro.IdRegistro, registro.registro, registro.Registro),
     condiciones: obtenerTexto(registro.idPlazo, registro.IdPlazo, registro.condiciones, registro.Condiciones),
-    operacionesCambioDivisas: obtenerTexto(
-      registro.operacionesCambioDivisas,
-      registro.OperacionesCambioDivisas,
-      registro.idOperacionesCambioDivisas,
-      registro.IdOperacionesCambioDivisas,
-    ),
+    operacionesCambioDivisas: String(
+      obtenerNumeroOpcional(registro.idOperacionesCambioDivisas, registro.IdOperacionesCambioDivisas) ?? "",
+    ) || obtenerTexto(registro.operacionesCambioDivisas, registro.OperacionesCambioDivisas),
     monedaTipoCambio: obtenerTexto(registro.monedaTipoCambio, registro.MonedaTipoCambio),
     capitalInicial: formatearNumero(registro.capitalInicial, 2),
     capitalDesembolsado: formatearNumero(registro.capitalPagado, 2),
@@ -607,8 +604,19 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     ventasCreditoPorcentaje: formatearNumero(registro.ventasCredito, 2),
     ventasCreditoDetalle: obtenerTexto(registro.ventasCreditoText, registro.VentasCreditoText),
     ventasCreditoSeleccion: obtenerTexto(registro.ventasCreditoSeleccion, registro.VentasCreditoSeleccion),
-    territorioVentasPorcentaje: formatearNumero(registro.ventasNacionales, 2),
-    territorioVentasDetalle: obtenerTexto(registro.ventasNacionalesText, registro.VentasNacionalesText),
+    territorioVentasPorcentaje: formatearNumero(
+      registro.territorioVentas
+        ?? registro.TerritorioVentas
+        ?? registro.ventasNacionales
+        ?? registro.VentasNacionales,
+      2,
+    ),
+    territorioVentasDetalle: obtenerTexto(
+      registro.territorioText,
+      registro.TerritorioText,
+      registro.ventasNacionalesText,
+      registro.VentasNacionalesText,
+    ),
     ventasExtranjeroPorcentaje: formatearNumero(registro.ventasInternacionales, 2),
     ventasExtranjeroDetalle: obtenerTexto(registro.ventasInternacionalesText, registro.VentasInternacionalesText),
     comprasNacionalesPorcentaje: formatearNumero(registro.comprasNacionales ?? registro.ComprasNacionales, 2),
