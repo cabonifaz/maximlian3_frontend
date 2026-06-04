@@ -554,12 +554,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     notario: obtenerTexto(registro.idNotario, registro.IdNotario, registro.notario, registro.Notario),
     registro: obtenerTexto(registro.idRegistro, registro.IdRegistro, registro.registro, registro.Registro),
     condiciones: obtenerTexto(registro.idPlazo, registro.IdPlazo, registro.condiciones, registro.Condiciones),
-    operacionesCambioDivisas: obtenerTexto(
-      registro.operacionesCambioDivisas,
-      registro.OperacionesCambioDivisas,
-      registro.idOperacionesCambioDivisas,
-      registro.IdOperacionesCambioDivisas,
-    ),
+    operacionesCambioDivisas: String(
+      obtenerNumeroOpcional(registro.idOperacionesCambioDivisas, registro.IdOperacionesCambioDivisas) ?? "",
+    ) || obtenerTexto(registro.operacionesCambioDivisas, registro.OperacionesCambioDivisas),
     monedaTipoCambio: obtenerTexto(registro.monedaTipoCambio, registro.MonedaTipoCambio),
     capitalInicial: formatearNumero(registro.capitalInicial, 2),
     capitalDesembolsado: formatearNumero(registro.capitalPagado, 2),

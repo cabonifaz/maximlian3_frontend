@@ -3168,7 +3168,9 @@ function PantallaInvestigacionAnalista({
     }
 
     const isoOperacionesCambioDivisas = opcionesMoneda?.find(
-      (opcion) => opcion.string1 === datosInvestigacion.aspectosLegales.operacionesCambioDivisas,
+      (opcion) =>
+        opcion.string1 === datosInvestigacion.aspectosLegales.operacionesCambioDivisas
+        || String(opcion.num1 ?? "") === datosInvestigacion.aspectosLegales.operacionesCambioDivisas,
     )?.string2?.trim() ?? "";
 
     return (
@@ -3215,6 +3217,7 @@ function PantallaInvestigacionAnalista({
           soloLectura={esSoloLectura}
           opcionesTablaMaestra={opcionesMoneda}
           marcador="Seleccione moneda"
+          obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")}
           onChange={(valor) => actualizarAspectosLegales("operacionesCambioDivisas", valor)}
         />
         <CampoInvestigacionAnalista etiqueta="Capital Inicial" valor={datosInvestigacion.aspectosLegales.capitalInicial} soloLectura={esSoloLectura} tipoEntrada="decimal" adornoFinal={isoOperacionesCambioDivisas} onChange={(valor) => actualizarAspectosLegales("capitalInicial", valor)} />
