@@ -8,24 +8,12 @@ import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service"
 import type { RegistroImportacionExportacionAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-
-function normalizarMontoDosDecimales(valor: string) {
-  const valorLimpio = valor.trim().replace(",", ".");
-  if (!valorLimpio) return "";
-
-  const numero = Number.parseFloat(valorLimpio);
-  if (Number.isNaN(numero)) return valor;
-
-  return numero.toFixed(2);
-}
-
-function sanitizarMontoDosDecimales(valor: string) {
-  const valorNormalizado = valor.replace(",", ".").replace(/[^0-9.]/g, "");
-  const partes = valorNormalizado.split(".");
-  const entero = partes[0] ?? "";
-  const decimal = partes[1] ?? "";
-  return partes.length > 1 ? `${entero}.${decimal.slice(0, 2)}` : entero;
-}
+import {
+  normalizarMontoDosDecimales,
+  sanitizarMontoDosDecimales,
+  seleccionarTextoEditableEnContenedor,
+  seleccionarTextoCampoEditable,
+} from "@maximilian/shared/utils/formato-monto.util";
 
 function sanitizarEntero(valor: string) {
   return valor.replace(/\D/g, "");
@@ -77,10 +65,6 @@ export function CustomModalOperacionAnalista({
   if (!estaAbierto) return null;
 
   const manejarGuardar = () => {
-    if (!anio.trim() || !monedaActual.trim() || !monto.trim() || !paises.trim() || !productos.trim() || !operaciones.trim()) {
-      return;
-    }
-
     onGuardar({
       idMesInicio: idMesActual,
       idMesFin: idMesActual,
@@ -96,7 +80,7 @@ export function CustomModalOperacionAnalista({
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
       <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[22px] bg-white shadow-2xl">
         <div className="flex items-start justify-between border-b border-gray-100 px-6 py-5 md:px-8">
           <div>
@@ -114,6 +98,7 @@ export function CustomModalOperacionAnalista({
             <input
               value={anio}
               onChange={(event) => setAnio(event.target.value.replace(/\D/g, "").slice(0, 4))}
+              onFocus={seleccionarTextoCampoEditable}
               inputMode="numeric"
               placeholder="2025"
               className="h-11 w-full rounded-xl border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
@@ -151,6 +136,7 @@ export function CustomModalOperacionAnalista({
               value={monto}
               onChange={(event) => setMonto(sanitizarMontoDosDecimales(event.target.value))}
               onBlur={(event) => setMonto(normalizarMontoDosDecimales(event.target.value))}
+              onFocus={seleccionarTextoCampoEditable}
               placeholder="0.00"
               className="h-11 w-full rounded-xl border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
             />
@@ -161,6 +147,7 @@ export function CustomModalOperacionAnalista({
             <input
               value={paises}
               onChange={(event) => setPaises(event.target.value)}
+              onFocus={seleccionarTextoCampoEditable}
               placeholder="Ingrese los países de exportación"
               className="h-11 w-full rounded-xl border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
             />
@@ -171,6 +158,7 @@ export function CustomModalOperacionAnalista({
             <input
               value={productos}
               onChange={(event) => setProductos(event.target.value)}
+              onFocus={seleccionarTextoCampoEditable}
               placeholder="Especifique los productos"
               className="h-11 w-full rounded-xl border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
             />
@@ -181,6 +169,7 @@ export function CustomModalOperacionAnalista({
             <input
               value={operaciones}
               onChange={(event) => setOperaciones(sanitizarEntero(event.target.value))}
+              onFocus={seleccionarTextoCampoEditable}
               inputMode="numeric"
               placeholder="Ej. 1"
               className="h-11 w-full rounded-xl border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"

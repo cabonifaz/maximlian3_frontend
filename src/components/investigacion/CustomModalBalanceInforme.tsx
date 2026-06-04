@@ -7,6 +7,12 @@ import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSele
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { RegistroBalanceAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import {
+  normalizarMontoDosDecimales,
+  sanitizarMontoDosDecimales,
+  seleccionarTextoEditableEnContenedor,
+  seleccionarTextoCampoEditable,
+} from "@maximilian/shared/utils/formato-monto.util";
 
 interface PropsCustomModalBalanceAnalista {
   estaAbierto: boolean;
@@ -27,24 +33,6 @@ function convertirFechaEntrada(fecha: string) {
   const [dia, mes, ano] = fecha.split("/");
   if (!dia || !mes || !ano) return "";
   return `${ano}-${mes}-${dia}`;
-}
-
-function normalizarTipoCambioDosDecimales(valor: string) {
-  const valorLimpio = valor.trim().replace(",", ".");
-  if (!valorLimpio) return "";
-
-  const numero = Number.parseFloat(valorLimpio);
-  if (Number.isNaN(numero)) return valor;
-
-  return numero.toFixed(2);
-}
-
-function sanitizarTipoCambioDosDecimales(valor: string) {
-  const valorNormalizado = valor.replace(",", ".").replace(/[^0-9.]/g, "");
-  const partes = valorNormalizado.split(".");
-  const entero = partes[0] ?? "";
-  const decimal = partes[1] ?? "";
-  return partes.length > 1 ? `${entero}.${decimal.slice(0, 2)}` : entero;
 }
 
 export function CustomModalBalanceAnalista({
@@ -81,6 +69,10 @@ export function CustomModalBalanceAnalista({
   if (!estaAbierto) return null;
 
   const manejarGuardar = () => {
+    const idTipoBalance = obtenerIdSeleccion(opcionesTipoBalance, tipoBalance) ?? registroInicial?.idTipoBalance;
+    const idTipoEstadoFinanciero = obtenerIdSeleccion(opcionesEstadoFinanciero, tipoEstadoFinanciero) ?? registroInicial?.idTipoEstadoFinanciero;
+    const idMoneda = obtenerIdSeleccion(opcionesMoneda, operacionCambio) ?? registroInicial?.idMoneda;
+
     if (fechaInicio && fechaActual && fechaInicio > fechaActual) {
       setErrorFechas("La fecha de inicio no puede ser mayor a la fecha actual.");
       return;
@@ -88,10 +80,6 @@ export function CustomModalBalanceAnalista({
 
     if (fechaInicio && fechaFin && !esActual && fechaInicio > fechaFin) {
       setErrorFechas("La fecha de inicio no puede ser mayor a la fecha de fin.");
-      return;
-    }
-
-    if (!fechaInicio || (!esActual && !fechaFin) || !tipoCambio.trim() || !operacionCambio.trim() || !tipoBalance.trim() || !tipoEstadoFinanciero.trim()) {
       return;
     }
 
@@ -104,15 +92,18 @@ export function CustomModalBalanceAnalista({
       fechaFin: esActual ? "" : formatearFecha(fechaFin),
       esActual,
       tipo: tipoEstadoFinanciero.trim(),
+      idTipoEstadoFinanciero,
       tipoEstadoFinanciero: tipoEstadoFinanciero.trim(),
       tipoCambio: tipoCambio.trim(),
+      idMoneda,
       operacionCambio: operacionCambio.trim(),
+      idTipoBalance,
       tipoBalance: tipoBalance.trim(),
     });
   };
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
       <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-7 py-6">
           <div>
@@ -131,7 +122,7 @@ export function CustomModalBalanceAnalista({
             <CustomLabel>Tipo de Balance</CustomLabel>
             <CustomSelectorBuscable
               options={opcionesTipoBalance}
-              value={opcionesTipoBalance?.find((opcion) => opcion.string1 === tipoBalance)?.num1 ?? undefined}
+              value={obtenerIdSeleccion(opcionesTipoBalance, tipoBalance)}
               onChange={(valor) => setTipoBalance(opcionesTipoBalance?.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
               onClear={() => setTipoBalance("")}
               optional
@@ -144,7 +135,7 @@ export function CustomModalBalanceAnalista({
             <CustomLabel>Tipo de Estado Financiero</CustomLabel>
             <CustomSelectorBuscable
               options={opcionesEstadoFinanciero}
-              value={opcionesEstadoFinanciero?.find((opcion) => opcion.string1 === tipoEstadoFinanciero)?.num1 ?? undefined}
+              value={obtenerIdSeleccion(opcionesEstadoFinanciero, tipoEstadoFinanciero)}
               onChange={(valor) => setTipoEstadoFinanciero(opcionesEstadoFinanciero?.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
               onClear={() => setTipoEstadoFinanciero("")}
               optional
@@ -176,6 +167,7 @@ export function CustomModalBalanceAnalista({
 
                 setErrorFechas("");
               }}
+              onFocus={seleccionarTextoCampoEditable}
               className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
             />
           </div>
@@ -198,6 +190,7 @@ export function CustomModalBalanceAnalista({
 
                 setErrorFechas("");
               }}
+              onFocus={seleccionarTextoCampoEditable}
               className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all disabled:bg-slate-50 disabled:text-slate-400 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
             />
           </div>
@@ -223,22 +216,13 @@ export function CustomModalBalanceAnalista({
             <p className="col-span-full text-sm text-red-500">{errorFechas}</p>
           ) : null}
 
-          <div className="space-y-2">
-            <CustomLabel>Tipo de Cambio</CustomLabel>
-            <input
-              value={tipoCambio}
-              onChange={(event) => setTipoCambio(sanitizarTipoCambioDosDecimales(event.target.value))}
-              onBlur={(event) => setTipoCambio(normalizarTipoCambioDosDecimales(event.target.value))}
-              placeholder="0.00"
-              className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
-            />
-          </div>
+          
 
           <div className="space-y-2">
             <CustomLabel>Operación de Cambio</CustomLabel>
             <CustomSelectorBuscable
               options={opcionesMoneda}
-              value={opcionesMoneda?.find((opcion) => opcion.string1 === operacionCambio)?.num1 ?? undefined}
+              value={obtenerIdSeleccion(opcionesMoneda, operacionCambio)}
               onChange={(valor) => setOperacionCambio(opcionesMoneda?.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
               onClear={() => setOperacionCambio("")}
               optional
@@ -246,7 +230,17 @@ export function CustomModalBalanceAnalista({
               placeholder="Seleccionar..."
             />
           </div>
-
+<div className="space-y-2">
+            <CustomLabel>Tipo de Cambio</CustomLabel>
+            <input
+              value={tipoCambio}
+              onChange={(event) => setTipoCambio(sanitizarMontoDosDecimales(event.target.value))}
+              onBlur={(event) => setTipoCambio(normalizarMontoDosDecimales(event.target.value))}
+              onFocus={seleccionarTextoCampoEditable}
+              placeholder="0.00"
+              className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+            />
+          </div>
         </div>
 
         <div className="flex justify-end gap-3 border-t border-gray-100 px-7 py-5">
@@ -260,4 +254,14 @@ export function CustomModalBalanceAnalista({
       </div>
     </div>
   );
+}
+
+function obtenerIdSeleccion(opciones: { num1: number | null; string1: string | null }[] | undefined, valor?: string) {
+  const texto = valor?.trim() ?? "";
+  if (!texto) return undefined;
+
+  const numero = Number.parseInt(texto, 10);
+  if (Number.isFinite(numero) && numero > 0) return numero;
+
+  return opciones?.find((opcion) => opcion.string1?.trim().toLowerCase() === texto.toLowerCase())?.num1 ?? undefined;
 }

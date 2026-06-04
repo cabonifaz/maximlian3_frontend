@@ -9,6 +9,7 @@ import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service"
 import type { CompaniaEditarRequest, CompaniaListaItem, DirectorioEjecutivoCrearRequest } from "@maximilian/shared/types/compania.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { seleccionarTextoEditableEnContenedor } from "@maximilian/shared/utils/formato-monto.util";
 
 export interface RegistroPersonaAnalista {
   id: number;
@@ -213,10 +214,8 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
 
   if (!estaAbierto) return null;
 
-  const formularioInvalido = !idTipoPersona || !idPais || !idTipoDocumento || !nombreCompleto.trim() || !numeroDocumento.trim();
-
   return (
-    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
       <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.25)]">
         <div className="border-b border-slate-100 bg-[linear-gradient(135deg,#fff_0%,#f8fafc_100%)] px-6 py-6 md:px-8">
           <div className="flex items-start justify-between gap-4">
@@ -253,7 +252,6 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
                 value={idTipoPersona}
                 onChange={setIdTipoPersona}
                 onClear={() => setIdTipoPersona(undefined)}
-                required
                 placeholder="Seleccione tipo persona"
               />
               <CustomSelectorBuscable
@@ -262,11 +260,10 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
                 value={idTipoDocumento}
                 onChange={setIdTipoDocumento}
                 onClear={() => setIdTipoDocumento(undefined)}
-                required
                 placeholder="Seleccione tipo documento"
               />
               <div className="space-y-2">
-                <CustomLabel required>Número de Documento</CustomLabel>
+                <CustomLabel>Número de Documento</CustomLabel>
                 <input
                   value={numeroDocumento}
                   onChange={(event) => setNumeroDocumento(event.target.value)}
@@ -275,7 +272,7 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
                 />
               </div>
               <div className="space-y-2">
-                <CustomLabel required>Nombre Completo / Razón Social</CustomLabel>
+                <CustomLabel>Nombre Completo / Razón Social</CustomLabel>
                 <input
                   value={nombreCompleto}
                   onChange={(event) => setNombreCompleto(event.target.value)}
@@ -303,7 +300,6 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
                 value={idPais}
                 onChange={setIdPais}
                 onClear={() => setIdPais(undefined)}
-                required
                 placeholder="Seleccione un país"
               />
               <div className="space-y-2">
@@ -368,7 +364,6 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
           <CustomButton
             size="sm"
             onClick={() => guardarCompaniaMutation.mutate()}
-            disabled={formularioInvalido}
             loading={guardarCompaniaMutation.isPending}
             loadingText="Guardando..."
           >

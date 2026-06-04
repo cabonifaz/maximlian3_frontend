@@ -8,6 +8,10 @@ import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/compone
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { RegistroImagenLocalAnalista, RegistroLocalAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import {
+  seleccionarTextoCampoEditable,
+  seleccionarTextoEditableEnContenedor,
+} from "@maximilian/shared/utils/formato-monto.util";
 
 interface PropsCustomModalLocalAnalista {
   estaAbierto: boolean;
@@ -59,10 +63,6 @@ export function CustomModalLocalAnalista({
   if (!estaAbierto) return null;
 
   const manejarGuardar = () => {
-    if (!tipoLocal.trim() || !comentario.trim()) {
-      return;
-    }
-
     onGuardar({
       tipoLocal: tipoLocal.trim(),
       direccion: direccion.trim(),
@@ -207,7 +207,7 @@ export function CustomModalLocalAnalista({
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
       <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
           <div>
@@ -238,6 +238,7 @@ export function CustomModalLocalAnalista({
             <input
               value={direccion}
               onChange={(event) => setDireccion(event.target.value)}
+              onFocus={seleccionarTextoCampoEditable}
               placeholder="Ej. Av. Industrial 456, Planta 2..."
               className="h-12 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
             />
@@ -248,6 +249,7 @@ export function CustomModalLocalAnalista({
             <textarea
               value={comentario}
               onChange={(event) => setComentario(event.target.value)}
+              onFocus={seleccionarTextoCampoEditable}
               placeholder="Describa brevemente las características del local..."
               rows={4}
               className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"

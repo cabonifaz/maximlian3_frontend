@@ -30,6 +30,9 @@ import type {
 type RegistroCompaniaInvestigacion = DatosInvestigacionAnalista["companiasRelacionadas"][number];
 type RegistroBancoInvestigacion = DatosInvestigacionAnalista["bancos"][number];
 type RegistroDirectorioInvestigacion = DatosInvestigacionAnalista["directorioEjecutivo"][number];
+type RegistroLocalInvestigacion = DatosInvestigacionAnalista["locales"][number];
+type RegistroBalanceInvestigacion = DatosInvestigacionAnalista["balances"][number];
+type RegistroProveedorInvestigacion = DatosInvestigacionAnalista["proveedores"][number];
 
 const TIMEOUT_EXTRACCION_MS = 10 * 60 * 1000;
 
@@ -546,6 +549,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     datosAdicionales: obtenerTexto(registro.datosAdicionales, registro.DatosAdicionales),
   };
 
+  const idOperacionesCambioDivisas = obtenerNumeroOpcional(registro.idOperacionesCambioDivisas, registro.IdOperacionesCambioDivisas);
+  const idTipoCambio = obtenerNumeroOpcional(registro.idTipoCambio, registro.IdTipoCambio);
+
   datos.aspectosLegales = {
     tipoEmpresa: obtenerTexto(registro.tipoEmpresa, registro.TipoEmpresa),
     fechaConstitucion: formatearFechaEntrada(obtenerTexto(registro.fechaConstitucion, registro.FechaConstitucion)),
@@ -554,10 +560,12 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     notario: obtenerTexto(registro.idNotario, registro.IdNotario, registro.notario, registro.Notario),
     registro: obtenerTexto(registro.idRegistro, registro.IdRegistro, registro.registro, registro.Registro),
     condiciones: obtenerTexto(registro.idPlazo, registro.IdPlazo, registro.condiciones, registro.Condiciones),
-    operacionesCambioDivisas: String(
-      obtenerNumeroOpcional(registro.idOperacionesCambioDivisas, registro.IdOperacionesCambioDivisas) ?? "",
-    ) || obtenerTexto(registro.operacionesCambioDivisas, registro.OperacionesCambioDivisas),
-    monedaTipoCambio: obtenerTexto(registro.monedaTipoCambio, registro.MonedaTipoCambio),
+    operacionesCambioDivisas: idOperacionesCambioDivisas && idOperacionesCambioDivisas > 0
+      ? String(idOperacionesCambioDivisas)
+      : obtenerTexto(registro.operacionesCambioDivisas, registro.OperacionesCambioDivisas),
+    monedaTipoCambio: idTipoCambio && idTipoCambio > 0
+      ? String(idTipoCambio)
+      : obtenerTexto(registro.monedaTipoCambio, registro.MonedaTipoCambio),
     capitalInicial: formatearNumero(registro.capitalInicial, 2),
     capitalDesembolsado: formatearNumero(registro.capitalPagado, 2),
     ultimaAmpliacion: formatearFechaEntrada(obtenerTexto(registro.fechaUltimoIncremento, registro.FechaUltimoIncremento)),
@@ -565,7 +573,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     tipoAcciones: obtenerTexto(registro.tipoAcciones, registro.TipoAcciones),
     valorAcciones: formatearNumero(registro.valorAcciones, 2),
     obligacionBolsa: obtenerBooleano(registro.cotizaBolsa, registro.CotizaBolsa) ? "Si" : "No",
-    tipoCambio: formatearNumero(registro.tipoCambio, 2),
+    tipoCambio: formatearNumero(registro.tipoCambio, 6),
     antecedentes: obtenerTexto(registro.antecedentes, registro.Antecedentes),
     aspectosLegales: obtenerTexto(registro.aspectosLegales, registro.AspectosLegales),
     comentariosEmpresasRelacionadas: obtenerTexto(
@@ -596,8 +604,10 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   datos.operacionPrincipal = {
     sector: obtenerTexto(registro.sector, registro.Sector),
     actividad: obtenerTexto(registro.actividad, registro.Actividad),
-    categoriaCiiu: obtenerTexto(registro.isicCategoria, registro.IsicCategoria, registro.categoriaCiiu, registro.CategoriaCiiu),
-    claseCiiu: obtenerTexto(registro.isicClase, registro.IsicClase, registro.claseCiiu, registro.ClaseCiiu),
+    categoriaCiiu: String(obtenerNumeroOpcional(registro.idIsicCategoria, registro.IdIsicCategoria) ?? "")
+      || obtenerTexto(registro.isicCategoria, registro.IsicCategoria, registro.categoriaCiiu, registro.CategoriaCiiu),
+    claseCiiu: String(obtenerNumeroOpcional(registro.idIsicClase, registro.IdIsicClase) ?? "")
+      || obtenerTexto(registro.isicClase, registro.IsicClase, registro.claseCiiu, registro.ClaseCiiu),
     actividadPrincipal: obtenerTexto(registro.actividadPrincipal, registro.ActividadPrincipal),
     ventasContadoPorcentaje: formatearNumero(registro.ventasContado, 2),
     ventasContadoDetalle: obtenerTexto(registro.ventasContadoText, registro.VentasContadoText),
@@ -678,6 +688,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
 
   datos.locales = obtenerLista(registro.locales, registro.Locales).map((item) => {
     const local = obtenerRegistro(item);
+    const idTipoLocal = obtenerNumeroOpcional(local.idTipoLocal, local.IdTipoLocal);
     const imagenes = obtenerLista(local.imagenes, local.Imagenes).map((imagen) => {
       const registroImagen = obtenerRegistro(imagen);
       return {
@@ -688,7 +699,10 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     });
 
     return {
-      tipoLocal: obtenerTexto(local.tipoLocal, local.TipoLocal),
+      idInformeLocal: obtenerNumeroOpcional(local.idInformeLocal, local.IdInformeLocal),
+      idTipoLocal,
+      tipoLocal: obtenerTexto(local.tipoLocal, local.TipoLocal, local.tipoLocalDescripcion, local.TipoLocalDescripcion)
+        || (idTipoLocal ? String(idTipoLocal) : ""),
       direccion: obtenerTexto(local.direccion, local.Direccion) || undefined,
       comentario: obtenerTexto(local.comentario, local.Comentario),
       imagen: imagenes[0]?.nombre ?? "",
@@ -708,18 +722,37 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   datos.balances = obtenerLista(registro.balances, registro.Balances).map((item, indice) => {
     const balance = obtenerRegistro(item);
     const cuentaBalance = obtenerRegistro(balance.cuentaBalance, balance.CuentaBalance);
+    const idTipoBalance = obtenerNumeroOpcional(balance.idTipoBalance, balance.IdTipoBalance, balance.tipoBalance, balance.TipoBalance);
+    const idTipoEstadoFinanciero = obtenerNumeroOpcional(
+      balance.idTipoEstadoFinanciero,
+      balance.IdTipoEstadoFinanciero,
+      balance.tipoEstadoFinanciero,
+      balance.TipoEstadoFinanciero,
+    );
+    const idMoneda = obtenerNumeroOpcional(balance.idMoneda, balance.IdMoneda);
     return {
+      idInformeBalance: obtenerNumeroOpcional(balance.idInformeBalance, balance.IdInformeBalance, balance.idIformeBalance, balance.IdIformeBalance),
       codigo: obtenerTexto(balance.codigo, balance.Codigo) || `${indice + 1}`,
       periodo: obtenerTexto(balance.periodo, balance.Periodo),
-      fecha: obtenerTexto(balance.fechaTexto, balance.FechaTexto),
+      fecha: obtenerTexto(balance.fechaTexto, balance.FechaTexto)
+        || [
+          formatearFechaEntrada(obtenerTexto(balance.fechaBalance, balance.FechaBalance)),
+          obtenerBooleano(balance.flgActualidad, balance.FlgActualidad)
+            ? "Actualidad"
+            : formatearFechaEntrada(obtenerTexto(balance.fechaHasta, balance.FechaHasta)),
+        ].filter(Boolean).join(" - "),
       fechaInicio: formatearFechaEntrada(obtenerTexto(balance.fechaBalance, balance.FechaBalance)) || undefined,
       fechaFin: formatearFechaEntrada(obtenerTexto(balance.fechaHasta, balance.FechaHasta)) || undefined,
       esActual: obtenerBooleano(balance.flgActualidad, balance.FlgActualidad),
       tipo: obtenerTexto(balance.tipo, balance.Tipo),
+      idTipoEstadoFinanciero,
       tipoEstadoFinanciero: obtenerTexto(balance.tipoEstadoFinanciero, balance.TipoEstadoFinanciero),
       tipoCambio: formatearNumero(balance.tipoCambio, 2),
+      idMoneda,
       operacionCambio: obtenerTexto(balance.moneda, balance.Moneda),
-      tipoBalance: obtenerTexto(balance.tipoBalanceDescripcion, balance.TipoBalanceDescripcion, balance.tipoBalance, balance.TipoBalance),
+      idTipoBalance,
+      tipoBalance: obtenerTexto(balance.tipoBalanceDescripcion, balance.TipoBalanceDescripcion)
+        || (idTipoBalance ? String(idTipoBalance) : ""),
       balanceGeneral: true,
       perdidaGanancia: true,
       cuentas: Object.keys(cuentaBalance).length > 0,
@@ -762,20 +795,48 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
 
   datos.proveedores = obtenerLista(registro.proveedores, registro.Proveedores).map((item) => {
     const proveedor = obtenerRegistro(item);
+    const idTipoProveedor = obtenerNumeroOpcional(proveedor.idTipoPersona, proveedor.IdTipoPersona, proveedor.idTipoProveedor, proveedor.IdTipoProveedor);
+    const idLimiteCredito = obtenerNumeroOpcional(proveedor.idLimiteCredito, proveedor.IdLimiteCredito);
+    const idPlazoCredito = obtenerNumeroOpcional(proveedor.idPlazoCredito, proveedor.IdPlazoCredito, idLimiteCredito);
     return {
+      idInformeProveedor: obtenerNumeroOpcional(proveedor.idInformeProveedor, proveedor.IdInformeProveedor),
+      idTipoProveedor,
       nombreEmpresa: obtenerTexto(proveedor.nombre, proveedor.Nombre, proveedor.nombreEmpresa, proveedor.NombreEmpresa),
-      contacto: obtenerTexto(proveedor.contacto, proveedor.Contacto),
-      tipoProveedor: obtenerTexto(proveedor.productos, proveedor.Productos, proveedor.tipoProveedor, proveedor.TipoProveedor),
+      contacto: obtenerTexto(proveedor.nombreContacto, proveedor.NombreContacto, proveedor.contacto, proveedor.Contacto),
+      tipoProveedor: obtenerTexto(proveedor.productos, proveedor.Productos, proveedor.tipoProveedor, proveedor.TipoProveedor)
+        || (idTipoProveedor ? String(idTipoProveedor) : ""),
       telefono: obtenerTexto(proveedor.telefono, proveedor.Telefono),
       tipoPersona: obtenerTexto(proveedor.tipoPersona, proveedor.TipoPersona),
+      idPais: obtenerNumeroOpcional(proveedor.idPais, proveedor.IdPais),
       pais: obtenerTexto(proveedor.pais, proveedor.Pais),
+      idTipoDocumento: obtenerNumeroOpcional(proveedor.idTipoDocumento, proveedor.IdTipoDocumento),
       taxIdType: obtenerTexto(proveedor.tipoDocumento, proveedor.TipoDocumento, proveedor.taxIdType, proveedor.TaxIdType),
       taxIdNumber: obtenerTexto(proveedor.numeroDocumento, proveedor.NumeroDocumento, proveedor.taxNum, proveedor.TaxNum),
-      tieneReferenciaComercial: obtenerBooleano(proveedor.tieneReferenciaComercial, proveedor.TieneReferenciaComercial),
-      comienzoNegociaciones: formatearFechaEntrada(obtenerTexto(proveedor.fechaInicio, proveedor.FechaInicio)) || undefined,
+      tieneReferenciaComercial: obtenerBooleano(
+        proveedor.esTieneReferenciaComercial,
+        proveedor.EsTieneReferenciaComercial,
+        proveedor.tieneReferenciaComercial,
+        proveedor.TieneReferenciaComercial,
+      ),
+      esTieneReferenciaComercial: obtenerBooleano(
+        proveedor.esTieneReferenciaComercial,
+        proveedor.EsTieneReferenciaComercial,
+        proveedor.tieneReferenciaComercial,
+        proveedor.TieneReferenciaComercial,
+      ),
+      comienzoNegociaciones: formatearFechaEntrada(obtenerTexto(
+        proveedor.comienzoNegociaciones,
+        proveedor.ComienzoNegociaciones,
+        proveedor.fechaInicio,
+        proveedor.FechaInicio,
+      )) || undefined,
+      idMoneda: obtenerNumeroOpcional(proveedor.idMoneda, proveedor.IdMoneda),
       operacionCambioMoneda: obtenerTexto(proveedor.moneda, proveedor.Moneda),
-      tipoCambio: formatearNumero(proveedor.tipoCambio, 2) || undefined,
-      limiteCredito: obtenerTexto(proveedor.plazoCredito, proveedor.PlazoCredito),
+      tipoCambio: formatearNumero(proveedor.tipoCambio, 6) || undefined,
+      idLimiteCredito,
+      idPlazoCredito,
+      limiteCredito: obtenerTexto(proveedor.plazoCredito, proveedor.PlazoCredito)
+        || (idPlazoCredito ? String(idPlazoCredito) : ""),
       promedioMensual: formatearNumero(proveedor.promedioMensual, 2) || undefined,
     };
   });
@@ -833,7 +894,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       idCargo: obtenerNumeroOpcional(ejecutivo.idCargo, ejecutivo.IdCargo),
       ejecutivo: nombreCompleto,
       cargo: obtenerTexto(ejecutivo.cargos, ejecutivo.Cargos, ejecutivo.cargo, ejecutivo.Cargo, ejecutivo.idCargo, ejecutivo.IdCargo),
-      porcentaje: formatearNumero(ejecutivo.participacion, 2),
+      porcentaje: formatearNumero(ejecutivo.participacion, 8),
       lista: obtenerBooleano(ejecutivo.apareceImpresoLista, ejecutivo.ApareceImpresoLista),
       detalleEjecutivo: obtenerBooleano(ejecutivo.imprimeDatosEjecutivos, ejecutivo.ImprimeDatosEjecutivos),
       orden: formatearEntero(ejecutivo.orden),
@@ -855,17 +916,39 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     taxIdType: obtenerNumeroOpcional(registro.taxIdType, registro.TaxIdType),
     idEstadoManual: obtenerNumeroOpcional(registro.idEstadoManual, registro.IdEstadoManual),
     idTipoEmpresa: obtenerNumeroOpcional(registro.idTipoEmpresa, registro.IdTipoEmpresa),
+    idTipoCambio: obtenerNumeroOpcional(registro.idTipoCambio, registro.IdTipoCambio),
     idCiudadRegistro: obtenerNumeroOpcional(registro.idCiudadRegistro, registro.IdCiudadRegistro),
     idSector: obtenerNumeroOpcional(registro.idSector, registro.IdSector),
     idActividad: obtenerNumeroOpcional(registro.idActividad, registro.IdActividad),
+    idIsicCategoria: obtenerNumeroOpcional(registro.idIsicCategoria, registro.IdIsicCategoria),
+    idIsicClase: obtenerNumeroOpcional(registro.idIsicClase, registro.IdIsicClase),
     datosInvestigacion: datos,
     archivosInvestigacion,
   };
 }
 
 async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Promise<InformeObtenerResponse> {
-  const sectores: EntradaTablaMaestra[] = await servicioTablaMaestra.list(TablaMaestraId.SECTOR_ECONOMICO)
-    .catch(() => []);
+  const [
+    sectores,
+    tiposLocal,
+    tiposBalance,
+    estadosFinancieros,
+    monedas,
+    tiposProveedor,
+    limitesCreditoProveedor,
+    paises,
+    tiposDocumento,
+  ]: EntradaTablaMaestra[][] = await Promise.all([
+    servicioTablaMaestra.list(TablaMaestraId.SECTOR_ECONOMICO).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.TIPO_LOCAL).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.TIPO_BALANCE).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.ESTADO_FINANCIERO).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.MONEDA).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.TIPO_PROVEEDOR).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.LIMITE_CREDITO_PROVEEDOR).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.PAIS).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.TIPO_REG_TRIBUTARIO).catch(() => []),
+  ]);
 
   const companias: RegistroCompaniaInvestigacion[] = await Promise.all(
     respuesta.datosInvestigacion.companiasRelacionadas.map(async (compania): Promise<RegistroCompaniaInvestigacion> => {
@@ -934,6 +1017,36 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
     }),
   );
 
+  const locales: RegistroLocalInvestigacion[] = respuesta.datosInvestigacion.locales.map((local) => ({
+    ...local,
+    tipoLocal: tiposLocal.find((tipoLocal) => tipoLocal.num1 === local.idTipoLocal)?.string1
+      || local.tipoLocal,
+  }));
+
+  const balances: RegistroBalanceInvestigacion[] = respuesta.datosInvestigacion.balances.map((balance) => ({
+    ...balance,
+    tipoBalance: tiposBalance.find((tipoBalance) => tipoBalance.num1 === balance.idTipoBalance)?.string1
+      || balance.tipoBalance,
+    tipoEstadoFinanciero: estadosFinancieros.find((estadoFinanciero) => estadoFinanciero.num1 === balance.idTipoEstadoFinanciero)?.string1
+      || balance.tipoEstadoFinanciero,
+    operacionCambio: monedas.find((moneda) => moneda.num1 === balance.idMoneda)?.string1
+      || balance.operacionCambio,
+  }));
+
+  const proveedores: RegistroProveedorInvestigacion[] = respuesta.datosInvestigacion.proveedores.map((proveedor) => ({
+    ...proveedor,
+    tipoProveedor: tiposProveedor.find((tipoProveedor) => tipoProveedor.num1 === proveedor.idTipoProveedor)?.string1
+      || proveedor.tipoProveedor,
+    pais: paises.find((pais) => pais.num1 === proveedor.idPais)?.string1
+      || proveedor.pais,
+    taxIdType: tiposDocumento.find((tipoDocumento) => tipoDocumento.num1 === proveedor.idTipoDocumento)?.string1
+      || proveedor.taxIdType,
+    operacionCambioMoneda: monedas.find((moneda) => moneda.num1 === proveedor.idMoneda)?.string1
+      || proveedor.operacionCambioMoneda,
+    limiteCredito: limitesCreditoProveedor.find((limiteCredito) => limiteCredito.num1 === (proveedor.idPlazoCredito ?? proveedor.idLimiteCredito))?.string1
+      || proveedor.limiteCredito,
+  }));
+
   return {
     ...respuesta,
       datosInvestigacion: {
@@ -941,6 +1054,9 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
         companiasRelacionadas: companias,
         bancos,
         directorioEjecutivo: directorios,
+        locales,
+        balances,
+        proveedores,
       },
     };
   }

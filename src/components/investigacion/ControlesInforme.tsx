@@ -1,10 +1,15 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Briefcase, Building2, Check, Eye, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import {
+  normalizarMontoDosDecimales,
+  sanitizarMontoDosDecimales,
+  seleccionarTextoCampoEditable,
+} from "@maximilian/shared/utils/formato-monto.util";
 import {
   obtenerDescripcionTablaMaestra,
   obtenerSiguienteNumTablaMaestra,
@@ -143,24 +148,6 @@ function sanitizarNumeroEntero(valor: string) {
   return valor.replace(/\D/g, "");
 }
 
-function normalizarNumeroDosDecimales(valor: string) {
-  const valorLimpio = valor.trim().replace(",", ".");
-  if (!valorLimpio) return "";
-
-  const numero = Number.parseFloat(valorLimpio);
-  if (Number.isNaN(numero)) return valor;
-
-  return numero.toFixed(2);
-}
-
-function sanitizarNumeroDosDecimales(valor: string) {
-  const valorNormalizado = valor.replace(",", ".").replace(/[^0-9.]/g, "");
-  const partes = valorNormalizado.split(".");
-  const entero = partes[0] ?? "";
-  const decimal = partes[1] ?? "";
-  return partes.length > 1 ? `${entero}.${decimal.slice(0, 2)}` : entero;
-}
-
 function crearOpcionTablaMaestra(num1: number, string1: string, num2: number | null = null): EntradaTablaMaestra {
   return {
     idEmpresa: 0,
@@ -223,10 +210,19 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   puedeAgregarNuevo?: (terminoBusqueda: string) => boolean;
 }) {
   const queryClient = useQueryClient();
-  const [opciones, setOpciones] = useState<EntradaTablaMaestra[]>(() =>
-    opcionesTablaMaestra ?? (opcionesIniciales ?? []).map((opcion, indice) => crearOpcionTablaMaestra(indice + 1, opcion)),
+  const claveOpciones = `${idMaestro ?? "sin-maestro"}:${etiqueta}`;
+  const opcionesBase = useMemo(
+    () => opcionesTablaMaestra ?? (opcionesIniciales ?? []).map((opcion, indice) => crearOpcionTablaMaestra(indice + 1, opcion)),
+    [opcionesIniciales, opcionesTablaMaestra],
   );
-  const obtenerValorSeleccion = (opcion: EntradaTablaMaestra) => obtenerValorOpcion?.(opcion) || opcion.string1 || "";
+  const [estadoOpcionesLocales, setEstadoOpcionesLocales] = useState<{ clave: string; opciones: EntradaTablaMaestra[] }>(() => ({
+    clave: claveOpciones,
+    opciones: [],
+  }));
+  const obtenerValorSeleccion = useCallback(
+    (opcion: EntradaTablaMaestra) => obtenerValorOpcion?.(opcion) || opcion.string1 || "",
+    [obtenerValorOpcion],
+  );
   const altaNuevaMutation = useMutation({
     mutationFn: async (termino: string): Promise<{
       opcion?: EntradaTablaMaestra;
@@ -291,47 +287,51 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
     },
   });
 
-  useEffect(() => {
-    if (!opcionesTablaMaestra) return;
+  const opcionesDisponibles = useMemo(() => {
+    if (!permiteAltaNueva || !conservarOpcionesLocales) return opcionesBase;
 
-    setOpciones((anteriores) => {
-      if (!permiteAltaNueva || !conservarOpcionesLocales) {
-        return opcionesTablaMaestra;
-      }
-
-      const opcionesExtras = anteriores.filter(
-        (opcionAnterior) => !opcionesTablaMaestra.some((opcionTablaMaestra) => opcionTablaMaestra.string1 === opcionAnterior.string1),
-      );
-
-      return [...opcionesTablaMaestra, ...opcionesExtras];
-    });
-  }, [conservarOpcionesLocales, opcionesTablaMaestra, permiteAltaNueva]);
-
-  useEffect(() => {
-    if (!permiteAltaNueva || !conservarOpcionesLocales) return;
-
+    const opcionesLocales = estadoOpcionesLocales.clave === claveOpciones ? estadoOpcionesLocales.opciones : [];
+    const opcionesExtras = opcionesLocales.filter(
+      (opcionLocal) => !opcionesBase.some((opcionBase) => opcionBase.string1 === opcionLocal.string1),
+    );
+    const opcionesActuales = [...opcionesBase, ...opcionesExtras];
     const valorLimpio = valor.trim();
-    if (!valorLimpio) return;
 
-    setOpciones((anteriores) => {
-      if (anteriores.some((opcion) =>
-        normalizarTexto(opcion.string1 ?? "") === normalizarTexto(valorLimpio)
-        || normalizarTexto(obtenerValorSeleccion(opcion)) === normalizarTexto(valorLimpio)
-      )) {
-        return anteriores;
-      }
+    if (!valorLimpio || opcionesActuales.some((opcion) =>
+      normalizarTexto(opcion.string1 ?? "") === normalizarTexto(valorLimpio)
+      || normalizarTexto(obtenerValorSeleccion(opcion)) === normalizarTexto(valorLimpio)
+    )) {
+      return opcionesActuales;
+    }
 
-      const siguienteId = anteriores.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
-      return [...anteriores, crearOpcionTablaMaestra(siguienteId, valorLimpio)];
-    });
-  }, [conservarOpcionesLocales, obtenerValorOpcion, permiteAltaNueva, valor]);
-
-  const opcionesDisponibles = opciones;
+    const siguienteId = opcionesActuales.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
+    return [...opcionesActuales, crearOpcionTablaMaestra(siguienteId, valorLimpio)];
+  }, [
+    claveOpciones,
+    conservarOpcionesLocales,
+    estadoOpcionesLocales,
+    obtenerValorSeleccion,
+    opcionesBase,
+    permiteAltaNueva,
+    valor,
+  ]);
 
   const valorSeleccionado = useMemo(
-    () => opcionesDisponibles.find((opcion) => obtenerValorSeleccion(opcion) === valor || opcion.string1 === valor)?.num1 ?? undefined,
-    [opcionesDisponibles, valor],
+    () => opcionesDisponibles.find((opcion) =>
+      obtenerValorSeleccion(opcion) === valor
+      || opcion.string1 === valor
+      || opcion.string2 === valor
+      || String(opcion.num1 ?? "") === valor
+    )?.num1 ?? undefined,
+    [obtenerValorSeleccion, opcionesDisponibles, valor],
   );
+  const opcionSeleccionada = useMemo(
+    () => opcionesDisponibles.find((opcion) => opcion.num1 === valorSeleccionado),
+    [opcionesDisponibles, valorSeleccionado],
+  );
+  const textoSeleccionado = opcionSeleccionada
+    ? (obtenerEtiquetaOpcion?.(opcionSeleccionada) || opcionSeleccionada.string1 || "")
+    : valor;
 
   const manejarCambio = (nuevoValor: number) => {
     const opcion = opcionesDisponibles.find((opcionActual) => opcionActual.num1 === nuevoValor);
@@ -344,12 +344,17 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
     if (!terminoLimpio) return;
 
     if (!idMaestro) {
-      setOpciones((anteriores) => {
-        if (anteriores.some((opcion) => opcion.string1 === terminoLimpio)) {
+      setEstadoOpcionesLocales((anteriores) => {
+        const opcionesActuales = anteriores.clave === claveOpciones ? anteriores.opciones : [];
+
+        if (opcionesDisponibles.some((opcion) => opcion.string1 === terminoLimpio)) {
           return anteriores;
         }
-        const siguienteId = anteriores.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
-        return [...anteriores, crearOpcionTablaMaestra(siguienteId, terminoLimpio, num2AltaNueva)];
+        const siguienteId = opcionesDisponibles.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
+        return {
+          clave: claveOpciones,
+          opciones: [...opcionesActuales, crearOpcionTablaMaestra(siguienteId, terminoLimpio, num2AltaNueva)],
+        };
       });
       onChange?.(terminoLimpio);
       return;
@@ -357,20 +362,27 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
 
     void altaNuevaMutation.mutateAsync(terminoLimpio).then(({ opcion, respuesta, termino }) => {
       if (opcion) {
-        setOpciones((anteriores) => {
-          if (anteriores.some((opcionAnterior) => opcionAnterior.num1 === opcion.num1)) {
+        setEstadoOpcionesLocales((anteriores) => {
+          const opcionesActuales = anteriores.clave === claveOpciones ? anteriores.opciones : [];
+
+          if (opcionesDisponibles.some((opcionAnterior) => opcionAnterior.num1 === opcion.num1)) {
             return anteriores;
           }
-          return [...anteriores, opcion];
+          return { clave: claveOpciones, opciones: [...opcionesActuales, opcion] };
         });
       } else {
-        setOpciones((anteriores) => {
-          if (anteriores.some((opcionAnterior) => normalizarTexto(opcionAnterior.string1 ?? "") === normalizarTexto(termino))) {
+        setEstadoOpcionesLocales((anteriores) => {
+          const opcionesActuales = anteriores.clave === claveOpciones ? anteriores.opciones : [];
+
+          if (opcionesActuales.some((opcionAnterior) => normalizarTexto(opcionAnterior.string1 ?? "") === normalizarTexto(termino))) {
             return anteriores;
           }
 
-          const siguienteId = respuesta?.idTablaMaestra ?? (anteriores.reduce((maximo, opcionAnterior) => Math.max(maximo, opcionAnterior.num1 ?? 0), 0) + 1);
-          return [...anteriores, crearOpcionTablaMaestra(siguienteId, termino, num2AltaNueva)];
+          const siguienteId = respuesta?.idTablaMaestra ?? (opcionesDisponibles.reduce((maximo, opcionAnterior) => Math.max(maximo, opcionAnterior.num1 ?? 0), 0) + 1);
+          return {
+            clave: claveOpciones,
+            opciones: [...opcionesActuales, crearOpcionTablaMaestra(siguienteId, termino, num2AltaNueva)],
+          };
         });
       }
       onChange?.(opcion ? obtenerValorSeleccion(opcion) : termino);
@@ -381,6 +393,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
 
   return (
     <CustomSelectorBuscable
+      key={claveOpciones}
       label={ocultarEtiqueta ? undefined : (
         <span className="inline-flex items-center gap-2">
           <span>{etiqueta}</span>
@@ -389,7 +402,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
       )}
       options={opcionesDisponibles}
       value={valorSeleccionado}
-      displayValue={valor}
+      displayValue={textoSeleccionado}
       onChange={manejarCambio}
       onClear={() => onChange?.("")}
       optional
@@ -505,7 +518,7 @@ export function CampoInvestigacionAnalista({
             }
 
             if (esCampoDecimal) {
-              onChange?.(sanitizarNumeroDosDecimales(event.target.value));
+              onChange?.(sanitizarMontoDosDecimales(event.target.value));
               return;
             }
 
@@ -517,11 +530,12 @@ export function CampoInvestigacionAnalista({
             if (esCampoPorcentaje) {
               onChange(normalizarPorcentajeDosDecimales(event.target.value));
             } else if (esCampoDecimal) {
-              onChange(normalizarNumeroDosDecimales(event.target.value));
+              onChange(normalizarMontoDosDecimales(event.target.value));
             }
 
             onBlur?.();
           }}
+          onFocus={seleccionarTextoCampoEditable}
           placeholder={marcadorFinal}
           className={clasesInput}
         />
@@ -560,6 +574,7 @@ export function AreaInvestigacionAnalista({
         value={valor}
         readOnly={soloLectura}
         onChange={(event) => onChange?.(event.target.value)}
+        onFocus={seleccionarTextoCampoEditable}
         placeholder={marcadorFinal}
         rows={filas}
         className="w-full resize-none rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400"
@@ -589,10 +604,10 @@ export function PestanasInvestigacionAnalista({
               }}
               className={`border-b-2 pb-3 text-xs font-bold uppercase tracking-[0.12em] transition-colors ${
                 opcion.disabled
-                  ? "cursor-not-allowed border-transparent text-slate-200"
+                  ? "cursor-not-allowed border-transparent text-slate-400"
                   : activa
                     ? "border-slate-900 text-slate-900"
-                    : "border-transparent text-slate-300 hover:text-slate-500"
+                    : "border-transparent text-slate-600 hover:text-slate-800"
               }`}
             >
               <span className="inline-flex items-center gap-2">

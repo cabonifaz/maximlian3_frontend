@@ -59,6 +59,7 @@ export interface InformeBalanceRequest {
   tipoCambio: number;
   idMoneda: number;
   tipoBalance: number;
+  tipoEstadoFinanciero?: number;
   cuentaBalance: InformeCuentaBalanceRequest | null;
 }
 
@@ -101,10 +102,16 @@ export interface InformeProveedorRequest {
   fechaInicio: string | null;
   idLimiteCredito: number;
   promedioMensual: number;
+  tipoCambio?: number;
   plazoCredito: string;
   productos: string;
   idCalificacion: number;
   comentarios: string;
+  esTieneReferenciaComercial?: boolean;
+  nombreContacto?: string;
+  telefono?: string;
+  comienzoNegociaciones?: string;
+  idPlazoCredito?: number;
 }
 
 export interface InformeDirectorioEjecutivoRequest {
@@ -180,6 +187,7 @@ export interface InformeCrearRequest {
   tipoAcciones: string;
   valorAcciones: number;
   cotizaBolsa: boolean;
+  idTipoCambio: number;
   tipoCambio: number;
   antecedentes: string;
   aspectosLegales: string;
@@ -242,9 +250,12 @@ export interface InformeObtenerResponse {
   taxIdType?: number;
   idEstadoManual?: number;
   idTipoEmpresa?: number;
+  idTipoCambio?: number;
   idCiudadRegistro?: number;
   idSector?: number;
   idActividad?: number;
+  idIsicCategoria?: number;
+  idIsicClase?: number;
   datosInvestigacion: DatosInvestigacionAnalista;
   archivosInvestigacion?: ArchivoInvestigacionAnalista[];
 }

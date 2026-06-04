@@ -27,6 +27,7 @@ export const TablaMaestraId = {
   TIPO_PROVEEDOR: 52,
   ETAPA_ASIGNACION: 53,
   CLASE_CIIU: 57,
+  LIMITE_CREDITO_PROVEEDOR: 58,
   PAGINACION_FRACTAL: 99,
 } as const;
 
@@ -107,6 +108,7 @@ const descripcionesTablaMaestraPorId: Partial<Record<TablaMaestraId, string>> = 
   [TablaMaestraId.TIPO_BALANCE]: "TIPO DE BALANCE",
   [TablaMaestraId.ESTADO_FINANCIERO]: "ESTADO FINANCIERO",
   [TablaMaestraId.TIPO_PROVEEDOR]: "TIPO DE PROVEEDOR",
+  [TablaMaestraId.LIMITE_CREDITO_PROVEEDOR]: "LIMITE DE CREDITO PROVEEDOR",
   [TablaMaestraId.ETAPA_ASIGNACION]: "FASE ASIGNACION",
   [TablaMaestraId.CLASE_CIIU]: "CLASE CIIU",
   [TablaMaestraId.PAGINACION_FRACTAL]: "PAGINACION FRACTAL",

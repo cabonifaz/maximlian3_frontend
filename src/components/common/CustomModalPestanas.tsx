@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { CustomButton } from "./CustomButton";
+import { seleccionarTextoEditableEnContenedor } from "@maximilian/shared/utils/formato-monto.util";
 
 interface TabDefinition {
   id: string;
@@ -57,7 +58,7 @@ export function CustomModalPestanas({
   };
 
   return (
-    <div className={`fixed inset-0 ${zIndex} flex min-h-dvh w-screen items-center justify-center overflow-y-auto p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300`}>
+    <div className={`fixed inset-0 ${zIndex} flex min-h-dvh w-screen items-center justify-center overflow-y-auto p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300`} onFocusCapture={seleccionarTextoEditableEnContenedor}>
       <div className={`bg-brand-white w-full ${maxWidth} rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[85vh]`}>
 
         {/* Encabezado */}
@@ -83,14 +84,14 @@ export function CustomModalPestanas({
                     onClick={() => handleTabChange(tab.id)}
                     className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
                       tab.disabled
-                        ? "cursor-not-allowed text-gray-300"
+                        ? "cursor-not-allowed text-gray-400"
                         : "cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99]"
                     } ${
                       currentTab === tab.id
                         ? "bg-brand-white text-brand-black shadow-sm border-b-2 border-brand-black"
                         : tab.disabled
-                          ? "text-gray-300"
-                          : "text-gray-400 hover:text-gray-600"
+                          ? "text-gray-400"
+                          : "text-gray-600 hover:text-gray-800"
                     }`}
                   >
                     <span>{tab.label}</span>
@@ -114,14 +115,14 @@ export function CustomModalPestanas({
                     onClick={() => handleTabChange(tab.id)}
                     className={`-mb-px flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-bold transition-all ${
                       tab.disabled
-                        ? "cursor-not-allowed border-transparent text-gray-300"
+                        ? "cursor-not-allowed border-transparent text-gray-400"
                         : "cursor-pointer"
                     } ${
                       currentTab === tab.id
                         ? "border-brand-black text-brand-black"
                         : tab.disabled
-                          ? "border-transparent text-gray-300"
-                          : "border-transparent text-gray-400 hover:text-gray-600"
+                          ? "border-transparent text-gray-400"
+                          : "border-transparent text-gray-600 hover:text-gray-800"
                     }`}
                   >
                     <span>{tab.label}</span>
