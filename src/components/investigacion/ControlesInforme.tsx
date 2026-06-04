@@ -196,6 +196,12 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   permiteAltaNueva = false,
   num2AltaNueva = null,
   conservarOpcionesLocales = true,
+  obtenerEtiquetaOpcion,
+  obtenerValorOpcion,
+  ocultarEtiqueta = false,
+  construirPayloadAltaNueva,
+  renderizarVistaPreviaAltaNueva,
+  puedeAgregarNuevo,
 }: {
   etiqueta: string;
   valor: string;
@@ -209,11 +215,18 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   permiteAltaNueva?: boolean;
   num2AltaNueva?: number | null;
   conservarOpcionesLocales?: boolean;
+  obtenerEtiquetaOpcion?: (opcion: EntradaTablaMaestra) => string;
+  obtenerValorOpcion?: (opcion: EntradaTablaMaestra) => string;
+  ocultarEtiqueta?: boolean;
+  construirPayloadAltaNueva?: (termino: string, opcionesActuales: EntradaTablaMaestra[]) => TablaMaestraCrearRequest;
+  renderizarVistaPreviaAltaNueva?: (terminoBusqueda: string) => ReactNode;
+  puedeAgregarNuevo?: (terminoBusqueda: string) => boolean;
 }) {
   const queryClient = useQueryClient();
   const [opciones, setOpciones] = useState<EntradaTablaMaestra[]>(() =>
     opcionesTablaMaestra ?? (opcionesIniciales ?? []).map((opcion, indice) => crearOpcionTablaMaestra(indice + 1, opcion)),
   );
+  const obtenerValorSeleccion = (opcion: EntradaTablaMaestra) => obtenerValorOpcion?.(opcion) || opcion.string1 || "";
   const altaNuevaMutation = useMutation({
     mutationFn: async (termino: string): Promise<{
       opcion?: EntradaTablaMaestra;
@@ -234,19 +247,19 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
         staleTime: 0,
       });
 
-      const payload: TablaMaestraCrearRequest = {
-        idMaestro,
-        descripcion: obtenerDescripcionTablaMaestra(idMaestro),
-        string1: termino,
-        num1: obtenerSiguienteNumTablaMaestra(opcionesActuales),
-        num2: num2AltaNueva,
-        num3: null,
-        string2: null,
-        string3: null,
-        date1: null,
-        date2: null,
-        date3: null,
-      };
+      const payload: TablaMaestraCrearRequest = construirPayloadAltaNueva?.(termino, opcionesActuales) ?? {
+          idMaestro,
+          descripcion: obtenerDescripcionTablaMaestra(idMaestro),
+          string1: termino,
+          num1: obtenerSiguienteNumTablaMaestra(opcionesActuales),
+          num2: num2AltaNueva,
+          num3: null,
+          string2: null,
+          string3: null,
+          date1: null,
+          date2: null,
+          date3: null,
+        };
 
       const respuesta = await servicioTablaMaestra.crear(payload);
       await queryClient.invalidateQueries({ queryKey: ["masterTable", idMaestro] });
@@ -258,6 +271,11 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
 
       const terminoNormalizado = normalizarTexto(termino);
       const opcion =
+        opcionesActualizadas.find((opcionActual) =>
+          normalizarTexto(opcionActual.string1 ?? "") === normalizarTexto(payload.string1 ?? "")
+          && normalizarTexto(opcionActual.string2 ?? "") === normalizarTexto(payload.string2 ?? "")
+          && (payload.num2 == null || opcionActual.num2 === payload.num2)
+        ) ??
         opcionesActualizadas.find((opcionActual) =>
           normalizarTexto(opcionActual.string1 ?? "") === terminoNormalizado
           && (num2AltaNueva == null || opcionActual.num2 === num2AltaNueva)
@@ -296,24 +314,28 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
     if (!valorLimpio) return;
 
     setOpciones((anteriores) => {
-      if (anteriores.some((opcion) => opcion.string1?.trim().toLowerCase() === valorLimpio.toLowerCase())) {
+      if (anteriores.some((opcion) =>
+        normalizarTexto(opcion.string1 ?? "") === normalizarTexto(valorLimpio)
+        || normalizarTexto(obtenerValorSeleccion(opcion)) === normalizarTexto(valorLimpio)
+      )) {
         return anteriores;
       }
 
       const siguienteId = anteriores.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
       return [...anteriores, crearOpcionTablaMaestra(siguienteId, valorLimpio)];
     });
-  }, [conservarOpcionesLocales, permiteAltaNueva, valor]);
+  }, [conservarOpcionesLocales, obtenerValorOpcion, permiteAltaNueva, valor]);
 
   const opcionesDisponibles = opciones;
 
   const valorSeleccionado = useMemo(
-    () => opcionesDisponibles.find((opcion) => opcion.string1 === valor)?.num1 ?? undefined,
+    () => opcionesDisponibles.find((opcion) => obtenerValorSeleccion(opcion) === valor || opcion.string1 === valor)?.num1 ?? undefined,
     [opcionesDisponibles, valor],
   );
 
   const manejarCambio = (nuevoValor: number) => {
-    const valorTexto = opcionesDisponibles.find((opcion) => opcion.num1 === nuevoValor)?.string1 ?? "";
+    const opcion = opcionesDisponibles.find((opcionActual) => opcionActual.num1 === nuevoValor);
+    const valorTexto = opcion ? obtenerValorSeleccion(opcion) : "";
     onChange?.(valorTexto);
   };
 
@@ -351,7 +373,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
           return [...anteriores, crearOpcionTablaMaestra(siguienteId, termino, num2AltaNueva)];
         });
       }
-      onChange?.(opcion?.string1?.trim() || opcion?.descripcion?.trim() || termino);
+      onChange?.(opcion ? obtenerValorSeleccion(opcion) : termino);
     }).catch(() => {
       // La notificacion de error la maneja el interceptor global.
     });
@@ -359,12 +381,12 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
 
   return (
     <CustomSelectorBuscable
-      label={
+      label={ocultarEtiqueta ? undefined : (
         <span className="inline-flex items-center gap-2">
           <span>{etiqueta}</span>
           {adicionalEtiqueta}
         </span>
-      }
+      )}
       options={opcionesDisponibles}
       value={valorSeleccionado}
       displayValue={valor}
@@ -375,6 +397,9 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
       onAddNew={permiteAltaNueva ? manejarAltaNuevo : undefined}
       placeholder={marcador ?? `Seleccione ${etiqueta.toLowerCase()}`}
       disabled={soloLectura}
+      obtenerEtiquetaOpcion={obtenerEtiquetaOpcion}
+      renderizarVistaPreviaAltaNueva={renderizarVistaPreviaAltaNueva}
+      puedeAgregarNuevo={puedeAgregarNuevo}
     />
   );
 }

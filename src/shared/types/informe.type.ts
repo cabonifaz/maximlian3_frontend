@@ -185,7 +185,8 @@ export interface InformeCrearRequest {
   aspectosLegales: string;
   comentariosAspectoLegal: string;
   idSector: number;
-  idActividad: number;
+  idActividad?: number;
+  actividad: string;
   idIsicCategoria: number;
   idIsicClase: number;
   actividadPrincipal: string;
@@ -194,8 +195,10 @@ export interface InformeCrearRequest {
   ventasCredito: number | null;
   ventasCreditoText: string;
   idVentasCreditoTiempo: number;
-  ventasNacionales: number | null;
-  ventasNacionalesText: string;
+  territorioVentas: number | null;
+  territorioText: string;
+  ventasNacionales?: number | null;
+  ventasNacionalesText?: string;
   ventasInternacionales: number | null;
   ventasInternacionalesText: string;
   comprasNacionales: number | null;
