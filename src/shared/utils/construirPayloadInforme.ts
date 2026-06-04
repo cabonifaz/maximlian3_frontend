@@ -1,17 +1,17 @@
 import type { InformeCrearRequest } from "@maximilian/shared/types/informe.type";
 import type { DatosInvestigacionAnalista, RegistroBalanceAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+import {
+  obtenerNumeroDesdeMonto,
+  obtenerNumeroOpcionalDesdeMonto,
+} from "@maximilian/shared/utils/formato-monto.util";
 
 function obtenerNumeroDesdeTexto(valor?: string) {
-  if (!valor) return 0;
-  const numero = Number.parseFloat(valor.replace(/[^0-9,.-]/g, "").replace(",", ".").trim());
-  return Number.isFinite(numero) ? numero : 0;
+  return obtenerNumeroDesdeMonto(valor);
 }
 
 function obtenerNumeroOpcionalDesdeTexto(valor?: string) {
-  if (!valor?.trim()) return null;
-  const numero = Number.parseFloat(valor.replace(/[^0-9,.-]/g, "").replace(",", ".").trim());
-  return Number.isFinite(numero) ? numero : null;
+  return obtenerNumeroOpcionalDesdeMonto(valor);
 }
 
 function obtenerEnteroDesdeTexto(valor?: string) {
@@ -35,6 +35,13 @@ function convertirFechaIso(valor?: string) {
 
 function obtenerIdPorTexto(opciones: EntradaTablaMaestra[] | undefined, valor: string) {
   return opciones?.find((opcion) => opcion.string1?.trim().toLowerCase() === valor.trim().toLowerCase())?.num1 ?? 0;
+}
+
+function obtenerIdPorTextoONumero(opciones: EntradaTablaMaestra[] | undefined, valor: string) {
+  const numero = Number.parseInt(valor.trim(), 10);
+  if (Number.isFinite(numero) && (!opciones || opciones.some((opcion) => opcion.num1 === numero))) return numero;
+
+  return obtenerIdPorTexto(opciones, valor);
 }
 
 function obtenerIdMoneda(valor: string) {
@@ -142,6 +149,7 @@ export function construirPayloadInforme({
   opcionesTipoPersona,
   opcionesPais,
   opcionesEstadoCliente,
+  opcionesMoneda,
   opcionesSectorEconomico,
 }: {
   idPedido: number;
@@ -151,6 +159,7 @@ export function construirPayloadInforme({
   opcionesTipoPersona: EntradaTablaMaestra[] | undefined;
   opcionesPais: EntradaTablaMaestra[] | undefined;
   opcionesEstadoCliente: EntradaTablaMaestra[] | undefined;
+  opcionesMoneda?: EntradaTablaMaestra[] | undefined;
   opcionesSectorEconomico: EntradaTablaMaestra[] | undefined;
 }): InformeCrearRequest {
   const { identificacion, aspectosLegales, operacionPrincipal, informacionFinanciera, referencias, datosGenerales } = datosInvestigacion;
@@ -193,6 +202,7 @@ export function construirPayloadInforme({
     tipoAcciones: aspectosLegales.tipoAcciones,
     valorAcciones: obtenerNumeroDesdeTexto(aspectosLegales.valorAcciones),
     cotizaBolsa: esTextoAfirmativo(aspectosLegales.obligacionBolsa),
+    idTipoCambio: obtenerIdPorTextoONumero(opcionesMoneda, aspectosLegales.monedaTipoCambio),
     tipoCambio: obtenerNumeroDesdeTexto(aspectosLegales.tipoCambio),
     antecedentes: aspectosLegales.antecedentes,
     aspectosLegales: aspectosLegales.aspectosLegales,
@@ -231,13 +241,14 @@ export function construirPayloadInforme({
     opinionCredito: datosGenerales.opinionCredito,
     flgTieneInformacion: true,
     lstBalances: datosInvestigacion.balances.map((balance) => ({
-      ...(esEdicion ? { idInformeBalance: 0 } : {}),
+      ...(esEdicion ? { idInformeBalance: balance.idInformeBalance ?? 0 } : {}),
       fechaBalance: convertirFechaIso(balance.fechaInicio ?? balance.fecha),
       fechaHasta: balance.esActual ? null : convertirFechaIso(balance.fechaFin),
       flgActualidad: balance.esActual ?? false,
       tipoCambio: obtenerNumeroDesdeTexto(balance.tipoCambio),
-      idMoneda: obtenerIdMoneda(balance.operacionCambio ?? ""),
-      tipoBalance: obtenerIdTipoBalance(balance.tipoBalance),
+      idMoneda: balance.idMoneda ?? obtenerIdMoneda(balance.operacionCambio ?? ""),
+      idTipoBalance: (balance.idTipoBalance ?? obtenerIdPorTextoONumero(undefined, balance.tipoBalance ?? "")) || obtenerIdTipoBalance(balance.tipoBalance),
+      idTipoEstadoFinanciero: balance.idTipoEstadoFinanciero ?? obtenerIdPorTextoONumero(undefined, balance.tipoEstadoFinanciero ?? balance.tipo ?? ""),
       cuentaBalance: construirCuentaBalance(balance.detalleCuentas),
     })),
     lstBancos: datosInvestigacion.bancos.map((banco) => ({
@@ -279,21 +290,27 @@ export function construirPayloadInforme({
       })),
     ],
     lstProveedores: datosInvestigacion.proveedores.map((proveedor) => ({
-      ...(esEdicion ? { idInformeProveedor: 0 } : {}),
+      ...(esEdicion ? { idInformeProveedor: proveedor.idInformeProveedor ?? 0 } : {}),
       idBancoProveedor: 0,
-      idTipoPersona: obtenerIdPorTexto(opcionesTipoPersona, proveedor.tipoPersona),
+      idTipoPersona: proveedor.idTipoProveedor ?? obtenerIdPorTextoONumero(undefined, proveedor.tipoProveedor),
       nombre: proveedor.nombreEmpresa,
-      idPais: obtenerIdPorTexto(opcionesPais, proveedor.pais),
-      idTipoDocumento: 0,
+      idPais: proveedor.idPais ?? obtenerIdPorTexto(opcionesPais, proveedor.pais),
+      idTipoDocumento: proveedor.idTipoDocumento ?? 0,
       numeroDocumento: proveedor.taxIdNumber,
-      idMoneda: obtenerIdMoneda(proveedor.operacionCambioMoneda ?? ""),
+      idMoneda: proveedor.idMoneda ?? obtenerIdMoneda(proveedor.operacionCambioMoneda ?? ""),
       fechaInicio: convertirFechaIso(proveedor.comienzoNegociaciones),
-      idLimiteCredito: 0,
+      idLimiteCredito: proveedor.idLimiteCredito ?? proveedor.idPlazoCredito ?? 0,
       promedioMensual: obtenerNumeroDesdeTexto(proveedor.promedioMensual),
+      tipoCambio: obtenerNumeroDesdeTexto(proveedor.tipoCambio),
       plazoCredito: proveedor.limiteCredito ?? "",
       productos: proveedor.tipoProveedor,
       idCalificacion: 0,
-      comentarios: [proveedor.contacto, proveedor.telefono].filter(Boolean).join(" - "),
+      comentarios: "",
+      esTieneReferenciaComercial: proveedor.esTieneReferenciaComercial ?? proveedor.tieneReferenciaComercial,
+      nombreContacto: proveedor.contacto,
+      telefono: proveedor.telefono,
+      comienzoNegociaciones: proveedor.comienzoNegociaciones ?? "",
+      idPlazoCredito: proveedor.idPlazoCredito ?? proveedor.idLimiteCredito ?? 0,
     })),
     lstDirectoriosEjecutivos: datosInvestigacion.directorioEjecutivo.map((ejecutivo) => ({
       ...(esEdicion ? { idInformeDirectorioEjecutivo: 0 } : {}),
@@ -308,8 +325,8 @@ export function construirPayloadInforme({
       imprimeDatosEjecutivos: ejecutivo.detalleEjecutivo,
     })),
     lstLocales: datosInvestigacion.locales.map((local) => ({
-      ...(esEdicion ? { idInformeLocal: 0 } : {}),
-      idTipoLocal: 0,
+      ...(esEdicion ? { idInformeLocal: local.idInformeLocal ?? 0 } : {}),
+      idTipoLocal: local.idTipoLocal ?? obtenerIdPorTextoONumero(undefined, local.tipoLocal),
       comentario: local.comentario,
       imagenUrl: local.imagenUrl ?? "",
       imagenes: (local.imagenes ?? []).map((imagen) => ({

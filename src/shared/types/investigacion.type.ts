@@ -77,6 +77,8 @@ export interface RegistroImportacionExportacionAnalista {
 }
 
 export interface RegistroLocalAnalista {
+  idInformeLocal?: number;
+  idTipoLocal?: number;
   tipoLocal: string;
   direccion?: string;
   comentario: string;
@@ -94,6 +96,7 @@ export interface RegistroImagenLocalAnalista {
 }
 
 export interface RegistroBalanceAnalista {
+  idInformeBalance?: number;
   codigo: string;
   periodo: string;
   fecha: string;
@@ -101,9 +104,12 @@ export interface RegistroBalanceAnalista {
   fechaFin?: string;
   esActual?: boolean;
   tipo: string;
+  idTipoEstadoFinanciero?: number;
   tipoEstadoFinanciero?: string;
   tipoCambio?: string;
+  idMoneda?: number;
   operacionCambio?: string;
+  idTipoBalance?: number;
   tipoBalance?: string;
   balanceGeneral: boolean;
   perdidaGanancia: boolean;
@@ -282,18 +288,26 @@ export interface DatosReferenciasAnalista {
 }
 
 export interface RegistroProveedorAnalista {
+  idInformeProveedor?: number;
+  idTipoProveedor?: number;
   nombreEmpresa: string;
   contacto: string;
   tipoProveedor: string;
   telefono: string;
   tipoPersona: string;
+  idPais?: number;
   pais: string;
+  idTipoDocumento?: number;
   taxIdType: string;
   taxIdNumber: string;
   tieneReferenciaComercial: boolean;
+  esTieneReferenciaComercial?: boolean;
   comienzoNegociaciones?: string;
+  idMoneda?: number;
   operacionCambioMoneda?: string;
   tipoCambio?: string;
+  idLimiteCredito?: number;
+  idPlazoCredito?: number;
   limiteCredito?: string;
   promedioMensual?: string;
 }

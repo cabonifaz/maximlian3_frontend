@@ -11,6 +11,10 @@ import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service"
 import type { BancoCrearRequest, BancoEditarRequest, BancoListaItem } from "@maximilian/shared/types/banco.type";
 import type { RegistroBancoAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import {
+  seleccionarTextoCampoEditable,
+  seleccionarTextoEditableEnContenedor,
+} from "@maximilian/shared/utils/formato-monto.util";
 
 interface PropsCustomModalBancoAnalista {
   estaAbierto: boolean;
@@ -104,7 +108,7 @@ function CustomModalCrearBancoAnalista({
   const formularioInvalido = !idPais || !nombre.trim() || !telefono.trim();
 
   return (
-    <div className="fixed inset-0 z-[115] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[115] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
       <div className="flex w-full max-w-3xl flex-col overflow-hidden rounded-[30px] bg-white shadow-[0_40px_100px_rgba(15,23,42,0.22)]">
         <div className="flex items-start justify-between gap-4 border-b border-gray-100 bg-[radial-gradient(circle_at_top_left,rgba(130,21,51,0.10),transparent_36%),linear-gradient(180deg,#ffffff,#f8fafc)] px-6 py-6 md:px-8">
           <div className="flex items-start gap-4">
@@ -149,6 +153,7 @@ function CustomModalCrearBancoAnalista({
                 <input
                   value={nombre}
                   onChange={(event) => setNombre(event.target.value)}
+                  onFocus={seleccionarTextoCampoEditable}
                   placeholder="Ingrese el nombre del banco"
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
                 />
@@ -159,6 +164,7 @@ function CustomModalCrearBancoAnalista({
                 <input
                   value={telefono}
                   onChange={(event) => setTelefono(event.target.value)}
+                  onFocus={seleccionarTextoCampoEditable}
                   placeholder="Ingrese el teléfono"
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
                 />
@@ -293,8 +299,9 @@ function CustomModalBusquedaBancoAnalista({
                 <div className="relative">
                   <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
                   <input
-                    value={busqueda}
-                    onChange={(event) => setBusqueda(event.target.value)}
+                  value={busqueda}
+                  onChange={(event) => setBusqueda(event.target.value)}
+                  onFocus={seleccionarTextoCampoEditable}
                     placeholder="Buscar por nombre del banco..."
                     className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
                   />
@@ -516,8 +523,6 @@ export function CustomModalBancoAnalista({
 
   const manejarGuardar = () => {
     const sectorSeleccionado = opcionesSector?.find((opcion) => opcion.num1 === idSectorSeleccionado)?.string1 ?? sector;
-    if (!banco.trim() || !sectorSeleccionado.trim() || !telefono.trim() || !numeroCuenta.trim()) return;
-
     onGuardar({
       idInformeBanco: registroInicial?.idInformeBanco,
       idBanco,
@@ -533,7 +538,7 @@ export function CustomModalBancoAnalista({
 
   return (
     <>
-      <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
         <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
           <div className="flex items-center justify-between border-b border-gray-100 px-7 py-6">
             <div>
@@ -552,6 +557,7 @@ export function CustomModalBancoAnalista({
                 <input
                   value={banco}
                   onChange={(event) => setBanco(event.target.value)}
+                  onFocus={seleccionarTextoCampoEditable}
                   placeholder="Nombre del banco"
                   className="h-11 rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none"
                 />
@@ -564,7 +570,7 @@ export function CustomModalBancoAnalista({
 
             <div className="space-y-2">
               <CustomLabel>Número de Cuenta</CustomLabel>
-              <input value={numeroCuenta} onChange={(event) => setNumeroCuenta(event.target.value)} placeholder="0000 0000 0000" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+              <input value={numeroCuenta} onChange={(event) => setNumeroCuenta(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="0000 0000 0000" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
             </div>
 
             <div className="space-y-2">
@@ -587,12 +593,12 @@ export function CustomModalBancoAnalista({
 
             <div className="space-y-2">
               <CustomLabel>Sectorista / Jefe de Cuenta</CustomLabel>
-              <input value={sectoristaJefeCuenta} onChange={(event) => setSectoristaJefeCuenta(event.target.value)} placeholder="Nombre del sectorista o jefe de cuenta" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+              <input value={sectoristaJefeCuenta} onChange={(event) => setSectoristaJefeCuenta(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Nombre del sectorista o jefe de cuenta" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
             </div>
 
             <div className="space-y-2">
               <CustomLabel>Numero(s) de Teléfono</CustomLabel>
-              <input value={telefono} onChange={(event) => setTelefono(event.target.value)} placeholder="+52 ..." className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+              <input value={telefono} onChange={(event) => setTelefono(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="+52 ..." className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
             </div>
 
             {pais ? (

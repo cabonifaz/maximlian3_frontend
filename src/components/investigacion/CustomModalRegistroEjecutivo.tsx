@@ -9,6 +9,7 @@ import type {
   RegistroDirectorioEjecutivoAnalista,
   RegistroPersonaDirectorioAnalista,
 } from "@maximilian/shared/types/investigacion.type";
+import { seleccionarTextoEditableEnContenedor } from "@maximilian/shared/utils/formato-monto.util";
 
 const ID_MAESTRO_CARGO_DIRECTORIO = 14;
 
@@ -54,8 +55,6 @@ export function CustomModalRegistroEjecutivoAnalista({
     const ejecutivo = String(formData.get("ejecutivo") ?? "").trim();
     const idCargo = obtenerIdCargo(opcionesCargo, cargoActual) || registroInicial?.idCargo || 0;
 
-    if (!ejecutivo || !cargoActual || !idCargo) return;
-
     const porcentaje = formatearPorcentajeParticipacion(porcentajeParticipacion);
     const imprimirListado = formData.get("imprimirListado") === "si";
     const imprimirDetalle = formData.get("imprimirDetalle") === "si";
@@ -81,7 +80,7 @@ export function CustomModalRegistroEjecutivoAnalista({
   };
 
   return (
-    <div className="fixed inset-0 z-[96] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[96] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
       <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[22px] bg-white shadow-2xl">
         <div className="flex items-start justify-between px-6 py-5">
           <div>

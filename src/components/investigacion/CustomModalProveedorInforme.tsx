@@ -8,6 +8,14 @@ import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/compone
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { RegistroProveedorAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import {
+  normalizarMontoDosDecimales,
+  normalizarMontoDecimales,
+  sanitizarMontoDosDecimales,
+  sanitizarMontoDecimales,
+  seleccionarTextoEditableEnContenedor,
+  seleccionarTextoCampoEditable,
+} from "@maximilian/shared/utils/formato-monto.util";
 
 interface PropsCustomModalProveedorAnalista {
   estaAbierto: boolean;
@@ -15,8 +23,6 @@ interface PropsCustomModalProveedorAnalista {
   onCerrar: () => void;
   onGuardar: (registro: RegistroProveedorAnalista) => void;
 }
-
-const opcionesLimiteCredito = ["Sin límite operativo", "Limitado", "Sujeto a evaluación"];
 
 export function CustomModalProveedorAnalista({
   estaAbierto,
@@ -31,7 +37,9 @@ export function CustomModalProveedorAnalista({
   const [taxIdNumber, setTaxIdNumber] = useState(registroInicial?.taxIdNumber ?? "");
   const [contacto, setContacto] = useState(registroInicial?.contacto ?? "");
   const [telefono, setTelefono] = useState(registroInicial?.telefono ?? "");
-  const [tieneReferenciaComercial, setTieneReferenciaComercial] = useState(registroInicial?.tieneReferenciaComercial ?? false);
+  const [tieneReferenciaComercial, setTieneReferenciaComercial] = useState(
+    registroInicial?.esTieneReferenciaComercial ?? registroInicial?.tieneReferenciaComercial ?? false,
+  );
   const [comienzoNegociaciones, setComienzoNegociaciones] = useState(registroInicial?.comienzoNegociaciones ?? "");
   const [operacionCambioMoneda, setOperacionCambioMoneda] = useState(registroInicial?.operacionCambioMoneda ?? "");
   const [tipoCambio, setTipoCambio] = useState(registroInicial?.tipoCambio ?? "");
@@ -57,34 +65,51 @@ export function CustomModalProveedorAnalista({
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
     staleTime: Infinity,
   });
+  const { data: opcionesLimiteCredito } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.LIMITE_CREDITO_PROVEEDOR],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.LIMITE_CREDITO_PROVEEDOR),
+    staleTime: Infinity,
+  });
 
   if (!estaAbierto) return null;
 
   const manejarGuardar = () => {
-    if (!tipoProveedor || !nombreEmpresa.trim() || !pais || !taxIdType || !taxIdNumber.trim()) {
-      return;
-    }
+    const idTipoProveedor = obtenerIdSeleccion(opcionesTipoProveedor, tipoProveedor) || registroInicial?.idTipoProveedor;
+    const idPais = obtenerIdSeleccion(opcionesPais, pais) || registroInicial?.idPais;
+    const idTipoDocumento = obtenerIdSeleccion(opcionesTaxId, taxIdType) || registroInicial?.idTipoDocumento;
+    const idMoneda = obtenerIdSeleccion(opcionesMoneda, operacionCambioMoneda) || registroInicial?.idMoneda;
+    const idLimiteCredito = obtenerIdSeleccion(opcionesLimiteCredito, limiteCredito)
+      ?? registroInicial?.idLimiteCredito
+      ?? registroInicial?.idPlazoCredito;
 
     onGuardar({
+      idInformeProveedor: registroInicial?.idInformeProveedor,
+      idTipoProveedor: idTipoProveedor ?? undefined,
       nombreEmpresa: nombreEmpresa.trim(),
       contacto: contacto.trim(),
       tipoProveedor,
       telefono: telefono.trim(),
       tipoPersona: registroInicial?.tipoPersona ?? "Juridica",
+      idPais: idPais ?? undefined,
       pais,
+      idTipoDocumento: idTipoDocumento ?? undefined,
       taxIdType,
       taxIdNumber: taxIdNumber.trim(),
       tieneReferenciaComercial,
+      esTieneReferenciaComercial: tieneReferenciaComercial,
       comienzoNegociaciones: tieneReferenciaComercial ? comienzoNegociaciones.trim() : "",
+      idMoneda: tieneReferenciaComercial ? idMoneda ?? undefined : undefined,
       operacionCambioMoneda: tieneReferenciaComercial ? operacionCambioMoneda : "",
       tipoCambio: tieneReferenciaComercial ? tipoCambio.trim() : "",
+      idLimiteCredito: tieneReferenciaComercial ? idLimiteCredito ?? undefined : undefined,
+      idPlazoCredito: tieneReferenciaComercial ? idLimiteCredito ?? undefined : undefined,
       limiteCredito: tieneReferenciaComercial ? limiteCredito : "",
       promedioMensual: tieneReferenciaComercial ? promedioMensual.trim() : "",
     });
   };
 
   return (
-    <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
       <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-7 py-6">
           <div>
@@ -110,7 +135,7 @@ export function CustomModalProveedorAnalista({
 
           <div className="space-y-2">
             <CustomLabel>Nombre de la Empresa / Compañía</CustomLabel>
-            <input value={nombreEmpresa} onChange={(event) => setNombreEmpresa(event.target.value)} placeholder="Ej. Schneider Electric SA de CV" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+            <input value={nombreEmpresa} onChange={(event) => setNombreEmpresa(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ej. Schneider Electric SA de CV" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -143,17 +168,17 @@ export function CustomModalProveedorAnalista({
 
           <div className="space-y-2">
             <CustomLabel>Tax ID Number</CustomLabel>
-            <input value={taxIdNumber} onChange={(event) => setTaxIdNumber(event.target.value)} placeholder="Ingrese número de identificación fiscal..." className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+            <input value={taxIdNumber} onChange={(event) => setTaxIdNumber(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese número de identificación fiscal..." className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
           </div>
 
           <div className="space-y-2">
             <CustomLabel>Nombre de Contacto</CustomLabel>
-            <input value={contacto} onChange={(event) => setContacto(event.target.value)} placeholder="Ingrese el nombre de contacto" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+            <input value={contacto} onChange={(event) => setContacto(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese el nombre de contacto" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
           </div>
 
           <div className="space-y-2">
             <CustomLabel>Teléfono</CustomLabel>
-            <input value={telefono} onChange={(event) => setTelefono(event.target.value)} placeholder="Ingrese el teléfono" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+            <input value={telefono} onChange={(event) => setTelefono(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese el teléfono" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
           </div>
 
           <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-slate-600">
@@ -183,7 +208,7 @@ export function CustomModalProveedorAnalista({
             <>
               <div className="space-y-2">
                 <CustomLabel>Comienzo de las Negociaciones</CustomLabel>
-                <input value={comienzoNegociaciones} onChange={(event) => setComienzoNegociaciones(event.target.value)} placeholder="Desde hace varios años" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+                <input value={comienzoNegociaciones} onChange={(event) => setComienzoNegociaciones(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Desde hace varios años" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
               </div>
 
               <div className="space-y-2">
@@ -198,7 +223,7 @@ export function CustomModalProveedorAnalista({
                     mostrarTextoOpcionalEnLabel={false}
                     placeholder="Divisa"
                   />
-                  <input value={tipoCambio} onChange={(event) => setTipoCambio(event.target.value)} placeholder="$ 0.00" className="h-11 rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+                  <input value={tipoCambio} onChange={(event) => setTipoCambio(sanitizarMontoDecimales(event.target.value, 6))} onBlur={(event) => setTipoCambio(normalizarMontoDecimales(event.target.value, 6))} onFocus={seleccionarTextoCampoEditable} placeholder="0.000000" className="h-11 rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
                 </div>
               </div>
 
@@ -206,14 +231,16 @@ export function CustomModalProveedorAnalista({
                 etiqueta="Límite de Crédito"
                 valor={limiteCredito}
                 soloLectura={false}
-                opcionesIniciales={opcionesLimiteCredito}
+                opcionesTablaMaestra={opcionesLimiteCredito}
+                idMaestro={TablaMaestraId.LIMITE_CREDITO_PROVEEDOR}
+                permiteAltaNueva
                 marcador="Seleccione o agregue límite de crédito"
                 onChange={setLimiteCredito}
               />
 
               <div className="space-y-2">
                 <CustomLabel>Promedio Mensual</CustomLabel>
-                <input value={promedioMensual} onChange={(event) => setPromedioMensual(event.target.value)} placeholder="Ingrese el promedio mensual" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+                <input value={promedioMensual} onChange={(event) => setPromedioMensual(sanitizarMontoDosDecimales(event.target.value))} onBlur={(event) => setPromedioMensual(normalizarMontoDosDecimales(event.target.value))} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese el promedio mensual" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
               </div>
             </>
           ) : null}
@@ -226,4 +253,12 @@ export function CustomModalProveedorAnalista({
       </div>
     </div>
   );
+}
+
+function obtenerIdSeleccion(opciones: { num1: number | null; string1: string | null }[] | undefined, valor: string) {
+  const texto = valor.trim();
+  const numero = Number.parseInt(texto, 10);
+  if (Number.isFinite(numero) && numero > 0) return numero;
+
+  return opciones?.find((opcion) => opcion.string1?.trim().toLowerCase() === texto.toLowerCase())?.num1 ?? undefined;
 }

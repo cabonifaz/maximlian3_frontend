@@ -17,6 +17,13 @@ import {
   obtenerConfiguracionEstadoFinanciero,
   obtenerTipoEntradaCampoEstadoFinanciero,
 } from "@maximilian/shared/utils/estados-financieros.util";
+import {
+  formatearMontoDosDecimales,
+  normalizarMontoDosDecimales,
+  obtenerNumeroDesdeMonto,
+  sanitizarMontoDosDecimales,
+  seleccionarTextoCampoEditable,
+} from "@maximilian/shared/utils/formato-monto.util";
 
 interface PropsCustomModalDetalleCuentasAnalista {
   estaAbierto: boolean;
@@ -57,12 +64,11 @@ function crearDetalleVacio(): DetalleCuentasBalanceAnalista {
 }
 
 function obtenerNumero(valor: string) {
-  const numero = Number.parseFloat(valor.replace(",", "."));
-  return Number.isFinite(numero) ? numero : 0;
+  return obtenerNumeroDesdeMonto(valor);
 }
 
 function formatearNumero(valor: number) {
-  return valor.toFixed(2);
+  return formatearMontoDosDecimales(valor);
 }
 
 function dividirSeguro(numerador: number, denominador: number) {
@@ -86,24 +92,7 @@ function sonRegistrosIguales(registrosActuales: Record<string, string>, registro
 }
 
 function sanitizarNumero(valor: string, permitirNegativo = false) {
-  let valorNormalizado = valor.replace(",", ".").replace(permitirNegativo ? /[^0-9.-]/g : /[^0-9.]/g, "");
-
-  if (permitirNegativo) {
-    const tieneNegativoInicial = valorNormalizado.startsWith("-");
-    valorNormalizado = valorNormalizado.replace(/-/g, "");
-    valorNormalizado = `${tieneNegativoInicial ? "-" : ""}${valorNormalizado}`;
-  }
-
-  const signo = valorNormalizado.startsWith("-") ? "-" : "";
-  const valorSinSigno = signo ? valorNormalizado.slice(1) : valorNormalizado;
-  const partes = valorSinSigno.split(".");
-  const entero = partes[0] ?? "";
-  const decimal = partes[1] ?? "";
-  const compuesto = partes.length > 1 ? `${entero}.${decimal.slice(0, 2)}` : entero;
-
-  if (!compuesto) return signo;
-
-  return `${signo}${compuesto}`;
+  return sanitizarMontoDosDecimales(valor, permitirNegativo);
 }
 
 function esValorCeroOBlanco(valor: string) {
@@ -147,11 +136,12 @@ function CampoDetalle({
         onBlur={(event) => {
           const texto = event.target.value.trim();
           if (!texto || texto === "-" || texto === "-.") {
-            onChange("0.00");
-            return;
-          }
-          onChange(formatearNumero(obtenerNumero(texto)));
+          onChange("0.00");
+          return;
+        }
+          onChange(normalizarMontoDosDecimales(texto, permitirNegativo));
         }}
+        onFocus={seleccionarTextoCampoEditable}
         placeholder="0.00"
         className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:text-slate-500 ${destacado ? "border-emerald-200 bg-white text-emerald-800 disabled:bg-emerald-50" : "border-gray-200 bg-slate-50 text-slate-600 disabled:bg-slate-100 disabled:text-slate-400"} ${negrita || destacado ? "font-bold" : ""}`}
       />
@@ -208,6 +198,7 @@ function CampoDetalleEntero({
         value={valor}
         disabled={deshabilitado}
         onChange={(event) => onChange(event.target.value.replace(/\D/g, ""))}
+        onFocus={seleccionarTextoCampoEditable}
         placeholder={placeholder}
         className="h-10 w-full rounded-md border border-gray-200 bg-slate-50 px-3 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
       />
