@@ -59,7 +59,7 @@ export interface InformeBalanceRequest {
   tipoCambio: number;
   idMoneda: number;
   tipoBalance: number;
-  tipoEstadoFinanciero?: number;
+  idTipoEstadoFinanciero?: number;
   cuentaBalance: InformeCuentaBalanceRequest | null;
 }
 
