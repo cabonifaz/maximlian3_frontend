@@ -20,15 +20,19 @@ interface PropsCustomModalLocalAnalista {
   onGuardar: (registro: RegistroLocalAnalista) => void;
 }
 
+function obtenerTextoLocal(valor: unknown) {
+  return valor == null ? "" : String(valor);
+}
+
 export function CustomModalLocalAnalista({
   estaAbierto,
   registroInicial,
   onCerrar,
   onGuardar,
 }: PropsCustomModalLocalAnalista) {
-  const [tipoLocal, setTipoLocal] = useState(registroInicial?.tipoLocal ?? "");
-  const [direccion, setDireccion] = useState(registroInicial?.direccion ?? "");
-  const [comentario, setComentario] = useState(registroInicial?.comentario ?? "");
+  const [tipoLocal, setTipoLocal] = useState(() => obtenerTextoLocal(registroInicial?.tipoLocal));
+  const [direccion, setDireccion] = useState(() => obtenerTextoLocal(registroInicial?.direccion));
+  const [comentario, setComentario] = useState(() => obtenerTextoLocal(registroInicial?.comentario));
   const [indiceImagenAEliminar, setIndiceImagenAEliminar] = useState<number | null>(null);
   const [imagenes, setImagenes] = useState<RegistroImagenLocalAnalista[]>(() => {
     if (registroInicial?.imagenes?.length) return registroInicial.imagenes;
@@ -63,10 +67,16 @@ export function CustomModalLocalAnalista({
   if (!estaAbierto) return null;
 
   const manejarGuardar = () => {
+    const tipoLocalNormalizado = obtenerTextoLocal(tipoLocal).trim();
+    const idTipoLocal = opcionesTipoLocal?.find(
+      (opcion) => opcion.string1 === tipoLocalNormalizado || String(opcion.num1 ?? "") === tipoLocalNormalizado,
+    )?.num1 ?? registroInicial?.idTipoLocal;
+
     onGuardar({
-      tipoLocal: tipoLocal.trim(),
-      direccion: direccion.trim(),
-      comentario: comentario.trim(),
+      idTipoLocal: idTipoLocal ?? undefined,
+      tipoLocal: tipoLocalNormalizado,
+      direccion: obtenerTextoLocal(direccion).trim(),
+      comentario: obtenerTextoLocal(comentario).trim(),
       imagen: imagenes.length === 0 ? "" : imagenes.length === 1 ? imagenes[0].nombre : `${imagenes.length} imágenes adjuntas`,
       imagenUrl: imagenes[0]?.url,
       imagenTipo: imagenes[0]?.tipo,

@@ -203,10 +203,8 @@ export interface InformeCrearRequest {
   ventasCredito: number | null;
   ventasCreditoText: string;
   idVentasCreditoTiempo: number;
-  territorioVentas: number | null;
-  territorioText: string;
-  ventasNacionales?: number | null;
-  ventasNacionalesText?: string;
+  ventasNacionales: number | null;
+  ventasNacionalesText: string;
   ventasInternacionales: number | null;
   ventasInternacionalesText: string;
   comprasNacionales: number | null;

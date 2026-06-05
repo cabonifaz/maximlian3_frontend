@@ -13,6 +13,7 @@ import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 interface PropsCustomModalBuscarEjecutivoAnalista {
   estaAbierto: boolean;
   registros: RegistroPersonaDirectorioAnalista[];
+  busquedaInicial?: string;
   onCerrar: () => void;
   onSeleccionar: (registro: RegistroPersonaDirectorioAnalista) => void;
   onAgregarEmpresaPersona: () => void;
@@ -21,6 +22,7 @@ interface PropsCustomModalBuscarEjecutivoAnalista {
 export function CustomModalBuscarEjecutivoAnalista({
   estaAbierto,
   registros: _registros,
+  busquedaInicial = "",
   onCerrar,
   onSeleccionar,
   onAgregarEmpresaPersona,
@@ -31,8 +33,8 @@ export function CustomModalBuscarEjecutivoAnalista({
   const [idRegistroSeleccionado, setIdRegistroSeleccionado] = useState<number | null>(null);
   const [idTipoPersona, setIdTipoPersona] = useState<number | undefined>(undefined);
   const [idPais, setIdPais] = useState<number | undefined>(undefined);
-  const [descripcion, setDescripcion] = useState("");
-  const [busquedaActiva, setBusquedaActiva] = useState("");
+  const [descripcion, setDescripcion] = useState(busquedaInicial);
+  const [busquedaActiva, setBusquedaActiva] = useState(busquedaInicial);
 
   const {
     data: respuestaDirectorio,
@@ -50,8 +52,8 @@ export function CustomModalBuscarEjecutivoAnalista({
   });
 
   const registrosFuente = useMemo(
-    () => respuestaDirectorio?.registros ?? [],
-    [respuestaDirectorio?.registros],
+    () => respuestaDirectorio?.registros ?? _registros,
+    [_registros, respuestaDirectorio?.registros],
   );
 
   const resultados = useMemo(() => {

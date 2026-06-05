@@ -258,7 +258,7 @@ export interface DatosOperacionPrincipalAnalista {
   ventasContadoDetalle: string;
   ventasCreditoPorcentaje: string;
   ventasCreditoDetalle: string;
-  ventasCreditoSeleccion: string;
+  ventasCreditoTiempo: string;
   territorioVentasPorcentaje: string;
   territorioVentasDetalle: string;
   ventasExtranjeroPorcentaje: string;

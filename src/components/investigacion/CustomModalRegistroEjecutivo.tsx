@@ -9,14 +9,15 @@ import type {
   RegistroDirectorioEjecutivoAnalista,
   RegistroPersonaDirectorioAnalista,
 } from "@maximilian/shared/types/investigacion.type";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { seleccionarTextoEditableEnContenedor } from "@maximilian/shared/utils/formato-monto.util";
-
-const ID_MAESTRO_CARGO_DIRECTORIO = 14;
 
 interface PropsCustomModalRegistroEjecutivoAnalista {
   estaAbierto: boolean;
   registroInicial?: RegistroDirectorioEjecutivoAnalista | null;
   personaSeleccionada?: RegistroPersonaDirectorioAnalista | null;
+  mensajeBusquedaEjecutivo?: string;
+  requiereEjecutivoRegistrado?: boolean;
   onCerrar: () => void;
   onBuscarEjecutivo: () => void;
   onGuardar: (registro: Omit<RegistroDirectorioEjecutivoAnalista, "id">) => void;
@@ -26,6 +27,8 @@ export function CustomModalRegistroEjecutivoAnalista({
   estaAbierto,
   registroInicial,
   personaSeleccionada,
+  mensajeBusquedaEjecutivo,
+  requiereEjecutivoRegistrado = false,
   onCerrar,
   onBuscarEjecutivo,
   onGuardar,
@@ -40,18 +43,27 @@ export function CustomModalRegistroEjecutivoAnalista({
     limpiarPorcentaje(registroInicial?.porcentaje),
   );
   const { data: opcionesCargo } = useQuery({
-    queryKey: ["masterTable", ID_MAESTRO_CARGO_DIRECTORIO],
-    queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_CARGO_DIRECTORIO),
+    queryKey: ["masterTable", TablaMaestraId.CARGO_DIRECTORIO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CARGO_DIRECTORIO),
     enabled: estaAbierto,
     staleTime: Infinity,
   });
 
-  const cargoMaestroRegistro = opcionesCargo?.find((opcion) => opcion.num1 === registroInicial?.idCargo)?.string1?.trim() ?? "";
+  const cargoMaestroRegistro = opcionesCargo
+    ?.find((opcion) => Number(opcion.num1) === Number(registroInicial?.idCargo))
+    ?.string1
+    ?.trim() ?? "";
   const cargoActual = cargo || cargoMaestroRegistro || cargoDefecto;
+  const idDirectorioEjecutivo = registroInicial?.idDirectorioEjecutivo
+    ?? personaSeleccionada?.idDirectorioEjecutivo
+    ?? personaSeleccionada?.id;
+  const tieneEjecutivoRegistrado = Number(idDirectorioEjecutivo) > 0;
 
   if (!estaAbierto) return null;
 
   const manejarEnvio = (formData: FormData) => {
+    if (requiereEjecutivoRegistrado && !tieneEjecutivoRegistrado) return;
+
     const ejecutivo = String(formData.get("ejecutivo") ?? "").trim();
     const idCargo = obtenerIdCargo(opcionesCargo, cargoActual) || registroInicial?.idCargo || 0;
 
@@ -61,7 +73,7 @@ export function CustomModalRegistroEjecutivoAnalista({
     const esParteDirectorio = formData.get("esParteDirectorio") === "si";
 
     onGuardar({
-      idDirectorioEjecutivo: registroInicial?.idDirectorioEjecutivo ?? personaSeleccionada?.idDirectorioEjecutivo ?? personaSeleccionada?.id,
+      idDirectorioEjecutivo,
       ejecutivo: ejecutivo.length > 13 ? `${ejecutivo.slice(0, 13)}...` : ejecutivo,
       idCargo,
       cargo: cargoActual,
@@ -102,22 +114,24 @@ export function CustomModalRegistroEjecutivoAnalista({
           }}
         >
           <div className="space-y-6 overflow-y-auto px-6 py-5">
-            <div className="grid gap-4 md:grid-cols-[1fr_auto]">
-              <label className="space-y-2">
-                <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8ea0c0]">Ejecutivo</CustomLabel>
+            <div className="space-y-2">
+              <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8ea0c0]">Ejecutivo</CustomLabel>
+              <div className="grid gap-4 md:grid-cols-[1fr_auto]">
                 <input
                   name="ejecutivo"
                   defaultValue={ejecutivoDefecto}
-                  placeholder="Nombre completo del ejecutivo"
-                  className="h-11 w-full rounded-lg border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none"
+                  placeholder="Busque y seleccione un ejecutivo"
+                  readOnly
+                  className="h-11 w-full cursor-default rounded-lg border border-[#dbe4f0] bg-slate-50 px-4 text-sm text-slate-700 outline-none"
                 />
-              </label>
-              <div className="flex items-end">
                 <CustomButton type="button" size="sm" className="h-11 rounded-lg bg-[#eb5b53] px-5 hover:bg-[#dd5249]" onClick={onBuscarEjecutivo}>
                   <Search size={14} />
                   Buscar
                 </CustomButton>
               </div>
+              {mensajeBusquedaEjecutivo ? (
+                <p className="text-xs leading-5 text-amber-700">{mensajeBusquedaEjecutivo}</p>
+              ) : null}
             </div>
 
             <div className="pt-1">
@@ -126,7 +140,7 @@ export function CustomModalRegistroEjecutivoAnalista({
                 valor={cargoActual}
                 soloLectura={false}
                 opcionesTablaMaestra={opcionesCargo}
-                idMaestro={ID_MAESTRO_CARGO_DIRECTORIO}
+                idMaestro={TablaMaestraId.CARGO_DIRECTORIO}
                 marcador="Seleccione o agregue cargo"
                 onChange={setCargo}
                 permiteAltaNueva
@@ -161,7 +175,11 @@ export function CustomModalRegistroEjecutivoAnalista({
             <CustomButton type="button" variant="secondary" size="sm" onClick={onCerrar}>
               Cancelar
             </CustomButton>
-            <CustomButton type="submit" size="sm">
+            <CustomButton
+              type="submit"
+              size="sm"
+              disabled={requiereEjecutivoRegistrado && !tieneEjecutivoRegistrado}
+            >
               Guardar
             </CustomButton>
           </div>
@@ -176,7 +194,10 @@ function limpiarTextoCargo(valor: string) {
 }
 
 function obtenerIdCargo(opciones: { num1: number | null; string1: string | null }[] | undefined, valor: string) {
-  return opciones?.find((opcion) => opcion.string1?.trim().toLowerCase() === valor.trim().toLowerCase())?.num1 ?? 0;
+  const idCargo = opciones?.find(
+    (opcion) => opcion.string1?.trim().toLowerCase() === valor.trim().toLowerCase(),
+  )?.num1;
+  return idCargo == null ? 0 : Number(idCargo);
 }
 
 function CampoInput({

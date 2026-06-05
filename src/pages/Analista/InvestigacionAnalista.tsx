@@ -133,11 +133,17 @@ interface CiudadExtraccionPendiente {
   pais: string;
 }
 
+interface ValorExtraidoNormalizado {
+  valor: string;
+  valorFormulario?: string;
+  alAplicar?: () => void;
+  omitirActualizacion?: boolean;
+  confirmarConValorVacio?: boolean;
+}
+
 const FILAS_POR_PAGINA_INVESTIGACION = 5;
 const ID_ESTADO_PEDIDO_BORRADOR = 3;
 const ID_ESTADO_PEDIDO_FINALIZADO = 5;
-const ID_MAESTRO_CARGO_DIRECTORIO = 14;
-
 function obtenerTotalPaginas(totalRegistros: number) {
   return Math.max(1, Math.ceil(totalRegistros / FILAS_POR_PAGINA_INVESTIGACION));
 }
@@ -154,6 +160,13 @@ function obtenerPorcentajeNumerico(valor?: string) {
 
 function formatearPorcentajeOchoDecimales(valor: number) {
   return `${valor.toFixed(8)}%`;
+}
+
+function enmascararNumeroCuenta(valor: string) {
+  const numeroCuenta = valor.trim();
+  if (!numeroCuenta) return "-";
+  if (numeroCuenta.length <= 4) return numeroCuenta;
+  return `${"*".repeat(numeroCuenta.length - 4)}${numeroCuenta.slice(-4)}`;
 }
 
 function obtenerNumeroDesdeTexto(valor?: string) {
@@ -213,7 +226,7 @@ function obtenerIdCiiuPorValor(
 
 function obtenerTextoPorId(opciones: { num1: number | null; string1: string | null }[] | undefined, id?: number) {
   if (!id) return "";
-  return opciones?.find((opcion) => opcion.num1 === id)?.string1?.trim() ?? "";
+  return opciones?.find((opcion) => Number(opcion.num1) === Number(id))?.string1?.trim() ?? "";
 }
 
 function obtenerIdMoneda(valor: string) {
@@ -355,37 +368,29 @@ const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacionAnalist
     ],
   },
   "ramo-operaciones": {
-    locales: ["tipoLocal", "direccion", "comentario"],
     ramoOperaciones: [
       "actividad",
       "actividadPrincipal",
       "categoriaCiiu",
       "claseCiiu",
-      "comentario",
       "comentariosOperaciones",
-      "comprasExtranjeroDetalle",
       "comprasExtranjeroDetalles",
       "comprasExtranjeroPorcentaje",
-      "comprasNacionalesDetalle",
       "comprasNacionalesDetalles",
       "comprasNacionalesPorcentaje",
       "direccion",
       "exportaciones",
-      "imagen",
-      "imagenTipo",
-      "imageUrl",
       "importaciones",
+      "locales",
       "numeroEmpleados",
       "numeroEmpleadosDetalle",
       "sector",
-      "territorioVentasDetalle",
-      "territorioVentasPorcentaje",
-      "tipoLocal",
       "ventasContadoDetalle",
       "ventasContadoPorcentaje",
       "ventasCreditoDetalle",
       "ventasCreditoPorcentaje",
-      "ventasCreditoSeleccion",
+      "ventasNacionalesDetalle",
+      "ventasNacionalesPorcentaje",
       "ventasExtranjeroDetalle",
       "ventasExtranjeroPorcentaje",
     ],
@@ -411,13 +416,13 @@ const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacionAnalist
   "directorio-ejecutivo": {
     directorioEjecutivo: [
       "ejecutivo",
-      "cargo",
+      "cargoEjecutivo",
       "vinculadoDesde",
       "companiaAnterior",
-      "porcentaje",
-      "esParteDirectorio",
-      "lista",
-      "detalleEjecutivo",
+      "participacion",
+      "formaParteDirectorioEjecutivo",
+      "figuraListadoEjecutivos",
+      "existenDetallesEjecutivo",
     ],
   },
 };
@@ -669,9 +674,9 @@ function construirPayloadCrearInforme({
     ventasContadoText: operacionPrincipal.ventasContadoDetalle,
     ventasCredito: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasCreditoPorcentaje),
     ventasCreditoText: operacionPrincipal.ventasCreditoDetalle,
-    idVentasCreditoTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.ventasCreditoSeleccion),
-    territorioVentas: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.territorioVentasPorcentaje),
-    territorioText: operacionPrincipal.territorioVentasDetalle,
+    idVentasCreditoTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.ventasCreditoTiempo),
+    ventasNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.territorioVentasPorcentaje),
+    ventasNacionalesText: operacionPrincipal.territorioVentasDetalle,
     ventasInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasExtranjeroPorcentaje),
     ventasInternacionalesText: operacionPrincipal.ventasExtranjeroDetalle,
     comprasNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasNacionalesPorcentaje),
@@ -918,6 +923,8 @@ function PantallaInvestigacionAnalista({
   const [estaAbiertoModalRevisionCompaniasExtraccion, setEstaAbiertoModalRevisionCompaniasExtraccion] = useState(false);
   const [ejecutivosExtraccionPendientes, setEjecutivosExtraccionPendientes] = useState<RegistroDirectorioEjecutivoAnalista[]>([]);
   const [indiceEjecutivoExtraccionEdicion, setIndiceEjecutivoExtraccionEdicion] = useState<number | null>(null);
+  const [indiceEjecutivoExtraccionAprobacion, setIndiceEjecutivoExtraccionAprobacion] = useState<number | null>(null);
+  const [indiceEjecutivoExtraccionBusqueda, setIndiceEjecutivoExtraccionBusqueda] = useState<number | null>(null);
   const [estaAbiertoModalRevisionEjecutivosExtraccion, setEstaAbiertoModalRevisionEjecutivosExtraccion] = useState(false);
   const [bancosExtraccionPendientes, setBancosExtraccionPendientes] = useState<RegistroBancoAnalista[]>([]);
   const [colaExistentesExtraccion, setColaExistentesExtraccion] = useState<RegistroBancoAnalista[]>([]);
@@ -1094,6 +1101,12 @@ function PantallaInvestigacionAnalista({
     staleTime: Infinity,
   });
 
+  const { data: opcionesTiempoCreditoVentas } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIEMPO_CREDITO_VENTAS],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIEMPO_CREDITO_VENTAS),
+    staleTime: Infinity,
+  });
+
   const { data: opcionesPlantillaInforme } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.PLANTILLA_INFORME],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLANTILLA_INFORME),
@@ -1101,8 +1114,8 @@ function PantallaInvestigacionAnalista({
   });
 
   const { data: opcionesCargoDirectorio } = useQuery({
-    queryKey: ["masterTable", ID_MAESTRO_CARGO_DIRECTORIO],
-    queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_CARGO_DIRECTORIO),
+    queryKey: ["masterTable", TablaMaestraId.CARGO_DIRECTORIO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CARGO_DIRECTORIO),
     enabled: idSeccionActiva === "directorio-ejecutivo" || datosInvestigacion.directorioEjecutivo.length > 0,
     staleTime: Infinity,
   });
@@ -1170,6 +1183,48 @@ function PantallaInvestigacionAnalista({
       actualizarCampoInvestigacion(["identificacion", "ciudadEstadoProvincia"], valor);
       ciudadExtraccionPendienteRef.current = null;
       setCiudadExtraccionPendiente(null);
+    },
+  });
+
+  const crearTiempoCreditoExtraccionMutation = useMutation({
+    mutationFn: async (tiempoCredito: string) => {
+      const opcionesActuales = await queryClient.fetchQuery({
+        queryKey: ["masterTable", TablaMaestraId.TIEMPO_CREDITO_VENTAS],
+        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIEMPO_CREDITO_VENTAS),
+        staleTime: 0,
+      });
+      const opcionExistente = obtenerOpcionTablaMaestraPorTexto(opcionesActuales, tiempoCredito);
+      if (opcionExistente?.num1 != null) return opcionExistente.num1;
+
+      const siguienteNumero = opcionesActuales.reduce(
+        (maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0),
+        0,
+      ) + 1;
+
+      await servicioTablaMaestra.crear({
+        idMaestro: TablaMaestraId.TIEMPO_CREDITO_VENTAS,
+        descripcion: obtenerDescripcionTablaMaestra(TablaMaestraId.TIEMPO_CREDITO_VENTAS),
+        string1: tiempoCredito,
+        num1: siguienteNumero,
+        num2: null,
+        num3: null,
+        string2: null,
+        string3: null,
+        date1: null,
+        date2: null,
+        date3: null,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["masterTable", TablaMaestraId.TIEMPO_CREDITO_VENTAS],
+      });
+
+      return siguienteNumero;
+    },
+    onSuccess: (idTiempoCredito) => {
+      actualizarCampoInvestigacion(
+        ["operacionPrincipal", "ventasCreditoTiempo"],
+        String(idTiempoCredito),
+      );
     },
   });
 
@@ -1529,8 +1584,8 @@ function PantallaInvestigacionAnalista({
   };
 
   const actualizarPorcentajesComplementarios = (
-    campoOrigen: "ventasContadoPorcentaje" | "ventasCreditoPorcentaje" | "comprasNacionalesPorcentaje" | "comprasExtranjeroPorcentaje",
-    campoComplementario: "ventasContadoPorcentaje" | "ventasCreditoPorcentaje" | "comprasNacionalesPorcentaje" | "comprasExtranjeroPorcentaje",
+    campoOrigen: "ventasContadoPorcentaje" | "ventasCreditoPorcentaje" | "territorioVentasPorcentaje" | "ventasExtranjeroPorcentaje" | "comprasNacionalesPorcentaje" | "comprasExtranjeroPorcentaje",
+    campoComplementario: "ventasContadoPorcentaje" | "ventasCreditoPorcentaje" | "territorioVentasPorcentaje" | "ventasExtranjeroPorcentaje" | "comprasNacionalesPorcentaje" | "comprasExtranjeroPorcentaje",
     valor: string,
   ) => {
     const valorLimpio = valor.trim();
@@ -1697,7 +1752,7 @@ function PantallaInvestigacionAnalista({
     procesarCiudadExtraida(ciudadPendiente.valor, ciudadPendiente);
   };
 
-  const normalizarValorExtraido = (ruta: string[], valor: unknown) => {
+  const normalizarValorExtraido = (ruta: string[], valor: unknown): ValorExtraidoNormalizado => {
     const rutaTexto = ruta.join(".");
     const valorTexto = valor == null ? "" : String(valor).trim();
     const normalizarPorTablaMaestra = (
@@ -1891,6 +1946,31 @@ function PantallaInvestigacionAnalista({
       return { valor: normalizarPorTablaMaestra(opcionesActividadEconomica) };
     }
 
+    if (rutaTexto === "operacionPrincipal.ventasCreditoTiempo") {
+      const opcionPorId = obtenerOpcionTablaMaestraPorId(opcionesTiempoCreditoVentas, valor);
+      if (opcionPorId?.num1 != null) {
+        return {
+          valor: opcionPorId.string1 ?? valorTexto,
+          valorFormulario: String(opcionPorId.num1),
+        };
+      }
+
+      const opcionPorTexto = obtenerOpcionTablaMaestraPorTexto(opcionesTiempoCreditoVentas, valor);
+      if (opcionPorTexto?.num1 != null) {
+        return {
+          valor: opcionPorTexto.string1 ?? valorTexto,
+          valorFormulario: String(opcionPorTexto.num1),
+        };
+      }
+
+      return {
+        valor: valorTexto,
+        alAplicar: () => crearTiempoCreditoExtraccionMutation.mutate(valorTexto),
+        omitirActualizacion: true,
+        confirmarConValorVacio: true,
+      };
+    }
+
     if (rutaTexto === "operacionPrincipal.categoriaCiiu") {
       const ciiu = obtenerCiiuExtraido(opcionesActividadEconomica);
       return {
@@ -1959,6 +2039,7 @@ function PantallaInvestigacionAnalista({
     valorActual,
     valorExtraido,
     onAplicar,
+    confirmarConValorVacio = false,
   }: {
     id: string;
     ruta: string[];
@@ -1966,6 +2047,7 @@ function PantallaInvestigacionAnalista({
     valorActual: string;
     valorExtraido: string;
     onAplicar: () => void;
+    confirmarConValorVacio?: boolean;
   }) => {
     const valorAnteriorLimpio = CAMPOS_MONETARIOS_EXTRACCION.has(id) && /^0+(?:[.,]0+)?$/.test(valorActual.trim())
       ? ""
@@ -1974,7 +2056,7 @@ function PantallaInvestigacionAnalista({
 
     if (!valorNuevoLimpio || valorAnteriorLimpio === valorNuevoLimpio) return;
 
-    if (!valorAnteriorLimpio) {
+    if (!valorAnteriorLimpio && !confirmarConValorVacio) {
       onAplicar();
       return;
     }
@@ -2028,7 +2110,13 @@ function PantallaInvestigacionAnalista({
       return;
     }
 
-    const { valor: valorExtraido, valorFormulario, alAplicar, omitirActualizacion } = normalizarValorExtraido(rutaBase, seccionExtraida);
+    const {
+      valor: valorExtraido,
+      valorFormulario,
+      alAplicar,
+      omitirActualizacion,
+      confirmarConValorVacio,
+    } = normalizarValorExtraido(rutaBase, seccionExtraida);
     const valorActual = seccionActual == null ? "" : String(seccionActual).trim();
     if (!valorExtraido) return;
 
@@ -2043,6 +2131,7 @@ function PantallaInvestigacionAnalista({
       etiqueta: etiquetaCompleta,
       valorActual,
       valorExtraido,
+      confirmarConValorVacio,
       onAplicar: () => {
         alAplicar?.();
         if (!omitirActualizacion) {
@@ -2292,10 +2381,17 @@ function PantallaInvestigacionAnalista({
   const aplicarResultadosRamoOperacionesExtraccion = (seccionExtraida: unknown) => {
     if (!esRegistroPlano(seccionExtraida)) return;
 
+    const ventasCreditoDetalleExtraido = esRegistroPlano(seccionExtraida.ventasCreditoDetalle)
+      ? seccionExtraida.ventasCreditoDetalle
+      : null;
     const camposOperacionPrincipal = {
       ...seccionExtraida,
+      ventasCreditoDetalle: ventasCreditoDetalleExtraido?.creditoDetalle ?? seccionExtraida.ventasCreditoDetalle,
+      ventasCreditoTiempo: ventasCreditoDetalleExtraido?.creditoTiempo,
       comprasNacionalesDetalle: seccionExtraida.comprasNacionalesDetalle ?? seccionExtraida.comprasNacionalesDetalles,
       comprasExtranjeroDetalle: seccionExtraida.comprasExtranjeroDetalle ?? seccionExtraida.comprasExtranjeroDetalles,
+      territorioVentasDetalle: seccionExtraida.ventasNacionalesDetalle ?? seccionExtraida.territorioVentasDetalle,
+      territorioVentasPorcentaje: seccionExtraida.ventasNacionalesPorcentaje ?? seccionExtraida.territorioVentasPorcentaje,
     };
 
     aplicarResultadosExtraccion(datosInvestigacion.operacionPrincipal, camposOperacionPrincipal, ["operacionPrincipal"]);
@@ -2309,7 +2405,27 @@ function PantallaInvestigacionAnalista({
     }
 
     if (seccionExtraida.locales !== undefined) {
-      aplicarResultadosExtraccion(datosInvestigacion.locales, seccionExtraida.locales, ["locales"]);
+      const localesExtraidos = Array.isArray(seccionExtraida.locales)
+        ? seccionExtraida.locales
+            .filter(esRegistroPlano)
+            .map((local) => {
+              const valorTipoLocal = local.tipoLocal ?? local.idTipoLocal;
+              const idTipoLocal = typeof valorTipoLocal === "number"
+                ? valorTipoLocal
+                : typeof valorTipoLocal === "string" && valorTipoLocal.trim() && !Number.isNaN(Number(valorTipoLocal))
+                  ? Number(valorTipoLocal)
+                  : null;
+              const tipoLocal = obtenerOpcionTablaMaestraPorId(opcionesTipoLocal, idTipoLocal)?.string1
+                ?? String(local.tipoLocal ?? "");
+
+              return {
+                ...local,
+                idTipoLocal: idTipoLocal ?? undefined,
+                tipoLocal,
+              };
+            })
+        : [];
+      aplicarResultadosExtraccion(datosInvestigacion.locales, localesExtraidos, ["locales"]);
       return;
     }
 
@@ -2420,22 +2536,30 @@ function PantallaInvestigacionAnalista({
           (e) => e.ejecutivo.toLowerCase() === nombre || (e.nombreCompleto ?? "").toLowerCase() === nombre,
         );
       })
-      .map((item): RegistroDirectorioEjecutivoAnalista => ({
-        id: Date.now() + Math.random(),
-        ejecutivo: String(item.ejecutivo ?? item.nombreCompleto ?? "").trim(),
-        nombreCompleto: String(item.nombreCompleto ?? item.ejecutivo ?? "").trim(),
-        cargo: String(item.cargo ?? "").trim(),
-        porcentaje: String(item.porcentaje ?? "0").trim(),
-        lista: Boolean(item.lista),
-        detalleEjecutivo: Boolean(item.detalleEjecutivo),
-        orden: "1",
-        vinculadoDesde: String(item.vinculadoDesde ?? "").trim(),
-        companiaAnterior: String(item.companiaAnterior ?? "").trim(),
-        esParteDirectorio: Boolean(item.esParteDirectorio),
-        pais: String(item.pais ?? "").trim(),
-        tipoPersona: String(item.tipoPersona ?? "Natural").trim(),
-        descripcionBusqueda: String(item.ejecutivo ?? item.nombreCompleto ?? "").trim(),
-      }));
+      .map((item): RegistroDirectorioEjecutivoAnalista => {
+        const valorCargo = item.cargoEjecutivo ?? item.idCargo;
+        const valorParticipacion = item.participacion ?? item.porcentaje;
+        const idCargo = valorCargo == null ? Number.NaN : Number(valorCargo);
+        const participacion = valorParticipacion == null ? Number.NaN : Number(valorParticipacion);
+
+        return {
+          id: Date.now() + Math.random(),
+          ejecutivo: String(item.ejecutivo ?? item.nombreCompleto ?? "").trim(),
+          nombreCompleto: String(item.nombreCompleto ?? item.ejecutivo ?? "").trim(),
+          idCargo: Number.isFinite(idCargo) && idCargo > 0 ? idCargo : undefined,
+          cargo: obtenerTextoPorId(opcionesCargoDirectorio, idCargo) || String(item.cargo ?? "").trim(),
+          porcentaje: Number.isFinite(participacion) ? formatearPorcentajeOchoDecimales(participacion) : "",
+          lista: Boolean(item.figuraListadoEjecutivos ?? item.lista),
+          detalleEjecutivo: Boolean(item.existenDetallesEjecutivo ?? item.detalleEjecutivo),
+          orden: "1",
+          vinculadoDesde: String(item.vinculadoDesde ?? "").trim(),
+          companiaAnterior: String(item.companiaAnterior ?? "").trim(),
+          esParteDirectorio: Boolean(item.formaParteDirectorioEjecutivo ?? item.esParteDirectorio),
+          pais: String(item.pais ?? "").trim(),
+          tipoPersona: String(item.tipoPersona ?? "Natural").trim(),
+          descripcionBusqueda: String(item.ejecutivo ?? item.nombreCompleto ?? "").trim(),
+        };
+      });
 
     if (nuevos.length > 0) {
       setEjecutivosExtraccionPendientes((anteriores) => [...anteriores, ...nuevos]);
@@ -2491,13 +2615,10 @@ function PantallaInvestigacionAnalista({
   };
 
   const aprobarEjecutivoExtraccion = (indice: number) => {
-    const ejecutivo = ejecutivosExtraccionPendientes[indice];
-    if (!ejecutivo) return;
-    setDatosInvestigacion((anterior) => ({
-      ...anterior,
-      directorioEjecutivo: [{ ...ejecutivo, id: Date.now() }, ...anterior.directorioEjecutivo],
-    }));
-    setEjecutivosExtraccionPendientes((anteriores) => anteriores.filter((_, i) => i !== indice));
+    if (!ejecutivosExtraccionPendientes[indice]) return;
+    setEstaAbiertoModalRevisionEjecutivosExtraccion(false);
+    setIndiceEjecutivoExtraccionAprobacion(indice);
+    setIndiceEjecutivoExtraccionEdicion(indice);
   };
 
   const rechazarEjecutivoExtraccion = (indice: number) => {
@@ -2506,6 +2627,24 @@ function PantallaInvestigacionAnalista({
 
   const guardarEdicionEjecutivoExtraccion = (registro: Omit<RegistroDirectorioEjecutivoAnalista, "id">) => {
     if (indiceEjecutivoExtraccionEdicion == null) return;
+
+    if (indiceEjecutivoExtraccionAprobacion === indiceEjecutivoExtraccionEdicion) {
+      setDatosInvestigacion((anterior) => ({
+        ...anterior,
+        directorioEjecutivo: [{ ...registro, id: Date.now() }, ...anterior.directorioEjecutivo],
+      }));
+      setEjecutivosExtraccionPendientes((anteriores) =>
+        anteriores.filter((_, indice) => indice !== indiceEjecutivoExtraccionEdicion),
+      );
+      setIndiceEjecutivoExtraccionAprobacion(null);
+      setIndiceEjecutivoExtraccionEdicion(null);
+      setIndiceEjecutivoExtraccionBusqueda(null);
+      if (ejecutivosExtraccionPendientes.length > 1) {
+        setEstaAbiertoModalRevisionEjecutivosExtraccion(true);
+      }
+      return;
+    }
+
     setEjecutivosExtraccionPendientes((anteriores) =>
       anteriores.map((ejecutivo, i) =>
         i === indiceEjecutivoExtraccionEdicion ? { ...ejecutivo, ...registro } : ejecutivo,
@@ -2973,6 +3112,27 @@ function PantallaInvestigacionAnalista({
     };
 
     setRegistrosPersonaDirectorio((anterior) => [nuevoRegistro, ...anterior]);
+    if (indiceEjecutivoExtraccionBusqueda != null) {
+      setEjecutivosExtraccionPendientes((anteriores) =>
+        anteriores.map((ejecutivo, indice) => (
+          indice === indiceEjecutivoExtraccionBusqueda
+            ? {
+                ...ejecutivo,
+                idDirectorioEjecutivo: nuevoRegistro.idDirectorioEjecutivo,
+                ejecutivo: nuevoRegistro.nombres,
+                nombreCompleto: nuevoRegistro.nombres,
+                pais: nuevoRegistro.pais,
+                tipoPersona: nuevoRegistro.tipoPersona,
+                descripcionBusqueda: nuevoRegistro.nombres,
+              }
+            : ejecutivo
+        )),
+      );
+      setEstaAbiertoModalRegistroPersona(false);
+      setEstaAbiertoModalBuscarEjecutivo(false);
+      setIndiceEjecutivoExtraccionBusqueda(null);
+      return;
+    }
     setPersonaDirectorioSeleccionada(nuevoRegistro);
     setEstaAbiertoModalRegistroPersona(false);
     setEstaAbiertoModalBuscarEjecutivo(false);
@@ -3913,11 +4073,25 @@ function PantallaInvestigacionAnalista({
         <AreaInvestigacionAnalista etiqueta="Actividad Principal" valor={datosInvestigacion.operacionPrincipal.actividadPrincipal} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.actividadPrincipal")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("actividadPrincipal", valor)} />
         <CampoInvestigacionAnalista etiqueta="Ventas al Contado (%)" valor={datosInvestigacion.operacionPrincipal.ventasContadoPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasContadoPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("ventasContadoPorcentaje", "ventasCreditoPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Ventas al Contado" valor={datosInvestigacion.operacionPrincipal.ventasContadoDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasContadoDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasContadoDetalle", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Ventas a Crédito (%)" valor={datosInvestigacion.operacionPrincipal.ventasCreditoPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasCreditoPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("ventasCreditoPorcentaje", "ventasContadoPorcentaje", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Detalle Ventas a Crédito" valor={datosInvestigacion.operacionPrincipal.ventasCreditoDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasCreditoDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasCreditoDetalle", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Territorio de Ventas" valor={datosInvestigacion.operacionPrincipal.territorioVentasPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.territorioVentasPorcentaje")} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasPorcentaje", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Detalle Territorio" valor={datosInvestigacion.operacionPrincipal.territorioVentasDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.territorioVentasDetalle")} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasDetalle", valor)} />
-        <CampoInvestigacionAnalista etiqueta="(%) Ventas en el Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasExtranjeroPorcentaje")} onChange={(valor) => actualizarOperacionPrincipal("ventasExtranjeroPorcentaje", valor)} />
+        <div className="grid gap-5 md:col-span-2 md:grid-cols-3">
+          <CampoInvestigacionAnalista etiqueta="Ventas a Crédito (%)" valor={datosInvestigacion.operacionPrincipal.ventasCreditoPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasCreditoPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("ventasCreditoPorcentaje", "ventasContadoPorcentaje", valor)} />
+          <CampoInvestigacionAnalista etiqueta="Detalle Ventas a Crédito" valor={datosInvestigacion.operacionPrincipal.ventasCreditoDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasCreditoDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasCreditoDetalle", valor)} />
+          <SelectorMaestroConAltaInvestigacionAnalista
+            etiqueta="Tiempo de Crédito"
+            valor={datosInvestigacion.operacionPrincipal.ventasCreditoTiempo}
+            soloLectura={esSoloLectura}
+            opcionesTablaMaestra={opcionesTiempoCreditoVentas}
+            idMaestro={TablaMaestraId.TIEMPO_CREDITO_VENTAS}
+            permiteAltaNueva
+            marcador="Seleccione tiempo"
+            obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")}
+            adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasCreditoTiempo")}
+            onChange={(valor) => actualizarOperacionPrincipal("ventasCreditoTiempo", valor)}
+          />
+        </div>
+        <CampoInvestigacionAnalista etiqueta="(%) Ventas Nacionales" valor={datosInvestigacion.operacionPrincipal.territorioVentasPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.territorioVentasPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("territorioVentasPorcentaje", "ventasExtranjeroPorcentaje", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Detalle Ventas Nacionales" valor={datosInvestigacion.operacionPrincipal.territorioVentasDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.territorioVentasDetalle")} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasDetalle", valor)} />
+        <CampoInvestigacionAnalista etiqueta="(%) Ventas en el Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasExtranjeroPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("ventasExtranjeroPorcentaje", "territorioVentasPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Ventas Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasExtranjeroDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasExtranjeroDetalle", valor)} />
         <CampoInvestigacionAnalista etiqueta="(%) Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasNacionalesPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("comprasNacionalesPorcentaje", "comprasExtranjeroPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasNacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasNacionalesDetalle", valor)} />
@@ -4305,7 +4479,9 @@ function PantallaInvestigacionAnalista({
                   return (
                     <tr key={`${banco.banco}-${banco.numeroCuenta}`}>
                       <td className="px-4 py-4 text-sm font-semibold leading-4 text-slate-700"><span className="block truncate">{banco.banco}</span></td>
-                      <td className="px-4 py-4 text-sm leading-4 text-slate-500"><span className="block truncate">{banco.numeroCuenta}</span></td>
+                      <td className="px-4 py-4 text-sm leading-4 text-slate-500">
+                        <span className="block truncate">{enmascararNumeroCuenta(banco.numeroCuenta)}</span>
+                      </td>
                       <td className="px-4 py-4 text-center text-sm">
                         <span className={`inline-flex max-w-full items-center overflow-hidden rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
                           sectorBanco.toLowerCase().includes("finanzas")
@@ -4364,6 +4540,15 @@ function PantallaInvestigacionAnalista({
           />
         </label>
         <div className="flex flex-wrap gap-3">
+          {ejecutivosExtraccionPendientes.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setEstaAbiertoModalRevisionEjecutivosExtraccion(true)}
+              className="rounded-xl border border-brand-wine/30 px-4 py-2 text-sm font-bold text-brand-wine transition-all hover:bg-brand-wine/5"
+            >
+              Revisar detectados ({ejecutivosExtraccionPendientes.length})
+            </button>
+          ) : null}
           <CustomButton
             variant="secondary"
             size="sm"
@@ -4384,15 +4569,6 @@ function PantallaInvestigacionAnalista({
             <Plus size={14} />
             Agregar Ejecutivo
           </CustomButton>
-          {ejecutivosExtraccionPendientes.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => setEstaAbiertoModalRevisionEjecutivosExtraccion(true)}
-              className="rounded-xl border border-brand-wine/30 px-4 py-2 text-sm font-bold text-brand-wine transition-all hover:bg-brand-wine/5"
-            >
-              Revisar detectados ({ejecutivosExtraccionPendientes.length})
-            </button>
-          ) : null}
         </div>
       </div>
 
@@ -4418,7 +4594,9 @@ function PantallaInvestigacionAnalista({
               </tr>
             ) : ejecutivosPaginados.map((ejecutivo) => {
               const indiceReal = datosInvestigacion.directorioEjecutivo.findIndex((item) => item.id === ejecutivo.id);
-              const cargoDirectorio = obtenerTextoPorId(opcionesCargoDirectorio, ejecutivo.idCargo) || ejecutivo.cargo;
+              const idCargoDirectorio = ejecutivo.idCargo ?? Number(ejecutivo.cargo);
+              const cargoDirectorio = obtenerTextoPorId(opcionesCargoDirectorio, idCargoDirectorio)
+                || (Number.isNaN(Number(ejecutivo.cargo)) ? ejecutivo.cargo : "-");
 
               return (
                 <tr key={ejecutivo.id} className="hover:bg-slate-50">
@@ -4797,7 +4975,11 @@ function PantallaInvestigacionAnalista({
       {estaAbiertoModalRevisionEjecutivosExtraccion ? (
         <CustomModalRevisionEjecutivosExtraccion
           ejecutivos={ejecutivosExtraccionPendientes}
-          onEditar={setIndiceEjecutivoExtraccionEdicion}
+          opcionesCargo={opcionesCargoDirectorio}
+          onEditar={(indice) => {
+            setIndiceEjecutivoExtraccionAprobacion(null);
+            setIndiceEjecutivoExtraccionEdicion(indice);
+          }}
           onAprobar={aprobarEjecutivoExtraccion}
           onRechazar={rechazarEjecutivoExtraccion}
           onCerrar={() => setEstaAbiertoModalRevisionEjecutivosExtraccion(false)}
@@ -4805,11 +4987,27 @@ function PantallaInvestigacionAnalista({
       ) : null}
 
       <CustomModalRegistroEjecutivoAnalista
-        key={`ejecutivo-extraccion-${indiceEjecutivoExtraccionEdicion ?? "cerrado"}`}
+        key={`ejecutivo-extraccion-${indiceEjecutivoExtraccionEdicion ?? "cerrado"}-${indiceEjecutivoExtraccionEdicion == null ? "" : ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionEdicion]?.idDirectorioEjecutivo ?? ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionEdicion]?.nombreCompleto ?? ""}`}
         estaAbierto={indiceEjecutivoExtraccionEdicion !== null}
         registroInicial={indiceEjecutivoExtraccionEdicion != null ? ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionEdicion] : null}
-        onCerrar={() => setIndiceEjecutivoExtraccionEdicion(null)}
-        onBuscarEjecutivo={() => {}}
+        mensajeBusquedaEjecutivo={
+          indiceEjecutivoExtraccionAprobacion !== null
+            ? "El nombre fue detectado en el documento. Presione Buscar y seleccione un resultado o registre una empresa o persona antes de guardar."
+            : undefined
+        }
+        requiereEjecutivoRegistrado={indiceEjecutivoExtraccionAprobacion !== null}
+        onCerrar={() => {
+          setIndiceEjecutivoExtraccionEdicion(null);
+          setIndiceEjecutivoExtraccionAprobacion(null);
+          setIndiceEjecutivoExtraccionBusqueda(null);
+          if (ejecutivosExtraccionPendientes.length > 0) {
+            setEstaAbiertoModalRevisionEjecutivosExtraccion(true);
+          }
+        }}
+        onBuscarEjecutivo={() => {
+          setIndiceEjecutivoExtraccionBusqueda(indiceEjecutivoExtraccionEdicion);
+          setEstaAbiertoModalBuscarEjecutivo(true);
+        }}
         onGuardar={guardarEdicionEjecutivoExtraccion}
       />
 
@@ -4942,10 +5140,41 @@ function PantallaInvestigacionAnalista({
       />
 
       <CustomModalBuscarEjecutivoAnalista
+        key={`buscar-ejecutivo-${indiceEjecutivoExtraccionBusqueda ?? "manual"}-${estaAbiertoModalBuscarEjecutivo ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalBuscarEjecutivo}
         registros={registrosPersonaDirectorio}
-        onCerrar={() => setEstaAbiertoModalBuscarEjecutivo(false)}
+        busquedaInicial={
+          indiceEjecutivoExtraccionBusqueda == null
+            ? ""
+            : ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]?.nombreCompleto
+              ?? ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]?.ejecutivo
+              ?? ""
+        }
+        onCerrar={() => {
+          setEstaAbiertoModalBuscarEjecutivo(false);
+          setIndiceEjecutivoExtraccionBusqueda(null);
+        }}
         onSeleccionar={(registro) => {
+          if (indiceEjecutivoExtraccionBusqueda != null) {
+            setEjecutivosExtraccionPendientes((anteriores) =>
+              anteriores.map((ejecutivo, indice) => (
+                indice === indiceEjecutivoExtraccionBusqueda
+                  ? {
+                      ...ejecutivo,
+                      idDirectorioEjecutivo: registro.idDirectorioEjecutivo ?? registro.id,
+                      ejecutivo: registro.nombres,
+                      nombreCompleto: registro.nombres,
+                      pais: registro.pais,
+                      tipoPersona: registro.tipoPersona,
+                      descripcionBusqueda: registro.nombres,
+                    }
+                  : ejecutivo
+              )),
+            );
+            setEstaAbiertoModalBuscarEjecutivo(false);
+            setIndiceEjecutivoExtraccionBusqueda(null);
+            return;
+          }
           setPersonaDirectorioSeleccionada(registro);
           setEstaAbiertoModalBuscarEjecutivo(false);
           setEstaAbiertoModalEjecutivo(true);
@@ -4954,7 +5183,14 @@ function PantallaInvestigacionAnalista({
       />
 
       <CustomModalRegistroPersonaDirectorioAnalista
+        key={`registro-persona-${indiceEjecutivoExtraccionBusqueda ?? "manual"}-${estaAbiertoModalRegistroPersona ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalRegistroPersona}
+        nombreInicial={
+          indiceEjecutivoExtraccionBusqueda == null
+            ? undefined
+            : ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]?.nombreCompleto
+              ?? ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]?.ejecutivo
+        }
         onCerrar={() => setEstaAbiertoModalRegistroPersona(false)}
         onGuardar={guardarPersonaDirectorio}
       />

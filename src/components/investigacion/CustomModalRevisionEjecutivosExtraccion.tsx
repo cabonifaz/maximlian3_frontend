@@ -4,6 +4,7 @@ import type { RegistroDirectorioEjecutivoAnalista } from "@maximilian/shared/typ
 
 interface PropsCustomModalRevisionEjecutivosExtraccion {
   ejecutivos: RegistroDirectorioEjecutivoAnalista[];
+  opcionesCargo?: { num1: number | null; string1: string | null }[];
   onEditar: (indice: number) => void;
   onAprobar: (indice: number) => void;
   onRechazar: (indice: number) => void;
@@ -12,6 +13,7 @@ interface PropsCustomModalRevisionEjecutivosExtraccion {
 
 export function CustomModalRevisionEjecutivosExtraccion({
   ejecutivos,
+  opcionesCargo,
   onEditar,
   onAprobar,
   onRechazar,
@@ -51,8 +53,12 @@ export function CustomModalRevisionEjecutivosExtraccion({
                 {ejecutivos.map((ejecutivo, indice) => (
                   <tr key={`${ejecutivo.ejecutivo}-${indice}`} className="transition-colors hover:bg-slate-50">
                     <td className="px-4 py-4 text-sm font-semibold text-slate-700">{ejecutivo.ejecutivo || ejecutivo.nombreCompleto || "-"}</td>
-                    <td className="px-4 py-4 text-sm text-slate-500">{ejecutivo.cargo || "-"}</td>
-                    <td className="px-4 py-4 text-sm text-slate-500">{ejecutivo.porcentaje || "-"}</td>
+                    <td className="px-4 py-4 text-sm text-slate-500">
+                      {obtenerCargoEjecutivo(ejecutivo, opcionesCargo)}
+                    </td>
+                    <td className="px-4 py-4 text-sm text-slate-500">
+                      {formatearParticipacion(ejecutivo.porcentaje)}
+                    </td>
                     <td className="px-4 py-4 text-sm text-slate-500">{ejecutivo.vinculadoDesde || "-"}</td>
                     <td className="px-4 py-4">
                       <div className="flex justify-end gap-2">
@@ -79,4 +85,20 @@ export function CustomModalRevisionEjecutivosExtraccion({
       </div>
     </div>
   );
+}
+
+function obtenerCargoEjecutivo(
+  ejecutivo: RegistroDirectorioEjecutivoAnalista,
+  opcionesCargo: { num1: number | null; string1: string | null }[] | undefined,
+) {
+  const idCargo = ejecutivo.idCargo ?? Number(ejecutivo.cargo);
+  return opcionesCargo?.find((opcion) => Number(opcion.num1) === Number(idCargo))?.string1?.trim()
+    || ejecutivo.cargo
+    || "-";
+}
+
+function formatearParticipacion(valor?: string) {
+  const numero = Number.parseFloat((valor ?? "").replace("%", "").replace(",", "."));
+  if (Number.isNaN(numero)) return "-";
+  return `${numero.toFixed(8).replace(/\.?0+$/, "")}%`;
 }

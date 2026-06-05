@@ -308,7 +308,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           ventasContadoDetalle: "Ventas contado detalle",
           ventasCreditoPorcentaje: "Ventas credito %",
           ventasCreditoDetalle: "Ventas credito detalle",
-          ventasCreditoSeleccion: "Ventas credito seleccion",
+          ventasCreditoTiempo: "Tiempo de credito",
           territorioVentasPorcentaje: "Territorio ventas %",
           territorioVentasDetalle: "Territorio ventas detalle",
           ventasExtranjeroPorcentaje: "Ventas extranjero %",
