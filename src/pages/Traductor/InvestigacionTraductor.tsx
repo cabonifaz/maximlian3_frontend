@@ -1044,7 +1044,7 @@ function construirPayloadCrearInforme({
     opinionCredito: datosGenerales.opinionCredito,
     flgTieneInformacion: true,
     lstBalances: datosInvestigacion.balances.map((balance) => ({
-      ...(esEdicion ? { idInformeBalance: 0 } : {}),
+      ...(esEdicion ? { idInformeBalance: balance.idInformeBalance ?? 0 } : {}),
       fechaBalance: convertirFechaIso(balance.fechaInicio ?? balance.fecha),
       fechaHasta: balance.esActual ? null : convertirFechaIso(balance.fechaFin),
       flgActualidad: balance.esActual ?? false,
