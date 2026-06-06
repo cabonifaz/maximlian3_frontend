@@ -773,20 +773,20 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       detalleCuentas: Object.keys(cuentaBalance).length > 0
         ? {
             balanceGeneral: {
-              totalCorrientes: formatearMonto(cuentaBalance.totalCorriente, 2),
-              totalNoCorrientes: formatearMonto(cuentaBalance.totalNoCorriente, 2),
+              totalCorrientes: formatearMonto(cuentaBalance.totalCorriente ?? cuentaBalance.totalActivoCorriente ?? cuentaBalance.totalCorriente, 2),
+              totalNoCorrientes: formatearMonto(cuentaBalance.totalNoCorriente ?? cuentaBalance.totalActivoNoCorriente, 2),
               otrosActivos: formatearMonto(cuentaBalance.otrosActivos, 2),
-              totalActivos: formatearMonto(cuentaBalance.totalActivos, 2),
-              totalPasivosCorrientes: formatearMonto(cuentaBalance.totalPasivosCorrientes, 2),
-              totalPasivosNoCorrientes: formatearMonto(cuentaBalance.totalPasivosNoCorrientes, 2),
+              totalActivos: formatearMonto(cuentaBalance.totalActivos ?? cuentaBalance.totalActivo, 2),
+              totalPasivosCorrientes: formatearMonto(cuentaBalance.totalPasivosCorrientes ?? cuentaBalance.totalPasivoCorriente, 2),
+              totalPasivosNoCorrientes: formatearMonto(cuentaBalance.totalPasivosNoCorrientes ?? cuentaBalance.totalPasivoNoCorriente, 2),
               otrosPasivos: formatearMonto(cuentaBalance.otrosPasivos, 2),
               totalPasivos: formatearMonto(cuentaBalance.totalPasivos, 2),
-              patrimonio: formatearMonto(cuentaBalance.patrimonio, 2),
-              totalPasivoPatrimonio: formatearMonto(cuentaBalance.totalPasivoPatrimonio, 2),
+              patrimonio: formatearMonto(cuentaBalance.patrimonio ?? cuentaBalance.totalPatrimonio, 2),
+              totalPasivoPatrimonio: formatearMonto(cuentaBalance.totalPasivoPatrimonio ?? cuentaBalance.totalPasivosPatrimonio, 2),
             },
             estadoGananciasPerdidas: {
-              ventasNetas: formatearMonto(cuentaBalance.ventasNetas, 2),
-              utilidadGanancia: formatearMonto(cuentaBalance.utilidadPerdida, 2),
+              ventasNetas: formatearMonto(cuentaBalance.ventasNetas ?? cuentaBalance.ingresosOrdinarios, 2),
+              utilidadGanancia: formatearMonto(cuentaBalance.utilidadPerdida ?? cuentaBalance.gananciaNeta ?? cuentaBalance.utilidadEjercicio ?? cuentaBalance.utilidadNeta, 2),
             },
             ratios: {
               liquidez: formatearNumero(cuentaBalance.indiceLiquidez, 2),
@@ -794,6 +794,12 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
               endeudamiento: formatearNumero(cuentaBalance.ratioEndeudamiento, 2),
               rentabilidad: formatearNumero(cuentaBalance.ratioRentabilidad, 2),
             },
+            registrosHabilitados: true,
+            registrosEstadoFinanciero: Object.fromEntries(
+              Object.entries(cuentaBalance)
+                .filter(([, v]) => v !== null && v !== undefined)
+                .map(([k, v]) => [k, String(v)])
+            ),
           }
         : undefined,
     };
