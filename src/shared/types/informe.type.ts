@@ -32,25 +32,6 @@ export interface InformeListResponse {
   totalPaginas: number;
 }
 
-export interface InformeCuentaBalanceRequest {
-  totalCorriente: number;
-  totalNoCorriente: number;
-  otrosActivos: number;
-  totalActivos: number;
-  totalPasivosCorrientes: number;
-  totalPasivosNoCorrientes: number;
-  otrosPasivos: number;
-  totalPasivos: number;
-  patrimonio: number;
-  totalPasivoPatrimonio: number;
-  ventasNetas: number;
-  utilidadPerdida: number;
-  indiceLiquidez: number;
-  capitalTrabajo: number;
-  ratioEndeudamiento: number;
-  ratioRentabilidad: number;
-}
-
 export interface InformeBalanceRequest {
   idInformeBalance?: number;
   fechaBalance: string | null;
@@ -58,9 +39,214 @@ export interface InformeBalanceRequest {
   flgActualidad: boolean;
   tipoCambio: number;
   idMoneda: number;
-  tipoBalance: number;
+  idTipoBalance: number;
   idTipoEstadoFinanciero?: number;
-  cuentaBalance: InformeCuentaBalanceRequest | null;
+}
+
+export interface InformeBalanceDesagregadoRequest {
+  id: number;
+  efectivoEquivalente?: number | null;
+  otrosActivosFinancierosCorriente?: number | null;
+  cuentasCobrarCorriente?: number | null;
+  inventariosCorriente?: number | null;
+  activosBiologicosCorriente?: number | null;
+  activosImpuestosGanancias?: number | null;
+  otrosActivosNoFinancierosCorriente?: number | null;
+  totalActivoCorriente?: number | null;
+  otrosActivosFinancierosNoCorriente?: number | null;
+  inversionesSubsidiarias?: number | null;
+  cuentasCobrarNoCorriente?: number | null;
+  inventariosNoCorriente?: number | null;
+  activosBiologicosNoCorriente?: number | null;
+  propiedadesInversion?: number | null;
+  propiedadesPlantaEquipo?: number | null;
+  intangibles?: number | null;
+  activosImpuestosDiferidos?: number | null;
+  activosImpuestosCorrientes?: number | null;
+  plusvalia?: number | null;
+  otrosActivosNoFinancierosNoCorriente?: number | null;
+  totalActivoNoCorriente?: number | null;
+  totalActivo?: number | null;
+  otrosPasivosFinancierosCorriente?: number | null;
+  cuentasPagarCorriente?: number | null;
+  beneficiosEmpleadosCorriente?: number | null;
+  otrasProvisionesCorriente?: number | null;
+  impuestosGananciasCorriente?: number | null;
+  otrosPasivosNoFinancierosCorriente?: number | null;
+  totalPasivoCorriente?: number | null;
+  otrosPasivosFinancierosNoCorriente?: number | null;
+  cuentasPagarNoCorriente?: number | null;
+  beneficiosEmpleadosNoCorriente?: number | null;
+  otrasProvisionesNoCorriente?: number | null;
+  impuestosDiferidosNoCorriente?: number | null;
+  impuestosCorrientesNoCorriente?: number | null;
+  otrosPasivosNoFinancierosNoCorriente?: number | null;
+  totalPasivoNoCorriente?: number | null;
+  totalPasivos?: number | null;
+  capitalEmitido?: number | null;
+  primasEmision?: number | null;
+  accionesInversion?: number | null;
+  accionesCartera?: number | null;
+  otrasReservasCapital?: number | null;
+  resultadosAcumulados?: number | null;
+  otrasReservasPatrimonio?: number | null;
+  totalPatrimonio?: number | null;
+  totalPasivoPatrimonio?: number | null;
+  ingresosOrdinarios?: number | null;
+  costoVentas?: number | null;
+  gananciaBruta?: number | null;
+  gastosVentas?: number | null;
+  gastosAdministracion?: number | null;
+  otrosIngresosOperativos?: number | null;
+  otrosGastosOperativos?: number | null;
+  otrasGananciasPerdidas?: number | null;
+  gananciaOperativa?: number | null;
+  ingresosFinancieros?: number | null;
+  ingresosIntereses?: number | null;
+  gastosFinancieros?: number | null;
+  deterioroValor?: number | null;
+  otrosIngresosSubsidiarias?: number | null;
+  diferenciasCambio?: number | null;
+  gananciaAntesImpuestos?: number | null;
+  ingresoGastoImpuesto?: number | null;
+  operacionesDescontinuadas?: number | null;
+  gananciaNeta?: number | null;
+  indiceLiquidez?: number | null;
+  capitalTrabajo?: number | null;
+  ratioEndeudamiento?: number | null;
+  ratioRentabilidad?: number | null;
+}
+
+export interface InformeBalanceTotalizadoRequest {
+  id: number;
+  totalActivoCorriente?: number | null;
+  totalActivoNoCorriente?: number | null;
+  totalActivo?: number | null;
+  totalPasivoCorriente?: number | null;
+  totalPasivoNoCorriente?: number | null;
+  totalPasivos?: number | null;
+  totalPatrimonio?: number | null;
+  totalPasivoPatrimonio?: number | null;
+  ingresosOrdinarios?: number | null;
+  gananciaNeta?: number | null;
+  indiceLiquidez?: number | null;
+  capitalTrabajo?: number | null;
+  ratioEndeudamiento?: number | null;
+  ratioRentabilidad?: number | null;
+}
+
+export interface InformeBalanceBancoRequest {
+  id: number;
+  disponible?: number | null;
+  fondosInterbancarios?: number | null;
+  inversionesValorRazonable?: number | null;
+  carteraCreditos?: number | null;
+  derivadosNegociacionActivo?: number | null;
+  derivadosCoberturaActivo?: number | null;
+  bienesRealizables?: number | null;
+  participacionesSubsidiarias?: number | null;
+  inmuebleMobiliarioEquipo?: number | null;
+  impuestoRentaDiferido?: number | null;
+  otrosActivos?: number | null;
+  totalActivos?: number | null;
+  obligacionesPublico?: number | null;
+  fondosInterbancariosPasivo?: number | null;
+  adeudosFinancieras?: number | null;
+  derivadosNegociacionPasivo?: number | null;
+  derivadosCoberturaPasivo?: number | null;
+  cuentasPagarProvisiones?: number | null;
+  totalPasivo?: number | null;
+  capitalSocial?: number | null;
+  reservas?: number | null;
+  resultadosNoRealizados?: number | null;
+  resultadoEjercicio?: number | null;
+  totalPatrimonio?: number | null;
+  totalPasivoPatrimonio?: number | null;
+  ingresosIntereses?: number | null;
+  utilidadEjercicio?: number | null;
+}
+
+export interface InformeBalanceSeguroRequest {
+  id: number;
+  efectivoDisponible?: number | null;
+  inversionesFinancieras?: number | null;
+  prestamosInteresesNetos?: number | null;
+  primasCobrar?: number | null;
+  deudasReaseguradores?: number | null;
+  activosVenta?: number | null;
+  propiedadesInversion?: number | null;
+  propiedadPlantaEquipo?: number | null;
+  otrosActivos?: number | null;
+  totalActivos?: number | null;
+  obligacionesAsegurados?: number | null;
+  reservasSiniestros?: number | null;
+  reservasTecnicas?: number | null;
+  obligacionesReaseguradores?: number | null;
+  obligacionesFinancieras?: number | null;
+  cuentasPagar?: number | null;
+  otrosPasivos?: number | null;
+  totalPasivo?: number | null;
+  capitalSocial?: number | null;
+  aportesCapitalNoCapitalizados?: number | null;
+  resultadosAcumulados?: number | null;
+  patrimonioRestringido?: number | null;
+  totalPatrimonio?: number | null;
+  totalPasivoPatrimonio?: number | null;
+  primasGanadasNetas?: number | null;
+  utilidadNeta?: number | null;
+}
+
+export interface InformeBalanceTurquiaRequest {
+  id: number;
+  ano?: number | null;
+  fechaBalance?: string | null;
+  idMoneda?: number | null;
+  duracionPeriodo?: number | null;
+  idNivelConfiabilidad?: number | null;
+  tipoCambio?: number | null;
+  efectivo?: number | null;
+  existencias?: number | null;
+  deudores?: number | null;
+  totalCorriente?: number | null;
+  bienesTongibles?: number | null;
+  activosIntangibles?: number | null;
+  activoFijoNeto?: number | null;
+  totalActivos?: number | null;
+  prestamos?: number | null;
+  acreedores?: number | null;
+  pasivosCorrientes?: number | null;
+  pasivosNoCorrientes?: number | null;
+  pasivosLargoPlazo?: number | null;
+  totalPasivosNoCorrientes?: number | null;
+  totalPasivos?: number | null;
+  capital?: number | null;
+  patrimonio?: number | null;
+  totalPatrimonio?: number | null;
+  totalPasivosPatrimonio?: number | null;
+  ventasNetas?: number | null;
+  costoVentas?: number | null;
+  costoMateriales?: number | null;
+  gananciaBruta?: number | null;
+  otrosGastosOperativos?: number | null;
+  costoEmpleados?: number | null;
+  depreciacion?: number | null;
+  ingresosFinancieros?: number | null;
+  gastosFinancieros?: number | null;
+  interesesPagados?: number | null;
+  plFinanciero?: number | null;
+  ingresosExtraordinarios?: number | null;
+  gastosExtraordinarios?: number | null;
+  plExtraordinario?: number | null;
+  gananciaAntesImpuestos?: number | null;
+  impuestos?: number | null;
+  gananciaNeta?: number | null;
+  ebit?: number | null;
+  ebitda?: number | null;
+  ganancia?: number | null;
+  indiceLiquidez?: number | null;
+  capitalTrabajo?: number | null;
+  ratioEndeudamiento?: number | null;
+  ratioRentabilidad?: number | null;
 }
 
 export interface InformeBancoRequest {
@@ -227,6 +413,11 @@ export interface InformeCrearRequest {
   opinionCredito: string;
   flgTieneInformacion: boolean;
   lstBalances: InformeBalanceRequest[];
+  lstBalancesDesagregado: InformeBalanceDesagregadoRequest[];
+  lstBalancesTotalizado: InformeBalanceTotalizadoRequest[];
+  lstBalancesBanco: InformeBalanceBancoRequest[];
+  lstBalancesSeguro: InformeBalanceSeguroRequest[];
+  lstBalancesTurquia: InformeBalanceTurquiaRequest[];
   lstBancos: InformeBancoRequest[];
   lstCompaniasRelacionadas: InformeCompaniaRelacionadaRequest[];
   lstExportacionesImportaciones: InformeOperacionExteriorRequest[];
