@@ -8,6 +8,7 @@ import type {
 } from "@maximilian/shared/types/informe.type";
 import type { DatosInvestigacionAnalista, RegistroBalanceAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+import { obtenerValorCampoEstadoFinanciero } from "@maximilian/shared/utils/estados-financieros.util";
 import {
   obtenerNumeroDesdeMonto,
   obtenerNumeroOpcionalDesdeMonto,
@@ -108,10 +109,14 @@ function construirListasDetalleBalance(balances: RegistroBalanceAnalista[]) {
   balances.forEach((balance, index) => {
     const id = index + 1;
     const tipo = balance.idTipoEstadoFinanciero;
+    const tipoEstadoFinanciero = balance.tipoEstadoFinanciero
+      || ({ 1: "desagregado", 2: "totalizado", 3: "bancos", 4: "seguros", 5: "turquia" }[tipo ?? 0] ?? balance.tipo);
     const r = balance.detalleCuentas?.registrosEstadoFinanciero ?? {};
-    const d = (campo: string) => obtenerNumeroOpcionalDesdeTexto(r[campo]) ?? null;
+    const d = (campo: string) => obtenerNumeroOpcionalDesdeTexto(
+      obtenerValorCampoEstadoFinanciero(r, campo, tipoEstadoFinanciero),
+    ) ?? null;
     const i = (campo: string): number | null => {
-      const v = r[campo];
+      const v = obtenerValorCampoEstadoFinanciero(r, campo, tipoEstadoFinanciero);
       if (!v) return null;
       const num = Number.parseInt(v.replace(/[^\d-]/g, ""), 10);
       return Number.isFinite(num) ? num : null;
@@ -274,10 +279,14 @@ function construirListasDetalleBalance(balances: RegistroBalanceAnalista[]) {
       lstBalancesTurquia.push({
         id,
         ano: i("ano"),
-        fechaBalance: r["fechaBalance"] ?? null,
-        idMoneda: i("idMoneda"),
+        fechaBalance: obtenerValorCampoEstadoFinanciero(r, "fechaBalance", tipoEstadoFinanciero) || null,
+        idMoneda: balance.idMoneda ?? i("idMoneda"),
         duracionPeriodo: i("duracionPeriodo"),
-        idNivelConfiabilidad: i("idNivelConfiabilidad"),
+        idNivelConfiabilidad: {
+          ACTUAL: 1,
+          PRELIMINAR: 2,
+          ESTIMADO: 3,
+        }[obtenerValorCampoEstadoFinanciero(r, "idNivelConfiabilidad", tipoEstadoFinanciero).toUpperCase()] ?? i("idNivelConfiabilidad"),
         tipoCambio: d("tipoCambio"),
         efectivo: d("efectivo"),
         existencias: d("existencias"),
@@ -331,10 +340,9 @@ function construirListasDetalleBalance(balances: RegistroBalanceAnalista[]) {
 
 function depurarPayloadInforme(valor: unknown): unknown {
   if (Array.isArray(valor)) {
-    const lista = valor
+    return valor
       .map((item) => depurarPayloadInforme(item))
       .filter((item) => item !== undefined);
-    return lista.length > 0 ? lista : undefined;
   }
 
   if (valor && typeof valor === "object") {
