@@ -36,7 +36,7 @@ interface PropsCustomModalCrearBancoAnalista {
   onBancoCreado: (banco: BancoListaItem) => void;
 }
 
-function CustomModalCrearBancoAnalista({
+export function CustomModalCrearBancoAnalista({
   estaAbierto,
   bancoInicial,
   onCerrar,
@@ -515,9 +515,11 @@ export function CustomModalBancoAnalista({
   useEffect(() => {
     if (!estaAbierto || !opcionesSector) return;
 
-    const opcionSector = opcionesSector.find((opcion) => opcion.string1 === (registroInicial?.sector ?? ""));
+    const opcionSector = registroInicial?.idSector
+      ? opcionesSector.find((opcion) => opcion.num1 === registroInicial.idSector)
+      : opcionesSector.find((opcion) => opcion.string1 === (registroInicial?.sector ?? ""));
     setIdSectorSeleccionado(opcionSector?.num1 ?? undefined);
-  }, [estaAbierto, opcionesSector, registroInicial?.sector]);
+  }, [estaAbierto, opcionesSector, registroInicial?.idSector, registroInicial?.sector]);
 
   if (!estaAbierto) return null;
 

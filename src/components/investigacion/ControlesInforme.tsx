@@ -64,8 +64,8 @@ const marcadoresPorEtiqueta: Record<string, string> = {
   "Detalle Ventas al Contado": "Describa cómo se realizan las ventas al contado",
   "Ventas a Crédito (%)": "Ej. 75%",
   "Detalle Ventas a Crédito": "Describa cómo se realizan las ventas a crédito",
-  "Territorio de Ventas": "Ej. Nacional",
-  "Detalle Territorio": "Detalle las zonas o mercados de venta",
+  "(%) Ventas Nacionales": "Ej. 70%",
+  "Detalle Ventas Nacionales": "Detalle las ventas realizadas en el mercado nacional",
   "(%) Ventas en el Extranjero": "Ej. 30%",
   "Detalle Ventas Extranjero": "Detalle las ventas realizadas en el extranjero",
   "(%) Compras Nacionales": "Ej. 65%",
@@ -210,6 +210,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   puedeAgregarNuevo?: (terminoBusqueda: string) => boolean;
 }) {
   const queryClient = useQueryClient();
+  const valorTextoActual = String(valor ?? "");
   const claveOpciones = `${idMaestro ?? "sin-maestro"}:${etiqueta}`;
   const opcionesBase = useMemo(
     () => opcionesTablaMaestra ?? (opcionesIniciales ?? []).map((opcion, indice) => crearOpcionTablaMaestra(indice + 1, opcion)),
@@ -295,7 +296,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
       (opcionLocal) => !opcionesBase.some((opcionBase) => opcionBase.string1 === opcionLocal.string1),
     );
     const opcionesActuales = [...opcionesBase, ...opcionesExtras];
-    const valorLimpio = valor.trim();
+    const valorLimpio = valorTextoActual.trim();
 
     if (!valorLimpio || opcionesActuales.some((opcion) =>
       normalizarTexto(opcion.string1 ?? "") === normalizarTexto(valorLimpio)
@@ -313,17 +314,17 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
     obtenerValorSeleccion,
     opcionesBase,
     permiteAltaNueva,
-    valor,
+    valorTextoActual,
   ]);
 
   const valorSeleccionado = useMemo(
     () => opcionesDisponibles.find((opcion) =>
-      obtenerValorSeleccion(opcion) === valor
-      || opcion.string1 === valor
-      || opcion.string2 === valor
-      || String(opcion.num1 ?? "") === valor
+      obtenerValorSeleccion(opcion) === valorTextoActual
+      || opcion.string1 === valorTextoActual
+      || opcion.string2 === valorTextoActual
+      || String(opcion.num1 ?? "") === valorTextoActual
     )?.num1 ?? undefined,
-    [obtenerValorSeleccion, opcionesDisponibles, valor],
+    [obtenerValorSeleccion, opcionesDisponibles, valorTextoActual],
   );
   const opcionSeleccionada = useMemo(
     () => opcionesDisponibles.find((opcion) => opcion.num1 === valorSeleccionado),
@@ -331,7 +332,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   );
   const textoSeleccionado = opcionSeleccionada
     ? (obtenerEtiquetaOpcion?.(opcionSeleccionada) || opcionSeleccionada.string1 || "")
-    : valor;
+    : valorTextoActual;
 
   const manejarCambio = (nuevoValor: number) => {
     const opcion = opcionesDisponibles.find((opcionActual) => opcionActual.num1 === nuevoValor);

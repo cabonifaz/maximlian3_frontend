@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  Image as IconoImagen,
   Pencil,
   Plus,
   RotateCcw,
@@ -15,7 +16,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { CustomModalBalanceAnalista } from "@maximilian/components/investigacion/CustomModalBalanceInforme";
-import { CustomModalBancoAnalista } from "@maximilian/components/investigacion/CustomModalBancoInforme";
+import { CustomModalBancoAnalista, CustomModalCrearBancoAnalista } from "@maximilian/components/investigacion/CustomModalBancoInforme";
+import type { BancoListaItem } from "@maximilian/shared/types/banco.type";
 import { CustomModalArchivosInvestigacionAnalista } from "@maximilian/components/investigacion/CustomModalArchivosInforme";
 import { CustomModalBuscarEjecutivoAnalista } from "@maximilian/components/investigacion/CustomModalBuscarEjecutivo";
 import { CustomModalDetalleCuentasAnalista } from "@maximilian/components/investigacion/CustomModalDetalleCuentasInforme";
@@ -40,6 +42,8 @@ import {
   CustomModalRevisionCompaniasExtraccion,
   type CompaniaRelacionadaExtraccionNueva,
 } from "@maximilian/components/investigacion/CustomModalRevisionCompaniasExtraccion";
+import { CustomModalRevisionEjecutivosExtraccion } from "@maximilian/components/investigacion/CustomModalRevisionEjecutivosExtraccion";
+import { CustomModalRevisionBancosExtraccion } from "@maximilian/components/investigacion/CustomModalRevisionBancosExtraccion";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import {
@@ -52,6 +56,7 @@ import {
   SelectorMaestroConAltaInvestigacionAnalista,
 } from "@maximilian/components/investigacion/ControlesInforme";
 import { informeService } from "@maximilian/services/informe.service";
+import { servicioBanco } from "@maximilian/services/banco.service";
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
@@ -62,6 +67,11 @@ import {
 } from "@maximilian/shared/utils/datos-simulados-investigacion";
 import type {
   AlcanceExtraccionInforme,
+  InformeBalanceBancoRequest,
+  InformeBalanceDesagregadoRequest,
+  InformeBalanceSeguroRequest,
+  InformeBalanceTotalizadoRequest,
+  InformeBalanceTurquiaRequest,
   InformeConfiguracionExtraccion,
   InformeCrearRequest,
   InformeSeccionExtraccionDisponible,
@@ -94,6 +104,7 @@ import {
   sanitizarMontoDecimales,
   seleccionarTextoCampoEditable,
 } from "@maximilian/shared/utils/formato-monto.util";
+import { obtenerValorCampoEstadoFinanciero } from "@maximilian/shared/utils/estados-financieros.util";
 
 interface PropsPantallaInvestigacionAnalista {
   idPedido?: string;
@@ -129,11 +140,17 @@ interface CiudadExtraccionPendiente {
   pais: string;
 }
 
+interface ValorExtraidoNormalizado {
+  valor: string;
+  valorFormulario?: string;
+  alAplicar?: () => void;
+  omitirActualizacion?: boolean;
+  confirmarConValorVacio?: boolean;
+}
+
 const FILAS_POR_PAGINA_INVESTIGACION = 5;
 const ID_ESTADO_PEDIDO_BORRADOR = 3;
 const ID_ESTADO_PEDIDO_FINALIZADO = 5;
-const ID_MAESTRO_CARGO_DIRECTORIO = 14;
-
 function obtenerTotalPaginas(totalRegistros: number) {
   return Math.max(1, Math.ceil(totalRegistros / FILAS_POR_PAGINA_INVESTIGACION));
 }
@@ -150,6 +167,13 @@ function obtenerPorcentajeNumerico(valor?: string) {
 
 function formatearPorcentajeOchoDecimales(valor: number) {
   return `${valor.toFixed(8)}%`;
+}
+
+function enmascararNumeroCuenta(valor: string) {
+  const numeroCuenta = valor.trim();
+  if (!numeroCuenta) return "-";
+  if (numeroCuenta.length <= 4) return numeroCuenta;
+  return `${"*".repeat(numeroCuenta.length - 4)}${numeroCuenta.slice(-4)}`;
 }
 
 function obtenerNumeroDesdeTexto(valor?: string) {
@@ -209,7 +233,7 @@ function obtenerIdCiiuPorValor(
 
 function obtenerTextoPorId(opciones: { num1: number | null; string1: string | null }[] | undefined, id?: number) {
   if (!id) return "";
-  return opciones?.find((opcion) => opcion.num1 === id)?.string1?.trim() ?? "";
+  return opciones?.find((opcion) => Number(opcion.num1) === Number(id))?.string1?.trim() ?? "";
 }
 
 function obtenerIdMoneda(valor: string) {
@@ -356,31 +380,24 @@ const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacionAnalist
       "actividadPrincipal",
       "categoriaCiiu",
       "claseCiiu",
-      "comentario",
       "comentariosOperaciones",
-      "comprasExtranjeroDetalle",
       "comprasExtranjeroDetalles",
       "comprasExtranjeroPorcentaje",
-      "comprasNacionalesDetalle",
       "comprasNacionalesDetalles",
       "comprasNacionalesPorcentaje",
       "direccion",
       "exportaciones",
-      "imagen",
-      "imagenTipo",
-      "imageUrl",
       "importaciones",
+      "locales",
       "numeroEmpleados",
       "numeroEmpleadosDetalle",
       "sector",
-      "territorioVentasDetalle",
-      "territorioVentasPorcentaje",
-      "tipoLocal",
       "ventasContadoDetalle",
       "ventasContadoPorcentaje",
       "ventasCreditoDetalle",
       "ventasCreditoPorcentaje",
-      "ventasCreditoSeleccion",
+      "ventasNacionalesDetalle",
+      "ventasNacionalesPorcentaje",
       "ventasExtranjeroDetalle",
       "ventasExtranjeroPorcentaje",
     ],
@@ -390,24 +407,15 @@ const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacionAnalist
   },
   balances: {},
   "bancos-proveedores": {
-    referencias: ["comentariosProveedores", "referenciasBancos", "litigios", "riesgoPrincipal", "superintendencia"],
-    proveedores: [
-      "nombreEmpresa",
-      "contacto",
-      "tipoProveedor",
-      "telefono",
-      "tipoPersona",
-      "pais",
-      "taxIdType",
-      "taxIdNumber",
-      "tieneReferenciaComercial",
-      "comienzoNegociaciones",
-      "operacionCambioMoneda",
-      "tipoCambio",
-      "limiteCredito",
-      "promedioMensual",
+    bancosProveedores: [
+      "comentariosProveedores",
+      "referenciasBancos",
+      "litigios",
+      "riesgoPrincipal",
+      "superintendencia",
+      "proveedores",
+      "bancos",
     ],
-    bancos: ["banco", "numeroCuenta", "sector", "telefono", "sectoristaJefeCuenta"],
   },
   "datos-generales": {
     datosGenerales: ["informacionGeneral", "opinionCredito"],
@@ -415,18 +423,13 @@ const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacionAnalist
   "directorio-ejecutivo": {
     directorioEjecutivo: [
       "ejecutivo",
-      "cargo",
-      "porcentaje",
-      "lista",
-      "detalleEjecutivo",
-      "orden",
+      "cargoEjecutivo",
       "vinculadoDesde",
       "companiaAnterior",
-      "esParteDirectorio",
-      "pais",
-      "tipoPersona",
-      "descripcionBusqueda",
-      "nombreCompleto",
+      "participacion",
+      "formaParteDirectorioEjecutivo",
+      "figuraListadoEjecutivos",
+      "existenDetallesEjecutivo",
     ],
   },
 };
@@ -435,9 +438,17 @@ const SECCIONES_LISTA_EXTRACCION = new Set([
   "companiasRelacionadas",
   "importaciones",
   "exportaciones",
+  "locales",
   "proveedores",
   "bancos",
 ]);
+
+const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
+  porcentaje: "Porcentaje de participacion",
+  esParteDirectorio: "¿Forma parte del directorio Ejecutivo?",
+  lista: "¿Figura en el listado de ejecutivos?",
+  detalleEjecutivo: "¿Se tiene los detalles del Ejecutivo?",
+};
 
 function humanizarClaveExtraccion(valor: string) {
   const texto = valor
@@ -470,7 +481,7 @@ function construirSeccionesDisponiblesExtraccion(alcance: AlcanceExtraccionInfor
       return camposSeccion.map((campo) => ({
         id: 0,
         claveCampo: campo,
-        etiquetaCampo: humanizarClaveExtraccion(campo),
+        etiquetaCampo: ETIQUETAS_CAMPOS_EXTRACCION[campo] ?? humanizarClaveExtraccion(campo),
         claveSeccionExtraccion: claveSeccion,
       }));
     });
@@ -531,35 +542,250 @@ function actualizarValorEnRuta<T>(valorActual: T, ruta: string[], valorNuevo: un
   } as T;
 }
 
-function construirCuentaBalance(detalle?: RegistroBalanceAnalista["detalleCuentas"]) {
-  if (!detalle) return null;
+function construirListasDetalleBalance(balances: RegistroBalanceAnalista[]) {
+  const lstBalancesDesagregado: InformeBalanceDesagregadoRequest[] = [];
+  const lstBalancesTotalizado: InformeBalanceTotalizadoRequest[] = [];
+  const lstBalancesBanco: InformeBalanceBancoRequest[] = [];
+  const lstBalancesSeguro: InformeBalanceSeguroRequest[] = [];
+  const lstBalancesTurquia: InformeBalanceTurquiaRequest[] = [];
 
-  return {
-    totalCorriente: obtenerNumeroDesdeTexto(detalle.balanceGeneral.totalCorrientes),
-    totalNoCorriente: obtenerNumeroDesdeTexto(detalle.balanceGeneral.totalNoCorrientes),
-    otrosActivos: obtenerNumeroDesdeTexto(detalle.balanceGeneral.otrosActivos),
-    totalActivos: obtenerNumeroDesdeTexto(detalle.balanceGeneral.totalActivos),
-    totalPasivosCorrientes: obtenerNumeroDesdeTexto(detalle.balanceGeneral.totalPasivosCorrientes),
-    totalPasivosNoCorrientes: obtenerNumeroDesdeTexto(detalle.balanceGeneral.totalPasivosNoCorrientes),
-    otrosPasivos: obtenerNumeroDesdeTexto(detalle.balanceGeneral.otrosPasivos),
-    totalPasivos: obtenerNumeroDesdeTexto(detalle.balanceGeneral.totalPasivos),
-    patrimonio: obtenerNumeroDesdeTexto(detalle.balanceGeneral.patrimonio),
-    totalPasivoPatrimonio: obtenerNumeroDesdeTexto(detalle.balanceGeneral.totalPasivoPatrimonio),
-    ventasNetas: obtenerNumeroDesdeTexto(detalle.estadoGananciasPerdidas.ventasNetas),
-    utilidadPerdida: obtenerNumeroDesdeTexto(detalle.estadoGananciasPerdidas.utilidadGanancia),
-    indiceLiquidez: obtenerNumeroDesdeTexto(detalle.ratios.liquidez),
-    capitalTrabajo: obtenerNumeroDesdeTexto(detalle.ratios.capitalTrabajo),
-    ratioEndeudamiento: obtenerNumeroDesdeTexto(detalle.ratios.endeudamiento),
-    ratioRentabilidad: obtenerNumeroDesdeTexto(detalle.ratios.rentabilidad),
-  };
+  balances.forEach((balance, index) => {
+    const id = index + 1;
+    const tipo = balance.idTipoEstadoFinanciero;
+    const tipoEstadoFinanciero = balance.tipoEstadoFinanciero
+      || ({ 1: "desagregado", 2: "totalizado", 3: "bancos", 4: "seguros", 5: "turquia" }[tipo ?? 0] ?? balance.tipo);
+    const r = balance.detalleCuentas?.registrosEstadoFinanciero ?? {};
+    const d = (campo: string) => obtenerNumeroOpcionalDesdeTexto(
+      obtenerValorCampoEstadoFinanciero(r, campo, tipoEstadoFinanciero),
+    ) ?? null;
+    const i = (campo: string): number | null => {
+      const v = obtenerValorCampoEstadoFinanciero(r, campo, tipoEstadoFinanciero);
+      if (!v) return null;
+      const num = Number.parseInt(v.replace(/[^\d-]/g, ""), 10);
+      return Number.isFinite(num) ? num : null;
+    };
+
+    if (tipo === 1) {
+      lstBalancesDesagregado.push({
+        id,
+        efectivoEquivalente: d("efectivoEquivalente"),
+        otrosActivosFinancierosCorriente: d("otrosActivosFinancierosCorriente"),
+        cuentasCobrarCorriente: d("cuentasCobrarCorriente"),
+        inventariosCorriente: d("inventariosCorriente"),
+        activosBiologicosCorriente: d("activosBiologicosCorriente"),
+        activosImpuestosGanancias: d("activosImpuestosGanancias"),
+        otrosActivosNoFinancierosCorriente: d("otrosActivosNoFinancierosCorriente"),
+        totalActivoCorriente: d("totalActivoCorriente"),
+        otrosActivosFinancierosNoCorriente: d("otrosActivosFinancierosNoCorriente"),
+        inversionesSubsidiarias: d("inversionesSubsidiarias"),
+        cuentasCobrarNoCorriente: d("cuentasCobrarNoCorriente"),
+        inventariosNoCorriente: d("inventariosNoCorriente"),
+        activosBiologicosNoCorriente: d("activosBiologicosNoCorriente"),
+        propiedadesInversion: d("propiedadesInversion"),
+        propiedadesPlantaEquipo: d("propiedadesPlantaEquipo"),
+        intangibles: d("intangibles"),
+        activosImpuestosDiferidos: d("activosImpuestosDiferidos"),
+        activosImpuestosCorrientes: d("activosImpuestosCorrientes"),
+        plusvalia: d("plusvalia"),
+        otrosActivosNoFinancierosNoCorriente: d("otrosActivosNoFinancierosNoCorriente"),
+        totalActivoNoCorriente: d("totalActivoNoCorriente"),
+        totalActivo: d("totalActivo"),
+        otrosPasivosFinancierosCorriente: d("otrosPasivosFinancierosCorriente"),
+        cuentasPagarCorriente: d("cuentasPagarCorriente"),
+        beneficiosEmpleadosCorriente: d("beneficiosEmpleadosCorriente"),
+        otrasProvisionesCorriente: d("otrasProvisionesCorriente"),
+        impuestosGananciasCorriente: d("impuestosGananciasCorriente"),
+        otrosPasivosNoFinancierosCorriente: d("otrosPasivosNoFinancierosCorriente"),
+        totalPasivoCorriente: d("totalPasivoCorriente"),
+        otrosPasivosFinancierosNoCorriente: d("otrosPasivosFinancierosNoCorriente"),
+        cuentasPagarNoCorriente: d("cuentasPagarNoCorriente"),
+        beneficiosEmpleadosNoCorriente: d("beneficiosEmpleadosNoCorriente"),
+        otrasProvisionesNoCorriente: d("otrasProvisionesNoCorriente"),
+        impuestosDiferidosNoCorriente: d("impuestosDiferidosNoCorriente"),
+        impuestosCorrientesNoCorriente: d("impuestosCorrientesNoCorriente"),
+        otrosPasivosNoFinancierosNoCorriente: d("otrosPasivosNoFinancierosNoCorriente"),
+        totalPasivoNoCorriente: d("totalPasivoNoCorriente"),
+        totalPasivos: d("totalPasivos"),
+        capitalEmitido: d("capitalEmitido"),
+        primasEmision: d("primasEmision"),
+        accionesInversion: d("accionesInversion"),
+        accionesCartera: d("accionesCartera"),
+        otrasReservasCapital: d("otrasReservasCapital"),
+        resultadosAcumulados: d("resultadosAcumulados"),
+        otrasReservasPatrimonio: d("otrasReservasPatrimonio"),
+        totalPatrimonio: d("totalPatrimonio"),
+        totalPasivoPatrimonio: d("totalPasivoPatrimonio"),
+        ingresosOrdinarios: d("ingresosOrdinarios"),
+        costoVentas: d("costoVentas"),
+        gananciaBruta: d("gananciaBruta"),
+        gastosVentas: d("gastosVentas"),
+        gastosAdministracion: d("gastosAdministracion"),
+        otrosIngresosOperativos: d("otrosIngresosOperativos"),
+        otrosGastosOperativos: d("otrosGastosOperativos"),
+        otrasGananciasPerdidas: d("otrasGananciasPerdidas"),
+        gananciaOperativa: d("gananciaOperativa"),
+        ingresosFinancieros: d("ingresosFinancieros"),
+        ingresosIntereses: d("ingresosIntereses"),
+        gastosFinancieros: d("gastosFinancieros"),
+        deterioroValor: d("deterioroValor"),
+        otrosIngresosSubsidiarias: d("otrosIngresosSubsidiarias"),
+        diferenciasCambio: d("diferenciasCambio"),
+        gananciaAntesImpuestos: d("gananciaAntesImpuestos"),
+        ingresoGastoImpuesto: d("ingresoGastoImpuesto"),
+        operacionesDescontinuadas: d("operacionesDescontinuadas"),
+        gananciaNeta: d("gananciaNeta"),
+        indiceLiquidez: d("indiceLiquidez"),
+        capitalTrabajo: d("capitalTrabajo"),
+        ratioEndeudamiento: d("ratioEndeudamiento"),
+        ratioRentabilidad: d("ratioRentabilidad"),
+      });
+    } else if (tipo === 2) {
+      lstBalancesTotalizado.push({
+        id,
+        totalActivoCorriente: d("totalActivoCorriente"),
+        totalActivoNoCorriente: d("totalActivoNoCorriente"),
+        totalActivo: d("totalActivo"),
+        totalPasivoCorriente: d("totalPasivoCorriente"),
+        totalPasivoNoCorriente: d("totalPasivoNoCorriente"),
+        totalPasivos: d("totalPasivos"),
+        totalPatrimonio: d("totalPatrimonio"),
+        totalPasivoPatrimonio: d("totalPasivoPatrimonio"),
+        ingresosOrdinarios: d("ingresosOrdinarios"),
+        gananciaNeta: d("gananciaNeta"),
+        indiceLiquidez: d("indiceLiquidez"),
+        capitalTrabajo: d("capitalTrabajo"),
+        ratioEndeudamiento: d("ratioEndeudamiento"),
+        ratioRentabilidad: d("ratioRentabilidad"),
+      });
+    } else if (tipo === 3) {
+      lstBalancesBanco.push({
+        id,
+        disponible: d("disponible"),
+        fondosInterbancarios: d("fondosInterbancarios"),
+        inversionesValorRazonable: d("inversionesValorRazonable"),
+        carteraCreditos: d("carteraCreditos"),
+        derivadosNegociacionActivo: d("derivadosNegociacionActivo"),
+        derivadosCoberturaActivo: d("derivadosCoberturaActivo"),
+        bienesRealizables: d("bienesRealizables"),
+        participacionesSubsidiarias: d("participacionesSubsidiarias"),
+        inmuebleMobiliarioEquipo: d("inmuebleMobiliarioEquipo"),
+        impuestoRentaDiferido: d("impuestoRentaDiferido"),
+        otrosActivos: d("otrosActivos"),
+        totalActivos: d("totalActivos"),
+        obligacionesPublico: d("obligacionesPublico"),
+        fondosInterbancariosPasivo: d("fondosInterbancariosPasivo"),
+        adeudosFinancieras: d("adeudosFinancieras"),
+        derivadosNegociacionPasivo: d("derivadosNegociacionPasivo"),
+        derivadosCoberturaPasivo: d("derivadosCoberturaPasivo"),
+        cuentasPagarProvisiones: d("cuentasPagarProvisiones"),
+        totalPasivo: d("totalPasivo"),
+        capitalSocial: d("capitalSocial"),
+        reservas: d("reservas"),
+        resultadosNoRealizados: d("resultadosNoRealizados"),
+        resultadoEjercicio: d("resultadoEjercicio"),
+        totalPatrimonio: d("totalPatrimonio"),
+        totalPasivoPatrimonio: d("totalPasivoPatrimonio"),
+        ingresosIntereses: d("ingresosIntereses"),
+        utilidadEjercicio: d("utilidadEjercicio"),
+      });
+    } else if (tipo === 4) {
+      lstBalancesSeguro.push({
+        id,
+        efectivoDisponible: d("efectivoDisponible"),
+        inversionesFinancieras: d("inversionesFinancieras"),
+        prestamosInteresesNetos: d("prestamosInteresesNetos"),
+        primasCobrar: d("primasCobrar"),
+        deudasReaseguradores: d("deudasReaseguradores"),
+        activosVenta: d("activosVenta"),
+        propiedadesInversion: d("propiedadesInversion"),
+        propiedadPlantaEquipo: d("propiedadPlantaEquipo"),
+        otrosActivos: d("otrosActivos"),
+        totalActivos: d("totalActivos"),
+        obligacionesAsegurados: d("obligacionesAsegurados"),
+        reservasSiniestros: d("reservasSiniestros"),
+        reservasTecnicas: d("reservasTecnicas"),
+        obligacionesReaseguradores: d("obligacionesReaseguradores"),
+        obligacionesFinancieras: d("obligacionesFinancieras"),
+        cuentasPagar: d("cuentasPagar"),
+        otrosPasivos: d("otrosPasivos"),
+        totalPasivo: d("totalPasivo"),
+        capitalSocial: d("capitalSocial"),
+        aportesCapitalNoCapitalizados: d("aportesCapitalNoCapitalizados"),
+        resultadosAcumulados: d("resultadosAcumulados"),
+        patrimonioRestringido: d("patrimonioRestringido"),
+        totalPatrimonio: d("totalPatrimonio"),
+        totalPasivoPatrimonio: d("totalPasivoPatrimonio"),
+        primasGanadasNetas: d("primasGanadasNetas"),
+        utilidadNeta: d("utilidadNeta"),
+      });
+    } else if (tipo === 5) {
+      lstBalancesTurquia.push({
+        id,
+        ano: i("ano"),
+        fechaBalance: obtenerValorCampoEstadoFinanciero(r, "fechaBalance", tipoEstadoFinanciero) || null,
+        idMoneda: balance.idMoneda ?? i("idMoneda"),
+        duracionPeriodo: i("duracionPeriodo"),
+        idNivelConfiabilidad: {
+          ACTUAL: 1,
+          PRELIMINAR: 2,
+          ESTIMADO: 3,
+        }[obtenerValorCampoEstadoFinanciero(r, "idNivelConfiabilidad", tipoEstadoFinanciero).toUpperCase()] ?? i("idNivelConfiabilidad"),
+        tipoCambio: d("tipoCambio"),
+        efectivo: d("efectivo"),
+        existencias: d("existencias"),
+        deudores: d("deudores"),
+        totalCorriente: d("totalCorriente"),
+        bienesTongibles: d("bienesTongibles"),
+        activosIntangibles: d("activosIntangibles"),
+        activoFijoNeto: d("activoFijoNeto"),
+        totalActivos: d("totalActivos"),
+        prestamos: d("prestamos"),
+        acreedores: d("acreedores"),
+        pasivosCorrientes: d("pasivosCorrientes"),
+        pasivosNoCorrientes: d("pasivosNoCorrientes"),
+        pasivosLargoPlazo: d("pasivosLargoPlazo"),
+        totalPasivosNoCorrientes: d("totalPasivosNoCorrientes"),
+        totalPasivos: d("totalPasivos"),
+        capital: d("capital"),
+        patrimonio: d("patrimonio"),
+        totalPatrimonio: d("totalPatrimonio"),
+        totalPasivosPatrimonio: d("totalPasivosPatrimonio"),
+        ventasNetas: d("ventasNetas"),
+        costoVentas: d("costoVentas"),
+        costoMateriales: d("costoMateriales"),
+        gananciaBruta: d("gananciaBruta"),
+        otrosGastosOperativos: d("otrosGastosOperativos"),
+        costoEmpleados: d("costoEmpleados"),
+        depreciacion: d("depreciacion"),
+        ingresosFinancieros: d("ingresosFinancieros"),
+        gastosFinancieros: d("gastosFinancieros"),
+        interesesPagados: d("interesesPagados"),
+        plFinanciero: d("plFinanciero"),
+        ingresosExtraordinarios: d("ingresosExtraordinarios"),
+        gastosExtraordinarios: d("gastosExtraordinarios"),
+        plExtraordinario: d("plExtraordinario"),
+        gananciaAntesImpuestos: d("gananciaAntesImpuestos"),
+        impuestos: d("impuestos"),
+        gananciaNeta: d("gananciaNeta"),
+        ebit: d("ebit"),
+        ebitda: d("ebitda"),
+        ganancia: d("ganancia"),
+        indiceLiquidez: d("indiceLiquidez"),
+        capitalTrabajo: d("capitalTrabajo"),
+        ratioEndeudamiento: d("ratioEndeudamiento"),
+        ratioRentabilidad: d("ratioRentabilidad"),
+      });
+    }
+  });
+
+  return { lstBalancesDesagregado, lstBalancesTotalizado, lstBalancesBanco, lstBalancesSeguro, lstBalancesTurquia };
 }
 
 function depurarPayloadInforme(valor: unknown): unknown {
   if (Array.isArray(valor)) {
-    const lista = valor
+    return valor
       .map((item) => depurarPayloadInforme(item))
       .filter((item) => item !== undefined);
-    return lista.length > 0 ? lista : undefined;
   }
 
   if (valor && typeof valor === "object") {
@@ -670,9 +896,9 @@ function construirPayloadCrearInforme({
     ventasContadoText: operacionPrincipal.ventasContadoDetalle,
     ventasCredito: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasCreditoPorcentaje),
     ventasCreditoText: operacionPrincipal.ventasCreditoDetalle,
-    idVentasCreditoTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.ventasCreditoSeleccion),
-    territorioVentas: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.territorioVentasPorcentaje),
-    territorioText: operacionPrincipal.territorioVentasDetalle,
+    idVentasCreditoTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.ventasCreditoTiempo),
+    ventasNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.territorioVentasPorcentaje),
+    ventasNacionalesText: operacionPrincipal.territorioVentasDetalle,
     ventasInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasExtranjeroPorcentaje),
     ventasInternacionalesText: operacionPrincipal.ventasExtranjeroDetalle,
     comprasNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasNacionalesPorcentaje),
@@ -703,8 +929,8 @@ function construirPayloadCrearInforme({
       idMoneda: balance.idMoneda ?? (obtenerIdPorTexto(opcionesMoneda, balance.operacionCambio ?? "") || obtenerIdMoneda(balance.operacionCambio ?? "")),
       idTipoBalance: (balance.idTipoBalance ?? obtenerIdPorTextoONumero(undefined, balance.tipoBalance ?? "")) || obtenerIdTipoBalance(balance.tipoBalance),
       idTipoEstadoFinanciero: balance.idTipoEstadoFinanciero ?? obtenerIdPorTextoONumero(undefined, balance.tipoEstadoFinanciero ?? balance.tipo ?? ""),
-      cuentaBalance: construirCuentaBalance(balance.detalleCuentas),
     })),
+    ...construirListasDetalleBalance(datosInvestigacion.balances),
     lstBancos: datosInvestigacion.bancos.map((banco) => ({
       ...(esEdicion ? { idInformeBanco: banco.idInformeBanco ?? 0 } : {}),
       idBanco: banco.idBanco ?? 0,
@@ -779,14 +1005,14 @@ function construirPayloadCrearInforme({
       imprimeDatosEjecutivos: ejecutivo.detalleEjecutivo,
     })),
     lstLocales: datosInvestigacion.locales.map((local) => ({
-      ...(esEdicion ? { idInformeLocal: local.idInformeLocal ?? 0 } : {}),
+      idInformeLocal: local.idInformeLocal ?? 0,
       idTipoLocal: local.idTipoLocal ?? obtenerIdPorTextoONumero(opcionesTipoLocal, local.tipoLocal),
       comentario: local.comentario,
-      imagenUrl: local.imagenUrl ?? "",
       imagenes: (local.imagenes ?? []).map((imagen) => ({
-        ...(esEdicion ? { idInformeLocalImagen: 0 } : {}),
-        imagenURL: imagen.url ?? "",
+        idInformeLocalImagen: 0,
+        ...(imagen.esNueva ? {} : { imagenURL: imagen.url ?? "" }),
         idTipoArchivo: obtenerIdTipoArchivo(imagen.tipo ?? local.imagenTipo),
+        nombre: imagen.nombre,
       })),
     })),
   }) as InformeCrearRequest;
@@ -861,6 +1087,10 @@ function IndicadorCambioExtraccion({
     <span className="group relative inline-flex">
       <button
         type="button"
+        onMouseDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -913,6 +1143,16 @@ function PantallaInvestigacionAnalista({
   const [companiasExtraccionPendientes, setCompaniasExtraccionPendientes] = useState<CompaniaRelacionadaExtraccionNueva[]>([]);
   const [indiceCompaniaExtraccionEdicion, setIndiceCompaniaExtraccionEdicion] = useState<number | null>(null);
   const [estaAbiertoModalRevisionCompaniasExtraccion, setEstaAbiertoModalRevisionCompaniasExtraccion] = useState(false);
+  const [ejecutivosExtraccionPendientes, setEjecutivosExtraccionPendientes] = useState<RegistroDirectorioEjecutivoAnalista[]>([]);
+  const [indiceEjecutivoExtraccionEdicion, setIndiceEjecutivoExtraccionEdicion] = useState<number | null>(null);
+  const [indiceEjecutivoExtraccionAprobacion, setIndiceEjecutivoExtraccionAprobacion] = useState<number | null>(null);
+  const [indiceEjecutivoExtraccionBusqueda, setIndiceEjecutivoExtraccionBusqueda] = useState<number | null>(null);
+  const [estaAbiertoModalRevisionEjecutivosExtraccion, setEstaAbiertoModalRevisionEjecutivosExtraccion] = useState(false);
+  const [bancosExtraccionPendientes, setBancosExtraccionPendientes] = useState<RegistroBancoAnalista[]>([]);
+  const [colaExistentesExtraccion, setColaExistentesExtraccion] = useState<RegistroBancoAnalista[]>([]);
+  const [indiceBancoExtraccionEdicion, setIndiceBancoExtraccionEdicion] = useState<number | null>(null);
+  const [bancoRecienCreado, setBancoRecienCreado] = useState<BancoListaItem | null>(null);
+  const [estaAbiertoModalRevisionBancosExtraccion, setEstaAbiertoModalRevisionBancosExtraccion] = useState(false);
   const [estaAbiertoModalOperacion, setEstaAbiertoModalOperacion] = useState(false);
   const [estaAbiertoModalLocal, setEstaAbiertoModalLocal] = useState(false);
   const [estaAbiertoModalBalance, setEstaAbiertoModalBalance] = useState(false);
@@ -1083,6 +1323,12 @@ function PantallaInvestigacionAnalista({
     staleTime: Infinity,
   });
 
+  const { data: opcionesTiempoCreditoVentas } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIEMPO_CREDITO_VENTAS],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIEMPO_CREDITO_VENTAS),
+    staleTime: Infinity,
+  });
+
   const { data: opcionesPlantillaInforme } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.PLANTILLA_INFORME],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLANTILLA_INFORME),
@@ -1090,8 +1336,8 @@ function PantallaInvestigacionAnalista({
   });
 
   const { data: opcionesCargoDirectorio } = useQuery({
-    queryKey: ["masterTable", ID_MAESTRO_CARGO_DIRECTORIO],
-    queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_CARGO_DIRECTORIO),
+    queryKey: ["masterTable", TablaMaestraId.CARGO_DIRECTORIO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CARGO_DIRECTORIO),
     enabled: idSeccionActiva === "directorio-ejecutivo" || datosInvestigacion.directorioEjecutivo.length > 0,
     staleTime: Infinity,
   });
@@ -1159,6 +1405,48 @@ function PantallaInvestigacionAnalista({
       actualizarCampoInvestigacion(["identificacion", "ciudadEstadoProvincia"], valor);
       ciudadExtraccionPendienteRef.current = null;
       setCiudadExtraccionPendiente(null);
+    },
+  });
+
+  const crearTiempoCreditoExtraccionMutation = useMutation({
+    mutationFn: async (tiempoCredito: string) => {
+      const opcionesActuales = await queryClient.fetchQuery({
+        queryKey: ["masterTable", TablaMaestraId.TIEMPO_CREDITO_VENTAS],
+        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIEMPO_CREDITO_VENTAS),
+        staleTime: 0,
+      });
+      const opcionExistente = obtenerOpcionTablaMaestraPorTexto(opcionesActuales, tiempoCredito);
+      if (opcionExistente?.num1 != null) return opcionExistente.num1;
+
+      const siguienteNumero = opcionesActuales.reduce(
+        (maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0),
+        0,
+      ) + 1;
+
+      await servicioTablaMaestra.crear({
+        idMaestro: TablaMaestraId.TIEMPO_CREDITO_VENTAS,
+        descripcion: obtenerDescripcionTablaMaestra(TablaMaestraId.TIEMPO_CREDITO_VENTAS),
+        string1: tiempoCredito,
+        num1: siguienteNumero,
+        num2: null,
+        num3: null,
+        string2: null,
+        string3: null,
+        date1: null,
+        date2: null,
+        date3: null,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["masterTable", TablaMaestraId.TIEMPO_CREDITO_VENTAS],
+      });
+
+      return siguienteNumero;
+    },
+    onSuccess: (idTiempoCredito) => {
+      actualizarCampoInvestigacion(
+        ["operacionPrincipal", "ventasCreditoTiempo"],
+        String(idTiempoCredito),
+      );
     },
   });
 
@@ -1438,6 +1726,40 @@ function PantallaInvestigacionAnalista({
       },
     }));
   }, [datosInvestigacion.operacionPrincipal.actividad, idActividadInicial, opcionesActividadEconomica]);
+
+  useEffect(() => {
+    if (colaExistentesExtraccion.length === 0) return;
+    const items = colaExistentesExtraccion;
+    setColaExistentesExtraccion([]);
+    Promise.all(
+      items.map((item) =>
+        servicioBanco.obtener({ idBanco: item.idBanco }).then(
+          (banco): RegistroBancoAnalista | null => {
+            if (!banco) return null;
+            return {
+              idBanco: banco.idBanco,
+              idPais: banco.idPais,
+              pais: banco.pais,
+              banco: banco.nombre,
+              telefono: item.telefono || banco.telefono,
+              numeroCuenta: item.numeroCuenta,
+              idSector: item.idSector,
+              sector: item.sector || banco.sector || "",
+              sectoristaJefeCuenta: item.sectoristaJefeCuenta,
+            };
+          },
+        ).catch(() => null),
+      ),
+    ).then((registros) => {
+      const validos = registros.filter((r): r is RegistroBancoAnalista => r !== null);
+      if (validos.length === 0) return;
+      setDatosInvestigacion((anterior) => ({
+        ...anterior,
+        bancos: [...validos, ...anterior.bancos],
+      }));
+    });
+  }, [colaExistentesExtraccion]);
+
   const opcionesFiltroTipoProveedor = useMemo(
     () => [
       { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 0, num2: null, num3: null, string1: "Todos", string2: null, string3: null, date1: null, date2: null, date3: null },
@@ -1484,8 +1806,8 @@ function PantallaInvestigacionAnalista({
   };
 
   const actualizarPorcentajesComplementarios = (
-    campoOrigen: "ventasContadoPorcentaje" | "ventasCreditoPorcentaje" | "comprasNacionalesPorcentaje" | "comprasExtranjeroPorcentaje",
-    campoComplementario: "ventasContadoPorcentaje" | "ventasCreditoPorcentaje" | "comprasNacionalesPorcentaje" | "comprasExtranjeroPorcentaje",
+    campoOrigen: "ventasContadoPorcentaje" | "ventasCreditoPorcentaje" | "territorioVentasPorcentaje" | "ventasExtranjeroPorcentaje" | "comprasNacionalesPorcentaje" | "comprasExtranjeroPorcentaje",
+    campoComplementario: "ventasContadoPorcentaje" | "ventasCreditoPorcentaje" | "territorioVentasPorcentaje" | "ventasExtranjeroPorcentaje" | "comprasNacionalesPorcentaje" | "comprasExtranjeroPorcentaje",
     valor: string,
   ) => {
     const valorLimpio = valor.trim();
@@ -1652,7 +1974,7 @@ function PantallaInvestigacionAnalista({
     procesarCiudadExtraida(ciudadPendiente.valor, ciudadPendiente);
   };
 
-  const normalizarValorExtraido = (ruta: string[], valor: unknown) => {
+  const normalizarValorExtraido = (ruta: string[], valor: unknown): ValorExtraidoNormalizado => {
     const rutaTexto = ruta.join(".");
     const valorTexto = valor == null ? "" : String(valor).trim();
     const normalizarPorTablaMaestra = (
@@ -1846,6 +2168,31 @@ function PantallaInvestigacionAnalista({
       return { valor: normalizarPorTablaMaestra(opcionesActividadEconomica) };
     }
 
+    if (rutaTexto === "operacionPrincipal.ventasCreditoTiempo") {
+      const opcionPorId = obtenerOpcionTablaMaestraPorId(opcionesTiempoCreditoVentas, valor);
+      if (opcionPorId?.num1 != null) {
+        return {
+          valor: opcionPorId.string1 ?? valorTexto,
+          valorFormulario: String(opcionPorId.num1),
+        };
+      }
+
+      const opcionPorTexto = obtenerOpcionTablaMaestraPorTexto(opcionesTiempoCreditoVentas, valor);
+      if (opcionPorTexto?.num1 != null) {
+        return {
+          valor: opcionPorTexto.string1 ?? valorTexto,
+          valorFormulario: String(opcionPorTexto.num1),
+        };
+      }
+
+      return {
+        valor: valorTexto,
+        alAplicar: () => crearTiempoCreditoExtraccionMutation.mutate(valorTexto),
+        omitirActualizacion: true,
+        confirmarConValorVacio: true,
+      };
+    }
+
     if (rutaTexto === "operacionPrincipal.categoriaCiiu") {
       const ciiu = obtenerCiiuExtraido(opcionesActividadEconomica);
       return {
@@ -1854,6 +2201,7 @@ function PantallaInvestigacionAnalista({
           setCodigoNuevaCategoriaCiiu(ciiu.codigo);
           setTextoNuevaCategoriaCiiu(ciiu.texto);
         },
+        omitirActualizacion: !ciiu.existe,
       };
     }
 
@@ -1865,6 +2213,7 @@ function PantallaInvestigacionAnalista({
           setCodigoNuevaClaseCiiu(ciiu.codigo);
           setTextoNuevaClaseCiiu(ciiu.texto);
         },
+        omitirActualizacion: !ciiu.existe,
       };
     }
 
@@ -1912,6 +2261,7 @@ function PantallaInvestigacionAnalista({
     valorActual,
     valorExtraido,
     onAplicar,
+    confirmarConValorVacio = false,
   }: {
     id: string;
     ruta: string[];
@@ -1919,6 +2269,7 @@ function PantallaInvestigacionAnalista({
     valorActual: string;
     valorExtraido: string;
     onAplicar: () => void;
+    confirmarConValorVacio?: boolean;
   }) => {
     const valorAnteriorLimpio = CAMPOS_MONETARIOS_EXTRACCION.has(id) && /^0+(?:[.,]0+)?$/.test(valorActual.trim())
       ? ""
@@ -1927,7 +2278,7 @@ function PantallaInvestigacionAnalista({
 
     if (!valorNuevoLimpio || valorAnteriorLimpio === valorNuevoLimpio) return;
 
-    if (!valorAnteriorLimpio) {
+    if (!valorAnteriorLimpio && !confirmarConValorVacio) {
       onAplicar();
       return;
     }
@@ -1981,7 +2332,13 @@ function PantallaInvestigacionAnalista({
       return;
     }
 
-    const { valor: valorExtraido, valorFormulario, alAplicar } = normalizarValorExtraido(rutaBase, seccionExtraida);
+    const {
+      valor: valorExtraido,
+      valorFormulario,
+      alAplicar,
+      omitirActualizacion,
+      confirmarConValorVacio,
+    } = normalizarValorExtraido(rutaBase, seccionExtraida);
     const valorActual = seccionActual == null ? "" : String(seccionActual).trim();
     if (!valorExtraido) return;
 
@@ -1996,9 +2353,12 @@ function PantallaInvestigacionAnalista({
       etiqueta: etiquetaCompleta,
       valorActual,
       valorExtraido,
+      confirmarConValorVacio,
       onAplicar: () => {
         alAplicar?.();
-        actualizarCampoInvestigacion(rutaBase, valorFormulario ?? valorExtraido);
+        if (!omitirActualizacion) {
+          actualizarCampoInvestigacion(rutaBase, valorFormulario ?? valorExtraido);
+        }
       },
     });
   };
@@ -2151,6 +2511,64 @@ function PantallaInvestigacionAnalista({
     });
   };
 
+  const obtenerTextoExtraccionSeguro = (valor: unknown) => String(valor ?? "").trim();
+
+  const obtenerIdExtraccion = (valor: unknown) => {
+    const numero = typeof valor === "number" ? valor : Number(obtenerTextoExtraccionSeguro(valor));
+    return Number.isFinite(numero) && numero > 0 ? numero : undefined;
+  };
+
+  const obtenerTextoTablaMaestraExtraccion = (
+    opciones: { num1: number | null; string1: string | null }[] | undefined,
+    valor: unknown,
+  ) => obtenerOpcionTablaMaestraPorId(opciones, valor)?.string1 ?? obtenerTextoExtraccionSeguro(valor);
+
+  const obtenerBooleanoExtraccion = (valor: unknown) => {
+    if (typeof valor === "boolean") return valor;
+    if (typeof valor === "number") return valor === 1;
+    const texto = obtenerTextoExtraccionSeguro(valor).toLowerCase();
+    return ["1", "true", "si", "sí", "s", "yes"].includes(texto);
+  };
+
+  const normalizarProveedoresExtraccion = (valor: unknown): RegistroProveedorAnalista[] | unknown => {
+    if (!Array.isArray(valor)) return valor;
+
+    return valor
+      .filter(esRegistroPlano)
+      .map((proveedor): RegistroProveedorAnalista => {
+        const idTipoProveedor = obtenerIdExtraccion(proveedor.tipoProveedor ?? proveedor.idTipoProveedor);
+        const idPais = obtenerIdExtraccion(proveedor.idPais);
+        const idTipoDocumento = obtenerIdExtraccion(proveedor.idTipoDocumento);
+        const idMoneda = obtenerIdExtraccion(proveedor.operacionesCambioMoneda ?? proveedor.idMoneda);
+        const idLimiteCredito = obtenerIdExtraccion(proveedor.limiteCredito ?? proveedor.idLimiteCredito ?? proveedor.idPlazoCredito);
+        const tieneReferenciaComercial = obtenerBooleanoExtraccion(proveedor.referenciaComercial ?? proveedor.esTieneReferenciaComercial ?? proveedor.tieneReferenciaComercial);
+
+        return {
+          idTipoProveedor,
+          nombreEmpresa: obtenerTextoExtraccionSeguro(proveedor.nombreEmpresa ?? proveedor.nombre),
+          contacto: obtenerTextoExtraccionSeguro(proveedor.contacto ?? proveedor.nombreContacto),
+          tipoProveedor: obtenerTextoTablaMaestraExtraccion(opcionesTipoProveedor, idTipoProveedor ?? proveedor.tipoProveedor),
+          telefono: obtenerTextoExtraccionSeguro(proveedor.telefono),
+          tipoPersona: "",
+          idPais,
+          pais: obtenerTextoTablaMaestraExtraccion(opcionesPais, idPais ?? proveedor.pais),
+          idTipoDocumento,
+          taxIdType: obtenerTextoTablaMaestraExtraccion(opcionesTipoRegTributario, idTipoDocumento ?? proveedor.taxIdType),
+          taxIdNumber: obtenerTextoExtraccionSeguro(proveedor.taxIdNumber ?? proveedor.numeroIdentificacion ?? proveedor.numeroDocumento),
+          tieneReferenciaComercial,
+          esTieneReferenciaComercial: tieneReferenciaComercial,
+          comienzoNegociaciones: obtenerTextoExtraccionSeguro(proveedor.comienzoNegociaciones),
+          idMoneda,
+          operacionCambioMoneda: obtenerTextoTablaMaestraExtraccion(opcionesMoneda, idMoneda ?? proveedor.operacionesCambioMoneda ?? proveedor.operacionCambioMoneda),
+          tipoCambio: proveedor.tipoCambio == null ? "" : normalizarMontoDecimales(obtenerTextoExtraccionSeguro(proveedor.tipoCambio), 6),
+          idLimiteCredito,
+          idPlazoCredito: idLimiteCredito,
+          limiteCredito: obtenerTextoTablaMaestraExtraccion(undefined, idLimiteCredito ?? proveedor.limiteCredito),
+          promedioMensual: proveedor.promedioMensual == null ? "" : normalizarMontoDosDecimales(obtenerTextoExtraccionSeguro(proveedor.promedioMensual)),
+        };
+      });
+  };
+
   const aplicarResultadosLegalesExtraccion = (seccionExtraida: unknown) => {
     if (Array.isArray(seccionExtraida)) {
       aplicarCompaniasRelacionadasExtraccion(seccionExtraida);
@@ -2185,10 +2603,17 @@ function PantallaInvestigacionAnalista({
   const aplicarResultadosRamoOperacionesExtraccion = (seccionExtraida: unknown) => {
     if (!esRegistroPlano(seccionExtraida)) return;
 
+    const ventasCreditoDetalleExtraido = esRegistroPlano(seccionExtraida.ventasCreditoDetalle)
+      ? seccionExtraida.ventasCreditoDetalle
+      : null;
     const camposOperacionPrincipal = {
       ...seccionExtraida,
+      ventasCreditoDetalle: ventasCreditoDetalleExtraido?.creditoDetalle ?? seccionExtraida.ventasCreditoDetalle,
+      ventasCreditoTiempo: ventasCreditoDetalleExtraido?.creditoTiempo,
       comprasNacionalesDetalle: seccionExtraida.comprasNacionalesDetalle ?? seccionExtraida.comprasNacionalesDetalles,
       comprasExtranjeroDetalle: seccionExtraida.comprasExtranjeroDetalle ?? seccionExtraida.comprasExtranjeroDetalles,
+      territorioVentasDetalle: seccionExtraida.ventasNacionalesDetalle ?? seccionExtraida.territorioVentasDetalle,
+      territorioVentasPorcentaje: seccionExtraida.ventasNacionalesPorcentaje ?? seccionExtraida.territorioVentasPorcentaje,
     };
 
     aplicarResultadosExtraccion(datosInvestigacion.operacionPrincipal, camposOperacionPrincipal, ["operacionPrincipal"]);
@@ -2202,7 +2627,27 @@ function PantallaInvestigacionAnalista({
     }
 
     if (seccionExtraida.locales !== undefined) {
-      aplicarResultadosExtraccion(datosInvestigacion.locales, seccionExtraida.locales, ["locales"]);
+      const localesExtraidos = Array.isArray(seccionExtraida.locales)
+        ? seccionExtraida.locales
+            .filter(esRegistroPlano)
+            .map((local) => {
+              const valorTipoLocal = local.tipoLocal ?? local.idTipoLocal;
+              const idTipoLocal = typeof valorTipoLocal === "number"
+                ? valorTipoLocal
+                : typeof valorTipoLocal === "string" && valorTipoLocal.trim() && !Number.isNaN(Number(valorTipoLocal))
+                  ? Number(valorTipoLocal)
+                  : null;
+              const tipoLocal = obtenerOpcionTablaMaestraPorId(opcionesTipoLocal, idTipoLocal)?.string1
+                ?? String(local.tipoLocal ?? "");
+
+              return {
+                ...local,
+                idTipoLocal: idTipoLocal ?? undefined,
+                tipoLocal,
+              };
+            })
+        : [];
+      aplicarResultadosExtraccion(datosInvestigacion.locales, localesExtraidos, ["locales"]);
       return;
     }
 
@@ -2215,6 +2660,20 @@ function PantallaInvestigacionAnalista({
     };
     if (Object.values(localExtraido).some((valor) => valor !== undefined)) {
       aplicarResultadosExtraccion(datosInvestigacion.locales, [localExtraido], ["locales"]);
+    }
+  };
+
+  const aplicarResultadosBancosProveedoresExtraccion = (seccionExtraida: unknown) => {
+    if (!esRegistroPlano(seccionExtraida)) return;
+
+    aplicarResultadosExtraccion(datosInvestigacion.referencias, seccionExtraida, ["referencias"]);
+
+    if (seccionExtraida.proveedores !== undefined) {
+      aplicarResultadosExtraccion(datosInvestigacion.proveedores, normalizarProveedoresExtraccion(seccionExtraida.proveedores), ["proveedores"]);
+    }
+
+    if (seccionExtraida.bancos !== undefined) {
+      aplicarBancosExtraccion(seccionExtraida.bancos);
     }
   };
 
@@ -2286,6 +2745,167 @@ function PantallaInvestigacionAnalista({
 
   const rechazarCompaniaExtraccion = (indice: number) => {
     setCompaniasExtraccionPendientes((anteriores) => anteriores.filter((_, indiceActual) => indiceActual !== indice));
+  };
+
+  const aplicarDirectorioEjecutivoExtraccion = (valor: unknown) => {
+    if (!Array.isArray(valor)) return;
+    const existentes = datosInvestigacion.directorioEjecutivo;
+    const nuevos = valor
+      .filter((item): item is Record<string, unknown> => {
+        if (!esRegistroPlano(item)) return false;
+        const nombre = String(item.ejecutivo ?? item.nombreCompleto ?? "").trim().toLowerCase();
+        return Boolean(nombre) && !existentes.some(
+          (e) => e.ejecutivo.toLowerCase() === nombre || (e.nombreCompleto ?? "").toLowerCase() === nombre,
+        );
+      })
+      .map((item): RegistroDirectorioEjecutivoAnalista => {
+        const valorCargo = item.cargoEjecutivo ?? item.idCargo;
+        const valorParticipacion = item.participacion ?? item.porcentaje;
+        const idCargo = valorCargo == null ? Number.NaN : Number(valorCargo);
+        const participacion = valorParticipacion == null ? Number.NaN : Number(valorParticipacion);
+
+        return {
+          id: Date.now() + Math.random(),
+          ejecutivo: String(item.ejecutivo ?? item.nombreCompleto ?? "").trim(),
+          nombreCompleto: String(item.nombreCompleto ?? item.ejecutivo ?? "").trim(),
+          idCargo: Number.isFinite(idCargo) && idCargo > 0 ? idCargo : undefined,
+          cargo: obtenerTextoPorId(opcionesCargoDirectorio, idCargo) || String(item.cargo ?? "").trim(),
+          porcentaje: Number.isFinite(participacion) ? formatearPorcentajeOchoDecimales(participacion) : "",
+          lista: Boolean(item.figuraListadoEjecutivos ?? item.lista),
+          detalleEjecutivo: Boolean(item.existenDetallesEjecutivo ?? item.detalleEjecutivo),
+          orden: "1",
+          vinculadoDesde: String(item.vinculadoDesde ?? "").trim(),
+          companiaAnterior: String(item.companiaAnterior ?? "").trim(),
+          esParteDirectorio: Boolean(item.formaParteDirectorioEjecutivo ?? item.esParteDirectorio),
+          pais: String(item.pais ?? "").trim(),
+          tipoPersona: String(item.tipoPersona ?? "Natural").trim(),
+          descripcionBusqueda: String(item.ejecutivo ?? item.nombreCompleto ?? "").trim(),
+        };
+      });
+
+    if (nuevos.length > 0) {
+      setEjecutivosExtraccionPendientes((anteriores) => [...anteriores, ...nuevos]);
+      setEstaAbiertoModalRevisionEjecutivosExtraccion(true);
+    }
+  };
+
+  const aplicarBancosExtraccion = (valor: unknown) => {
+    const mapearItem = (item: Record<string, unknown>): RegistroBancoAnalista => ({
+      idBanco: typeof item.idBanco === "number" && item.idBanco > 0 ? item.idBanco : undefined,
+      banco: String(item.nombre ?? item.banco ?? "").trim(),
+      numeroCuenta: String(item.numeroCuenta ?? "").trim(),
+      idSector: typeof item.listaSectores === "number" ? item.listaSectores : undefined,
+      sector: String(item.sector ?? "").trim(),
+      telefono: String(item.numerosTelefono ?? item.telefono ?? "").trim(),
+      sectoristaJefeCuenta: String(item.sectoristaJefeCuenta ?? "").trim() || undefined,
+      pais: String(item.pais ?? "").trim() || undefined,
+    });
+
+    const bancosEnTabla = datosInvestigacion.bancos;
+    const procesarItems = (items: unknown[]) => {
+      const existentesExtraccion: RegistroBancoAnalista[] = [];
+      const nuevos: RegistroBancoAnalista[] = [];
+      for (const item of items) {
+        if (!esRegistroPlano(item)) continue;
+        const idBanco = typeof item.idBanco === "number" && item.idBanco > 0 ? item.idBanco : null;
+        if (idBanco) {
+          existentesExtraccion.push(mapearItem(item));
+        } else {
+          const nombre = String(item.nombre ?? item.banco ?? "").trim().toLowerCase();
+          if (nombre && !bancosEnTabla.some((b) => b.banco.toLowerCase() === nombre)) {
+            nuevos.push(mapearItem(item));
+          }
+        }
+      }
+      return { existentesExtraccion, nuevos };
+    };
+
+    let resultado = { existentesExtraccion: [] as RegistroBancoAnalista[], nuevos: [] as RegistroBancoAnalista[] };
+    if (esRegistroPlano(valor) && Array.isArray(valor.nuevos)) {
+      resultado = procesarItems(valor.nuevos);
+    } else if (Array.isArray(valor)) {
+      resultado = procesarItems(valor);
+    }
+
+    if (resultado.existentesExtraccion.length > 0) {
+      setColaExistentesExtraccion((anteriores) => [...anteriores, ...resultado.existentesExtraccion]);
+    }
+    if (resultado.nuevos.length > 0) {
+      setBancosExtraccionPendientes((anteriores) => [...anteriores, ...resultado.nuevos]);
+      setEstaAbiertoModalRevisionBancosExtraccion(true);
+    }
+  };
+
+  const aprobarEjecutivoExtraccion = (indice: number) => {
+    if (!ejecutivosExtraccionPendientes[indice]) return;
+    setEstaAbiertoModalRevisionEjecutivosExtraccion(false);
+    setIndiceEjecutivoExtraccionAprobacion(indice);
+    setIndiceEjecutivoExtraccionEdicion(indice);
+  };
+
+  const rechazarEjecutivoExtraccion = (indice: number) => {
+    setEjecutivosExtraccionPendientes((anteriores) => anteriores.filter((_, i) => i !== indice));
+  };
+
+  const guardarEdicionEjecutivoExtraccion = (registro: Omit<RegistroDirectorioEjecutivoAnalista, "id">) => {
+    if (indiceEjecutivoExtraccionEdicion == null) return;
+
+    if (indiceEjecutivoExtraccionAprobacion === indiceEjecutivoExtraccionEdicion) {
+      setDatosInvestigacion((anterior) => ({
+        ...anterior,
+        directorioEjecutivo: [{ ...registro, id: Date.now() }, ...anterior.directorioEjecutivo],
+      }));
+      setEjecutivosExtraccionPendientes((anteriores) =>
+        anteriores.filter((_, indice) => indice !== indiceEjecutivoExtraccionEdicion),
+      );
+      setIndiceEjecutivoExtraccionAprobacion(null);
+      setIndiceEjecutivoExtraccionEdicion(null);
+      setIndiceEjecutivoExtraccionBusqueda(null);
+      if (ejecutivosExtraccionPendientes.length > 1) {
+        setEstaAbiertoModalRevisionEjecutivosExtraccion(true);
+      }
+      return;
+    }
+
+    setEjecutivosExtraccionPendientes((anteriores) =>
+      anteriores.map((ejecutivo, i) =>
+        i === indiceEjecutivoExtraccionEdicion ? { ...ejecutivo, ...registro } : ejecutivo,
+      ),
+    );
+    setIndiceEjecutivoExtraccionEdicion(null);
+  };
+
+  const iniciarCreacionBancoExtraccion = (indice: number) => {
+    if (!bancosExtraccionPendientes[indice]) return;
+    setEstaAbiertoModalRevisionBancosExtraccion(false);
+    setIndiceBancoExtraccionEdicion(indice);
+  };
+
+  const aprobarBancoExtraccion = (indice: number) => iniciarCreacionBancoExtraccion(indice);
+
+  const rechazarBancoExtraccion = (indice: number) => {
+    setBancosExtraccionPendientes((anteriores) => anteriores.filter((_, i) => i !== indice));
+  };
+
+  const onBancoExtraccionCreado = (banco: BancoListaItem) => {
+    if (indiceBancoExtraccionEdicion == null) return;
+    setBancosExtraccionPendientes((anteriores) => anteriores.filter((_, i) => i !== indiceBancoExtraccionEdicion));
+    setIndiceBancoExtraccionEdicion(null);
+    setBancoRecienCreado(banco);
+  };
+
+  const guardarCuentaBancariaExtraccion = (registro: RegistroBancoAnalista) => {
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      bancos: [registro, ...anterior.bancos],
+    }));
+    setBancosExtraccionPendientes((anteriores) => {
+      if (anteriores.length > 0) {
+        setEstaAbiertoModalRevisionBancosExtraccion(true);
+      }
+      return anteriores;
+    });
+    setBancoRecienCreado(null);
   };
 
   const convertirCompaniaExtraccionARegistro = (
@@ -2714,6 +3334,27 @@ function PantallaInvestigacionAnalista({
     };
 
     setRegistrosPersonaDirectorio((anterior) => [nuevoRegistro, ...anterior]);
+    if (indiceEjecutivoExtraccionBusqueda != null) {
+      setEjecutivosExtraccionPendientes((anteriores) =>
+        anteriores.map((ejecutivo, indice) => (
+          indice === indiceEjecutivoExtraccionBusqueda
+            ? {
+                ...ejecutivo,
+                idDirectorioEjecutivo: nuevoRegistro.idDirectorioEjecutivo,
+                ejecutivo: nuevoRegistro.nombres,
+                nombreCompleto: nuevoRegistro.nombres,
+                pais: nuevoRegistro.pais,
+                tipoPersona: nuevoRegistro.tipoPersona,
+                descripcionBusqueda: nuevoRegistro.nombres,
+              }
+            : ejecutivo
+        )),
+      );
+      setEstaAbiertoModalRegistroPersona(false);
+      setEstaAbiertoModalBuscarEjecutivo(false);
+      setIndiceEjecutivoExtraccionBusqueda(null);
+      return;
+    }
     setPersonaDirectorioSeleccionada(nuevoRegistro);
     setEstaAbiertoModalRegistroPersona(false);
     setEstaAbiertoModalBuscarEjecutivo(false);
@@ -2849,6 +3490,22 @@ function PantallaInvestigacionAnalista({
           if (claveSeccion === "ramoOperaciones") {
             const campos = camposExtraidos as Record<string, unknown>;
             aplicarResultadosRamoOperacionesExtraccion(campos[claveSeccion] ?? campos.operacionPrincipal);
+            return;
+          }
+
+          if (claveSeccion === "bancosProveedores") {
+            const campos = camposExtraidos as Record<string, unknown>;
+            aplicarResultadosBancosProveedoresExtraccion(campos[claveSeccion] ?? campos);
+            return;
+          }
+
+          if (claveSeccion === "directorioEjecutivo") {
+            aplicarDirectorioEjecutivoExtraccion((camposExtraidos as Record<string, unknown>)[claveSeccion]);
+            return;
+          }
+
+          if (claveSeccion === "bancos") {
+            aplicarBancosExtraccion((camposExtraidos as Record<string, unknown>)[claveSeccion]);
             return;
           }
 
@@ -3075,7 +3732,7 @@ function PantallaInvestigacionAnalista({
           adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.tipoEmpresa")}
           onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)}
         />
-        <label className="space-y-2">
+        <div className="space-y-2">
           <CustomLabel as="p" className="text-sm font-bold text-gray-700">
             <span className="inline-flex items-center gap-2">
               <span>Fecha de Constitucion</span>
@@ -3089,7 +3746,7 @@ function PantallaInvestigacionAnalista({
             onChange={(event) => actualizarAspectosLegales("fechaConstitucion", event.target.value)}
             className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400"
           />
-        </label>
+        </div>
         <SelectorMaestroConAltaInvestigacionAnalista
           etiqueta="Ciudad de Registro"
           valor={datosInvestigacion.aspectosLegales.ciudadRegistro}
@@ -3133,7 +3790,7 @@ function PantallaInvestigacionAnalista({
           placeholder="Seleccione valor"
           disabled={esSoloLectura}
         />
-        <label className="space-y-2">
+        <div className="space-y-2">
           <CustomLabel as="p" className="text-sm font-bold text-gray-700">
             <span className="inline-flex items-center gap-2">
               <span>Tipo de Cambio</span>
@@ -3173,7 +3830,7 @@ function PantallaInvestigacionAnalista({
               ) : null}
             </div>
           </div>
-        </label>
+        </div>
         <AreaInvestigacionAnalista etiqueta="Antecedentes" valor={datosInvestigacion.aspectosLegales.antecedentes} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.antecedentes")} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("antecedentes", valor)} />
         <AreaInvestigacionAnalista etiqueta="Aspectos Legales" valor={datosInvestigacion.aspectosLegales.aspectosLegales} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.aspectosLegales")} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("aspectosLegales", valor)} />
         <AreaInvestigacionAnalista etiqueta="Comentarios sobre Empresas Relacionadas" valor={datosInvestigacion.aspectosLegales.comentariosEmpresasRelacionadas} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.comentariosEmpresasRelacionadas")} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("comentariosEmpresasRelacionadas", valor)} />
@@ -3251,7 +3908,6 @@ function PantallaInvestigacionAnalista({
                     <th className="px-4 py-3">Tipo Local</th>
                     <th className="px-4 py-3">Comentario</th>
                     <th className="px-4 py-3">Imagen Local</th>
-                    <th className="px-4 py-3 text-right">Acciones</th>
                   </tr>
                 ) : (
                   <tr>
@@ -3270,7 +3926,7 @@ function PantallaInvestigacionAnalista({
                   ? datosInvestigacion.locales.length
                   : registrosImportacionExportacionTabla.length) === 0 ? (
                   <tr>
-                    <td colSpan={pestanaRamoOperacionesVisible === "locales" ? 4 : 7} className="px-4 py-10 text-center text-sm text-slate-300">
+                    <td colSpan={pestanaRamoOperacionesVisible === "locales" ? 3 : 7} className="px-4 py-10 text-center text-sm text-slate-300">
                       Sin registros disponibles.
                     </td>
                   </tr>
@@ -3283,9 +3939,26 @@ function PantallaInvestigacionAnalista({
                     >
                       <td className="px-4 py-4 text-sm font-semibold text-slate-700">{local.tipoLocal}</td>
                       <td className="px-4 py-4 text-sm text-slate-500">{local.comentario}</td>
-                      <td className="px-4 py-4 text-sm text-slate-400">{local.imagen}</td>
-                      <td className="px-4 py-4 text-right text-slate-400">
-                        <Pencil size={14} className="ml-auto" />
+                      <td className="px-4 py-4">
+                        {local.imagenes?.[0]?.url ?? local.imagenUrl ? (
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={local.imagenes?.[0]?.url ?? local.imagenUrl}
+                              alt={local.imagen || "Vista previa"}
+                              className="h-10 w-10 shrink-0 rounded-lg border border-gray-100 object-cover"
+                            />
+                            {(local.imagenes?.length ?? 0) > 1 && (
+                              <span className="text-xs text-slate-400">+{(local.imagenes?.length ?? 0) - 1} más</span>
+                            )}
+                          </div>
+                        ) : local.imagen ? (
+                          <div className="flex items-center gap-2 text-slate-400">
+                            <IconoImagen size={16} />
+                            <span className="text-xs">{local.imagen}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs italic text-slate-300">Sin imagen</span>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -3444,6 +4117,7 @@ function PantallaInvestigacionAnalista({
       deshabilitado,
       codigoDuplicado,
       guardando,
+      mensajeAdvertencia,
     }: {
       codigo: string;
       texto: string;
@@ -3453,6 +4127,7 @@ function PantallaInvestigacionAnalista({
       deshabilitado: boolean;
       codigoDuplicado: boolean;
       guardando: boolean;
+      mensajeAdvertencia?: string;
     }) => (
       <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-3">
         <div className="grid gap-3 md:grid-cols-[120px_minmax(0,1fr)_auto]">
@@ -3494,6 +4169,8 @@ function PantallaInvestigacionAnalista({
         </div>
         {codigoDuplicado ? (
           <p className="mt-2 text-xs font-semibold text-red-600">Este código ya existe en la tabla maestra.</p>
+        ) : mensajeAdvertencia ? (
+          <p className="mt-2 text-xs font-semibold text-amber-600">{mensajeAdvertencia}</p>
         ) : null}
       </div>
     );
@@ -3519,7 +4196,7 @@ function PantallaInvestigacionAnalista({
           adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.actividad")}
           onChange={(valor) => actualizarOperacionPrincipal("actividad", valor)}
         />
-        <label className="space-y-2">
+        <div className="space-y-2">
           <CustomLabel as="p" className="text-sm font-bold text-gray-700">
             <span className="inline-flex items-center gap-2">
               <span>Categoría CIIU</span>
@@ -3560,6 +4237,7 @@ function PantallaInvestigacionAnalista({
             onCodigoChange: setCodigoNuevaCategoriaCiiu,
             onTextoChange: setTextoNuevaCategoriaCiiu,
             deshabilitado: !codigoNuevaCategoriaCiiu.trim() || !textoNuevaCategoriaCiiu.trim() || !opcionSectorSeleccionado?.num1,
+            mensajeAdvertencia: !opcionSectorSeleccionado?.num1 ? "Debe seleccionar un Sector para agregar una nueva categoría CIIU." : undefined,
             codigoDuplicado: codigoCategoriaCiiuDuplicado,
             guardando: claveAltaCiiuGuardando === "categoria",
             onAgregar: () => void crearAltaCiiu({
@@ -3575,8 +4253,8 @@ function PantallaInvestigacionAnalista({
               },
             }),
           })}
-        </label>
-        <label className="space-y-2">
+        </div>
+        <div className="space-y-2">
           <CustomLabel as="p" className="text-sm font-bold text-gray-700">
             <span className="inline-flex items-center gap-2">
               <span>Clase CIIU</span>
@@ -3617,6 +4295,7 @@ function PantallaInvestigacionAnalista({
             onCodigoChange: setCodigoNuevaClaseCiiu,
             onTextoChange: setTextoNuevaClaseCiiu,
             deshabilitado: !codigoNuevaClaseCiiu.trim() || !textoNuevaClaseCiiu.trim() || !opcionCategoriaSeleccionada?.num1,
+            mensajeAdvertencia: !opcionCategoriaSeleccionada?.num1 ? "Debe seleccionar una Categoría CIIU para agregar una nueva clase CIIU." : undefined,
             codigoDuplicado: codigoClaseCiiuDuplicado,
             guardando: claveAltaCiiuGuardando === "clase",
             onAgregar: () => void crearAltaCiiu({
@@ -3632,15 +4311,29 @@ function PantallaInvestigacionAnalista({
               },
             }),
           })}
-        </label>
+        </div>
         <AreaInvestigacionAnalista etiqueta="Actividad Principal" valor={datosInvestigacion.operacionPrincipal.actividadPrincipal} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.actividadPrincipal")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("actividadPrincipal", valor)} />
         <CampoInvestigacionAnalista etiqueta="Ventas al Contado (%)" valor={datosInvestigacion.operacionPrincipal.ventasContadoPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasContadoPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("ventasContadoPorcentaje", "ventasCreditoPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Ventas al Contado" valor={datosInvestigacion.operacionPrincipal.ventasContadoDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasContadoDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasContadoDetalle", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Ventas a Crédito (%)" valor={datosInvestigacion.operacionPrincipal.ventasCreditoPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasCreditoPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("ventasCreditoPorcentaje", "ventasContadoPorcentaje", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Detalle Ventas a Crédito" valor={datosInvestigacion.operacionPrincipal.ventasCreditoDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasCreditoDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasCreditoDetalle", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Territorio de Ventas" valor={datosInvestigacion.operacionPrincipal.territorioVentasPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.territorioVentasPorcentaje")} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasPorcentaje", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Detalle Territorio" valor={datosInvestigacion.operacionPrincipal.territorioVentasDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.territorioVentasDetalle")} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasDetalle", valor)} />
-        <CampoInvestigacionAnalista etiqueta="(%) Ventas en el Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasExtranjeroPorcentaje")} onChange={(valor) => actualizarOperacionPrincipal("ventasExtranjeroPorcentaje", valor)} />
+        <div className="grid gap-5 md:col-span-2 md:grid-cols-3">
+          <CampoInvestigacionAnalista etiqueta="Ventas a Crédito (%)" valor={datosInvestigacion.operacionPrincipal.ventasCreditoPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasCreditoPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("ventasCreditoPorcentaje", "ventasContadoPorcentaje", valor)} />
+          <CampoInvestigacionAnalista etiqueta="Detalle Ventas a Crédito" valor={datosInvestigacion.operacionPrincipal.ventasCreditoDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasCreditoDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasCreditoDetalle", valor)} />
+          <SelectorMaestroConAltaInvestigacionAnalista
+            etiqueta="Tiempo de Crédito"
+            valor={datosInvestigacion.operacionPrincipal.ventasCreditoTiempo}
+            soloLectura={esSoloLectura}
+            opcionesTablaMaestra={opcionesTiempoCreditoVentas}
+            idMaestro={TablaMaestraId.TIEMPO_CREDITO_VENTAS}
+            permiteAltaNueva
+            marcador="Seleccione tiempo"
+            obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")}
+            adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasCreditoTiempo")}
+            onChange={(valor) => actualizarOperacionPrincipal("ventasCreditoTiempo", valor)}
+          />
+        </div>
+        <CampoInvestigacionAnalista etiqueta="(%) Ventas Nacionales" valor={datosInvestigacion.operacionPrincipal.territorioVentasPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.territorioVentasPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("territorioVentasPorcentaje", "ventasExtranjeroPorcentaje", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Detalle Ventas Nacionales" valor={datosInvestigacion.operacionPrincipal.territorioVentasDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.territorioVentasDetalle")} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasDetalle", valor)} />
+        <CampoInvestigacionAnalista etiqueta="(%) Ventas en el Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasExtranjeroPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("ventasExtranjeroPorcentaje", "territorioVentasPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Ventas Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasExtranjeroDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasExtranjeroDetalle", valor)} />
         <CampoInvestigacionAnalista etiqueta="(%) Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasNacionalesPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("comprasNacionalesPorcentaje", "comprasExtranjeroPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasNacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasNacionalesDetalle", valor)} />
@@ -3935,6 +4628,15 @@ function PantallaInvestigacionAnalista({
                 
               </div>
               <div className="flex flex-wrap gap-2">
+                {bancosExtraccionPendientes.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setEstaAbiertoModalRevisionBancosExtraccion(true)}
+                    className="rounded-xl border border-brand-wine/30 px-4 py-2 text-sm font-bold text-brand-wine transition-all hover:bg-brand-wine/5"
+                  >
+                    Revisar detectados ({bancosExtraccionPendientes.length})
+                  </button>
+                ) : null}
                 <CustomButton
                   variant="secondary"
                   size="sm"
@@ -4019,7 +4721,9 @@ function PantallaInvestigacionAnalista({
                   return (
                     <tr key={`${banco.banco}-${banco.numeroCuenta}`}>
                       <td className="px-4 py-4 text-sm font-semibold leading-4 text-slate-700"><span className="block truncate">{banco.banco}</span></td>
-                      <td className="px-4 py-4 text-sm leading-4 text-slate-500"><span className="block truncate">{banco.numeroCuenta}</span></td>
+                      <td className="px-4 py-4 text-sm leading-4 text-slate-500">
+                        <span className="block truncate">{enmascararNumeroCuenta(banco.numeroCuenta)}</span>
+                      </td>
                       <td className="px-4 py-4 text-center text-sm">
                         <span className={`inline-flex max-w-full items-center overflow-hidden rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
                           sectorBanco.toLowerCase().includes("finanzas")
@@ -4078,6 +4782,15 @@ function PantallaInvestigacionAnalista({
           />
         </label>
         <div className="flex flex-wrap gap-3">
+          {ejecutivosExtraccionPendientes.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setEstaAbiertoModalRevisionEjecutivosExtraccion(true)}
+              className="rounded-xl border border-brand-wine/30 px-4 py-2 text-sm font-bold text-brand-wine transition-all hover:bg-brand-wine/5"
+            >
+              Revisar detectados ({ejecutivosExtraccionPendientes.length})
+            </button>
+          ) : null}
           <CustomButton
             variant="secondary"
             size="sm"
@@ -4123,7 +4836,9 @@ function PantallaInvestigacionAnalista({
               </tr>
             ) : ejecutivosPaginados.map((ejecutivo) => {
               const indiceReal = datosInvestigacion.directorioEjecutivo.findIndex((item) => item.id === ejecutivo.id);
-              const cargoDirectorio = obtenerTextoPorId(opcionesCargoDirectorio, ejecutivo.idCargo) || ejecutivo.cargo;
+              const idCargoDirectorio = ejecutivo.idCargo ?? Number(ejecutivo.cargo);
+              const cargoDirectorio = obtenerTextoPorId(opcionesCargoDirectorio, idCargoDirectorio)
+                || (Number.isNaN(Number(ejecutivo.cargo)) ? ejecutivo.cargo : "-");
 
               return (
                 <tr key={ejecutivo.id} className="hover:bg-slate-50">
@@ -4348,7 +5063,7 @@ function PantallaInvestigacionAnalista({
       />
 
       <CustomModalLocalAnalista
-        key={`local-${indiceLocalSeleccionado ?? "nuevo"}-${estaAbiertoModalLocal ? "abierto" : "cerrado"}`}
+        key="local-modal"
         estaAbierto={estaAbiertoModalLocal}
         registroInicial={indiceLocalSeleccionado != null ? datosInvestigacion.locales[indiceLocalSeleccionado] : null}
         onCerrar={() => {
@@ -4499,6 +5214,89 @@ function PantallaInvestigacionAnalista({
         onGuardar={guardarEdicionCompaniaExtraccion}
       />
 
+      {estaAbiertoModalRevisionEjecutivosExtraccion ? (
+        <CustomModalRevisionEjecutivosExtraccion
+          ejecutivos={ejecutivosExtraccionPendientes}
+          opcionesCargo={opcionesCargoDirectorio}
+          onEditar={(indice) => {
+            setIndiceEjecutivoExtraccionAprobacion(null);
+            setIndiceEjecutivoExtraccionEdicion(indice);
+          }}
+          onAprobar={aprobarEjecutivoExtraccion}
+          onRechazar={rechazarEjecutivoExtraccion}
+          onCerrar={() => setEstaAbiertoModalRevisionEjecutivosExtraccion(false)}
+        />
+      ) : null}
+
+      <CustomModalRegistroEjecutivoAnalista
+        key={`ejecutivo-extraccion-${indiceEjecutivoExtraccionEdicion ?? "cerrado"}-${indiceEjecutivoExtraccionEdicion == null ? "" : ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionEdicion]?.idDirectorioEjecutivo ?? ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionEdicion]?.nombreCompleto ?? ""}`}
+        estaAbierto={indiceEjecutivoExtraccionEdicion !== null}
+        registroInicial={indiceEjecutivoExtraccionEdicion != null ? ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionEdicion] : null}
+        mensajeBusquedaEjecutivo={
+          indiceEjecutivoExtraccionAprobacion !== null
+            ? "El nombre fue detectado en el documento. Presione Buscar y seleccione un resultado o registre una empresa o persona antes de guardar."
+            : undefined
+        }
+        requiereEjecutivoRegistrado={indiceEjecutivoExtraccionAprobacion !== null}
+        onCerrar={() => {
+          setIndiceEjecutivoExtraccionEdicion(null);
+          setIndiceEjecutivoExtraccionAprobacion(null);
+          setIndiceEjecutivoExtraccionBusqueda(null);
+          if (ejecutivosExtraccionPendientes.length > 0) {
+            setEstaAbiertoModalRevisionEjecutivosExtraccion(true);
+          }
+        }}
+        onBuscarEjecutivo={() => {
+          setIndiceEjecutivoExtraccionBusqueda(indiceEjecutivoExtraccionEdicion);
+          setEstaAbiertoModalBuscarEjecutivo(true);
+        }}
+        onGuardar={guardarEdicionEjecutivoExtraccion}
+      />
+
+      {estaAbiertoModalRevisionBancosExtraccion ? (
+        <CustomModalRevisionBancosExtraccion
+          bancos={bancosExtraccionPendientes}
+          onAprobar={aprobarBancoExtraccion}
+          onRechazar={rechazarBancoExtraccion}
+          onCerrar={() => setEstaAbiertoModalRevisionBancosExtraccion(false)}
+        />
+      ) : null}
+
+      <CustomModalCrearBancoAnalista
+        key={`banco-extraccion-crear-${indiceBancoExtraccionEdicion ?? "cerrado"}`}
+        estaAbierto={indiceBancoExtraccionEdicion !== null}
+        bancoInicial={indiceBancoExtraccionEdicion != null ? {
+          idBanco: 0,
+          nombre: bancosExtraccionPendientes[indiceBancoExtraccionEdicion]?.banco ?? "",
+          telefono: bancosExtraccionPendientes[indiceBancoExtraccionEdicion]?.telefono ?? "",
+          pais: bancosExtraccionPendientes[indiceBancoExtraccionEdicion]?.pais ?? "",
+          idPais: opcionesPais?.find((op) => op.string1 === bancosExtraccionPendientes[indiceBancoExtraccionEdicion]?.pais)?.num1 ?? undefined,
+        } : null}
+        onCerrar={() => {
+          setIndiceBancoExtraccionEdicion(null);
+          if (bancosExtraccionPendientes.length > 0) {
+            setEstaAbiertoModalRevisionBancosExtraccion(true);
+          }
+        }}
+        onBancoCreado={onBancoExtraccionCreado}
+      />
+
+      <CustomModalBancoAnalista
+        key={`banco-extraccion-cuenta-${bancoRecienCreado?.idBanco ?? "cerrado"}`}
+        estaAbierto={bancoRecienCreado !== null}
+        registroInicial={bancoRecienCreado ? {
+          idBanco: bancoRecienCreado.idBanco,
+          idPais: bancoRecienCreado.idPais,
+          pais: bancoRecienCreado.pais,
+          banco: bancoRecienCreado.nombre,
+          telefono: bancoRecienCreado.telefono,
+          numeroCuenta: "",
+          sector: "",
+        } : null}
+        onCerrar={() => setBancoRecienCreado(null)}
+        onGuardar={guardarCuentaBancariaExtraccion}
+      />
+
       <CustomModalConfirmacionAccion
         isOpen={estaAbiertoModalConfirmacionPrimerBorrador}
         onClose={() => setEstaAbiertoModalConfirmacionPrimerBorrador(false)}
@@ -4552,8 +5350,14 @@ function PantallaInvestigacionAnalista({
         textoCargandoConfirmar="Reemplazando..."
         varianteConfirmar="secondary"
       >
-        <p><span className="font-bold">Original:</span> {cambiosExtraccionPendientes[idCambioExtraccionActivo ?? ""]?.valorOriginal ?? "-"}</p>
-        <p><span className="font-bold">Reemplazar por:</span> {cambiosExtraccionPendientes[idCambioExtraccionActivo ?? ""]?.valorNuevo ?? "-"}</p>
+        <div>
+          <span className="font-bold">Original:</span>
+          <div className="mt-1 max-h-20 overflow-y-auto break-words">{cambiosExtraccionPendientes[idCambioExtraccionActivo ?? ""]?.valorOriginal ?? "-"}</div>
+        </div>
+        <div>
+          <span className="font-bold">Reemplazar por:</span>
+          <div className="mt-1 max-h-20 overflow-y-auto break-words">{cambiosExtraccionPendientes[idCambioExtraccionActivo ?? ""]?.valorNuevo ?? "-"}</div>
+        </div>
       </CustomModalConfirmacionAccion>
 
       <CustomModalFinalizarInvestigacionAnalista
@@ -4578,10 +5382,41 @@ function PantallaInvestigacionAnalista({
       />
 
       <CustomModalBuscarEjecutivoAnalista
+        key={`buscar-ejecutivo-${indiceEjecutivoExtraccionBusqueda ?? "manual"}-${estaAbiertoModalBuscarEjecutivo ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalBuscarEjecutivo}
         registros={registrosPersonaDirectorio}
-        onCerrar={() => setEstaAbiertoModalBuscarEjecutivo(false)}
+        busquedaInicial={
+          indiceEjecutivoExtraccionBusqueda == null
+            ? ""
+            : ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]?.nombreCompleto
+              ?? ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]?.ejecutivo
+              ?? ""
+        }
+        onCerrar={() => {
+          setEstaAbiertoModalBuscarEjecutivo(false);
+          setIndiceEjecutivoExtraccionBusqueda(null);
+        }}
         onSeleccionar={(registro) => {
+          if (indiceEjecutivoExtraccionBusqueda != null) {
+            setEjecutivosExtraccionPendientes((anteriores) =>
+              anteriores.map((ejecutivo, indice) => (
+                indice === indiceEjecutivoExtraccionBusqueda
+                  ? {
+                      ...ejecutivo,
+                      idDirectorioEjecutivo: registro.idDirectorioEjecutivo ?? registro.id,
+                      ejecutivo: registro.nombres,
+                      nombreCompleto: registro.nombres,
+                      pais: registro.pais,
+                      tipoPersona: registro.tipoPersona,
+                      descripcionBusqueda: registro.nombres,
+                    }
+                  : ejecutivo
+              )),
+            );
+            setEstaAbiertoModalBuscarEjecutivo(false);
+            setIndiceEjecutivoExtraccionBusqueda(null);
+            return;
+          }
           setPersonaDirectorioSeleccionada(registro);
           setEstaAbiertoModalBuscarEjecutivo(false);
           setEstaAbiertoModalEjecutivo(true);
@@ -4590,7 +5425,14 @@ function PantallaInvestigacionAnalista({
       />
 
       <CustomModalRegistroPersonaDirectorioAnalista
+        key={`registro-persona-${indiceEjecutivoExtraccionBusqueda ?? "manual"}-${estaAbiertoModalRegistroPersona ? "abierto" : "cerrado"}`}
         estaAbierto={estaAbiertoModalRegistroPersona}
+        nombreInicial={
+          indiceEjecutivoExtraccionBusqueda == null
+            ? undefined
+            : ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]?.nombreCompleto
+              ?? ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]?.ejecutivo
+        }
         onCerrar={() => setEstaAbiertoModalRegistroPersona(false)}
         onGuardar={guardarPersonaDirectorio}
       />

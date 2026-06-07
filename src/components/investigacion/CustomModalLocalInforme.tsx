@@ -20,15 +20,19 @@ interface PropsCustomModalLocalAnalista {
   onGuardar: (registro: RegistroLocalAnalista) => void;
 }
 
+function obtenerTextoLocal(valor: unknown) {
+  return valor == null ? "" : String(valor);
+}
+
 export function CustomModalLocalAnalista({
   estaAbierto,
   registroInicial,
   onCerrar,
   onGuardar,
 }: PropsCustomModalLocalAnalista) {
-  const [tipoLocal, setTipoLocal] = useState(registroInicial?.tipoLocal ?? "");
-  const [direccion, setDireccion] = useState(registroInicial?.direccion ?? "");
-  const [comentario, setComentario] = useState(registroInicial?.comentario ?? "");
+  const [tipoLocal, setTipoLocal] = useState(() => obtenerTextoLocal(registroInicial?.tipoLocal));
+  const [direccion, setDireccion] = useState(() => obtenerTextoLocal(registroInicial?.direccion));
+  const [comentario, setComentario] = useState(() => obtenerTextoLocal(registroInicial?.comentario));
   const [indiceImagenAEliminar, setIndiceImagenAEliminar] = useState<number | null>(null);
   const [imagenes, setImagenes] = useState<RegistroImagenLocalAnalista[]>(() => {
     if (registroInicial?.imagenes?.length) return registroInicial.imagenes;
@@ -44,6 +48,25 @@ export function CustomModalLocalAnalista({
     return [];
   });
   const inputArchivoRef = useRef<HTMLInputElement>(null);
+  const blobUrlsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    if (!estaAbierto) return;
+    setTipoLocal(obtenerTextoLocal(registroInicial?.tipoLocal));
+    setDireccion(obtenerTextoLocal(registroInicial?.direccion));
+    setComentario(obtenerTextoLocal(registroInicial?.comentario));
+    setIndiceImagenAEliminar(null);
+    setImagenes(
+      registroInicial?.imagenes?.length
+        ? registroInicial.imagenes
+        : registroInicial?.imagen
+          ? [{ nombre: registroInicial.imagen, url: registroInicial.imagenUrl, tipo: registroInicial.imagenTipo }]
+          : [],
+    );
+    blobUrlsRef.current = [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estaAbierto, registroInicial]);
+
   const { data: opcionesTipoLocal } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_LOCAL],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_LOCAL),
@@ -52,21 +75,23 @@ export function CustomModalLocalAnalista({
 
   useEffect(() => {
     return () => {
-      imagenes.forEach((imagen) => {
-        if (imagen.esNueva && imagen.url) {
-          URL.revokeObjectURL(imagen.url);
-        }
-      });
+      blobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [imagenes]);
+  }, []);
 
   if (!estaAbierto) return null;
 
   const manejarGuardar = () => {
+    const tipoLocalNormalizado = obtenerTextoLocal(tipoLocal).trim();
+    const idTipoLocal = opcionesTipoLocal?.find(
+      (opcion) => opcion.string1 === tipoLocalNormalizado || String(opcion.num1 ?? "") === tipoLocalNormalizado,
+    )?.num1 ?? registroInicial?.idTipoLocal;
+
     onGuardar({
-      tipoLocal: tipoLocal.trim(),
-      direccion: direccion.trim(),
-      comentario: comentario.trim(),
+      idTipoLocal: idTipoLocal ?? undefined,
+      tipoLocal: tipoLocalNormalizado,
+      direccion: obtenerTextoLocal(direccion).trim(),
+      comentario: obtenerTextoLocal(comentario).trim(),
       imagen: imagenes.length === 0 ? "" : imagenes.length === 1 ? imagenes[0].nombre : `${imagenes.length} imágenes adjuntas`,
       imagenUrl: imagenes[0]?.url,
       imagenTipo: imagenes[0]?.tipo,
@@ -77,12 +102,11 @@ export function CustomModalLocalAnalista({
   const manejarSeleccionImagen = (archivos?: FileList | null) => {
     if (!archivos?.length) return;
 
-    const nuevasImagenes = Array.from(archivos).map((archivo) => ({
-      nombre: archivo.name,
-      tipo: archivo.type,
-      url: URL.createObjectURL(archivo),
-      esNueva: true,
-    }));
+    const nuevasImagenes = Array.from(archivos).map((archivo) => {
+      const url = URL.createObjectURL(archivo);
+      blobUrlsRef.current.push(url);
+      return { nombre: archivo.name, tipo: archivo.type, url, esNueva: true };
+    });
 
     setImagenes((anterior) => [...anterior, ...nuevasImagenes]);
 
@@ -101,6 +125,7 @@ export function CustomModalLocalAnalista({
       const imagen = anterior[indiceImagen];
       if (imagen?.esNueva && imagen.url) {
         URL.revokeObjectURL(imagen.url);
+        blobUrlsRef.current = blobUrlsRef.current.filter((u) => u !== imagen.url);
       }
       return anterior.filter((_, indice) => indice !== indiceImagen);
     });

@@ -26,6 +26,12 @@ import type {
   DatosInvestigacionAnalista,
   EstadoInvestigacionAnalista,
 } from "@maximilian/shared/types/investigacion.type";
+import { formatearMontoDecimales } from "@maximilian/shared/utils/formato-monto.util";
+import {
+  adaptarCuentaBalanceDesdeApi,
+  esCampoEnteroEstadoFinanciero,
+  obtenerClaveEstadoFinanciero,
+} from "@maximilian/shared/utils/estados-financieros.util";
 
 type RegistroCompaniaInvestigacion = DatosInvestigacionAnalista["companiasRelacionadas"][number];
 type RegistroBancoInvestigacion = DatosInvestigacionAnalista["bancos"][number];
@@ -216,10 +222,27 @@ function formatearNumero(valor: unknown, decimales = 2): string {
   return numero.toFixed(decimales);
 }
 
+function formatearMonto(valor: unknown, decimales = 2): string {
+  const numero = obtenerNumeroOpcional(valor);
+  if (numero == null) return "";
+  return formatearMontoDecimales(numero, decimales);
+}
+
 function formatearEntero(valor: unknown): string {
   const numero = obtenerNumeroOpcional(valor);
   if (numero == null) return "";
   return String(Math.trunc(numero));
+}
+
+function obtenerValorRegistro(registro: Record<string, unknown>, ...claves: string[]) {
+  const valoresPorClave = new Map(
+    Object.entries(registro).map(([clave, valor]) => [clave.toLowerCase(), valor]),
+  );
+  for (const clave of claves) {
+    const valor = valoresPorClave.get(clave.toLowerCase());
+    if (valor != null) return valor;
+  }
+  return undefined;
 }
 
 function normalizarEstado(...valores: unknown[]): EstadoInvestigacionAnalista {
@@ -441,7 +464,7 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       ventasContadoDetalle: "",
       ventasCreditoPorcentaje: "",
       ventasCreditoDetalle: "",
-      ventasCreditoSeleccion: "",
+      ventasCreditoTiempo: "",
       territorioVentasPorcentaje: "",
       territorioVentasDetalle: "",
       ventasExtranjeroPorcentaje: "",
@@ -566,14 +589,14 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     monedaTipoCambio: idTipoCambio && idTipoCambio > 0
       ? String(idTipoCambio)
       : obtenerTexto(registro.monedaTipoCambio, registro.MonedaTipoCambio),
-    capitalInicial: formatearNumero(registro.capitalInicial, 2),
-    capitalDesembolsado: formatearNumero(registro.capitalPagado, 2),
+    capitalInicial: formatearMonto(registro.capitalInicial, 2),
+    capitalDesembolsado: formatearMonto(registro.capitalPagado, 2),
     ultimaAmpliacion: formatearFechaEntrada(obtenerTexto(registro.fechaUltimoIncremento, registro.FechaUltimoIncremento)),
-    patrimonioNeto: formatearNumero(registro.patrimonioNeto, 2),
+    patrimonioNeto: formatearMonto(registro.patrimonioNeto, 2),
     tipoAcciones: obtenerTexto(registro.tipoAcciones, registro.TipoAcciones),
-    valorAcciones: formatearNumero(registro.valorAcciones, 2),
+    valorAcciones: formatearMonto(registro.valorAcciones, 2),
     obligacionBolsa: obtenerBooleano(registro.cotizaBolsa, registro.CotizaBolsa) ? "Si" : "No",
-    tipoCambio: formatearNumero(registro.tipoCambio, 6),
+    tipoCambio: formatearMonto(registro.tipoCambio, 6),
     antecedentes: obtenerTexto(registro.antecedentes, registro.Antecedentes),
     aspectosLegales: obtenerTexto(registro.aspectosLegales, registro.AspectosLegales),
     comentariosEmpresasRelacionadas: obtenerTexto(
@@ -613,19 +636,26 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     ventasContadoDetalle: obtenerTexto(registro.ventasContadoText, registro.VentasContadoText),
     ventasCreditoPorcentaje: formatearNumero(registro.ventasCredito, 2),
     ventasCreditoDetalle: obtenerTexto(registro.ventasCreditoText, registro.VentasCreditoText),
-    ventasCreditoSeleccion: obtenerTexto(registro.ventasCreditoSeleccion, registro.VentasCreditoSeleccion),
+    ventasCreditoTiempo: String(
+      obtenerNumeroOpcional(registro.idVentasCreditoTiempo, registro.IdVentasCreditoTiempo) ?? "",
+    ) || obtenerTexto(
+      registro.ventasCreditoTiempo,
+      registro.VentasCreditoTiempo,
+      registro.ventasCreditoSeleccion,
+      registro.VentasCreditoSeleccion,
+    ),
     territorioVentasPorcentaje: formatearNumero(
-      registro.territorioVentas
-        ?? registro.TerritorioVentas
-        ?? registro.ventasNacionales
-        ?? registro.VentasNacionales,
+      registro.ventasNacionales
+        ?? registro.VentasNacionales
+        ?? registro.territorioVentas
+        ?? registro.TerritorioVentas,
       2,
     ),
     territorioVentasDetalle: obtenerTexto(
-      registro.territorioText,
-      registro.TerritorioText,
       registro.ventasNacionalesText,
       registro.VentasNacionalesText,
+      registro.territorioText,
+      registro.TerritorioText,
     ),
     ventasExtranjeroPorcentaje: formatearNumero(registro.ventasInternacionales, 2),
     ventasExtranjeroDetalle: obtenerTexto(registro.ventasInternacionalesText, registro.VentasInternacionalesText),
@@ -666,7 +696,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       moneda: obtenerTexto(item.moneda, item.Moneda),
       paises: obtenerTexto(item.paises, item.Paises),
       productos: obtenerTexto(item.productos, item.Productos),
-      monto: formatearNumero(item.monto, 2),
+      monto: formatearMonto(item.monto, 2),
       operaciones: formatearEntero(item.numOperaciones ?? item.NumOperaciones),
     }));
 
@@ -682,7 +712,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       moneda: obtenerTexto(item.moneda, item.Moneda),
       paises: obtenerTexto(item.paises, item.Paises),
       productos: obtenerTexto(item.productos, item.Productos),
-      monto: formatearNumero(item.monto, 2),
+      monto: formatearMonto(item.monto, 2),
       operaciones: formatearEntero(item.numOperaciones ?? item.NumOperaciones),
     }));
 
@@ -730,6 +760,17 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       balance.TipoEstadoFinanciero,
     );
     const idMoneda = obtenerNumeroOpcional(balance.idMoneda, balance.IdMoneda);
+    const tipoEstadoFinanciero = obtenerTexto(balance.tipoEstadoFinanciero, balance.TipoEstadoFinanciero)
+      || ({ 1: "Desagregado", 2: "Totalizado", 3: "Bancos", 4: "Seguros", 5: "Turquia" }[
+        idTipoEstadoFinanciero ?? 0
+      ] ?? "");
+    const claveEstadoFinanciero = obtenerClaveEstadoFinanciero(tipoEstadoFinanciero);
+    const registrosEstadoFinanciero = adaptarCuentaBalanceDesdeApi(
+      cuentaBalance,
+      tipoEstadoFinanciero,
+    );
+    const valorCuenta = (...claves: string[]) => obtenerValorRegistro(cuentaBalance, ...claves);
+
     return {
       idInformeBalance: obtenerNumeroOpcional(balance.idInformeBalance, balance.IdInformeBalance, balance.idIformeBalance, balance.IdIformeBalance),
       codigo: obtenerTexto(balance.codigo, balance.Codigo) || `${indice + 1}`,
@@ -746,8 +787,8 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       esActual: obtenerBooleano(balance.flgActualidad, balance.FlgActualidad),
       tipo: obtenerTexto(balance.tipo, balance.Tipo),
       idTipoEstadoFinanciero,
-      tipoEstadoFinanciero: obtenerTexto(balance.tipoEstadoFinanciero, balance.TipoEstadoFinanciero),
-      tipoCambio: formatearNumero(balance.tipoCambio, 2),
+      tipoEstadoFinanciero,
+      tipoCambio: formatearMonto(balance.tipoCambio, 2),
       idMoneda,
       operacionCambio: obtenerTexto(balance.moneda, balance.Moneda),
       idTipoBalance,
@@ -759,27 +800,41 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       detalleCuentas: Object.keys(cuentaBalance).length > 0
         ? {
             balanceGeneral: {
-              totalCorrientes: formatearNumero(cuentaBalance.totalCorriente, 2),
-              totalNoCorrientes: formatearNumero(cuentaBalance.totalNoCorriente, 2),
-              otrosActivos: formatearNumero(cuentaBalance.otrosActivos, 2),
-              totalActivos: formatearNumero(cuentaBalance.totalActivos, 2),
-              totalPasivosCorrientes: formatearNumero(cuentaBalance.totalPasivosCorrientes, 2),
-              totalPasivosNoCorrientes: formatearNumero(cuentaBalance.totalPasivosNoCorrientes, 2),
-              otrosPasivos: formatearNumero(cuentaBalance.otrosPasivos, 2),
-              totalPasivos: formatearNumero(cuentaBalance.totalPasivos, 2),
-              patrimonio: formatearNumero(cuentaBalance.patrimonio, 2),
-              totalPasivoPatrimonio: formatearNumero(cuentaBalance.totalPasivoPatrimonio, 2),
+              totalCorrientes: formatearMonto(valorCuenta("totalCorriente", "totalActivoCorriente"), 2),
+              totalNoCorrientes: formatearMonto(valorCuenta("totalNoCorriente", "totalActivoNoCorriente"), 2),
+              otrosActivos: formatearMonto(valorCuenta("otrosActivos"), 2),
+              totalActivos: formatearMonto(valorCuenta("totalActivos", "totalActivo"), 2),
+              totalPasivosCorrientes: formatearMonto(valorCuenta("totalPasivosCorrientes", "totalPasivoCorriente"), 2),
+              totalPasivosNoCorrientes: formatearMonto(valorCuenta("totalPasivosNoCorrientes", "totalPasivoNoCorriente"), 2),
+              otrosPasivos: formatearMonto(valorCuenta("otrosPasivos"), 2),
+              totalPasivos: formatearMonto(valorCuenta("totalPasivos", "totalPasivo"), 2),
+              patrimonio: formatearMonto(valorCuenta("patrimonio", "totalPatrimonio"), 2),
+              totalPasivoPatrimonio: formatearMonto(valorCuenta("totalPasivoPatrimonio", "totalPasivosPatrimonio"), 2),
             },
             estadoGananciasPerdidas: {
-              ventasNetas: formatearNumero(cuentaBalance.ventasNetas, 2),
-              utilidadGanancia: formatearNumero(cuentaBalance.utilidadPerdida, 2),
+              ventasNetas: formatearMonto(valorCuenta("ventasNetas", "ingresosOrdinarios", "ingresosIntereses", "primasGanadasNetas"), 2),
+              utilidadGanancia: formatearMonto(valorCuenta("utilidadPerdida", "gananciaNeta", "utilidadEjercicio", "utilidadNeta"), 2),
             },
             ratios: {
-              liquidez: formatearNumero(cuentaBalance.indiceLiquidez, 2),
-              capitalTrabajo: formatearNumero(cuentaBalance.capitalTrabajo, 2),
-              endeudamiento: formatearNumero(cuentaBalance.ratioEndeudamiento, 2),
-              rentabilidad: formatearNumero(cuentaBalance.ratioRentabilidad, 2),
+              liquidez: formatearNumero(valorCuenta("indiceLiquidez"), 2),
+              capitalTrabajo: formatearMonto(valorCuenta("capitalTrabajo"), 2),
+              endeudamiento: formatearNumero(valorCuenta("ratioEndeudamiento"), 2),
+              rentabilidad: formatearNumero(valorCuenta("ratioRentabilidad"), 2),
             },
+            registrosHabilitados: true,
+            registrosEstadoFinanciero: Object.fromEntries(
+              Object.entries(registrosEstadoFinanciero).map(([clave, valor]) => {
+                if (["balance-date", "balance-date-p", "currency", "currency-p", "currency-iso", "reliability-level"].includes(clave)) {
+                  return [clave, valor];
+                }
+                if (esCampoEnteroEstadoFinanciero(clave, tipoEstadoFinanciero)) {
+                  return [clave, valor];
+                }
+                const esRatio = claveEstadoFinanciero !== "turquia"
+                  && /(liquidity|indebtedness|profitability)/.test(clave);
+                return [clave, esRatio ? formatearNumero(valor, 2) : formatearMonto(valor, 2)];
+              }),
+            ),
           }
         : undefined,
     };
@@ -832,12 +887,12 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       )) || undefined,
       idMoneda: obtenerNumeroOpcional(proveedor.idMoneda, proveedor.IdMoneda),
       operacionCambioMoneda: obtenerTexto(proveedor.moneda, proveedor.Moneda),
-      tipoCambio: formatearNumero(proveedor.tipoCambio, 6) || undefined,
+      tipoCambio: formatearMonto(proveedor.tipoCambio, 6) || undefined,
       idLimiteCredito,
       idPlazoCredito,
       limiteCredito: obtenerTexto(proveedor.plazoCredito, proveedor.PlazoCredito)
         || (idPlazoCredito ? String(idPlazoCredito) : ""),
-      promedioMensual: formatearNumero(proveedor.promedioMensual, 2) || undefined,
+      promedioMensual: formatearMonto(proveedor.promedioMensual, 2) || undefined,
     };
   });
 

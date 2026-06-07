@@ -153,7 +153,7 @@ export function CustomModalProveedorAnalista({
             </div>
 
             <div className="space-y-2">
-              <CustomLabel>Tax ID Type</CustomLabel>
+              <CustomLabel>Tipo de ID Fiscal</CustomLabel>
               <CustomSelectorBuscable
                 options={opcionesTaxId}
                 value={opcionesTaxId?.find((opcion) => opcion.string1 === taxIdType)?.num1 ?? undefined}
@@ -167,7 +167,7 @@ export function CustomModalProveedorAnalista({
           </div>
 
           <div className="space-y-2">
-            <CustomLabel>Tax ID Number</CustomLabel>
+            <CustomLabel>Número de ID Fiscal</CustomLabel>
             <input value={taxIdNumber} onChange={(event) => setTaxIdNumber(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese número de identificación fiscal..." className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
           </div>
 

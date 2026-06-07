@@ -1,7 +1,7 @@
 export interface CampoEstadoFinancieroAnalista {
   id: string;
   etiqueta: string;
-  tipoEntrada?: "numero" | "entero" | "fecha" | "selector-moneda-nombre" | "selector-moneda-codigo" | "selector-confiabilidad";
+  tipoEntrada?: "numero" | "entero" | "fecha" | "selector-moneda-nombre" | "selector-moneda-codigo" | "selector-confiabilidad" | "selector-ano";
 }
 
 export interface SeccionEstadoFinancieroAnalista {
@@ -276,7 +276,7 @@ const configuracionEstadosFinancieros: Record<string, SeccionEstadoFinancieroAna
       id: "general-turquia",
       titulo: "General",
       campos: [
-        { id: "year", etiqueta: "Ano (Year)", tipoEntrada: "entero" },
+        { id: "year", etiqueta: "Ano (Year)", tipoEntrada: "selector-ano" },
         { id: "balance-date", etiqueta: "Fecha de Balance (Balance Date)", tipoEntrada: "fecha" },
         { id: "currency", etiqueta: "Moneda (Currency)", tipoEntrada: "selector-moneda-nombre" },
         { id: "currency-iso", etiqueta: "ISO de Moneda (Currency ISO)", tipoEntrada: "selector-moneda-codigo" },
@@ -362,6 +362,184 @@ export function obtenerClaveEstadoFinanciero(tipoEstadoFinanciero?: string) {
   return "";
 }
 
+const aliasCamposEstadoFinanciero: Record<string, Record<string, string>> = {
+  desagregado: {
+    indiceLiquidez: "liquidity-ratio",
+    capitalTrabajo: "working-capital-ratio",
+    ratioEndeudamiento: "current-indebtedness-ratio",
+    ratioRentabilidad: "profitability-ratio",
+  },
+  totalizado: {
+    ingresosOrdinarios: "ingresos-ordinarios-totalizado",
+    gananciaNeta: "ganancia-neta-totalizado",
+    indiceLiquidez: "liquidity-ratio-totalizado",
+    capitalTrabajo: "working-capital-ratio-totalizado",
+    ratioEndeudamiento: "current-indebtedness-ratio-totalizado",
+    ratioRentabilidad: "profitability-ratio-totalizado",
+  },
+  bancos: {
+    fondosInterbancarios: "fondos-interbancarios-activo",
+    inversionesValorRazonable: "inversiones-valor-razonable",
+    carteraCreditos: "cartera-creditos",
+    derivadosNegociacionActivo: "derivados-negociacion-activo",
+    derivadosCoberturaActivo: "derivados-cobertura-activo",
+    bienesRealizables: "bienes-realizables",
+    participacionesSubsidiarias: "participaciones-subsidiarias",
+    inmuebleMobiliarioEquipo: "inmueble-mobiliario-equipo",
+    impuestoRentaDiferido: "impuesto-renta-diferido",
+    otrosActivos: "otros-activos-bancos",
+    totalActivos: "total-activos-bancos",
+    obligacionesPublico: "obligaciones-publico",
+    fondosInterbancariosPasivo: "fondos-interbancarios-pasivo",
+    adeudosFinancieras: "adeudos-financieras",
+    derivadosNegociacionPasivo: "derivados-negociacion-pasivo",
+    derivadosCoberturaPasivo: "derivados-cobertura-pasivo",
+    cuentasPagarProvisiones: "cuentas-pagar-provisiones",
+    totalPasivo: "total-pasivo-bancos",
+    capitalSocial: "capital-social-bancos",
+    reservas: "reservas-bancos",
+    resultadosNoRealizados: "resultados-no-realizados",
+    resultadoEjercicio: "resultado-ejercicio-bancos",
+    totalPatrimonio: "total-patrimonio-bancos",
+    totalPasivoPatrimonio: "total-pasivo-patrimonio-bancos",
+    ingresosIntereses: "ingresos-intereses-bancos",
+    utilidadEjercicio: "utilidad-ejercicio-bancos",
+  },
+  seguros: {
+    efectivoDisponible: "efectivo-disponible",
+    inversionesFinancieras: "inversiones-financieras-seguros",
+    prestamosInteresesNetos: "prestamos-intereses-netos",
+    primasCobrar: "primas-cobrar",
+    deudasReaseguradores: "deudas-reaseguradores",
+    activosVenta: "activos-venta",
+    propiedadesInversion: "propiedades-inversion-seguros",
+    propiedadPlantaEquipo: "propiedad-planta-equipo-seguros",
+    otrosActivos: "otros-activos-seguros",
+    totalActivos: "total-activos-seguros",
+    obligacionesAsegurados: "obligaciones-asegurados",
+    reservasSiniestros: "reservas-siniestros",
+    reservasTecnicas: "reservas-tecnicas",
+    obligacionesReaseguradores: "obligaciones-reaseguradores",
+    obligacionesFinancieras: "obligaciones-financieras-seguros",
+    cuentasPagar: "cuentas-pagar-seguros",
+    otrosPasivos: "otros-pasivos-seguros",
+    totalPasivo: "total-pasivo-seguros",
+    capitalSocial: "capital-social-seguros",
+    aportesCapitalNoCapitalizados: "aportes-capital-no-capitalizados",
+    resultadosAcumulados: "resultados-acumulados-seguros",
+    patrimonioRestringido: "patrimonio-restringido",
+    totalPatrimonio: "total-patrimonio-seguros",
+    totalPasivoPatrimonio: "total-pasivo-patrimonio-seguros",
+    primasGanadasNetas: "primas-ganadas-netas",
+    utilidadNeta: "utilidad-neta-seguros",
+  },
+  turquia: {
+    ano: "year",
+    fechaBalance: "balance-date",
+    idMoneda: "currency",
+    duracionPeriodo: "length-period",
+    idNivelConfiabilidad: "reliability-level",
+    tipoCambio: "exchange-rate",
+    efectivo: "cash",
+    existencias: "stocks",
+    deudores: "creditors",
+    totalCorriente: "current-total",
+    bienesTongibles: "tangible-assets",
+    activosIntangibles: "intangible-assets",
+    activoFijoNeto: "net-fixed",
+    totalActivos: "total-assets-turquia",
+    prestamos: "loans",
+    acreedores: "debtors",
+    pasivosCorrientes: "current-liabilities",
+    pasivosNoCorrientes: "non-current-liabilities",
+    pasivosLargoPlazo: "long-term-liabilities",
+    totalPasivosNoCorrientes: "total-non-current-liabilities",
+    totalPasivos: "total-liabilities",
+    patrimonio: "equity",
+    totalPatrimonio: "total-equity",
+    totalPasivosPatrimonio: "total-liabilities-equity",
+    ventasNetas: "turnover",
+    costoVentas: "costs-goods-sold",
+    costoMateriales: "material-costs",
+    gananciaBruta: "gross-profit",
+    otrosGastosOperativos: "other-operating-expenses",
+    costoEmpleados: "costs-employees",
+    depreciacion: "depreciation",
+    ingresosFinancieros: "financial-revenue",
+    gastosFinancieros: "financial-expenses",
+    interesesPagados: "interest-paid",
+    plFinanciero: "financial-pl",
+    ingresosExtraordinarios: "extra-other-revenue",
+    gastosExtraordinarios: "extra-other-expenses",
+    plExtraordinario: "extra-other-pl",
+    gananciaAntesImpuestos: "profit-loss-before-taxes",
+    impuestos: "taxation",
+    gananciaNeta: "profit-loss-after-taxes",
+    ganancia: "profit",
+    indiceLiquidez: "liquidity-index",
+    capitalTrabajo: "working-capital",
+    ratioEndeudamiento: "indebtedness-ratio",
+    ratioRentabilidad: "profitability-ratio-turquia",
+  },
+};
+
+export function obtenerValorCampoEstadoFinanciero(
+  registros: Record<string, string>,
+  campoApi: string,
+  tipoEstadoFinanciero?: string,
+) {
+  const claveTipo = obtenerClaveEstadoFinanciero(tipoEstadoFinanciero);
+  const alias = aliasCamposEstadoFinanciero[claveTipo]?.[campoApi];
+  const claveKebab = campoApi.replace(/[A-Z]/g, (letra) => `-${letra.toLowerCase()}`);
+  return registros[campoApi] ?? (alias ? registros[alias] : undefined) ?? registros[claveKebab] ?? "";
+}
+
+export function adaptarCuentaBalanceDesdeApi(
+  cuentaBalance: Record<string, unknown>,
+  tipoEstadoFinanciero?: string,
+) {
+  const claveTipo = obtenerClaveEstadoFinanciero(tipoEstadoFinanciero);
+  const valoresPorClave = new Map(
+    Object.entries(cuentaBalance).map(([clave, valor]) => [clave.toLowerCase(), valor]),
+  );
+  const registros: Record<string, string> = {};
+  const camposConfigurados = configuracionEstadosFinancieros[claveTipo]
+    ?.flatMap((seccion) => seccion.campos) ?? [];
+
+  camposConfigurados.forEach((campo) => {
+    const campoApi = Object.entries(aliasCamposEstadoFinanciero[claveTipo] ?? {})
+      .find(([, campoFormulario]) => campoFormulario === campo.id)?.[0]
+      ?? campo.id.replace(/-([a-z])/g, (_, letra: string) => letra.toUpperCase());
+    const valor = valoresPorClave.get(campoApi.toLowerCase());
+    if (valor == null) return;
+    const valorStr = String(valor);
+    if (campo.tipoEntrada === "entero" || campo.tipoEntrada === "selector-ano") {
+      const n = Math.trunc(Number.parseFloat(valorStr.replace(/,/g, "")));
+      registros[campo.id] = Number.isFinite(n) ? String(n) : valorStr;
+    } else {
+      registros[campo.id] = valorStr;
+    }
+  });
+
+  if (claveTipo === "turquia") {
+    registros["balance-date-p"] = registros["balance-date"] ?? "";
+    registros["currency-iso"] = registros.currency ?? "";
+    registros["currency-p"] = registros.currency ?? "";
+    registros["exchange-rate-p"] = registros["exchange-rate"] ?? "";
+  }
+
+  return registros;
+}
+
+export function esCampoEnteroEstadoFinanciero(campoId: string, tipoEstadoFinanciero?: string): boolean {
+  const clave = obtenerClaveEstadoFinanciero(tipoEstadoFinanciero);
+  const secciones = clave ? configuracionEstadosFinancieros[clave] ?? [] : [];
+  const campo = secciones.flatMap((s) => s.campos).find((c) => c.id === campoId);
+  if (!campo) return false;
+  const tipo = obtenerTipoEntradaCampoEstadoFinanciero(campo);
+  return tipo === "entero" || tipo === "selector-ano";
+}
+
 export function obtenerConfiguracionEstadoFinanciero(tipoEstadoFinanciero?: string) {
   const clave = obtenerClaveEstadoFinanciero(tipoEstadoFinanciero);
   return clave ? configuracionEstadosFinancieros[clave] ?? [] : [];
@@ -373,7 +551,7 @@ export function obtenerTipoEntradaCampoEstadoFinanciero(campo: CampoEstadoFinanc
   const textoNormalizado = normalizarTextoEstadoFinanciero(`${campo.id} ${campo.etiqueta}`);
 
   if (/(^|[\s-])(year|ano)([\s-]|$)/.test(textoNormalizado)) {
-    return "entero";
+    return "selector-ano";
   }
 
   if (/(balance date|fecha de balance)/.test(textoNormalizado)) {

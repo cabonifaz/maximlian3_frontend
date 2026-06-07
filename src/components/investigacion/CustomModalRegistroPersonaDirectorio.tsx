@@ -15,6 +15,7 @@ import { seleccionarTextoEditableEnContenedor } from "@maximilian/shared/utils/f
 interface PropsCustomModalRegistroPersonaDirectorioAnalista {
   estaAbierto: boolean;
   registroInicial?: RegistroPersonaDirectorioAnalista | null;
+  nombreInicial?: string;
   onCerrar: () => void;
   onGuardar: (registro: RegistroPersonaDirectorioAnalista) => void;
 }
@@ -39,6 +40,7 @@ function normalizarFechaApi(fecha: string) {
 export function CustomModalRegistroPersonaDirectorioAnalista({
   estaAbierto,
   registroInicial,
+  nombreInicial,
   onCerrar,
   onGuardar,
 }: PropsCustomModalRegistroPersonaDirectorioAnalista) {
@@ -200,7 +202,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
               <EncabezadoSeccion icono={<UserRound size={18} />} titulo="Identificacion" subtitulo="Datos principales del registro" />
               <div className="grid gap-4 md:grid-cols-[0.9fr_2fr_1fr]">
                 <CampoSelector nombre="tipoPersona" nombreId="idTipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersona} valorDefecto={registroInicial?.tipoPersona} valorDefectoId={registroInicial?.idTipoPersona} marcadorVacio="Seleccione tipo persona" />
-                <CampoInput nombre="nombres" etiqueta="Nombre Completo / Razón Social" marcador="Ingrese nombres completos" valorInicial={registroInicial?.nombres} />
+                <CampoInput nombre="nombres" etiqueta="Nombre Completo / Razón Social" marcador="Ingrese nombres completos" valorInicial={registroInicial?.nombres ?? nombreInicial} />
                 <CampoInput nombre="fechaNacimiento" etiqueta="Fecha de Nacimiento" marcador="mm/dd/yyyy" valorInicial={registroInicial?.fechaNacimiento} tipo="date" />
               </div>
             </section>
