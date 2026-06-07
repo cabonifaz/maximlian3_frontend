@@ -7,7 +7,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  Image as IconoImagen,
+  Eye,
   Pencil,
   Plus,
   RotateCcw,
@@ -1155,12 +1155,14 @@ function PantallaInvestigacionAnalista({
   const [estaAbiertoModalRevisionBancosExtraccion, setEstaAbiertoModalRevisionBancosExtraccion] = useState(false);
   const [estaAbiertoModalOperacion, setEstaAbiertoModalOperacion] = useState(false);
   const [estaAbiertoModalLocal, setEstaAbiertoModalLocal] = useState(false);
+  const [estaAbiertoVistaLocal, setEstaAbiertoVistaLocal] = useState(false);
   const [estaAbiertoModalBalance, setEstaAbiertoModalBalance] = useState(false);
   const [estaAbiertoModalDetalleBalance, setEstaAbiertoModalDetalleBalance] = useState(false);
   const [estaAbiertoModalProveedor, setEstaAbiertoModalProveedor] = useState(false);
   const [estaAbiertoModalBanco, setEstaAbiertoModalBanco] = useState(false);
   const [indiceOperacionSeleccionada, setIndiceOperacionSeleccionada] = useState<number | null>(null);
   const [indiceLocalSeleccionado, setIndiceLocalSeleccionado] = useState<number | null>(null);
+  const [indiceVistaLocal, setIndiceVistaLocal] = useState<number | null>(null);
   const [indiceBalanceSeleccionado, setIndiceBalanceSeleccionado] = useState<number | null>(null);
   const [indiceBalanceAEliminar, setIndiceBalanceAEliminar] = useState<number | null>(null);
   const [indiceProveedorSeleccionado, setIndiceProveedorSeleccionado] = useState<number | null>(null);
@@ -1188,6 +1190,8 @@ function PantallaInvestigacionAnalista({
   const [codigoNuevaClaseCiiu, setCodigoNuevaClaseCiiu] = useState("");
   const [textoNuevaClaseCiiu, setTextoNuevaClaseCiiu] = useState("");
   const [claveAltaCiiuGuardando, setClaveAltaCiiuGuardando] = useState<string | null>(null);
+  const [mostrarFormCategoriaCiiu, setMostrarFormCategoriaCiiu] = useState(false);
+  const [mostrarFormClaseCiiu, setMostrarFormClaseCiiu] = useState(false);
   const [estaAbiertoModalFinalizarInvestigacion, setEstaAbiertoModalFinalizarInvestigacion] = useState(false);
   const [estaAbiertoModalConfirmacionPrimerBorrador, setEstaAbiertoModalConfirmacionPrimerBorrador] = useState(false);
   const [estaAbiertoModalEjecutivo, setEstaAbiertoModalEjecutivo] = useState(false);
@@ -1463,6 +1467,8 @@ function PantallaInvestigacionAnalista({
     guardarInformeMutation.mutate(ID_ESTADO_PEDIDO_BORRADOR);
   };
 
+  const archivosImagenesNuevosRef = useRef<Map<string, File>>(new Map());
+
   const guardarInformeMutation = useMutation({
     mutationFn: async (idEstadoInforme: number) => {
       const idPedidoNumerico = Number(idPedido);
@@ -1471,11 +1477,33 @@ function PantallaInvestigacionAnalista({
         throw new Error("No se encontró un pedido válido para crear el informe.");
       }
 
+      const mapaArchivos = new Map<string, File>();
+      const contadorNombres = new Map<string, number>();
+      const localesConNombresDeduplicados = datosInvestigacion.locales.map((local) => ({
+        ...local,
+        imagenes: (local.imagenes ?? []).map((imagen) => {
+          if (!imagen.esNueva || !imagen.archivo) return imagen;
+          const nombreOriginal = imagen.nombre;
+          const cuenta = contadorNombres.get(nombreOriginal) ?? 0;
+          contadorNombres.set(nombreOriginal, cuenta + 1);
+          let nombreFinal = nombreOriginal;
+          if (cuenta > 0) {
+            const punto = nombreOriginal.lastIndexOf(".");
+            const sinExt = punto >= 0 ? nombreOriginal.slice(0, punto) : nombreOriginal;
+            const ext = punto >= 0 ? nombreOriginal.slice(punto) : "";
+            nombreFinal = `${sinExt} (${cuenta})${ext}`;
+          }
+          mapaArchivos.set(nombreFinal, imagen.archivo);
+          return { ...imagen, nombre: nombreFinal };
+        }),
+      }));
+      archivosImagenesNuevosRef.current = mapaArchivos;
+
       const payload = construirPayloadCrearInforme({
         idPedido: idPedidoNumerico,
         idInforme: idInformeActual,
         idEstadoInforme,
-        datosInvestigacion,
+        datosInvestigacion: { ...datosInvestigacion, locales: localesConNombresDeduplicados },
         opcionesTipoPersona,
         opcionesPais,
         opcionesEstadoCliente,
@@ -1496,7 +1524,24 @@ function PantallaInvestigacionAnalista({
 
       return informeService.create(payload);
     },
-    onSuccess: (respuesta, idEstado) => {
+    onSuccess: async (respuesta, idEstado) => {
+      const imagenesPendientes = respuesta.imagenesPendientes ?? [];
+      if (imagenesPendientes.length > 0) {
+        const toastId = toast.loading("Subiendo imágenes de locales...");
+        let huboError = false;
+        for (const imagenPendiente of imagenesPendientes) {
+          const archivo = archivosImagenesNuevosRef.current.get(imagenPendiente.nombre);
+          if (!archivo) continue;
+          try {
+            await informeService.subirArchivoUrlPrefirmada(imagenPendiente.uploadUrl, archivo);
+          } catch {
+            huboError = true;
+            toast.error(`No se pudo subir la imagen "${imagenPendiente.nombre}".`, { id: toastId });
+          }
+        }
+        if (!huboError) toast.dismiss(toastId);
+        archivosImagenesNuevosRef.current = new Map();
+      }
       const idInformeResultado = respuesta.idInforme ?? idInformeActual;
 
       if (idInformeResultado && idInformeResultado > 0) {
@@ -3907,7 +3952,7 @@ function PantallaInvestigacionAnalista({
                   <tr>
                     <th className="px-4 py-3">Tipo Local</th>
                     <th className="px-4 py-3">Comentario</th>
-                    <th className="px-4 py-3">Imagen Local</th>
+                    <th className="px-4 py-3">Ver Detalle</th>
                   </tr>
                 ) : (
                   <tr>
@@ -3931,37 +3976,43 @@ function PantallaInvestigacionAnalista({
                     </td>
                   </tr>
                 ) : pestanaRamoOperacionesVisible === "locales" ? (
-                  registrosLocalesPaginados.map((local) => (
+                  registrosLocalesPaginados.map((local) => {
+                    const estaSeleccionado = indiceLocalSeleccionado === datosInvestigacion.locales.findIndex(
+                      (item) => item.tipoLocal === local.tipoLocal && item.comentario === local.comentario,
+                    );
+                    return (
                     <tr
                       key={`${local.tipoLocal}-${local.comentario}`}
-                      className={`cursor-pointer transition-colors ${indiceLocalSeleccionado === datosInvestigacion.locales.findIndex((item) => item.tipoLocal === local.tipoLocal && item.comentario === local.comentario) ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
+                      className={`cursor-pointer transition-colors ${estaSeleccionado ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
                       onClick={() => setIndiceLocalSeleccionado(datosInvestigacion.locales.findIndex((item) => item.tipoLocal === local.tipoLocal && item.comentario === local.comentario))}
                     >
-                      <td className="px-4 py-4 text-sm font-semibold text-slate-700">{local.tipoLocal}</td>
+                      <td className="relative px-4 py-4">
+                        <span className={`pointer-events-none absolute inset-y-0 left-0 w-[3px] rounded-r-full transition-colors ${estaSeleccionado ? "bg-brand-wine" : ""}`} />
+                        <span className={`text-sm font-semibold ${estaSeleccionado ? "text-brand-wine" : "text-slate-700"}`}>{local.tipoLocal}</span>
+                      </td>
                       <td className="px-4 py-4 text-sm text-slate-500">{local.comentario}</td>
                       <td className="px-4 py-4">
-                        {local.imagenes?.[0]?.url ?? local.imagenUrl ? (
-                          <div className="flex items-center gap-2">
-                            <img
-                              src={local.imagenes?.[0]?.url ?? local.imagenUrl}
-                              alt={local.imagen || "Vista previa"}
-                              className="h-10 w-10 shrink-0 rounded-lg border border-gray-100 object-cover"
-                            />
-                            {(local.imagenes?.length ?? 0) > 1 && (
-                              <span className="text-xs text-slate-400">+{(local.imagenes?.length ?? 0) - 1} más</span>
-                            )}
-                          </div>
-                        ) : local.imagen ? (
-                          <div className="flex items-center gap-2 text-slate-400">
-                            <IconoImagen size={16} />
-                            <span className="text-xs">{local.imagen}</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs italic text-slate-300">Sin imagen</span>
-                        )}
+                        <CustomButton
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const indiceReal = datosInvestigacion.locales.findIndex(
+                              (item) => item.tipoLocal === local.tipoLocal && item.comentario === local.comentario,
+                            );
+                            setIndiceVistaLocal(indiceReal);
+                            setEstaAbiertoVistaLocal(true);
+                          }}
+                          title="Ver detalle del local"
+                          aria-label="Ver detalle del local"
+                          className="text-slate-400 hover:text-slate-700"
+                        >
+                          <Eye size={16} />
+                        </CustomButton>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 ) : (
                   registrosImportacionExportacionPaginados.map((registro) => {
                     const mesRegistro = obtenerTextoPorId(opcionesMes, registro.idMesInicio) || registro.mes;
@@ -3980,7 +4031,10 @@ function PantallaInvestigacionAnalista({
                         className={`cursor-pointer transition-colors ${indiceOperacionSeleccionada === indiceRegistro ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
                         onClick={() => setIndiceOperacionSeleccionada(indiceRegistro)}
                       >
-                        <td className="px-4 py-4 text-sm text-slate-500">{registro.anio}</td>
+                        <td className="relative px-4 py-4 text-sm">
+                          <span className={`pointer-events-none absolute inset-y-0 left-0 w-[3px] rounded-r-full transition-colors ${indiceOperacionSeleccionada === indiceRegistro ? "bg-brand-wine" : ""}`} />
+                          <span className={indiceOperacionSeleccionada === indiceRegistro ? "text-brand-wine" : "text-slate-500"}>{registro.anio}</span>
+                        </td>
                         <td className="px-4 py-4 text-sm text-slate-500">{mesRegistro || "-"}</td>
                         <td className="px-4 py-4 text-sm text-slate-500">{monedaRegistro || "-"}</td>
                         <td className="px-4 py-4 text-sm text-slate-500">{registro.paises}</td>
@@ -4114,6 +4168,7 @@ function PantallaInvestigacionAnalista({
       onCodigoChange,
       onTextoChange,
       onAgregar,
+      onOcultar,
       deshabilitado,
       codigoDuplicado,
       guardando,
@@ -4124,6 +4179,7 @@ function PantallaInvestigacionAnalista({
       onCodigoChange: (valor: string) => void;
       onTextoChange: (valor: string) => void;
       onAgregar: () => void;
+      onOcultar?: () => void;
       deshabilitado: boolean;
       codigoDuplicado: boolean;
       guardando: boolean;
@@ -4150,20 +4206,32 @@ function PantallaInvestigacionAnalista({
             placeholder="Texto"
             className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
           />
-          <CustomButton
-            type="button"
-            size="sm"
-            variant="secondary"
-            disabled={deshabilitado || codigoDuplicado || esSoloLectura}
-            loading={guardando}
-            loadingText="Agregando..."
-            onClick={onAgregar}
-          >
-            Agregar
-          </CustomButton>
+          <div className="flex gap-2">
+            <CustomButton
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={deshabilitado || codigoDuplicado || esSoloLectura}
+              loading={guardando}
+              loadingText="Agregando..."
+              onClick={onAgregar}
+            >
+              Agregar
+            </CustomButton>
+            {onOcultar && (
+              <CustomButton
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={onOcultar}
+              >
+                Cancelar
+              </CustomButton>
+            )}
+          </div>
         </div>
         <div className="mt-2 text-xs text-slate-500">
-          Se creará como <span className="font-semibold text-slate-700">{codigo.trim() || "-"}</span>
+          Se agregará como <span className="font-semibold text-slate-700">{codigo.trim() || "-"}</span>
           {" - "}
           <span className="font-semibold text-slate-700">{texto.trim() || "-"}</span>
         </div>
@@ -4231,7 +4299,16 @@ function PantallaInvestigacionAnalista({
               onChange={(valor) => actualizarOperacionPrincipal("categoriaCiiu", valor)}
             />
           </div>
-          {renderizarAltaCiiu({
+          {!esSoloLectura && !mostrarFormCategoriaCiiu && (
+            <button
+              type="button"
+              onClick={() => setMostrarFormCategoriaCiiu(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-wine transition-colors hover:text-brand-wine/80 cursor-pointer"
+            >
+              + Agregar Categoría CIIU
+            </button>
+          )}
+          {mostrarFormCategoriaCiiu && renderizarAltaCiiu({
             codigo: codigoNuevaCategoriaCiiu,
             texto: textoNuevaCategoriaCiiu,
             onCodigoChange: setCodigoNuevaCategoriaCiiu,
@@ -4240,6 +4317,7 @@ function PantallaInvestigacionAnalista({
             mensajeAdvertencia: !opcionSectorSeleccionado?.num1 ? "Debe seleccionar un Sector para agregar una nueva categoría CIIU." : undefined,
             codigoDuplicado: codigoCategoriaCiiuDuplicado,
             guardando: claveAltaCiiuGuardando === "categoria",
+            onOcultar: () => { setMostrarFormCategoriaCiiu(false); setCodigoNuevaCategoriaCiiu(""); setTextoNuevaCategoriaCiiu(""); },
             onAgregar: () => void crearAltaCiiu({
               clave: "categoria",
               idMaestro: TablaMaestraId.ACTIVIDAD_ECONOMICA,
@@ -4250,6 +4328,7 @@ function PantallaInvestigacionAnalista({
               limpiar: () => {
                 setCodigoNuevaCategoriaCiiu("");
                 setTextoNuevaCategoriaCiiu("");
+                setMostrarFormCategoriaCiiu(false);
               },
             }),
           })}
@@ -4289,7 +4368,16 @@ function PantallaInvestigacionAnalista({
               onChange={(valor) => actualizarOperacionPrincipal("claseCiiu", valor)}
             />
           </div>
-          {renderizarAltaCiiu({
+          {!esSoloLectura && !mostrarFormClaseCiiu && (
+            <button
+              type="button"
+              onClick={() => setMostrarFormClaseCiiu(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-wine transition-colors hover:text-brand-wine/80 cursor-pointer"
+            >
+              + Agregar Clase CIIU
+            </button>
+          )}
+          {mostrarFormClaseCiiu && renderizarAltaCiiu({
             codigo: codigoNuevaClaseCiiu,
             texto: textoNuevaClaseCiiu,
             onCodigoChange: setCodigoNuevaClaseCiiu,
@@ -4298,6 +4386,7 @@ function PantallaInvestigacionAnalista({
             mensajeAdvertencia: !opcionCategoriaSeleccionada?.num1 ? "Debe seleccionar una Categoría CIIU para agregar una nueva clase CIIU." : undefined,
             codigoDuplicado: codigoClaseCiiuDuplicado,
             guardando: claveAltaCiiuGuardando === "clase",
+            onOcultar: () => { setMostrarFormClaseCiiu(false); setCodigoNuevaClaseCiiu(""); setTextoNuevaClaseCiiu(""); },
             onAgregar: () => void crearAltaCiiu({
               clave: "clase",
               idMaestro: TablaMaestraId.CLASE_CIIU,
@@ -4308,6 +4397,7 @@ function PantallaInvestigacionAnalista({
               limpiar: () => {
                 setCodigoNuevaClaseCiiu("");
                 setTextoNuevaClaseCiiu("");
+                setMostrarFormClaseCiiu(false);
               },
             }),
           })}
@@ -4433,7 +4523,7 @@ function PantallaInvestigacionAnalista({
                   <td className="px-4 py-4">
                     <button
                       type="button"
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-slate-400 transition-colors hover:border-brand-black hover:text-brand-black"
+                      className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-white text-slate-400 transition-colors hover:border-brand-black hover:text-brand-black"
                       onClick={() => {
                         setIndiceBalanceSeleccionado(indiceReal);
                         setEstaAbiertoModalDetalleBalance(true);
@@ -4446,6 +4536,7 @@ function PantallaInvestigacionAnalista({
                     <div className="flex justify-end gap-3">
                       <button
                         type="button"
+                        className="cursor-pointer transition-colors hover:text-slate-600"
                         onClick={() => {
                           setIndiceBalanceSeleccionado(indiceReal);
                           setEstaAbiertoModalBalance(true);
@@ -4455,6 +4546,7 @@ function PantallaInvestigacionAnalista({
                       </button>
                       <button
                         type="button"
+                        className="cursor-pointer transition-colors hover:text-slate-600"
                         onClick={() => setIndiceBalanceAEliminar(indiceReal)}
                       >
                         <Trash2 size={14} />
@@ -4599,8 +4691,8 @@ function PantallaInvestigacionAnalista({
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500">{proveedor.telefono || "-"}</td>
                       <td className="px-4 py-4 text-right text-slate-400">
                         <div className="flex justify-end gap-3">
-                          <button type="button" onClick={() => { setIndiceProveedorSeleccionado(indiceReal); setEstaAbiertoModalProveedor(true); }}><Pencil size={14} /></button>
-                          <button type="button" onClick={() => setIndiceProveedorAEliminar(indiceReal)}><Trash2 size={14} /></button>
+                          <button type="button" className="cursor-pointer transition-colors hover:text-slate-600" onClick={() => { setIndiceProveedorSeleccionado(indiceReal); setEstaAbiertoModalProveedor(true); }}><Pencil size={14} /></button>
+                          <button type="button" className="cursor-pointer transition-colors hover:text-slate-600" onClick={() => setIndiceProveedorAEliminar(indiceReal)}><Trash2 size={14} /></button>
                         </div>
                       </td>
                     </tr>
@@ -4741,8 +4833,8 @@ function PantallaInvestigacionAnalista({
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500"><span className="block truncate">{banco.telefono}</span></td>
                       <td className="px-4 py-4 text-right text-slate-400">
                         <div className="flex justify-end gap-3">
-                          <button type="button" onClick={() => { setIndiceBancoSeleccionado(indiceReal); setEstaAbiertoModalBanco(true); }}><Pencil size={14} /></button>
-                          <button type="button" onClick={() => setIndiceBancoAEliminar(indiceReal)}><Trash2 size={14} /></button>
+                          <button type="button" className="cursor-pointer transition-colors hover:text-slate-600" onClick={() => { setIndiceBancoSeleccionado(indiceReal); setEstaAbiertoModalBanco(true); }}><Pencil size={14} /></button>
+                          <button type="button" className="cursor-pointer transition-colors hover:text-slate-600" onClick={() => setIndiceBancoAEliminar(indiceReal)}><Trash2 size={14} /></button>
                         </div>
                       </td>
                     </tr>
@@ -4856,6 +4948,7 @@ function PantallaInvestigacionAnalista({
                     <div className="flex justify-end gap-3">
                       <button
                         type="button"
+                        className="cursor-pointer transition-colors hover:text-slate-600"
                         disabled={esSoloLectura}
                         onClick={() => {
                           setIndiceEjecutivoSeleccionado(indiceReal);
@@ -4865,7 +4958,7 @@ function PantallaInvestigacionAnalista({
                       >
                         <Pencil size={14} />
                       </button>
-                      <button type="button" disabled={esSoloLectura} onClick={() => setIndiceEjecutivoAEliminar(indiceReal)}>
+                      <button type="button" className="cursor-pointer transition-colors hover:text-slate-600" disabled={esSoloLectura} onClick={() => setIndiceEjecutivoAEliminar(indiceReal)}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -4925,7 +5018,11 @@ function PantallaInvestigacionAnalista({
                 { id: "locales", etiqueta: "Locales" },
               ]}
               valorActivo={pestanaRamoOperacionesVisible}
-              onChange={(valor) => setPestanaRamoOperaciones(valor as PestanaRamoOperaciones)}
+              onChange={(valor) => {
+                setPestanaRamoOperaciones(valor as PestanaRamoOperaciones);
+                setIndiceOperacionSeleccionada(null);
+                setIndiceLocalSeleccionado(null);
+              }}
             />
             {renderizarRamoOperaciones()}
           </div>
@@ -5071,6 +5168,18 @@ function PantallaInvestigacionAnalista({
           setEstaAbiertoModalLocal(false);
         }}
         onGuardar={guardarLocal}
+      />
+
+      <CustomModalLocalAnalista
+        key="local-vista"
+        estaAbierto={estaAbiertoVistaLocal}
+        registroInicial={indiceVistaLocal != null ? datosInvestigacion.locales[indiceVistaLocal] : null}
+        soloLectura
+        onCerrar={() => {
+          setIndiceVistaLocal(null);
+          setEstaAbiertoVistaLocal(false);
+        }}
+        onGuardar={() => {}}
       />
 
       <CustomModalBalanceAnalista

@@ -7,6 +7,7 @@ import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
+  ImagenPendienteSubida,
   InformeAutocompletarRequest,
   InformeCrearRequest,
   InformeCrearResponse,
@@ -202,15 +203,13 @@ function obtenerLista(...valores: unknown[]): unknown[] {
 function formatearFechaEntrada(valor: string): string {
   const texto = valor.trim();
   if (!texto) return "";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return texto;
 
-  const coincidenciaIso = texto.match(/^(\d{4}-\d{2}-\d{2})T/);
-  if (coincidenciaIso?.[1]) return coincidenciaIso[1];
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) return texto;
 
-  const coincidenciaLatina = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (coincidenciaLatina) {
-    const [, dia, mes, ano] = coincidenciaLatina;
-    return `${ano}-${mes}-${dia}`;
+  const coincidenciaIso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (coincidenciaIso) {
+    const [, ano, mes, dia] = coincidenciaIso;
+    return `${dia}/${mes}/${ano}`;
   }
 
   return texto;
@@ -346,6 +345,15 @@ function normalizarRespuestaLista(resultado: unknown): InformeListResponse {
   };
 }
 
+function normalizarImagenPendiente(raw: unknown): ImagenPendienteSubida {
+  const item = typeof raw === "object" && raw !== null ? (raw as Record<string, unknown>) : {};
+  return {
+    idInformeLocalImagen: obtenerNumero(item.idInformeLocalImagen, item.IdInformeLocalImagen) ?? 0,
+    nombre: obtenerTexto(item.nombre, item.Nombre),
+    uploadUrl: obtenerTexto(item.uploadUrl, item.UploadUrl),
+  };
+}
+
 function normalizarRespuestaCrear(resultado: unknown): InformeCrearResponse {
   if (Array.isArray(resultado)) {
     const primerRegistro = resultado[0];
@@ -353,10 +361,12 @@ function normalizarRespuestaCrear(resultado: unknown): InformeCrearResponse {
   }
 
   const registro = typeof resultado === "object" && resultado !== null ? (resultado as Record<string, unknown>) : {};
+  const imagenesPendientesRaw = Array.isArray(registro.imagenesPendientes) ? registro.imagenesPendientes : [];
 
   return {
     idInforme: obtenerNumero(registro.idInforme, registro.IdInforme) || undefined,
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido) || undefined,
+    imagenesPendientes: imagenesPendientesRaw.map(normalizarImagenPendiente),
   };
 }
 

@@ -93,6 +93,7 @@ export interface RegistroImagenLocalAnalista {
   url?: string;
   tipo?: string;
   esNueva?: boolean;
+  archivo?: File;
 }
 
 export interface RegistroBalanceAnalista {

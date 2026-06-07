@@ -426,9 +426,16 @@ export interface InformeCrearRequest {
   lstLocales: InformeLocalRequest[];
 }
 
+export interface ImagenPendienteSubida {
+  idInformeLocalImagen: number;
+  nombre: string;
+  uploadUrl: string;
+}
+
 export interface InformeCrearResponse {
   idInforme?: number;
   idPedido?: number;
+  imagenesPendientes?: ImagenPendienteSubida[];
 }
 
 export interface InformeObtenerResponse {

@@ -504,7 +504,7 @@ export function CampoInvestigacionAnalista({
       </CustomLabel>
       <div className="relative">
         <input
-          type={tipoEntrada === "email" ? "email" : tipoEntrada === "fecha" ? "date" : "text"}
+          type={tipoEntrada === "email" ? "email" : "text"}
           value={valor}
           readOnly={soloLectura}
           onChange={(event) => {
@@ -537,7 +537,7 @@ export function CampoInvestigacionAnalista({
             onBlur?.();
           }}
           onFocus={seleccionarTextoCampoEditable}
-          placeholder={marcadorFinal}
+          placeholder={tipoEntrada === "fecha" ? "dd/mm/yyyy" : (marcadorFinal ?? "")}
           className={clasesInput}
         />
         {adornoFinal ? (
