@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  Image as IconoImagen,
   Pencil,
   Plus,
   RotateCcw,
@@ -1004,14 +1005,14 @@ function construirPayloadCrearInforme({
       imprimeDatosEjecutivos: ejecutivo.detalleEjecutivo,
     })),
     lstLocales: datosInvestigacion.locales.map((local) => ({
-      ...(esEdicion ? { idInformeLocal: local.idInformeLocal ?? 0 } : {}),
+      idInformeLocal: local.idInformeLocal ?? 0,
       idTipoLocal: local.idTipoLocal ?? obtenerIdPorTextoONumero(opcionesTipoLocal, local.tipoLocal),
       comentario: local.comentario,
-      imagenUrl: local.imagenUrl ?? "",
       imagenes: (local.imagenes ?? []).map((imagen) => ({
-        ...(esEdicion ? { idInformeLocalImagen: 0 } : {}),
-        imagenURL: imagen.url ?? "",
+        idInformeLocalImagen: 0,
+        ...(imagen.esNueva ? {} : { imagenURL: imagen.url ?? "" }),
         idTipoArchivo: obtenerIdTipoArchivo(imagen.tipo ?? local.imagenTipo),
+        nombre: imagen.nombre,
       })),
     })),
   }) as InformeCrearRequest;
@@ -3938,7 +3939,27 @@ function PantallaInvestigacionAnalista({
                     >
                       <td className="px-4 py-4 text-sm font-semibold text-slate-700">{local.tipoLocal}</td>
                       <td className="px-4 py-4 text-sm text-slate-500">{local.comentario}</td>
-                      <td className="px-4 py-4 text-sm text-slate-400">{local.imagen}</td>
+                      <td className="px-4 py-4">
+                        {local.imagenes?.[0]?.url ?? local.imagenUrl ? (
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={local.imagenes?.[0]?.url ?? local.imagenUrl}
+                              alt={local.imagen || "Vista previa"}
+                              className="h-10 w-10 shrink-0 rounded-lg border border-gray-100 object-cover"
+                            />
+                            {(local.imagenes?.length ?? 0) > 1 && (
+                              <span className="text-xs text-slate-400">+{(local.imagenes?.length ?? 0) - 1} más</span>
+                            )}
+                          </div>
+                        ) : local.imagen ? (
+                          <div className="flex items-center gap-2 text-slate-400">
+                            <IconoImagen size={16} />
+                            <span className="text-xs">{local.imagen}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs italic text-slate-300">Sin imagen</span>
+                        )}
+                      </td>
                     </tr>
                   ))
                 ) : (
@@ -5042,7 +5063,7 @@ function PantallaInvestigacionAnalista({
       />
 
       <CustomModalLocalAnalista
-        key={`local-${indiceLocalSeleccionado ?? "nuevo"}-${estaAbiertoModalLocal ? "abierto" : "cerrado"}`}
+        key="local-modal"
         estaAbierto={estaAbiertoModalLocal}
         registroInicial={indiceLocalSeleccionado != null ? datosInvestigacion.locales[indiceLocalSeleccionado] : null}
         onCerrar={() => {

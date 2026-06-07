@@ -1,7 +1,7 @@
 export interface CampoEstadoFinancieroAnalista {
   id: string;
   etiqueta: string;
-  tipoEntrada?: "numero" | "entero" | "fecha" | "selector-moneda-nombre" | "selector-moneda-codigo" | "selector-confiabilidad";
+  tipoEntrada?: "numero" | "entero" | "fecha" | "selector-moneda-nombre" | "selector-moneda-codigo" | "selector-confiabilidad" | "selector-ano";
 }
 
 export interface SeccionEstadoFinancieroAnalista {
@@ -276,7 +276,7 @@ const configuracionEstadosFinancieros: Record<string, SeccionEstadoFinancieroAna
       id: "general-turquia",
       titulo: "General",
       campos: [
-        { id: "year", etiqueta: "Ano (Year)", tipoEntrada: "entero" },
+        { id: "year", etiqueta: "Ano (Year)", tipoEntrada: "selector-ano" },
         { id: "balance-date", etiqueta: "Fecha de Balance (Balance Date)", tipoEntrada: "fecha" },
         { id: "currency", etiqueta: "Moneda (Currency)", tipoEntrada: "selector-moneda-nombre" },
         { id: "currency-iso", etiqueta: "ISO de Moneda (Currency ISO)", tipoEntrada: "selector-moneda-codigo" },
@@ -363,6 +363,12 @@ export function obtenerClaveEstadoFinanciero(tipoEstadoFinanciero?: string) {
 }
 
 const aliasCamposEstadoFinanciero: Record<string, Record<string, string>> = {
+  desagregado: {
+    indiceLiquidez: "liquidity-ratio",
+    capitalTrabajo: "working-capital-ratio",
+    ratioEndeudamiento: "current-indebtedness-ratio",
+    ratioRentabilidad: "profitability-ratio",
+  },
   totalizado: {
     ingresosOrdinarios: "ingresos-ordinarios-totalizado",
     gananciaNeta: "ganancia-neta-totalizado",
@@ -506,16 +512,32 @@ export function adaptarCuentaBalanceDesdeApi(
       ?? campo.id.replace(/-([a-z])/g, (_, letra: string) => letra.toUpperCase());
     const valor = valoresPorClave.get(campoApi.toLowerCase());
     if (valor == null) return;
-    registros[campo.id] = String(valor);
+    const valorStr = String(valor);
+    if (campo.tipoEntrada === "entero" || campo.tipoEntrada === "selector-ano") {
+      const n = Math.trunc(Number.parseFloat(valorStr.replace(/,/g, "")));
+      registros[campo.id] = Number.isFinite(n) ? String(n) : valorStr;
+    } else {
+      registros[campo.id] = valorStr;
+    }
   });
 
   if (claveTipo === "turquia") {
     registros["balance-date-p"] = registros["balance-date"] ?? "";
+    registros["currency-iso"] = registros.currency ?? "";
     registros["currency-p"] = registros.currency ?? "";
     registros["exchange-rate-p"] = registros["exchange-rate"] ?? "";
   }
 
   return registros;
+}
+
+export function esCampoEnteroEstadoFinanciero(campoId: string, tipoEstadoFinanciero?: string): boolean {
+  const clave = obtenerClaveEstadoFinanciero(tipoEstadoFinanciero);
+  const secciones = clave ? configuracionEstadosFinancieros[clave] ?? [] : [];
+  const campo = secciones.flatMap((s) => s.campos).find((c) => c.id === campoId);
+  if (!campo) return false;
+  const tipo = obtenerTipoEntradaCampoEstadoFinanciero(campo);
+  return tipo === "entero" || tipo === "selector-ano";
 }
 
 export function obtenerConfiguracionEstadoFinanciero(tipoEstadoFinanciero?: string) {
@@ -529,7 +551,7 @@ export function obtenerTipoEntradaCampoEstadoFinanciero(campo: CampoEstadoFinanc
   const textoNormalizado = normalizarTextoEstadoFinanciero(`${campo.id} ${campo.etiqueta}`);
 
   if (/(^|[\s-])(year|ano)([\s-]|$)/.test(textoNormalizado)) {
-    return "entero";
+    return "selector-ano";
   }
 
   if (/(balance date|fecha de balance)/.test(textoNormalizado)) {

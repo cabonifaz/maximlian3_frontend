@@ -48,6 +48,25 @@ export function CustomModalLocalAnalista({
     return [];
   });
   const inputArchivoRef = useRef<HTMLInputElement>(null);
+  const blobUrlsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    if (!estaAbierto) return;
+    setTipoLocal(obtenerTextoLocal(registroInicial?.tipoLocal));
+    setDireccion(obtenerTextoLocal(registroInicial?.direccion));
+    setComentario(obtenerTextoLocal(registroInicial?.comentario));
+    setIndiceImagenAEliminar(null);
+    setImagenes(
+      registroInicial?.imagenes?.length
+        ? registroInicial.imagenes
+        : registroInicial?.imagen
+          ? [{ nombre: registroInicial.imagen, url: registroInicial.imagenUrl, tipo: registroInicial.imagenTipo }]
+          : [],
+    );
+    blobUrlsRef.current = [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estaAbierto, registroInicial]);
+
   const { data: opcionesTipoLocal } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_LOCAL],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_LOCAL),
@@ -56,13 +75,9 @@ export function CustomModalLocalAnalista({
 
   useEffect(() => {
     return () => {
-      imagenes.forEach((imagen) => {
-        if (imagen.esNueva && imagen.url) {
-          URL.revokeObjectURL(imagen.url);
-        }
-      });
+      blobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [imagenes]);
+  }, []);
 
   if (!estaAbierto) return null;
 
@@ -87,12 +102,11 @@ export function CustomModalLocalAnalista({
   const manejarSeleccionImagen = (archivos?: FileList | null) => {
     if (!archivos?.length) return;
 
-    const nuevasImagenes = Array.from(archivos).map((archivo) => ({
-      nombre: archivo.name,
-      tipo: archivo.type,
-      url: URL.createObjectURL(archivo),
-      esNueva: true,
-    }));
+    const nuevasImagenes = Array.from(archivos).map((archivo) => {
+      const url = URL.createObjectURL(archivo);
+      blobUrlsRef.current.push(url);
+      return { nombre: archivo.name, tipo: archivo.type, url, esNueva: true };
+    });
 
     setImagenes((anterior) => [...anterior, ...nuevasImagenes]);
 
@@ -111,6 +125,7 @@ export function CustomModalLocalAnalista({
       const imagen = anterior[indiceImagen];
       if (imagen?.esNueva && imagen.url) {
         URL.revokeObjectURL(imagen.url);
+        blobUrlsRef.current = blobUrlsRef.current.filter((u) => u !== imagen.url);
       }
       return anterior.filter((_, indice) => indice !== indiceImagen);
     });

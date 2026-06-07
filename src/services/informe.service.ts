@@ -29,6 +29,7 @@ import type {
 import { formatearMontoDecimales } from "@maximilian/shared/utils/formato-monto.util";
 import {
   adaptarCuentaBalanceDesdeApi,
+  esCampoEnteroEstadoFinanciero,
   obtenerClaveEstadoFinanciero,
 } from "@maximilian/shared/utils/estados-financieros.util";
 
@@ -824,6 +825,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
             registrosEstadoFinanciero: Object.fromEntries(
               Object.entries(registrosEstadoFinanciero).map(([clave, valor]) => {
                 if (["balance-date", "balance-date-p", "currency", "currency-p", "currency-iso", "reliability-level"].includes(clave)) {
+                  return [clave, valor];
+                }
+                if (esCampoEnteroEstadoFinanciero(clave, tipoEstadoFinanciero)) {
                   return [clave, valor];
                 }
                 const esRatio = claveEstadoFinanciero !== "turquia"

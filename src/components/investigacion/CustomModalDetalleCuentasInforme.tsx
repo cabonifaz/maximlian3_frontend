@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
@@ -202,6 +203,121 @@ function CampoDetalleEntero({
         placeholder={placeholder}
         className="h-10 w-full rounded-md border border-gray-200 bg-slate-50 px-3 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
       />
+    </div>
+  );
+}
+
+function CampoDetalleAno({
+  etiqueta,
+  valor,
+  onChange,
+  deshabilitado = false,
+}: {
+  etiqueta: string;
+  valor: string;
+  onChange: (valor: string) => void;
+  deshabilitado?: boolean;
+}) {
+  const [abierto, setAbierto] = useState(false);
+  const contenedorRef = useRef<HTMLDivElement>(null);
+  const anoActual = new Date().getFullYear();
+
+  const calcularDecadaBase = (v: string) => {
+    const n = Number.parseInt(v, 10);
+    return Number.isFinite(n) ? Math.floor(n / 10) * 10 : Math.floor(anoActual / 10) * 10;
+  };
+
+  const [decadaBase, setDecadaBase] = useState(() => calcularDecadaBase(valor));
+  const anos = Array.from({ length: 12 }, (_, i) => decadaBase + i);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const manejarClickFuera = (evento: MouseEvent) => {
+      if (contenedorRef.current && !contenedorRef.current.contains(evento.target as Node)) {
+        setAbierto(false);
+      }
+    };
+    document.addEventListener("mousedown", manejarClickFuera);
+    return () => document.removeEventListener("mousedown", manejarClickFuera);
+  }, [abierto]);
+
+  const abrirPicker = () => {
+    setDecadaBase(calcularDecadaBase(valor));
+    setAbierto(true);
+  };
+
+  return (
+    <div className="space-y-2" ref={contenedorRef}>
+      <CustomLabel as="p" className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+        {etiqueta}
+      </CustomLabel>
+      <div className="relative">
+        <input
+          value={valor}
+          disabled={deshabilitado}
+          onChange={(evento) => onChange(evento.target.value.replace(/\D/g, "").slice(0, 4))}
+          onFocus={seleccionarTextoCampoEditable}
+          placeholder="Ej. 2026"
+          className="h-10 w-full rounded-md border border-gray-200 bg-slate-50 px-3 pr-9 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+        />
+        <button
+          type="button"
+          disabled={deshabilitado}
+          onClick={abrirPicker}
+          className="absolute right-0 top-0 flex h-10 w-9 items-center justify-center text-slate-400 hover:text-slate-600 disabled:cursor-not-allowed"
+        >
+          <ChevronDown className="h-4 w-4" />
+        </button>
+
+        {abierto && (
+          <div className="absolute z-20 mt-1 w-52 rounded-xl border border-gray-200 bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-100 px-2 py-2">
+              <button
+                type="button"
+                onClick={() => setDecadaBase((d) => d - 12)}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-xs font-bold text-slate-700">
+                {decadaBase} – {decadaBase + 11}
+              </span>
+              <button
+                type="button"
+                onClick={() => setDecadaBase((d) => d + 12)}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-1 p-2">
+              {anos.map((ano) => {
+                const seleccionado = valor === String(ano);
+                const esActual = ano === anoActual;
+                return (
+                  <button
+                    key={ano}
+                    type="button"
+                    onClick={() => {
+                      onChange(String(ano));
+                      setAbierto(false);
+                    }}
+                    className={`rounded-lg py-2 text-sm font-medium transition-colors ${
+                      seleccionado
+                        ? "bg-brand-black text-white"
+                        : esActual
+                          ? "border border-brand-black/30 text-brand-black hover:bg-slate-50"
+                          : "text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {ano}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -490,6 +606,11 @@ export function CustomModalDetalleCuentasAnalista({
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
     staleTime: Infinity,
   });
+  const { data: opcionesNivelConfiabilidad } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.NIVEL_CONFIABILIDAD],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.NIVEL_CONFIABILIDAD),
+    staleTime: Infinity,
+  });
 
   useEffect(() => {
     setDetalle(detalleBase);
@@ -678,6 +799,16 @@ export function CustomModalDetalleCuentasAnalista({
     }));
   };
 
+  const actualizarRegistrosEstadoFinanciero = (cambios: Record<string, string>) => {
+    setDetalle((anterior) => ({
+      ...anterior,
+      registrosEstadoFinanciero: {
+        ...(anterior.registrosEstadoFinanciero ?? {}),
+        ...cambios,
+      },
+    }));
+  };
+
   const seccionesBalanceConfiguradas = seccionesEstadoFinanciero.filter(
     (seccion) => !/(resultado|ganancia|perdida|profit|ratio)/i.test(`${seccion.id} ${seccion.titulo}`),
   );
@@ -693,14 +824,6 @@ export function CustomModalDetalleCuentasAnalista({
     esCampoTotalConfigurado(seccion.titulo)
     || seccion.campos.some((campo) => esCampoTotalConfigurado(`${campo.id} ${campo.etiqueta}`))
   ));
-  const opcionesConfiabilidad = useMemo(
-    () => [
-      { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 1, num2: null, num3: null, string1: "ACTUAL", string2: null, string3: null, date1: null, date2: null, date3: null },
-      { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 2, num2: null, num3: null, string1: "PRELIMINAR", string2: null, string3: null, date1: null, date2: null, date3: null },
-      { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 3, num2: null, num3: null, string1: "ESTIMADO", string2: null, string3: null, date1: null, date2: null, date3: null },
-    ],
-    [],
-  );
 
   const renderizarControlesHabilitacion = () => (
     <div className="flex flex-col gap-3 md:flex-row">
@@ -856,6 +979,18 @@ export function CustomModalDetalleCuentasAnalista({
               const deshabilitado = deshabilitadoBase || (esCalculado && !esTotal);
               const tipoEntradaCampo = obtenerTipoEntradaCampoEstadoFinanciero(campo);
 
+              if (tipoEntradaCampo === "selector-ano") {
+                return (
+                  <CampoDetalleAno
+                    key={campo.id}
+                    etiqueta={campo.etiqueta}
+                    valor={valorCampo}
+                    onChange={(valor) => actualizarRegistroEstadoFinanciero(campo.id, valor)}
+                    deshabilitado={deshabilitado}
+                  />
+                );
+              }
+
               if (tipoEntradaCampo === "fecha") {
                 return (
                   <CampoDetalleFecha
@@ -882,6 +1017,11 @@ export function CustomModalDetalleCuentasAnalista({
               }
 
               if (tipoEntradaCampo === "selector-moneda-nombre") {
+                const idNumericoMoneda = valorCampo && /^\d+$/.test(valorCampo.trim()) ? Number(valorCampo) : null;
+                const opcionMonedaActual = idNumericoMoneda != null
+                  ? opcionesMoneda?.find((o) => o.num1 === idNumericoMoneda)
+                  : opcionesMoneda?.find((o) => o.string1 === valorCampo);
+
                 return (
                   <div key={campo.id} className="space-y-2">
                     <CustomLabel as="p" className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
@@ -889,10 +1029,27 @@ export function CustomModalDetalleCuentasAnalista({
                     </CustomLabel>
                     <CustomSelectorBuscable
                       options={opcionesMoneda}
-                      value={opcionesMoneda?.find((opcion) => opcion.string1 === valorCampo)?.num1 ?? undefined}
-                      displayValue={valorCampo}
-                      onChange={(valor) => actualizarRegistroEstadoFinanciero(campo.id, opcionesMoneda?.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
-                      onClear={() => actualizarRegistroEstadoFinanciero(campo.id, "")}
+                      value={opcionMonedaActual?.num1 ?? undefined}
+                      displayValue={opcionMonedaActual?.string1 ?? ""}
+                      onChange={(valor) => {
+                        const idStr = String(valor ?? "");
+                        if (campo.id === "currency") {
+                          actualizarRegistrosEstadoFinanciero({ currency: idStr, "currency-iso": idStr, "currency-p": idStr });
+                        } else if (campo.id === "currency-p") {
+                          actualizarRegistrosEstadoFinanciero({ "currency-p": idStr, currency: idStr, "currency-iso": idStr });
+                        } else {
+                          actualizarRegistroEstadoFinanciero(campo.id, idStr);
+                        }
+                      }}
+                      onClear={() => {
+                        if (campo.id === "currency") {
+                          actualizarRegistrosEstadoFinanciero({ currency: "", "currency-iso": "", "currency-p": "" });
+                        } else if (campo.id === "currency-p") {
+                          actualizarRegistrosEstadoFinanciero({ "currency-p": "", currency: "", "currency-iso": "" });
+                        } else {
+                          actualizarRegistroEstadoFinanciero(campo.id, "");
+                        }
+                      }}
                       optional
                       mostrarTextoOpcionalEnLabel={false}
                       placeholder="Seleccione moneda"
@@ -903,6 +1060,11 @@ export function CustomModalDetalleCuentasAnalista({
               }
 
               if (tipoEntradaCampo === "selector-moneda-codigo") {
+                const idNumericoIso = valorCampo && /^\d+$/.test(valorCampo.trim()) ? Number(valorCampo) : null;
+                const opcionIsoActual = idNumericoIso != null
+                  ? opcionesMoneda?.find((o) => o.num1 === idNumericoIso)
+                  : opcionesMoneda?.find((o) => o.string2 === valorCampo);
+
                 return (
                   <div key={campo.id} className="space-y-2">
                     <CustomLabel as="p" className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
@@ -910,10 +1072,24 @@ export function CustomModalDetalleCuentasAnalista({
                     </CustomLabel>
                     <CustomSelectorBuscable
                       options={opcionesMoneda}
-                      value={opcionesMoneda?.find((opcion) => opcion.string2 === valorCampo)?.num1 ?? undefined}
-                      displayValue={valorCampo}
-                      onChange={(valor) => actualizarRegistroEstadoFinanciero(campo.id, opcionesMoneda?.find((opcion) => opcion.num1 === valor)?.string2 ?? "")}
-                      onClear={() => actualizarRegistroEstadoFinanciero(campo.id, "")}
+                      value={opcionIsoActual?.num1 ?? undefined}
+                      displayValue={opcionIsoActual?.string2 ?? ""}
+                      obtenerEtiquetaOpcion={(opcion) => opcion.string2 ?? opcion.string1 ?? ""}
+                      onChange={(valor) => {
+                        const idStr = String(valor ?? "");
+                        if (campo.id === "currency-iso") {
+                          actualizarRegistrosEstadoFinanciero({ "currency-iso": idStr, currency: idStr, "currency-p": idStr });
+                        } else {
+                          actualizarRegistroEstadoFinanciero(campo.id, idStr);
+                        }
+                      }}
+                      onClear={() => {
+                        if (campo.id === "currency-iso") {
+                          actualizarRegistrosEstadoFinanciero({ "currency-iso": "", currency: "", "currency-p": "" });
+                        } else {
+                          actualizarRegistroEstadoFinanciero(campo.id, "");
+                        }
+                      }}
                       optional
                       mostrarTextoOpcionalEnLabel={false}
                       placeholder="Seleccione ISO"
@@ -924,16 +1100,21 @@ export function CustomModalDetalleCuentasAnalista({
               }
 
               if (tipoEntradaCampo === "selector-confiabilidad") {
+                const idNumericoConf = valorCampo && /^\d+$/.test(valorCampo.trim()) ? Number(valorCampo) : null;
+                const opcionConfActual = idNumericoConf != null
+                  ? opcionesNivelConfiabilidad?.find((o) => o.num1 === idNumericoConf)
+                  : opcionesNivelConfiabilidad?.find((o) => o.string1?.toUpperCase() === valorCampo.toUpperCase());
+
                 return (
                   <div key={campo.id} className="space-y-2">
                     <CustomLabel as="p" className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
                       {campo.etiqueta}
                     </CustomLabel>
                     <CustomSelectorBuscable
-                      options={opcionesConfiabilidad}
-                      value={opcionesConfiabilidad.find((opcion) => opcion.string1 === valorCampo)?.num1 ?? undefined}
-                      displayValue={valorCampo}
-                      onChange={(valor) => actualizarRegistroEstadoFinanciero(campo.id, opcionesConfiabilidad.find((opcion) => opcion.num1 === valor)?.string1 ?? "")}
+                      options={opcionesNivelConfiabilidad}
+                      value={opcionConfActual?.num1 ?? undefined}
+                      displayValue={opcionConfActual?.string1 ?? ""}
+                      onChange={(valor) => actualizarRegistroEstadoFinanciero(campo.id, String(valor ?? ""))}
                       onClear={() => actualizarRegistroEstadoFinanciero(campo.id, "")}
                       optional
                       mostrarTextoOpcionalEnLabel={false}
@@ -1065,6 +1246,11 @@ export function CustomModalDetalleCuentasAnalista({
   ];
 
   const validarTotalesBalance = () => {
+    // Los tipos configurados usan registrosEstadoFinanciero; el balanceGeneral simplificado no mapea correctamente desde la API para ellos.
+    if (!esEstadoFinancieroTotalizado && seccionesBalanceConfiguradas.length > 0) {
+      return true;
+    }
+
     const totalActivos = obtenerNumero(detalle.balanceGeneral.totalActivos);
     const totalPasivos = obtenerNumero(detalle.balanceGeneral.totalPasivos);
     const patrimonio = obtenerNumero(detalle.balanceGeneral.patrimonio);
