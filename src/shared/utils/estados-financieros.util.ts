@@ -488,6 +488,36 @@ export function obtenerValorCampoEstadoFinanciero(
   return registros[campoApi] ?? (alias ? registros[alias] : undefined) ?? registros[claveKebab] ?? "";
 }
 
+export function adaptarCuentaBalanceDesdeApi(
+  cuentaBalance: Record<string, unknown>,
+  tipoEstadoFinanciero?: string,
+) {
+  const claveTipo = obtenerClaveEstadoFinanciero(tipoEstadoFinanciero);
+  const valoresPorClave = new Map(
+    Object.entries(cuentaBalance).map(([clave, valor]) => [clave.toLowerCase(), valor]),
+  );
+  const registros: Record<string, string> = {};
+  const camposConfigurados = configuracionEstadosFinancieros[claveTipo]
+    ?.flatMap((seccion) => seccion.campos) ?? [];
+
+  camposConfigurados.forEach((campo) => {
+    const campoApi = Object.entries(aliasCamposEstadoFinanciero[claveTipo] ?? {})
+      .find(([, campoFormulario]) => campoFormulario === campo.id)?.[0]
+      ?? campo.id.replace(/-([a-z])/g, (_, letra: string) => letra.toUpperCase());
+    const valor = valoresPorClave.get(campoApi.toLowerCase());
+    if (valor == null) return;
+    registros[campo.id] = String(valor);
+  });
+
+  if (claveTipo === "turquia") {
+    registros["balance-date-p"] = registros["balance-date"] ?? "";
+    registros["currency-p"] = registros.currency ?? "";
+    registros["exchange-rate-p"] = registros["exchange-rate"] ?? "";
+  }
+
+  return registros;
+}
+
 export function obtenerConfiguracionEstadoFinanciero(tipoEstadoFinanciero?: string) {
   const clave = obtenerClaveEstadoFinanciero(tipoEstadoFinanciero);
   return clave ? configuracionEstadosFinancieros[clave] ?? [] : [];
