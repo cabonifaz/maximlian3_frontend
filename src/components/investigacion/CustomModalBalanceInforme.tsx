@@ -28,11 +28,12 @@ function formatearFecha(fecha: string) {
   return `${dia}/${mes}/${ano}`;
 }
 
-function convertirFechaEntrada(fecha: string) {
-  if (!fecha.includes("/")) return fecha;
-  const [dia, mes, ano] = fecha.split("/");
-  if (!dia || !mes || !ano) return "";
-  return `${ano}-${mes}-${dia}`;
+function compararFechasDdMmYyyy(a: string, b: string): number {
+  const partes = (fecha: string) => fecha.split("/").map(Number);
+  const [da, ma, ya] = partes(a);
+  const [db, mb, yb] = partes(b);
+  if (!da || !ma || !ya || !db || !mb || !yb) return 0;
+  return new Date(ya, ma - 1, da).getTime() - new Date(yb, mb - 1, db).getTime();
 }
 
 export function CustomModalBalanceAnalista({
@@ -41,15 +42,16 @@ export function CustomModalBalanceAnalista({
   onCerrar,
   onGuardar,
 }: PropsCustomModalBalanceAnalista) {
-  const [fechaInicio, setFechaInicio] = useState(convertirFechaEntrada(registroInicial?.fechaInicio ?? registroInicial?.fecha ?? ""));
-  const [fechaFin, setFechaFin] = useState(convertirFechaEntrada(registroInicial?.fechaFin ?? ""));
+  const [fechaInicio, setFechaInicio] = useState(formatearFecha(registroInicial?.fechaInicio ?? registroInicial?.fecha ?? ""));
+  const [fechaFin, setFechaFin] = useState(formatearFecha(registroInicial?.fechaFin ?? ""));
   const [esActual, setEsActual] = useState(registroInicial?.esActual ?? false);
   const [tipoCambio, setTipoCambio] = useState(registroInicial?.tipoCambio ?? "");
   const [operacionCambio, setOperacionCambio] = useState(registroInicial?.operacionCambio ?? "");
   const [tipoBalance, setTipoBalance] = useState(registroInicial?.tipoBalance ?? "Balance general");
   const [tipoEstadoFinanciero, setTipoEstadoFinanciero] = useState(registroInicial?.tipoEstadoFinanciero ?? registroInicial?.tipo ?? "");
   const [errorFechas, setErrorFechas] = useState("");
-  const fechaActual = new Date().toISOString().split("T")[0] ?? "";
+  const hoy = new Date();
+  const fechaActual = `${String(hoy.getDate()).padStart(2, "0")}/${String(hoy.getMonth() + 1).padStart(2, "0")}/${hoy.getFullYear()}`;
   const { data: opcionesMoneda } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.MONEDA],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
@@ -73,12 +75,12 @@ export function CustomModalBalanceAnalista({
     const idTipoEstadoFinanciero = obtenerIdSeleccion(opcionesEstadoFinanciero, tipoEstadoFinanciero) ?? registroInicial?.idTipoEstadoFinanciero;
     const idMoneda = obtenerIdSeleccion(opcionesMoneda, operacionCambio) ?? registroInicial?.idMoneda;
 
-    if (fechaInicio && fechaActual && fechaInicio > fechaActual) {
+    if (fechaInicio && fechaActual && compararFechasDdMmYyyy(fechaInicio, fechaActual) > 0) {
       setErrorFechas("La fecha de inicio no puede ser mayor a la fecha actual.");
       return;
     }
 
-    if (fechaInicio && fechaFin && !esActual && fechaInicio > fechaFin) {
+    if (fechaInicio && fechaFin && !esActual && compararFechasDdMmYyyy(fechaInicio, fechaFin) > 0) {
       setErrorFechas("La fecha de inicio no puede ser mayor a la fecha de fin.");
       return;
     }
@@ -147,19 +149,20 @@ export function CustomModalBalanceAnalista({
           <div className="space-y-2">
             <CustomLabel>Fecha de Inicio</CustomLabel>
             <input
-              type="date"
+              type="text"
+              placeholder="dd/mm/yyyy"
               value={fechaInicio}
               onChange={(event) => {
                 const nuevoValor = event.target.value;
                 setFechaInicio(nuevoValor);
 
-                if (nuevoValor && fechaFin && nuevoValor > fechaFin) {
+                if (nuevoValor && fechaFin && compararFechasDdMmYyyy(nuevoValor, fechaFin) > 0) {
                   const mensaje = "La fecha de inicio no puede ser mayor a la fecha de fin.";
                   setErrorFechas(mensaje);
                   return;
                 }
 
-                if (nuevoValor && fechaActual && nuevoValor > fechaActual) {
+                if (nuevoValor && fechaActual && compararFechasDdMmYyyy(nuevoValor, fechaActual) > 0) {
                   const mensaje = "La fecha de inicio no puede ser mayor a la fecha actual.";
                   setErrorFechas(mensaje);
                   return;
@@ -175,14 +178,15 @@ export function CustomModalBalanceAnalista({
           <div className="space-y-2">
             <CustomLabel>Fecha de Fin</CustomLabel>
             <input
-              type="date"
+              type="text"
+              placeholder="dd/mm/yyyy"
               value={fechaFin}
               disabled={esActual}
               onChange={(event) => {
                 const nuevoValor = event.target.value;
                 setFechaFin(nuevoValor);
 
-                if (fechaInicio && nuevoValor && nuevoValor < fechaInicio) {
+                if (fechaInicio && nuevoValor && compararFechasDdMmYyyy(nuevoValor, fechaInicio) < 0) {
                   const mensaje = "La fecha de fin no puede ser menor a la fecha de inicio.";
                   setErrorFechas(mensaje);
                   return;

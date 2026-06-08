@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, Image as IconoImagen, Trash2, Upload, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, Image as IconoImagen, Trash2, Upload, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { informeService } from "@maximilian/services/informe.service";
 import type { RegistroImagenLocalAnalista, RegistroLocalAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import {
@@ -16,6 +18,7 @@ import {
 interface PropsCustomModalLocalAnalista {
   estaAbierto: boolean;
   registroInicial?: RegistroLocalAnalista | null;
+  soloLectura?: boolean;
   onCerrar: () => void;
   onGuardar: (registro: RegistroLocalAnalista) => void;
 }
@@ -27,6 +30,7 @@ function obtenerTextoLocal(valor: unknown) {
 export function CustomModalLocalAnalista({
   estaAbierto,
   registroInicial,
+  soloLectura = false,
   onCerrar,
   onGuardar,
 }: PropsCustomModalLocalAnalista) {
@@ -34,6 +38,7 @@ export function CustomModalLocalAnalista({
   const [direccion, setDireccion] = useState(() => obtenerTextoLocal(registroInicial?.direccion));
   const [comentario, setComentario] = useState(() => obtenerTextoLocal(registroInicial?.comentario));
   const [indiceImagenAEliminar, setIndiceImagenAEliminar] = useState<number | null>(null);
+  const [indiceImagenVisualizando, setIndiceImagenVisualizando] = useState<number | null>(null);
   const [imagenes, setImagenes] = useState<RegistroImagenLocalAnalista[]>(() => {
     if (registroInicial?.imagenes?.length) return registroInicial.imagenes;
     if (registroInicial?.imagen) {
@@ -56,6 +61,7 @@ export function CustomModalLocalAnalista({
     setDireccion(obtenerTextoLocal(registroInicial?.direccion));
     setComentario(obtenerTextoLocal(registroInicial?.comentario));
     setIndiceImagenAEliminar(null);
+    setIndiceImagenVisualizando(null);
     setImagenes(
       registroInicial?.imagenes?.length
         ? registroInicial.imagenes
@@ -64,6 +70,39 @@ export function CustomModalLocalAnalista({
           : [],
     );
     blobUrlsRef.current = [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estaAbierto, registroInicial]);
+
+  useEffect(() => {
+    if (!estaAbierto) return;
+
+    const imagenesIniciales = registroInicial?.imagenes?.length
+      ? registroInicial.imagenes
+      : registroInicial?.imagen
+        ? [{ nombre: registroInicial.imagen, url: registroInicial.imagenUrl, tipo: registroInicial.imagenTipo }]
+        : [];
+
+    const idsSinUrl = imagenesIniciales
+      .filter((img) => img.idInformeLocalImagen && !img.url && !img.esNueva)
+      .map((img) => img.idInformeLocalImagen!);
+
+    if (idsSinUrl.length === 0) return;
+
+    let cancelado = false;
+
+    informeService.obtenerUrlsImagenes(idsSinUrl).then((urlsObtenidas) => {
+      if (cancelado) return;
+      const mapaUrls = new Map(urlsObtenidas.map((u) => [u.idInformeLocalImagen, u.url]));
+      setImagenes((anterior) =>
+        anterior.map((img) =>
+          img.idInformeLocalImagen && mapaUrls.has(img.idInformeLocalImagen)
+            ? { ...img, url: mapaUrls.get(img.idInformeLocalImagen) }
+            : img,
+        ),
+      );
+    }).catch(() => {});
+
+    return () => { cancelado = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estaAbierto, registroInicial]);
 
@@ -102,10 +141,24 @@ export function CustomModalLocalAnalista({
   const manejarSeleccionImagen = (archivos?: FileList | null) => {
     if (!archivos?.length) return;
 
+    const nombresUsados = new Set(imagenes.map((img) => img.nombre));
+
     const nuevasImagenes = Array.from(archivos).map((archivo) => {
       const url = URL.createObjectURL(archivo);
       blobUrlsRef.current.push(url);
-      return { nombre: archivo.name, tipo: archivo.type, url, esNueva: true };
+
+      let nombreFinal = archivo.name;
+      if (nombresUsados.has(nombreFinal)) {
+        const punto = archivo.name.lastIndexOf(".");
+        const sinExt = punto >= 0 ? archivo.name.slice(0, punto) : archivo.name;
+        const ext = punto >= 0 ? archivo.name.slice(punto) : "";
+        let sufijo = 1;
+        while (nombresUsados.has(`${sinExt} (${sufijo})${ext}`)) sufijo++;
+        nombreFinal = `${sinExt} (${sufijo})${ext}`;
+      }
+      nombresUsados.add(nombreFinal);
+
+      return { nombre: nombreFinal, tipo: archivo.type, url, esNueva: true, archivo };
     });
 
     setImagenes((anterior) => [...anterior, ...nuevasImagenes]);
@@ -115,9 +168,9 @@ export function CustomModalLocalAnalista({
     }
   };
 
-  const abrirImagenAdjunta = (url?: string) => {
-    if (!url) return;
-    window.open(url, "_blank", "noopener,noreferrer");
+  const abrirImagenAdjunta = (indice: number) => {
+    if (!imagenes[indice]?.url) return;
+    setIndiceImagenVisualizando(indice);
   };
 
   const eliminarImagenAdjunta = (indiceImagen: number) => {
@@ -135,6 +188,60 @@ export function CustomModalLocalAnalista({
     imagenes.length === 0 ? "Sin imagen adjunta" : `${imagenes.length} ${imagenes.length === 1 ? "imagen adjunta" : "imágenes adjuntas"}`;
 
   const puedeAgregarMasImagenes = true;
+
+  const renderizarGaleriaImagenes = () => {
+    if (imagenes.length === 0) {
+      return (
+        <div className="flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#d8e0ef] bg-[#fbfcfe] text-center">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-[#8ea0c0]">
+            <IconoImagen size={16} />
+          </span>
+          <span className="text-sm font-semibold text-slate-500">Sin imágenes</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="overflow-hidden rounded-2xl border border-gray-100">
+        <div className="flex items-center gap-3 border-b border-gray-100 bg-slate-50 px-4 py-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm">
+            <IconoImagen size={16} />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-slate-700">Imágenes del local</p>
+            <p className="text-xs text-slate-400">{etiquetaImagenes}</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3">
+          {imagenes.map((imagen, indice) => (
+            <button
+              key={`${imagen.nombre}-${indice}`}
+              type="button"
+              onClick={() => abrirImagenAdjunta(indice)}
+              disabled={!imagen.url}
+              className="group relative aspect-square overflow-hidden rounded-xl border border-gray-100 bg-slate-50"
+            >
+              {imagen.url ? (
+                <img src={imagen.url} alt={imagen.nombre} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-slate-300">
+                  <IconoImagen size={24} />
+                </div>
+              )}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="rounded-full bg-black/50 p-2">
+                  <Eye size={14} className="text-white" />
+                </div>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 truncate bg-gradient-to-t from-black/60 to-transparent px-2 py-1 text-xs text-white">
+                {imagen.nombre}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   const renderizarListaImagenes = () => {
     if (imagenes.length === 0) {
@@ -205,7 +312,7 @@ export function CustomModalLocalAnalista({
                 <CustomButton
                   variant="ghost"
                   size="icon"
-                  onClick={() => abrirImagenAdjunta(imagen.url)}
+                  onClick={() => abrirImagenAdjunta(indice)}
                   disabled={!imagen.url}
                   title="Ver imagen"
                   aria-label="Ver imagen"
@@ -232,12 +339,15 @@ export function CustomModalLocalAnalista({
   };
 
   return (
+    <>
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
       <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">Registro de locales</p>
-            <h2 className="mt-2 text-xl font-bold text-brand-black">{registroInicial ? "Editar Local" : "Nuevo Local"}</h2>
+            <h2 className="mt-2 text-xl font-bold text-brand-black">
+              {soloLectura ? "Detalle de Local" : registroInicial ? "Editar Local" : "Nuevo Local"}
+            </h2>
           </div>
           <CustomButton variant="ghost" size="icon" onClick={onCerrar}>
             <X size={20} className="text-[#8ea0c0]" />
@@ -249,10 +359,10 @@ export function CustomModalLocalAnalista({
             <SelectorMaestroConAltaInvestigacionAnalista
               etiqueta="Tipo de Local"
               valor={tipoLocal}
-              soloLectura={false}
+              soloLectura={soloLectura}
               opcionesTablaMaestra={opcionesTipoLocal}
               idMaestro={TablaMaestraId.TIPO_LOCAL}
-              permiteAltaNueva
+              permiteAltaNueva={!soloLectura}
               marcador="Seleccione tipo de local"
               onChange={setTipoLocal}
             />
@@ -264,8 +374,9 @@ export function CustomModalLocalAnalista({
               value={direccion}
               onChange={(event) => setDireccion(event.target.value)}
               onFocus={seleccionarTextoCampoEditable}
+              disabled={soloLectura}
               placeholder="Ej. Av. Industrial 456, Planta 2..."
-              className="h-12 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+              className="h-12 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-default disabled:bg-slate-50"
             />
           </div>
 
@@ -275,33 +386,44 @@ export function CustomModalLocalAnalista({
               value={comentario}
               onChange={(event) => setComentario(event.target.value)}
               onFocus={seleccionarTextoCampoEditable}
+              disabled={soloLectura}
               placeholder="Describa brevemente las características del local..."
               rows={4}
-              className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+              className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-default disabled:bg-slate-50"
             />
           </div>
 
           <div className="space-y-2">
-            <CustomLabel>Imagen del Local</CustomLabel>
-            <input
-              ref={inputArchivoRef}
-              type="file"
-              accept=".jpg,.jpeg,.png"
-              multiple
-              className="hidden"
-              onChange={(event) => manejarSeleccionImagen(event.target.files)}
-            />
-            {renderizarListaImagenes()}
+            <CustomLabel>Imágenes del Local</CustomLabel>
+            {!soloLectura && (
+              <input
+                ref={inputArchivoRef}
+                type="file"
+                accept=".jpg,.jpeg,.png"
+                multiple
+                className="hidden"
+                onChange={(event) => manejarSeleccionImagen(event.target.files)}
+              />
+            )}
+            {soloLectura ? renderizarGaleriaImagenes() : renderizarListaImagenes()}
           </div>
         </div>
 
         <div className="flex justify-end gap-3 border-t border-gray-100 bg-gray-50/50 px-6 py-4">
-          <CustomButton variant="secondary" size="sm" onClick={onCerrar}>
-            Cancelar
-          </CustomButton>
-          <CustomButton size="sm" onClick={manejarGuardar}>
-            Guardar
-          </CustomButton>
+          {soloLectura ? (
+            <CustomButton variant="secondary" size="sm" onClick={onCerrar}>
+              Cerrar
+            </CustomButton>
+          ) : (
+            <>
+              <CustomButton variant="secondary" size="sm" onClick={onCerrar}>
+                Cancelar
+              </CustomButton>
+              <CustomButton size="sm" onClick={manejarGuardar}>
+                Guardar
+              </CustomButton>
+            </>
+          )}
         </div>
       </div>
 
@@ -318,5 +440,61 @@ export function CustomModalLocalAnalista({
         <p><span className="font-bold">Archivo:</span> {indiceImagenAEliminar != null ? imagenes[indiceImagenAEliminar]?.nombre ?? "-" : "-"}</p>
       </CustomModalConfirmacionEliminacion>
     </div>
+
+    {indiceImagenVisualizando !== null && createPortal(
+      <div
+        className="fixed inset-0 z-[120] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+        onClick={() => setIndiceImagenVisualizando(null)}
+      >
+        <button
+          type="button"
+          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+          onClick={() => setIndiceImagenVisualizando(null)}
+        >
+          <X size={18} />
+        </button>
+
+        {imagenes.length > 1 && (
+          <>
+            <button
+              type="button"
+              className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIndiceImagenVisualizando((anterior) => (anterior! - 1 + imagenes.length) % imagenes.length);
+              }}
+            >
+              <ChevronLeft size={22} />
+            </button>
+            <button
+              type="button"
+              className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIndiceImagenVisualizando((anterior) => (anterior! + 1) % imagenes.length);
+              }}
+            >
+              <ChevronRight size={22} />
+            </button>
+          </>
+        )}
+
+        <div className="flex max-h-[90vh] max-w-[90vw] flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
+          <img
+            src={imagenes[indiceImagenVisualizando]?.url}
+            alt={imagenes[indiceImagenVisualizando]?.nombre}
+            className="max-h-[80vh] max-w-[85vw] rounded-xl object-contain shadow-2xl"
+          />
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-white/80">{imagenes[indiceImagenVisualizando]?.nombre}</p>
+            {imagenes.length > 1 && (
+              <p className="text-xs text-white/50">{indiceImagenVisualizando + 1} / {imagenes.length}</p>
+            )}
+          </div>
+        </div>
+      </div>,
+      document.body,
+    )}
+    </>
   );
 }

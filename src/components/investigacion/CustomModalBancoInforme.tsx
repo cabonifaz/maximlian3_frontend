@@ -370,12 +370,13 @@ function CustomModalBusquedaBancoAnalista({
                           className={`cursor-pointer transition-colors ${estaSeleccionado ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
                           onClick={() => setIdBancoSeleccionado(banco.idBanco)}
                         >
-                          <td className="px-5 py-4">
+                          <td className="relative px-5 py-4">
+                            <span className={`pointer-events-none absolute inset-y-0 left-0 w-[3px] rounded-r-full transition-colors ${estaSeleccionado ? "bg-brand-wine" : ""}`} />
                             <div className="flex items-center gap-3">
                               <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${estaSeleccionado ? "bg-brand-wine text-white" : "bg-slate-100 text-slate-400"}`}>
                                 <Landmark size={16} />
                               </div>
-                              <span className="text-sm font-semibold text-slate-700">{banco.nombre}</span>
+                              <span className={`text-sm font-semibold ${estaSeleccionado ? "text-brand-wine" : "text-slate-700"}`}>{banco.nombre}</span>
                             </div>
                           </td>
                           <td className="px-5 py-4 text-sm text-slate-500">{banco.pais}</td>

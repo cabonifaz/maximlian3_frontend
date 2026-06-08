@@ -167,7 +167,8 @@ function CampoDetalleFecha({
         {etiqueta}
       </CustomLabel>
       <input
-        type="date"
+        type="text"
+        placeholder="dd/mm/yyyy"
         value={valor}
         disabled={deshabilitado}
         onChange={(event) => onChange(event.target.value)}

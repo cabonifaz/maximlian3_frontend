@@ -252,7 +252,10 @@ export function CustomModalBuscarEjecutivoAnalista({
                           className={`cursor-pointer transition-colors ${estaSeleccionado ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
                           onClick={() => setIdRegistroSeleccionado(registro.id)}
                         >
-                          <td className="px-5 py-5 text-sm font-bold text-brand-black">{registro.nombres}</td>
+                          <td className="relative px-5 py-5">
+                            <span className={`pointer-events-none absolute inset-y-0 left-0 w-[3px] rounded-r-full transition-colors ${estaSeleccionado ? "bg-brand-wine" : ""}`} />
+                            <span className={`text-sm font-bold ${estaSeleccionado ? "text-brand-wine" : "text-brand-black"}`}>{registro.nombres}</span>
+                          </td>
                           <td className="px-5 py-5">
                             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
                               {registro.tipoDocumentoIdentidad || "-"} - {registro.numeroDocumentoIdentidad || "-"}

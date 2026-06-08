@@ -7,6 +7,7 @@ import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
+  ImagenPendienteSubida,
   InformeAutocompletarRequest,
   InformeCrearRequest,
   InformeCrearResponse,
@@ -202,15 +203,13 @@ function obtenerLista(...valores: unknown[]): unknown[] {
 function formatearFechaEntrada(valor: string): string {
   const texto = valor.trim();
   if (!texto) return "";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return texto;
 
-  const coincidenciaIso = texto.match(/^(\d{4}-\d{2}-\d{2})T/);
-  if (coincidenciaIso?.[1]) return coincidenciaIso[1];
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) return texto;
 
-  const coincidenciaLatina = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (coincidenciaLatina) {
-    const [, dia, mes, ano] = coincidenciaLatina;
-    return `${ano}-${mes}-${dia}`;
+  const coincidenciaIso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (coincidenciaIso) {
+    const [, ano, mes, dia] = coincidenciaIso;
+    return `${dia}/${mes}/${ano}`;
   }
 
   return texto;
@@ -346,6 +345,15 @@ function normalizarRespuestaLista(resultado: unknown): InformeListResponse {
   };
 }
 
+function normalizarImagenPendiente(raw: unknown): ImagenPendienteSubida {
+  const item = typeof raw === "object" && raw !== null ? (raw as Record<string, unknown>) : {};
+  return {
+    idInformeLocalImagen: obtenerNumero(item.idInformeLocalImagen, item.IdInformeLocalImagen) ?? 0,
+    nombre: obtenerTexto(item.nombre, item.Nombre),
+    uploadUrl: obtenerTexto(item.uploadUrl, item.UploadUrl),
+  };
+}
+
 function normalizarRespuestaCrear(resultado: unknown): InformeCrearResponse {
   if (Array.isArray(resultado)) {
     const primerRegistro = resultado[0];
@@ -353,10 +361,12 @@ function normalizarRespuestaCrear(resultado: unknown): InformeCrearResponse {
   }
 
   const registro = typeof resultado === "object" && resultado !== null ? (resultado as Record<string, unknown>) : {};
+  const imagenesPendientesRaw = Array.isArray(registro.imagenesPendientes) ? registro.imagenesPendientes : [];
 
   return {
     idInforme: obtenerNumero(registro.idInforme, registro.IdInforme) || undefined,
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido) || undefined,
+    imagenesPendientes: imagenesPendientesRaw.map(normalizarImagenPendiente),
   };
 }
 
@@ -722,6 +732,8 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     const imagenes = obtenerLista(local.imagenes, local.Imagenes).map((imagen) => {
       const registroImagen = obtenerRegistro(imagen);
       return {
+        idInformeLocalImagen: obtenerNumeroOpcional(registroImagen.idInformeLocalImagen, registroImagen.IdInformeLocalImagen),
+        idTipoArchivo: obtenerNumeroOpcional(registroImagen.idTipoArchivo, registroImagen.IdTipoArchivo),
         nombre: obtenerTexto(registroImagen.nombre, registroImagen.Nombre, registroImagen.imagenURL, registroImagen.ImagenURL) || "archivo",
         url: obtenerTexto(registroImagen.url, registroImagen.Url, registroImagen.imagenURL, registroImagen.ImagenURL) || undefined,
         tipo: obtenerTexto(registroImagen.tipoArchivo, registroImagen.TipoArchivo, registroImagen.mimeType, registroImagen.MimeType) || undefined,
@@ -1198,6 +1210,31 @@ export const informeService = {
     if (!respuesta.ok) {
       throw new Error("No se pudo subir el archivo al almacenamiento");
     }
+  },
+
+  actualizarEstadoCargaImagenes: async (ids: number[]): Promise<void> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/actualizarEstadoCargaImagenes", { ids });
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/actualizarEstadoCargaImagenes")) {
+      throw new Error(data.mensaje || "No se pudo actualizar el estado de carga de imágenes");
+    }
+  },
+
+  obtenerUrlsImagenes: async (ids: number[]): Promise<{ idInformeLocalImagen: number; url: string }[]> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/obtenerUrlsImagenes", { ids });
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/obtenerUrlsImagenes")) {
+      throw new Error(data.mensaje || "No se pudo obtener las URLs de las imágenes");
+    }
+
+    const lista = Array.isArray(data.result) ? data.result : [];
+    return lista.map((item: unknown) => {
+      const registro = typeof item === "object" && item !== null ? (item as Record<string, unknown>) : {};
+      return {
+        idInformeLocalImagen: obtenerNumero(registro.idInformeLocalImagen, registro.IdInformeLocalImagen) ?? 0,
+        url: obtenerTexto(registro.url, registro.Url, registro.uploadUrl, registro.UploadUrl),
+      };
+    });
   },
 
   autocompletar: async (payload: InformeAutocompletarRequest): Promise<InformeExtraccionResponse> => {
