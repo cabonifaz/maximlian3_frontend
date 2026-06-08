@@ -449,6 +449,9 @@ export interface InformeObtenerResponse {
   idEstadoManual?: number;
   idTipoEmpresa?: number;
   idTipoCambio?: number;
+  idOperacionesTCMoneda?: number;
+  idOperacionesCambioDivisas?: number;
+  idVentasCreditoTiempo?: number;
   idCiudadRegistro?: number;
   idSector?: number;
   idActividad?: number;

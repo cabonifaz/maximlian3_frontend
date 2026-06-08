@@ -1067,6 +1067,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     idEstadoManual: obtenerNumeroOpcional(registro.idEstadoManual, registro.IdEstadoManual),
     idTipoEmpresa: obtenerNumeroOpcional(registro.idTipoEmpresa, registro.IdTipoEmpresa),
     idTipoCambio: obtenerNumeroOpcional(registro.idTipoCambio, registro.IdTipoCambio),
+    idOperacionesTCMoneda: obtenerNumeroOpcional(registro.operacionesTCMoneda, registro.OperacionesTCMoneda),
+    idOperacionesCambioDivisas: obtenerNumeroOpcional(registro.idOperacionesCambioDivisas, registro.IdOperacionesCambioDivisas),
+    idVentasCreditoTiempo: obtenerNumeroOpcional(registro.idVentasCreditoTiempo, registro.IdVentasCreditoTiempo),
     idCiudadRegistro: obtenerNumeroOpcional(registro.idCiudadRegistro, registro.IdCiudadRegistro),
     idSector: obtenerNumeroOpcional(registro.idSector, registro.IdSector),
     idActividad: obtenerNumeroOpcional(registro.idActividad, registro.IdActividad),
@@ -1088,6 +1091,13 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
     limitesCreditoProveedor,
     paises,
     tiposDocumento,
+    tiposPersona,
+    estadosCliente,
+    tiposEmpresa,
+    ciudades,
+    actividadesEconomicas,
+    clasesCiiu,
+    tiemposCreditoVentas,
   ]: EntradaTablaMaestra[][] = await Promise.all([
     servicioTablaMaestra.list(TablaMaestraId.SECTOR_ECONOMICO).catch(() => []),
     servicioTablaMaestra.list(TablaMaestraId.TIPO_LOCAL).catch(() => []),
@@ -1098,6 +1108,13 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
     servicioTablaMaestra.list(TablaMaestraId.LIMITE_CREDITO_PROVEEDOR).catch(() => []),
     servicioTablaMaestra.list(TablaMaestraId.PAIS).catch(() => []),
     servicioTablaMaestra.list(TablaMaestraId.TIPO_REG_TRIBUTARIO).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.ESTADO_CLIENTE).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.TIPO_EMPRESA).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.CIUDAD).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.ACTIVIDAD_ECONOMICA).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.CLASE_CIIU).catch(() => []),
+    servicioTablaMaestra.list(TablaMaestraId.TIEMPO_CREDITO_VENTAS).catch(() => []),
   ]);
 
   const companias: RegistroCompaniaInvestigacion[] = await Promise.all(
@@ -1197,19 +1214,79 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
       || proveedor.limiteCredito,
   }));
 
+  const operacionPrincipal = { ...respuesta.datosInvestigacion.operacionPrincipal };
+  if (!operacionPrincipal.sector && respuesta.idSector) {
+    operacionPrincipal.sector = sectores.find((s) => s.num1 === respuesta.idSector)?.string1 ?? operacionPrincipal.sector;
+  }
+  if (respuesta.idIsicCategoria) {
+    operacionPrincipal.categoriaCiiu = actividadesEconomicas.find((a) => a.num1 === respuesta.idIsicCategoria)?.string1 ?? operacionPrincipal.categoriaCiiu;
+  }
+  if (respuesta.idIsicClase) {
+    operacionPrincipal.claseCiiu = clasesCiiu.find((c) => c.num1 === respuesta.idIsicClase)?.string1 ?? operacionPrincipal.claseCiiu;
+  }
+  if (respuesta.idVentasCreditoTiempo) {
+    operacionPrincipal.ventasCreditoTiempo = tiemposCreditoVentas.find((t) => t.num1 === respuesta.idVentasCreditoTiempo)?.string1 ?? operacionPrincipal.ventasCreditoTiempo;
+  }
+
+  const importaciones = respuesta.datosInvestigacion.importaciones.map((item) => ({
+    ...item,
+    moneda: item.moneda || monedas.find((m) => m.num1 === item.idMoneda)?.string1 || item.moneda,
+  }));
+
+  const exportaciones = respuesta.datosInvestigacion.exportaciones.map((item) => ({
+    ...item,
+    moneda: item.moneda || monedas.find((m) => m.num1 === item.idMoneda)?.string1 || item.moneda,
+  }));
+
+  const identificacion = { ...respuesta.datosInvestigacion.identificacion };
+  if (!identificacion.tipoPersona && respuesta.idTipoPersona) {
+    identificacion.tipoPersona = tiposPersona.find((t) => t.num1 === respuesta.idTipoPersona)?.string1 ?? identificacion.tipoPersona;
+  }
+  if (!identificacion.pais && respuesta.idPais) {
+    identificacion.pais = paises.find((p) => p.num1 === respuesta.idPais)?.string1 ?? identificacion.pais;
+  }
+  if (!identificacion.operacionesCambio && respuesta.idOperacionesTCMoneda) {
+    identificacion.operacionesCambio = monedas.find((m) => m.num1 === respuesta.idOperacionesTCMoneda)?.string1 ?? identificacion.operacionesCambio;
+  }
+  if (!identificacion.tipoIdentificacionFiscal && respuesta.taxIdType) {
+    identificacion.tipoIdentificacionFiscal = tiposDocumento.find((t) => t.num1 === respuesta.taxIdType)?.string1 ?? identificacion.tipoIdentificacionFiscal;
+  }
+  if (!identificacion.estadoActual && respuesta.idEstadoManual) {
+    identificacion.estadoActual = estadosCliente.find((e) => e.num1 === respuesta.idEstadoManual)?.string1 ?? identificacion.estadoActual;
+  }
+
+  const aspectosLegales = { ...respuesta.datosInvestigacion.aspectosLegales };
+  if (!aspectosLegales.tipoEmpresa && respuesta.idTipoEmpresa) {
+    aspectosLegales.tipoEmpresa = tiposEmpresa.find((t) => t.num1 === respuesta.idTipoEmpresa)?.string1 ?? aspectosLegales.tipoEmpresa;
+  }
+  if (!aspectosLegales.ciudadRegistro && respuesta.idCiudadRegistro) {
+    aspectosLegales.ciudadRegistro = ciudades.find((c) => c.num1 === respuesta.idCiudadRegistro)?.string1 ?? aspectosLegales.ciudadRegistro;
+  }
+  if (respuesta.idOperacionesCambioDivisas) {
+    aspectosLegales.operacionesCambioDivisas = monedas.find((m) => m.num1 === respuesta.idOperacionesCambioDivisas)?.string1 ?? aspectosLegales.operacionesCambioDivisas;
+  }
+  if (respuesta.idTipoCambio) {
+    aspectosLegales.monedaTipoCambio = monedas.find((m) => m.num1 === respuesta.idTipoCambio)?.string1 ?? aspectosLegales.monedaTipoCambio;
+  }
+
   return {
     ...respuesta,
-      datosInvestigacion: {
-        ...respuesta.datosInvestigacion,
-        companiasRelacionadas: companias,
-        bancos,
-        directorioEjecutivo: directorios,
-        locales,
-        balances,
-        proveedores,
-      },
-    };
-  }
+    datosInvestigacion: {
+      ...respuesta.datosInvestigacion,
+      identificacion,
+      aspectosLegales,
+      operacionPrincipal,
+      importaciones,
+      exportaciones,
+      companiasRelacionadas: companias,
+      bancos,
+      directorioEjecutivo: directorios,
+      locales,
+      balances,
+      proveedores,
+    },
+  };
+}
 
 export const informeService = {
   list: async (params: InformeListParams): Promise<InformeListResponse> => {

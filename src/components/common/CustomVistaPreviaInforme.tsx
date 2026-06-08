@@ -643,71 +643,93 @@ function CustomTarjetaVistaPreviaInforme({
   mostrarValorTraducido,
 }: PropsTarjetaVistaPreviaInforme) {
   return (
-    <article className="min-h-[540px] rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-50 text-red-500">
-            <FileText size={18} />
+    <article className="min-h-[600px] overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+      {/* Cabecera del documento */}
+      <div className="border-b border-gray-200 bg-slate-50 px-8 py-5">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileText size={15} className="text-slate-400" />
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{titulo}</p>
           </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">{titulo}</p>
-            <p className="text-xs font-semibold text-slate-500">Safety Report</p>
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+            {indicador}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-[11px]">
+          <div className="flex gap-2">
+            <span className="w-24 shrink-0 font-semibold text-slate-400">{mostrarValorTraducido ? "Country" : "País"}:</span>
+            <span className="text-slate-700">{encabezado.pais || "-"}</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="w-24 shrink-0 font-semibold text-slate-400">{mostrarValorTraducido ? "Date" : "Fecha"}:</span>
+            <span className="text-slate-700">{encabezado.fecha}</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="w-24 shrink-0 font-semibold text-slate-400">{mostrarValorTraducido ? "Type" : "Tipo"}:</span>
+            <span className="text-slate-700">{encabezado.tipoSolicitud || "-"}</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="w-24 shrink-0 font-semibold text-slate-400">{mostrarValorTraducido ? "Analyst" : "Analista"}:</span>
+            <span className="text-slate-700">{encabezado.analista}</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="w-24 shrink-0 font-semibold text-slate-400">{mostrarValorTraducido ? "Translator" : "Traductor"}:</span>
+            <span className="text-slate-700">{encabezado.traductor}</span>
           </div>
         </div>
-        <span className="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-600">
-          {indicador}
-        </span>
       </div>
 
-      <div className="mb-6 border-b border-gray-100 pb-5 text-[11px] leading-5 text-slate-500">
-        <p><span className="font-bold text-slate-700">Country:</span> {encabezado.pais}</p>
-        <p><span className="font-bold text-slate-700">Date of Request:</span> {encabezado.fecha}</p>
-        <p><span className="font-bold text-slate-700">Type of Report:</span> {encabezado.tipoSolicitud}</p>
-        <p><span className="font-bold text-slate-700">Analyst:</span> {encabezado.analista}</p>
-        <p><span className="font-bold text-slate-700">Translator:</span> {encabezado.traductor}</p>
-      </div>
-
-      <div className="space-y-6">
-        {secciones.map((seccion) => (
-          <section key={seccion.id} className="space-y-4">
-            {mostrarTituloSeccion ? (
-              <div>
-                <h3 className="text-center text-xs font-bold uppercase tracking-[0.16em] text-slate-700">
-                  {seccion.titulo}
-                </h3>
-              </div>
-            ) : null}
-
-            <div className="space-y-4">
-              {seccion.bloques.map((bloque) => (
-                <div key={bloque.id} className="rounded-2xl border border-gray-100 p-4">
-                  <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                    {bloque.titulo}
-                  </p>
-                  <div className="space-y-3 text-[11px] leading-5 text-slate-600">
-                    {bloque.filas.map((fila) => (
-                      <div key={`${bloque.id}-${fila.etiqueta}`} className="grid gap-2 border-b border-gray-50 pb-3 md:grid-cols-[180px_minmax(0,1fr)]">
-                        <p className="font-bold uppercase tracking-[0.14em] text-slate-400">
-                          {mostrarValorTraducido ? fila.etiquetaTraducida : fila.etiqueta}
-                        </p>
-                        <p>{mostrarValorTraducido ? fila.valorTraducido : fila.valorOriginal}</p>
-                      </div>
-                    ))}
-                  </div>
+      {/* Cuerpo del documento */}
+      <div className="px-8 py-6">
+        <div className="space-y-8">
+          {secciones.map((seccion) => (
+            <section key={seccion.id}>
+              {mostrarTituloSeccion ? (
+                <div className="mb-5 border-b-2 border-slate-700 pb-1.5">
+                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-700">
+                    {mostrarValorTraducido ? traducirTextoVistaPrevia(seccion.titulo) : seccion.titulo}
+                  </h3>
                 </div>
-              ))}
-            </div>
+              ) : null}
 
-            {seccion.observaciones ? (
-              <div className="rounded-2xl bg-slate-50 p-4 text-[11px] leading-5 text-slate-600">
-                <p className="mb-2 font-bold uppercase tracking-[0.14em] text-slate-400">
-                  Observaciones de {seccion.titulo}
-                </p>
-                <p>{seccion.observaciones}</p>
+              <div className="space-y-5">
+                {seccion.bloques.map((bloque) => (
+                  <div key={bloque.id}>
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                      {mostrarValorTraducido ? traducirTextoVistaPrevia(bloque.titulo) : bloque.titulo}
+                    </p>
+                    <div className="overflow-hidden rounded-lg border border-slate-100">
+                      {bloque.filas.map((fila, indice) => (
+                        <div
+                          key={`${bloque.id}-${fila.etiqueta}`}
+                          className={`grid text-xs md:grid-cols-[200px_minmax(0,1fr)] ${
+                            indice % 2 === 0 ? "bg-white" : "bg-slate-50/70"
+                          }`}
+                        >
+                          <p className="border-r border-slate-100 px-4 py-2.5 font-semibold text-slate-500">
+                            {mostrarValorTraducido ? fila.etiquetaTraducida : fila.etiqueta}
+                          </p>
+                          <p className="px-4 py-2.5 leading-relaxed text-slate-800">
+                            {mostrarValorTraducido ? fila.valorTraducido : fila.valorOriginal}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ) : null}
-          </section>
-        ))}
+
+              {seccion.observaciones ? (
+                <div className="mt-4 border-l-2 border-slate-300 bg-slate-50/50 py-3 pl-4 pr-4">
+                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    {mostrarValorTraducido ? "Observations" : "Observaciones"} · {mostrarValorTraducido ? traducirTextoVistaPrevia(seccion.titulo) : seccion.titulo}
+                  </p>
+                  <p className="text-xs leading-relaxed text-slate-600">{seccion.observaciones}</p>
+                </div>
+              ) : null}
+            </section>
+          ))}
+        </div>
       </div>
     </article>
   );
