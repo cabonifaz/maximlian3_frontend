@@ -5173,8 +5173,6 @@ function PantallaInvestigacionAnalista({
       <CustomModalArchivosInvestigacionAnalista
         estaAbierto={estaAbiertoModalArchivosInvestigacion}
         archivos={archivosInvestigacion}
-        faseActual={idSeccionActiva}
-        secciones={seccionesInvestigacionAnalista}
         onCerrar={() => setEstaAbiertoModalArchivosInvestigacion(false)}
         onArchivosChange={setArchivosInvestigacion}
       />

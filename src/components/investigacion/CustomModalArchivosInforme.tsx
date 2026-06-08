@@ -1,17 +1,17 @@
 import { Download, Trash2, Upload, X } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomBloqueCargaArchivosAnalista } from "@maximilian/components/investigacion/CustomBloqueCargaArchivos";
 import type { ReferenciaBloqueCargaArchivosAnalista } from "@maximilian/components/investigacion/CustomBloqueCargaArchivos";
-import type { ArchivoInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
-import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+import type { ArchivoInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 
 interface PropsCustomModalArchivosInvestigacionAnalista {
   estaAbierto: boolean;
   archivos: ArchivoInvestigacionAnalista[];
-  secciones: Array<{ id: IdSeccionInvestigacionAnalista; titulo: string }>;
-  faseActual: IdSeccionInvestigacionAnalista;
   onCerrar: () => void;
   onArchivosChange: (archivos: ArchivoInvestigacionAnalista[]) => void;
 }
@@ -26,42 +26,26 @@ function obtenerExtensionArchivo(nombre: string) {
   return nombre.split(".").pop()?.toUpperCase() ?? "—";
 }
 
-function crearOpcion(num1: number, string1: string): EntradaTablaMaestra {
-  return {
-    idEmpresa: 0,
-    idTablaMaestra: null,
-    idMaestro: 0,
-    descripcion: "",
-    num1,
-    num2: null,
-    num3: null,
-    string1,
-    string2: null,
-    string3: null,
-    date1: null,
-    date2: null,
-    date3: null,
-  };
-}
-
 export function CustomModalArchivosInvestigacionAnalista({
   estaAbierto,
   archivos,
-  secciones,
-  faseActual,
   onCerrar,
   onArchivosChange,
 }: PropsCustomModalArchivosInvestigacionAnalista) {
   const bloqueCargaRef = useRef<ReferenciaBloqueCargaArchivosAnalista>(null);
   const [idArchivoDescargando, setIdArchivoDescargando] = useState<string | null>(null);
-  const opcionesTipoDocumento = useMemo(
-    () => [crearOpcion(1, "Informativo"), crearOpcion(2, "Evidencia")],
-    [],
-  );
-  const opcionesSecciones = useMemo(
-    () => secciones.map((seccion, indice) => crearOpcion(indice + 1, seccion.titulo)),
-    [secciones],
-  );
+  const { data: opcionesTipoEvidencia } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_EVIDENCIA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_EVIDENCIA),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
+  const { data: opcionesFaseEvidencia } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.FASE_EVIDENCIA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.FASE_EVIDENCIA),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
 
   if (!estaAbierto) return null;
 
@@ -89,6 +73,24 @@ export function CustomModalArchivosInvestigacionAnalista({
     }));
 
     onArchivosChange([...archivos, ...nuevosArchivos]);
+  };
+
+  const obtenerIdTipoEvidencia = (archivo: ArchivoInvestigacionAnalista) =>
+    archivo.idTipoEvidencia
+    ?? opcionesTipoEvidencia?.find(
+      (opcion) => opcion.string1?.trim().toLowerCase() === archivo.tipoDocumento.toLowerCase(),
+    )?.num1
+    ?? undefined;
+
+  const esTipoEvidencia = (archivo: ArchivoInvestigacionAnalista) => {
+    const idTipoEvidencia = obtenerIdTipoEvidencia(archivo);
+    const textoTipo = opcionesTipoEvidencia
+      ?.find((opcion) => opcion.num1 === idTipoEvidencia)
+      ?.string1
+      ?.trim()
+      .toLowerCase();
+
+    return textoTipo?.includes("evidencia") ?? archivo.tipoDocumento === "Evidencia";
   };
 
   return (
@@ -155,21 +157,28 @@ export function CustomModalArchivosInvestigacionAnalista({
                             <span className="text-xs text-slate-500">{archivo.tipoDocumento || "-"}</span>
                           ) : (
                             <CustomSelectorBuscable
-                              options={opcionesTipoDocumento}
-                              value={archivo.tipoDocumento === "Informativo" ? 1 : archivo.tipoDocumento === "Evidencia" ? 2 : undefined}
-                              onChange={(valor) =>
+                              options={opcionesTipoEvidencia}
+                              value={obtenerIdTipoEvidencia(archivo)}
+                              onChange={(valor) => {
+                                const textoTipo = opcionesTipoEvidencia
+                                  ?.find((opcion) => opcion.num1 === valor)
+                                  ?.string1
+                                  ?.trim();
+                                const esEvidencia = textoTipo?.toLowerCase().includes("evidencia") ?? false;
+
                                 onArchivosChange(
                                   archivos.map((item) =>
                                     item.id === archivo.id
                                       ? {
                                           ...item,
-                                          tipoDocumento: valor === 2 ? "Evidencia" : "Informativo",
-                                          faseVinculada: valor === 2 ? item.faseVinculada ?? faseActual : undefined,
+                                          idTipoEvidencia: valor,
+                                          tipoDocumento: esEvidencia ? "Evidencia" : "Informativo",
+                                          idFaseEvidencia: esEvidencia ? item.idFaseEvidencia : undefined,
                                         }
                                       : item,
                                   ),
-                                )
-                              }
+                                );
+                              }}
                               onClear={() =>
                                 onArchivosChange(
                                   archivos.map((item) =>
@@ -177,6 +186,8 @@ export function CustomModalArchivosInvestigacionAnalista({
                                       ? {
                                           ...item,
                                           tipoDocumento: "",
+                                          idTipoEvidencia: undefined,
+                                          idFaseEvidencia: undefined,
                                           faseVinculada: undefined,
                                         }
                                       : item,
@@ -192,17 +203,15 @@ export function CustomModalArchivosInvestigacionAnalista({
                         <td className="px-3 py-2.5">
                           {archivo.esPersistido ? (
                             <span className="text-xs text-slate-500">{archivo.faseVinculadaTexto || "No aplica"}</span>
-                          ) : archivo.tipoDocumento === "Evidencia" ? (
+                          ) : esTipoEvidencia(archivo) ? (
                             <CustomSelectorBuscable
-                              options={opcionesSecciones}
-                              value={
-                                opcionesSecciones.find((seccion) => seccion.string1 === secciones.find((item) => item.id === (archivo.faseVinculada ?? faseActual))?.titulo)?.num1 ?? undefined
-                              }
+                              options={opcionesFaseEvidencia}
+                              value={archivo.idFaseEvidencia}
                               onChange={(valor) =>
                                 onArchivosChange(
                                   archivos.map((item) =>
                                     item.id === archivo.id
-                                      ? { ...item, faseVinculada: secciones[(valor ?? 1) - 1]?.id as IdSeccionInvestigacionAnalista }
+                                      ? { ...item, idFaseEvidencia: valor }
                                       : item,
                                 ),
                               )
@@ -211,7 +220,7 @@ export function CustomModalArchivosInvestigacionAnalista({
                                 onArchivosChange(
                                   archivos.map((item) =>
                                     item.id === archivo.id
-                                      ? { ...item, faseVinculada: undefined }
+                                      ? { ...item, idFaseEvidencia: undefined }
                                       : item,
                                   ),
                                 )

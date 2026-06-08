@@ -174,6 +174,13 @@ function normalizarArchivosInvestigacion(
         archivo.tipoDocumento,
         archivo.TipoDocumento,
       ),
+      idTipoEvidencia: obtenerNumeroOpcional(archivo.idTipoArchivo, archivo.IdTipoArchivo),
+      idFaseEvidencia: obtenerNumeroOpcional(
+        archivo.idFaseEvidencia,
+        archivo.IdFaseEvidencia,
+        archivo.idFase,
+        archivo.IdFase,
+      ),
       esPersistido: true,
       urlDescarga,
       mimeType,
