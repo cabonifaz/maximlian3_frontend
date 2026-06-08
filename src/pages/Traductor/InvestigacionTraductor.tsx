@@ -15,6 +15,7 @@ import {
   Search,
   Sparkles,
   Trash2,
+  X,
 } from "lucide-react";
 import { CustomModalVistaPreviaTraductor } from "@maximilian/components/traductor/CustomModalVistaPreviaTraductor";
 import { CustomModalBalanceAnalista } from "@maximilian/components/investigacion/CustomModalBalanceInforme";
@@ -4289,14 +4290,14 @@ function PantallaInvestigacionAnalista({
       mensajeAdvertencia?: string;
     }) => (
       <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-3">
-        <div className="grid gap-3 md:grid-cols-[120px_minmax(0,1fr)_auto]">
+        <div className="grid gap-3 md:grid-cols-[96px_minmax(0,1fr)_auto]">
           <input
             value={codigo}
             onChange={(event) => onCodigoChange(event.target.value)}
             readOnly={esSoloLectura}
             placeholder="Código"
             aria-invalid={codigoDuplicado}
-            className={`h-10 rounded-lg border bg-white px-3 text-sm text-slate-700 outline-none focus:ring-2 ${
+            className={`h-10 w-24 rounded-lg border bg-white px-3 text-sm text-slate-700 outline-none focus:ring-2 ${
               codigoDuplicado
                 ? "border-red-300 focus:border-red-500 focus:ring-red-500/10"
                 : "border-slate-200 focus:border-brand-black focus:ring-brand-black/5"
@@ -4313,7 +4314,7 @@ function PantallaInvestigacionAnalista({
             <CustomButton
               type="button"
               size="sm"
-              variant="secondary"
+              variant="wine"
               disabled={deshabilitado || codigoDuplicado || esSoloLectura}
               loading={guardando}
               loadingText="Agregando..."
@@ -4324,11 +4325,13 @@ function PantallaInvestigacionAnalista({
             {onOcultar && (
               <CustomButton
                 type="button"
-                size="sm"
+                size="icon"
                 variant="ghost"
+                aria-label="Cancelar alta CIIU"
+                title="Cancelar"
                 onClick={onOcultar}
               >
-                Cancelar
+                <X size={18} className="text-slate-500" />
               </CustomButton>
             )}
           </div>
