@@ -5172,8 +5172,21 @@ function PantallaInvestigacionAnalista({
 
       <CustomModalArchivosInvestigacionAnalista
         estaAbierto={estaAbiertoModalArchivosInvestigacion}
+        idPedido={Number.isFinite(Number(idPedido)) ? Number(idPedido) : undefined}
+        idInforme={idInformeActual}
         archivos={archivosInvestigacion}
         onCerrar={() => setEstaAbiertoModalArchivosInvestigacion(false)}
+        onInformeCreado={(nuevoIdInforme) => {
+          setIdInformeActual(nuevoIdInforme);
+          const parametros = new URLSearchParams(window.location.search);
+          parametros.set("modo", "continuar");
+          parametros.set("idInforme", String(nuevoIdInforme));
+          window.history.replaceState(
+            window.history.state,
+            "",
+            `${window.location.pathname}?${parametros.toString()}`,
+          );
+        }}
         onArchivosChange={setArchivosInvestigacion}
       />
 
@@ -5616,10 +5629,9 @@ export default function InvestigacionAnalista() {
   const datosEjemploInvestigacion = useMemo(() => obtenerDatosInvestigacionAnalista(modo), [modo]);
 
   const { data: informeObtenido, isLoading: estaCargandoInforme } = useQuery({
-    queryKey: ["informe-obtener-analista", idPedidoNumerico, idInformeNumerico, idCarga],
+    queryKey: ["informe-obtener-analista", idPedidoNumerico, idCarga],
     queryFn: () => informeService.obtener({
       idPedido: idPedidoNumerico,
-      idInforme: Number.isFinite(idInformeNumerico) && idInformeNumerico > 0 ? idInformeNumerico : undefined,
     }),
     enabled: usaDatosBackend,
     staleTime: 0,

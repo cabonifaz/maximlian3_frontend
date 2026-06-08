@@ -330,6 +330,7 @@ export interface RegistroBancoAnalista {
 
 export interface ArchivoInvestigacionAnalista {
   id: string;
+  idInformeArchivo?: number;
   nombre: string;
   extension: string;
   tamano: number;

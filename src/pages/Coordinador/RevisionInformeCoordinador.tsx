@@ -34,7 +34,6 @@ export default function RevisionInformeCoordinador() {
     queryKey: ["coordinador-revision-detalle", idPedido, idInforme],
     queryFn: () => informeService.obtener({
       idPedido: Number(idPedido),
-      idInforme: Number.isFinite(idInforme) && idInforme > 0 ? idInforme : undefined,
     }),
     enabled: !esEjemplo && Number.isFinite(Number(idPedido)) && Number(idPedido) > 0,
   });

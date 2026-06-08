@@ -457,8 +457,56 @@ export interface InformeObtenerResponse {
 }
 
 export interface InformeObtenerParams {
+  idPedido: number;
+}
+
+export interface InformeGenerarUrlsArchivoRequest {
+  idPedido: number;
+  nombres: string[];
+}
+
+export interface InformeUrlArchivoGenerada {
+  nombre: string;
+  uploadUrl: string;
+  archivoUrl: string;
+}
+
+export interface InformeArchivoLoteItem {
+  nombre: string;
+  archivoUrl: string;
+  extension: string;
+  tamanoBytes: number;
+  idTipoArchivo: number | null;
+  idFaseEvidencia: number | null;
+}
+
+export interface InformeInsertarArchivoLoteRequest {
+  idInforme: number;
+  idPedido: number;
+  archivos: InformeArchivoLoteItem[];
+}
+
+export interface InformeInsertarArchivoLoteResponse {
   idInforme?: number;
   idPedido?: number;
+}
+
+export interface InformeObtenerArchivoRequest {
+  idInformeArchivo: number;
+}
+
+export interface InformeObtenerArchivoResponse {
+  downloadUrl: string;
+}
+
+export interface InformeActualizarArchivoRequest {
+  idInformeArchivo: number;
+  idTipoArchivo: number;
+  idFaseEvidencia: number | null;
+}
+
+export interface InformeEliminarArchivoRequest {
+  idInformeArchivo: number;
 }
 
 export type AlcanceExtraccionInforme = "general" | IdSeccionInvestigacionAnalista;
