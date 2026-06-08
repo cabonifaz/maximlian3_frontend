@@ -330,10 +330,13 @@ export interface RegistroBancoAnalista {
 
 export interface ArchivoInvestigacionAnalista {
   id: string;
+  idInformeArchivo?: number;
   nombre: string;
   extension: string;
   tamano: number;
   tipoDocumento: "" | "Informativo" | "Evidencia";
+  idTipoEvidencia?: number;
+  idFaseEvidencia?: number;
   faseVinculada?: IdSeccionInvestigacionAnalista;
   archivo?: File;
   esPersistido?: boolean;

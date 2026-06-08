@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { toast } from "sonner";
-import { Upload, Trash2, FileText, Filter, AlertCircle, RotateCcw, ChevronLeft, ChevronRight, Download, Sparkles } from "lucide-react";
+import { Upload, Trash2, FileText, Filter, AlertCircle, RotateCcw, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -23,7 +23,6 @@ import {
 } from "react-hook-form";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
-import { CustomModalExtraccionInformacionAnalista } from "@maximilian/components/investigacion/CustomModalProcesamientoInforme";
 import { TablaTarifarioCorta } from "@maximilian/components/coordinador/TablaTarifarioCorta";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { pedidoSchema, type PedidoFormData } from "@maximilian/schemas";
@@ -551,7 +550,6 @@ function AnexosTab({
   const [numPag, setNumPag] = useState(1);
   const [filterFormato, setFilterFormato] = useState("");
   const [filterTipo, setFilterTipo] = useState<number | undefined>(undefined);
-  const [estaAbiertoModalExtraccion, setEstaAbiertoModalExtraccion] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -856,12 +854,7 @@ function AnexosTab({
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-3">
-          <CustomButton variant="secondary" size="sm" onClick={() => setEstaAbiertoModalExtraccion(true)}>
-            <Sparkles size={14} />
-            Extraer información
-          </CustomButton>
-
+        <div className="flex items-center justify-end gap-3">
           {totalPaginas > 1 && (
             <div className="flex items-center justify-end gap-1">
             <button
@@ -902,15 +895,6 @@ function AnexosTab({
         <p className="text-sm font-medium">{archivoToDelete?.nombreDocumento}</p>
       </CustomModalConfirmacionEliminacion>
 
-      <CustomModalExtraccionInformacionAnalista
-        estaAbierto={estaAbiertoModalExtraccion}
-        alcance="general"
-        onCerrar={() => setEstaAbiertoModalExtraccion(false)}
-        onExtraer={async () => {
-          await Promise.resolve();
-          toast.success("La extracción demo se ejecutó correctamente.");
-        }}
-      />
     </div>
   );
 }

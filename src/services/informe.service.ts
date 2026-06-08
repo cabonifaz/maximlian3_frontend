@@ -9,17 +9,25 @@ import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra
 import type {
   ImagenPendienteSubida,
   InformeAutocompletarRequest,
+  InformeActualizarArchivoRequest,
   InformeCrearRequest,
   InformeCrearResponse,
+  InformeEliminarArchivoRequest,
   InformeExtraerDocumentoRequest,
   InformeExtraccionResponse,
+  InformeGenerarUrlsArchivoRequest,
+  InformeInsertarArchivoLoteRequest,
+  InformeInsertarArchivoLoteResponse,
   InformeListEntry,
   InformeListParams,
   InformeListResponse,
+  InformeObtenerArchivoRequest,
+  InformeObtenerArchivoResponse,
   InformeObtenerParams,
   InformeObtenerUrlPrefirmadaRequest,
   InformeObtenerUrlPrefirmadaResponse,
   InformeObtenerResponse,
+  InformeUrlArchivoGenerada,
 } from "@maximilian/shared/types/informe.type";
 import type {
   AccionBandejaAnalista,
@@ -149,6 +157,10 @@ function normalizarArchivosInvestigacion(
     ) || undefined;
 
     return {
+      idInformeArchivo: obtenerNumeroOpcional(
+        archivo.idInformeArchivo,
+        archivo.IdInformeArchivo,
+      ),
       id: String(
         obtenerNumero(
           archivo.idInformeArchivo,
@@ -173,6 +185,13 @@ function normalizarArchivosInvestigacion(
         archivo.IdTipoArchivo,
         archivo.tipoDocumento,
         archivo.TipoDocumento,
+      ),
+      idTipoEvidencia: obtenerNumeroOpcional(archivo.idTipoArchivo, archivo.IdTipoArchivo),
+      idFaseEvidencia: obtenerNumeroOpcional(
+        archivo.idFaseEvidencia,
+        archivo.IdFaseEvidencia,
+        archivo.idFase,
+        archivo.IdFase,
       ),
       esPersistido: true,
       urlDescarga,
@@ -213,6 +232,25 @@ function formatearFechaEntrada(valor: string): string {
   }
 
   return texto;
+}
+
+function formatearFechaInputHtml(valor: string): string {
+  const texto = valor.trim();
+  if (!texto) return "";
+
+  const coincidenciaIso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (coincidenciaIso) {
+    const [, ano, mes, dia] = coincidenciaIso;
+    return `${ano}-${mes}-${dia}`;
+  }
+
+  const coincidenciaLocal = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (coincidenciaLocal) {
+    const [, dia, mes, ano] = coincidenciaLocal;
+    return `${ano}-${mes}-${dia}`;
+  }
+
+  return "";
 }
 
 function formatearNumero(valor: unknown, decimales = 2): string {
@@ -289,7 +327,9 @@ function normalizarFilaInforme(fila: unknown): InformeListEntry {
     idInforme: obtenerNumero(registro.idInforme, registro.IdInforme),
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido),
     idEstado,
+    idIdioma: obtenerNumeroOpcional(registro.idIdioma, registro.IdIdioma),
     codigo: obtenerTexto(registro.codigo, registro.Codigo, registro.codigoPedido, registro.CodigoPedido) || "-",
+    vigencia: obtenerTexto(registro.vigencia, registro.Vigencia, registro.porVencerTexto, registro.PorVencerTexto) || "-",
     investigado: obtenerTexto(
       registro.investigado,
       registro.nombre,
@@ -355,6 +395,10 @@ function normalizarImagenPendiente(raw: unknown): ImagenPendienteSubida {
 }
 
 function normalizarRespuestaCrear(resultado: unknown): InformeCrearResponse {
+  if (typeof resultado === "number" && Number.isFinite(resultado)) {
+    return { idInforme: resultado };
+  }
+
   if (Array.isArray(resultado)) {
     const primerRegistro = resultado[0];
     return normalizarRespuestaCrear(primerRegistro);
@@ -378,6 +422,64 @@ function normalizarRespuestaUrlPrefirmada(resultado: unknown): InformeObtenerUrl
     fileKey: obtenerTexto(registro.fileKey, registro.FileKey, registro.key, registro.Key),
     expiresIn: obtenerNumeroOpcional(registro.expiresIn, registro.ExpiresIn),
   };
+}
+
+function normalizarUrlsArchivoGeneradas(resultado: unknown): InformeUrlArchivoGenerada[] {
+  const registro = obtenerRegistro(resultado);
+  const lista = Array.isArray(resultado)
+    ? resultado
+    : obtenerLista(
+      registro.archivos,
+      registro.Archivos,
+      registro.lstArchivos,
+      registro.LstArchivos,
+      registro.urls,
+      registro.Urls,
+      registro.result,
+      registro.Result,
+    );
+  const registros = lista.length > 0 ? lista : Object.keys(registro).length > 0 ? [registro] : [];
+
+  return registros.map((item) => {
+    const archivo = obtenerRegistro(item);
+    const uploadUrl = obtenerTexto(
+      archivo.uploadUrl,
+      archivo.UploadUrl,
+      archivo.urlCarga,
+      archivo.UrlCarga,
+      archivo.urlPrefirmada,
+      archivo.UrlPrefirmada,
+      archivo.urlPreFirmada,
+      archivo.UrlPreFirmada,
+      archivo.url,
+      archivo.Url,
+    );
+    const archivoUrl = obtenerTexto(
+      archivo.archivoUrl,
+      archivo.ArchivoUrl,
+      archivo.urlArchivo,
+      archivo.UrlArchivo,
+      archivo.fileKey,
+      archivo.FileKey,
+      archivo.urlDestino,
+      archivo.UrlDestino,
+      archivo.ruta,
+      archivo.Ruta,
+    ) || uploadUrl.split("?")[0];
+
+    return {
+      nombre: obtenerTexto(
+        archivo.nombre,
+        archivo.Nombre,
+        archivo.nombreArchivo,
+        archivo.NombreArchivo,
+        archivo.fileName,
+        archivo.FileName,
+      ),
+      uploadUrl,
+      archivoUrl,
+    };
+  });
 }
 
 function normalizarRespuestaExtraccion(resultado: unknown): InformeExtraccionResponse {
@@ -587,7 +689,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
 
   datos.aspectosLegales = {
     tipoEmpresa: obtenerTexto(registro.tipoEmpresa, registro.TipoEmpresa),
-    fechaConstitucion: formatearFechaEntrada(obtenerTexto(registro.fechaConstitucion, registro.FechaConstitucion)),
+    fechaConstitucion: formatearFechaInputHtml(obtenerTexto(registro.fechaConstitucion, registro.FechaConstitucion)),
     ciudadRegistro: obtenerTexto(registro.ciudadRegistro, registro.CiudadRegistro),
     notaria: obtenerTexto(registro.idNotaria, registro.IdNotaria, registro.notaria, registro.Notaria),
     notario: obtenerTexto(registro.idNotario, registro.IdNotario, registro.notario, registro.Notario),
@@ -1166,10 +1268,9 @@ export const informeService = {
     return normalizarRespuestaCrear(data.result);
   },
 
-  obtener: async ({ idInforme, idPedido }: InformeObtenerParams): Promise<InformeObtenerResponse> => {
+  obtener: async ({ idPedido }: InformeObtenerParams): Promise<InformeObtenerResponse> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Informe/obtener", {
       params: {
-        IdInforme: idInforme,
         IdPedido: idPedido,
       },
     });
@@ -1179,6 +1280,96 @@ export const informeService = {
     }
 
     return enriquecerRespuestaObtener(normalizarRespuestaObtener(data.result));
+  },
+
+  generarUrlsArchivo: async (
+    payload: InformeGenerarUrlsArchivoRequest,
+  ): Promise<InformeUrlArchivoGenerada[]> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      "/api/Informe/generarUrlsArchivo",
+      payload,
+    );
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/generarUrlsArchivo")) {
+      throw new Error(data.mensaje || "No se pudieron generar las URLs de los archivos");
+    }
+
+    const urls = normalizarUrlsArchivoGeneradas(data.result);
+    if (urls.some((archivo) => !archivo.nombre || !archivo.uploadUrl || !archivo.archivoUrl)) {
+      throw new Error("La respuesta de URLs de archivos es invalida");
+    }
+
+    return urls;
+  },
+
+  insertarArchivoLote: async (
+    payload: InformeInsertarArchivoLoteRequest,
+  ): Promise<InformeInsertarArchivoLoteResponse> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      "/api/Informe/insertarArchivoLote",
+      payload,
+    );
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/insertarArchivoLote")) {
+      throw new Error(data.mensaje || "No se pudieron registrar los archivos");
+    }
+
+    return normalizarRespuestaCrear(data.result);
+  },
+
+  obtenerArchivo: async (
+    payload: InformeObtenerArchivoRequest,
+  ): Promise<InformeObtenerArchivoResponse> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      "/api/Informe/obtenerArchivo",
+      payload,
+    );
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/obtenerArchivo")) {
+      throw new Error(data.mensaje || "No se pudo obtener el archivo");
+    }
+
+    const registro = obtenerRegistro(
+      Array.isArray(data.result) ? data.result[0] : data.result,
+    );
+    const downloadUrl = obtenerTexto(
+      typeof data.result === "string" ? data.result : undefined,
+      registro.downloadUrl,
+      registro.DownloadUrl,
+      registro.archivoUrl,
+      registro.ArchivoUrl,
+      registro.url,
+      registro.Url,
+    );
+    if (!downloadUrl) throw new Error("La respuesta del archivo es invalida");
+
+    return { downloadUrl };
+  },
+
+  actualizarArchivo: async (
+    payload: InformeActualizarArchivoRequest,
+  ): Promise<void> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      "/api/Informe/actualizarArchivo",
+      payload,
+    );
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/actualizarArchivo")) {
+      throw new Error(data.mensaje || "No se pudo actualizar el archivo");
+    }
+  },
+
+  eliminarArchivo: async (
+    payload: InformeEliminarArchivoRequest,
+  ): Promise<void> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      "/api/Informe/eliminarArchivo",
+      payload,
+    );
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/eliminarArchivo")) {
+      throw new Error(data.mensaje || "No se pudo eliminar el archivo");
+    }
   },
 
   obtenerUrlPrefirmada: async (
