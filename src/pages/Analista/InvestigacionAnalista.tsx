@@ -2846,6 +2846,48 @@ function PantallaInvestigacionAnalista({
     />
   );
 
+  const obtenerValorOriginalCambioExtraccion = () => {
+    const idCambio = idCambioExtraccionActivo ?? "";
+    const cambio = cambiosExtraccionPendientes[idCambio];
+    if (!cambio) return "-";
+
+    if (idCambio === "operacionPrincipal.ventasCreditoTiempo") {
+      const opcionTiempoCredito = obtenerOpcionTablaMaestraPorId(
+        opcionesTiempoCreditoVentas,
+        cambio.valorOriginal,
+      ) ?? obtenerOpcionTablaMaestraPorTexto(
+        opcionesTiempoCreditoVentas,
+        cambio.valorOriginal,
+      );
+
+      return opcionTiempoCredito?.string1?.trim() || cambio.valorOriginal || "-";
+    }
+
+    const opcionesCiiu = idCambio === "operacionPrincipal.categoriaCiiu"
+      ? opcionesActividadEconomica
+      : idCambio === "operacionPrincipal.claseCiiu"
+        ? opcionesClaseCiiu
+        : undefined;
+    if (!opcionesCiiu) return cambio.valorOriginal || "-";
+
+    const valorOriginal = cambio.valorOriginal.trim();
+    const valorNormalizado = valorOriginal.toLowerCase();
+    const opcion = opcionesCiiu.find((item) => {
+      const etiquetaCompleta = [item.string2?.trim(), item.string1?.trim()]
+        .filter(Boolean)
+        .join(" - ")
+        .toLowerCase();
+
+      return String(item.num1 ?? "") === valorOriginal
+        || item.string2?.trim().toLowerCase() === valorNormalizado
+        || item.string1?.trim().toLowerCase() === valorNormalizado
+        || etiquetaCompleta === valorNormalizado;
+    });
+
+    if (!opcion?.string1?.trim()) return cambio.valorOriginal || "-";
+    return [opcion.string2?.trim(), opcion.string1.trim()].filter(Boolean).join(" - ");
+  };
+
   const agregarCompaniaRelacionada = (empresaNueva: DatosInvestigacionAnalista["companiasRelacionadas"][number]) => {
     setDatosInvestigacion((anterior) => {
       const indiceExistente = anterior.companiasRelacionadas.findIndex(
@@ -5609,7 +5651,7 @@ function PantallaInvestigacionAnalista({
       >
         <div>
           <span className="font-bold">Original:</span>
-          <div className="mt-1 max-h-20 overflow-y-auto break-words">{cambiosExtraccionPendientes[idCambioExtraccionActivo ?? ""]?.valorOriginal ?? "-"}</div>
+          <div className="mt-1 max-h-20 overflow-y-auto break-words">{obtenerValorOriginalCambioExtraccion()}</div>
         </div>
         <div>
           <span className="font-bold">Reemplazar por:</span>
