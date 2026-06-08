@@ -234,25 +234,6 @@ function formatearFechaEntrada(valor: string): string {
   return texto;
 }
 
-function formatearFechaInputHtml(valor: string): string {
-  const texto = valor.trim();
-  if (!texto) return "";
-
-  const coincidenciaIso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (coincidenciaIso) {
-    const [, ano, mes, dia] = coincidenciaIso;
-    return `${ano}-${mes}-${dia}`;
-  }
-
-  const coincidenciaLocal = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (coincidenciaLocal) {
-    const [, dia, mes, ano] = coincidenciaLocal;
-    return `${ano}-${mes}-${dia}`;
-  }
-
-  return "";
-}
-
 function formatearNumero(valor: unknown, decimales = 2): string {
   const numero = obtenerNumeroOpcional(valor);
   if (numero == null) return "";
@@ -689,7 +670,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
 
   datos.aspectosLegales = {
     tipoEmpresa: obtenerTexto(registro.tipoEmpresa, registro.TipoEmpresa),
-    fechaConstitucion: formatearFechaInputHtml(obtenerTexto(registro.fechaConstitucion, registro.FechaConstitucion)),
+    fechaConstitucion: formatearFechaEntrada(obtenerTexto(registro.fechaConstitucion, registro.FechaConstitucion)),
     ciudadRegistro: obtenerTexto(registro.ciudadRegistro, registro.CiudadRegistro),
     notaria: obtenerTexto(registro.idNotaria, registro.IdNotaria, registro.notaria, registro.Notaria),
     notario: obtenerTexto(registro.idNotario, registro.IdNotario, registro.notario, registro.Notario),

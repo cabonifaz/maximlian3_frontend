@@ -2337,6 +2337,7 @@ function PantallaInvestigacionAnalista({
         alAplicar: ciiu.existe ? undefined : () => {
           setCodigoNuevaCategoriaCiiu(ciiu.codigo);
           setTextoNuevaCategoriaCiiu(ciiu.texto);
+          setMostrarFormCategoriaCiiu(true);
         },
         omitirActualizacion: !ciiu.existe,
       };
@@ -2349,6 +2350,7 @@ function PantallaInvestigacionAnalista({
         alAplicar: ciiu.existe ? undefined : () => {
           setCodigoNuevaClaseCiiu(ciiu.codigo);
           setTextoNuevaClaseCiiu(ciiu.texto);
+          setMostrarFormClaseCiiu(true);
         },
         omitirActualizacion: !ciiu.existe,
       };
@@ -3140,7 +3142,7 @@ function PantallaInvestigacionAnalista({
     const mayorCodigo = balances.reduce((mayor, balance) => {
       const numero = Number.parseInt(balance.codigo, 10);
       return Number.isNaN(numero) ? mayor : Math.max(mayor, numero);
-    }, 23119);
+    }, 0);
 
     return String(mayorCodigo + 1);
   };
@@ -3906,21 +3908,14 @@ function PantallaInvestigacionAnalista({
         adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.tipoEmpresa")}
         onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)}
       />
-        <div className="space-y-2">
-          <CustomLabel as="p" className="text-sm font-bold text-gray-700">
-            <span className="inline-flex items-center gap-2">
-              <span>Fecha de Constitucion</span>
-              {obtenerAyudaTraduccion("aspectosLegales.fechaConstitucion")}
-            </span>
-          </CustomLabel>
-          <input
-            type="date"
-            value={datosInvestigacion.aspectosLegales.fechaConstitucion}
-            readOnly={esSoloLectura}
-            onChange={(event) => actualizarAspectosLegales("fechaConstitucion", event.target.value)}
-            className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400"
-          />
-        </div>
+        <CampoInvestigacionAnalista
+          etiqueta="Fecha de Constitucion"
+          valor={datosInvestigacion.aspectosLegales.fechaConstitucion}
+          soloLectura={esSoloLectura}
+          tipoEntrada="fecha"
+          adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.fechaConstitucion")}
+          onChange={(valor) => actualizarAspectosLegales("fechaConstitucion", valor)}
+        />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Ciudad de Registro"
         valor={datosInvestigacion.aspectosLegales.ciudadRegistro}
@@ -5488,10 +5483,6 @@ function PantallaInvestigacionAnalista({
         <CustomModalRevisionEjecutivosExtraccion
           ejecutivos={ejecutivosExtraccionPendientes}
           opcionesCargo={opcionesCargoDirectorio}
-          onEditar={(indice) => {
-            setIndiceEjecutivoExtraccionAprobacion(null);
-            setIndiceEjecutivoExtraccionEdicion(indice);
-          }}
           onAprobar={aprobarEjecutivoExtraccion}
           onRechazar={rechazarEjecutivoExtraccion}
           onCerrar={() => setEstaAbiertoModalRevisionEjecutivosExtraccion(false)}

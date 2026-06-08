@@ -14,6 +14,7 @@ interface CustomSelectorFechaProps {
   label?: string;
   value?: Date;
   onChange: (date: Date | undefined) => void;
+  disabled?: boolean;
   required?: boolean;
   optional?: boolean;
   error?: string;
@@ -24,6 +25,7 @@ export function CustomSelectorFecha({
   label,
   value,
   onChange,
+  disabled = false,
   required,
   optional,
   error,
@@ -44,11 +46,12 @@ export function CustomSelectorFecha({
           {label}
         </CustomLabel>
       )}
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
         <PopoverTrigger
+          disabled={disabled}
           className={`w-full flex items-center justify-between px-4 py-2.5 bg-brand-white border ${
             error ? "border-red-500" : "border-gray-200"
-          } rounded-xl text-sm text-left focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all cursor-pointer hover:border-gray-300`}
+          } rounded-xl text-sm text-left focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all cursor-pointer hover:border-gray-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400`}
         >
           {value ? (
             <span className="text-gray-900">{format(value, "dd/MM/yyyy")}</span>
@@ -67,6 +70,15 @@ export function CustomSelectorFecha({
               locale={es}
               captionLayout="dropdown"
             />
+            <div className="border-t border-gray-100 p-2">
+              <button
+                type="button"
+                onClick={() => handleSelect(new Date())}
+                className="w-full rounded-lg px-3 py-2 text-sm font-semibold text-brand-wine transition-colors hover:bg-brand-wine/10"
+              >
+                Hoy
+              </button>
+            </div>
           </div>
         </PopoverContent>
       </Popover>

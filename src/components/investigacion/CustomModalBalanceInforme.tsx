@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { RegistroBalanceAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
@@ -47,7 +48,7 @@ export function CustomModalBalanceAnalista({
   const [esActual, setEsActual] = useState(registroInicial?.esActual ?? false);
   const [tipoCambio, setTipoCambio] = useState(registroInicial?.tipoCambio ?? "");
   const [operacionCambio, setOperacionCambio] = useState(registroInicial?.operacionCambio ?? "");
-  const [tipoBalance, setTipoBalance] = useState(registroInicial?.tipoBalance ?? "Balance general");
+  const [tipoBalance, setTipoBalance] = useState(registroInicial?.tipoBalance ?? "Balance General");
   const [tipoEstadoFinanciero, setTipoEstadoFinanciero] = useState(registroInicial?.tipoEstadoFinanciero ?? registroInicial?.tipo ?? "");
   const [errorFechas, setErrorFechas] = useState("");
   const hoy = new Date();
@@ -74,6 +75,10 @@ export function CustomModalBalanceAnalista({
     const idTipoBalance = obtenerIdSeleccion(opcionesTipoBalance, tipoBalance) ?? registroInicial?.idTipoBalance;
     const idTipoEstadoFinanciero = obtenerIdSeleccion(opcionesEstadoFinanciero, tipoEstadoFinanciero) ?? registroInicial?.idTipoEstadoFinanciero;
     const idMoneda = obtenerIdSeleccion(opcionesMoneda, operacionCambio) ?? registroInicial?.idMoneda;
+    const tipoBalanceSeleccionado = opcionesTipoBalance
+      ?.find((opcion) => opcion.num1 === idTipoBalance)
+      ?.string1
+      ?.trim() || tipoBalance.trim();
 
     if (fechaInicio && fechaActual && compararFechasDdMmYyyy(fechaInicio, fechaActual) > 0) {
       setErrorFechas("La fecha de inicio no puede ser mayor a la fecha actual.");
@@ -100,7 +105,7 @@ export function CustomModalBalanceAnalista({
       idMoneda,
       operacionCambio: operacionCambio.trim(),
       idTipoBalance,
-      tipoBalance: tipoBalance.trim(),
+      tipoBalance: tipoBalanceSeleccionado,
     });
   };
 
@@ -146,14 +151,10 @@ export function CustomModalBalanceAnalista({
             />
           </div>
 
-          <div className="space-y-2">
-            <CustomLabel>Fecha de Inicio</CustomLabel>
-            <input
-              type="text"
-              placeholder="dd/mm/yyyy"
-              value={fechaInicio}
-              onChange={(event) => {
-                const nuevoValor = event.target.value;
+          <CustomCampoFechaInvestigacion
+            etiqueta="Fecha de Inicio"
+            valor={fechaInicio}
+            onChange={(nuevoValor) => {
                 setFechaInicio(nuevoValor);
 
                 if (nuevoValor && fechaFin && compararFechasDdMmYyyy(nuevoValor, fechaFin) > 0) {
@@ -169,21 +170,14 @@ export function CustomModalBalanceAnalista({
                 }
 
                 setErrorFechas("");
-              }}
-              onFocus={seleccionarTextoCampoEditable}
-              className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
-            />
-          </div>
+            }}
+          />
 
-          <div className="space-y-2">
-            <CustomLabel>Fecha de Fin</CustomLabel>
-            <input
-              type="text"
-              placeholder="dd/mm/yyyy"
-              value={fechaFin}
-              disabled={esActual}
-              onChange={(event) => {
-                const nuevoValor = event.target.value;
+          <CustomCampoFechaInvestigacion
+            etiqueta="Fecha de Fin"
+            valor={fechaFin}
+            soloLectura={esActual}
+            onChange={(nuevoValor) => {
                 setFechaFin(nuevoValor);
 
                 if (fechaInicio && nuevoValor && compararFechasDdMmYyyy(nuevoValor, fechaInicio) < 0) {
@@ -193,11 +187,8 @@ export function CustomModalBalanceAnalista({
                 }
 
                 setErrorFechas("");
-              }}
-              onFocus={seleccionarTextoCampoEditable}
-              className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all disabled:bg-slate-50 disabled:text-slate-400 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
-            />
-          </div>
+            }}
+          />
 
           <label className="col-span-full flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-slate-600">
             <input

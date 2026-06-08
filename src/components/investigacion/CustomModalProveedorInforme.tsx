@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { RegistroProveedorAnalista } from "@maximilian/shared/types/investigacion.type";
@@ -206,10 +207,11 @@ export function CustomModalProveedorAnalista({
 
           {tieneReferenciaComercial ? (
             <>
-              <div className="space-y-2">
-                <CustomLabel>Comienzo de las Negociaciones</CustomLabel>
-                <input value={comienzoNegociaciones} onChange={(event) => setComienzoNegociaciones(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Desde hace varios años" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
-              </div>
+              <CustomCampoFechaInvestigacion
+                etiqueta="Comienzo de las Negociaciones"
+                valor={comienzoNegociaciones}
+                onChange={setComienzoNegociaciones}
+              />
 
               <div className="space-y-2">
                 <CustomLabel>Operaciones de Cambio de Moneda</CustomLabel>

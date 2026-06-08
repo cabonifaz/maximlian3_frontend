@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type {
@@ -36,7 +37,7 @@ export function CustomModalRegistroEjecutivoAnalista({
   const ejecutivoDefecto = registroInicial?.nombreCompleto ?? personaSeleccionada?.nombres ?? "";
   const tipoPersonaDefecto = registroInicial?.tipoPersona ?? personaSeleccionada?.tipoPersona ?? "Natural";
   const paisDefecto = registroInicial?.pais ?? personaSeleccionada?.pais ?? "";
-  const vinculadoDesdeDefecto = convertirFechaParaInput(registroInicial?.vinculadoDesde ?? "");
+  const [vinculadoDesde, setVinculadoDesde] = useState(registroInicial?.vinculadoDesde ?? "");
   const cargoDefecto = registroInicial?.idCargo ? "" : limpiarTextoCargo(registroInicial?.cargo ?? "");
   const [cargo, setCargo] = useState(cargoDefecto);
   const [porcentajeParticipacion, setPorcentajeParticipacion] = useState(
@@ -81,7 +82,7 @@ export function CustomModalRegistroEjecutivoAnalista({
       lista: imprimirListado,
       detalleEjecutivo: imprimirDetalle,
       orden: registroInicial?.orden ?? "1",
-      vinculadoDesde: formatearFechaParaGuardar(String(formData.get("vinculadoDesde") ?? "").trim()),
+      vinculadoDesde: String(formData.get("vinculadoDesde") ?? "").trim(),
       companiaAnterior: String(formData.get("companiaAnterior") ?? "").trim(),
       esParteDirectorio,
       pais: paisDefecto,
@@ -149,7 +150,12 @@ export function CustomModalRegistroEjecutivoAnalista({
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
-              <CampoInput nombre="vinculadoDesde" etiqueta="Vinculado Desde" marcador="Seleccionar fecha" valorInicial={vinculadoDesdeDefecto} tipo="date" />
+              <CustomCampoFechaInvestigacion
+                nombre="vinculadoDesde"
+                etiqueta="Vinculado Desde"
+                valor={vinculadoDesde}
+                onChange={setVinculadoDesde}
+              />
               <CampoInput nombre="companiaAnterior" etiqueta="Compañía Anterior" marcador="Empresa previa" valorInicial={registroInicial?.companiaAnterior} />
             </div>
 
@@ -282,27 +288,6 @@ function formatearPorcentajeParticipacion(valor: string) {
   if (Number.isNaN(numero)) return "0.00000000%";
 
   return `${numero.toFixed(8)}%`;
-}
-
-function convertirFechaParaInput(valor: string) {
-  if (!valor) return "";
-  if (valor.includes("-")) return valor;
-  if (!valor.includes("/")) return "";
-
-  const [dia, mes, ano] = valor.split("/");
-  if (!dia || !mes || !ano) return "";
-
-  return `${ano}-${mes}-${dia}`;
-}
-
-function formatearFechaParaGuardar(valor: string) {
-  if (!valor) return "";
-  if (!valor.includes("-")) return valor;
-
-  const [ano, mes, dia] = valor.split("-");
-  if (!ano || !mes || !dia) return valor;
-
-  return `${dia}/${mes}/${ano}`;
 }
 
 function GrupoRadio({
