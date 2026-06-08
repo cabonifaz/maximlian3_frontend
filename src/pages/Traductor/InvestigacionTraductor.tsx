@@ -1134,9 +1134,8 @@ function construirPayloadCrearInforme({
       idTipoLocal: local.idTipoLocal ?? obtenerIdPorTexto(opcionesTipoLocal, local.tipoLocal),
       comentario: local.comentario,
       imagenes: (local.imagenes ?? []).map((imagen) => ({
-        idInformeLocalImagen: 0,
-        ...(imagen.esNueva ? {} : { imagenURL: imagen.url ?? "" }),
-        idTipoArchivo: obtenerIdTipoArchivo(imagen.tipo ?? local.imagenTipo),
+        idInformeLocalImagen: imagen.idInformeLocalImagen ?? 0,
+        idTipoArchivo: imagen.idTipoArchivo ?? obtenerIdTipoArchivo(imagen.tipo ?? local.imagenTipo),
         nombre: imagen.nombre,
       })),
     })),
@@ -1567,7 +1566,7 @@ function PantallaInvestigacionAnalista({
       const localesConNombresDeduplicados = datosInvestigacion.locales.map((local) => ({
         ...local,
         imagenes: (local.imagenes ?? []).map((imagen) => {
-          if (!imagen.esNueva || !imagen.archivo) return imagen;
+          if (!imagen.archivo) return imagen;
           const nombreOriginal = imagen.nombre;
           const cuenta = contadorNombres.get(nombreOriginal) ?? 0;
           contadorNombres.set(nombreOriginal, cuenta + 1);
@@ -1610,22 +1609,53 @@ function PantallaInvestigacionAnalista({
       return informeService.create(payload);
     },
     onSuccess: async (respuesta, idEstado) => {
+      const idsExistentes = datosInvestigacion.locales.flatMap((local) =>
+        (local.imagenes ?? [])
+          .filter((img) => (img.idInformeLocalImagen ?? 0) > 0)
+          .map((img) => img.idInformeLocalImagen!),
+      );
+
       const imagenesPendientes = respuesta.imagenesPendientes ?? [];
+      const idsSubidosOk: number[] = [];
+
       if (imagenesPendientes.length > 0) {
         const toastId = toast.loading("Subiendo imágenes de locales...");
-        let huboError = false;
         for (const imagenPendiente of imagenesPendientes) {
           const archivo = archivosImagenesNuevosRef.current.get(imagenPendiente.nombre);
-          if (!archivo) continue;
+          if (!archivo) {
+            idsSubidosOk.push(imagenPendiente.idInformeLocalImagen);
+            continue;
+          }
           try {
             await informeService.subirArchivoUrlPrefirmada(imagenPendiente.uploadUrl, archivo);
+            idsSubidosOk.push(imagenPendiente.idInformeLocalImagen);
           } catch {
-            huboError = true;
             toast.error(`No se pudo subir la imagen "${imagenPendiente.nombre}".`, { id: toastId });
           }
         }
-        if (!huboError) toast.dismiss(toastId);
+        toast.dismiss(toastId);
         archivosImagenesNuevosRef.current = new Map();
+
+        const idsPorNombre = new Map(
+          imagenesPendientes.map((img) => [img.nombre, img.idInformeLocalImagen]),
+        );
+        setDatosInvestigacion((anterior) => ({
+          ...anterior,
+          locales: anterior.locales.map((local) => ({
+            ...local,
+            imagenes: (local.imagenes ?? []).map((imagen) => {
+              if (!imagen.archivo) return imagen;
+              const idAsignado = idsPorNombre.get(imagen.nombre);
+              if (!idAsignado) return imagen;
+              return { ...imagen, idInformeLocalImagen: idAsignado };
+            }),
+          })),
+        }));
+      }
+
+      const todosLosIds = [...new Set([...idsExistentes, ...idsSubidosOk])];
+      if (todosLosIds.length > 0) {
+        await informeService.actualizarEstadoCargaImagenes(todosLosIds);
       }
 
       const idInformeResultado = respuesta.idInforme ?? idInformeActual;
@@ -3087,7 +3117,11 @@ function PantallaInvestigacionAnalista({
       const listaActual = [...anterior.locales];
 
       if (indiceLocalSeleccionado != null) {
-        listaActual[indiceLocalSeleccionado] = registro;
+        const localExistente = listaActual[indiceLocalSeleccionado];
+        listaActual[indiceLocalSeleccionado] = {
+          ...registro,
+          idInformeLocal: localExistente?.idInformeLocal,
+        };
       } else {
         listaActual.unshift(registro);
       }

@@ -7,6 +7,7 @@ import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { informeService } from "@maximilian/services/informe.service";
 import type { RegistroImagenLocalAnalista, RegistroLocalAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import {
@@ -69,6 +70,39 @@ export function CustomModalLocalAnalista({
           : [],
     );
     blobUrlsRef.current = [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estaAbierto, registroInicial]);
+
+  useEffect(() => {
+    if (!estaAbierto) return;
+
+    const imagenesIniciales = registroInicial?.imagenes?.length
+      ? registroInicial.imagenes
+      : registroInicial?.imagen
+        ? [{ nombre: registroInicial.imagen, url: registroInicial.imagenUrl, tipo: registroInicial.imagenTipo }]
+        : [];
+
+    const idsSinUrl = imagenesIniciales
+      .filter((img) => img.idInformeLocalImagen && !img.url && !img.esNueva)
+      .map((img) => img.idInformeLocalImagen!);
+
+    if (idsSinUrl.length === 0) return;
+
+    let cancelado = false;
+
+    informeService.obtenerUrlsImagenes(idsSinUrl).then((urlsObtenidas) => {
+      if (cancelado) return;
+      const mapaUrls = new Map(urlsObtenidas.map((u) => [u.idInformeLocalImagen, u.url]));
+      setImagenes((anterior) =>
+        anterior.map((img) =>
+          img.idInformeLocalImagen && mapaUrls.has(img.idInformeLocalImagen)
+            ? { ...img, url: mapaUrls.get(img.idInformeLocalImagen) }
+            : img,
+        ),
+      );
+    }).catch(() => {});
+
+    return () => { cancelado = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estaAbierto, registroInicial]);
 

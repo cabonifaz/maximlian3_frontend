@@ -89,6 +89,8 @@ export interface RegistroLocalAnalista {
 }
 
 export interface RegistroImagenLocalAnalista {
+  idInformeLocalImagen?: number;
+  idTipoArchivo?: number;
   nombre: string;
   url?: string;
   tipo?: string;

@@ -732,6 +732,8 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     const imagenes = obtenerLista(local.imagenes, local.Imagenes).map((imagen) => {
       const registroImagen = obtenerRegistro(imagen);
       return {
+        idInformeLocalImagen: obtenerNumeroOpcional(registroImagen.idInformeLocalImagen, registroImagen.IdInformeLocalImagen),
+        idTipoArchivo: obtenerNumeroOpcional(registroImagen.idTipoArchivo, registroImagen.IdTipoArchivo),
         nombre: obtenerTexto(registroImagen.nombre, registroImagen.Nombre, registroImagen.imagenURL, registroImagen.ImagenURL) || "archivo",
         url: obtenerTexto(registroImagen.url, registroImagen.Url, registroImagen.imagenURL, registroImagen.ImagenURL) || undefined,
         tipo: obtenerTexto(registroImagen.tipoArchivo, registroImagen.TipoArchivo, registroImagen.mimeType, registroImagen.MimeType) || undefined,
@@ -1208,6 +1210,31 @@ export const informeService = {
     if (!respuesta.ok) {
       throw new Error("No se pudo subir el archivo al almacenamiento");
     }
+  },
+
+  actualizarEstadoCargaImagenes: async (ids: number[]): Promise<void> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/actualizarEstadoCargaImagenes", { ids });
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/actualizarEstadoCargaImagenes")) {
+      throw new Error(data.mensaje || "No se pudo actualizar el estado de carga de imágenes");
+    }
+  },
+
+  obtenerUrlsImagenes: async (ids: number[]): Promise<{ idInformeLocalImagen: number; url: string }[]> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/obtenerUrlsImagenes", { ids });
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/obtenerUrlsImagenes")) {
+      throw new Error(data.mensaje || "No se pudo obtener las URLs de las imágenes");
+    }
+
+    const lista = Array.isArray(data.result) ? data.result : [];
+    return lista.map((item: unknown) => {
+      const registro = typeof item === "object" && item !== null ? (item as Record<string, unknown>) : {};
+      return {
+        idInformeLocalImagen: obtenerNumero(registro.idInformeLocalImagen, registro.IdInformeLocalImagen) ?? 0,
+        url: obtenerTexto(registro.url, registro.Url, registro.uploadUrl, registro.UploadUrl),
+      };
+    });
   },
 
   autocompletar: async (payload: InformeAutocompletarRequest): Promise<InformeExtraccionResponse> => {
