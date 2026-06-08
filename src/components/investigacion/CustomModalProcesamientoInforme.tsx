@@ -91,7 +91,7 @@ export function CustomModalExtraccionInformacionAnalista({
       : `${verboAccion} información de la sección`;
   const descripcion = useMemo(() => {
     if (alcance === "general") {
-      return "Se procesarán los documentos para intentar completar todas las secciones del informe.";
+      return "Se procesarán los documentos para completar todas las secciones del informe.";
     }
 
     return "Se procesarán los documentos para completar únicamente los campos de la sección seleccionada.";
@@ -175,7 +175,7 @@ export function CustomModalExtraccionInformacionAnalista({
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+      <div className="flex h-[calc(100vh-2rem)] max-h-[960px] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex items-start justify-between border-b border-gray-100 px-7 py-6">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
@@ -189,9 +189,9 @@ export function CustomModalExtraccionInformacionAnalista({
           </CustomButton>
         </div>
 
-        <div className="space-y-4 overflow-y-auto px-6 py-1">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-4 lg:overflow-hidden">
           {ocultarCargaArchivos ? null : (
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+            <div className="flex min-h-0 flex-col gap-4 lg:flex-1 lg:flex-row lg:items-stretch">
               <div className="shrink-0">
                 <CustomBloqueCargaArchivosAnalista
                   textoIndicativo="Arrastra archivos aquí o haz clic para subir"
@@ -199,8 +199,8 @@ export function CustomModalExtraccionInformacionAnalista({
                 />
               </div>
 
-              <div className="flex min-w-0 flex-1 flex-col gap-4 self-start">
-                <div className="flex min-w-0 flex-1 flex-col gap-3">
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
+                <div className="flex min-w-0 flex-col gap-3">
                   <div className="space-y-1">
                     <CustomLabel>Documentos</CustomLabel>
                   </div>
@@ -256,7 +256,7 @@ export function CustomModalExtraccionInformacionAnalista({
                 </div>
 
                 {seccionesConOpciones.length > 0 ? (
-                  <div className="space-y-2 rounded-xl border border-gray-100 bg-slate-50/40 p-3">
+                  <div className="flex min-h-48 flex-1 flex-col gap-2 rounded-xl border border-gray-100 bg-slate-50/40 p-3">
                     <div className="flex items-center justify-between gap-3">
                       <CustomLabel>Campos a completar</CustomLabel>
                       <span className="text-xs text-slate-400">
@@ -264,7 +264,7 @@ export function CustomModalExtraccionInformacionAnalista({
                       </span>
                     </div>
 
-                    <div className="max-h-35 space-y-2 overflow-y-auto">
+                    <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
                       {seccionesConOpciones.map((seccion) => (
                         <div key={seccion.claveSeccion} className="grid gap-2 rounded-lg border border-gray-100 bg-white p-2 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
                           <div className="min-w-0">
@@ -298,7 +298,7 @@ export function CustomModalExtraccionInformacionAnalista({
           )}
 
           {ocultarCargaArchivos && seccionesConOpciones.length > 0 ? (
-            <div className="space-y-3 rounded-2xl border border-gray-100 bg-slate-50/60 p-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-3 rounded-2xl border border-gray-100 bg-slate-50/60 p-4">
               <div className="flex items-center justify-between gap-3">
                 <CustomLabel>Campos a completar</CustomLabel>
                 <span className="text-xs text-slate-400">
@@ -306,7 +306,7 @@ export function CustomModalExtraccionInformacionAnalista({
                 </span>
               </div>
 
-              <div className="max-h-[26rem] space-y-3 overflow-y-auto">
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
                 {seccionesConOpciones.map((seccion) => (
                   <div
                     key={seccion.claveSeccion}
@@ -340,14 +340,14 @@ export function CustomModalExtraccionInformacionAnalista({
           ) : null}
 
           {ocultarEspecificaciones ? null : (
-            <label className="space-y-2">
+            <label className="shrink-0 space-y-2">
               <CustomLabel>{textoEspecificaciones}</CustomLabel>
-              <textarea
+              <input
+                type="text"
                 value={especificaciones}
                 onChange={(event) => setEspecificaciones(event.target.value)}
                 placeholder={marcadorEspecificaciones}
-                rows={5}
-                className="w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm leading-6 text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
               />
             </label>
           )}

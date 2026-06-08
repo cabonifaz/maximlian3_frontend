@@ -4,6 +4,7 @@ import { BadgeCheck, FileText, MapPin, UserRound, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { servicioDirectorioEjecutivo } from "@maximilian/services/directorioEjecutivo.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { DirectorioEjecutivoGuardarRequest } from "@maximilian/shared/types/directorio-ejecutivo.type";
@@ -34,7 +35,12 @@ function obtenerIdFormulario(formData: FormData, nombre: string) {
 }
 
 function normalizarFechaApi(fecha: string) {
-  return fecha ? `${fecha}T00:00:00.000Z` : null;
+  if (!fecha) return null;
+  if (/^\d{4}-\d{2}-\d{2}/.test(fecha)) return `${fecha.slice(0, 10)}T00:00:00.000Z`;
+
+  const [dia, mes, ano] = fecha.split("/");
+  if (!dia || !mes || !ano) return null;
+  return `${ano}-${mes}-${dia}T00:00:00.000Z`;
 }
 
 export function CustomModalRegistroPersonaDirectorioAnalista({
@@ -44,6 +50,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
   onCerrar,
   onGuardar,
 }: PropsCustomModalRegistroPersonaDirectorioAnalista) {
+  const [fechaNacimiento, setFechaNacimiento] = useState(registroInicial?.fechaNacimiento ?? "");
   const { data: opcionesTipoPersona } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA),
@@ -203,7 +210,12 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
               <div className="grid gap-4 md:grid-cols-[0.9fr_2fr_1fr]">
                 <CampoSelector nombre="tipoPersona" nombreId="idTipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersona} valorDefecto={registroInicial?.tipoPersona} valorDefectoId={registroInicial?.idTipoPersona} marcadorVacio="Seleccione tipo persona" />
                 <CampoInput nombre="nombres" etiqueta="Nombre Completo / Razón Social" marcador="Ingrese nombres completos" valorInicial={registroInicial?.nombres ?? nombreInicial} />
-                <CampoInput nombre="fechaNacimiento" etiqueta="Fecha de Nacimiento" marcador="dd/mm/yyyy" valorInicial={registroInicial?.fechaNacimiento} tipo="date" />
+                <CustomCampoFechaInvestigacion
+                  nombre="fechaNacimiento"
+                  etiqueta="Fecha de Nacimiento"
+                  valor={fechaNacimiento}
+                  onChange={setFechaNacimiento}
+                />
               </div>
             </section>
 

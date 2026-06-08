@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Briefcase, Building2, Check, Eye, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
@@ -494,6 +495,20 @@ export function CampoInvestigacionAnalista({
   const esCampoDecimal = tipoEntrada === "decimal";
   const clasesInput = `h-11 w-full rounded-xl border bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400 ${adornoFinal ? "pr-20" : ""} ${error ? "border-red-500" : "border-gray-200"}`;
 
+  if (tipoEntrada === "fecha") {
+    return (
+      <CustomCampoFechaInvestigacion
+        etiqueta={etiqueta}
+        valor={valor}
+        soloLectura={soloLectura}
+        adicionalEtiqueta={adicionalEtiqueta}
+        error={error}
+        className={className}
+        onChange={(nuevoValor) => onChange?.(nuevoValor)}
+      />
+    );
+  }
+
   return (
     <label className={`space-y-2 ${className ?? ""}`}>
       <CustomLabel as="p" className={clasesEtiquetaCampoInvestigacion}>
@@ -537,7 +552,7 @@ export function CampoInvestigacionAnalista({
             onBlur?.();
           }}
           onFocus={seleccionarTextoCampoEditable}
-          placeholder={tipoEntrada === "fecha" ? "dd/mm/yyyy" : (marcadorFinal ?? "")}
+          placeholder={marcadorFinal ?? ""}
           className={clasesInput}
         />
         {adornoFinal ? (

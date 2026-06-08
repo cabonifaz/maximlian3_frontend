@@ -4,6 +4,7 @@ import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
@@ -162,19 +163,12 @@ function CampoDetalleFecha({
   deshabilitado?: boolean;
 }) {
   return (
-    <div className="space-y-2">
-      <CustomLabel as="p" className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
-        {etiqueta}
-      </CustomLabel>
-      <input
-        type="text"
-        placeholder="dd/mm/yyyy"
-        value={valor}
-        disabled={deshabilitado}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-10 w-full rounded-md border border-gray-200 bg-slate-50 px-3 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-      />
-    </div>
+    <CustomCampoFechaInvestigacion
+      etiqueta={etiqueta}
+      valor={valor}
+      onChange={onChange}
+      soloLectura={deshabilitado}
+    />
   );
 }
 

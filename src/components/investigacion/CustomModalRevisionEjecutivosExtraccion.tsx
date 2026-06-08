@@ -1,11 +1,10 @@
-import { Check, Pencil, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import type { RegistroDirectorioEjecutivoAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalRevisionEjecutivosExtraccion {
   ejecutivos: RegistroDirectorioEjecutivoAnalista[];
   opcionesCargo?: { num1: number | null; string1: string | null }[];
-  onEditar: (indice: number) => void;
   onAprobar: (indice: number) => void;
   onRechazar: (indice: number) => void;
   onCerrar: () => void;
@@ -14,7 +13,6 @@ interface PropsCustomModalRevisionEjecutivosExtraccion {
 export function CustomModalRevisionEjecutivosExtraccion({
   ejecutivos,
   opcionesCargo,
-  onEditar,
   onAprobar,
   onRechazar,
   onCerrar,
@@ -59,13 +57,9 @@ export function CustomModalRevisionEjecutivosExtraccion({
                     <td className="px-4 py-4 text-sm text-slate-500">
                       {formatearParticipacion(ejecutivo.porcentaje)}
                     </td>
-                    <td className="px-4 py-4 text-sm text-slate-500">{ejecutivo.vinculadoDesde || "-"}</td>
+                    <td className="px-4 py-4 text-sm text-slate-500">{formatearFecha(ejecutivo.vinculadoDesde)}</td>
                     <td className="px-4 py-4">
                       <div className="flex justify-end gap-2">
-                        <CustomButton variant="secondary" size="sm" onClick={() => onEditar(indice)}>
-                          <Pencil size={14} />
-                          Editar
-                        </CustomButton>
                         <CustomButton variant="secondary" size="sm" onClick={() => onRechazar(indice)}>
                           <X size={14} />
                           Rechazar
@@ -101,4 +95,11 @@ function formatearParticipacion(valor?: string) {
   const numero = Number.parseFloat((valor ?? "").replace("%", "").replace(",", "."));
   if (Number.isNaN(numero)) return "-";
   return `${numero.toFixed(8).replace(/\.?0+$/, "")}%`;
+}
+
+function formatearFecha(valor?: string) {
+  if (!valor) return "-";
+  const coincidenciaIso = valor.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!coincidenciaIso) return valor;
+  return `${coincidenciaIso[3]}/${coincidenciaIso[2]}/${coincidenciaIso[1]}`;
 }
