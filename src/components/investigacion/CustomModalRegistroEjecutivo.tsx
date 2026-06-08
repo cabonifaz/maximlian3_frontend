@@ -92,7 +92,7 @@ export function CustomModalRegistroEjecutivoAnalista({
   };
 
   return (
-    <div className="fixed inset-0 z-[96] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
+    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
       <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[22px] bg-white shadow-2xl">
         <div className="flex items-start justify-between px-6 py-5">
           <div>

@@ -173,7 +173,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
   const tituloModal = registroInicial ? "Editar Empresa o Persona" : "Agregar Empresa o Persona";
 
   return (
-    <div className="fixed inset-0 z-[98] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
+    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
       <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[30px] bg-white shadow-[0_40px_100px_rgba(15,23,42,0.28)]">
         <div className="border-b border-slate-100 bg-[radial-gradient(circle_at_top_left,#f8fafc,white_55%)] px-6 py-6 md:px-8">
           <div className="flex items-start justify-between gap-4">

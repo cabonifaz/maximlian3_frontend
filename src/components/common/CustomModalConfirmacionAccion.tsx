@@ -14,6 +14,7 @@ interface CustomModalConfirmacionAccionProps {
   textoCargandoConfirmar?: string;
   varianteConfirmar?: "primary" | "secondary" | "danger" | "wine" | "ghost";
   anchoMaximoClassName?: string;
+  zIndexClassName?: string;
 }
 
 export function CustomModalConfirmacionAccion({
@@ -29,11 +30,12 @@ export function CustomModalConfirmacionAccion({
   textoCargandoConfirmar = "Confirmando...",
   varianteConfirmar = "danger",
   anchoMaximoClassName = "max-w-md",
+  zIndexClassName = "z-[70]",
 }: CustomModalConfirmacionAccionProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className={`fixed inset-0 ${zIndexClassName} flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-300`}>
       <div
         className={`w-full overflow-hidden rounded-3xl bg-brand-white shadow-2xl animate-in zoom-in-95 duration-300 ${anchoMaximoClassName}`}
       >
