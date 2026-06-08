@@ -3505,6 +3505,30 @@ function PantallaInvestigacionAnalista({
     setEstaAbiertoModalExtraccionInformacion(true);
   };
 
+  const reiniciarPendientesExtraccion = (configuracion: InformeConfiguracionExtraccion) => {
+    if (configuracion.legales) {
+      setCompaniasExtraccionPendientes([]);
+      setIndiceCompaniaExtraccionEdicion(null);
+      setEstaAbiertoModalRevisionCompaniasExtraccion(false);
+    }
+
+    if (configuracion.directorioEjecutivo) {
+      setEjecutivosExtraccionPendientes([]);
+      setIndiceEjecutivoExtraccionEdicion(null);
+      setIndiceEjecutivoExtraccionAprobacion(null);
+      setIndiceEjecutivoExtraccionBusqueda(null);
+      setEstaAbiertoModalRevisionEjecutivosExtraccion(false);
+    }
+
+    if (configuracion.bancosProveedores || configuracion.bancos) {
+      setBancosExtraccionPendientes([]);
+      setColaExistentesExtraccion([]);
+      setIndiceBancoExtraccionEdicion(null);
+      setBancoRecienCreado(null);
+      setEstaAbiertoModalRevisionBancosExtraccion(false);
+    }
+  };
+
   const extraerInformacionDocumento = async (
     archivos: File[],
     alcance: AlcanceExtraccionInforme,
@@ -3528,6 +3552,7 @@ function PantallaInvestigacionAnalista({
     try {
       paisExtraccionRef.current = { aplicado: false };
       asignarCiudadExtraccionPendiente(null, false);
+      reiniciarPendientesExtraccion(configuracionSecciones);
       const totalArchivos = archivos.length;
 
       for (const [indiceArchivo, archivo] of archivos.entries()) {
