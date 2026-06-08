@@ -343,6 +343,32 @@ const CAMPOS_MONETARIOS_EXTRACCION = new Set([
   "aspectosLegales.tipoCambio",
 ]);
 
+type CampoPorcentajeOperacion =
+  | "ventasContadoPorcentaje"
+  | "ventasCreditoPorcentaje"
+  | "territorioVentasPorcentaje"
+  | "ventasExtranjeroPorcentaje"
+  | "comprasNacionalesPorcentaje"
+  | "comprasExtranjeroPorcentaje";
+
+const CAMPOS_PORCENTAJE_EXTRACCION = new Set<CampoPorcentajeOperacion>([
+  "ventasContadoPorcentaje",
+  "ventasCreditoPorcentaje",
+  "territorioVentasPorcentaje",
+  "ventasExtranjeroPorcentaje",
+  "comprasNacionalesPorcentaje",
+  "comprasExtranjeroPorcentaje",
+]);
+
+const CAMPOS_PORCENTAJE_COMPLEMENTARIO: Record<CampoPorcentajeOperacion, CampoPorcentajeOperacion> = {
+  ventasContadoPorcentaje: "ventasCreditoPorcentaje",
+  ventasCreditoPorcentaje: "ventasContadoPorcentaje",
+  territorioVentasPorcentaje: "ventasExtranjeroPorcentaje",
+  ventasExtranjeroPorcentaje: "territorioVentasPorcentaje",
+  comprasNacionalesPorcentaje: "comprasExtranjeroPorcentaje",
+  comprasExtranjeroPorcentaje: "comprasNacionalesPorcentaje",
+};
+
 const ETIQUETAS_SECCIONES_EXTRACCION: Record<string, string> = {
   identificacion: "Identificación",
   legales: "Aspectos Legales",
@@ -1968,8 +1994,8 @@ function PantallaInvestigacionAnalista({
   };
 
   const actualizarPorcentajesComplementarios = (
-    campoOrigen: "ventasContadoPorcentaje" | "ventasCreditoPorcentaje" | "territorioVentasPorcentaje" | "ventasExtranjeroPorcentaje" | "comprasNacionalesPorcentaje" | "comprasExtranjeroPorcentaje",
-    campoComplementario: "ventasContadoPorcentaje" | "ventasCreditoPorcentaje" | "territorioVentasPorcentaje" | "ventasExtranjeroPorcentaje" | "comprasNacionalesPorcentaje" | "comprasExtranjeroPorcentaje",
+    campoOrigen: CampoPorcentajeOperacion,
+    campoComplementario: CampoPorcentajeOperacion,
     valor: string,
   ) => {
     const valorLimpio = valor.trim();
@@ -2002,6 +2028,42 @@ function PantallaInvestigacionAnalista({
         ...anterior,
         operacionPrincipal,
       };
+    });
+  };
+
+  const aplicarPorcentajeExtraccion = (campoOrigen: CampoPorcentajeOperacion, valor: string) => {
+    const numero = Number.parseFloat(valor.replace(",", "."));
+    if (Number.isNaN(numero) || numero < 0 || numero > 100) return;
+
+    const valorFormateado = numero.toFixed(2);
+    const campoComplementario = CAMPOS_PORCENTAJE_COMPLEMENTARIO[campoOrigen];
+    const valorComplementario = formatearPorcentajeComplementario(100 - numero);
+
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      operacionPrincipal: {
+        ...anterior.operacionPrincipal,
+        [campoOrigen]: valorFormateado,
+        [campoComplementario]: valorComplementario,
+      },
+    }));
+
+    const idComplementario = `operacionPrincipal.${campoComplementario}`;
+    setCambiosExtraccionPendientes((anterior) => {
+      const cambioComplementario = anterior[idComplementario];
+      if (!cambioComplementario) return anterior;
+
+      const siguientes = { ...anterior };
+      const valorExtraidoComplementario = Number.parseFloat(cambioComplementario.valorNuevo.replace(",", "."));
+      if (!Number.isNaN(valorExtraidoComplementario) && valorExtraidoComplementario.toFixed(2) === valorComplementario) {
+        delete siguientes[idComplementario];
+      } else {
+        siguientes[idComplementario] = {
+          ...cambioComplementario,
+          valorOriginal: valorComplementario,
+        };
+      }
+      return siguientes;
     });
   };
 
@@ -2221,6 +2283,20 @@ function PantallaInvestigacionAnalista({
       return { valor: normalizarMontoDosDecimales(valorTexto) };
     }
 
+    const campoPorcentaje = rutaTexto.startsWith("operacionPrincipal.")
+      ? rutaTexto.replace("operacionPrincipal.", "") as CampoPorcentajeOperacion
+      : null;
+    if (campoPorcentaje && CAMPOS_PORCENTAJE_EXTRACCION.has(campoPorcentaje)) {
+      const numero = Number.parseFloat(valorTexto.replace(",", "."));
+      if (Number.isNaN(numero) || numero < 0 || numero > 100) return { valor: "" };
+      const valorPorcentaje = numero.toFixed(2);
+      return {
+        valor: valorPorcentaje,
+        alAplicar: () => aplicarPorcentajeExtraccion(campoPorcentaje, valorPorcentaje),
+        omitirActualizacion: true,
+      };
+    }
+
     if (rutaTexto === "identificacion.tipoPersona") {
       const opcionPorId = obtenerOpcionTablaMaestraPorId(opcionesTipoPersona, valor);
       if (opcionPorId?.string1) {
@@ -2408,10 +2484,18 @@ function PantallaInvestigacionAnalista({
     valorExtraido: string;
     onAplicar: () => void;
   }) => {
-    const valorAnteriorLimpio = CAMPOS_MONETARIOS_EXTRACCION.has(id) && /^0+(?:[.,]0+)?$/.test(valorActual.trim())
-      ? ""
+    const esPorcentaje = id.startsWith("operacionPrincipal.")
+      && CAMPOS_PORCENTAJE_EXTRACCION.has(id.replace("operacionPrincipal.", "") as CampoPorcentajeOperacion);
+    const valorAnteriorBase = esPorcentaje && valorActual.trim()
+      ? Number.parseFloat(valorActual.replace(",", ".")).toFixed(2)
       : valorActual.trim();
-    const valorNuevoLimpio = valorExtraido.trim();
+    const valorNuevoBase = esPorcentaje
+      ? Number.parseFloat(valorExtraido.replace(",", ".")).toFixed(2)
+      : valorExtraido.trim();
+    const valorAnteriorLimpio = CAMPOS_MONETARIOS_EXTRACCION.has(id) && /^0+(?:[.,]0+)?$/.test(valorAnteriorBase)
+      ? ""
+      : valorAnteriorBase;
+    const valorNuevoLimpio = valorNuevoBase;
 
     if (!valorNuevoLimpio || valorAnteriorLimpio === valorNuevoLimpio) return;
 
