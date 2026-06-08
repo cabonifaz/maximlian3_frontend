@@ -5,6 +5,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router";
 import { CheckCircle2, CircleX, Download, Eye, ShieldCheck } from "lucide-react";
 import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/CustomModalRechazoInforme";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import {
   CustomVistaPreviaInformeComparado,
   type EncabezadoVistaPreviaInforme,
@@ -105,6 +106,8 @@ export default function RevisionInformeCoordinador() {
   });
 
   const puedeEditarRevision = !isLoading && !mutationRevision.isPending && Boolean(datosInvestigacion);
+
+  if (isLoading) return <PantallaCarga message="Obteniendo informe..." />;
 
   return (
     <div className="space-y-6">

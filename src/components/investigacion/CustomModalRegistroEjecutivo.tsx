@@ -130,7 +130,7 @@ export function CustomModalRegistroEjecutivoAnalista({
                   Buscar
                 </CustomButton>
               </div>
-              {mensajeBusquedaEjecutivo ? (
+              {mensajeBusquedaEjecutivo && !tieneEjecutivoRegistrado ? (
                 <p className="text-xs leading-5 text-amber-700">{mensajeBusquedaEjecutivo}</p>
               ) : null}
             </div>
