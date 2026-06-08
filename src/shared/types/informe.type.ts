@@ -17,10 +17,12 @@ export interface InformeListEntry {
   idInforme: number;
   idPedido: number;
   idEstado: number;
+  idIdioma?: number;
   codigo: string;
   investigado: string;
   pais: string;
   fecha: string;
+  vigencia: string;
   tipo: string;
   estado: EstadoInvestigacionAnalista;
   accion: AccionBandejaAnalista;

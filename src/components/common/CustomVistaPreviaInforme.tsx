@@ -51,6 +51,7 @@ interface PropsVistaPreviaInformeComparado {
   datosInvestigacion: DatosInvestigacionAnalista;
   encabezado: EncabezadoVistaPreviaInforme;
   indicadorReporteTraducido?: string;
+  mostrarInformeTraducido?: boolean;
   className?: string;
   contenidoEntreTabsYTarjetas?: ReactNode;
 }
@@ -716,6 +717,7 @@ export function CustomVistaPreviaInformeComparado({
   datosInvestigacion,
   encabezado,
   indicadorReporteTraducido = "En traducción",
+  mostrarInformeTraducido = true,
   className = "space-y-6",
   contenidoEntreTabsYTarjetas,
 }: PropsVistaPreviaInformeComparado) {
@@ -738,7 +740,7 @@ export function CustomVistaPreviaInformeComparado({
       <CustomTabsVistaPreviaInforme idTabActiva={idTabActiva} onTabChange={setIdTabActiva} />
       {contenidoEntreTabsYTarjetas}
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className={`grid gap-6 ${mostrarInformeTraducido ? "xl:grid-cols-2" : ""}`}>
         <CustomTarjetaVistaPreviaInforme
           titulo="Reporte original (español)"
           indicador="Original"
@@ -747,14 +749,16 @@ export function CustomVistaPreviaInformeComparado({
           mostrarTituloSeccion={idTabActiva === "vista-general"}
           mostrarValorTraducido={false}
         />
-        <CustomTarjetaVistaPreviaInforme
-          titulo="Reporte traducido (inglés)"
-          indicador={indicadorReporteTraducido}
-          encabezado={encabezado}
-          secciones={seccionesVisibles}
-          mostrarTituloSeccion={idTabActiva === "vista-general"}
-          mostrarValorTraducido
-        />
+        {mostrarInformeTraducido ? (
+          <CustomTarjetaVistaPreviaInforme
+            titulo="Reporte traducido (inglés)"
+            indicador={indicadorReporteTraducido}
+            encabezado={encabezado}
+            secciones={seccionesVisibles}
+            mostrarTituloSeccion={idTabActiva === "vista-general"}
+            mostrarValorTraducido
+          />
+        ) : null}
       </div>
     </div>
   );

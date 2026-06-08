@@ -31,7 +31,7 @@ export default function RevisionInformeCoordinador() {
   const datosEjemplo = useMemo(() => obtenerDatosInvestigacionAnalista("detalle"), []);
 
   const { data: informeObtenido, isLoading } = useQuery({
-    queryKey: ["coordinador-revision-detalle", idPedido, idInforme],
+    queryKey: ["coordinador-revision-detalle", idPedido],
     queryFn: () => informeService.obtener({
       idPedido: Number(idPedido),
     }),
@@ -64,7 +64,8 @@ export default function RevisionInformeCoordinador() {
 
   const datosInvestigacion = informeObtenido?.datosInvestigacion ?? (esEjemplo ? datosEjemplo : undefined);
   const idPedidoNumerico = Number(idPedido);
-  const idInformeSeguro = Number.isFinite(idInforme) ? idInforme : 0;
+  const idInformeSeguro = informeObtenido?.idInforme
+    ?? (Number.isFinite(idInforme) ? idInforme : 0);
 
   const encabezado: EncabezadoVistaPreviaInforme = {
     pais: datosInvestigacion?.resumen.pais || "-",
@@ -115,7 +116,7 @@ export default function RevisionInformeCoordinador() {
           <div>
             <h1 className="text-xl font-bold text-brand-black">Revisión y Aprobación</h1>
             <p className="text-sm text-slate-500">
-              {esEjemplo ? "Vista de ejemplo para el flujo de aprobación." : "Comparación del informe original y traducido."}
+              {esEjemplo ? "Vista de ejemplo para el flujo de aprobación." : "Revisión del informe original en español."}
             </p>
           </div>
         </div>
@@ -136,86 +137,46 @@ export default function RevisionInformeCoordinador() {
           <CustomVistaPreviaInformeComparado
             datosInvestigacion={datosInvestigacion}
             encabezado={encabezado}
-            indicadorReporteTraducido="Traducido"
+            mostrarInformeTraducido={false}
             className="space-y-3"
             contenidoEntreTabsYTarjetas={(
-              <div className="grid gap-4 xl:grid-cols-2">
-                <section className="space-y-2">
-                  <div className="flex min-h-[68px] items-start justify-between gap-4">
-                    <div className="min-w-0 pt-2">
-                      <CustomLabel as="p" className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                        Informe original
-                      </CustomLabel>
-                      <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                        (Español)
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center justify-end gap-2">
-                      <CustomButton
-                        variant="secondary"
-                        size="sm"
-                        className="border-green-400 text-green-600"
-                        disabled={!puedeEditarRevision}
-                        onClick={() => mutationRevision.mutate(ID_ESTADO_INFORME_APROBADO)}
-                      >
-                        <CheckCircle2 size={14} />
-                        Aprobar
-                      </CustomButton>
-                      <CustomButton
-                        variant="secondary"
-                        size="sm"
-                        className="border-red-400 text-red-500"
-                        disabled={!puedeEditarRevision}
-                        onClick={() => setEstaAbiertoModalRechazo(true)}
-                      >
-                        <CircleX size={14} />
-                        Rechazar
-                      </CustomButton>
-                      <span className="rounded-full bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                        Original
-                      </span>
-                    </div>
+              <section className="space-y-2">
+                <div className="flex min-h-[68px] items-start justify-between gap-4">
+                  <div className="min-w-0 pt-2">
+                    <CustomLabel as="p" className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                      Informe original
+                    </CustomLabel>
+                    <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                      (Español)
+                    </p>
                   </div>
-                </section>
-
-                <section className="space-y-2">
-                  <div className="flex min-h-[68px] items-start justify-between gap-6">
-                    <div className="min-w-0 pt-2">
-                      <CustomLabel as="p" className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                        Informe traducido
-                      </CustomLabel>
-                      <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                        (Inglés)
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center justify-end gap-2">
-                      <CustomButton
-                        variant="secondary"
-                        size="sm"
-                        className="border-green-400 text-green-600"
-                        disabled={!puedeEditarRevision}
-                        onClick={() => mutationRevision.mutate(ID_ESTADO_INFORME_APROBADO)}
-                      >
-                        <CheckCircle2 size={14} />
-                        Aprobar
-                      </CustomButton>
-                      <CustomButton
-                        variant="secondary"
-                        size="sm"
-                        className="border-red-400 text-red-500"
-                        disabled={!puedeEditarRevision}
-                        onClick={() => setEstaAbiertoModalRechazo(true)}
-                      >
-                        <CircleX size={14} />
-                        Rechazar
-                      </CustomButton>
-                      <span className="rounded-full bg-blue-100 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-blue-600">
-                        Traducido
-                      </span>
-                    </div>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <CustomButton
+                      variant="secondary"
+                      size="sm"
+                      className="border-green-400 text-green-600"
+                      disabled={!puedeEditarRevision}
+                      onClick={() => mutationRevision.mutate(ID_ESTADO_INFORME_APROBADO)}
+                    >
+                      <CheckCircle2 size={14} />
+                      Aprobar
+                    </CustomButton>
+                    <CustomButton
+                      variant="secondary"
+                      size="sm"
+                      className="border-red-400 text-red-500"
+                      disabled={!puedeEditarRevision}
+                      onClick={() => setEstaAbiertoModalRechazo(true)}
+                    >
+                      <CircleX size={14} />
+                      Rechazar
+                    </CustomButton>
+                    <span className="rounded-full bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                      Original
+                    </span>
                   </div>
-                </section>
-              </div>
+                </div>
+              </section>
             )}
           />
         ) : (

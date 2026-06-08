@@ -327,7 +327,9 @@ function normalizarFilaInforme(fila: unknown): InformeListEntry {
     idInforme: obtenerNumero(registro.idInforme, registro.IdInforme),
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido),
     idEstado,
+    idIdioma: obtenerNumeroOpcional(registro.idIdioma, registro.IdIdioma),
     codigo: obtenerTexto(registro.codigo, registro.Codigo, registro.codigoPedido, registro.CodigoPedido) || "-",
+    vigencia: obtenerTexto(registro.vigencia, registro.Vigencia, registro.porVencerTexto, registro.PorVencerTexto) || "-",
     investigado: obtenerTexto(
       registro.investigado,
       registro.nombre,

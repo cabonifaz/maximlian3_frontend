@@ -1,51 +1,17 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
-import { BadgeCheck, CheckCircle2, CircleX, ClipboardList, FileSearch, Search, SlidersHorizontal, TriangleAlert } from "lucide-react";
+import { BadgeCheck, CheckCircle2, CircleX, ClipboardList, Search, SlidersHorizontal, TriangleAlert } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
-import { servicioAsignacion } from "@maximilian/services/asignacion.service";
-import type { AssignmentOrderEntry } from "@maximilian/shared/types/asignacion.type";
-import type { EstadoInvestigacionAnalista, TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
+import { informeService } from "@maximilian/services/informe.service";
+import type { InformeListEntry } from "@maximilian/shared/types/informe.type";
+import type { TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
 import {
   obtenerColorEstadoAnalista,
   obtenerTextoEstadoAnalista,
 } from "@maximilian/shared/utils/datos-simulados-investigacion";
-
-interface RegistroRevisionCoordinador {
-  idRegistro: number;
-  idPedido: number;
-  idInforme: number;
-  idIdioma?: number;
-  investigado: string;
-  vigencia: string;
-  vigenciaColor: string;
-  tipo: string;
-  estado: EstadoInvestigacionAnalista;
-  esEjemplo?: boolean;
-}
-
-const REGISTRO_EJEMPLO: RegistroRevisionCoordinador = {
-  idRegistro: -1,
-  idPedido: 2024001,
-  idInforme: 2024001,
-  investigado: "Generation & Power SA",
-  vigencia: "3 dias",
-  vigenciaColor: "#334155",
-  tipo: "Normal",
-  estado: "pendiente-aprobacion",
-  esEjemplo: true,
-};
-
-function formatearEstadoRevision(registro: AssignmentOrderEntry): EstadoInvestigacionAnalista {
-  const estado = (registro.estado ?? "").trim().toLowerCase();
-  if (estado.includes("rechaz")) return "rechazado";
-  if (estado.includes("aprob")) return "aprobado";
-  if (estado.includes("pend")) return "pendiente-aprobacion";
-  if (estado.includes("proceso") || estado.includes("curso")) return "en-proceso";
-  return (registro.idInforme ?? 0) > 0 ? "pendiente-aprobacion" : "asignado";
-}
 
 function obtenerIconoTarjeta(id: string) {
   if (id === "pendiente") return <ClipboardList size={18} className="text-orange-500" />;
@@ -62,14 +28,14 @@ export default function GestionRevisionAprobacion() {
   const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
 
   const {
-    data: respuestaAsignaciones,
+    data: respuestaInformes,
     isLoading,
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["asignaciones-bandeja-coordinador-revision", paginaActual, terminoBusquedaConRetardo],
+    queryKey: ["informes-bandeja-coordinador-revision", paginaActual, terminoBusquedaConRetardo],
     queryFn: () =>
-      servicioAsignacion.bandeja({
+      informeService.list({
         numPag: paginaActual,
         busqueda: terminoBusquedaConRetardo.trim() || undefined,
       }),
@@ -77,30 +43,16 @@ export default function GestionRevisionAprobacion() {
     retry: false,
   });
 
-  const registros = useMemo<RegistroRevisionCoordinador[]>(() => {
-    const registrosApi = (respuestaAsignaciones?.lstPedido ?? [])
-      .filter((registro) => (registro.idInforme ?? 0) > 0)
-      .map((registro) => ({
-        idRegistro: registro.idPedido,
-        idPedido: registro.idPedido,
-        idInforme: registro.idInforme ?? 0,
-        idIdioma: registro.idIdioma,
-        investigado: registro.investigado,
-        vigencia: registro.porVencerTexto || "-",
-        vigenciaColor: registro.porVencerColor || "#64748b",
-        tipo: registro.tipoTramite || "-",
-        estado: formatearEstadoRevision(registro),
-        esEjemplo: false,
-      }));
-
-    return [REGISTRO_EJEMPLO, ...registrosApi];
-  }, [respuestaAsignaciones?.lstPedido]);
+  const registros = useMemo<InformeListEntry[]>(
+    () => respuestaInformes?.lstInforme ?? [],
+    [respuestaInformes?.lstInforme],
+  );
 
   const resumenTarjetas = useMemo<TarjetaResumenAnalista[]>(() => {
-    const pendientes = registros.filter((registro) => registro.estado === "pendiente-aprobacion").length;
-    const aprobados = registros.filter((registro) => registro.estado === "aprobado").length;
-    const rechazados = registros.filter((registro) => registro.estado === "rechazado").length;
-    const vigentes = registros.filter((registro) => !registro.vigencia.toLowerCase().includes("venc")).length;
+    const pendientes = registros.filter((r) => r.estado === "pendiente-aprobacion").length;
+    const aprobados = registros.filter((r) => r.estado === "aprobado").length;
+    const rechazados = registros.filter((r) => r.estado === "rechazado").length;
+    const vigentes = registros.filter((r) => r.estado !== "rechazado").length;
     const vencidos = registros.length - vigentes;
 
     return [
@@ -112,20 +64,14 @@ export default function GestionRevisionAprobacion() {
     ];
   }, [registros]);
 
-  const abrirRevision = (registro: RegistroRevisionCoordinador) => {
+  const abrirRevision = (registro: InformeListEntry) => {
     const parametros = new URLSearchParams();
     parametros.set("idInforme", String(registro.idInforme));
     if (registro.idIdioma != null) {
       parametros.set("idIdioma", String(registro.idIdioma));
     }
-    if (registro.esEjemplo) {
-      parametros.set("ejemplo", "1");
-    }
-
     navigate(`/coordinador/revision/${registro.idPedido}?${parametros.toString()}`);
   };
-
-  const abrirEjemploInforme = () => abrirRevision(REGISTRO_EJEMPLO);
 
   const columnas = [
     { label: "ID Pedido" },
@@ -191,15 +137,6 @@ export default function GestionRevisionAprobacion() {
               Filtros
             </CustomButton>
 
-            <CustomButton
-              variant="wine"
-              size="md"
-              className="h-12 min-w-40 text-sm font-semibold"
-              onClick={abrirEjemploInforme}
-            >
-              <FileSearch size={16} />
-              Ver ejemplo
-            </CustomButton>
           </div>
         </div>
 
@@ -212,27 +149,25 @@ export default function GestionRevisionAprobacion() {
         <CustomTabla
           columns={columnas}
           data={registros}
-          getId={(registro) => registro.idRegistro}
+          getId={(registro) => registro.idInforme}
           isLoading={isLoading}
           isError={false}
           onRetry={() => void refetch()}
           paginaActual={paginaActual}
-          totalPages={respuestaAsignaciones?.totalPaginas ?? 1}
-          totalRecords={(respuestaAsignaciones?.totalRegistros ?? 0) + 1}
+          totalPages={respuestaInformes?.totalPaginas ?? 1}
+          totalRecords={respuestaInformes?.totalRegistros ?? 0}
           entityLabel="informes"
           onPageChange={setPaginaActual}
           emptyMessage="No se encontraron informes para revisión."
           renderRow={(registro) => (
             <>
               <td className="px-6 py-4 text-sm font-medium text-slate-400">
-                #{registro.esEjemplo ? "SR-2024-001" : registro.idPedido}
+                #{registro.idPedido}
               </td>
               <td className="max-w-48 px-6 py-4 text-sm font-semibold text-slate-700">
                 <span className="line-clamp-1">{registro.investigado}</span>
               </td>
-              <td className="px-6 py-4 text-sm" style={{ color: registro.vigenciaColor }}>
-                {registro.vigencia}
-              </td>
+              <td className="px-6 py-4 text-sm text-slate-500">{registro.vigencia}</td>
               <td className="px-6 py-4 text-sm text-slate-500">{registro.tipo}</td>
               <td className="px-6 py-4 text-center">
                 <span
