@@ -726,15 +726,12 @@ export function ResumenPedidoInvestigacionAnalista({
   plantilla,
   resumen,
   esSoloLectura,
-  mostrarBotonFinalizar,
-  onFinalizarInvestigacion,
   onExtraerInformacion,
   onAbrirArchivos,
   onVistaPrevia,
   accionesSecundarias,
   textoBotonArchivos = "Adjuntar archivos",
   textoBotonAccionIa = "Extraer Información",
-  textoBotonFinalizar = "Finalizar Investigación",
 }: PropsResumenPedidoInvestigacionAnalista) {
   return (
     <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -801,9 +798,7 @@ export function ResumenPedidoInvestigacionAnalista({
             </CustomButton>
           ) : null}
           {accionesSecundarias}
-          {mostrarBotonFinalizar ? (
-            <CustomButton size="sm" onClick={onFinalizarInvestigacion}>{textoBotonFinalizar}</CustomButton>
-          ) : null}
+          
         </div>
       </div>
     </section>
