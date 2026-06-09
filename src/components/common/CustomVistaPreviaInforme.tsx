@@ -8,18 +8,29 @@ interface FilaVistaPreviaInforme {
   etiquetaTraducida: string;
   valorOriginal: string;
   valorTraducido: string;
+  subValorOriginal?: string;
+  subValorTraducido?: string;
 }
 
 interface BloqueVistaPreviaInforme {
   id: string;
   titulo: string;
   filas: FilaVistaPreviaInforme[];
+  layout?: "columna" | "activos-pasivos" | "dos-columnas";
+}
+
+interface GrupoBloquesVistaPreviaInforme {
+  id: string;
+  titulo: string;
+  subtitulo?: string;
+  bloques: BloqueVistaPreviaInforme[];
 }
 
 export interface SeccionVistaPreviaInforme {
   id: IdSeccionInvestigacionAnalista;
   titulo: string;
   bloques: BloqueVistaPreviaInforme[];
+  grupos?: GrupoBloquesVistaPreviaInforme[];
   observaciones?: string;
 }
 
@@ -175,6 +186,7 @@ function crearFilasDesdeRegistro(
 ) {
   return Object.entries(registro)
     .filter(([clave]) => !clavesOmitidas.includes(clave))
+    .filter(([, valor]) => valor !== null && valor !== undefined && valor !== "")
     .map(([clave, valor]) => crearFilaVistaPrevia(etiquetasPersonalizadas[clave] ?? humanizarEtiquetaVistaPrevia(clave), valor));
 }
 
@@ -184,11 +196,13 @@ function crearBloqueDesdeRegistro(
   registro: Record<string, unknown>,
   etiquetasPersonalizadas: Record<string, string> = {},
   clavesOmitidas: string[] = [],
+  layout?: BloqueVistaPreviaInforme["layout"],
 ): BloqueVistaPreviaInforme {
   return {
     id,
     titulo,
     filas: crearFilasDesdeRegistro(registro, etiquetasPersonalizadas, clavesOmitidas),
+    layout,
   };
 }
 
@@ -212,6 +226,137 @@ function crearBloquesDesdeLista(
     titulo: `${tituloBase} ${indice + 1}`,
     filas: crearFilasDesdeRegistro(registro, etiquetasPersonalizadas, clavesOmitidas),
   }));
+}
+
+const etiquetasTurquia: Record<string, string> = {
+  "year": "Año",
+  "balance-date": "Fecha de balance",
+  "balance-date-p": "Fecha de balance (P/G)",
+  "currency": "Moneda",
+  "currency-iso": "ISO de moneda",
+  "currency-p": "Moneda (P/G)",
+  "length-period": "Duracion del periodo",
+  "reliability-level": "Nivel de confiabilidad",
+  "exchange-rate": "Tipo de cambio",
+  "exchange-rate-p": "Tipo de cambio (P/G)",
+  "cash": "Efectivo",
+  "stocks": "Existencias",
+  "creditors": "Deudores",
+  "current-total": "Total corriente",
+  "tangible-assets": "Bienes tangibles",
+  "intangible-assets": "Activos intangibles",
+  "net-fixed": "Activo fijo neto",
+  "total-assets-turquia": "Total activos",
+  "loans": "Prestamos",
+  "debtors": "Acreedores",
+  "current-liabilities": "Pasivos corrientes",
+  "non-current-liabilities": "Pasivos no corrientes",
+  "long-term-liabilities": "Pasivos de largo plazo",
+  "total-non-current-liabilities": "Total pasivos no corrientes",
+  "total-liabilities": "Total pasivos",
+  "capital": "Capital",
+  "equity": "Patrimonio",
+  "total-equity": "Total patrimonio",
+  "total-liabilities-equity": "Total pasivos y patrimonio",
+  "turnover": "Ventas netas",
+  "costs-goods-sold": "Costo de ventas",
+  "material-costs": "Costo de materiales",
+  "gross-profit": "Ganancia bruta",
+  "other-operating-expenses": "Otros gastos operativos",
+  "costs-employees": "Costo de empleados",
+  "depreciation": "Depreciacion",
+  "financial-revenue": "Ingresos financieros",
+  "financial-expenses": "Gastos financieros",
+  "interest-paid": "Intereses pagados",
+  "financial-pl": "P/L financiero",
+  "extra-other-revenue": "Ingresos extraordinarios y otros",
+  "extra-other-expenses": "Gastos extraordinarios y otros",
+  "extra-other-pl": "P/L extraordinario y otros",
+  "profit-loss-before-taxes": "Ganancia antes de impuestos",
+  "taxation": "Impuestos",
+  "profit-loss-after-taxes": "Ganancia/Perdida neta",
+  "ebit": "EBIT",
+  "ebitda": "EBITDA",
+  "profit": "Ganancia",
+  "liquidity-index": "Ratio de liquidez",
+  "working-capital": "Capital de trabajo",
+  "indebtedness-ratio": "Ratio de endeudamiento",
+  "profitability-ratio-turquia": "Ratio de rentabilidad",
+};
+
+function esEtiquetaImportante(etiqueta: string): boolean {
+  const t = etiqueta.toLowerCase();
+  return (
+    t.startsWith("total") ||
+    t.includes("total") ||
+    t === "patrimonio" ||
+    t.includes("ganancia") ||
+    t.includes("utilidad") ||
+    t === "ebit" ||
+    t === "ebitda"
+  );
+}
+
+const etiquetasActivosBalanceGeneral = new Set([
+  "Total corrientes",
+  "Total no corrientes",
+  "Otros activos",
+  "Total activos",
+]);
+
+function crearFilaConSub(etiqueta: string, valorPrincipal: unknown, valorSecundario: unknown): FilaVistaPreviaInforme {
+  const principal = formatearValorVistaPrevia(valorPrincipal);
+  const secundario = formatearValorVistaPrevia(valorSecundario);
+  return {
+    etiqueta,
+    etiquetaTraducida: traducirTextoVistaPrevia(etiqueta),
+    valorOriginal: principal,
+    valorTraducido: traducirTextoVistaPrevia(principal),
+    subValorOriginal: secundario !== "-" ? secundario : undefined,
+    subValorTraducido: secundario !== "-" ? traducirTextoVistaPrevia(secundario) : undefined,
+  };
+}
+
+const paresOperacionPrincipal: Array<[string, string, string]> = [
+  ["ventasContadoPorcentaje", "ventasContadoDetalle", "Ventas al Contado"],
+  ["ventasCreditoPorcentaje", "ventasCreditoDetalle", "Ventas a Credito"],
+  ["territorioVentasPorcentaje", "territorioVentasDetalle", "Ventas Nacionales"],
+  ["ventasExtranjeroPorcentaje", "ventasExtranjeroDetalle", "Ventas Extranjero"],
+  ["comprasNacionalesPorcentaje", "comprasNacionalesDetalle", "Compras Nacionales"],
+  ["comprasExtranjeroPorcentaje", "comprasExtranjeroDetalle", "Compras Extranjero"],
+];
+const camposParOperacionPrincipal = new Set(paresOperacionPrincipal.flatMap(([a, b]) => [a, b]));
+
+function crearBloqueOperacionPrincipal(operacionPrincipal: Record<string, unknown>): BloqueVistaPreviaInforme {
+  const etiquetasSimples: Record<string, string> = {
+    sector: "Sector",
+    actividad: "Actividad",
+    categoriaCiiu: "Categoria CIIU",
+    claseCiiu: "Clase CIIU",
+    actividadPrincipal: "Actividad principal",
+    ventasCreditoTiempo: "Tiempo de credito",
+    numeroEmpleados: "Numero de empleados",
+    numeroEmpleadosDetalle: "Detalle empleados",
+    comentariosOperaciones: "Comentarios operaciones",
+  };
+
+  const filas: FilaVistaPreviaInforme[] = [];
+
+  for (const [clave, etiqueta] of Object.entries(etiquetasSimples)) {
+    const valor = operacionPrincipal[clave];
+    if (valor === null || valor === undefined || valor === "") continue;
+    filas.push(crearFilaVistaPrevia(etiqueta, valor));
+  }
+
+  for (const [clavePct, claveDetalle, etiqueta] of paresOperacionPrincipal) {
+    const pct = operacionPrincipal[clavePct];
+    const detalle = operacionPrincipal[claveDetalle];
+    if ((pct === null || pct === undefined || pct === "") && (detalle === null || detalle === undefined || detalle === "")) continue;
+    const pctStr = pct !== null && pct !== undefined && pct !== "" ? `${pct}%` : pct;
+    filas.push(crearFilaConSub(etiqueta, pctStr, detalle));
+  }
+
+  return { id: "operacion-principal", titulo: "Operacion principal", filas };
 }
 
 export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInvestigacionAnalista): SeccionVistaPreviaInforme[] {
@@ -287,6 +432,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           idFiscal: "Id fiscal",
           pais: "Pais",
         },
+        ["idInformeCompaniaRelacionada", "idCompania"],
       ),
     ],
   });
@@ -295,40 +441,13 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
     id: "ramo-operaciones",
     titulo: "Ramo Operaciones",
     bloques: [
-      crearBloqueDesdeRegistro(
-        "operacion-principal",
-        "Operacion principal",
-        datosInvestigacion.operacionPrincipal as unknown as Record<string, unknown>,
-        {
-          sector: "Sector",
-          actividad: "Actividad",
-          categoriaCiiu: "Categoria CIIU",
-          claseCiiu: "Clase CIIU",
-          actividadPrincipal: "Actividad principal",
-          ventasContadoPorcentaje: "Ventas contado %",
-          ventasContadoDetalle: "Ventas contado detalle",
-          ventasCreditoPorcentaje: "Ventas credito %",
-          ventasCreditoDetalle: "Ventas credito detalle",
-          ventasCreditoTiempo: "Tiempo de credito",
-          territorioVentasPorcentaje: "Territorio ventas %",
-          territorioVentasDetalle: "Territorio ventas detalle",
-          ventasExtranjeroPorcentaje: "Ventas extranjero %",
-          ventasExtranjeroDetalle: "Ventas extranjero detalle",
-          comprasNacionalesPorcentaje: "Compras nacionales %",
-          comprasNacionalesDetalle: "Compras nacionales detalle",
-          comprasExtranjeroPorcentaje: "Compras extranjero %",
-          comprasExtranjeroDetalle: "Compras extranjero detalle",
-          numeroEmpleados: "Numero de empleados",
-          numeroEmpleadosDetalle: "Detalle empleados",
-          comentariosOperaciones: "Comentarios operaciones",
-        },
-      ),
+      crearBloqueOperacionPrincipal(datosInvestigacion.operacionPrincipal as unknown as Record<string, unknown>),
       ...crearBloquesDesdeLista(
         "importaciones",
         "Importacion",
         datosInvestigacion.importaciones as unknown as Record<string, unknown>[],
         {
-          anio: "Ano",
+          anio: "Año",
           mes: "Mes",
           moneda: "Moneda",
           paises: "Paises",
@@ -336,13 +455,14 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           monto: "Monto",
           operaciones: "Operaciones",
         },
+        ["idInformeExportacionImportacion", "idMesInicio", "idMesFin", "idMoneda"],
       ),
       ...crearBloquesDesdeLista(
         "exportaciones",
         "Exportacion",
         datosInvestigacion.exportaciones as unknown as Record<string, unknown>[],
         {
-          anio: "Ano",
+          anio: "Año",
           mes: "Mes",
           moneda: "Moneda",
           paises: "Paises",
@@ -350,6 +470,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           monto: "Monto",
           operaciones: "Operaciones",
         },
+        ["idInformeExportacionImportacion", "idMesInicio", "idMesFin", "idMoneda"],
       ),
       ...crearBloquesDesdeLista(
         "locales",
@@ -393,43 +514,36 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
   seccionesPorId.set("balances", {
     id: "balances",
     titulo: "Balances",
-    bloques: datosInvestigacion.balances.length > 0
-      ? datosInvestigacion.balances.flatMap((balance, indice) => {
+    bloques: [],
+    grupos: datosInvestigacion.balances.length > 0
+      ? datosInvestigacion.balances.map((balance, indice) => {
+          const tituloGrupo = [balance.tipoEstadoFinanciero, balance.tipoBalance]
+            .filter(Boolean)
+            .join(" · ") || `Balance ${indice + 1}`;
+          const subtituloGrupo = [
+            balance.fecha ? `Fecha: ${balance.fecha}` : null,
+            balance.operacionCambio ? `Moneda: ${balance.operacionCambio}` : null,
+            balance.tipoCambio ? `TC: ${balance.tipoCambio}` : null,
+            balance.esActual ? "Actual" : null,
+          ].filter(Boolean).join("  ·  ");
+
           const bloques: BloqueVistaPreviaInforme[] = [
             crearBloqueDesdeRegistro(
               `balance-${indice}`,
-              `Balance ${indice + 1}`,
+              "Datos generales",
               {
-                codigo: balance.codigo,
-                periodo: balance.periodo,
                 fecha: balance.fecha,
                 fechaInicio: balance.fechaInicio,
                 fechaFin: balance.fechaFin,
-                esActual: balance.esActual,
-                tipo: balance.tipo,
-                tipoEstadoFinanciero: balance.tipoEstadoFinanciero,
                 tipoCambio: balance.tipoCambio,
                 operacionCambio: balance.operacionCambio,
-                tipoBalance: balance.tipoBalance,
-                balanceGeneral: balance.balanceGeneral,
-                perdidaGanancia: balance.perdidaGanancia,
-                cuentas: balance.cuentas,
               },
               {
-                codigo: "Codigo",
-                periodo: "Periodo",
                 fecha: "Fecha",
                 fechaInicio: "Fecha inicio",
                 fechaFin: "Fecha fin",
-                esActual: "Es actual",
-                tipo: "Tipo",
-                tipoEstadoFinanciero: "Tipo de estado financiero",
                 tipoCambio: "Tipo de cambio",
-                operacionCambio: "Operacion cambio",
-                tipoBalance: "Tipo de balance",
-                balanceGeneral: "Balance general",
-                perdidaGanancia: "Perdida y ganancia",
-                cuentas: "Cuentas",
+                operacionCambio: "Moneda",
               },
             ),
           ];
@@ -438,7 +552,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
             bloques.push(
               crearBloqueDesdeRegistro(
                 `balance-general-${indice}`,
-                `Detalle balance general ${indice + 1}`,
+                "Balance general",
                 balance.detalleCuentas.balanceGeneral as unknown as Record<string, unknown>,
                 {
                   totalCorrientes: "Total corrientes",
@@ -452,13 +566,15 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
                   patrimonio: "Patrimonio",
                   totalPasivoPatrimonio: "Total pasivo y patrimonio",
                 },
+                [],
+                "activos-pasivos",
               ),
             );
 
             bloques.push(
               crearBloqueDesdeRegistro(
                 `balance-ganancias-${indice}`,
-                `Estado de ganancias y perdidas ${indice + 1}`,
+                "Estado de ganancias y perdidas",
                 balance.detalleCuentas.estadoGananciasPerdidas as unknown as Record<string, unknown>,
                 {
                   ventasNetas: "Ventas netas",
@@ -467,38 +583,41 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
               ),
             );
 
-            bloques.push(
-              crearBloqueDesdeRegistro(
-                `balance-ratios-${indice}`,
-                `Ratios ${indice + 1}`,
-                balance.detalleCuentas.ratios as unknown as Record<string, unknown>,
-                {
-                  liquidez: "Liquidez",
-                  capitalTrabajo: "Capital de trabajo",
-                  endeudamiento: "Endeudamiento",
-                  rentabilidad: "Rentabilidad",
-                },
-              ),
-            );
+            const esBancoOSeguro = balance.idTipoEstadoFinanciero === 3 || balance.idTipoEstadoFinanciero === 4;
+            if (!esBancoOSeguro) {
+              bloques.push(
+                crearBloqueDesdeRegistro(
+                  `balance-ratios-${indice}`,
+                  "Ratios financieros",
+                  balance.detalleCuentas.ratios as unknown as Record<string, unknown>,
+                  {
+                    liquidez: "Liquidez",
+                    capitalTrabajo: "Capital de trabajo",
+                    endeudamiento: "Endeudamiento",
+                    rentabilidad: "Rentabilidad",
+                  },
+                ),
+              );
+            }
 
             if (balance.detalleCuentas.registrosEstadoFinanciero && Object.keys(balance.detalleCuentas.registrosEstadoFinanciero).length > 0) {
+              const esTurquia = balance.idTipoEstadoFinanciero === 5 || (balance.tipoEstadoFinanciero ?? "").toLowerCase().includes("turqu");
               bloques.push(
                 crearBloqueDesdeRegistro(
                   `balance-registros-${indice}`,
-                  `Registros configurados ${indice + 1}`,
+                  "Registros configurados",
                   balance.detalleCuentas.registrosEstadoFinanciero,
+                  esTurquia ? etiquetasTurquia : {},
+                  [],
+                  "dos-columnas",
                 ),
               );
             }
           }
 
-          return bloques;
+          return { id: `grupo-balance-${indice}`, titulo: tituloGrupo, subtitulo: subtituloGrupo, bloques };
         })
-      : [{
-          id: "balance-vacio",
-          titulo: "Balances",
-          filas: [crearFilaVistaPrevia("Detalle", "Sin balances registrados.")],
-        }],
+      : undefined,
   });
 
   seccionesPorId.set("bancos-proveedores", {
@@ -525,18 +644,19 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           nombreEmpresa: "Nombre de empresa",
           contacto: "Contacto",
           tipoProveedor: "Tipo de proveedor",
-          telefono: "Telefono",
           tipoPersona: "Tipo de persona",
           pais: "Pais",
           taxIdType: "Tipo tax ID",
           taxIdNumber: "Numero tax ID",
-          tieneReferenciaComercial: "Tiene referencia comercial",
+          telefono: "Telefono",
           comienzoNegociaciones: "Comienzo negociaciones",
-          operacionCambioMoneda: "Operacion cambio moneda",
+          tieneReferenciaComercial: "Referencia comercial",
+          operacionCambioMoneda: "Moneda",
           tipoCambio: "Tipo de cambio",
           limiteCredito: "Limite de credito",
           promedioMensual: "Promedio mensual",
         },
+        ["idInformeProveedor", "idTipoProveedor", "idPais", "idTipoDocumento", "idMoneda", "idLimiteCredito", "idPlazoCredito", "esTieneReferenciaComercial"],
       ),
       ...crearBloquesDesdeLista(
         "bancos",
@@ -548,7 +668,9 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           sector: "Sector",
           telefono: "Telefono",
           sectoristaJefeCuenta: "Sectorista / jefe de cuenta",
+          pais: "Pais",
         },
+        ["idInformeBanco", "idBanco", "idPais", "idSector"],
       ),
     ],
   });
@@ -577,21 +699,19 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
       "Ejecutivo",
       datosInvestigacion.directorioEjecutivo as unknown as Record<string, unknown>[],
       {
-        ejecutivo: "Ejecutivo",
+        nombreCompleto: "Nombre completo",
         cargo: "Cargo",
-        porcentaje: "Porcentaje",
-        lista: "Lista",
-        detalleEjecutivo: "Detalle ejecutivo",
-        orden: "Orden",
+        tipoPersona: "Tipo de persona",
+        pais: "Pais",
+        porcentaje: "Participacion %",
         vinculadoDesde: "Vinculado desde",
         companiaAnterior: "Compania anterior",
         esParteDirectorio: "Es parte del directorio",
-        pais: "Pais",
-        tipoPersona: "Tipo de persona",
-        descripcionBusqueda: "Descripcion de busqueda",
-        nombreCompleto: "Nombre completo",
-        id: "Id",
+        lista: "Aparece en lista",
+        detalleEjecutivo: "Imprime detalle",
+        descripcionBusqueda: "Referencias",
       },
+      ["idInformeDirectorioEjecutivo", "id", "idDirectorioEjecutivo", "idCargo", "ejecutivo", "orden"],
     ),
   });
 
@@ -692,32 +812,160 @@ function CustomTarjetaVistaPreviaInforme({
                 </div>
               ) : null}
 
-              <div className="space-y-5">
-                {seccion.bloques.map((bloque) => (
-                  <div key={bloque.id}>
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                      {mostrarValorTraducido ? traducirTextoVistaPrevia(bloque.titulo) : bloque.titulo}
-                    </p>
-                    <div className="overflow-hidden rounded-lg border border-slate-100">
-                      {bloque.filas.map((fila, indice) => (
-                        <div
-                          key={`${bloque.id}-${fila.etiqueta}`}
-                          className={`grid text-xs md:grid-cols-[200px_minmax(0,1fr)] ${
-                            indice % 2 === 0 ? "bg-white" : "bg-slate-50/70"
-                          }`}
-                        >
-                          <p className="border-r border-slate-100 px-4 py-2.5 font-semibold text-slate-500">
-                            {mostrarValorTraducido ? fila.etiquetaTraducida : fila.etiqueta}
-                          </p>
-                          <p className="px-4 py-2.5 leading-relaxed text-slate-800">
-                            {mostrarValorTraducido ? fila.valorTraducido : fila.valorOriginal}
-                          </p>
-                        </div>
-                      ))}
+              {seccion.grupos && seccion.grupos.length > 0 ? (
+                <div className="space-y-4">
+                  {seccion.grupos.map((grupo) => (
+                    <div key={grupo.id} className="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+                      <div className="border-b border-slate-600 bg-slate-700 px-4 py-2.5">
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-white">{grupo.titulo}</p>
+                        {grupo.subtitulo ? (
+                          <p className="mt-0.5 text-[10px] text-slate-300">{grupo.subtitulo}</p>
+                        ) : null}
+                      </div>
+                      <div className="divide-y divide-slate-100">
+                        {grupo.bloques.filter((b) => b.filas.length > 0).map((bloque) => {
+                          const tituloBloque = mostrarValorTraducido ? traducirTextoVistaPrevia(bloque.titulo) : bloque.titulo;
+
+                          if (bloque.layout === "activos-pasivos") {
+                            const filasActivos = bloque.filas.filter((f) => etiquetasActivosBalanceGeneral.has(f.etiqueta));
+                            const filasPasivos = bloque.filas.filter((f) => !etiquetasActivosBalanceGeneral.has(f.etiqueta));
+                            const renderFilaContable = (fila: FilaVistaPreviaInforme, indice: number) => {
+                              const etiqueta = mostrarValorTraducido ? fila.etiquetaTraducida : fila.etiqueta;
+                              const valor = mostrarValorTraducido ? fila.valorTraducido : fila.valorOriginal;
+                              const esImportante = esEtiquetaImportante(etiqueta);
+                              return (
+                                <div key={fila.etiqueta} className={`flex items-baseline justify-between gap-2 px-2 py-1 text-xs ${indice % 2 === 0 ? "bg-white" : "bg-slate-50/60"}`}>
+                                  <span className={`font-semibold ${esImportante ? "uppercase text-slate-700" : "text-slate-500"}`}>{etiqueta}</span>
+                                  <span className={`shrink-0 tabular-nums font-mono ${esImportante ? "font-bold text-slate-900" : "text-slate-700"}`}>{valor}</span>
+                                </div>
+                              );
+                            };
+                            return (
+                              <div key={bloque.id} className="px-3 py-2">
+                                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">{tituloBloque}</p>
+                                <div className="grid grid-cols-2 divide-x divide-slate-100 overflow-hidden rounded-md border border-slate-100">
+                                  <div>
+                                    <div className="border-b border-slate-100 bg-slate-50 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">Activos</div>
+                                    {filasActivos.map((fila, i) => renderFilaContable(fila, i))}
+                                  </div>
+                                  <div>
+                                    <div className="border-b border-slate-100 bg-slate-50 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">Pasivos y Patrimonio</div>
+                                    {filasPasivos.map((fila, i) => renderFilaContable(fila, i))}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          if (bloque.layout === "dos-columnas") {
+                            const pares: [FilaVistaPreviaInforme, FilaVistaPreviaInforme | null][] = [];
+                            for (let i = 0; i < bloque.filas.length; i += 2) {
+                              pares.push([bloque.filas[i], bloque.filas[i + 1] ?? null]);
+                            }
+                            const renderCeldaDosCol = (fila: FilaVistaPreviaInforme | null, filaIndice: number) => {
+                              if (!fila) return <div key={`vacia-${filaIndice}`} className="px-2 py-1" />;
+                              const etiqueta = mostrarValorTraducido ? fila.etiquetaTraducida : fila.etiqueta;
+                              const valor = mostrarValorTraducido ? fila.valorTraducido : fila.valorOriginal;
+                              const esImportante = esEtiquetaImportante(etiqueta);
+                              return (
+                                <div key={fila.etiqueta} className="flex items-baseline justify-between gap-2 px-2 py-1 text-xs">
+                                  <span className={`font-semibold ${esImportante ? "uppercase text-slate-700" : "text-slate-500"}`}>{etiqueta}</span>
+                                  <span className={`shrink-0 tabular-nums font-mono ${esImportante ? "font-bold text-slate-900" : "text-slate-700"}`}>{valor}</span>
+                                </div>
+                              );
+                            };
+                            return (
+                              <div key={bloque.id} className="px-3 py-2">
+                                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">{tituloBloque}</p>
+                                <div className="overflow-hidden rounded-md border border-slate-100">
+                                  {pares.map((par, i) => (
+                                    <div key={i} className={`grid grid-cols-2 divide-x divide-slate-100 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/60"}`}>
+                                      {renderCeldaDosCol(par[0], i * 2)}
+                                      {renderCeldaDosCol(par[1], i * 2 + 1)}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div key={bloque.id} className="px-3 py-2">
+                              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">{tituloBloque}</p>
+                              <div className="overflow-hidden rounded-md border border-slate-100">
+                                {bloque.filas.map((fila, indice) => {
+                                  const etiqueta = mostrarValorTraducido ? fila.etiquetaTraducida : fila.etiqueta;
+                                  const valor = mostrarValorTraducido ? fila.valorTraducido : fila.valorOriginal;
+                                  const esImportante = esEtiquetaImportante(etiqueta);
+                                  const esNumero = /^-?[\d.,]+$/.test(valor.trim());
+                                  return (
+                                    <div
+                                      key={`${bloque.id}-${fila.etiqueta}`}
+                                      className={`flex items-baseline gap-3 text-xs ${indice % 2 === 0 ? "bg-white" : "bg-slate-50/60"}`}
+                                    >
+                                      <p className={`shrink-0 basis-[55%] border-r border-slate-100 px-3 py-1.5 font-semibold ${
+                                        esImportante ? "uppercase text-slate-700" : "text-slate-500"
+                                      }`}>
+                                        {etiqueta}
+                                      </p>
+                                      <p className={`min-w-0 flex-1 px-3 py-1.5 leading-relaxed tabular-nums ${
+                                        esImportante
+                                          ? `font-bold text-slate-900 ${esNumero ? "text-right font-mono" : ""}`
+                                          : `text-slate-800 ${esNumero ? "text-right font-mono" : ""}`
+                                      }`}>
+                                        {valor}
+                                      </p>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : seccion.bloques.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-slate-200 py-6 text-center text-xs text-slate-400">
+                  Sin registros.
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  {seccion.bloques.map((bloque) => (
+                    <div key={bloque.id}>
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                        {mostrarValorTraducido ? traducirTextoVistaPrevia(bloque.titulo) : bloque.titulo}
+                      </p>
+                      <div className="overflow-hidden rounded-lg border border-slate-100">
+                        {bloque.filas.map((fila, indice) => {
+                          const etiqueta = mostrarValorTraducido ? fila.etiquetaTraducida : fila.etiqueta;
+                          const valor = mostrarValorTraducido ? fila.valorTraducido : fila.valorOriginal;
+                          const subValor = mostrarValorTraducido ? fila.subValorTraducido : fila.subValorOriginal;
+                          return (
+                            <div
+                              key={`${bloque.id}-${fila.etiqueta}`}
+                              className={`grid text-xs md:grid-cols-[200px_minmax(0,1fr)] ${
+                                indice % 2 === 0 ? "bg-white" : "bg-slate-50/70"
+                              }`}
+                            >
+                              <p className="border-r border-slate-100 px-4 py-2.5 font-semibold text-slate-500">
+                                {etiqueta}
+                              </p>
+                              <div className="px-4 py-2 leading-relaxed text-slate-800">
+                                <span>{valor}</span>
+                                {subValor ? (
+                                  <p className="mt-0.5 text-[11px] text-slate-500">{subValor}</p>
+                                ) : null}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {seccion.observaciones ? (
                 <div className="mt-4 border-l-2 border-slate-300 bg-slate-50/50 py-3 pl-4 pr-4">

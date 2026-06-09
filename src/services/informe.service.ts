@@ -240,6 +240,12 @@ function formatearNumero(valor: unknown, decimales = 2): string {
   return numero.toFixed(decimales);
 }
 
+function formatearPorcentaje(valor: unknown, decimales = 2): string {
+  const numero = obtenerNumeroOpcional(valor);
+  if (numero == null) return "";
+  return `${(numero * 100).toFixed(decimales)}%`;
+}
+
 function formatearMonto(valor: unknown, decimales = 2): string {
   const numero = obtenerNumeroOpcional(valor);
   if (numero == null) return "";
@@ -913,8 +919,8 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
             ratios: {
               liquidez: formatearNumero(valorCuenta("indiceLiquidez"), 2),
               capitalTrabajo: formatearMonto(valorCuenta("capitalTrabajo"), 2),
-              endeudamiento: formatearNumero(valorCuenta("ratioEndeudamiento"), 2),
-              rentabilidad: formatearNumero(valorCuenta("ratioRentabilidad"), 2),
+              endeudamiento: formatearPorcentaje(valorCuenta("ratioEndeudamiento")),
+              rentabilidad: formatearPorcentaje(valorCuenta("ratioRentabilidad")),
             },
             registrosHabilitados: true,
             registrosEstadoFinanciero: Object.fromEntries(
@@ -925,9 +931,11 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
                 if (esCampoEnteroEstadoFinanciero(clave, tipoEstadoFinanciero)) {
                   return [clave, valor];
                 }
-                const esRatio = claveEstadoFinanciero !== "turquia"
-                  && /(liquidity|indebtedness|profitability)/.test(clave);
-                return [clave, esRatio ? formatearNumero(valor, 2) : formatearMonto(valor, 2)];
+                if (/(indebtedness|profitability)/.test(clave)) {
+                  return [clave, formatearPorcentaje(valor)];
+                }
+                const esRatioNumero = claveEstadoFinanciero !== "turquia" && /liquidity/.test(clave);
+                return [clave, esRatioNumero ? formatearNumero(valor, 2) : formatearMonto(valor, 2)];
               }),
             ),
           }
@@ -1190,15 +1198,39 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
       || local.tipoLocal,
   }));
 
-  const balances: RegistroBalanceInvestigacion[] = respuesta.datosInvestigacion.balances.map((balance) => ({
-    ...balance,
-    tipoBalance: tiposBalance.find((tipoBalance) => tipoBalance.num1 === balance.idTipoBalance)?.string1
-      || balance.tipoBalance,
-    tipoEstadoFinanciero: estadosFinancieros.find((estadoFinanciero) => estadoFinanciero.num1 === balance.idTipoEstadoFinanciero)?.string1
-      || balance.tipoEstadoFinanciero,
-    operacionCambio: monedas.find((moneda) => moneda.num1 === balance.idMoneda)?.string1
-      || balance.operacionCambio,
-  }));
+  const resolverIdMoneda = (val: string, campo: "string1" | "string2") => {
+    const id = Number(val);
+    return Number.isFinite(id) && id > 0
+      ? (monedas.find((m) => m.num1 === id)?.[campo] ?? val)
+      : val;
+  };
+
+  const balances: RegistroBalanceInvestigacion[] = respuesta.datosInvestigacion.balances.map((balance) => {
+    let detalleCuentas = balance.detalleCuentas;
+
+    const esTipoTurquia =
+      balance.idTipoEstadoFinanciero === 5 ||
+      (balance.tipoEstadoFinanciero ?? "").toLowerCase().includes("turqu");
+
+    if (esTipoTurquia && detalleCuentas?.registrosEstadoFinanciero) {
+      const registros: Record<string, string> = { ...detalleCuentas.registrosEstadoFinanciero };
+      if (registros["currency"]) registros["currency"] = resolverIdMoneda(registros["currency"], "string1");
+      if (registros["currency-p"]) registros["currency-p"] = resolverIdMoneda(registros["currency-p"], "string1");
+      if (registros["currency-iso"]) registros["currency-iso"] = resolverIdMoneda(registros["currency-iso"], "string2");
+      detalleCuentas = { ...detalleCuentas, registrosEstadoFinanciero: registros };
+    }
+
+    return {
+      ...balance,
+      tipoBalance: tiposBalance.find((tipoBalance) => tipoBalance.num1 === balance.idTipoBalance)?.string1
+        || balance.tipoBalance,
+      tipoEstadoFinanciero: estadosFinancieros.find((estadoFinanciero) => estadoFinanciero.num1 === balance.idTipoEstadoFinanciero)?.string1
+        || balance.tipoEstadoFinanciero,
+      operacionCambio: monedas.find((moneda) => moneda.num1 === balance.idMoneda)?.string1
+        || balance.operacionCambio,
+      detalleCuentas,
+    };
+  });
 
   const proveedores: RegistroProveedorInvestigacion[] = respuesta.datosInvestigacion.proveedores.map((proveedor) => ({
     ...proveedor,
@@ -1215,28 +1247,46 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
   }));
 
   const operacionPrincipal = { ...respuesta.datosInvestigacion.operacionPrincipal };
-  if (!operacionPrincipal.sector && respuesta.idSector) {
-    operacionPrincipal.sector = sectores.find((s) => s.num1 === respuesta.idSector)?.string1 ?? operacionPrincipal.sector;
+  if (respuesta.idSector) {
+    const entradaSector = sectores.find((s) => s.num1 === respuesta.idSector);
+    if (entradaSector) {
+      operacionPrincipal.sector = entradaSector.string2 && entradaSector.string1
+        ? `${entradaSector.string2} - ${entradaSector.string1}`
+        : (entradaSector.string1 ?? operacionPrincipal.sector);
+    }
   }
   if (respuesta.idIsicCategoria) {
-    operacionPrincipal.categoriaCiiu = actividadesEconomicas.find((a) => a.num1 === respuesta.idIsicCategoria)?.string1 ?? operacionPrincipal.categoriaCiiu;
+    const opcionCategoria = actividadesEconomicas.find((a) => a.num1 === respuesta.idIsicCategoria);
+    if (opcionCategoria) {
+      operacionPrincipal.categoriaCiiu = opcionCategoria.string2 && opcionCategoria.string1
+        ? `${opcionCategoria.string2} - ${opcionCategoria.string1}`
+        : (opcionCategoria.string1 ?? operacionPrincipal.categoriaCiiu);
+    }
   }
   if (respuesta.idIsicClase) {
-    operacionPrincipal.claseCiiu = clasesCiiu.find((c) => c.num1 === respuesta.idIsicClase)?.string1 ?? operacionPrincipal.claseCiiu;
+    const opcionClase = clasesCiiu.find((c) => c.num1 === respuesta.idIsicClase);
+    if (opcionClase) {
+      operacionPrincipal.claseCiiu = opcionClase.string2 && opcionClase.string1
+        ? `${opcionClase.string2} - ${opcionClase.string1}`
+        : (opcionClase.string1 ?? operacionPrincipal.claseCiiu);
+    }
   }
   if (respuesta.idVentasCreditoTiempo) {
     operacionPrincipal.ventasCreditoTiempo = tiemposCreditoVentas.find((t) => t.num1 === respuesta.idVentasCreditoTiempo)?.string1 ?? operacionPrincipal.ventasCreditoTiempo;
   }
 
-  const importaciones = respuesta.datosInvestigacion.importaciones.map((item) => ({
-    ...item,
-    moneda: item.moneda || monedas.find((m) => m.num1 === item.idMoneda)?.string1 || item.moneda,
-  }));
+  const enriquecerImportExport = (item: typeof respuesta.datosInvestigacion.importaciones[number]) => {
+    const entradaMoneda = item.idMoneda ? monedas.find((m) => m.num1 === item.idMoneda) ?? null : null;
+    const iso = entradaMoneda?.string2 ?? null;
+    return {
+      ...item,
+      moneda: entradaMoneda?.string1 || item.moneda,
+      monto: item.monto && iso ? `${item.monto} ${iso}` : item.monto,
+    };
+  };
 
-  const exportaciones = respuesta.datosInvestigacion.exportaciones.map((item) => ({
-    ...item,
-    moneda: item.moneda || monedas.find((m) => m.num1 === item.idMoneda)?.string1 || item.moneda,
-  }));
+  const importaciones = respuesta.datosInvestigacion.importaciones.map(enriquecerImportExport);
+  const exportaciones = respuesta.datosInvestigacion.exportaciones.map(enriquecerImportExport);
 
   const identificacion = { ...respuesta.datosInvestigacion.identificacion };
   if (!identificacion.tipoPersona && respuesta.idTipoPersona) {
@@ -1262,11 +1312,34 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
   if (!aspectosLegales.ciudadRegistro && respuesta.idCiudadRegistro) {
     aspectosLegales.ciudadRegistro = ciudades.find((c) => c.num1 === respuesta.idCiudadRegistro)?.string1 ?? aspectosLegales.ciudadRegistro;
   }
-  if (respuesta.idOperacionesCambioDivisas) {
-    aspectosLegales.operacionesCambioDivisas = monedas.find((m) => m.num1 === respuesta.idOperacionesCambioDivisas)?.string1 ?? aspectosLegales.operacionesCambioDivisas;
+
+  const entradaMonedaDivisas = respuesta.idOperacionesCambioDivisas
+    ? monedas.find((m) => m.num1 === respuesta.idOperacionesCambioDivisas) ?? null
+    : null;
+  const entradaMonedaTipoCambio = respuesta.idTipoCambio
+    ? monedas.find((m) => m.num1 === respuesta.idTipoCambio) ?? null
+    : null;
+
+  if (entradaMonedaDivisas) {
+    aspectosLegales.operacionesCambioDivisas = entradaMonedaDivisas.string1 ?? aspectosLegales.operacionesCambioDivisas;
   }
-  if (respuesta.idTipoCambio) {
-    aspectosLegales.monedaTipoCambio = monedas.find((m) => m.num1 === respuesta.idTipoCambio)?.string1 ?? aspectosLegales.monedaTipoCambio;
+  if (entradaMonedaTipoCambio) {
+    aspectosLegales.monedaTipoCambio = entradaMonedaTipoCambio.string1 ?? aspectosLegales.monedaTipoCambio;
+  }
+
+  const isoDivisas = entradaMonedaDivisas?.string2 ?? null;
+  const isoTipoCambio = entradaMonedaTipoCambio?.string2 ?? null;
+
+  if (isoDivisas) {
+    const agregarIso = (valor: string) => valor ? `${valor} ${isoDivisas}` : valor;
+    if (aspectosLegales.capitalInicial) aspectosLegales.capitalInicial = agregarIso(aspectosLegales.capitalInicial);
+    if (aspectosLegales.capitalDesembolsado) aspectosLegales.capitalDesembolsado = agregarIso(aspectosLegales.capitalDesembolsado);
+    if (aspectosLegales.patrimonioNeto) aspectosLegales.patrimonioNeto = agregarIso(aspectosLegales.patrimonioNeto);
+    if (aspectosLegales.valorAcciones) aspectosLegales.valorAcciones = agregarIso(aspectosLegales.valorAcciones);
+  }
+
+  if (aspectosLegales.tipoCambio && isoTipoCambio && isoDivisas) {
+    aspectosLegales.tipoCambio = `1 ${isoTipoCambio} = ${aspectosLegales.tipoCambio} ${isoDivisas}`;
   }
 
   return {
