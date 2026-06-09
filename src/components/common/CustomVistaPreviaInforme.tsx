@@ -325,7 +325,6 @@ const paresOperacionPrincipal: Array<[string, string, string]> = [
   ["comprasNacionalesPorcentaje", "comprasNacionalesDetalle", "Compras Nacionales"],
   ["comprasExtranjeroPorcentaje", "comprasExtranjeroDetalle", "Compras Extranjero"],
 ];
-const camposParOperacionPrincipal = new Set(paresOperacionPrincipal.flatMap(([a, b]) => [a, b]));
 
 function crearBloqueOperacionPrincipal(operacionPrincipal: Record<string, unknown>): BloqueVistaPreviaInforme {
   const etiquetasSimples: Record<string, string> = {

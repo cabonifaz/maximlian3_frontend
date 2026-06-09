@@ -25,6 +25,7 @@ import { CustomModalArchivosInvestigacionAnalista } from "@maximilian/components
 import { CustomModalBuscarEjecutivoAnalista } from "@maximilian/components/investigacion/CustomModalBuscarEjecutivo";
 import { CustomModalDetalleCuentasAnalista } from "@maximilian/components/investigacion/CustomModalDetalleCuentasInforme";
 import { CustomModalFinalizarInvestigacionAnalista } from "@maximilian/components/investigacion/CustomModalFinalizarInforme";
+import { CustomModalVistaPreviaInforme } from "@maximilian/components/common/CustomModalVistaPreviaInforme";
 import { CustomModalExtraccionInformacionAnalista } from "@maximilian/components/investigacion/CustomModalProcesamientoInforme";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
@@ -1345,6 +1346,7 @@ function PantallaInvestigacionAnalista({
   const [mostrarFormCategoriaCiiu, setMostrarFormCategoriaCiiu] = useState(false);
   const [mostrarFormClaseCiiu, setMostrarFormClaseCiiu] = useState(false);
   const [estaAbiertoModalFinalizarInvestigacion, setEstaAbiertoModalFinalizarInvestigacion] = useState(false);
+  const [estaAbiertoVistaPreviaFinalizar, setEstaAbiertoVistaPreviaFinalizar] = useState(false);
   const [estaAbiertoModalConfirmacionPrimerBorrador, setEstaAbiertoModalConfirmacionPrimerBorrador] = useState(false);
   const [estaAbiertoModalEjecutivo, setEstaAbiertoModalEjecutivo] = useState(false);
   const [estaAbiertoModalBuscarEjecutivo, setEstaAbiertoModalBuscarEjecutivo] = useState(false);
@@ -5752,8 +5754,23 @@ function PantallaInvestigacionAnalista({
         estaGuardando={guardarInformeMutation.isPending}
         onCerrar={() => setEstaAbiertoModalFinalizarInvestigacion(false)}
         onConfirmar={() => guardarInformeMutation.mutate(ID_ESTADO_PEDIDO_FINALIZADO)}
+        onVerVistaPreviaInforme={() => setEstaAbiertoVistaPreviaFinalizar(true)}
         tipoProceso="traducción"
         descripcionDestino="Al confirmar, este informe traducido será enviado al coordinador para revisión y aprobación."
+      />
+
+      <CustomModalVistaPreviaInforme
+        estaAbierto={estaAbiertoVistaPreviaFinalizar}
+        datosInvestigacion={datosInvestigacion}
+        encabezado={{
+          pais: resumenEncabezado.pais || "-",
+          fecha: new Date().toLocaleDateString("es-PE"),
+          tipoSolicitud: resumenEncabezado.prioridad || "-",
+          analista: "-",
+          traductor: "-",
+        }}
+        mostrarInformeTraducido
+        onCerrar={() => setEstaAbiertoVistaPreviaFinalizar(false)}
       />
 
       <CustomModalRegistroEjecutivoAnalista

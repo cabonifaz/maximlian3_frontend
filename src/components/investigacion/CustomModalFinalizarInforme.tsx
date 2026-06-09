@@ -1,3 +1,4 @@
+import { Eye } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 
 interface PropsCustomModalFinalizarInvestigacionAnalista {
@@ -5,6 +6,7 @@ interface PropsCustomModalFinalizarInvestigacionAnalista {
   estaGuardando?: boolean;
   onCerrar: () => void;
   onConfirmar: () => void;
+  onVerVistaPreviaInforme?: () => void;
   tipoProceso?: string;
   descripcionDestino?: string;
 }
@@ -14,6 +16,7 @@ export function CustomModalFinalizarInvestigacionAnalista({
   estaGuardando = false,
   onCerrar,
   onConfirmar,
+  onVerVistaPreviaInforme,
   tipoProceso = "investigación",
   descripcionDestino = "Al presionar confirmar este informe será enviado al coordinador para que sea revisado y aprobado.",
 }: PropsCustomModalFinalizarInvestigacionAnalista) {
@@ -29,6 +32,17 @@ export function CustomModalFinalizarInvestigacionAnalista({
           <p className="mt-5 text-sm leading-6 text-[#7b8aa3]">
             {descripcionDestino}
           </p>
+          {onVerVistaPreviaInforme ? (
+            <button
+              type="button"
+              onClick={onVerVistaPreviaInforme}
+              disabled={estaGuardando}
+              className="mt-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50"
+            >
+              <Eye size={14} />
+              Ver vista previa del reporte
+            </button>
+          ) : null}
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
