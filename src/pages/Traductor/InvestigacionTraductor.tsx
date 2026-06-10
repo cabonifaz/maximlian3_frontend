@@ -350,7 +350,11 @@ type CampoPorcentajeOperacion =
   | "territorioVentasPorcentaje"
   | "ventasExtranjeroPorcentaje"
   | "comprasNacionalesPorcentaje"
-  | "comprasExtranjeroPorcentaje";
+  | "comprasExtranjeroPorcentaje"
+  | "comprasContadoNacionalesPorcentaje"
+  | "comprasCreditoNacionalesPorcentaje"
+  | "comprasContadoInternacionalesPorcentaje"
+  | "comprasCreditoInternacionalesPorcentaje";
 
 const CAMPOS_PORCENTAJE_EXTRACCION = new Set<CampoPorcentajeOperacion>([
   "ventasContadoPorcentaje",
@@ -359,6 +363,10 @@ const CAMPOS_PORCENTAJE_EXTRACCION = new Set<CampoPorcentajeOperacion>([
   "ventasExtranjeroPorcentaje",
   "comprasNacionalesPorcentaje",
   "comprasExtranjeroPorcentaje",
+  "comprasContadoNacionalesPorcentaje",
+  "comprasCreditoNacionalesPorcentaje",
+  "comprasContadoInternacionalesPorcentaje",
+  "comprasCreditoInternacionalesPorcentaje",
 ]);
 
 const CAMPOS_PORCENTAJE_COMPLEMENTARIO: Record<CampoPorcentajeOperacion, CampoPorcentajeOperacion> = {
@@ -368,6 +376,10 @@ const CAMPOS_PORCENTAJE_COMPLEMENTARIO: Record<CampoPorcentajeOperacion, CampoPo
   ventasExtranjeroPorcentaje: "territorioVentasPorcentaje",
   comprasNacionalesPorcentaje: "comprasExtranjeroPorcentaje",
   comprasExtranjeroPorcentaje: "comprasNacionalesPorcentaje",
+  comprasContadoNacionalesPorcentaje: "comprasCreditoNacionalesPorcentaje",
+  comprasCreditoNacionalesPorcentaje: "comprasContadoNacionalesPorcentaje",
+  comprasContadoInternacionalesPorcentaje: "comprasCreditoInternacionalesPorcentaje",
+  comprasCreditoInternacionalesPorcentaje: "comprasContadoInternacionalesPorcentaje",
 };
 
 const ETIQUETAS_SECCIONES_EXTRACCION: Record<string, string> = {
@@ -441,8 +453,16 @@ const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacionAnalist
       "categoriaCiiu",
       "claseCiiu",
       "comentariosOperaciones",
+      "comprasContadoInternacionalesDetalle",
+      "comprasContadoInternacionalesPorcentaje",
+      "comprasCreditoInternacionalesDetalle",
+      "comprasCreditoInternacionalesPorcentaje",
       "comprasExtranjeroDetalles",
       "comprasExtranjeroPorcentaje",
+      "comprasContadoNacionalesDetalle",
+      "comprasContadoNacionalesPorcentaje",
+      "comprasCreditoNacionalesDetalle",
+      "comprasCreditoNacionalesPorcentaje",
       "comprasNacionalesDetalles",
       "comprasNacionalesPorcentaje",
       "direccion",
@@ -541,8 +561,12 @@ const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
     "ventasCreditoTiempo",
     "territorioVentasDetalle",
     "ventasExtranjeroDetalle",
-    "comprasNacionalesDetalle",
-    "comprasExtranjeroDetalle",
+    "comprasContadoNacionalesDetalle",
+    "comprasCreditoNacionalesDetalle",
+    "comprasCreditoNacionalesTiempo",
+    "comprasContadoInternacionalesDetalle",
+    "comprasCreditoInternacionalesDetalle",
+    "comprasCreditoInternacionalesTiempo",
     "numeroEmpleadosDetalle",
     "comentariosOperaciones",
   ],
@@ -582,8 +606,16 @@ const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
     "categoriaCiiu",
     "claseCiiu",
     "comentariosOperaciones",
+    "comprasContadoInternacionalesDetalle",
+    "comprasContadoInternacionalesPorcentaje",
+    "comprasCreditoInternacionalesDetalle",
+    "comprasCreditoInternacionalesPorcentaje",
     "comprasExtranjeroDetalles",
     "comprasExtranjeroPorcentaje",
+    "comprasContadoNacionalesDetalle",
+    "comprasContadoNacionalesPorcentaje",
+    "comprasCreditoNacionalesDetalle",
+    "comprasCreditoNacionalesPorcentaje",
     "comprasNacionalesDetalles",
     "comprasNacionalesPorcentaje",
     "direccion",
@@ -1056,8 +1088,18 @@ function construirPayloadCrearInforme({
     ventasInternacionalesText: operacionPrincipal.ventasExtranjeroDetalle,
     comprasNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasNacionalesPorcentaje),
     comprasNacionalesText: operacionPrincipal.comprasNacionalesDetalle,
+    comprasContadoNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasContadoNacionalesPorcentaje),
+    comprasContadoNacionalesText: operacionPrincipal.comprasContadoNacionalesDetalle,
+    comprasCreditoNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasCreditoNacionalesPorcentaje),
+    comprasCreditoNacionalesText: operacionPrincipal.comprasCreditoNacionalesDetalle,
+    idComprasCreditoNacionalesTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.comprasCreditoNacionalesTiempo),
     comprasInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasExtranjeroPorcentaje),
     comprasInternacionalesText: operacionPrincipal.comprasExtranjeroDetalle,
+    comprasContadoInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasContadoInternacionalesPorcentaje),
+    comprasContadoInternacionalesText: operacionPrincipal.comprasContadoInternacionalesDetalle,
+    comprasCreditoInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasCreditoInternacionalesPorcentaje),
+    comprasCreditoInternacionalesText: operacionPrincipal.comprasCreditoInternacionalesDetalle,
+    idComprasCreditoInternacionalesTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.comprasCreditoInternacionalesTiempo),
     numeroEmpleados: obtenerEnteroDesdeTexto(operacionPrincipal.numeroEmpleados),
     numeroEmpleadosText: operacionPrincipal.numeroEmpleadosDetalle,
     comentariosOperaciones: operacionPrincipal.comentariosOperaciones,
@@ -2408,6 +2450,21 @@ function PantallaInvestigacionAnalista({
       return { valor: normalizarPorTablaMaestra(opcionesActividadEconomica) };
     }
 
+    if (
+      rutaTexto === "operacionPrincipal.ventasCreditoTiempo"
+      || rutaTexto === "operacionPrincipal.comprasCreditoNacionalesTiempo"
+      || rutaTexto === "operacionPrincipal.comprasCreditoInternacionalesTiempo"
+    ) {
+      const opcionPorId = obtenerOpcionTablaMaestraPorId(opcionesTiempoCreditoVentas, valor);
+      if (opcionPorId?.num1 != null) {
+        return { valor: opcionPorId.string1 ?? valorTexto, valorFormulario: String(opcionPorId.num1) };
+      }
+      const opcionPorTexto = obtenerOpcionTablaMaestraPorTexto(opcionesTiempoCreditoVentas, valor);
+      if (opcionPorTexto?.num1 != null) {
+        return { valor: opcionPorTexto.string1 ?? valorTexto, valorFormulario: String(opcionPorTexto.num1) };
+      }
+    }
+
     if (rutaTexto === "operacionPrincipal.categoriaCiiu") {
       const ciiu = obtenerCiiuExtraido(opcionesActividadEconomica);
       return {
@@ -2822,12 +2879,28 @@ function PantallaInvestigacionAnalista({
     const ventasCreditoDetalleExtraido = esRegistroPlano(seccionExtraida.ventasCreditoDetalle)
       ? seccionExtraida.ventasCreditoDetalle
       : null;
+    const comprasCreditoNacionalesDetalleExtraido = esRegistroPlano(seccionExtraida.comprasCreditoNacionalesDetalle)
+      ? seccionExtraida.comprasCreditoNacionalesDetalle
+      : null;
+    const comprasCreditoInternacionalesDetalleExtraido = esRegistroPlano(seccionExtraida.comprasCreditoInternacionalesDetalle)
+      ? seccionExtraida.comprasCreditoInternacionalesDetalle
+      : null;
     const camposOperacionPrincipal = {
       ...seccionExtraida,
       ventasCreditoDetalle: ventasCreditoDetalleExtraido?.creditoDetalle ?? seccionExtraida.ventasCreditoDetalle,
       ventasCreditoTiempo: ventasCreditoDetalleExtraido?.creditoTiempo,
       comprasNacionalesDetalle: seccionExtraida.comprasNacionalesDetalle ?? seccionExtraida.comprasNacionalesDetalles,
+      comprasContadoNacionalesDetalle: seccionExtraida.comprasContadoNacionalesDetalle,
+      comprasContadoNacionalesPorcentaje: seccionExtraida.comprasContadoNacionalesPorcentaje,
+      comprasCreditoNacionalesDetalle: comprasCreditoNacionalesDetalleExtraido?.creditoDetalle ?? seccionExtraida.comprasCreditoNacionalesDetalle,
+      comprasCreditoNacionalesTiempo: comprasCreditoNacionalesDetalleExtraido?.creditoTiempo,
+      comprasCreditoNacionalesPorcentaje: seccionExtraida.comprasCreditoNacionalesPorcentaje,
       comprasExtranjeroDetalle: seccionExtraida.comprasExtranjeroDetalle ?? seccionExtraida.comprasExtranjeroDetalles,
+      comprasContadoInternacionalesDetalle: seccionExtraida.comprasContadoInternacionalesDetalle,
+      comprasContadoInternacionalesPorcentaje: seccionExtraida.comprasContadoInternacionalesPorcentaje,
+      comprasCreditoInternacionalesDetalle: comprasCreditoInternacionalesDetalleExtraido?.creditoDetalle ?? seccionExtraida.comprasCreditoInternacionalesDetalle,
+      comprasCreditoInternacionalesTiempo: comprasCreditoInternacionalesDetalleExtraido?.creditoTiempo,
+      comprasCreditoInternacionalesPorcentaje: seccionExtraida.comprasCreditoInternacionalesPorcentaje,
       territorioVentasDetalle: seccionExtraida.ventasNacionalesDetalle ?? seccionExtraida.territorioVentasDetalle,
       territorioVentasPorcentaje: seccionExtraida.ventasNacionalesPorcentaje ?? seccionExtraida.territorioVentasPorcentaje,
     };
@@ -2905,7 +2978,11 @@ function PantallaInvestigacionAnalista({
     const cambio = cambiosExtraccionPendientes[idCambio];
     if (!cambio) return "-";
 
-    if (idCambio === "operacionPrincipal.ventasCreditoTiempo") {
+    if (
+      idCambio === "operacionPrincipal.ventasCreditoTiempo"
+      || idCambio === "operacionPrincipal.comprasCreditoNacionalesTiempo"
+      || idCambio === "operacionPrincipal.comprasCreditoInternacionalesTiempo"
+    ) {
       const opcionTiempoCredito = obtenerOpcionTablaMaestraPorId(
         opcionesTiempoCreditoVentas,
         cambio.valorOriginal,
@@ -3212,7 +3289,7 @@ function PantallaInvestigacionAnalista({
   const pestanaRamoOperacionesVisible =
     pestanaRamoOperaciones === "exportaciones" && !esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje)
       ? "operaciones"
-      : pestanaRamoOperaciones === "importaciones" && !esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje)
+      : pestanaRamoOperaciones === "importaciones" && !esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.comprasContadoInternacionalesPorcentaje) && !esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.comprasCreditoInternacionalesPorcentaje)
         ? "operaciones"
         : pestanaRamoOperaciones;
 
@@ -3457,7 +3534,9 @@ function PantallaInvestigacionAnalista({
   });
 
   const exportacionesHabilitadas = esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje);
-  const importacionesHabilitadas = esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje);
+  const importacionesHabilitadas =
+    esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.comprasContadoInternacionalesPorcentaje) ||
+    esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.comprasCreditoInternacionalesPorcentaje);
 
   const irASeccion = (direccion: "anterior" | "siguiente") => {
     const nuevoIndice = direccion === "anterior" ? indiceSeccionActiva - 1 : indiceSeccionActiva + 1;
@@ -4679,10 +4758,54 @@ function PantallaInvestigacionAnalista({
         <CampoInvestigacionAnalista etiqueta="Detalle Ventas Nacionales" valor={datosInvestigacion.operacionPrincipal.territorioVentasDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.territorioVentasDetalle")} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasDetalle", valor)} />
         <CampoInvestigacionAnalista etiqueta="(%) Ventas en el Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.ventasExtranjeroPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("ventasExtranjeroPorcentaje", "territorioVentasPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Ventas Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.ventasExtranjeroDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasExtranjeroDetalle", valor)} />
+        <div className="md:col-span-2 flex items-center gap-3 pt-1">
+          <span className="whitespace-nowrap text-xs font-bold uppercase tracking-widest text-slate-400">Compras Nacionales</span>
+          <div className="flex-1 border-t border-gray-100" />
+        </div>
         <CampoInvestigacionAnalista etiqueta="(%) Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasNacionalesPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("comprasNacionalesPorcentaje", "comprasExtranjeroPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasNacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasNacionalesDetalle", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Compras al Contado Nacionales (%)" valor={datosInvestigacion.operacionPrincipal.comprasContadoNacionalesPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasContadoNacionalesPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("comprasContadoNacionalesPorcentaje", "comprasCreditoNacionalesPorcentaje", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Detalle Compras al Contado Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasContadoNacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasContadoNacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasContadoNacionalesDetalle", valor)} />
+        <div className="grid gap-5 md:col-span-2 md:grid-cols-3">
+          <CampoInvestigacionAnalista etiqueta="Compras a Crédito Nacionales (%)" valor={datosInvestigacion.operacionPrincipal.comprasCreditoNacionalesPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasCreditoNacionalesPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("comprasCreditoNacionalesPorcentaje", "comprasContadoNacionalesPorcentaje", valor)} />
+          <CampoInvestigacionAnalista etiqueta="Detalle Compras a Crédito Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasCreditoNacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasCreditoNacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasCreditoNacionalesDetalle", valor)} />
+          <SelectorMaestroConAltaInvestigacionAnalista
+            etiqueta="Tiempo de Crédito Compras Nacionales"
+            valor={datosInvestigacion.operacionPrincipal.comprasCreditoNacionalesTiempo}
+            soloLectura={esSoloLectura}
+            opcionesTablaMaestra={opcionesTiempoCreditoVentas}
+            idMaestro={TablaMaestraId.TIEMPO_CREDITO_VENTAS}
+            permiteAltaNueva
+            marcador="Seleccione tiempo"
+            obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")}
+            adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasCreditoNacionalesTiempo")}
+            onChange={(valor) => actualizarOperacionPrincipal("comprasCreditoNacionalesTiempo", valor)}
+          />
+        </div>
+        <div className="md:col-span-2 flex items-center gap-3 pt-1">
+          <span className="whitespace-nowrap text-xs font-bold uppercase tracking-widest text-slate-400">Compras en el Extranjero</span>
+          <div className="flex-1 border-t border-gray-100" />
+        </div>
         <CampoInvestigacionAnalista etiqueta="(%) Compras en el Extranjero" valor={datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasExtranjeroPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("comprasExtranjeroPorcentaje", "comprasNacionalesPorcentaje", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Compras Extranjero" valor={datosInvestigacion.operacionPrincipal.comprasExtranjeroDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasExtranjeroDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasExtranjeroDetalle", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Compras al Contado Extranjero (%)" valor={datosInvestigacion.operacionPrincipal.comprasContadoInternacionalesPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasContadoInternacionalesPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("comprasContadoInternacionalesPorcentaje", "comprasCreditoInternacionalesPorcentaje", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Detalle Compras al Contado Extranjero" valor={datosInvestigacion.operacionPrincipal.comprasContadoInternacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasContadoInternacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasContadoInternacionalesDetalle", valor)} />
+        <div className="grid gap-5 md:col-span-2 md:grid-cols-3">
+          <CampoInvestigacionAnalista etiqueta="Compras a Crédito Extranjero (%)" valor={datosInvestigacion.operacionPrincipal.comprasCreditoInternacionalesPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasCreditoInternacionalesPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("comprasCreditoInternacionalesPorcentaje", "comprasContadoInternacionalesPorcentaje", valor)} />
+          <CampoInvestigacionAnalista etiqueta="Detalle Compras a Crédito Extranjero" valor={datosInvestigacion.operacionPrincipal.comprasCreditoInternacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasCreditoInternacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasCreditoInternacionalesDetalle", valor)} />
+          <SelectorMaestroConAltaInvestigacionAnalista
+            etiqueta="Tiempo de Crédito Compras Extranjero"
+            valor={datosInvestigacion.operacionPrincipal.comprasCreditoInternacionalesTiempo}
+            soloLectura={esSoloLectura}
+            opcionesTablaMaestra={opcionesTiempoCreditoVentas}
+            idMaestro={TablaMaestraId.TIEMPO_CREDITO_VENTAS}
+            permiteAltaNueva
+            marcador="Seleccione tiempo"
+            obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")}
+            adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comprasCreditoInternacionalesTiempo")}
+            onChange={(valor) => actualizarOperacionPrincipal("comprasCreditoInternacionalesTiempo", valor)}
+          />
+        </div>
         <CampoInvestigacionAnalista etiqueta="N. de Empleados" valor={datosInvestigacion.operacionPrincipal.numeroEmpleados} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.numeroEmpleados")} onChange={(valor) => actualizarOperacionPrincipal("numeroEmpleados", valor)} />
         <CampoInvestigacionAnalista etiqueta="Detalle Empleados" valor={datosInvestigacion.operacionPrincipal.numeroEmpleadosDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.numeroEmpleadosDetalle")} onChange={(valor) => actualizarOperacionPrincipal("numeroEmpleadosDetalle", valor)} />
         <AreaInvestigacionAnalista etiqueta="Comentarios sobre las Operaciones" valor={datosInvestigacion.operacionPrincipal.comentariosOperaciones} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.comentariosOperaciones")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("comentariosOperaciones", valor)} />

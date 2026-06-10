@@ -7,6 +7,7 @@ import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type {
   DetalleBalanceGeneralAnalista,
@@ -1095,26 +1096,18 @@ export function CustomModalDetalleCuentasAnalista({
               }
 
               if (tipoEntradaCampo === "selector-confiabilidad") {
-                const idNumericoConf = valorCampo && /^\d+$/.test(valorCampo.trim()) ? Number(valorCampo) : null;
-                const opcionConfActual = idNumericoConf != null
-                  ? opcionesNivelConfiabilidad?.find((o) => o.num1 === idNumericoConf)
-                  : opcionesNivelConfiabilidad?.find((o) => o.string1?.toUpperCase() === valorCampo.toUpperCase());
-
                 return (
-                  <div key={campo.id} className="space-y-2">
-                    <CustomLabel as="p" className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
-                      {campo.etiqueta}
-                    </CustomLabel>
-                    <CustomSelectorBuscable
-                      options={opcionesNivelConfiabilidad}
-                      value={opcionConfActual?.num1 ?? undefined}
-                      displayValue={opcionConfActual?.string1 ?? ""}
-                      onChange={(valor) => actualizarRegistroEstadoFinanciero(campo.id, String(valor ?? ""))}
-                      onClear={() => actualizarRegistroEstadoFinanciero(campo.id, "")}
-                      optional
-                      mostrarTextoOpcionalEnLabel={false}
-                      placeholder="Seleccione nivel"
-                      disabled={deshabilitado}
+                  <div key={campo.id}>
+                    <SelectorMaestroConAltaInvestigacionAnalista
+                      etiqueta={campo.etiqueta}
+                      valor={valorCampo}
+                      soloLectura={deshabilitado}
+                      idMaestro={TablaMaestraId.NIVEL_CONFIABILIDAD}
+                      opcionesTablaMaestra={opcionesNivelConfiabilidad}
+                      permiteAltaNueva
+                      marcador="Seleccione nivel"
+                      obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")}
+                      onChange={(valor) => actualizarRegistroEstadoFinanciero(campo.id, valor)}
                     />
                   </div>
                 );
@@ -1241,8 +1234,36 @@ export function CustomModalDetalleCuentasAnalista({
   ];
 
   const validarTotalesBalance = () => {
-    // Los tipos configurados usan registrosEstadoFinanciero; el balanceGeneral simplificado no mapea correctamente desde la API para ellos.
     if (!esEstadoFinancieroTotalizado && seccionesBalanceConfiguradas.length > 0) {
+      const r = detalle.registrosEstadoFinanciero ?? {};
+      const n = (campo: string) => obtenerNumero(r[campo] ?? "");
+      const clave = normalizarTexto(tipoEstadoFinanciero);
+
+      type ParValidacion = { activos: string; pasivoPatrimonio: string };
+      const par: ParValidacion | null = clave.includes("desagregado")
+        ? { activos: "total-activo", pasivoPatrimonio: "total-pasivo-patrimonio" }
+        : clave.includes("banco")
+          ? { activos: "total-activos-bancos", pasivoPatrimonio: "total-pasivo-patrimonio-bancos" }
+          : clave.includes("seguro")
+            ? { activos: "total-activos-seguros", pasivoPatrimonio: "total-pasivo-patrimonio-seguros" }
+            : clave.includes("turquia")
+              ? { activos: "total-assets-turquia", pasivoPatrimonio: "total-liabilities-equity" }
+              : null;
+
+      if (par) {
+        const totalActivos = n(par.activos);
+        const totalPasivoPatrimonio = n(par.pasivoPatrimonio);
+        if (
+          (totalActivos !== 0 || totalPasivoPatrimonio !== 0)
+          && Math.abs(totalActivos - totalPasivoPatrimonio) > 0.01
+        ) {
+          toast.error(
+            `Total Activos debe ser igual a Total Pasivos + Patrimonio (${formatearNumero(totalPasivoPatrimonio)}).`,
+          );
+          return false;
+        }
+      }
+
       return true;
     }
 

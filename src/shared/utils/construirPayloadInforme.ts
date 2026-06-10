@@ -114,7 +114,7 @@ function construirListasDetalleBalance(balances: RegistroBalanceAnalista[]) {
     const r = balance.detalleCuentas?.registrosEstadoFinanciero ?? {};
     const d = (campo: string) => obtenerNumeroOpcionalDesdeTexto(
       obtenerValorCampoEstadoFinanciero(r, campo, tipoEstadoFinanciero),
-    ) ?? null;
+    ) ?? 0;
     const i = (campo: string): number | null => {
       const v = obtenerValorCampoEstadoFinanciero(r, campo, tipoEstadoFinanciero);
       if (!v) return null;
@@ -446,8 +446,18 @@ export function construirPayloadInforme({
     ventasInternacionalesText: operacionPrincipal.ventasExtranjeroDetalle,
     comprasNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasNacionalesPorcentaje),
     comprasNacionalesText: operacionPrincipal.comprasNacionalesDetalle,
+    comprasContadoNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasContadoNacionalesPorcentaje),
+    comprasContadoNacionalesText: operacionPrincipal.comprasContadoNacionalesDetalle,
+    comprasCreditoNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasCreditoNacionalesPorcentaje),
+    comprasCreditoNacionalesText: operacionPrincipal.comprasCreditoNacionalesDetalle,
+    idComprasCreditoNacionalesTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.comprasCreditoNacionalesTiempo),
     comprasInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasExtranjeroPorcentaje),
     comprasInternacionalesText: operacionPrincipal.comprasExtranjeroDetalle,
+    comprasContadoInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasContadoInternacionalesPorcentaje),
+    comprasContadoInternacionalesText: operacionPrincipal.comprasContadoInternacionalesDetalle,
+    comprasCreditoInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasCreditoInternacionalesPorcentaje),
+    comprasCreditoInternacionalesText: operacionPrincipal.comprasCreditoInternacionalesDetalle,
+    idComprasCreditoInternacionalesTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.comprasCreditoInternacionalesTiempo),
     numeroEmpleados: obtenerEnteroDesdeTexto(operacionPrincipal.numeroEmpleados),
     numeroEmpleadosText: operacionPrincipal.numeroEmpleadosDetalle,
     comentariosOperaciones: operacionPrincipal.comentariosOperaciones,

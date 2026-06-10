@@ -397,8 +397,18 @@ export interface InformeCrearRequest {
   ventasInternacionalesText: string;
   comprasNacionales: number | null;
   comprasNacionalesText: string;
+  comprasContadoNacionales: number | null;
+  comprasContadoNacionalesText: string;
+  comprasCreditoNacionales: number | null;
+  comprasCreditoNacionalesText: string;
+  idComprasCreditoNacionalesTiempo: number;
   comprasInternacionales: number | null;
   comprasInternacionalesText: string;
+  comprasContadoInternacionales: number | null;
+  comprasContadoInternacionalesText: string;
+  comprasCreditoInternacionales: number | null;
+  comprasCreditoInternacionalesText: string;
+  idComprasCreditoInternacionalesTiempo: number;
   numeroEmpleados: number;
   numeroEmpleadosText: string;
   comentariosOperaciones: string;

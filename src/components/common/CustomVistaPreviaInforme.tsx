@@ -1,7 +1,10 @@
 import { type ReactNode, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
 import type { DatosInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 import { seccionesInvestigacionAnalista } from "@maximilian/shared/utils/datos-simulados-investigacion";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface FilaVistaPreviaInforme {
   etiqueta: string;
@@ -317,48 +320,89 @@ function crearFilaConSub(etiqueta: string, valorPrincipal: unknown, valorSecunda
   };
 }
 
-const paresOperacionPrincipal: Array<[string, string, string]> = [
-  ["ventasContadoPorcentaje", "ventasContadoDetalle", "Ventas al Contado"],
-  ["ventasCreditoPorcentaje", "ventasCreditoDetalle", "Ventas a Credito"],
-  ["territorioVentasPorcentaje", "territorioVentasDetalle", "Ventas Nacionales"],
-  ["ventasExtranjeroPorcentaje", "ventasExtranjeroDetalle", "Ventas Extranjero"],
-  ["comprasNacionalesPorcentaje", "comprasNacionalesDetalle", "Compras Nacionales"],
-  ["comprasExtranjeroPorcentaje", "comprasExtranjeroDetalle", "Compras Extranjero"],
-];
+type OpcionTiempo = { num1: number | null; string1: string | null };
 
-function crearBloqueOperacionPrincipal(operacionPrincipal: Record<string, unknown>): BloqueVistaPreviaInforme {
-  const etiquetasSimples: Record<string, string> = {
-    sector: "Sector",
-    actividad: "Actividad",
-    categoriaCiiu: "Categoria CIIU",
-    claseCiiu: "Clase CIIU",
-    actividadPrincipal: "Actividad principal",
-    ventasCreditoTiempo: "Tiempo de credito",
-    numeroEmpleados: "Numero de empleados",
-    numeroEmpleadosDetalle: "Detalle empleados",
-    comentariosOperaciones: "Comentarios operaciones",
-  };
+function resolverTiempoCredito(valor: unknown, opciones: OpcionTiempo[] | undefined): string {
+  if (valor === null || valor === undefined || valor === "") return "";
+  const str = String(valor);
+  const id = Number(str);
+  if (!Number.isNaN(id) && Number.isFinite(id) && id > 0) {
+    return opciones?.find((o) => Number(o.num1) === id)?.string1?.trim() ?? str;
+  }
+  return str;
+}
 
+function agregarSimple(filas: FilaVistaPreviaInforme[], op: Record<string, unknown>, clave: string, etiqueta: string) {
+  const valor = op[clave];
+  if (valor === null || valor === undefined || valor === "") return;
+  filas.push(crearFilaVistaPrevia(etiqueta, valor));
+}
+
+function agregarPar(filas: FilaVistaPreviaInforme[], op: Record<string, unknown>, clavePct: string, claveDetalle: string, etiqueta: string) {
+  const pct = op[clavePct];
+  const detalle = op[claveDetalle];
+  if ((pct === null || pct === undefined || pct === "") && (detalle === null || detalle === undefined || detalle === "")) return;
+  const pctStr = pct !== null && pct !== undefined && pct !== "" ? `${pct}%` : pct;
+  filas.push(crearFilaConSub(etiqueta, pctStr, detalle));
+}
+
+function agregarCreditoCompras(
+  filas: FilaVistaPreviaInforme[],
+  op: Record<string, unknown>,
+  clavePct: string,
+  claveDetalle: string,
+  claveTiempo: string,
+  etiquetaCredito: string,
+  etiquetaTiempo: string,
+  opciones: OpcionTiempo[] | undefined,
+) {
+  const pct = op[clavePct];
+  if (pct !== null && pct !== undefined && pct !== "") {
+    filas.push(crearFilaVistaPrevia(etiquetaCredito, `${pct}%`));
+  }
+  const tiempoLabel = resolverTiempoCredito(op[claveTiempo], opciones);
+  const detalle = op[claveDetalle];
+  const detalleStr = detalle !== null && detalle !== undefined && detalle !== "" ? String(detalle) : "";
+  const combinado = [detalleStr, tiempoLabel].filter(Boolean).join(" ");
+  if (combinado) {
+    filas.push(crearFilaVistaPrevia(etiquetaTiempo, combinado));
+  }
+}
+
+function crearBloqueOperacionPrincipal(
+  operacionPrincipal: Record<string, unknown>,
+  opcionesTiempoCredito: OpcionTiempo[] | undefined,
+): BloqueVistaPreviaInforme {
+  const op = operacionPrincipal;
   const filas: FilaVistaPreviaInforme[] = [];
 
-  for (const [clave, etiqueta] of Object.entries(etiquetasSimples)) {
-    const valor = operacionPrincipal[clave];
-    if (valor === null || valor === undefined || valor === "") continue;
-    filas.push(crearFilaVistaPrevia(etiqueta, valor));
-  }
+  agregarSimple(filas, op, "sector", "Sector");
+  agregarSimple(filas, op, "actividad", "Actividad");
+  agregarSimple(filas, op, "categoriaCiiu", "Categoria CIIU");
+  agregarSimple(filas, op, "claseCiiu", "Clase CIIU");
+  agregarSimple(filas, op, "actividadPrincipal", "Actividad principal");
 
-  for (const [clavePct, claveDetalle, etiqueta] of paresOperacionPrincipal) {
-    const pct = operacionPrincipal[clavePct];
-    const detalle = operacionPrincipal[claveDetalle];
-    if ((pct === null || pct === undefined || pct === "") && (detalle === null || detalle === undefined || detalle === "")) continue;
-    const pctStr = pct !== null && pct !== undefined && pct !== "" ? `${pct}%` : pct;
-    filas.push(crearFilaConSub(etiqueta, pctStr, detalle));
-  }
+  agregarPar(filas, op, "ventasContadoPorcentaje", "ventasContadoDetalle", "Ventas al Contado");
+  agregarCreditoCompras(filas, op, "ventasCreditoPorcentaje", "ventasCreditoDetalle", "ventasCreditoTiempo", "Ventas a Credito", "Tiempo de credito ventas", opcionesTiempoCredito);
+  agregarPar(filas, op, "territorioVentasPorcentaje", "territorioVentasDetalle", "Ventas Nacionales");
+  agregarPar(filas, op, "ventasExtranjeroPorcentaje", "ventasExtranjeroDetalle", "Ventas Extranjero");
+
+  agregarPar(filas, op, "comprasNacionalesPorcentaje", "comprasNacionalesDetalle", "Compras Nacionales");
+  agregarPar(filas, op, "comprasContadoNacionalesPorcentaje", "comprasContadoNacionalesDetalle", "Compras al Contado Nacionales");
+  agregarCreditoCompras(filas, op, "comprasCreditoNacionalesPorcentaje", "comprasCreditoNacionalesDetalle", "comprasCreditoNacionalesTiempo", "Compras a Credito Nacionales", "Tiempo de credito compras nacionales", opcionesTiempoCredito);
+
+  agregarPar(filas, op, "comprasExtranjeroPorcentaje", "comprasExtranjeroDetalle", "Compras Extranjero");
+  agregarPar(filas, op, "comprasContadoInternacionalesPorcentaje", "comprasContadoInternacionalesDetalle", "Compras al Contado Extranjero");
+  agregarCreditoCompras(filas, op, "comprasCreditoInternacionalesPorcentaje", "comprasCreditoInternacionalesDetalle", "comprasCreditoInternacionalesTiempo", "Compras a Credito Extranjero", "Tiempo de credito compras extranjero", opcionesTiempoCredito);
+
+  agregarSimple(filas, op, "numeroEmpleados", "Numero de empleados");
+  agregarSimple(filas, op, "numeroEmpleadosDetalle", "Detalle empleados");
+  agregarSimple(filas, op, "comentariosOperaciones", "Comentarios operaciones");
 
   return { id: "operacion-principal", titulo: "Operacion principal", filas };
 }
 
-export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInvestigacionAnalista): SeccionVistaPreviaInforme[] {
+export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInvestigacionAnalista, opcionesTiempoCredito?: OpcionTiempo[]): SeccionVistaPreviaInforme[] {
   const seccionesPorId = new Map<IdSeccionInvestigacionAnalista, SeccionVistaPreviaInforme>();
 
   seccionesPorId.set("identificacion", {
@@ -440,7 +484,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
     id: "ramo-operaciones",
     titulo: "Ramo Operaciones",
     bloques: [
-      crearBloqueOperacionPrincipal(datosInvestigacion.operacionPrincipal as unknown as Record<string, unknown>),
+      crearBloqueOperacionPrincipal(datosInvestigacion.operacionPrincipal as unknown as Record<string, unknown>, opcionesTiempoCredito),
       ...crearBloquesDesdeLista(
         "importaciones",
         "Importacion",
@@ -992,9 +1036,15 @@ export function CustomVistaPreviaInformeComparado({
 }: PropsVistaPreviaInformeComparado) {
   const [idTabActiva, setIdTabActiva] = useState<IdTabVistaPreviaInforme>("vista-general");
 
+  const { data: opcionesTiempoCredito } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIEMPO_CREDITO_VENTAS],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIEMPO_CREDITO_VENTAS),
+    staleTime: Infinity,
+  });
+
   const seccionesVistaPrevia = useMemo(
-    () => obtenerSeccionesVistaPreviaInforme(datosInvestigacion),
-    [datosInvestigacion],
+    () => obtenerSeccionesVistaPreviaInforme(datosInvestigacion, opcionesTiempoCredito),
+    [datosInvestigacion, opcionesTiempoCredito],
   );
 
   const seccionesVisibles = useMemo(

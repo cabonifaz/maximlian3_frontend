@@ -268,8 +268,18 @@ export interface DatosOperacionPrincipalAnalista {
   ventasExtranjeroDetalle: string;
   comprasNacionalesPorcentaje: string;
   comprasNacionalesDetalle: string;
+  comprasContadoNacionalesPorcentaje: string;
+  comprasContadoNacionalesDetalle: string;
+  comprasCreditoNacionalesPorcentaje: string;
+  comprasCreditoNacionalesDetalle: string;
+  comprasCreditoNacionalesTiempo: string;
   comprasExtranjeroPorcentaje: string;
   comprasExtranjeroDetalle: string;
+  comprasContadoInternacionalesPorcentaje: string;
+  comprasContadoInternacionalesDetalle: string;
+  comprasCreditoInternacionalesPorcentaje: string;
+  comprasCreditoInternacionalesDetalle: string;
+  comprasCreditoInternacionalesTiempo: string;
   numeroEmpleados: string;
   numeroEmpleadosDetalle: string;
   comentariosOperaciones: string;
