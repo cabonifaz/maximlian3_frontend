@@ -198,6 +198,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   construirPayloadAltaNueva,
   renderizarVistaPreviaAltaNueva,
   puedeAgregarNuevo,
+  className,
 }: {
   etiqueta: string;
   valor: string;
@@ -217,6 +218,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   construirPayloadAltaNueva?: (termino: string, opcionesActuales: EntradaTablaMaestra[]) => TablaMaestraCrearRequest;
   renderizarVistaPreviaAltaNueva?: (terminoBusqueda: string) => ReactNode;
   puedeAgregarNuevo?: (terminoBusqueda: string) => boolean;
+  className?: string;
 }) {
   const queryClient = useQueryClient();
   const valorTextoActual = String(valor ?? "");
@@ -402,6 +404,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   };
 
   return (
+    <div className={className ?? ""}>
     <CustomSelectorBuscable
       key={claveOpciones}
       label={ocultarEtiqueta ? undefined : (
@@ -424,6 +427,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
       renderizarVistaPreviaAltaNueva={renderizarVistaPreviaAltaNueva}
       puedeAgregarNuevo={puedeAgregarNuevo}
     />
+    </div>
   );
 }
 
@@ -518,7 +522,7 @@ export function CampoInvestigacionAnalista({
   }
 
   return (
-    <label className={`space-y-2 ${className ?? ""}`}>
+    <label className={`block space-y-2 ${className ?? ""}`}>
       <CustomLabel as="p" className={clasesEtiquetaCampoInvestigacion}>
         <span className="inline-flex items-center gap-2">
           <span>{etiqueta}</span>
