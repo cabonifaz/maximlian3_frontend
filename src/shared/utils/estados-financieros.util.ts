@@ -276,7 +276,7 @@ const configuracionEstadosFinancieros: Record<string, SeccionEstadoFinancieroAna
       id: "general-turquia",
       titulo: "General",
       campos: [
-        { id: "year", etiqueta: "Ano (Year)", tipoEntrada: "selector-ano" },
+        { id: "year", etiqueta: "Año (Year)", tipoEntrada: "selector-ano" },
         { id: "balance-date", etiqueta: "Fecha de Balance (Balance Date)", tipoEntrada: "fecha" },
         { id: "currency", etiqueta: "Moneda (Currency)", tipoEntrada: "selector-moneda-nombre" },
         { id: "currency-iso", etiqueta: "ISO de Moneda (Currency ISO)", tipoEntrada: "selector-moneda-codigo" },
