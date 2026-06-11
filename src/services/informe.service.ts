@@ -35,11 +35,15 @@ import type {
   DatosInvestigacionAnalista,
   EstadoInvestigacionAnalista,
 } from "@maximilian/shared/types/investigacion.type";
-import { formatearMontoDecimales } from "@maximilian/shared/utils/formato-monto.util";
+import {
+  formatearMontoDecimales,
+  obtenerNumeroDesdeMonto,
+} from "@maximilian/shared/utils/formato-monto.util";
 import {
   adaptarCuentaBalanceDesdeApi,
   esCampoEnteroEstadoFinanciero,
   obtenerClaveEstadoFinanciero,
+  obtenerValorCampoEstadoFinanciero,
 } from "@maximilian/shared/utils/estados-financieros.util";
 
 type RegistroCompaniaInvestigacion = DatosInvestigacionAnalista["companiasRelacionadas"][number];
@@ -1613,5 +1617,234 @@ export const informeService = {
     }
 
     return normalizarRespuestaExtraccion(data.result);
+  },
+
+  calcularBalance: async (payload: {
+    tipoEstadoFinanciero: string;
+    registros: Record<string, string>;
+    balanceGeneral: Record<string, string>;
+    estadoGananciasPerdidas: Record<string, string>;
+  }): Promise<Record<string, string>> => {
+    const clave = obtenerClaveEstadoFinanciero(payload.tipoEstadoFinanciero);
+    const n = (...valores: Array<string | undefined>) => {
+      const valor = valores.find((item) => item?.trim());
+      return obtenerNumeroDesdeMonto(valor);
+    };
+    const r = payload.registros;
+    const bg = payload.balanceGeneral;
+    const egp = payload.estadoGananciasPerdidas;
+
+    if (clave === "totalizado") {
+      const cuerpo = {
+        totalActivoCorriente: n(bg.totalCorrientes, r["total-activo-corriente"]),
+        totalActivoNoCorriente: n(bg.totalNoCorrientes, r["total-activo-no-corriente"]),
+        totalPasivoCorriente: n(bg.totalPasivosCorrientes, r["total-pasivo-corriente"]),
+        totalPasivoNoCorriente: n(bg.totalPasivosNoCorrientes, r["total-pasivo-no-corriente"]),
+        totalPatrimonio: n(bg.patrimonio, r["total-patrimonio"]),
+        ingresosOrdinarios: n(r["ingresos-ordinarios-totalizado"], egp.ventasNetas),
+        gananciaNeta: n(r["ganancia-neta-totalizado"], egp.utilidadGanancia),
+      };
+      const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/calcularBalanceTotalizado", cuerpo);
+      if (!esRespuestaOkCompatibilidad(data, "/api/Informe/calcularBalanceTotalizado")) {
+        throw new Error(data.mensaje || "Error al calcular el balance");
+      }
+      const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
+      return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);
+    }
+
+    if (clave === "desagregado") {
+      const campos = [
+        "efectivoEquivalente",
+        "otrosActivosFinancierosCorriente",
+        "cuentasCobrarCorriente",
+        "inventariosCorriente",
+        "activosBiologicosCorriente",
+        "activosImpuestosGanancias",
+        "otrosActivosNoFinancierosCorriente",
+        "otrosActivosFinancierosNoCorriente",
+        "inversionesSubsidiarias",
+        "cuentasCobrarNoCorriente",
+        "inventariosNoCorriente",
+        "activosBiologicosNoCorriente",
+        "propiedadesInversion",
+        "propiedadesPlantaEquipo",
+        "intangibles",
+        "activosImpuestosDiferidos",
+        "activosImpuestosCorrientes",
+        "plusvalia",
+        "otrosActivosNoFinancierosNoCorriente",
+        "otrosPasivosFinancierosCorriente",
+        "cuentasPagarCorriente",
+        "beneficiosEmpleadosCorriente",
+        "otrasProvisionesCorriente",
+        "impuestosGananciasCorriente",
+        "otrosPasivosNoFinancierosCorriente",
+        "otrosPasivosFinancierosNoCorriente",
+        "cuentasPagarNoCorriente",
+        "beneficiosEmpleadosNoCorriente",
+        "otrasProvisionesNoCorriente",
+        "impuestosDiferidosNoCorriente",
+        "impuestosCorrientesNoCorriente",
+        "otrosPasivosNoFinancierosNoCorriente",
+        "capitalEmitido",
+        "primasEmision",
+        "accionesInversion",
+        "accionesCartera",
+        "otrasReservasCapital",
+        "resultadosAcumulados",
+        "otrasReservasPatrimonio",
+        "ingresosOrdinarios",
+        "costoVentas",
+        "gastosVentas",
+        "gastosAdministracion",
+        "otrosIngresosOperativos",
+        "otrosGastosOperativos",
+        "otrasGananciasPerdidas",
+        "ingresosFinancieros",
+        "ingresosIntereses",
+        "gastosFinancieros",
+        "deterioroValor",
+        "otrosIngresosSubsidiarias",
+        "diferenciasCambio",
+        "ingresoGastoImpuesto",
+        "operacionesDescontinuadas",
+      ];
+      const cuerpo = Object.fromEntries(
+        campos.map((campo) => [
+          campo,
+          n(obtenerValorCampoEstadoFinanciero(r, campo, payload.tipoEstadoFinanciero)),
+        ]),
+      );
+      const ruta = "/api/Informe/calcularBalanceDesagregado";
+      const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
+      if (!esRespuestaOkCompatibilidad(data, ruta)) {
+        throw new Error(data.mensaje || "Error al calcular el balance");
+      }
+      const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
+      return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);
+    }
+
+    if (clave === "bancos") {
+      const campos = [
+        "disponible",
+        "fondosInterbancarios",
+        "inversionesValorRazonable",
+        "carteraCreditos",
+        "derivadosNegociacionActivo",
+        "derivadosCoberturaActivo",
+        "bienesRealizables",
+        "participacionesSubsidiarias",
+        "inmuebleMobiliarioEquipo",
+        "impuestoRentaDiferido",
+        "otrosActivos",
+        "obligacionesPublico",
+        "fondosInterbancariosPasivo",
+        "adeudosFinancieras",
+        "derivadosNegociacionPasivo",
+        "derivadosCoberturaPasivo",
+        "cuentasPagarProvisiones",
+        "capitalSocial",
+        "reservas",
+        "resultadosNoRealizados",
+        "resultadoEjercicio",
+      ];
+      const cuerpo = Object.fromEntries(
+        campos.map((campo) => [
+          campo,
+          n(obtenerValorCampoEstadoFinanciero(r, campo, payload.tipoEstadoFinanciero)),
+        ]),
+      );
+      const ruta = "/api/Informe/calcularBalanceBanco";
+      const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
+      if (!esRespuestaOkCompatibilidad(data, ruta)) {
+        throw new Error(data.mensaje || "Error al calcular el balance");
+      }
+      const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
+      return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);
+    }
+
+    if (clave === "seguros") {
+      const campos = [
+        "efectivoDisponible",
+        "inversionesFinancieras",
+        "prestamosInteresesNetos",
+        "primasCobrar",
+        "deudasReaseguradores",
+        "activosVenta",
+        "propiedadesInversion",
+        "propiedadPlantaEquipo",
+        "otrosActivos",
+        "obligacionesAsegurados",
+        "reservasSiniestros",
+        "reservasTecnicas",
+        "obligacionesReaseguradores",
+        "obligacionesFinancieras",
+        "cuentasPagar",
+        "otrosPasivos",
+        "capitalSocial",
+        "aportesCapitalNoCapitalizados",
+        "resultadosAcumulados",
+        "patrimonioRestringido",
+      ];
+      const cuerpo = Object.fromEntries(
+        campos.map((campo) => [
+          campo,
+          n(obtenerValorCampoEstadoFinanciero(r, campo, payload.tipoEstadoFinanciero)),
+        ]),
+      );
+      const ruta = "/api/Informe/calcularBalanceSeguro";
+      const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
+      if (!esRespuestaOkCompatibilidad(data, ruta)) {
+        throw new Error(data.mensaje || "Error al calcular el balance");
+      }
+      const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
+      return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);
+    }
+
+    if (clave === "turquia") {
+      const campos = [
+        "efectivo",
+        "existencias",
+        "deudores",
+        "bienesTongibles",
+        "activosIntangibles",
+        "prestamos",
+        "acreedores",
+        "pasivosNoCorrientes",
+        "pasivosLargoPlazo",
+        "patrimonio",
+        "ventasNetas",
+        "costoVentas",
+        "otrosGastosOperativos",
+        "costoEmpleados",
+        "depreciacion",
+        "ingresosFinancieros",
+        "gastosFinancieros",
+        "ingresosExtraordinarios",
+        "gastosExtraordinarios",
+        "impuestos",
+        "costoMateriales",
+        "interesesPagados",
+        "capital",
+        "ebit",
+        "ebitda",
+        "ganancia",
+      ];
+      const cuerpo = Object.fromEntries(
+        campos.map((campo) => [
+          campo,
+          n(obtenerValorCampoEstadoFinanciero(r, campo, payload.tipoEstadoFinanciero)),
+        ]),
+      );
+      const ruta = "/api/Informe/calcularBalanceTurquia";
+      const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
+      if (!esRespuestaOkCompatibilidad(data, ruta)) {
+        throw new Error(data.mensaje || "Error al calcular el balance");
+      }
+      const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
+      return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);
+    }
+
+    throw new Error(`Endpoint de calculo no disponible para el tipo: ${payload.tipoEstadoFinanciero}`);
   },
 };
