@@ -8,7 +8,10 @@ import type {
 } from "@maximilian/shared/types/informe.type";
 import type { DatosInvestigacionAnalista, RegistroBalanceAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-import { obtenerValorCampoEstadoFinanciero } from "@maximilian/shared/utils/estados-financieros.util";
+import {
+  obtenerClaveEstadoFinanciero,
+  obtenerValorCampoEstadoFinanciero,
+} from "@maximilian/shared/utils/estados-financieros.util";
 import {
   obtenerNumeroDesdeMonto,
   obtenerNumeroOpcionalDesdeMonto,
@@ -108,12 +111,19 @@ function construirListasDetalleBalance(balances: RegistroBalanceAnalista[]) {
 
   balances.forEach((balance, index) => {
     const id = index + 1;
-    const tipo = balance.idTipoEstadoFinanciero;
     const tipoEstadoFinanciero = balance.tipoEstadoFinanciero
-      || ({ 1: "desagregado", 2: "totalizado", 3: "bancos", 4: "seguros", 5: "turquia" }[tipo ?? 0] ?? balance.tipo);
+      || ({ 1: "desagregado", 2: "totalizado", 3: "bancos", 4: "seguros", 5: "turquia" }[balance.idTipoEstadoFinanciero ?? 0] ?? balance.tipo);
+    const tipo = balance.idTipoEstadoFinanciero ?? ({
+      desagregado: 1,
+      totalizado: 2,
+      bancos: 3,
+      seguros: 4,
+      turquia: 5,
+    } as Record<string, number>)[obtenerClaveEstadoFinanciero(tipoEstadoFinanciero)];
     const r = balance.detalleCuentas?.registrosEstadoFinanciero ?? {};
-    const d = (campo: string) => obtenerNumeroOpcionalDesdeTexto(
-      obtenerValorCampoEstadoFinanciero(r, campo, tipoEstadoFinanciero),
+    const d = (campo: string, ...alternativos: Array<string | undefined>) => obtenerNumeroOpcionalDesdeTexto(
+      obtenerValorCampoEstadoFinanciero(r, campo, tipoEstadoFinanciero)
+        || alternativos.find((valor) => valor?.trim()),
     ) ?? 0;
     const i = (campo: string): number | null => {
       const v = obtenerValorCampoEstadoFinanciero(r, campo, tipoEstadoFinanciero);
@@ -146,7 +156,7 @@ function construirListasDetalleBalance(balances: RegistroBalanceAnalista[]) {
         plusvalia: d("plusvalia"),
         otrosActivosNoFinancierosNoCorriente: d("otrosActivosNoFinancierosNoCorriente"),
         totalActivoNoCorriente: d("totalActivoNoCorriente"),
-        totalActivo: d("totalActivo"),
+        totalActivo: d("totalActivo", balance.detalleCuentas?.balanceGeneral.totalActivos),
         otrosPasivosFinancierosCorriente: d("otrosPasivosFinancierosCorriente"),
         cuentasPagarCorriente: d("cuentasPagarCorriente"),
         beneficiosEmpleadosCorriente: d("beneficiosEmpleadosCorriente"),
@@ -162,7 +172,7 @@ function construirListasDetalleBalance(balances: RegistroBalanceAnalista[]) {
         impuestosCorrientesNoCorriente: d("impuestosCorrientesNoCorriente"),
         otrosPasivosNoFinancierosNoCorriente: d("otrosPasivosNoFinancierosNoCorriente"),
         totalPasivoNoCorriente: d("totalPasivoNoCorriente"),
-        totalPasivos: d("totalPasivos"),
+        totalPasivos: d("totalPasivos", balance.detalleCuentas?.balanceGeneral.totalPasivos),
         capitalEmitido: d("capitalEmitido"),
         primasEmision: d("primasEmision"),
         accionesInversion: d("accionesInversion"),
@@ -171,7 +181,7 @@ function construirListasDetalleBalance(balances: RegistroBalanceAnalista[]) {
         resultadosAcumulados: d("resultadosAcumulados"),
         otrasReservasPatrimonio: d("otrasReservasPatrimonio"),
         totalPatrimonio: d("totalPatrimonio"),
-        totalPasivoPatrimonio: d("totalPasivoPatrimonio"),
+        totalPasivoPatrimonio: d("totalPasivoPatrimonio", balance.detalleCuentas?.balanceGeneral.totalPasivoPatrimonio),
         ingresosOrdinarios: d("ingresosOrdinarios"),
         costoVentas: d("costoVentas"),
         gananciaBruta: d("gananciaBruta"),
@@ -191,28 +201,28 @@ function construirListasDetalleBalance(balances: RegistroBalanceAnalista[]) {
         ingresoGastoImpuesto: d("ingresoGastoImpuesto"),
         operacionesDescontinuadas: d("operacionesDescontinuadas"),
         gananciaNeta: d("gananciaNeta"),
-        indiceLiquidez: d("indiceLiquidez"),
-        capitalTrabajo: d("capitalTrabajo"),
-        ratioEndeudamiento: d("ratioEndeudamiento"),
-        ratioRentabilidad: d("ratioRentabilidad"),
+        indiceLiquidez: d("indiceLiquidez", balance.detalleCuentas?.ratios.liquidez),
+        capitalTrabajo: d("capitalTrabajo", balance.detalleCuentas?.ratios.capitalTrabajo),
+        ratioEndeudamiento: d("ratioEndeudamiento", balance.detalleCuentas?.ratios.endeudamiento),
+        ratioRentabilidad: d("ratioRentabilidad", balance.detalleCuentas?.ratios.rentabilidad),
       });
     } else if (tipo === 2) {
       lstBalancesTotalizado.push({
         id,
-        totalActivoCorriente: d("totalActivoCorriente"),
-        totalActivoNoCorriente: d("totalActivoNoCorriente"),
-        totalActivo: d("totalActivo"),
-        totalPasivoCorriente: d("totalPasivoCorriente"),
-        totalPasivoNoCorriente: d("totalPasivoNoCorriente"),
-        totalPasivos: d("totalPasivos"),
-        totalPatrimonio: d("totalPatrimonio"),
-        totalPasivoPatrimonio: d("totalPasivoPatrimonio"),
-        ingresosOrdinarios: d("ingresosOrdinarios"),
-        gananciaNeta: d("gananciaNeta"),
-        indiceLiquidez: d("indiceLiquidez"),
-        capitalTrabajo: d("capitalTrabajo"),
-        ratioEndeudamiento: d("ratioEndeudamiento"),
-        ratioRentabilidad: d("ratioRentabilidad"),
+        totalActivoCorriente: d("totalActivoCorriente", balance.detalleCuentas?.balanceGeneral.totalCorrientes),
+        totalActivoNoCorriente: d("totalActivoNoCorriente", balance.detalleCuentas?.balanceGeneral.totalNoCorrientes),
+        totalActivo: d("totalActivo", balance.detalleCuentas?.balanceGeneral.totalActivos),
+        totalPasivoCorriente: d("totalPasivoCorriente", balance.detalleCuentas?.balanceGeneral.totalPasivosCorrientes),
+        totalPasivoNoCorriente: d("totalPasivoNoCorriente", balance.detalleCuentas?.balanceGeneral.totalPasivosNoCorrientes),
+        totalPasivos: d("totalPasivos", balance.detalleCuentas?.balanceGeneral.totalPasivos),
+        totalPatrimonio: d("totalPatrimonio", balance.detalleCuentas?.balanceGeneral.patrimonio),
+        totalPasivoPatrimonio: d("totalPasivoPatrimonio", balance.detalleCuentas?.balanceGeneral.totalPasivoPatrimonio),
+        ingresosOrdinarios: d("ingresosOrdinarios", balance.detalleCuentas?.estadoGananciasPerdidas.ventasNetas),
+        gananciaNeta: d("gananciaNeta", balance.detalleCuentas?.estadoGananciasPerdidas.utilidadGanancia),
+        indiceLiquidez: d("indiceLiquidez", balance.detalleCuentas?.ratios.liquidez),
+        capitalTrabajo: d("capitalTrabajo", balance.detalleCuentas?.ratios.capitalTrabajo),
+        ratioEndeudamiento: d("ratioEndeudamiento", balance.detalleCuentas?.ratios.endeudamiento),
+        ratioRentabilidad: d("ratioRentabilidad", balance.detalleCuentas?.ratios.rentabilidad),
       });
     } else if (tipo === 3) {
       lstBalancesBanco.push({
@@ -481,7 +491,13 @@ export function construirPayloadInforme({
       tipoCambio: obtenerNumeroDesdeTexto(balance.tipoCambio),
       idMoneda: balance.idMoneda ?? obtenerIdMoneda(balance.operacionCambio ?? ""),
       idTipoBalance: (balance.idTipoBalance ?? obtenerIdPorTextoONumero(undefined, balance.tipoBalance ?? "")) || obtenerIdTipoBalance(balance.tipoBalance),
-      idTipoEstadoFinanciero: balance.idTipoEstadoFinanciero ?? obtenerIdPorTextoONumero(undefined, balance.tipoEstadoFinanciero ?? balance.tipo ?? ""),
+      idTipoEstadoFinanciero: balance.idTipoEstadoFinanciero ?? ({
+        desagregado: 1,
+        totalizado: 2,
+        bancos: 3,
+        seguros: 4,
+        turquia: 5,
+      } as Record<string, number>)[obtenerClaveEstadoFinanciero(balance.tipoEstadoFinanciero ?? balance.tipo)] ?? 0,
     })),
     ...construirListasDetalleBalance(datosInvestigacion.balances),
     lstBancos: datosInvestigacion.bancos.map((banco) => ({

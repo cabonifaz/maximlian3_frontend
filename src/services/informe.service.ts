@@ -247,7 +247,7 @@ function formatearNumero(valor: unknown, decimales = 2): string {
 function formatearPorcentaje(valor: unknown, decimales = 2): string {
   const numero = obtenerNumeroOpcional(valor);
   if (numero == null) return "";
-  return `${(numero * 100).toFixed(decimales)}%`;
+  return numero.toFixed(decimales);
 }
 
 function formatearMonto(valor: unknown, decimales = 2): string {
