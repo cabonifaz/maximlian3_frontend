@@ -378,6 +378,13 @@ function normalizarRespuestaLista(resultado: unknown): InformeListResponse {
   if (Array.isArray(resultado)) {
     return {
       lstInforme: resultado.map(normalizarFilaInforme),
+      asignado: 0,
+      enProceso: 0,
+      pendienteAprobacion: 0,
+      aprobado: 0,
+      rechazado: 0,
+      vigente: 0,
+      vencido: 0,
       totalRegistros: resultado.length,
       totalPaginas: 1,
     };
@@ -394,6 +401,16 @@ function normalizarRespuestaLista(resultado: unknown): InformeListResponse {
 
   return {
     lstInforme: listaOriginal.map(normalizarFilaInforme),
+    asignado: obtenerNumero(registro.asignado, registro.Asignado),
+    enProceso: obtenerNumero(registro.enProceso, registro.EnProceso),
+    pendienteAprobacion: obtenerNumero(
+      registro.pendienteAprobacion,
+      registro.PendienteAprobacion,
+    ),
+    aprobado: obtenerNumero(registro.aprobado, registro.Aprobado),
+    rechazado: obtenerNumero(registro.rechazado, registro.Rechazado),
+    vigente: obtenerNumero(registro.vigente, registro.Vigente),
+    vencido: obtenerNumero(registro.vencido, registro.Vencido),
     totalRegistros: obtenerNumero(registro.totalRegistros, registro.TotalRegistros, listaOriginal.length),
     totalPaginas: obtenerNumero(registro.totalPaginas, registro.TotalPaginas, 1),
   };

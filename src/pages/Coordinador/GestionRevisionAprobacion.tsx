@@ -72,20 +72,14 @@ export default function GestionRevisionAprobacion() {
   );
 
   const resumenTarjetas = useMemo<TarjetaResumenAnalista[]>(() => {
-    const pendientes = registros.filter((r) => r.estado === "pendiente-aprobacion").length;
-    const aprobados = registros.filter((r) => r.estado === "aprobado").length;
-    const rechazados = registros.filter((r) => r.estado === "rechazado").length;
-    const vigentes = registros.filter((r) => r.estado !== "rechazado").length;
-    const vencidos = registros.length - vigentes;
-
     return [
-      { id: "pendiente", titulo: "Pendiente", valor: pendientes, colorIcono: "text-orange-500" },
-      { id: "aprobado", titulo: "Aprobado", valor: aprobados, colorIcono: "text-emerald-500" },
-      { id: "rechazado", titulo: "Rechazado", valor: rechazados, colorIcono: "text-rose-500" },
-      { id: "vigente", titulo: "Vigentes", valor: vigentes, colorIcono: "text-slate-600" },
-      { id: "vencido", titulo: "Vencidos", valor: vencidos, colorIcono: "text-red-400" },
+      { id: "pendiente", titulo: "Pendiente", valor: respuestaInformes?.pendienteAprobacion ?? 0, colorIcono: "text-orange-500" },
+      { id: "aprobado", titulo: "Aprobado", valor: respuestaInformes?.aprobado ?? 0, colorIcono: "text-emerald-500" },
+      { id: "rechazado", titulo: "Rechazado", valor: respuestaInformes?.rechazado ?? 0, colorIcono: "text-rose-500" },
+      { id: "vigente", titulo: "Vigentes", valor: respuestaInformes?.vigente ?? 0, colorIcono: "text-slate-600" },
+      { id: "vencido", titulo: "Vencidos", valor: respuestaInformes?.vencido ?? 0, colorIcono: "text-red-400" },
     ];
-  }, [registros]);
+  }, [respuestaInformes]);
 
   const abrirRevision = (registro: InformeListEntry) => {
     const parametros = new URLSearchParams();
