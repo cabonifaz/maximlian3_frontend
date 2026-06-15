@@ -278,8 +278,8 @@ function normalizarEstado(...valores: unknown[]): EstadoInvestigacionAnalista {
     if (typeof valor === "string") {
       const texto = valor.trim().toLowerCase();
       if (texto.includes("rechaz")) return "rechazado";
-      if (texto.includes("aprob")) return "aprobado";
       if (texto.includes("pend")) return "pendiente-aprobacion";
+      if (texto.includes("aprob")) return "aprobado";
       if (texto.includes("proceso") || texto.includes("curso") || texto.includes("borrador")) return "en-proceso";
       if (texto.includes("asign")) return "asignado";
     }
@@ -305,10 +305,20 @@ function obtenerAccion(estado: EstadoInvestigacionAnalista): AccionBandejaAnalis
 function normalizarFilaInforme(fila: unknown): InformeListEntry {
   const registro = typeof fila === "object" && fila !== null ? (fila as Record<string, unknown>) : {};
   const idEstado = obtenerNumero(registro.idEstado, registro.IdEstado, registro.estado, registro.Estado);
+  const estadoInforme = obtenerTexto(
+    registro.estadoInforme,
+    registro.EstadoInforme,
+    registro.descripcionEstado,
+    registro.DescripcionEstado,
+    registro.estado,
+    registro.Estado,
+  ) || "Asignado";
   const estado = normalizarEstado(
+    estadoInforme,
     registro.estado,
     registro.idEstado,
     registro.descripcionEstado,
+    registro.EstadoInforme,
     registro.Estado,
     registro.IdEstado,
     registro.DescripcionEstado,
@@ -321,6 +331,18 @@ function normalizarFilaInforme(fila: unknown): InformeListEntry {
     idIdioma: obtenerNumeroOpcional(registro.idIdioma, registro.IdIdioma),
     codigo: obtenerTexto(registro.codigo, registro.Codigo, registro.codigoPedido, registro.CodigoPedido) || "-",
     vigencia: obtenerTexto(registro.vigencia, registro.Vigencia, registro.porVencerTexto, registro.PorVencerTexto) || "-",
+    vigenciaColor: obtenerTexto(
+      registro.porVencerColor,
+      registro.PorVencerColor,
+      registro.colorTextoVigencia,
+      registro.ColorTextoVigencia,
+    ) || undefined,
+    vigenciaFondo: obtenerTexto(
+      registro.porVencerFondo,
+      registro.PorVencerFondo,
+      registro.colorFondoVigencia,
+      registro.ColorFondoVigencia,
+    ) || undefined,
     investigado: obtenerTexto(
       registro.investigado,
       registro.nombre,
@@ -346,6 +368,7 @@ function normalizarFilaInforme(fila: unknown): InformeListEntry {
       registro.TipoTramite,
       registro.TipoInforme,
     ) || "-",
+    estadoInforme,
     estado,
     accion: idEstado === 0 ? "continuar" : obtenerAccion(estado),
   };
@@ -355,6 +378,13 @@ function normalizarRespuestaLista(resultado: unknown): InformeListResponse {
   if (Array.isArray(resultado)) {
     return {
       lstInforme: resultado.map(normalizarFilaInforme),
+      asignado: 0,
+      enProceso: 0,
+      pendienteAprobacion: 0,
+      aprobado: 0,
+      rechazado: 0,
+      vigente: 0,
+      vencido: 0,
       totalRegistros: resultado.length,
       totalPaginas: 1,
     };
@@ -371,6 +401,16 @@ function normalizarRespuestaLista(resultado: unknown): InformeListResponse {
 
   return {
     lstInforme: listaOriginal.map(normalizarFilaInforme),
+    asignado: obtenerNumero(registro.asignado, registro.Asignado),
+    enProceso: obtenerNumero(registro.enProceso, registro.EnProceso),
+    pendienteAprobacion: obtenerNumero(
+      registro.pendienteAprobacion,
+      registro.PendienteAprobacion,
+    ),
+    aprobado: obtenerNumero(registro.aprobado, registro.Aprobado),
+    rechazado: obtenerNumero(registro.rechazado, registro.Rechazado),
+    vigente: obtenerNumero(registro.vigente, registro.Vigente),
+    vencido: obtenerNumero(registro.vencido, registro.Vencido),
     totalRegistros: obtenerNumero(registro.totalRegistros, registro.TotalRegistros, listaOriginal.length),
     totalPaginas: obtenerNumero(registro.totalPaginas, registro.TotalPaginas, 1),
   };

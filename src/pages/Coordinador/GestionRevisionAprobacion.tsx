@@ -8,10 +8,7 @@ import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { informeService } from "@maximilian/services/informe.service";
 import type { InformeListEntry } from "@maximilian/shared/types/informe.type";
 import type { TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
-import {
-  obtenerColorEstadoAnalista,
-  obtenerTextoEstadoAnalista,
-} from "@maximilian/shared/utils/datos-simulados-investigacion";
+import { obtenerColorEstadoAnalista } from "@maximilian/shared/utils/datos-simulados-investigacion";
 
 function obtenerIconoTarjeta(id: string) {
   if (id === "pendiente") return <ClipboardList size={18} className="text-orange-500" />;
@@ -19,6 +16,32 @@ function obtenerIconoTarjeta(id: string) {
   if (id === "rechazado") return <CircleX size={18} className="text-rose-500" />;
   if (id === "vigente") return <BadgeCheck size={18} className="text-slate-600" />;
   return <TriangleAlert size={18} className="text-red-400" />;
+}
+
+function obtenerBadgeVigencia(registro: InformeListEntry) {
+  const texto = registro.vigencia || "-";
+  const textoNormalizado = texto.toLowerCase();
+  const esVencido = textoNormalizado.includes("venc");
+  const dias = texto.match(/\d+/)?.[0];
+  const esVencimientoInmediato = !esVencido && dias != null && Number(dias) <= 1;
+  const color = registro.vigenciaColor
+    || (esVencido ? "#dc2626" : esVencimientoInmediato ? "#b45309" : "#166534");
+  const fondo = registro.vigenciaFondo
+    || (esVencido ? "#fef2f2" : esVencimientoInmediato ? "#fffbeb" : "#ecfdf5");
+
+  return (
+    <span
+      className="inline-flex min-w-24 flex-col rounded-xl px-3 py-2 text-center text-xs font-semibold"
+      style={{ color, backgroundColor: fondo }}
+    >
+      <span>{esVencido ? "Vencido" : texto}</span>
+      {esVencido && dias ? (
+        <span className="text-[11px] font-medium opacity-80">
+          {dias} {dias === "1" ? "dia" : "dias"}
+        </span>
+      ) : null}
+    </span>
+  );
 }
 
 export default function GestionRevisionAprobacion() {
@@ -49,20 +72,14 @@ export default function GestionRevisionAprobacion() {
   );
 
   const resumenTarjetas = useMemo<TarjetaResumenAnalista[]>(() => {
-    const pendientes = registros.filter((r) => r.estado === "pendiente-aprobacion").length;
-    const aprobados = registros.filter((r) => r.estado === "aprobado").length;
-    const rechazados = registros.filter((r) => r.estado === "rechazado").length;
-    const vigentes = registros.filter((r) => r.estado !== "rechazado").length;
-    const vencidos = registros.length - vigentes;
-
     return [
-      { id: "pendiente", titulo: "Pendiente", valor: pendientes, colorIcono: "text-orange-500" },
-      { id: "aprobado", titulo: "Aprobado", valor: aprobados, colorIcono: "text-emerald-500" },
-      { id: "rechazado", titulo: "Rechazado", valor: rechazados, colorIcono: "text-rose-500" },
-      { id: "vigente", titulo: "Vigentes", valor: vigentes, colorIcono: "text-slate-600" },
-      { id: "vencido", titulo: "Vencidos", valor: vencidos, colorIcono: "text-red-400" },
+      { id: "pendiente", titulo: "Pendiente", valor: respuestaInformes?.pendienteAprobacion ?? 0, colorIcono: "text-orange-500" },
+      { id: "aprobado", titulo: "Aprobado", valor: respuestaInformes?.aprobado ?? 0, colorIcono: "text-emerald-500" },
+      { id: "rechazado", titulo: "Rechazado", valor: respuestaInformes?.rechazado ?? 0, colorIcono: "text-rose-500" },
+      { id: "vigente", titulo: "Vigentes", valor: respuestaInformes?.vigente ?? 0, colorIcono: "text-slate-600" },
+      { id: "vencido", titulo: "Vencidos", valor: respuestaInformes?.vencido ?? 0, colorIcono: "text-red-400" },
     ];
-  }, [registros]);
+  }, [respuestaInformes]);
 
   const abrirRevision = (registro: InformeListEntry) => {
     const parametros = new URLSearchParams();
@@ -167,13 +184,13 @@ export default function GestionRevisionAprobacion() {
               <td className="max-w-48 px-6 py-4 text-sm font-semibold text-slate-700">
                 <span className="line-clamp-1">{registro.investigado}</span>
               </td>
-              <td className="px-6 py-4 text-sm text-slate-500">{registro.vigencia}</td>
+              <td className="px-6 py-4">{obtenerBadgeVigencia(registro)}</td>
               <td className="px-6 py-4 text-sm text-slate-500">{registro.tipo}</td>
               <td className="px-6 py-4 text-center">
                 <span
                   className={`inline-flex rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wide ${obtenerColorEstadoAnalista(registro.estado)}`}
                 >
-                  {registro.estado === "pendiente-aprobacion" ? "Pendiente" : obtenerTextoEstadoAnalista(registro.estado)}
+                  {registro.estadoInforme}
                 </span>
               </td>
               <td className="px-6 py-4">

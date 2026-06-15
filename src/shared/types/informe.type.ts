@@ -23,13 +23,23 @@ export interface InformeListEntry {
   pais: string;
   fecha: string;
   vigencia: string;
+  vigenciaColor?: string;
+  vigenciaFondo?: string;
   tipo: string;
+  estadoInforme: string;
   estado: EstadoInvestigacionAnalista;
   accion: AccionBandejaAnalista;
 }
 
 export interface InformeListResponse {
   lstInforme: InformeListEntry[];
+  asignado: number;
+  enProceso: number;
+  pendienteAprobacion: number;
+  aprobado: number;
+  rechazado: number;
+  vigente: number;
+  vencido: number;
   totalRegistros: number;
   totalPaginas: number;
 }

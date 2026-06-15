@@ -27,6 +27,11 @@ export interface PedidoListEntry {
 
 export interface PedidoListResponse {
   lstPedido: PedidoListEntry[];
+  pendiente: number;
+  enRevision: number;
+  aprobado: number;
+  observado: number;
+  cancelado: number;
   totalRegistros: number;
   totalPaginas: number;
 }

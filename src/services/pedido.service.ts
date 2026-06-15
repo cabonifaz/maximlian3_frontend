@@ -110,20 +110,26 @@ function normalizarFilaPedido(fila: unknown): PedidoListEntry {
 
 function normalizarRespuestaPedido(resultado: PedidoListResponse | Record<string, unknown>): PedidoListResponse {
   const registro = typeof resultado === "object" && resultado !== null ? resultado : {};
-  const listaOriginal = Array.isArray((registro as Record<string, unknown>).lstPedido)
-    ? ((registro as Record<string, unknown>).lstPedido as unknown[])
+  const respuesta = registro as Record<string, unknown>;
+  const listaOriginal = Array.isArray(respuesta.lstPedido)
+    ? (respuesta.lstPedido as unknown[])
     : [];
 
   return {
     lstPedido: listaOriginal.map(normalizarFilaPedido),
+    pendiente: obtenerNumero(respuesta.pendiente, respuesta.Pendiente),
+    enRevision: obtenerNumero(respuesta.enRevision, respuesta.EnRevision),
+    aprobado: obtenerNumero(respuesta.aprobado, respuesta.Aprobado),
+    observado: obtenerNumero(respuesta.observado, respuesta.Observado),
+    cancelado: obtenerNumero(respuesta.cancelado, respuesta.Cancelado),
     totalRegistros: obtenerNumero(
-      (registro as Record<string, unknown>).totalRegistros,
-      (registro as Record<string, unknown>).TotalRegistros,
+      respuesta.totalRegistros,
+      respuesta.TotalRegistros,
       listaOriginal.length,
     ),
     totalPaginas: obtenerNumero(
-      (registro as Record<string, unknown>).totalPaginas,
-      (registro as Record<string, unknown>).TotalPaginas,
+      respuesta.totalPaginas,
+      respuesta.TotalPaginas,
       1,
     ),
   };

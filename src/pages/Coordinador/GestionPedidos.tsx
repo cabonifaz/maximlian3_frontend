@@ -1,9 +1,25 @@
 import { useMemo, useState } from "react";
-import { Search, Filter, MoreHorizontal, Edit, UserPlus, X, Plus, Eye, Trash2, TriangleAlert } from "lucide-react";
+import {
+  CheckCircle2,
+  CircleAlert,
+  CircleX,
+  Clock3,
+  Edit,
+  Eye,
+  Filter,
+  MoreHorizontal,
+  Plus,
+  Search,
+  SearchCheck,
+  Trash2,
+  TriangleAlert,
+  UserPlus,
+  X,
+} from "lucide-react";
 import { useNavigate } from "react-router";
 import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { ModalPedido } from "@maximilian/components/coordinador/ModalPedido";
@@ -30,6 +46,14 @@ const ESTADO_OPTIONS = [
   { num1: 4, string1: "Observado" },
   { num1: 5, string1: "Cancelado" },
 ] as EntradaTablaMaestra[];
+
+const TARJETAS_ESTADO_PEDIDO = [
+  { clave: "pendiente", titulo: "Pendiente", Icono: Clock3, colorIcono: "text-orange-500" },
+  { clave: "enRevision", titulo: "En revisión", Icono: SearchCheck, colorIcono: "text-blue-500" },
+  { clave: "aprobado", titulo: "Aprobado", Icono: CheckCircle2, colorIcono: "text-emerald-500" },
+  { clave: "observado", titulo: "Observado", Icono: CircleAlert, colorIcono: "text-amber-500" },
+  { clave: "cancelado", titulo: "Cancelado", Icono: CircleX, colorIcono: "text-rose-500" },
+] as const;
 
 function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: string) {
   return (
@@ -266,6 +290,30 @@ export default function PedidoManagement() {
 
   return (
     <div className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        {TARJETAS_ESTADO_PEDIDO.map((tarjeta) => {
+          const Icono = tarjeta.Icono;
+          const total = pedidosData?.[tarjeta.clave] ?? 0;
+
+          return (
+            <article
+              key={tarjeta.clave}
+              className="rounded-2xl border border-gray-100 bg-white px-6 py-5 shadow-sm"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50">
+                  <Icono size={18} className={tarjeta.colorIcono} />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                  {tarjeta.titulo}
+                </span>
+              </div>
+              <p className="text-3xl font-bold text-brand-black">{total}</p>
+            </article>
+          );
+        })}
+      </div>
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-brand-black">Pedidos</h1>
