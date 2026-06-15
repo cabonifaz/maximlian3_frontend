@@ -950,6 +950,18 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
               endeudamiento: formatearPorcentaje(valorCuenta("ratioEndeudamiento")),
               rentabilidad: formatearPorcentaje(valorCuenta("ratioRentabilidad")),
             },
+            tipoBalanceTurquia: claveEstadoFinanciero === "turquia"
+              ? (
+                  obtenerTexto(
+                    cuentaBalance.tipoBalanceTurquia,
+                    cuentaBalance.TipoBalanceTurquia,
+                    balance.tipoBalanceTurquia,
+                    balance.TipoBalanceTurquia,
+                  ).toUpperCase() === "C"
+                    ? "C"
+                    : "I"
+                )
+              : undefined,
             registrosHabilitados: true,
             registrosEstadoFinanciero: Object.fromEntries(
               Object.entries(registrosEstadoFinanciero).map(([clave, valor]) => {
@@ -1621,6 +1633,8 @@ export const informeService = {
 
   calcularBalance: async (payload: {
     tipoEstadoFinanciero: string;
+    campoObjetivo?: string;
+    tipoBalanceTurquia?: "C" | "I";
     registros: Record<string, string>;
     balanceGeneral: Record<string, string>;
     estadoGananciasPerdidas: Record<string, string>;
@@ -1812,7 +1826,6 @@ export const informeService = {
         "acreedores",
         "pasivosNoCorrientes",
         "pasivosLargoPlazo",
-        "patrimonio",
         "ventasNetas",
         "costoVentas",
         "otrosGastosOperativos",
@@ -1826,16 +1839,20 @@ export const informeService = {
         "costoMateriales",
         "interesesPagados",
         "capital",
-        "ebit",
-        "ebitda",
-        "ganancia",
+        "reservas",
+        "resultadosAcumulados",
+        "resultadoEjercicio",
+        "otrasCuentas",
       ];
-      const cuerpo = Object.fromEntries(
+      const cuerpo = {
+        ...Object.fromEntries(
         campos.map((campo) => [
           campo,
           n(obtenerValorCampoEstadoFinanciero(r, campo, payload.tipoEstadoFinanciero)),
         ]),
-      );
+        ),
+        tipoBalanceTurquia: payload.tipoBalanceTurquia ?? null,
+      };
       const ruta = "/api/Informe/calcularBalanceTurquia";
       const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
       if (!esRespuestaOkCompatibilidad(data, ruta)) {

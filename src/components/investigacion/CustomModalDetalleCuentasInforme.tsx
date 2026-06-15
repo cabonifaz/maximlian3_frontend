@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Calculator, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Calculator,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
@@ -126,6 +131,8 @@ const camposCalculadosEstadoFinanciero = new Set([
   "extra-other-pl",
   "profit-loss-before-taxes",
   "profit-loss-after-taxes",
+  "ebit",
+  "ebitda",
   "profit",
   "liquidity-index",
   "working-capital",
@@ -152,6 +159,9 @@ function CampoDetalle({
   mostrarComoPorcentaje = false,
   deshabilitado = false,
   permitirNegativo = false,
+  onCalcular,
+  calculando = false,
+  azul = false,
 }: {
   etiqueta: string;
   valor: string;
@@ -162,29 +172,57 @@ function CampoDetalle({
   mostrarComoPorcentaje?: boolean;
   deshabilitado?: boolean;
   permitirNegativo?: boolean;
+  onCalcular?: () => void;
+  calculando?: boolean;
+  azul?: boolean;
 }) {
-  const valorMostrado = mostrarComoPorcentaje ? `${formatearNumero(obtenerNumero(valor))}%` : valor;
+  const valorMostrado = mostrarComoPorcentaje
+    ? `${formatearNumero(obtenerNumero(valor))}%`
+    : valor;
 
   return (
-    <div className={`space-y-2 rounded-lg ${destacado ? "border border-brand-wine/20 bg-brand-wine/5 p-3" : ""} ${claseContenedor}`}>
-      <CustomLabel as="p" className={`text-[10px] font-bold uppercase tracking-[0.12em] ${destacado ? "text-brand-wine" : "text-slate-600"}`}>
-        {etiqueta}
-      </CustomLabel>
+    <div
+      className={`space-y-2 rounded-lg ${azul ? "border border-blue-200 bg-blue-50 p-3" : destacado ? "border border-brand-wine/20 bg-brand-wine/5 p-3" : ""} ${claseContenedor}`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <CustomLabel
+          as="p"
+          className={`text-[10px] font-bold uppercase tracking-[0.12em] ${azul ? "text-blue-700" : destacado ? "text-brand-wine" : "text-slate-600"}`}
+        >
+          {etiqueta}
+        </CustomLabel>
+        {onCalcular ? (
+          <CustomButton
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="h-8 shrink-0 px-3 text-xs"
+            loading={calculando}
+            loadingText=""
+            onClick={onCalcular}
+          >
+            <Calculator size={14} />
+            Calcular
+          </CustomButton>
+        ) : null}
+      </div>
       <input
         value={valorMostrado}
         disabled={deshabilitado}
-        onChange={(event) => onChange(sanitizarNumero(event.target.value, permitirNegativo))}
+        onChange={(event) =>
+          onChange(sanitizarNumero(event.target.value, permitirNegativo))
+        }
         onBlur={(event) => {
           const texto = event.target.value.trim();
           if (!texto || texto === "-" || texto === "-.") {
-          onChange("0.00");
-          return;
-        }
+            onChange("0.00");
+            return;
+          }
           onChange(normalizarMontoDosDecimales(texto, permitirNegativo));
         }}
         onFocus={seleccionarTextoCampoEditable}
         placeholder="0.00"
-        className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:text-slate-500 ${destacado ? "border-brand-wine/20 bg-white text-brand-wine disabled:bg-brand-wine/5 disabled:text-brand-wine/70" : "border-gray-200 bg-slate-50 text-slate-600 disabled:bg-slate-100 disabled:text-slate-400"} ${negrita || destacado ? "font-bold" : ""}`}
+        className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:text-slate-500 ${azul ? "border-blue-300 bg-blue-100 text-blue-800 disabled:bg-blue-100 disabled:text-blue-700" : destacado ? "border-brand-wine/20 bg-white text-brand-wine disabled:bg-brand-wine/5 disabled:text-brand-wine/70" : "border-gray-200 bg-slate-50 text-slate-600 disabled:bg-slate-100 disabled:text-slate-400"} ${negrita || destacado || azul ? "font-bold" : ""}`}
       />
     </div>
   );
@@ -226,7 +264,10 @@ function CampoDetalleEntero({
 }) {
   return (
     <div className="space-y-2">
-      <CustomLabel as="p" className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+      <CustomLabel
+        as="p"
+        className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
+      >
         {etiqueta}
       </CustomLabel>
       <input
@@ -258,7 +299,9 @@ function CampoDetalleAno({
 
   const calcularDecadaBase = (v: string) => {
     const n = Number.parseInt(v, 10);
-    return Number.isFinite(n) ? Math.floor(n / 10) * 10 : Math.floor(anoActual / 10) * 10;
+    return Number.isFinite(n)
+      ? Math.floor(n / 10) * 10
+      : Math.floor(anoActual / 10) * 10;
   };
 
   const [decadaBase, setDecadaBase] = useState(() => calcularDecadaBase(valor));
@@ -267,7 +310,10 @@ function CampoDetalleAno({
   useEffect(() => {
     if (!abierto) return;
     const manejarClickFuera = (evento: MouseEvent) => {
-      if (contenedorRef.current && !contenedorRef.current.contains(evento.target as Node)) {
+      if (
+        contenedorRef.current &&
+        !contenedorRef.current.contains(evento.target as Node)
+      ) {
         setAbierto(false);
       }
     };
@@ -282,14 +328,19 @@ function CampoDetalleAno({
 
   return (
     <div className="space-y-2" ref={contenedorRef}>
-      <CustomLabel as="p" className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+      <CustomLabel
+        as="p"
+        className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
+      >
         {etiqueta}
       </CustomLabel>
       <div className="relative">
         <input
           value={valor}
           disabled={deshabilitado}
-          onChange={(evento) => onChange(evento.target.value.replace(/\D/g, "").slice(0, 4))}
+          onChange={(evento) =>
+            onChange(evento.target.value.replace(/\D/g, "").slice(0, 4))
+          }
           onFocus={seleccionarTextoCampoEditable}
           placeholder="Ej. 2026"
           className="h-10 w-full rounded-md border border-gray-200 bg-slate-50 px-3 pr-9 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
@@ -359,11 +410,17 @@ function CampoDetalleAno({
 function obtenerPlaceholderCampoEntero(etiqueta: string) {
   const etiquetaNormalizada = etiqueta.trim().toLowerCase();
 
-  if (etiquetaNormalizada.includes("ano") || etiquetaNormalizada.includes("year")) {
+  if (
+    etiquetaNormalizada.includes("ano") ||
+    etiquetaNormalizada.includes("year")
+  ) {
     return "Ej. 2026";
   }
 
-  if (etiquetaNormalizada.includes("duracion del periodo") || etiquetaNormalizada.includes("length of period")) {
+  if (
+    etiquetaNormalizada.includes("duracion del periodo") ||
+    etiquetaNormalizada.includes("length of period")
+  ) {
     return "Ej. 12";
   }
 
@@ -385,8 +442,12 @@ export function CustomModalDetalleCuentasAnalista({
   detalleInicial,
   tipoEstadoFinanciero,
 }: PropsCustomModalDetalleCuentasAnalista) {
-  const detalleBase = useMemo(() => detalleInicial ?? crearDetalleVacio(), [detalleInicial]);
-  const [detalle, setDetalle] = useState<DetalleCuentasBalanceAnalista>(detalleBase);
+  const detalleBase = useMemo(
+    () => detalleInicial ?? crearDetalleVacio(),
+    [detalleInicial],
+  );
+  const [detalle, setDetalle] =
+    useState<DetalleCuentasBalanceAnalista>(detalleBase);
   const [pestanaActiva, setPestanaActiva] = useState("balance-general");
   const { data: opcionesMoneda } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.MONEDA],
@@ -395,7 +456,8 @@ export function CustomModalDetalleCuentasAnalista({
   });
   const { data: opcionesNivelConfiabilidad } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.NIVEL_CONFIABILIDAD],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.NIVEL_CONFIABILIDAD),
+    queryFn: () =>
+      servicioTablaMaestra.list(TablaMaestraId.NIVEL_CONFIABILIDAD),
     staleTime: Infinity,
   });
 
@@ -403,8 +465,13 @@ export function CustomModalDetalleCuentasAnalista({
     setDetalle(detalleBase);
   }, [detalleBase]);
 
-  const mostrarRatios = ["Desagregado", "Totalizado", "Turquía"].includes(tipoEstadoFinanciero ?? "");
-  const esEstadoFinancieroTotalizado = normalizarTexto(tipoEstadoFinanciero) === "totalizado";
+  const mostrarRatios = ["Desagregado", "Totalizado", "Turquía"].includes(
+    tipoEstadoFinanciero ?? "",
+  );
+  const esEstadoFinancieroTotalizado =
+    normalizarTexto(tipoEstadoFinanciero) === "totalizado";
+  const esEstadoFinancieroTurquia =
+    normalizarTexto(tipoEstadoFinanciero).includes("turqu");
   const totalesHabilitados = detalle.totalesHabilitados ?? false;
   const registrosHabilitados = detalle.registrosHabilitados ?? false;
   const seccionesEstadoFinanciero = useMemo(
@@ -418,31 +485,88 @@ export function CustomModalDetalleCuentasAnalista({
   }, [mostrarRatios, pestanaActiva]);
 
   const mutacionCalcular = useMutation({
-    mutationFn: () => informeService.calcularBalance({
-      tipoEstadoFinanciero: tipoEstadoFinanciero ?? "",
-      registros: detalle.registrosEstadoFinanciero ?? {},
-      balanceGeneral: detalle.balanceGeneral as unknown as Record<string, string>,
-      estadoGananciasPerdidas: detalle.estadoGananciasPerdidas as unknown as Record<string, string>,
-    }),
-    onSuccess: (registrosCalculados) => {
+    mutationFn: (campoObjetivo: string) =>
+      informeService.calcularBalance({
+        tipoEstadoFinanciero: tipoEstadoFinanciero ?? "",
+        campoObjetivo,
+        tipoBalanceTurquia: detalle.tipoBalanceTurquia,
+        registros: detalle.registrosEstadoFinanciero ?? {},
+        balanceGeneral: detalle.balanceGeneral as unknown as Record<
+          string,
+          string
+        >,
+        estadoGananciasPerdidas:
+          detalle.estadoGananciasPerdidas as unknown as Record<string, string>,
+      }),
+    onSuccess: (registrosCalculados, campoObjetivo) => {
+      const valorCalculado = registrosCalculados[campoObjetivo];
+      if (valorCalculado == null) return;
+
+      const equivalenciasBalanceTotalizado: Partial<
+        Record<string, keyof DetalleBalanceGeneralAnalista>
+      > = {
+        "total-activo-corriente": "totalCorrientes",
+        "total-activo-no-corriente": "totalNoCorrientes",
+        "total-activo": "totalActivos",
+        "total-pasivo-corriente": "totalPasivosCorrientes",
+        "total-pasivo-no-corriente": "totalPasivosNoCorrientes",
+        "total-pasivos": "totalPasivos",
+        "total-patrimonio": "patrimonio",
+        "total-pasivo-patrimonio": "totalPasivoPatrimonio",
+      };
+      const campoBalanceGeneral = equivalenciasBalanceTotalizado[campoObjetivo];
+      const valorFormateado = formatearNumero(obtenerNumero(valorCalculado));
+
       setDetalle((anterior) => ({
         ...anterior,
-        balanceGeneral: esEstadoFinancieroTotalizado
-          ? {
-              ...anterior.balanceGeneral,
-              totalActivos: formatearNumero(obtenerNumero(registrosCalculados["total-activo"] ?? "")),
-              totalPasivos: formatearNumero(obtenerNumero(registrosCalculados["total-pasivos"] ?? "")),
-              totalPasivoPatrimonio: formatearNumero(obtenerNumero(registrosCalculados["total-pasivo-patrimonio"] ?? "")),
-            }
-          : anterior.balanceGeneral,
+        balanceGeneral:
+          esEstadoFinancieroTotalizado && campoBalanceGeneral
+            ? {
+                ...anterior.balanceGeneral,
+                [campoBalanceGeneral]: valorFormateado,
+              }
+            : anterior.balanceGeneral,
         registrosEstadoFinanciero: {
           ...(anterior.registrosEstadoFinanciero ?? {}),
-          ...Object.fromEntries(
-            Object.entries(registrosCalculados).map(([campo, valor]) => [
-              campo,
-              formatearNumero(obtenerNumero(valor)),
-            ]),
-          ),
+          [campoObjetivo]: valorFormateado,
+        },
+      }));
+    },
+  });
+
+  const mutacionCalcularRatios = useMutation({
+    mutationFn: () =>
+      informeService.calcularBalance({
+        tipoEstadoFinanciero: tipoEstadoFinanciero ?? "",
+        tipoBalanceTurquia: detalle.tipoBalanceTurquia,
+        registros: detalle.registrosEstadoFinanciero ?? {},
+        balanceGeneral: detalle.balanceGeneral as unknown as Record<
+          string,
+          string
+        >,
+        estadoGananciasPerdidas:
+          detalle.estadoGananciasPerdidas as unknown as Record<string, string>,
+      }),
+    onSuccess: (registrosCalculados) => {
+      const idsRatios = new Set(
+        seccionesRatiosConfiguradas.flatMap((seccion) =>
+          seccion.campos.map((campo) => campo.id),
+        ),
+      );
+      const ratiosCalculados = Object.fromEntries(
+        Object.entries(registrosCalculados)
+          .filter(([campo]) => idsRatios.has(campo))
+          .map(([campo, valor]) => [
+            campo,
+            formatearNumero(obtenerNumero(valor)),
+          ]),
+      );
+
+      setDetalle((anterior) => ({
+        ...anterior,
+        registrosEstadoFinanciero: {
+          ...(anterior.registrosEstadoFinanciero ?? {}),
+          ...ratiosCalculados,
         },
       }));
     },
@@ -450,7 +574,10 @@ export function CustomModalDetalleCuentasAnalista({
 
   if (!estaAbierto) return null;
 
-  const actualizarBalanceGeneral = (campo: keyof DetalleBalanceGeneralAnalista, valor: string) => {
+  const actualizarBalanceGeneral = (
+    campo: keyof DetalleBalanceGeneralAnalista,
+    valor: string,
+  ) => {
     setDetalle((anterior) => ({
       ...anterior,
       balanceGeneral: {
@@ -460,7 +587,10 @@ export function CustomModalDetalleCuentasAnalista({
     }));
   };
 
-  const actualizarEstadoGanancias = (campo: keyof DetalleEstadoGananciaAnalista, valor: string) => {
+  const actualizarEstadoGanancias = (
+    campo: keyof DetalleEstadoGananciaAnalista,
+    valor: string,
+  ) => {
     setDetalle((anterior) => ({
       ...anterior,
       estadoGananciasPerdidas: {
@@ -470,7 +600,10 @@ export function CustomModalDetalleCuentasAnalista({
     }));
   };
 
-  const actualizarRatios = (campo: keyof DetalleRatiosBalanceAnalista, valor: string) => {
+  const actualizarRatios = (
+    campo: keyof DetalleRatiosBalanceAnalista,
+    valor: string,
+  ) => {
     setDetalle((anterior) => ({
       ...anterior,
       ratios: {
@@ -490,7 +623,9 @@ export function CustomModalDetalleCuentasAnalista({
     }));
   };
 
-  const actualizarRegistrosEstadoFinanciero = (cambios: Record<string, string>) => {
+  const actualizarRegistrosEstadoFinanciero = (
+    cambios: Record<string, string>,
+  ) => {
     setDetalle((anterior) => ({
       ...anterior,
       registrosEstadoFinanciero: {
@@ -501,20 +636,31 @@ export function CustomModalDetalleCuentasAnalista({
   };
 
   const seccionesBalanceConfiguradas = seccionesEstadoFinanciero.filter(
-    (seccion) => !/(resultado|ganancia|perdida|profit|ratio)/i.test(`${seccion.id} ${seccion.titulo}`),
+    (seccion) =>
+      !/(resultado|ganancia|perdida|profit|ratio)/i.test(
+        `${seccion.id} ${seccion.titulo}`,
+      ),
   );
   const seccionesGananciasConfiguradas = seccionesEstadoFinanciero.filter(
-    (seccion) => /(resultado|ganancia|perdida|profit)/i.test(`${seccion.id} ${seccion.titulo}`),
+    (seccion) =>
+      /(resultado|ganancia|perdida|profit)/i.test(
+        `${seccion.id} ${seccion.titulo}`,
+      ),
   );
   const seccionesRatiosConfiguradas = seccionesEstadoFinanciero.filter(
     (seccion) => /ratio/i.test(`${seccion.id} ${seccion.titulo}`),
   );
 
   const esCampoTotalConfigurado = (etiqueta: string) => /total/i.test(etiqueta);
-  const mostrarControlTotales = esEstadoFinancieroTotalizado || seccionesBalanceConfiguradas.some((seccion) => (
-    esCampoTotalConfigurado(seccion.titulo)
-    || seccion.campos.some((campo) => esCampoTotalConfigurado(`${campo.id} ${campo.etiqueta}`))
-  ));
+  const mostrarControlTotales =
+    esEstadoFinancieroTotalizado ||
+    seccionesBalanceConfiguradas.some(
+      (seccion) =>
+        esCampoTotalConfigurado(seccion.titulo) ||
+        seccion.campos.some((campo) =>
+          esCampoTotalConfigurado(`${campo.id} ${campo.etiqueta}`),
+        ),
+    );
 
   const renderizarControlesHabilitacion = () => (
     <div className="flex flex-col gap-3 md:flex-row">
@@ -554,58 +700,152 @@ export function CustomModalDetalleCuentasAnalista({
     </div>
   );
 
+  const renderizarSelectorTipoBalanceTurquia = () => {
+    if (!esEstadoFinancieroTurquia) return null;
+
+    const opciones = [
+      {
+        idEmpresa: 0,
+        idTablaMaestra: 1,
+        idMaestro: 0,
+        descripcion: "Consolidado",
+        num1: 1,
+        num2: null,
+        num3: null,
+        string1: "Consolidado (C)",
+        string2: "C",
+        string3: null,
+        date1: null,
+        date2: null,
+        date3: null,
+      },
+      {
+        idEmpresa: 0,
+        idTablaMaestra: 2,
+        idMaestro: 0,
+        descripcion: "Individual",
+        num1: 2,
+        num2: null,
+        num3: null,
+        string1: "Individual (I)",
+        string2: "I",
+        string3: null,
+        date1: null,
+        date2: null,
+        date3: null,
+      },
+    ];
+    const valorActual = detalle.tipoBalanceTurquia ?? "I";
+
+    return (
+      <div className="rounded-2xl border border-gray-100 bg-slate-50 p-4">
+        <CustomLabel as="p" required>
+          Alcance del balance de Turquía
+        </CustomLabel>
+        <div className="mt-2 grid items-center gap-3 md:grid-cols-[minmax(0,20rem)_1fr]">
+          <CustomSelectorBuscable
+            options={opciones}
+            value={valorActual === "C" ? 1 : 2}
+            displayValue={
+              valorActual === "C" ? "Consolidado (C)" : "Individual (I)"
+            }
+            onChange={(valor) => {
+              setDetalle((anterior) => ({
+                ...anterior,
+                tipoBalanceTurquia: valor === 1 ? "C" : "I",
+              }));
+            }}
+            required
+            mostrarTextoOpcionalEnLabel={false}
+            placeholder="Seleccione el alcance"
+          />
+          <p className="text-xs text-slate-500">
+            Consolidado aplica al grupo económico. Individual aplica a una sola
+            empresa.
+          </p>
+        </div>
+      </div>
+    );
+  };
+
   const renderizarBalanceGeneralTotalizado = () => (
     <div className="space-y-6">
       {renderizarControlesHabilitacion()}
 
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="space-y-5">
-          <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">• Activos</p>
+          <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">
+            • Activos
+          </p>
           <CampoDetalle
             etiqueta="Total Activo Corriente"
             valor={detalle.balanceGeneral.totalCorrientes}
-            onChange={(valor) => actualizarBalanceGeneral("totalCorrientes", valor)}
+            onChange={(valor) =>
+              actualizarBalanceGeneral("totalCorrientes", valor)
+            }
             deshabilitado={!registrosHabilitados}
           />
           <CampoDetalle
             etiqueta="Total Activo No Corriente"
             valor={detalle.balanceGeneral.totalNoCorrientes}
-            onChange={(valor) => actualizarBalanceGeneral("totalNoCorrientes", valor)}
+            onChange={(valor) =>
+              actualizarBalanceGeneral("totalNoCorrientes", valor)
+            }
             deshabilitado={!registrosHabilitados}
           />
           <CampoDetalle
             etiqueta="Total Activo"
             valor={detalle.balanceGeneral.totalActivos}
-            onChange={(valor) => actualizarBalanceGeneral("totalActivos", valor)}
+            onChange={(valor) =>
+              actualizarBalanceGeneral("totalActivos", valor)
+            }
             negrita
             destacado
             claseContenedor="my-2"
-            deshabilitado={!totalesHabilitados}
+            deshabilitado
+            onCalcular={() => mutacionCalcular.mutate("total-activo")}
+            calculando={
+              mutacionCalcular.isPending &&
+              mutacionCalcular.variables === "total-activo"
+            }
           />
         </div>
 
         <div className="space-y-5">
-          <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">• Pasivos y Patrimonio</p>
+          <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">
+            • Pasivos y Patrimonio
+          </p>
           <CampoDetalle
             etiqueta="Total Pasivo Corriente"
             valor={detalle.balanceGeneral.totalPasivosCorrientes}
-            onChange={(valor) => actualizarBalanceGeneral("totalPasivosCorrientes", valor)}
+            onChange={(valor) =>
+              actualizarBalanceGeneral("totalPasivosCorrientes", valor)
+            }
             deshabilitado={!registrosHabilitados}
           />
           <CampoDetalle
             etiqueta="Total Pasivo No Corriente"
             valor={detalle.balanceGeneral.totalPasivosNoCorrientes}
-            onChange={(valor) => actualizarBalanceGeneral("totalPasivosNoCorrientes", valor)}
+            onChange={(valor) =>
+              actualizarBalanceGeneral("totalPasivosNoCorrientes", valor)
+            }
             deshabilitado={!registrosHabilitados}
           />
           <CampoDetalle
             etiqueta="Total Pasivos"
             valor={detalle.balanceGeneral.totalPasivos}
-            onChange={(valor) => actualizarBalanceGeneral("totalPasivos", valor)}
+            onChange={(valor) =>
+              actualizarBalanceGeneral("totalPasivos", valor)
+            }
             negrita
             destacado
             claseContenedor="my-2"
-            deshabilitado={!totalesHabilitados}
+            deshabilitado
+            onCalcular={() => mutacionCalcular.mutate("total-pasivos")}
+            calculando={
+              mutacionCalcular.isPending &&
+              mutacionCalcular.variables === "total-pasivos"
+            }
           />
           <CampoDetalle
             etiqueta="Total Patrimonio"
@@ -615,20 +855,28 @@ export function CustomModalDetalleCuentasAnalista({
             negrita
             destacado
             claseContenedor="my-2"
-            deshabilitado={!registrosHabilitados}
+            deshabilitado={!registrosHabilitados && !totalesHabilitados}
           />
           <CampoDetalle
             etiqueta="Total Pasivos + Patrimonio"
             valor={detalle.balanceGeneral.totalPasivoPatrimonio}
-            onChange={(valor) => actualizarBalanceGeneral("totalPasivoPatrimonio", valor)}
+            onChange={(valor) =>
+              actualizarBalanceGeneral("totalPasivoPatrimonio", valor)
+            }
             negrita
             destacado
             claseContenedor="my-2"
-            deshabilitado={!totalesHabilitados}
+            deshabilitado
+            onCalcular={() =>
+              mutacionCalcular.mutate("total-pasivo-patrimonio")
+            }
+            calculando={
+              mutacionCalcular.isPending &&
+              mutacionCalcular.variables === "total-pasivo-patrimonio"
+            }
           />
         </div>
       </div>
-
     </div>
   );
 
@@ -643,23 +891,36 @@ export function CustomModalDetalleCuentasAnalista({
   }) => (
     <div className="space-y-5">
       {secciones.map((seccion) => (
-        <div key={seccion.id} className="space-y-4 rounded-2xl border border-gray-100 p-4">
-          <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">{seccion.titulo}</h3>
+        <div
+          key={seccion.id}
+          className="space-y-4 rounded-2xl border border-gray-100 p-4"
+        >
+          <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">
+            {seccion.titulo}
+          </h3>
           <div className="grid gap-4 md:grid-cols-2">
             {seccion.campos.map((campo) => {
               const esTotal = esCampoTotalConfigurado(campo.etiqueta);
-              const esCalculado = camposCalculadosEstadoFinanciero.has(campo.id);
+              const esCalculado = camposCalculadosEstadoFinanciero.has(
+                campo.id,
+              );
               const esDestacado = esTotal || esCalculado;
-              const esSeccionRatios = /ratio/i.test(`${seccion.id} ${seccion.titulo}`);
+              const esSeccionRatios = /ratio/i.test(
+                `${seccion.id} ${seccion.titulo}`,
+              );
               const esRatioPorcentaje = camposRatioPorcentaje.has(campo.id);
-              const valorCampo = detalle.registrosEstadoFinanciero?.[campo.id] ?? "";
+              const valorCampo =
+                detalle.registrosEstadoFinanciero?.[campo.id] ?? "";
               const deshabilitadoBase = bloquearTodos
                 ? true
                 : usarHabilitacionTotales
-                  ? (esTotal ? !totalesHabilitados : !registrosHabilitados)
+                  ? esTotal
+                    ? !totalesHabilitados
+                    : !registrosHabilitados
                   : false;
-              const deshabilitado = deshabilitadoBase || (esCalculado && !esTotal);
-              const tipoEntradaCampo = obtenerTipoEntradaCampoEstadoFinanciero(campo);
+              const deshabilitado = deshabilitadoBase || esCalculado;
+              const tipoEntradaCampo =
+                obtenerTipoEntradaCampoEstadoFinanciero(campo);
 
               if (tipoEntradaCampo === "selector-ano") {
                 return (
@@ -667,7 +928,9 @@ export function CustomModalDetalleCuentasAnalista({
                     key={campo.id}
                     etiqueta={campo.etiqueta}
                     valor={valorCampo}
-                    onChange={(valor) => actualizarRegistroEstadoFinanciero(campo.id, valor)}
+                    onChange={(valor) =>
+                      actualizarRegistroEstadoFinanciero(campo.id, valor)
+                    }
                     deshabilitado={deshabilitado}
                   />
                 );
@@ -679,7 +942,9 @@ export function CustomModalDetalleCuentasAnalista({
                     key={campo.id}
                     etiqueta={campo.etiqueta}
                     valor={valorCampo}
-                    onChange={(valor) => actualizarRegistroEstadoFinanciero(campo.id, valor)}
+                    onChange={(valor) =>
+                      actualizarRegistroEstadoFinanciero(campo.id, valor)
+                    }
                     deshabilitado={deshabilitado}
                   />
                 );
@@ -691,7 +956,9 @@ export function CustomModalDetalleCuentasAnalista({
                     key={campo.id}
                     etiqueta={campo.etiqueta}
                     valor={valorCampo}
-                    onChange={(valor) => actualizarRegistroEstadoFinanciero(campo.id, valor)}
+                    onChange={(valor) =>
+                      actualizarRegistroEstadoFinanciero(campo.id, valor)
+                    }
                     deshabilitado={deshabilitado}
                     placeholder={obtenerPlaceholderCampoEntero(campo.etiqueta)}
                   />
@@ -699,14 +966,21 @@ export function CustomModalDetalleCuentasAnalista({
               }
 
               if (tipoEntradaCampo === "selector-moneda-nombre") {
-                const idNumericoMoneda = valorCampo && /^\d+$/.test(valorCampo.trim()) ? Number(valorCampo) : null;
-                const opcionMonedaActual = idNumericoMoneda != null
-                  ? opcionesMoneda?.find((o) => o.num1 === idNumericoMoneda)
-                  : opcionesMoneda?.find((o) => o.string1 === valorCampo);
+                const idNumericoMoneda =
+                  valorCampo && /^\d+$/.test(valorCampo.trim())
+                    ? Number(valorCampo)
+                    : null;
+                const opcionMonedaActual =
+                  idNumericoMoneda != null
+                    ? opcionesMoneda?.find((o) => o.num1 === idNumericoMoneda)
+                    : opcionesMoneda?.find((o) => o.string1 === valorCampo);
 
                 return (
                   <div key={campo.id} className="space-y-2">
-                    <CustomLabel as="p" className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+                    <CustomLabel
+                      as="p"
+                      className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
+                    >
                       {campo.etiqueta}
                     </CustomLabel>
                     <CustomSelectorBuscable
@@ -716,18 +990,34 @@ export function CustomModalDetalleCuentasAnalista({
                       onChange={(valor) => {
                         const idStr = String(valor ?? "");
                         if (campo.id === "currency") {
-                          actualizarRegistrosEstadoFinanciero({ currency: idStr, "currency-iso": idStr, "currency-p": idStr });
+                          actualizarRegistrosEstadoFinanciero({
+                            currency: idStr,
+                            "currency-iso": idStr,
+                            "currency-p": idStr,
+                          });
                         } else if (campo.id === "currency-p") {
-                          actualizarRegistrosEstadoFinanciero({ "currency-p": idStr, currency: idStr, "currency-iso": idStr });
+                          actualizarRegistrosEstadoFinanciero({
+                            "currency-p": idStr,
+                            currency: idStr,
+                            "currency-iso": idStr,
+                          });
                         } else {
                           actualizarRegistroEstadoFinanciero(campo.id, idStr);
                         }
                       }}
                       onClear={() => {
                         if (campo.id === "currency") {
-                          actualizarRegistrosEstadoFinanciero({ currency: "", "currency-iso": "", "currency-p": "" });
+                          actualizarRegistrosEstadoFinanciero({
+                            currency: "",
+                            "currency-iso": "",
+                            "currency-p": "",
+                          });
                         } else if (campo.id === "currency-p") {
-                          actualizarRegistrosEstadoFinanciero({ "currency-p": "", currency: "", "currency-iso": "" });
+                          actualizarRegistrosEstadoFinanciero({
+                            "currency-p": "",
+                            currency: "",
+                            "currency-iso": "",
+                          });
                         } else {
                           actualizarRegistroEstadoFinanciero(campo.id, "");
                         }
@@ -742,32 +1032,49 @@ export function CustomModalDetalleCuentasAnalista({
               }
 
               if (tipoEntradaCampo === "selector-moneda-codigo") {
-                const idNumericoIso = valorCampo && /^\d+$/.test(valorCampo.trim()) ? Number(valorCampo) : null;
-                const opcionIsoActual = idNumericoIso != null
-                  ? opcionesMoneda?.find((o) => o.num1 === idNumericoIso)
-                  : opcionesMoneda?.find((o) => o.string2 === valorCampo);
+                const idNumericoIso =
+                  valorCampo && /^\d+$/.test(valorCampo.trim())
+                    ? Number(valorCampo)
+                    : null;
+                const opcionIsoActual =
+                  idNumericoIso != null
+                    ? opcionesMoneda?.find((o) => o.num1 === idNumericoIso)
+                    : opcionesMoneda?.find((o) => o.string2 === valorCampo);
 
                 return (
                   <div key={campo.id} className="space-y-2">
-                    <CustomLabel as="p" className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+                    <CustomLabel
+                      as="p"
+                      className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
+                    >
                       {campo.etiqueta}
                     </CustomLabel>
                     <CustomSelectorBuscable
                       options={opcionesMoneda}
                       value={opcionIsoActual?.num1 ?? undefined}
                       displayValue={opcionIsoActual?.string2 ?? ""}
-                      obtenerEtiquetaOpcion={(opcion) => opcion.string2 ?? opcion.string1 ?? ""}
+                      obtenerEtiquetaOpcion={(opcion) =>
+                        opcion.string2 ?? opcion.string1 ?? ""
+                      }
                       onChange={(valor) => {
                         const idStr = String(valor ?? "");
                         if (campo.id === "currency-iso") {
-                          actualizarRegistrosEstadoFinanciero({ "currency-iso": idStr, currency: idStr, "currency-p": idStr });
+                          actualizarRegistrosEstadoFinanciero({
+                            "currency-iso": idStr,
+                            currency: idStr,
+                            "currency-p": idStr,
+                          });
                         } else {
                           actualizarRegistroEstadoFinanciero(campo.id, idStr);
                         }
                       }}
                       onClear={() => {
                         if (campo.id === "currency-iso") {
-                          actualizarRegistrosEstadoFinanciero({ "currency-iso": "", currency: "", "currency-p": "" });
+                          actualizarRegistrosEstadoFinanciero({
+                            "currency-iso": "",
+                            currency: "",
+                            "currency-p": "",
+                          });
                         } else {
                           actualizarRegistroEstadoFinanciero(campo.id, "");
                         }
@@ -793,7 +1100,9 @@ export function CustomModalDetalleCuentasAnalista({
                       permiteAltaNueva
                       marcador="Seleccione nivel"
                       obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")}
-                      onChange={(valor) => actualizarRegistroEstadoFinanciero(campo.id, valor)}
+                      onChange={(valor) =>
+                        actualizarRegistroEstadoFinanciero(campo.id, valor)
+                      }
                     />
                   </div>
                 );
@@ -804,13 +1113,27 @@ export function CustomModalDetalleCuentasAnalista({
                   key={campo.id}
                   etiqueta={campo.etiqueta}
                   valor={valorCampo}
-                  onChange={(valor) => actualizarRegistroEstadoFinanciero(campo.id, valor)}
+                  onChange={(valor) =>
+                    actualizarRegistroEstadoFinanciero(campo.id, valor)
+                  }
                   permitirNegativo
                   negrita={esDestacado}
                   destacado={esDestacado}
-                  claseContenedor={esDestacado && !esSeccionRatios ? "md:col-span-2 my-2" : ""}
+                  claseContenedor={
+                    esDestacado && !esSeccionRatios ? "md:col-span-2 my-2" : ""
+                  }
                   mostrarComoPorcentaje={esRatioPorcentaje}
                   deshabilitado={deshabilitado}
+                  onCalcular={
+                    esCalculado && !esSeccionRatios
+                      ? () => mutacionCalcular.mutate(campo.id)
+                      : undefined
+                  }
+                  calculando={
+                    mutacionCalcular.isPending &&
+                    mutacionCalcular.variables === campo.id
+                  }
+                  azul={esEstadoFinancieroTurquia && campo.id === "profit"}
                 />
               );
             })}
@@ -824,41 +1147,124 @@ export function CustomModalDetalleCuentasAnalista({
     {
       id: "balance-general",
       label: "Balance General",
-      content: (
-        esEstadoFinancieroTotalizado
-          ? renderizarBalanceGeneralTotalizado()
-          : (
-            <div className="space-y-6">
-              {renderizarControlesHabilitacion()}
+      content: esEstadoFinancieroTotalizado ? (
+        renderizarBalanceGeneralTotalizado()
+      ) : (
+        <div className="space-y-6">
+          {renderizarControlesHabilitacion()}
+          {renderizarSelectorTipoBalanceTurquia()}
 
-              {seccionesBalanceConfiguradas.length > 0 ? (
-                renderizarCamposConfigurados({
-                  secciones: seccionesBalanceConfiguradas,
-                  usarHabilitacionTotales: true,
-                })
-              ) : (
-                <div className="grid gap-8 lg:grid-cols-2">
-                  <div className="space-y-5">
-                    <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">• Activos</p>
-                    <CampoDetalle etiqueta="Total Corrientes" valor={detalle.balanceGeneral.totalCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalCorrientes", valor)} deshabilitado={!registrosHabilitados} />
-                    <CampoDetalle etiqueta="Total No Corrientes" valor={detalle.balanceGeneral.totalNoCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalNoCorrientes", valor)} deshabilitado={!registrosHabilitados} />
-                    <CampoDetalle etiqueta="Otros Activos" valor={detalle.balanceGeneral.otrosActivos} onChange={(valor) => actualizarBalanceGeneral("otrosActivos", valor)} deshabilitado={!registrosHabilitados} />
-                    <CampoDetalle etiqueta="Total Activos" valor={detalle.balanceGeneral.totalActivos} onChange={(valor) => actualizarBalanceGeneral("totalActivos", valor)} negrita destacado claseContenedor="my-2" deshabilitado={!totalesHabilitados} />
-                  </div>
+          {seccionesBalanceConfiguradas.length > 0 ? (
+            renderizarCamposConfigurados({
+              secciones: seccionesBalanceConfiguradas,
+              usarHabilitacionTotales: true,
+            })
+          ) : (
+            <div className="grid gap-8 lg:grid-cols-2">
+              <div className="space-y-5">
+                <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">
+                  • Activos
+                </p>
+                <CampoDetalle
+                  etiqueta="Total Corrientes"
+                  valor={detalle.balanceGeneral.totalCorrientes}
+                  onChange={(valor) =>
+                    actualizarBalanceGeneral("totalCorrientes", valor)
+                  }
+                  deshabilitado={!registrosHabilitados}
+                />
+                <CampoDetalle
+                  etiqueta="Total No Corrientes"
+                  valor={detalle.balanceGeneral.totalNoCorrientes}
+                  onChange={(valor) =>
+                    actualizarBalanceGeneral("totalNoCorrientes", valor)
+                  }
+                  deshabilitado={!registrosHabilitados}
+                />
+                <CampoDetalle
+                  etiqueta="Otros Activos"
+                  valor={detalle.balanceGeneral.otrosActivos}
+                  onChange={(valor) =>
+                    actualizarBalanceGeneral("otrosActivos", valor)
+                  }
+                  deshabilitado={!registrosHabilitados}
+                />
+                <CampoDetalle
+                  etiqueta="Total Activos"
+                  valor={detalle.balanceGeneral.totalActivos}
+                  onChange={(valor) =>
+                    actualizarBalanceGeneral("totalActivos", valor)
+                  }
+                  negrita
+                  destacado
+                  claseContenedor="my-2"
+                  deshabilitado={!totalesHabilitados}
+                />
+              </div>
 
-                  <div className="space-y-5">
-                    <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">• Pasivos y Patrimonio</p>
-                    <CampoDetalle etiqueta="Total Pasivos Corrientes" valor={detalle.balanceGeneral.totalPasivosCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalPasivosCorrientes", valor)} deshabilitado={!registrosHabilitados} />
-                    <CampoDetalle etiqueta="Total Pasivos No Corrientes" valor={detalle.balanceGeneral.totalPasivosNoCorrientes} onChange={(valor) => actualizarBalanceGeneral("totalPasivosNoCorrientes", valor)} deshabilitado={!registrosHabilitados} />
-                    <CampoDetalle etiqueta="Otros Pasivos" valor={detalle.balanceGeneral.otrosPasivos} onChange={(valor) => actualizarBalanceGeneral("otrosPasivos", valor)} deshabilitado={!registrosHabilitados} />
-                    <CampoDetalle etiqueta="Total Pasivos" valor={detalle.balanceGeneral.totalPasivos} onChange={(valor) => actualizarBalanceGeneral("totalPasivos", valor)} negrita destacado claseContenedor="my-2" deshabilitado={!totalesHabilitados} />
-                    <CampoDetalle etiqueta="Patrimonio" valor={detalle.balanceGeneral.patrimonio} onChange={(valor) => actualizarBalanceGeneral("patrimonio", valor)} permitirNegativo deshabilitado={!registrosHabilitados} />
-                    <CampoDetalle etiqueta="Total Pasivo y Patrimonio" valor={detalle.balanceGeneral.totalPasivoPatrimonio} onChange={(valor) => actualizarBalanceGeneral("totalPasivoPatrimonio", valor)} negrita destacado claseContenedor="my-2" deshabilitado={!totalesHabilitados} />
-                  </div>
-                </div>
-              )}
+              <div className="space-y-5">
+                <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">
+                  • Pasivos y Patrimonio
+                </p>
+                <CampoDetalle
+                  etiqueta="Total Pasivos Corrientes"
+                  valor={detalle.balanceGeneral.totalPasivosCorrientes}
+                  onChange={(valor) =>
+                    actualizarBalanceGeneral("totalPasivosCorrientes", valor)
+                  }
+                  deshabilitado={!registrosHabilitados}
+                />
+                <CampoDetalle
+                  etiqueta="Total Pasivos No Corrientes"
+                  valor={detalle.balanceGeneral.totalPasivosNoCorrientes}
+                  onChange={(valor) =>
+                    actualizarBalanceGeneral("totalPasivosNoCorrientes", valor)
+                  }
+                  deshabilitado={!registrosHabilitados}
+                />
+                <CampoDetalle
+                  etiqueta="Otros Pasivos"
+                  valor={detalle.balanceGeneral.otrosPasivos}
+                  onChange={(valor) =>
+                    actualizarBalanceGeneral("otrosPasivos", valor)
+                  }
+                  deshabilitado={!registrosHabilitados}
+                />
+                <CampoDetalle
+                  etiqueta="Total Pasivos"
+                  valor={detalle.balanceGeneral.totalPasivos}
+                  onChange={(valor) =>
+                    actualizarBalanceGeneral("totalPasivos", valor)
+                  }
+                  negrita
+                  destacado
+                  claseContenedor="my-2"
+                  deshabilitado={!totalesHabilitados}
+                />
+                <CampoDetalle
+                  etiqueta="Patrimonio"
+                  valor={detalle.balanceGeneral.patrimonio}
+                  onChange={(valor) =>
+                    actualizarBalanceGeneral("patrimonio", valor)
+                  }
+                  permitirNegativo
+                  deshabilitado={!registrosHabilitados}
+                />
+                <CampoDetalle
+                  etiqueta="Total Pasivo y Patrimonio"
+                  valor={detalle.balanceGeneral.totalPasivoPatrimonio}
+                  onChange={(valor) =>
+                    actualizarBalanceGeneral("totalPasivoPatrimonio", valor)
+                  }
+                  negrita
+                  destacado
+                  claseContenedor="my-2"
+                  deshabilitado={!totalesHabilitados}
+                />
+              </div>
             </div>
-          )
+          )}
+        </div>
       ),
     },
     {
@@ -872,8 +1278,21 @@ export function CustomModalDetalleCuentasAnalista({
             })
           ) : (
             <div className="grid gap-8 md:grid-cols-2">
-              <CampoDetalle etiqueta="Ventas Netas" valor={detalle.estadoGananciasPerdidas.ventasNetas} onChange={(valor) => actualizarEstadoGanancias("ventasNetas", valor)} />
-              <CampoDetalle etiqueta="Utilidad / Ganancia" valor={detalle.estadoGananciasPerdidas.utilidadGanancia} onChange={(valor) => actualizarEstadoGanancias("utilidadGanancia", valor)} permitirNegativo />
+              <CampoDetalle
+                etiqueta="Ventas Netas"
+                valor={detalle.estadoGananciasPerdidas.ventasNetas}
+                onChange={(valor) =>
+                  actualizarEstadoGanancias("ventasNetas", valor)
+                }
+              />
+              <CampoDetalle
+                etiqueta="Utilidad / Ganancia"
+                valor={detalle.estadoGananciasPerdidas.utilidadGanancia}
+                onChange={(valor) =>
+                  actualizarEstadoGanancias("utilidadGanancia", valor)
+                }
+                permitirNegativo
+              />
             </div>
           )}
         </div>
@@ -883,9 +1302,23 @@ export function CustomModalDetalleCuentasAnalista({
       id: "ratios",
       label: "Ratios",
       disabled: !mostrarRatios,
-      tooltip: "Los ratios se habilitan para estados financieros Desagregado, Totalizado o Turquía.",
+      tooltip:
+        "Los ratios se habilitan para estados financieros Desagregado, Totalizado o Turquía.",
       content: (
-        <div className="space-y-6">
+        <div className="space-y-1">
+          <div className="flex justify-end">
+            <CustomButton
+              type="button"
+              variant="wine"
+              size="sm"
+              loading={mutacionCalcularRatios.isPending}
+              loadingText="Calculando ratios..."
+              onClick={() => mutacionCalcularRatios.mutate()}
+            >
+              <Calculator size={16} />
+              Calcular ratios
+            </CustomButton>
+          </div>
           {seccionesRatiosConfiguradas.length > 0 ? (
             renderizarCamposConfigurados({
               secciones: seccionesRatiosConfiguradas,
@@ -893,10 +1326,40 @@ export function CustomModalDetalleCuentasAnalista({
             })
           ) : (
             <div className="grid gap-8 md:grid-cols-2">
-              <CampoDetalle etiqueta="Índice de Liquidez" valor={detalle.ratios.liquidez} onChange={(valor) => actualizarRatios("liquidez", valor)} permitirNegativo destacado deshabilitado />
-              <CampoDetalle etiqueta="Capital de Trabajo" valor={detalle.ratios.capitalTrabajo} onChange={(valor) => actualizarRatios("capitalTrabajo", valor)} permitirNegativo destacado deshabilitado />
-              <CampoDetalle etiqueta="Ratio de Endeudamiento" valor={detalle.ratios.endeudamiento} onChange={(valor) => actualizarRatios("endeudamiento", valor)} permitirNegativo destacado mostrarComoPorcentaje deshabilitado />
-              <CampoDetalle etiqueta="Ratio de Rentabilidad" valor={detalle.ratios.rentabilidad} onChange={(valor) => actualizarRatios("rentabilidad", valor)} permitirNegativo destacado mostrarComoPorcentaje deshabilitado />
+              <CampoDetalle
+                etiqueta="Índice de Liquidez"
+                valor={detalle.ratios.liquidez}
+                onChange={(valor) => actualizarRatios("liquidez", valor)}
+                permitirNegativo
+                destacado
+                deshabilitado
+              />
+              <CampoDetalle
+                etiqueta="Capital de Trabajo"
+                valor={detalle.ratios.capitalTrabajo}
+                onChange={(valor) => actualizarRatios("capitalTrabajo", valor)}
+                permitirNegativo
+                destacado
+                deshabilitado
+              />
+              <CampoDetalle
+                etiqueta="Ratio de Endeudamiento"
+                valor={detalle.ratios.endeudamiento}
+                onChange={(valor) => actualizarRatios("endeudamiento", valor)}
+                permitirNegativo
+                destacado
+                mostrarComoPorcentaje
+                deshabilitado
+              />
+              <CampoDetalle
+                etiqueta="Ratio de Rentabilidad"
+                valor={detalle.ratios.rentabilidad}
+                onChange={(valor) => actualizarRatios("rentabilidad", valor)}
+                permitirNegativo
+                destacado
+                mostrarComoPorcentaje
+                deshabilitado
+              />
             </div>
           )}
         </div>
@@ -904,35 +1367,90 @@ export function CustomModalDetalleCuentasAnalista({
     },
   ];
 
-  const limpiarCerosDetalle = (detalleActual: DetalleCuentasBalanceAnalista): DetalleCuentasBalanceAnalista => ({
+  const limpiarCerosDetalle = (
+    detalleActual: DetalleCuentasBalanceAnalista,
+  ): DetalleCuentasBalanceAnalista => ({
     ...detalleActual,
     balanceGeneral: {
-      totalCorrientes: esValorCeroOBlanco(detalleActual.balanceGeneral.totalCorrientes) ? "" : detalleActual.balanceGeneral.totalCorrientes,
-      totalNoCorrientes: esValorCeroOBlanco(detalleActual.balanceGeneral.totalNoCorrientes) ? "" : detalleActual.balanceGeneral.totalNoCorrientes,
-      otrosActivos: esValorCeroOBlanco(detalleActual.balanceGeneral.otrosActivos) ? "" : detalleActual.balanceGeneral.otrosActivos,
-      totalActivos: esValorCeroOBlanco(detalleActual.balanceGeneral.totalActivos) ? "" : detalleActual.balanceGeneral.totalActivos,
-      totalPasivosCorrientes: esValorCeroOBlanco(detalleActual.balanceGeneral.totalPasivosCorrientes) ? "" : detalleActual.balanceGeneral.totalPasivosCorrientes,
-      totalPasivosNoCorrientes: esValorCeroOBlanco(detalleActual.balanceGeneral.totalPasivosNoCorrientes) ? "" : detalleActual.balanceGeneral.totalPasivosNoCorrientes,
-      otrosPasivos: esValorCeroOBlanco(detalleActual.balanceGeneral.otrosPasivos) ? "" : detalleActual.balanceGeneral.otrosPasivos,
-      totalPasivos: esValorCeroOBlanco(detalleActual.balanceGeneral.totalPasivos) ? "" : detalleActual.balanceGeneral.totalPasivos,
-      patrimonio: esValorCeroOBlanco(detalleActual.balanceGeneral.patrimonio) ? "" : detalleActual.balanceGeneral.patrimonio,
-      totalPasivoPatrimonio: esValorCeroOBlanco(detalleActual.balanceGeneral.totalPasivoPatrimonio) ? "" : detalleActual.balanceGeneral.totalPasivoPatrimonio,
+      totalCorrientes: esValorCeroOBlanco(
+        detalleActual.balanceGeneral.totalCorrientes,
+      )
+        ? ""
+        : detalleActual.balanceGeneral.totalCorrientes,
+      totalNoCorrientes: esValorCeroOBlanco(
+        detalleActual.balanceGeneral.totalNoCorrientes,
+      )
+        ? ""
+        : detalleActual.balanceGeneral.totalNoCorrientes,
+      otrosActivos: esValorCeroOBlanco(
+        detalleActual.balanceGeneral.otrosActivos,
+      )
+        ? ""
+        : detalleActual.balanceGeneral.otrosActivos,
+      totalActivos: esValorCeroOBlanco(
+        detalleActual.balanceGeneral.totalActivos,
+      )
+        ? ""
+        : detalleActual.balanceGeneral.totalActivos,
+      totalPasivosCorrientes: esValorCeroOBlanco(
+        detalleActual.balanceGeneral.totalPasivosCorrientes,
+      )
+        ? ""
+        : detalleActual.balanceGeneral.totalPasivosCorrientes,
+      totalPasivosNoCorrientes: esValorCeroOBlanco(
+        detalleActual.balanceGeneral.totalPasivosNoCorrientes,
+      )
+        ? ""
+        : detalleActual.balanceGeneral.totalPasivosNoCorrientes,
+      otrosPasivos: esValorCeroOBlanco(
+        detalleActual.balanceGeneral.otrosPasivos,
+      )
+        ? ""
+        : detalleActual.balanceGeneral.otrosPasivos,
+      totalPasivos: esValorCeroOBlanco(
+        detalleActual.balanceGeneral.totalPasivos,
+      )
+        ? ""
+        : detalleActual.balanceGeneral.totalPasivos,
+      patrimonio: esValorCeroOBlanco(detalleActual.balanceGeneral.patrimonio)
+        ? ""
+        : detalleActual.balanceGeneral.patrimonio,
+      totalPasivoPatrimonio: esValorCeroOBlanco(
+        detalleActual.balanceGeneral.totalPasivoPatrimonio,
+      )
+        ? ""
+        : detalleActual.balanceGeneral.totalPasivoPatrimonio,
     },
     estadoGananciasPerdidas: {
-      ventasNetas: esValorCeroOBlanco(detalleActual.estadoGananciasPerdidas.ventasNetas) ? "" : detalleActual.estadoGananciasPerdidas.ventasNetas,
-      utilidadGanancia: esValorCeroOBlanco(detalleActual.estadoGananciasPerdidas.utilidadGanancia) ? "" : detalleActual.estadoGananciasPerdidas.utilidadGanancia,
+      ventasNetas: esValorCeroOBlanco(
+        detalleActual.estadoGananciasPerdidas.ventasNetas,
+      )
+        ? ""
+        : detalleActual.estadoGananciasPerdidas.ventasNetas,
+      utilidadGanancia: esValorCeroOBlanco(
+        detalleActual.estadoGananciasPerdidas.utilidadGanancia,
+      )
+        ? ""
+        : detalleActual.estadoGananciasPerdidas.utilidadGanancia,
     },
     ratios: {
-      liquidez: esValorCeroOBlanco(detalleActual.ratios.liquidez) ? "" : detalleActual.ratios.liquidez,
-      capitalTrabajo: esValorCeroOBlanco(detalleActual.ratios.capitalTrabajo) ? "" : detalleActual.ratios.capitalTrabajo,
-      endeudamiento: esValorCeroOBlanco(detalleActual.ratios.endeudamiento) ? "" : detalleActual.ratios.endeudamiento,
-      rentabilidad: esValorCeroOBlanco(detalleActual.ratios.rentabilidad) ? "" : detalleActual.ratios.rentabilidad,
+      liquidez: esValorCeroOBlanco(detalleActual.ratios.liquidez)
+        ? ""
+        : detalleActual.ratios.liquidez,
+      capitalTrabajo: esValorCeroOBlanco(detalleActual.ratios.capitalTrabajo)
+        ? ""
+        : detalleActual.ratios.capitalTrabajo,
+      endeudamiento: esValorCeroOBlanco(detalleActual.ratios.endeudamiento)
+        ? ""
+        : detalleActual.ratios.endeudamiento,
+      rentabilidad: esValorCeroOBlanco(detalleActual.ratios.rentabilidad)
+        ? ""
+        : detalleActual.ratios.rentabilidad,
     },
     registrosEstadoFinanciero: Object.fromEntries(
-      Object.entries(detalleActual.registrosEstadoFinanciero ?? {}).map(([clave, valor]) => [
-        clave,
-        esValorCeroOBlanco(valor) ? "" : valor,
-      ]),
+      Object.entries(detalleActual.registrosEstadoFinanciero ?? {}).map(
+        ([clave, valor]) => [clave, esValorCeroOBlanco(valor) ? "" : valor],
+      ),
     ),
   });
 
@@ -941,25 +1459,18 @@ export function CustomModalDetalleCuentasAnalista({
       isOpen={estaAbierto}
       onClose={onCerrar}
       title="Detalle de Cuentas"
-      subtitle={<p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">Gestión de cuentas contables</p>}
+      subtitle={
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
+          Gestión de cuentas contables
+        </p>
+      }
       tabs={tabs}
       activeTab={pestanaActiva}
       onTabChange={setPestanaActiva}
       tabVariant="underline"
       maxWidth="max-w-5xl"
-      footer={(
+      footer={
         <div className="flex justify-end gap-3">
-          <CustomButton
-            variant="wine"
-            size="sm"
-            className="rounded-xl px-5 shadow-md shadow-brand-wine/20"
-            loading={mutacionCalcular.isPending}
-            loadingText="Calculando..."
-            onClick={() => mutacionCalcular.mutate()}
-          >
-            <Calculator size={16} />
-            Calcular
-          </CustomButton>
           <CustomButton
             size="sm"
             onClick={() => onGuardar(limpiarCerosDetalle(detalle))}
@@ -967,7 +1478,7 @@ export function CustomModalDetalleCuentasAnalista({
             Guardar Cambios
           </CustomButton>
         </div>
-      )}
+      }
     />
   );
 }

@@ -149,6 +149,7 @@ export interface DetalleCuentasBalanceAnalista {
   balanceGeneral: DetalleBalanceGeneralAnalista;
   estadoGananciasPerdidas: DetalleEstadoGananciaAnalista;
   ratios: DetalleRatiosBalanceAnalista;
+  tipoBalanceTurquia?: "C" | "I";
   totalesHabilitados?: boolean;
   registrosHabilitados?: boolean;
   registrosEstadoFinanciero?: Record<string, string>;
