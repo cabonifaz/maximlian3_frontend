@@ -200,7 +200,6 @@ export interface InformeBalanceSeguroRequest {
 
 export interface InformeBalanceTurquiaRequest {
   id: number;
-  tipoBalanceTurquia?: "C" | "I" | null;
   ano?: number | null;
   fechaBalance?: string | null;
   idMoneda?: number | null;
@@ -227,6 +226,7 @@ export interface InformeBalanceTurquiaRequest {
   resultadosAcumulados?: number | null;
   resultadoEjercicio?: number | null;
   otrasCuentas?: number | null;
+  patrimonio?: number | null;
   totalPatrimonio?: number | null;
   totalPasivosPatrimonio?: number | null;
   ventasNetas?: number | null;

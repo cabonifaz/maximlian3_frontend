@@ -516,6 +516,14 @@ export function CustomModalDetalleCuentasAnalista({
       };
       const campoBalanceGeneral = equivalenciasBalanceTotalizado[campoObjetivo];
       const valorFormateado = formatearNumero(obtenerNumero(valorCalculado));
+      const camposGananciaTurquia: Record<string, string> =
+        esEstadoFinancieroTurquia &&
+        ["profit-loss-after-taxes", "profit"].includes(campoObjetivo)
+          ? {
+              "profit-loss-after-taxes": valorFormateado,
+              profit: valorFormateado,
+            }
+          : {};
 
       setDetalle((anterior) => ({
         ...anterior,
@@ -529,6 +537,7 @@ export function CustomModalDetalleCuentasAnalista({
         registrosEstadoFinanciero: {
           ...(anterior.registrosEstadoFinanciero ?? {}),
           [campoObjetivo]: valorFormateado,
+          ...camposGananciaTurquia,
         },
       }));
     },
@@ -614,11 +623,24 @@ export function CustomModalDetalleCuentasAnalista({
   };
 
   const actualizarRegistroEstadoFinanciero = (campo: string, valor: string) => {
+    const camposSincronizados: Record<string, string> = {};
+    if (esEstadoFinancieroTurquia) {
+      if (campo === "balance-date" || campo === "balance-date-p") {
+        camposSincronizados["balance-date"] = valor;
+        camposSincronizados["balance-date-p"] = valor;
+      }
+      if (campo === "exchange-rate" || campo === "exchange-rate-p") {
+        camposSincronizados["exchange-rate"] = valor;
+        camposSincronizados["exchange-rate-p"] = valor;
+      }
+    }
+
     setDetalle((anterior) => ({
       ...anterior,
       registrosEstadoFinanciero: {
         ...(anterior.registrosEstadoFinanciero ?? {}),
         [campo]: valor,
+        ...camposSincronizados,
       },
     }));
   };
