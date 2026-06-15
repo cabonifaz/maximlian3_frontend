@@ -516,7 +516,10 @@ export function adaptarCuentaBalanceDesdeApi(
     const campoApi = Object.entries(aliasCamposEstadoFinanciero[claveTipo] ?? {})
       .find(([, campoFormulario]) => campoFormulario === campo.id)?.[0]
       ?? campo.id.replace(/-([a-z])/g, (_, letra: string) => letra.toUpperCase());
-    const valor = valoresPorClave.get(campoApi.toLowerCase());
+    const valor = valoresPorClave.get(campoApi.toLowerCase())
+      ?? (claveTipo === "turquia" && campo.id === "profit"
+        ? valoresPorClave.get("ganancianeta")
+        : undefined);
     if (valor == null) return;
     const valorStr = String(valor);
     if (campo.tipoEntrada === "entero" || campo.tipoEntrada === "selector-ano") {
