@@ -288,6 +288,7 @@ function construirListasDetalleBalance(balances: RegistroBalanceAnalista[]) {
     } else if (tipo === 5) {
       lstBalancesTurquia.push({
         id,
+        tipoBalanceTurquia: balance.detalleCuentas?.tipoBalanceTurquia ?? "I",
         ano: i("ano"),
         fechaBalance: obtenerValorCampoEstadoFinanciero(r, "fechaBalance", tipoEstadoFinanciero) || null,
         idMoneda: balance.idMoneda ?? i("idMoneda"),
@@ -314,7 +315,10 @@ function construirListasDetalleBalance(balances: RegistroBalanceAnalista[]) {
         totalPasivosNoCorrientes: d("totalPasivosNoCorrientes"),
         totalPasivos: d("totalPasivos"),
         capital: d("capital"),
-        patrimonio: d("patrimonio"),
+        reservas: d("reservas"),
+        resultadosAcumulados: d("resultadosAcumulados"),
+        resultadoEjercicio: d("resultadoEjercicio"),
+        otrasCuentas: d("otrasCuentas"),
         totalPatrimonio: d("totalPatrimonio"),
         totalPasivosPatrimonio: d("totalPasivosPatrimonio"),
         ventasNetas: d("ventasNetas"),
