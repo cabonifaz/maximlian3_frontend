@@ -278,8 +278,8 @@ function normalizarEstado(...valores: unknown[]): EstadoInvestigacionAnalista {
     if (typeof valor === "string") {
       const texto = valor.trim().toLowerCase();
       if (texto.includes("rechaz")) return "rechazado";
-      if (texto.includes("aprob")) return "aprobado";
       if (texto.includes("pend")) return "pendiente-aprobacion";
+      if (texto.includes("aprob")) return "aprobado";
       if (texto.includes("proceso") || texto.includes("curso") || texto.includes("borrador")) return "en-proceso";
       if (texto.includes("asign")) return "asignado";
     }
@@ -305,10 +305,20 @@ function obtenerAccion(estado: EstadoInvestigacionAnalista): AccionBandejaAnalis
 function normalizarFilaInforme(fila: unknown): InformeListEntry {
   const registro = typeof fila === "object" && fila !== null ? (fila as Record<string, unknown>) : {};
   const idEstado = obtenerNumero(registro.idEstado, registro.IdEstado, registro.estado, registro.Estado);
+  const estadoInforme = obtenerTexto(
+    registro.estadoInforme,
+    registro.EstadoInforme,
+    registro.descripcionEstado,
+    registro.DescripcionEstado,
+    registro.estado,
+    registro.Estado,
+  ) || "Asignado";
   const estado = normalizarEstado(
+    estadoInforme,
     registro.estado,
     registro.idEstado,
     registro.descripcionEstado,
+    registro.EstadoInforme,
     registro.Estado,
     registro.IdEstado,
     registro.DescripcionEstado,
@@ -321,6 +331,18 @@ function normalizarFilaInforme(fila: unknown): InformeListEntry {
     idIdioma: obtenerNumeroOpcional(registro.idIdioma, registro.IdIdioma),
     codigo: obtenerTexto(registro.codigo, registro.Codigo, registro.codigoPedido, registro.CodigoPedido) || "-",
     vigencia: obtenerTexto(registro.vigencia, registro.Vigencia, registro.porVencerTexto, registro.PorVencerTexto) || "-",
+    vigenciaColor: obtenerTexto(
+      registro.porVencerColor,
+      registro.PorVencerColor,
+      registro.colorTextoVigencia,
+      registro.ColorTextoVigencia,
+    ) || undefined,
+    vigenciaFondo: obtenerTexto(
+      registro.porVencerFondo,
+      registro.PorVencerFondo,
+      registro.colorFondoVigencia,
+      registro.ColorFondoVigencia,
+    ) || undefined,
     investigado: obtenerTexto(
       registro.investigado,
       registro.nombre,
@@ -346,6 +368,7 @@ function normalizarFilaInforme(fila: unknown): InformeListEntry {
       registro.TipoTramite,
       registro.TipoInforme,
     ) || "-",
+    estadoInforme,
     estado,
     accion: idEstado === 0 ? "continuar" : obtenerAccion(estado),
   };

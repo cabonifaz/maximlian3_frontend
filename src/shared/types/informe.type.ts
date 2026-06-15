@@ -23,7 +23,10 @@ export interface InformeListEntry {
   pais: string;
   fecha: string;
   vigencia: string;
+  vigenciaColor?: string;
+  vigenciaFondo?: string;
   tipo: string;
+  estadoInforme: string;
   estado: EstadoInvestigacionAnalista;
   accion: AccionBandejaAnalista;
 }
