@@ -182,12 +182,12 @@ function CampoDetalle({
 
   return (
     <div
-      className={`space-y-2 rounded-lg border p-3 transition-colors ${azul ? "border-blue-200 bg-blue-50" : destacado ? "border-brand-wine/20 bg-brand-wine/5 shadow-sm" : "border-slate-100 bg-white hover:border-slate-200"} ${claseContenedor}`}
+      className={`space-y-2 rounded-lg border p-3 transition-colors ${azul ? "border-blue-200 bg-blue-50" : destacado ? "border-brand-wine/25 bg-white shadow-sm ring-1 ring-brand-wine/5" : "border-slate-200 bg-white hover:border-slate-300"} ${claseContenedor}`}
     >
       <div className="flex items-center justify-between gap-3">
         <CustomLabel
           as="p"
-          className={`text-[10px] font-bold uppercase tracking-[0.12em] ${azul ? "text-blue-700" : destacado ? "text-brand-wine" : "text-slate-600"}`}
+          className={`text-[10px] font-bold uppercase leading-4 tracking-[0.12em] ${azul ? "text-blue-700" : destacado ? "text-brand-wine" : "text-slate-600"}`}
         >
           {etiqueta}
         </CustomLabel>
@@ -222,7 +222,7 @@ function CampoDetalle({
         }}
         onFocus={seleccionarTextoCampoEditable}
         placeholder="0.00"
-        className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:text-slate-500 ${azul ? "border-blue-300 bg-blue-100 text-blue-800 disabled:bg-blue-100 disabled:text-blue-700" : destacado ? "border-brand-wine/20 bg-white text-brand-wine disabled:bg-brand-wine/5 disabled:text-brand-wine/70" : "border-slate-200 bg-white text-slate-700 disabled:bg-slate-100 disabled:text-slate-400"} ${negrita || destacado || azul ? "font-bold" : ""}`}
+        className={`h-10 w-full rounded-md border px-3 text-right text-sm tabular-nums outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:text-slate-500 ${azul ? "border-blue-300 bg-blue-100 text-blue-800 disabled:bg-blue-100 disabled:text-blue-700" : destacado ? "border-brand-wine/20 bg-brand-wine/5 text-brand-wine disabled:bg-brand-wine/5 disabled:text-brand-wine/70" : "border-slate-200 bg-white text-slate-700 disabled:bg-slate-100 disabled:text-slate-400"} ${negrita || destacado || azul ? "font-bold" : ""}`}
       />
     </div>
   );
@@ -801,8 +801,15 @@ export function CustomModalDetalleCuentasAnalista({
     );
 
   const renderizarControlesHabilitacion = () => (
-    <div className="flex flex-col gap-3 md:flex-row">
-      <label className="flex items-center gap-3 rounded-xl border border-gray-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+    <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 md:flex-row">
+      <label
+        className={`flex flex-1 cursor-pointer items-center justify-between gap-4 rounded-md border px-4 py-3 text-sm font-semibold transition-colors ${
+          registrosHabilitados
+            ? "border-brand-wine/30 bg-brand-wine/5 text-brand-wine"
+            : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300"
+        }`}
+      >
+        <span>Habilitar Registros</span>
         <input
           type="checkbox"
           checked={registrosHabilitados}
@@ -815,11 +822,17 @@ export function CustomModalDetalleCuentasAnalista({
           }}
           className="h-4 w-4 accent-brand-wine"
         />
-        Habilitar Registros
       </label>
 
       {mostrarControlTotales ? (
-        <label className="flex items-center gap-3 rounded-xl border border-gray-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+        <label
+          className={`flex flex-1 cursor-pointer items-center justify-between gap-4 rounded-md border px-4 py-3 text-sm font-semibold transition-colors ${
+            totalesHabilitados
+              ? "border-brand-wine/30 bg-brand-wine/5 text-brand-wine"
+              : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300"
+          }`}
+        >
+          <span>Habilitar Totales</span>
           <input
             type="checkbox"
             checked={totalesHabilitados}
@@ -832,7 +845,6 @@ export function CustomModalDetalleCuentasAnalista({
             }}
             className="h-4 w-4 accent-brand-wine"
           />
-          Habilitar Totales
         </label>
       ) : null}
     </div>
@@ -1033,12 +1045,14 @@ export function CustomModalDetalleCuentasAnalista({
       {secciones.map((seccion, indiceSeccion) => (
         <div
           key={seccion.id}
-          className="space-y-4 rounded-lg border border-slate-200 bg-slate-50/70 p-4"
+          className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
         >
-          <div className="flex flex-col gap-3 border-b border-slate-200 pb-3 sm:flex-row sm:items-center sm:justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">
-              {seccion.titulo}
-            </h3>
+          <div className="flex flex-col gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="border-l-4 border-brand-wine pl-3">
+              <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">
+                {seccion.titulo}
+              </h3>
+            </div>
             {indiceSeccion === 0 ? accionEncabezado : null}
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -1074,8 +1088,8 @@ export function CustomModalDetalleCuentasAnalista({
               const encabezadoGrupo =
                 grupoVisual && grupoVisual !== grupoVisualAnterior ? (
                   <div className="md:col-span-2">
-                    <div className="mt-2 rounded-md border border-slate-200 bg-white px-3 py-2 first:mt-0">
-                      <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                    <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 first:mt-0">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600">
                         {grupoVisual}
                       </span>
                     </div>
@@ -1139,7 +1153,7 @@ export function CustomModalDetalleCuentasAnalista({
                     : opcionesMoneda?.find((o) => o.string1 === valorCampo);
 
                 return envolverCampo(
-                  <div className="space-y-2 rounded-lg border border-slate-100 bg-white p-3 hover:border-slate-200">
+                  <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3 transition-colors hover:border-slate-300">
                     <CustomLabel
                       as="p"
                       className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
@@ -1205,7 +1219,7 @@ export function CustomModalDetalleCuentasAnalista({
                     : opcionesMoneda?.find((o) => o.string2 === valorCampo);
 
                 return envolverCampo(
-                  <div className="space-y-2 rounded-lg border border-slate-100 bg-white p-3 hover:border-slate-200">
+                  <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3 transition-colors hover:border-slate-300">
                     <CustomLabel
                       as="p"
                       className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
@@ -1253,7 +1267,7 @@ export function CustomModalDetalleCuentasAnalista({
 
               if (tipoEntradaCampo === "selector-confiabilidad") {
                 return envolverCampo(
-                  <div className="rounded-lg border border-slate-100 bg-white p-3 hover:border-slate-200">
+                  <div className="rounded-lg border border-slate-200 bg-white p-3 transition-colors hover:border-slate-300">
                     <SelectorMaestroConAltaInvestigacionAnalista
                       etiqueta={campo.etiqueta}
                       valor={valorCampo}
@@ -1490,11 +1504,13 @@ export function CustomModalDetalleCuentasAnalista({
               accionEncabezado: renderizarBotonCalcularRatios(),
             })
           ) : (
-            <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50/70 p-4">
-              <div className="flex flex-col gap-3 border-b border-slate-200 pb-3 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">
-                  Ratios
-                </h3>
+            <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-col gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="border-l-4 border-brand-wine pl-3">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">
+                    Ratios
+                  </h3>
+                </div>
                 {renderizarBotonCalcularRatios()}
               </div>
               <div className="grid gap-4 md:grid-cols-2">
