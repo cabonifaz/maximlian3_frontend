@@ -112,6 +112,12 @@ export function CustomModalArchivosInvestigacionAnalista({
   };
 
   const archivosNuevos = archivos.filter((archivo) => !archivo.esPersistido && archivo.archivo);
+  const archivosNuevosSinTipo = archivosNuevos.filter((archivo) => !obtenerIdTipoEvidencia(archivo));
+  const archivosNuevosEvidenciaSinFase = archivosNuevos.filter(
+    (archivo) => esTipoEvidencia(archivo) && !archivo.idFaseEvidencia,
+  );
+  const hayArchivosNuevosIncompletos =
+    archivosNuevosSinTipo.length > 0 || archivosNuevosEvidenciaSinFase.length > 0;
 
   const actualizarArchivoPersistido = async (
     archivo: ArchivoInvestigacionAnalista,
@@ -136,15 +142,24 @@ export function CustomModalArchivosInvestigacionAnalista({
 
   const guardarArchivosNuevos = async () => {
     if (!idPedido || archivosNuevos.length === 0) return;
+    if (archivosNuevosSinTipo.length > 0) {
+      toast.error("Selecciona el tipo de todos los archivos antes de adjuntar.");
+      return;
+    }
+    if (archivosNuevosEvidenciaSinFase.length > 0) {
+      toast.error("Selecciona la fase de cada evidencia antes de adjuntar.");
+      return;
+    }
 
     const toastId = toast.loading("Preparando archivos...");
     setEstaGuardandoArchivos(true);
     try {
-      const urlsGeneradas = await informeService.generarUrlsArchivo({
+      const respuestaUrls = await informeService.generarUrlsArchivo({
         idPedido,
         nombres: archivosNuevos.map((archivo) => archivo.nombre),
       });
-      const urlsDisponibles = [...urlsGeneradas];
+      const idInformeParaArchivos = respuestaUrls.idInforme ?? idInforme ?? 0;
+      const urlsDisponibles = [...respuestaUrls.archivos];
       const archivosSubidos: Array<{
         archivo: ArchivoInvestigacionAnalista;
         archivoUrl: string;
@@ -173,7 +188,7 @@ export function CustomModalArchivosInvestigacionAnalista({
       if (archivosSubidos.length > 0) {
         toast.loading("Registrando archivos...", { id: toastId });
         const respuestaInsercion = await informeService.insertarArchivoLote({
-          idInforme: idInforme ?? 0,
+          idInforme: idInformeParaArchivos,
           idPedido,
           archivos: archivosSubidos.map(({ archivo, archivoUrl }) => ({
             nombre: archivo.nombre,
@@ -184,8 +199,9 @@ export function CustomModalArchivosInvestigacionAnalista({
             idFaseEvidencia: archivo.idFaseEvidencia ?? null,
           })),
         });
-        if (!idInforme && respuestaInsercion.idInforme) {
-          onInformeCreado?.(respuestaInsercion.idInforme);
+        const idInformeCreado = respuestaInsercion.idInforme ?? respuestaUrls.idInforme;
+        if (!idInforme && idInformeCreado) {
+          onInformeCreado?.(idInformeCreado);
         }
 
         const idsSubidos = new Set(archivosSubidos.map(({ archivo }) => archivo.id));
@@ -331,7 +347,7 @@ export function CustomModalArchivosInvestigacionAnalista({
                             }
                             optional
                             mostrarTextoOpcionalEnLabel={false}
-                            placeholder="Seleccione"
+                            placeholder={archivo.esPersistido ? "Seleccione" : "Tipo requerido"}
                           />
                         </td>
                         <td className="px-3 py-2.5">
@@ -370,7 +386,7 @@ export function CustomModalArchivosInvestigacionAnalista({
                               }
                               optional
                               mostrarTextoOpcionalEnLabel={false}
-                              placeholder="Seleccione"
+                              placeholder={archivo.esPersistido ? "Seleccione" : "Fase requerida"}
                             />
                           ) : (
                             <span className="text-xs text-slate-400">No aplica</span>
@@ -414,13 +430,20 @@ export function CustomModalArchivosInvestigacionAnalista({
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-gray-100 bg-gray-50/50 px-8 py-5">
+        <div className="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/50 px-8 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs font-medium text-slate-500">
+            {archivosNuevosSinTipo.length > 0
+              ? "Completa el tipo de archivo antes de adjuntar."
+              : archivosNuevosEvidenciaSinFase.length > 0
+                ? "Completa la fase de cada evidencia antes de adjuntar."
+                : ""}
+          </p>
           <CustomButton
             variant="wine"
             size="sm"
             loading={estaGuardandoArchivos}
             loadingText="Adjuntando..."
-            disabled={!idPedido || archivosNuevos.length === 0}
+            disabled={!idPedido || archivosNuevos.length === 0 || hayArchivosNuevosIncompletos}
             onClick={() => void guardarArchivosNuevos()}
           >
             Adjuntar archivos

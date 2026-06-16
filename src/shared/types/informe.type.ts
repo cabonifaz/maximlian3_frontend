@@ -500,6 +500,11 @@ export interface InformeUrlArchivoGenerada {
   archivoUrl: string;
 }
 
+export interface InformeGenerarUrlsArchivoResponse {
+  idInforme?: number;
+  archivos: InformeUrlArchivoGenerada[];
+}
+
 export interface InformeArchivoLoteItem {
   nombre: string;
   archivoUrl: string;
