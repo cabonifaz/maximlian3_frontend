@@ -703,7 +703,7 @@ export type PlantillaSeccion =
   | { type: "subtitle"; text: string }
   | { type: "text"; field: string }
   | { type: "keyValue"; labelWidth?: string; rows: PlantillaFilaEtiquetaValor[] }
-  | { type: "borderedBox"; title: string; content?: string; rows?: PlantillaFilaEtiquetaValor[] }
+  | { type: "borderedBox"; title: string; content?: string; rows?: PlantillaFilaEtiquetaValor[]; valueAlign?: string }
   | { type: "referenceBox"; fontSize?: string; title: string; items: string[] }
   | { type: "dataTable"; source?: string; columns: { header: string; field: string }[]; rows?: string[][] }
   | { type: "repeat"; source?: string; sections: PlantillaSeccion[] }

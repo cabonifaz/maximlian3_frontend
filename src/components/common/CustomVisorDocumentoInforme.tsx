@@ -59,7 +59,7 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
         filas += seccion.rows
           .map(
             (f) =>
-              `<tr><td class="sr-label">${escaparHtml(f.label)}</td><td>${escaparHtml(f.value)}</td></tr>`,
+              `<tr><td class="sr-label">${escaparHtml(f.label)}</td><td${seccion.valueAlign ? ` style="text-align:${seccion.valueAlign}"` : ""}>${escaparHtml(f.value)}</td></tr>`,
           )
           .join("");
       }
