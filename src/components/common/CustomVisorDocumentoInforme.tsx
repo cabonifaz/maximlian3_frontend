@@ -77,8 +77,12 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
     case "dataTable": {
       const dtStyleAttr = seccion.style ? ` style="${seccion.style}"` : "";
       const dtCellStyle = seccion.cellStyle ? ` style="${seccion.cellStyle}"` : "";
-      return `<table class="sr-table sr-data"${dtStyleAttr}><thead><tr>${seccion.columns
-        .map((c) => `<th${dtCellStyle}>${escaparHtml(c.header)}</th>`)
+      const dtHeaderStyle = seccion.headerStyle ? `;${seccion.headerStyle}` : "";
+      const colgroup = seccion.columnWidths
+        ? `<colgroup>${seccion.columnWidths.map((w) => `<col style="width:${w}">`).join("")}</colgroup>`
+        : "";
+      return `<table class="sr-table sr-data"${dtStyleAttr}>${colgroup}<thead><tr>${seccion.columns
+        .map((c) => `<th style="${(seccion.cellStyle ?? "") + dtHeaderStyle}">${escaparHtml(c.header)}</th>`)
         .join("")}</tr></thead><tbody>${(seccion.rows ?? [])
         .map((fila) => {
           const celdas = Array.isArray(fila)
@@ -286,10 +290,6 @@ function construirCss(config: PlantillaDocumentoConfig): string {
 
     .sr-reference tr:last-child td {
       border-bottom: 1px solid #000;
-    }
-
-    .sr-data th {
-      font-weight: 700;
     }
 
     .sr-data th,
