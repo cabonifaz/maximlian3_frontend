@@ -47,6 +47,9 @@ type EstilosDocumento = {
   borders?: string;
   borderSize?: number;
   borderColor?: string;
+  borderSpace?: number;
+  cellBorders?: string;
+  cellBorderValue?: string;
   cellMargins?: {
     top?: number;
     bottom?: number;
@@ -63,6 +66,24 @@ type EstilosDocumento = {
   headerTextAlign?: string;
 };
 type EstilosDocumentoCatalogo = DocumentoInformeGenerado["styles"];
+type ConfiguracionPaginacionDocumento = NonNullable<DocumentoInformeGenerado["pagination"]>;
+
+const paginacionDocumentoPorDefecto: Required<ConfiguracionPaginacionDocumento> = {
+  maxPageWeightPortrait: 28,
+  maxPageWeightLandscape: 20,
+  maxTableWeightPortrait: 18,
+  maxTableWeightLandscape: 13,
+  keepTablesUnderRows: 0,
+  tableMinWeight: 2.5,
+  tableRowWeight: 0.78,
+  tableHeaderWeight: 1.2,
+  titleRowWeight: 2.35,
+  longTextCharactersPerWeight: 85,
+  longTextWeight: 0.78,
+  reserveEndTableWeight: 1.15,
+  keepTitleWithNext: true,
+  compactThreshold: 0.84,
+};
 
 function obtenerClaseAlineacion(alineacion?: string) {
   return alineacion ? alineacionClase[alineacion] ?? "text-left" : "text-left";
@@ -88,6 +109,12 @@ function obtenerDimensionDocumento(valor: number | undefined, unidad = "pt") {
   if (valor === undefined || valor === null) return undefined;
   if (unidad === "in" || unidad === "cm" || unidad === "px" || unidad === "pt") return `${valor}${unidad}`;
   return `${valor}pt`;
+}
+
+function obtenerGapDocumento(valor: number | undefined, unidad = "rem") {
+  if (valor === undefined || valor === null) return undefined;
+  if (unidad === "in" || unidad === "cm" || unidad === "px" || unidad === "pt" || unidad === "rem") return `${valor}${unidad}`;
+  return `${valor}rem`;
 }
 
 function obtenerEstiloDocumento(estilos?: EstilosDocumento, respaldo?: EstilosDocumento): CSSProperties {
@@ -121,26 +148,35 @@ function combinarEstilosDocumento(
 
 function obtenerEstiloTablaDocumento(estilos: EstilosDocumento): CSSProperties {
   const alineacionTabla = estilos.tableAlign ?? estilos.align;
+  const estiloBase = obtenerEstiloDocumento(estilos);
+  const tieneBorde = estilos.borders === "single";
+  const tamanoBorde = tieneBorde ? Math.max((estilos.borderSize ?? 8) / 8, 1) : 0;
   return {
-    ...obtenerEstiloDocumento(estilos),
+    ...estiloBase,
     width: obtenerDimensionDocumento(estilos.width, estilos.widthUnit),
-    marginLeft: alineacionTabla === "center" || alineacionTabla === "right" ? "auto" : obtenerEstiloDocumento(estilos).marginLeft,
-    marginRight: alineacionTabla === "center" || alineacionTabla === "left" ? "auto" : obtenerEstiloDocumento(estilos).marginRight,
+    marginLeft: alineacionTabla === "center" || alineacionTabla === "right" ? "auto" : estiloBase.marginLeft,
+    marginRight: alineacionTabla === "center" || alineacionTabla === "left" ? "auto" : estiloBase.marginRight,
     tableLayout: estilos.layout === "fixed" ? "fixed" : "auto",
+    borderCollapse: "collapse",
+    borderWidth: tamanoBorde,
+    borderStyle: tieneBorde ? "solid" : "none",
+    borderColor: estilos.borderColor ? `#${estilos.borderColor}` : undefined,
     textAlign: (estilos.textAlign ?? estilos.cellAlign ?? "left") as CSSProperties["textAlign"],
   };
 }
 
 function obtenerEstiloCeldaDocumento(estilos: EstilosDocumento): CSSProperties {
   const margenes = estilos.cellMargins;
-  const tamanoBorde = estilos.borders === "single" ? Math.max((estilos.borderSize ?? 8) / 8, 1) : 0;
+  const celdaSinBorde = estilos.cellBorders === "none" || estilos.cellBorderValue === "nil" || estilos.cellBorderValue === "none";
+  const tieneBorde = estilos.borders === "single" && !celdaSinBorde;
+  const tamanoBorde = tieneBorde ? Math.max((estilos.borderSize ?? 8) / 8, 1) : 0;
   return {
     paddingTop: obtenerDimensionDocumento(margenes?.top ?? 0, "in"),
     paddingBottom: obtenerDimensionDocumento(margenes?.bottom ?? 0, "in"),
     paddingLeft: obtenerDimensionDocumento(margenes?.left ?? 0.03, "in"),
     paddingRight: obtenerDimensionDocumento(margenes?.right ?? 0.03, "in"),
     borderWidth: tamanoBorde,
-    borderStyle: estilos.borders === "single" ? "solid" : "none",
+    borderStyle: tieneBorde ? "solid" : "none",
     borderColor: estilos.borderColor ? `#${estilos.borderColor}` : undefined,
     textAlign: (estilos.cellAlign ?? estilos.textAlign ?? "left") as CSSProperties["textAlign"],
   };
@@ -441,22 +477,38 @@ function esFilaTitulo(fila: unknown[], totalColumnas: number, valores: Map<strin
   return fila.length === 1 || fila.filter((celda) => tieneContenidoCelda(celda, valores)).length === 1 || fila.length < totalColumnas;
 }
 
-function obtenerPesoBloqueDocumento(bloque: DocumentoInformeBloque): number {
-  if (bloque.type === "table") return Math.max(2.5, (bloque.rows?.length ?? 0) * 0.78 + (bloque.header?.length ? 1.2 : 0));
-  if (bloque.type === "paragraph") return bloque.bold ? 1.4 : 1;
+function obtenerPesoBloqueDocumento(
+  bloque: DocumentoInformeBloque,
+  paginacion: Required<ConfiguracionPaginacionDocumento>,
+): number {
+  if (bloque.type === "table") {
+    return Math.max(
+      paginacion.tableMinWeight,
+      (bloque.rows?.length ?? 0) * paginacion.tableRowWeight + (bloque.header?.length ? paginacion.tableHeaderWeight : 0),
+    );
+  }
+  if (bloque.type === "paragraph") return bloque.bold ? 0.85 : 0.7;
   if (bloque.type === "image") return 2;
-  if (bloque.type === "each") return (bloque.blocks ?? []).reduce((total, item) => total + obtenerPesoBloqueDocumento(item), 0);
+  if (bloque.type === "each") {
+    return (bloque.blocks ?? []).reduce((total, item) => total + obtenerPesoBloqueDocumento(item, paginacion), 0);
+  }
   return 1;
 }
 
-function obtenerPesoFilaTablaDocumento(fila: unknown[], totalColumnas: number, valores: ValoresDocumento) {
+function obtenerPesoFilaTablaDocumento(
+  fila: unknown[],
+  totalColumnas: number,
+  valores: ValoresDocumento,
+  paginacion: Required<ConfiguracionPaginacionDocumento>,
+) {
   const celdas = Array.from({ length: totalColumnas }).map((_, indiceCelda) =>
     resolverTextoDocumento(fila[indiceCelda], valores, fila[0]),
   );
   const longitudMaxima = Math.max(...celdas.map((celda) => celda.length), 0);
   const esFilaTitulo = totalColumnas > 1 && celdas.slice(1).every((celda) => !celda.trim());
-  const base = esFilaTitulo ? 0.65 : 0.82;
-  return base + Math.max(0, Math.ceil(longitudMaxima / 85) - 1) * 0.78;
+  const base = esFilaTitulo ? Math.min(paginacion.tableRowWeight, 0.65) : paginacion.tableRowWeight;
+  return base
+    + Math.max(0, Math.ceil(longitudMaxima / paginacion.longTextCharactersPerWeight) - 1) * paginacion.longTextWeight;
 }
 
 function dividirTextoEnPartesDocumento(texto: string, longitudMaxima: number) {
@@ -502,25 +554,28 @@ function dividirTablaDocumento(
   bloque: Extract<DocumentoInformeBloque, { type: "table" }>,
   valores: ValoresDocumento,
   maximoPeso: number,
+  paginacion: Required<ConfiguracionPaginacionDocumento>,
 ): DocumentoInformeBloque[] {
   const filas = dividirFilasLargasDocumento(bloque, valores);
   const totalColumnas = obtenerColumnasTabla(bloque);
-  const reservaFinTabla = 1.15;
+  if (paginacion.keepTablesUnderRows > 0 && filas.length <= paginacion.keepTablesUnderRows) return [bloque];
+
+  const reservaFinTabla = paginacion.reserveEndTableWeight;
   const tablas: DocumentoInformeBloque[] = [];
   let filasTabla: unknown[][] = [];
-  let pesoTabla = bloque.header?.length ? 1.2 : 0;
+  let pesoTabla = bloque.header?.length ? paginacion.tableHeaderWeight : 0;
   const obtenerGrupoFilas = (indice: number) => {
     const fila = filas[indice];
     if (!fila) return [];
     return esFilaTitulo(fila, totalColumnas, valores) && filas[indice + 1] ? [fila, filas[indice + 1]] : [fila];
   };
   const obtenerPesoGrupo = (grupoFilas: unknown[][]) => {
-    const peso = grupoFilas.reduce(
-      (total, filaGrupo) => total + obtenerPesoFilaTablaDocumento(filaGrupo, totalColumnas, valores),
+    const pesoConConfig = grupoFilas.reduce(
+      (total, filaGrupo) => total + obtenerPesoFilaTablaDocumento(filaGrupo, totalColumnas, valores, paginacion),
       0,
     );
     const esRotuloSolo = grupoFilas.length === 1 && esFilaTitulo(grupoFilas[0], totalColumnas, valores);
-    return esRotuloSolo ? Math.max(peso, 2.35) : peso;
+    return esRotuloSolo ? Math.max(pesoConConfig, paginacion.titleRowWeight) : pesoConConfig;
   };
 
   for (let indiceFila = 0; indiceFila < filas.length; indiceFila += 1) {
@@ -537,7 +592,7 @@ function dividirTablaDocumento(
         rows: filasTabla,
       });
       filasTabla = [];
-      pesoTabla = bloque.header?.length ? 1.2 : 0;
+      pesoTabla = bloque.header?.length ? paginacion.tableHeaderWeight : 0;
     }
     filasTabla.push(...grupoFilas);
     pesoTabla += pesoGrupo;
@@ -559,6 +614,7 @@ function expandirBloquesDocumento(
   valores: ValoresDocumento,
   listas: ListasDocumento,
   maximoPesoTabla: number,
+  paginacion: Required<ConfiguracionPaginacionDocumento>,
 ): BloqueDocumentoRender[] {
   const bloquesRender: BloqueDocumentoRender[] = [];
 
@@ -569,13 +625,13 @@ function expandirBloquesDocumento(
 
       (contextos.length > 0 ? contextos : [new Map<string, string>()]).forEach((contexto) => {
         const valoresContexto = new Map([...valores, ...contexto]);
-        bloquesRender.push(...expandirBloquesDocumento(bloque.blocks, valoresContexto, listas, maximoPesoTabla));
+        bloquesRender.push(...expandirBloquesDocumento(bloque.blocks, valoresContexto, listas, maximoPesoTabla, paginacion));
       });
       return;
     }
 
     if (bloque.type === "table") {
-      dividirTablaDocumento(bloque, valores, maximoPesoTabla).forEach((tabla) => {
+      dividirTablaDocumento(bloque, valores, maximoPesoTabla, paginacion).forEach((tabla) => {
         bloquesRender.push({ bloque: tabla, valores });
       });
       return;
@@ -594,7 +650,11 @@ function expandirBloquesDocumento(
   return bloquesRender;
 }
 
-function paginarBloquesDocumento(bloques: BloqueDocumentoRender[], maximoPeso = 23) {
+function paginarBloquesDocumento(
+  bloques: BloqueDocumentoRender[],
+  maximoPeso: number,
+  paginacion: Required<ConfiguracionPaginacionDocumento>,
+) {
   const paginas: BloqueDocumentoRender[][] = [];
   let paginaActual: BloqueDocumentoRender[] = [];
   let pesoActual = 0;
@@ -603,14 +663,14 @@ function paginarBloquesDocumento(bloques: BloqueDocumentoRender[], maximoPeso = 
     const { bloque } = bloqueRender;
     const peso = bloque.type === "table"
       ? (bloque.rows ?? []).reduce(
-          (total, fila) => total + obtenerPesoFilaTablaDocumento(fila, obtenerColumnasTabla(bloque), bloqueRender.valores),
-          bloque.header?.length ? 1.2 : 0,
+          (total, fila) => total + obtenerPesoFilaTablaDocumento(fila, obtenerColumnasTabla(bloque), bloqueRender.valores, paginacion),
+          bloque.header?.length ? paginacion.tableHeaderWeight : 0,
         )
-      : obtenerPesoBloqueDocumento(bloque);
+      : obtenerPesoBloqueDocumento(bloque, paginacion);
     const siguienteBloque = bloques[indiceBloque + 1];
-    const debeMantenerConSiguiente = esTituloSeccionDocumento(bloqueRender) && Boolean(siguienteBloque);
+    const debeMantenerConSiguiente = Boolean(paginacion.keepTitleWithNext) && esTituloSeccionDocumento(bloqueRender) && Boolean(siguienteBloque);
     const pesoGrupo = debeMantenerConSiguiente
-      ? peso + obtenerPesoBloqueRenderDocumento(siguienteBloque)
+      ? peso + obtenerPesoBloqueRenderDocumento(siguienteBloque, paginacion)
       : peso;
     if (debeMantenerConSiguiente && paginaActual.length > 0 && pesoActual + pesoGrupo > maximoPeso) {
       paginas.push(paginaActual);
@@ -637,13 +697,16 @@ function esTituloSeccionDocumento(bloqueRender: BloqueDocumentoRender) {
   return texto.length > 0 && texto.length <= 80;
 }
 
-function obtenerPesoBloqueRenderDocumento(bloqueRender: BloqueDocumentoRender) {
+function obtenerPesoBloqueRenderDocumento(
+  bloqueRender: BloqueDocumentoRender,
+  paginacion: Required<ConfiguracionPaginacionDocumento>,
+) {
   const { bloque, valores } = bloqueRender;
 
   if (bloque.type === "table") {
     return (bloque.rows ?? []).reduce(
-      (total, fila) => total + obtenerPesoFilaTablaDocumento(fila, obtenerColumnasTabla(bloque), valores),
-      bloque.header?.length ? 0.9 : 0,
+      (total, fila) => total + obtenerPesoFilaTablaDocumento(fila, obtenerColumnasTabla(bloque), valores, paginacion),
+      bloque.header?.length ? paginacion.tableHeaderWeight : 0,
     );
   }
 
@@ -654,22 +717,26 @@ function obtenerPesoBloqueRenderDocumento(bloqueRender: BloqueDocumentoRender) {
 
   if (bloque.type === "image") return 1.4;
 
-  return obtenerPesoBloqueDocumento(bloque);
+  return obtenerPesoBloqueDocumento(bloque, paginacion);
 }
 
-function compactarPaginasDocumento(paginas: BloqueDocumentoRender[][], maximoPeso: number) {
-  const pesoMaximoCompactado = maximoPeso * 0.84;
+function compactarPaginasDocumento(
+  paginas: BloqueDocumentoRender[][],
+  maximoPeso: number,
+  paginacion: Required<ConfiguracionPaginacionDocumento>,
+) {
+  const pesoMaximoCompactado = maximoPeso * paginacion.compactThreshold;
   const paginasCompactadas = paginas.map((pagina) => [...pagina]);
 
   for (let indice = 0; indice < paginasCompactadas.length - 1; indice += 1) {
-    let pesoActual = paginasCompactadas[indice].reduce((total, bloque) => total + obtenerPesoBloqueRenderDocumento(bloque), 0);
+    let pesoActual = paginasCompactadas[indice].reduce((total, bloque) => total + obtenerPesoBloqueRenderDocumento(bloque, paginacion), 0);
     let siguiente = paginasCompactadas[indice + 1];
 
     while (siguiente.length > 0) {
       const bloquesMovimiento =
         esTituloSeccionDocumento(siguiente[0]) && siguiente[1] ? siguiente.slice(0, 2) : [siguiente[0]];
       const pesoMovimiento = bloquesMovimiento.reduce(
-        (total, bloque) => total + obtenerPesoBloqueRenderDocumento(bloque),
+        (total, bloque) => total + obtenerPesoBloqueRenderDocumento(bloque, paginacion),
         0,
       );
       if (pesoActual + pesoMovimiento > pesoMaximoCompactado) break;
@@ -880,6 +947,7 @@ function CustomSeccionDocumentoInforme({
   listas,
   estilos,
   catalogoEstilos,
+  gap,
 }: {
   tabla?: Extract<DocumentoInformeBloque, { type: "table" }>;
   bloques?: DocumentoInformeBloque[];
@@ -887,12 +955,13 @@ function CustomSeccionDocumentoInforme({
   listas: ListasDocumento;
   estilos?: EstilosDocumento;
   catalogoEstilos?: EstilosDocumentoCatalogo;
+  gap?: string;
 }) {
   if (!tabla && !bloques?.length) return null;
   const estilosSeccion = combinarEstilosDocumento(catalogoEstilos, estilos);
 
   return (
-    <div className="space-y-3" style={obtenerEstiloDocumento(estilosSeccion)}>
+    <div className="flex flex-col" style={{ ...obtenerEstiloDocumento(estilosSeccion), gap }}>
       {tabla ? (
         <CustomBloqueDocumentoInforme
           bloque={tabla}
@@ -923,17 +992,19 @@ function CustomSeccionDocumentoRender({
   listas,
   estilos,
   catalogoEstilos,
+  gap,
 }: {
   bloques: BloqueDocumentoRender[];
   listas: ListasDocumento;
   estilos?: EstilosDocumento;
   catalogoEstilos?: EstilosDocumentoCatalogo;
+  gap?: string;
 }) {
   if (!bloques.length) return null;
   const estilosSeccion = combinarEstilosDocumento(catalogoEstilos, estilos);
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col" style={{ gap }}>
       {bloques.map(({ bloque, valores }, indice) => (
         <CustomBloqueDocumentoInforme
           key={`${bloque.type}-${indice}`}
@@ -956,14 +1027,18 @@ export function CustomVisorDocumentoInforme({ documento, datosInvestigacion, enc
   const altoMinimo = orientacion === "landscape" ? "8.27in" : "11.69in";
   const distanciaHeader = obtenerDimensionDocumento(documento.pageSetup?.headerDistance ?? 0.5, "in");
   const distanciaFooter = obtenerDimensionDocumento(documento.pageSetup?.footerDistance ?? 0.5, "in");
+  const paginacion = { ...paginacionDocumentoPorDefecto, ...documento.pagination };
+  const gapBloques = obtenerGapDocumento(documento.layout?.blockGap, documento.layout?.unit ?? "rem");
+  const gapSeccion = obtenerGapDocumento(documento.layout?.sectionGap, documento.layout?.unit ?? "rem");
   const valores = construirValoresDocumento(datosInvestigacion, encabezado);
   const listas = construirListasDocumento(datosInvestigacion);
-  const maximoPesoPagina = orientacion === "landscape" ? 20 : 28;
-  const maximoPesoTabla = orientacion === "landscape" ? 13 : 18;
-  const bloquesRender = expandirBloquesDocumento(documento.body, valores, listas, maximoPesoTabla);
+  const maximoPesoPagina = orientacion === "landscape" ? paginacion.maxPageWeightLandscape : paginacion.maxPageWeightPortrait;
+  const maximoPesoTabla = orientacion === "landscape" ? paginacion.maxTableWeightLandscape : paginacion.maxTableWeightPortrait;
+  const bloquesRender = expandirBloquesDocumento(documento.body, valores, listas, maximoPesoTabla, paginacion);
   const paginas = compactarPaginasDocumento(
-    paginarBloquesDocumento(bloquesRender, maximoPesoPagina),
+    paginarBloquesDocumento(bloquesRender, maximoPesoPagina, paginacion),
     maximoPesoPagina,
+    paginacion,
   );
 
   return (
@@ -995,15 +1070,17 @@ export function CustomVisorDocumentoInforme({ documento, datosInvestigacion, enc
               listas={listas}
               estilos={documento.header}
               catalogoEstilos={documento.styles}
+              gap={gapSeccion}
             />
           </header>
 
-          <main className="min-h-0 grow space-y-4">
+          <main className="min-h-0 grow">
             <CustomSeccionDocumentoRender
               bloques={bloquesPagina}
               listas={listas}
               estilos={documento.styles?.default}
               catalogoEstilos={documento.styles}
+              gap={gapBloques}
             />
           </main>
 
@@ -1015,6 +1092,7 @@ export function CustomVisorDocumentoInforme({ documento, datosInvestigacion, enc
               listas={listas}
               estilos={documento.footer}
               catalogoEstilos={documento.styles}
+              gap={gapSeccion}
             />
           </footer>
         </article>

@@ -504,6 +504,30 @@ export interface DocumentoInformePageSetup {
   footerDistance?: number;
 }
 
+export interface DocumentoInformeLayout {
+  sectionGap?: number;
+  blockGap?: number;
+  eachGap?: number;
+  unit?: "px" | "pt" | "in" | "cm";
+}
+
+export interface DocumentoInformePagination {
+  maxPageWeightPortrait?: number;
+  maxPageWeightLandscape?: number;
+  maxTableWeightPortrait?: number;
+  maxTableWeightLandscape?: number;
+  keepTablesUnderRows?: number;
+  tableMinWeight?: number;
+  tableRowWeight?: number;
+  tableHeaderWeight?: number;
+  titleRowWeight?: number;
+  longTextCharactersPerWeight?: number;
+  longTextWeight?: number;
+  reserveEndTableWeight?: number;
+  keepTitleWithNext?: boolean;
+  compactThreshold?: number;
+}
+
 export interface DocumentoInformeEstiloBase {
   fontFamily?: string;
   fontSize?: number;
@@ -518,6 +542,9 @@ export interface DocumentoInformeEstiloBase {
   borders?: "none" | "single";
   borderSize?: number;
   borderColor?: string;
+  borderSpace?: number;
+  cellBorders?: "none" | "single";
+  cellBorderValue?: "nil" | "none" | "single";
   cellMargins?: {
     top?: number;
     bottom?: number;
@@ -555,6 +582,10 @@ export interface DocumentoInformeBloqueImagen {
   width?: number;
   height?: number;
   unit?: "px" | "in" | "cm";
+  tableCell?: {
+    row?: number;
+    col?: number;
+  };
 }
 
 export interface DocumentoInformeBloqueTabla {
@@ -573,6 +604,9 @@ export interface DocumentoInformeBloqueTabla {
   borders?: "none" | "single";
   borderSize?: number;
   borderColor?: string;
+  borderSpace?: number;
+  cellBorders?: "none" | "single";
+  cellBorderValue?: "nil" | "none" | "single";
   cellMargins?: {
     top?: number;
     bottom?: number;
@@ -620,6 +654,8 @@ export interface DocumentoInformeSangria {
 
 export interface DocumentoInformeGenerado {
   pageSetup?: DocumentoInformePageSetup;
+  layout?: DocumentoInformeLayout;
+  pagination?: DocumentoInformePagination;
   styles?: Record<string, DocumentoInformeEstiloBase>;
   header?: DocumentoInformeSeccion;
   footer?: DocumentoInformeSeccion;
