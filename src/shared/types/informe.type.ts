@@ -705,7 +705,7 @@ export type PlantillaSeccion =
   | { type: "keyValue"; labelWidth?: string; style?: string; rows: PlantillaFilaEtiquetaValor[] }
   | { type: "borderedBox"; title: string; content?: string; rows?: PlantillaFilaEtiquetaValor[]; valueAlign?: string }
   | { type: "referenceBox"; fontSize?: string; title: string; items: string[] }
-  | { type: "dataTable"; source?: string; columns: { header: string; field: string }[]; rows?: string[][] }
+  | { type: "dataTable"; source?: string; columns: { header: string; field?: string }[]; rows?: unknown[]; style?: string; cellStyle?: string }
   | { type: "repeat"; source?: string; sections: PlantillaSeccion[] }
   | { type: "repeatDetail"; source?: string; titleField?: string; contentField?: string; items?: { title: string; content: string }[] }
   | { type: "spacer"; height?: string };

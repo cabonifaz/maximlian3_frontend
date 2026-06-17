@@ -74,17 +74,20 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
         ${seccion.items.map((item) => `<tr><td>${escaparHtml(item)}</td></tr>`).join("")}
       </tbody></table>`;
 
-    case "dataTable":
-      return `<table class="sr-table sr-data"><thead><tr>${seccion.columns
-        .map((c) => `<th>${escaparHtml(c.header)}</th>`)
+    case "dataTable": {
+      const dtStyleAttr = seccion.style ? ` style="${seccion.style}"` : "";
+      const dtCellStyle = seccion.cellStyle ? ` style="${seccion.cellStyle}"` : "";
+      return `<table class="sr-table sr-data"${dtStyleAttr}><thead><tr>${seccion.columns
+        .map((c) => `<th${dtCellStyle}>${escaparHtml(c.header)}</th>`)
         .join("")}</tr></thead><tbody>${(seccion.rows ?? [])
         .map((fila) => {
           const celdas = Array.isArray(fila)
             ? fila
             : Object.values(fila as Record<string, unknown>).map(String);
-          return `<tr>${celdas.map((celda) => `<td>${escaparHtml(String(celda ?? ""))}</td>`).join("")}</tr>`;
+          return `<tr>${celdas.map((celda) => `<td${dtCellStyle}>${escaparHtml(String(celda ?? ""))}</td>`).join("")}</tr>`;
         })
         .join("")}</tbody></table>`;
+    }
 
     case "repeat":
       return seccion.sections.map(renderizarSeccion).join("");
