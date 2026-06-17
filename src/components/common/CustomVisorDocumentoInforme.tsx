@@ -41,13 +41,15 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
     case "text":
       return `<div class="sr-text">${escaparHtml(seccion.field)}</div>`;
 
-    case "keyValue":
-      return `<table class="sr-table"><tbody>${seccion.rows
+    case "keyValue": {
+      const kvBorder = seccion.borderStyle === "outer" ? ' style="border:1px solid #000"' : "";
+      return `<table class="sr-table"${kvBorder}><tbody>${seccion.rows
         .map(
           (f) =>
             `<tr><td class="sr-label">${escaparHtml(f.label)}</td><td>${escaparHtml(f.separator ?? "")}${escaparHtml(f.value)}</td></tr>`,
         )
         .join("")}</tbody></table>`;
+    }
 
     case "borderedBox": {
       const cols = seccion.rows ? 2 : 1;

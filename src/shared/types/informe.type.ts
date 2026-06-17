@@ -702,7 +702,7 @@ export type PlantillaSeccion =
   | { type: "heading"; level?: number; text: string; fontSize?: string }
   | { type: "subtitle"; text: string }
   | { type: "text"; field: string }
-  | { type: "keyValue"; labelWidth?: string; rows: PlantillaFilaEtiquetaValor[] }
+  | { type: "keyValue"; labelWidth?: string; borderStyle?: string; rows: PlantillaFilaEtiquetaValor[] }
   | { type: "borderedBox"; title: string; content?: string; rows?: PlantillaFilaEtiquetaValor[]; valueAlign?: string }
   | { type: "referenceBox"; fontSize?: string; title: string; items: string[] }
   | { type: "dataTable"; source?: string; columns: { header: string; field: string }[]; rows?: string[][] }
