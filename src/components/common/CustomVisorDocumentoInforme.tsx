@@ -76,10 +76,12 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
       return `<table class="sr-table sr-data"><thead><tr>${seccion.columns
         .map((c) => `<th>${escaparHtml(c.header)}</th>`)
         .join("")}</tr></thead><tbody>${(seccion.rows ?? [])
-        .map(
-          (fila) =>
-            `<tr>${fila.map((celda) => `<td>${escaparHtml(celda)}</td>`).join("")}</tr>`,
-        )
+        .map((fila) => {
+          const celdas = Array.isArray(fila)
+            ? fila
+            : Object.values(fila as Record<string, unknown>).map(String);
+          return `<tr>${celdas.map((celda) => `<td>${escaparHtml(String(celda ?? ""))}</td>`).join("")}</tr>`;
+        })
         .join("")}</tbody></table>`;
 
     case "repeat":
