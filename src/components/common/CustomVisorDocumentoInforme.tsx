@@ -42,16 +42,22 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
       return `<div class="sr-text">${escaparHtml(seccion.field)}</div>`;
 
     case "keyValue": {
+      const kv = seccion as Record<string, unknown>;
       const kvStyleAttr = seccion.style ? ` style="${seccion.style}"` : "";
+      const kvLblStyle = kv.labelStyle ? ` style="${kv.labelStyle}"` : "";
       return `<table class="sr-table"${kvStyleAttr}><tbody>${seccion.rows
         .map(
           (f) =>
-            `<tr><td class="sr-label">${escaparHtml(f.label)}</td><td>${escaparHtml(f.separator ?? "")}${escaparHtml(f.value)}</td></tr>`,
+            `<tr><td${kvLblStyle}>${escaparHtml(f.label)}</td><td>${escaparHtml(f.separator ?? "")}${escaparHtml(f.value)}</td></tr>`,
         )
         .join("")}</tbody></table>`;
     }
 
     case "borderedBox": {
+      const box = seccion as Record<string, unknown>;
+      const boxStyle = box.style ? ` style="${box.style}"` : "";
+      const lblStyle = box.labelStyle ? ` style="${box.labelStyle}"` : "";
+      const valStyle = box.valueStyle ? ` style="${box.valueStyle}"` : "";
       const cols = seccion.rows ? 2 : 1;
       let filas = `<tr><td colspan="${cols}" class="sr-box-title">${escaparHtml(seccion.title)}</td></tr>`;
       if (seccion.content) {
@@ -61,11 +67,11 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
         filas += seccion.rows
           .map(
             (f) =>
-              `<tr><td class="sr-label">${escaparHtml(f.label)}</td><td${seccion.valueAlign ? ` style="text-align:${seccion.valueAlign}"` : ""}>${escaparHtml(f.value)}</td></tr>`,
+              `<tr><td${lblStyle}>${escaparHtml(f.label)}</td><td${valStyle}>${escaparHtml(f.value)}</td></tr>`,
           )
           .join("");
       }
-      return `<table class="sr-table sr-bordered"><tbody>${filas}</tbody></table>`;
+      return `<table class="sr-table sr-bordered"${boxStyle}><tbody>${filas}</tbody></table>`;
     }
 
     case "referenceBox":
@@ -252,10 +258,6 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       vertical-align: top;
     }
 
-    .sr-label {
-      width: 1.94in;
-      font-weight: 700;
-    }
 
     .sr-bordered {
       border: 1px solid #000;
