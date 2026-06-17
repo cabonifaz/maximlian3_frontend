@@ -42,8 +42,8 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
       return `<div class="sr-text">${escaparHtml(seccion.field)}</div>`;
 
     case "keyValue": {
-      const kvBorder = seccion.borderStyle === "outer" ? ' style="border:1px solid #000"' : "";
-      return `<table class="sr-table"${kvBorder}><tbody>${seccion.rows
+      const kvStyleAttr = seccion.style ? ` style="${seccion.style}"` : "";
+      return `<table class="sr-table"${kvStyleAttr}><tbody>${seccion.rows
         .map(
           (f) =>
             `<tr><td class="sr-label">${escaparHtml(f.label)}</td><td>${escaparHtml(f.separator ?? "")}${escaparHtml(f.value)}</td></tr>`,
