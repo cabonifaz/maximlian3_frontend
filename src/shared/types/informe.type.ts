@@ -523,6 +523,7 @@ export interface DocumentoInformePagination {
   titleRowWeight?: number;
   longTextCharactersPerWeight?: number;
   longTextWeight?: number;
+  maxSplitCharacters?: number;
   reserveEndTableWeight?: number;
   keepTitleWithNext?: boolean;
   compactThreshold?: number;
@@ -557,6 +558,8 @@ export interface DocumentoInformeEstiloBase {
   headerAlign?: AlineacionDocumentoInforme;
   headerBold?: boolean;
   titleTextAlign?: AlineacionDocumentoInforme;
+  titleSpaceBefore?: number;
+  titleSpaceAfter?: number;
   tableAlign?: AlineacionDocumentoInforme;
   textAlign?: AlineacionDocumentoInforme;
   cellAlign?: AlineacionDocumentoInforme;
@@ -622,6 +625,8 @@ export interface DocumentoInformeBloqueTabla {
   headerAlign?: AlineacionDocumentoInforme;
   headerBold?: boolean;
   titleTextAlign?: AlineacionDocumentoInforme;
+  titleSpaceBefore?: number;
+  titleSpaceAfter?: number;
   tableAlign?: AlineacionDocumentoInforme;
   textAlign?: AlineacionDocumentoInforme;
   cellAlign?: AlineacionDocumentoInforme;

@@ -1,5 +1,6 @@
 import type { DocumentoInformeBloque, DocumentoInformeGenerado } from "@maximilian/shared/types/informe.type";
 import type { DatosInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 
 interface PropsCustomVisorDocumentoInforme {
@@ -62,6 +63,8 @@ type EstilosDocumento = {
   headerAlign?: string;
   headerBold?: boolean;
   titleTextAlign?: string;
+  titleSpaceBefore?: number;
+  titleSpaceAfter?: number;
   tableAlign?: string;
   textAlign?: string;
   cellAlign?: string;
@@ -83,6 +86,7 @@ const paginacionDocumentoPorDefecto: Required<ConfiguracionPaginacionDocumento> 
   titleRowWeight: 2.35,
   longTextCharactersPerWeight: 85,
   longTextWeight: 0.78,
+  maxSplitCharacters: 420,
   reserveEndTableWeight: 1.15,
   keepTitleWithNext: true,
   compactThreshold: 0.84,
@@ -152,7 +156,8 @@ function combinarEstilosDocumento(
 function obtenerEstiloTablaDocumento(estilos: EstilosDocumento): CSSProperties {
   const alineacionTabla = estilos.tableAlign ?? estilos.align;
   const estiloBase = obtenerEstiloDocumento(estilos);
-  const tieneBorde = estilos.borders === "single";
+  const celdasSinBorde = estilos.cellBorders === "none" || estilos.cellBorderValue === "nil" || estilos.cellBorderValue === "none";
+  const tieneBorde = estilos.borders === "single" && !celdasSinBorde;
   const tamanoBorde = tieneBorde ? Math.max((estilos.borderSize ?? 8) / 8, 1) : 0;
   return {
     ...estiloBase,
@@ -205,8 +210,11 @@ function obtenerEstiloCeldaTituloDocumento(
   estilos: EstilosDocumento,
   contexto?: { rowIndex?: number; rowCount?: number },
 ): CSSProperties {
+  const estiloBase = obtenerEstiloCeldaDocumento(estilos, contexto);
   return {
-    ...obtenerEstiloCeldaDocumento(estilos, contexto),
+    ...estiloBase,
+    paddingTop: obtenerDimensionDocumento(estilos.titleSpaceBefore) ?? estiloBase.paddingTop,
+    paddingBottom: obtenerDimensionDocumento(estilos.titleSpaceAfter) ?? estiloBase.paddingBottom,
     textAlign: (estilos.titleTextAlign
       ?? estilos.cellAlign
       ?? estilos.textAlign
@@ -552,8 +560,13 @@ function dividirTextoEnPartesDocumento(texto: string, longitudMaxima: number) {
 
   while (restante.length > longitudMaxima) {
     const corteBase = restante.slice(0, longitudMaxima);
+    const ultimoSalto = corteBase.lastIndexOf("\n");
     const ultimoEspacio = corteBase.lastIndexOf(" ");
-    const indiceCorte = ultimoEspacio > longitudMaxima * 0.65 ? ultimoEspacio : longitudMaxima;
+    const indiceCorte = ultimoSalto > longitudMaxima * 0.45
+      ? ultimoSalto + 1
+      : ultimoEspacio > longitudMaxima * 0.65
+        ? ultimoEspacio
+        : longitudMaxima;
     partes.push(restante.slice(0, indiceCorte).trim());
     restante = restante.slice(indiceCorte).trim();
   }
@@ -578,9 +591,21 @@ function dividirParrafoDocumento(
 
 function dividirFilasLargasDocumento(
   bloque: Extract<DocumentoInformeBloque, { type: "table" }>,
-  _valores: ValoresDocumento,
+  valores: ValoresDocumento,
+  paginacion: Required<ConfiguracionPaginacionDocumento>,
 ) {
-  return bloque.rows ?? [];
+  const filas = bloque.rows ?? [];
+  const totalColumnas = obtenerColumnasTabla(bloque);
+  if (totalColumnas !== 1) return filas;
+
+  const longitudMaxima = Math.max(paginacion.maxSplitCharacters, 220);
+
+  return filas.flatMap((fila) => {
+    if (esFilaTitulo(fila, totalColumnas, valores)) return [fila];
+    const texto = resolverTextoDocumento(fila[0], valores, fila[0]);
+    if (texto.length <= longitudMaxima) return [fila];
+    return dividirTextoEnPartesDocumento(texto, longitudMaxima).map((parte) => [parte]);
+  });
 }
 
 function dividirTablaDocumento(
@@ -589,9 +614,15 @@ function dividirTablaDocumento(
   maximoPeso: number,
   paginacion: Required<ConfiguracionPaginacionDocumento>,
 ): DocumentoInformeBloque[] {
-  const filas = dividirFilasLargasDocumento(bloque, valores);
+  const filas = dividirFilasLargasDocumento(bloque, valores, paginacion);
   const totalColumnas = obtenerColumnasTabla(bloque);
-  if (paginacion.keepTablesUnderRows > 0 && filas.length <= paginacion.keepTablesUnderRows) return [bloque];
+  const pesoTotalTabla = filas.reduce(
+    (total, fila) => total + obtenerPesoFilaTablaDocumento(fila, totalColumnas, valores, paginacion),
+    bloque.header?.length ? paginacion.tableHeaderWeight : 0,
+  );
+  if (paginacion.keepTablesUnderRows > 0 && filas.length <= paginacion.keepTablesUnderRows && pesoTotalTabla <= maximoPeso) {
+    return [{ ...bloque, rows: filas }];
+  }
 
   const reservaFinTabla = paginacion.reserveEndTableWeight;
   const tablas: DocumentoInformeBloque[] = [];
@@ -1055,25 +1086,51 @@ function CustomSeccionDocumentoRender({
 }
 
 export function CustomVisorDocumentoInforme({ documento, datosInvestigacion, encabezado }: PropsCustomVisorDocumentoInforme) {
+  const mainRefs = useRef<Array<HTMLElement | null>>([]);
   const margenes = documento.pageSetup?.margins;
   const orientacion = documento.pageSetup?.orientation ?? "portrait";
   const anchoPagina = orientacion === "landscape" ? "11.69in" : "8.27in";
   const altoMinimo = orientacion === "landscape" ? "8.27in" : "11.69in";
   const distanciaHeader = obtenerDimensionDocumento(documento.pageSetup?.headerDistance ?? 0.5, "in");
   const distanciaFooter = obtenerDimensionDocumento(documento.pageSetup?.footerDistance ?? 0.5, "in");
-  const paginacion = { ...paginacionDocumentoPorDefecto, ...documento.pagination };
   const gapBloques = obtenerGapDocumento(documento.layout?.blockGap, documento.layout?.unit ?? "rem");
   const gapSeccion = obtenerGapDocumento(documento.layout?.sectionGap, documento.layout?.unit ?? "rem");
-  const valores = construirValoresDocumento(datosInvestigacion, encabezado);
-  const listas = construirListasDocumento(datosInvestigacion);
-  const maximoPesoPagina = orientacion === "landscape" ? paginacion.maxPageWeightLandscape : paginacion.maxPageWeightPortrait;
-  const maximoPesoTabla = orientacion === "landscape" ? paginacion.maxTableWeightLandscape : paginacion.maxTableWeightPortrait;
-  const bloquesRender = expandirBloquesDocumento(documento.body, valores, listas, maximoPesoTabla, paginacion);
-  const paginas = compactarPaginasDocumento(
-    paginarBloquesDocumento(bloquesRender, maximoPesoPagina, paginacion),
-    maximoPesoPagina,
-    paginacion,
-  );
+  const valores = useMemo(() => construirValoresDocumento(datosInvestigacion, encabezado), [datosInvestigacion, encabezado]);
+  const listas = useMemo(() => construirListasDocumento(datosInvestigacion), [datosInvestigacion]);
+  const paginasBase = useMemo(() => {
+    const paginacion = { ...paginacionDocumentoPorDefecto, ...documento.pagination };
+    const maximoPesoPagina = orientacion === "landscape" ? paginacion.maxPageWeightLandscape : paginacion.maxPageWeightPortrait;
+    const maximoPesoTabla = orientacion === "landscape" ? paginacion.maxTableWeightLandscape : paginacion.maxTableWeightPortrait;
+    const bloquesRender = expandirBloquesDocumento(documento.body, valores, listas, maximoPesoTabla, paginacion);
+    return compactarPaginasDocumento(
+      paginarBloquesDocumento(bloquesRender, maximoPesoPagina, paginacion),
+      maximoPesoPagina,
+      paginacion,
+    );
+  }, [documento, listas, orientacion, valores]);
+  const [paginas, setPaginas] = useState(paginasBase);
+
+  useEffect(() => {
+    setPaginas(paginasBase);
+  }, [paginasBase]);
+
+  useLayoutEffect(() => {
+    setPaginas((paginasActuales) => {
+      for (let indicePagina = 0; indicePagina < paginasActuales.length; indicePagina += 1) {
+        const main = mainRefs.current[indicePagina];
+        if (!main || main.scrollHeight <= main.clientHeight + 2 || paginasActuales[indicePagina].length <= 1) continue;
+
+        const paginasSiguientes = paginasActuales.map((pagina) => [...pagina]);
+        const bloqueMovido = paginasSiguientes[indicePagina].pop();
+        if (!bloqueMovido) return paginasActuales;
+        if (!paginasSiguientes[indicePagina + 1]) paginasSiguientes[indicePagina + 1] = [];
+        paginasSiguientes[indicePagina + 1].unshift(bloqueMovido);
+        return paginasSiguientes;
+      }
+
+      return paginasActuales;
+    });
+  }, [paginas]);
 
   return (
     <div className="space-y-6 overflow-x-auto pb-4">
@@ -1108,7 +1165,12 @@ export function CustomVisorDocumentoInforme({ documento, datosInvestigacion, enc
             />
           </header>
 
-          <main className="min-h-0 grow">
+          <main
+            ref={(elemento) => {
+              mainRefs.current[indicePagina] = elemento;
+            }}
+            className="min-h-0 grow"
+          >
             <CustomSeccionDocumentoRender
               bloques={bloquesPagina}
               listas={listas}
