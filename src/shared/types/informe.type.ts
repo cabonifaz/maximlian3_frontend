@@ -561,6 +561,7 @@ export interface DocumentoInformeEstiloBase {
   textAlign?: AlineacionDocumentoInforme;
   cellAlign?: AlineacionDocumentoInforme;
   headerTextAlign?: AlineacionDocumentoInforme;
+  whiteSpace?: "normal" | "pre-line" | "pre-wrap";
 }
 
 export interface DocumentoInformeBloqueParrafo {
@@ -625,6 +626,7 @@ export interface DocumentoInformeBloqueTabla {
   textAlign?: AlineacionDocumentoInforme;
   cellAlign?: AlineacionDocumentoInforme;
   headerTextAlign?: AlineacionDocumentoInforme;
+  whiteSpace?: "normal" | "pre-line" | "pre-wrap";
 }
 
 export interface DocumentoInformeBloqueEach {

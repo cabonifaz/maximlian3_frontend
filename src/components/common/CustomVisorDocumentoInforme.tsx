@@ -66,6 +66,7 @@ type EstilosDocumento = {
   textAlign?: string;
   cellAlign?: string;
   headerTextAlign?: string;
+  whiteSpace?: string;
 };
 type EstilosDocumentoCatalogo = DocumentoInformeGenerado["styles"];
 type ConfiguracionPaginacionDocumento = NonNullable<DocumentoInformeGenerado["pagination"]>;
@@ -189,6 +190,7 @@ function obtenerEstiloCeldaDocumento(
     borderStyle: tieneBorde ? "solid" : "none",
     borderColor: estilos.borderColor ? `#${estilos.borderColor}` : undefined,
     textAlign: (estilos.cellAlign ?? estilos.textAlign ?? "left") as CSSProperties["textAlign"],
+    whiteSpace: estilos.whiteSpace as CSSProperties["whiteSpace"],
   };
 }
 
