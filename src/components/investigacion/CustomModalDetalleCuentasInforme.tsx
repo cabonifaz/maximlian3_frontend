@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Calculator,
@@ -182,12 +182,12 @@ function CampoDetalle({
 
   return (
     <div
-      className={`space-y-2 rounded-lg ${azul ? "border border-blue-200 bg-blue-50 p-3" : destacado ? "border border-brand-wine/20 bg-brand-wine/5 p-3" : ""} ${claseContenedor}`}
+      className={`space-y-2 rounded-lg border p-3 transition-colors ${azul ? "border-blue-200 bg-blue-50" : destacado ? "border-brand-wine/25 bg-white shadow-sm ring-1 ring-brand-wine/5" : "border-slate-200 bg-white hover:border-slate-300"} ${claseContenedor}`}
     >
       <div className="flex items-center justify-between gap-3">
         <CustomLabel
           as="p"
-          className={`text-[10px] font-bold uppercase tracking-[0.12em] ${azul ? "text-blue-700" : destacado ? "text-brand-wine" : "text-slate-600"}`}
+          className={`text-[10px] font-bold uppercase leading-4 tracking-[0.12em] ${azul ? "text-blue-700" : destacado ? "text-brand-wine" : "text-slate-600"}`}
         >
           {etiqueta}
         </CustomLabel>
@@ -222,7 +222,7 @@ function CampoDetalle({
         }}
         onFocus={seleccionarTextoCampoEditable}
         placeholder="0.00"
-        className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:text-slate-500 ${azul ? "border-blue-300 bg-blue-100 text-blue-800 disabled:bg-blue-100 disabled:text-blue-700" : destacado ? "border-brand-wine/20 bg-white text-brand-wine disabled:bg-brand-wine/5 disabled:text-brand-wine/70" : "border-gray-200 bg-slate-50 text-slate-600 disabled:bg-slate-100 disabled:text-slate-400"} ${negrita || destacado || azul ? "font-bold" : ""}`}
+        className={`h-10 w-full rounded-md border px-3 text-right text-sm tabular-nums outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:text-slate-500 ${azul ? "border-blue-300 bg-blue-100 text-blue-800 disabled:bg-blue-100 disabled:text-blue-700" : destacado ? "border-brand-wine/20 bg-brand-wine/5 text-brand-wine disabled:bg-brand-wine/5 disabled:text-brand-wine/70" : "border-slate-200 bg-white text-slate-700 disabled:bg-slate-100 disabled:text-slate-400"} ${negrita || destacado || azul ? "font-bold" : ""}`}
       />
     </div>
   );
@@ -433,6 +433,122 @@ function normalizarTexto(valor?: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
+}
+
+function obtenerGrupoVisualTurquia(campoId: string) {
+  if (
+    [
+      "year",
+      "balance-date",
+      "currency",
+      "currency-iso",
+      "length-period",
+      "reliability-level",
+      "exchange-rate",
+      "balance-date-p",
+      "currency-p",
+      "exchange-rate-p",
+    ].includes(campoId)
+  ) {
+    return "Datos del periodo";
+  }
+
+  if (["cash", "stocks", "creditors", "current-total"].includes(campoId)) {
+    return "Activo corriente";
+  }
+
+  if (
+    [
+      "tangible-assets",
+      "intangible-assets",
+      "net-fixed",
+      "total-assets-turquia",
+    ].includes(campoId)
+  ) {
+    return "Activo no corriente";
+  }
+
+  if (
+    [
+      "loans",
+      "debtors",
+      "current-liabilities",
+      "non-current-liabilities",
+      "long-term-liabilities",
+      "total-non-current-liabilities",
+      "total-liabilities",
+    ].includes(campoId)
+  ) {
+    return "Pasivo";
+  }
+
+  if (
+    [
+      "capital",
+      "reserves",
+      "retained-earnings",
+      "profit-loss-for-year",
+      "other-accounts",
+      "total-equity",
+      "total-liabilities-equity",
+    ].includes(campoId)
+  ) {
+    return "Patrimonio";
+  }
+
+  if (
+    ["turnover", "costs-goods-sold", "material-costs", "gross-profit"].includes(
+      campoId,
+    )
+  ) {
+    return "Ventas y costo";
+  }
+
+  if (
+    [
+      "other-operating-expenses",
+      "costs-employees",
+      "depreciation",
+    ].includes(campoId)
+  ) {
+    return "Gastos operativos";
+  }
+
+  if (
+    [
+      "financial-revenue",
+      "financial-expenses",
+      "interest-paid",
+      "financial-pl",
+    ].includes(campoId)
+  ) {
+    return "Resultado financiero";
+  }
+
+  if (
+    [
+      "extra-other-revenue",
+      "extra-other-expenses",
+      "extra-other-pl",
+    ].includes(campoId)
+  ) {
+    return "Otros resultados";
+  }
+
+  if (
+    [
+      "profit-loss-before-taxes",
+      "taxation",
+      "profit-loss-after-taxes",
+      "ebit",
+      "ebitda",
+      "profit",
+    ].includes(campoId)
+  ) {
+    return "Cierre del periodo";
+  }
+
+  return "";
 }
 
 export function CustomModalDetalleCuentasAnalista({
@@ -685,8 +801,15 @@ export function CustomModalDetalleCuentasAnalista({
     );
 
   const renderizarControlesHabilitacion = () => (
-    <div className="flex flex-col gap-3 md:flex-row">
-      <label className="flex items-center gap-3 rounded-xl border border-gray-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+    <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 md:flex-row">
+      <label
+        className={`flex flex-1 cursor-pointer items-center justify-between gap-4 rounded-md border px-4 py-3 text-sm font-semibold transition-colors ${
+          registrosHabilitados
+            ? "border-brand-wine/30 bg-brand-wine/5 text-brand-wine"
+            : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300"
+        }`}
+      >
+        <span>Habilitar Registros</span>
         <input
           type="checkbox"
           checked={registrosHabilitados}
@@ -699,11 +822,17 @@ export function CustomModalDetalleCuentasAnalista({
           }}
           className="h-4 w-4 accent-brand-wine"
         />
-        Habilitar Registros
       </label>
 
       {mostrarControlTotales ? (
-        <label className="flex items-center gap-3 rounded-xl border border-gray-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+        <label
+          className={`flex flex-1 cursor-pointer items-center justify-between gap-4 rounded-md border px-4 py-3 text-sm font-semibold transition-colors ${
+            totalesHabilitados
+              ? "border-brand-wine/30 bg-brand-wine/5 text-brand-wine"
+              : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300"
+          }`}
+        >
+          <span>Habilitar Totales</span>
           <input
             type="checkbox"
             checked={totalesHabilitados}
@@ -716,7 +845,6 @@ export function CustomModalDetalleCuentasAnalista({
             }}
             className="h-4 w-4 accent-brand-wine"
           />
-          Habilitar Totales
         </label>
       ) : null}
     </div>
@@ -906,22 +1034,29 @@ export function CustomModalDetalleCuentasAnalista({
     secciones,
     bloquearTodos = false,
     usarHabilitacionTotales = false,
+    accionEncabezado,
   }: {
     secciones: typeof seccionesEstadoFinanciero;
     bloquearTodos?: boolean;
     usarHabilitacionTotales?: boolean;
+    accionEncabezado?: ReactNode;
   }) => (
     <div className="space-y-5">
-      {secciones.map((seccion) => (
+      {secciones.map((seccion, indiceSeccion) => (
         <div
           key={seccion.id}
-          className="space-y-4 rounded-2xl border border-gray-100 p-4"
+          className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
         >
-          <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">
-            {seccion.titulo}
-          </h3>
+          <div className="flex flex-col gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="border-l-4 border-brand-wine pl-3">
+              <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">
+                {seccion.titulo}
+              </h3>
+            </div>
+            {indiceSeccion === 0 ? accionEncabezado : null}
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
-            {seccion.campos.map((campo) => {
+            {seccion.campos.map((campo, indiceCampo) => {
               const esTotal = esCampoTotalConfigurado(campo.etiqueta);
               const esCalculado = camposCalculadosEstadoFinanciero.has(
                 campo.id,
@@ -943,39 +1078,59 @@ export function CustomModalDetalleCuentasAnalista({
               const deshabilitado = deshabilitadoBase || esCalculado;
               const tipoEntradaCampo =
                 obtenerTipoEntradaCampoEstadoFinanciero(campo);
+              const grupoVisual = esEstadoFinancieroTurquia
+                ? obtenerGrupoVisualTurquia(campo.id)
+                : "";
+              const grupoVisualAnterior =
+                esEstadoFinancieroTurquia && indiceCampo > 0
+                  ? obtenerGrupoVisualTurquia(seccion.campos[indiceCampo - 1].id)
+                  : "";
+              const encabezadoGrupo =
+                grupoVisual && grupoVisual !== grupoVisualAnterior ? (
+                  <div className="md:col-span-2">
+                    <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 first:mt-0">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600">
+                        {grupoVisual}
+                      </span>
+                    </div>
+                  </div>
+                ) : null;
+              const envolverCampo = (contenido: ReactNode) => (
+                <div key={campo.id} className="contents">
+                  {encabezadoGrupo}
+                  {contenido}
+                </div>
+              );
 
               if (tipoEntradaCampo === "selector-ano") {
-                return (
+                return envolverCampo(
                   <CampoDetalleAno
-                    key={campo.id}
                     etiqueta={campo.etiqueta}
                     valor={valorCampo}
                     onChange={(valor) =>
                       actualizarRegistroEstadoFinanciero(campo.id, valor)
                     }
                     deshabilitado={deshabilitado}
-                  />
+                  />,
                 );
               }
 
               if (tipoEntradaCampo === "fecha") {
-                return (
+                return envolverCampo(
                   <CampoDetalleFecha
-                    key={campo.id}
                     etiqueta={campo.etiqueta}
                     valor={valorCampo}
                     onChange={(valor) =>
                       actualizarRegistroEstadoFinanciero(campo.id, valor)
                     }
                     deshabilitado={deshabilitado}
-                  />
+                  />,
                 );
               }
 
               if (tipoEntradaCampo === "entero") {
-                return (
+                return envolverCampo(
                   <CampoDetalleEntero
-                    key={campo.id}
                     etiqueta={campo.etiqueta}
                     valor={valorCampo}
                     onChange={(valor) =>
@@ -983,7 +1138,7 @@ export function CustomModalDetalleCuentasAnalista({
                     }
                     deshabilitado={deshabilitado}
                     placeholder={obtenerPlaceholderCampoEntero(campo.etiqueta)}
-                  />
+                  />,
                 );
               }
 
@@ -997,8 +1152,8 @@ export function CustomModalDetalleCuentasAnalista({
                     ? opcionesMoneda?.find((o) => o.num1 === idNumericoMoneda)
                     : opcionesMoneda?.find((o) => o.string1 === valorCampo);
 
-                return (
-                  <div key={campo.id} className="space-y-2">
+                return envolverCampo(
+                  <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3 transition-colors hover:border-slate-300">
                     <CustomLabel
                       as="p"
                       className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
@@ -1049,7 +1204,7 @@ export function CustomModalDetalleCuentasAnalista({
                       placeholder="Seleccione moneda"
                       disabled={deshabilitado}
                     />
-                  </div>
+                  </div>,
                 );
               }
 
@@ -1063,8 +1218,8 @@ export function CustomModalDetalleCuentasAnalista({
                     ? opcionesMoneda?.find((o) => o.num1 === idNumericoIso)
                     : opcionesMoneda?.find((o) => o.string2 === valorCampo);
 
-                return (
-                  <div key={campo.id} className="space-y-2">
+                return envolverCampo(
+                  <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3 transition-colors hover:border-slate-300">
                     <CustomLabel
                       as="p"
                       className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
@@ -1106,13 +1261,13 @@ export function CustomModalDetalleCuentasAnalista({
                       placeholder="Seleccione ISO"
                       disabled={deshabilitado}
                     />
-                  </div>
+                  </div>,
                 );
               }
 
               if (tipoEntradaCampo === "selector-confiabilidad") {
-                return (
-                  <div key={campo.id}>
+                return envolverCampo(
+                  <div className="rounded-lg border border-slate-200 bg-white p-3 transition-colors hover:border-slate-300">
                     <SelectorMaestroConAltaInvestigacionAnalista
                       etiqueta={campo.etiqueta}
                       valor={valorCampo}
@@ -1126,13 +1281,12 @@ export function CustomModalDetalleCuentasAnalista({
                         actualizarRegistroEstadoFinanciero(campo.id, valor)
                       }
                     />
-                  </div>
+                  </div>,
                 );
               }
 
-              return (
+              return envolverCampo(
                 <CampoDetalle
-                  key={campo.id}
                   etiqueta={campo.etiqueta}
                   valor={valorCampo}
                   onChange={(valor) =>
@@ -1156,13 +1310,28 @@ export function CustomModalDetalleCuentasAnalista({
                     mutacionCalcular.variables === campo.id
                   }
                   azul={esEstadoFinancieroTurquia && campo.id === "profit"}
-                />
+                />,
               );
             })}
           </div>
         </div>
       ))}
     </div>
+  );
+
+  const renderizarBotonCalcularRatios = () => (
+    <CustomButton
+      type="button"
+      variant="wine"
+      size="sm"
+      className="h-8 shrink-0 px-3 text-xs"
+      loading={mutacionCalcularRatios.isPending}
+      loadingText="Calculando ratios..."
+      onClick={() => mutacionCalcularRatios.mutate()}
+    >
+      <Calculator size={16} />
+      Calcular ratios
+    </CustomButton>
   );
 
   const tabs = [
@@ -1327,27 +1496,24 @@ export function CustomModalDetalleCuentasAnalista({
       tooltip:
         "Los ratios se habilitan para estados financieros Desagregado, Totalizado o Turquía.",
       content: (
-        <div className="space-y-1">
-          <div className="flex justify-end">
-            <CustomButton
-              type="button"
-              variant="wine"
-              size="sm"
-              loading={mutacionCalcularRatios.isPending}
-              loadingText="Calculando ratios..."
-              onClick={() => mutacionCalcularRatios.mutate()}
-            >
-              <Calculator size={16} />
-              Calcular ratios
-            </CustomButton>
-          </div>
+        <div className="space-y-5">
           {seccionesRatiosConfiguradas.length > 0 ? (
             renderizarCamposConfigurados({
               secciones: seccionesRatiosConfiguradas,
               bloquearTodos: true,
+              accionEncabezado: renderizarBotonCalcularRatios(),
             })
           ) : (
-            <div className="grid gap-8 md:grid-cols-2">
+            <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-col gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="border-l-4 border-brand-wine pl-3">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-brand-black">
+                    Ratios
+                  </h3>
+                </div>
+                {renderizarBotonCalcularRatios()}
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
               <CampoDetalle
                 etiqueta="Índice de Liquidez"
                 valor={detalle.ratios.liquidez}
@@ -1382,6 +1548,7 @@ export function CustomModalDetalleCuentasAnalista({
                 mostrarComoPorcentaje
                 deshabilitado
               />
+              </div>
             </div>
           )}
         </div>
@@ -1482,15 +1649,20 @@ export function CustomModalDetalleCuentasAnalista({
       onClose={onCerrar}
       title="Detalle de Cuentas"
       subtitle={
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
-          Gestión de cuentas contables
-        </p>
+        <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em]">
+          <span className="text-[#8ea0c0]">Gestion de cuentas contables</span>
+          {tipoEstadoFinanciero ? (
+            <span className="rounded-full bg-brand-wine/10 px-2.5 py-1 text-brand-wine">
+              {tipoEstadoFinanciero}
+            </span>
+          ) : null}
+        </div>
       }
       tabs={tabs}
       activeTab={pestanaActiva}
       onTabChange={setPestanaActiva}
       tabVariant="underline"
-      maxWidth="max-w-5xl"
+      maxWidth="max-w-6xl"
       footer={
         <div className="flex justify-end gap-3">
           <CustomButton

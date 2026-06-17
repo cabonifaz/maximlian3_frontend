@@ -5835,6 +5835,7 @@ function PantallaInvestigacionAnalista({
       <CustomModalVistaPreviaInforme
         estaAbierto={estaAbiertoVistaPreviaFinalizar}
         datosInvestigacion={datosInvestigacion}
+        idPedido={Number.isFinite(Number(idPedido)) ? Number(idPedido) : undefined}
         encabezado={{
           pais: resumenEncabezado.pais || "-",
           fecha: new Date().toLocaleDateString("es-PE"),

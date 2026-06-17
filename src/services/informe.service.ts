@@ -12,10 +12,12 @@ import type {
   InformeActualizarArchivoRequest,
   InformeCrearRequest,
   InformeCrearResponse,
+  DocumentoInformeGenerado,
   InformeEliminarArchivoRequest,
   InformeExtraerDocumentoRequest,
   InformeExtraccionResponse,
   InformeGenerarUrlsArchivoRequest,
+  InformeGenerarUrlsArchivoResponse,
   InformeInsertarArchivoLoteRequest,
   InformeInsertarArchivoLoteResponse,
   InformeListEntry,
@@ -511,6 +513,15 @@ function normalizarUrlsArchivoGeneradas(resultado: unknown): InformeUrlArchivoGe
       archivoUrl,
     };
   });
+}
+
+function normalizarRespuestaUrlsArchivo(resultado: unknown): InformeGenerarUrlsArchivoResponse {
+  const registro = obtenerRegistro(resultado);
+
+  return {
+    idInforme: obtenerNumero(registro.idInforme, registro.IdInforme) || undefined,
+    archivos: normalizarUrlsArchivoGeneradas(resultado),
+  };
 }
 
 function normalizarRespuestaExtraccion(resultado: unknown): InformeExtraccionResponse {
@@ -1493,9 +1504,23 @@ export const informeService = {
     return enriquecerRespuestaObtener(normalizarRespuestaObtener(data.result));
   },
 
+  generarDocumento: async (idPedido: number): Promise<DocumentoInformeGenerado> => {
+    const { data } = await maximilianService.get<ApiResponse<DocumentoInformeGenerado>>("/api/Informe/generarDocumento", {
+      params: {
+        IdPedido: idPedido,
+      },
+    });
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/generarDocumento")) {
+      throw new Error(data.mensaje || "No se pudo generar el documento del informe");
+    }
+
+    return data.result;
+  },
+
   generarUrlsArchivo: async (
     payload: InformeGenerarUrlsArchivoRequest,
-  ): Promise<InformeUrlArchivoGenerada[]> => {
+  ): Promise<InformeGenerarUrlsArchivoResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
       "/api/Informe/generarUrlsArchivo",
       payload,
@@ -1505,12 +1530,12 @@ export const informeService = {
       throw new Error(data.mensaje || "No se pudieron generar las URLs de los archivos");
     }
 
-    const urls = normalizarUrlsArchivoGeneradas(data.result);
-    if (urls.some((archivo) => !archivo.nombre || !archivo.uploadUrl || !archivo.archivoUrl)) {
+    const respuesta = normalizarRespuestaUrlsArchivo(data.result);
+    if (respuesta.archivos.some((archivo) => !archivo.nombre || !archivo.uploadUrl || !archivo.archivoUrl)) {
       throw new Error("La respuesta de URLs de archivos es invalida");
     }
 
-    return urls;
+    return respuesta;
   },
 
   insertarArchivoLote: async (

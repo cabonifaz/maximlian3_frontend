@@ -4,7 +4,9 @@ import { FileText } from "lucide-react";
 import type { DatosInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 import { seccionesInvestigacionAnalista } from "@maximilian/shared/utils/datos-simulados-investigacion";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { informeService } from "@maximilian/services/informe.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { CustomVisorDocumentoInforme } from "@maximilian/components/common/CustomVisorDocumentoInforme";
 
 interface FilaVistaPreviaInforme {
   etiqueta: string;
@@ -64,6 +66,7 @@ interface PropsTarjetaVistaPreviaInforme {
 interface PropsVistaPreviaInformeComparado {
   datosInvestigacion: DatosInvestigacionAnalista;
   encabezado: EncabezadoVistaPreviaInforme;
+  idPedido?: number;
   indicadorReporteTraducido?: string;
   mostrarInformeTraducido?: boolean;
   className?: string;
@@ -1032,12 +1035,25 @@ function CustomTarjetaVistaPreviaInforme({
 export function CustomVistaPreviaInformeComparado({
   datosInvestigacion,
   encabezado,
+  idPedido,
   indicadorReporteTraducido = "En traducción",
   mostrarInformeTraducido = true,
   className = "space-y-6",
   contenidoEntreTabsYTarjetas,
 }: PropsVistaPreviaInformeComparado) {
   const [idTabActiva, setIdTabActiva] = useState<IdTabVistaPreviaInforme>("vista-general");
+  const idPedidoDocumento = Number(idPedido);
+
+  const {
+    data: documentoGenerado,
+    isLoading: estaCargandoDocumento,
+    isError: errorDocumento,
+  } = useQuery({
+    queryKey: ["informe-documento-generado", idPedidoDocumento],
+    queryFn: () => informeService.generarDocumento(idPedidoDocumento),
+    enabled: Number.isFinite(idPedidoDocumento) && idPedidoDocumento > 0,
+    staleTime: 0,
+  });
 
   const { data: opcionesTiempoCredito } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIEMPO_CREDITO_VENTAS],
@@ -1056,6 +1072,29 @@ export function CustomVistaPreviaInformeComparado({
       : seccionesVistaPrevia.filter((seccion) => seccion.id === idTabActiva)),
     [idTabActiva, seccionesVistaPrevia],
   );
+
+  if (Number.isFinite(idPedidoDocumento) && idPedidoDocumento > 0) {
+    return (
+      <div className={className}>
+        {contenidoEntreTabsYTarjetas}
+        {estaCargandoDocumento ? (
+          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-500 shadow-sm">
+            Generando vista previa del documento...
+          </div>
+        ) : documentoGenerado ? (
+          <CustomVisorDocumentoInforme
+            documento={documentoGenerado}
+            datosInvestigacion={datosInvestigacion}
+            encabezado={encabezado}
+          />
+        ) : (
+          <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500 shadow-sm">
+            {errorDocumento ? "No se pudo generar la vista previa del documento." : "No hay documento disponible para mostrar."}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={className}>
