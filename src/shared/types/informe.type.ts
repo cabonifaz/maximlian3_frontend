@@ -665,6 +665,8 @@ export interface DocumentoInformeSangria {
 
 export interface DocumentoInformeGenerado {
   html?: string;
+  document?: PlantillaDocumentoConfig;
+  sections?: PlantillaSeccion[];
   pageSetup?: DocumentoInformePageSetup;
   layout?: DocumentoInformeLayout;
   pagination?: DocumentoInformePagination;
@@ -673,6 +675,39 @@ export interface DocumentoInformeGenerado {
   footer?: DocumentoInformeSeccion;
   body?: DocumentoInformeBloque[];
 }
+
+export interface PlantillaIndent {
+  left?: string;
+  right?: string;
+}
+
+export interface PlantillaDocumentoConfig {
+  pageSize?: { width?: string; height?: string };
+  margins?: { top?: string; bottom?: string; left?: string; right?: string };
+  contentIndent?: PlantillaIndent;
+  footerIndent?: PlantillaIndent;
+  headingIndent?: PlantillaIndent;
+  font?: { family?: string; size?: string; lineSpacing?: number };
+  header?: { logo?: string; logoWidth?: string; logoHeight?: string; align?: string };
+  footer?: { text?: string; fontSize?: string; align?: string; showPageNumber?: boolean };
+}
+
+export interface PlantillaFilaEtiquetaValor {
+  label: string;
+  value: string;
+  separator?: string;
+}
+
+export type PlantillaSeccion =
+  | { type: "heading"; level?: number; text: string; fontSize?: string }
+  | { type: "subtitle"; text: string }
+  | { type: "text"; field: string }
+  | { type: "keyValue"; labelWidth?: string; rows: PlantillaFilaEtiquetaValor[] }
+  | { type: "borderedBox"; title: string; content?: string; rows?: PlantillaFilaEtiquetaValor[] }
+  | { type: "referenceBox"; fontSize?: string; title: string; items: string[] }
+  | { type: "dataTable"; source?: string; columns: { header: string; field: string }[]; rows?: string[][] }
+  | { type: "repeat"; source?: string; sections: PlantillaSeccion[] }
+  | { type: "repeatDetail"; source?: string; titleField?: string; contentField?: string; items?: { title: string; content: string }[] };
 
 export interface InformeGenerarUrlsArchivoRequest {
   idPedido: number;
