@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { Previewer } from "pagedjs";
+import { useEffect, useRef, useState, useCallback } from "react";
+// @ts-expect-error Vite raw import bypasses package exports
+import pagedJsSource from "../../../node_modules/pagedjs/dist/paged.polyfill.js?raw";
 import type {
   DocumentoInformeGenerado,
   PlantillaDocumentoConfig,
@@ -98,7 +99,7 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
   }
 }
 
-function construirCssPagedJs(config: PlantillaDocumentoConfig): string {
+function construirCss(config: PlantillaDocumentoConfig): string {
   const ancho = config.pageSize?.width ?? "8.27in";
   const alto = config.pageSize?.height ?? "11.69in";
   const mt = config.margins?.top ?? "0.5in";
@@ -130,7 +131,6 @@ function construirCssPagedJs(config: PlantillaDocumentoConfig): string {
       @top-center {
         content: element(encabezado-logo);
         vertical-align: bottom;
-        text-align: center;
       }
       @bottom-center {
         content: element(pie-pagina);
@@ -170,11 +170,19 @@ function construirCssPagedJs(config: PlantillaDocumentoConfig): string {
       display: block;
     }
 
-    body, .sr-contenido {
+    body {
       font-family: ${fuente};
       font-size: ${tamano};
       line-height: ${interlineado};
       color: #000;
+      margin: 0;
+      padding: 0;
+      background: #f1f5f9;
+    }
+
+    .sr-contenido {
+      padding-left: ${ciL};
+      padding-right: ${ciR};
     }
 
     .pagedjs_pages {
@@ -184,22 +192,20 @@ function construirCssPagedJs(config: PlantillaDocumentoConfig): string {
     }
 
     .pagedjs_page {
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
       margin-bottom: 20px;
+      background: #fff;
     }
 
     .sr-title {
       text-align: center;
       font-weight: 700;
+      font-size: ${tamano};
       line-height: 1.6;
       margin: 14pt 0 5pt;
       padding-left: ${hiL};
       padding-right: ${hiR};
       break-after: avoid;
-    }
-
-    .sr-contenido {
-      padding-left: ${ciL};
-      padding-right: ${ciR};
     }
 
     .sr-subtitle {
@@ -283,12 +289,6 @@ function construirCssPagedJs(config: PlantillaDocumentoConfig): string {
       padding: 0.01in;
     }
 
-    .pagedjs_page {
-      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
-      margin-bottom: 20px;
-      background: #fff;
-    }
-
     .sr-pie-texto {
       ${pieTexto ? "" : "display: none;"}
     }
@@ -316,38 +316,66 @@ function construirHtmlContenido(
 }
 
 export function CustomVisorDocumentoInforme({ documento }: PropsCustomVisorDocumentoInforme) {
-  const contenedorRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const blobUrlRef = useRef<string | null>(null);
   const [estaPaginando, setEstaPaginando] = useState(false);
+  const [alturaIframe, setAlturaIframe] = useState(600);
   const [error, setError] = useState<string | null>(null);
-  const previewerRef = useRef<Previewer | null>(null);
+
+  const ajustarAltura = useCallback(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    try {
+      const doc = iframe.contentDocument;
+      if (doc) {
+        const altura = doc.documentElement.scrollHeight;
+        if (altura > 100) {
+          setAlturaIframe(altura + 40);
+          setEstaPaginando(false);
+          return;
+        }
+      }
+    } catch { /* cross-origin fallback */ }
+    setTimeout(ajustarAltura, 300);
+  }, []);
 
   useEffect(() => {
-    if (!documento.sections || !documento.document || !contenedorRef.current) return;
+    if (!documento.sections || !documento.document || !iframeRef.current) return;
 
-    const contenedor = contenedorRef.current;
-    contenedor.innerHTML = "";
     setEstaPaginando(true);
     setError(null);
 
-    const css = construirCssPagedJs(documento.document);
-    const html = construirHtmlContenido(documento.document, documento.sections);
+    const css = construirCss(documento.document);
+    const contenido = construirHtmlContenido(documento.document, documento.sections);
 
-    const previewer = new Previewer();
-    previewerRef.current = previewer;
+    const htmlCompleto = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>${css}</style>
+</head>
+<body>
+${contenido}
+<script>${pagedJsSource}<\/script>
+</body>
+</html>`;
 
-    previewer
-      .preview(html, [{ "inline-styles": css }], contenedor)
-      .then(() => setEstaPaginando(false))
-      .catch(() => {
-        setError("Error al generar la vista previa.");
-        setEstaPaginando(false);
-      });
+    if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    const blob = new Blob([htmlCompleto], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    blobUrlRef.current = url;
+
+    const iframe = iframeRef.current;
+    iframe.onload = () => setTimeout(ajustarAltura, 800);
+    iframe.src = url;
 
     return () => {
-      previewerRef.current = null;
-      contenedor.innerHTML = "";
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
     };
-  }, [documento]);
+  }, [documento, ajustarAltura]);
 
   if (documento.sections && documento.document) {
     return (
@@ -362,7 +390,16 @@ export function CustomVisorDocumentoInforme({ documento }: PropsCustomVisorDocum
             {error}
           </div>
         )}
-        <div ref={contenedorRef} className="mx-auto" style={{ background: "#f1f5f9" }} />
+        <iframe
+          ref={iframeRef}
+          title="Vista previa del documento"
+          style={{
+            width: "100%",
+            height: `${alturaIframe}px`,
+            border: "none",
+            display: estaPaginando ? "none" : "block",
+          }}
+        />
       </div>
     );
   }
