@@ -28,24 +28,26 @@ function escaparHtml(texto: string): string {
 }
 
 function renderizarSeccion(seccion: PlantillaSeccion): string {
+  const sec = seccion as Record<string, unknown>;
+  const secStyle = sec.style ? ` style="${sec.style}"` : "";
+
   switch (seccion.type) {
     case "heading": {
       const tag = seccion.level === 1 ? "h1" : "h2";
-      const estilo = seccion.fontSize ? ` style="font-size:${seccion.fontSize}"` : "";
-      return `<${tag} class="sr-title"${estilo}>${escaparHtml(seccion.text)}</${tag}>`;
+      return `<${tag}${secStyle}>${escaparHtml(seccion.text)}</${tag}>`;
     }
 
     case "subtitle":
-      return `<div class="sr-subtitle">${escaparHtml(seccion.text)}</div>`;
+      return `<div${secStyle}>${escaparHtml(seccion.text)}</div>`;
 
     case "text":
-      return `<div class="sr-text">${escaparHtml(seccion.field)}</div>`;
+      return `<div${secStyle}>${escaparHtml(seccion.field)}</div>`;
 
     case "keyValue": {
       const kv = seccion as Record<string, unknown>;
-      const kvStyleAttr = seccion.style ? ` style="${seccion.style}"` : "";
+      const kvStyle = kv.style ? ` style="${kv.style}"` : "";
       const kvLblStyle = kv.labelStyle ? ` style="${kv.labelStyle}"` : "";
-      return `<table class="sr-table"${kvStyleAttr}><tbody>${seccion.rows
+      return `<table${kvStyle}><tbody>${seccion.rows
         .map(
           (f) =>
             `<tr><td${kvLblStyle}>${escaparHtml(f.label)}</td><td>${escaparHtml(f.separator ?? "")}${escaparHtml(f.value)}</td></tr>`,
@@ -60,10 +62,10 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
       const valStyle = box.valueStyle ? ` style="${box.valueStyle}"` : "";
       const titleStyle = box.titleStyle ? ` style="${box.titleStyle}"` : "";
       const rows = (box.rows ?? []) as Record<string, unknown>[];
-      const cols = rows.length > 0 ? 2 : (seccion.content ? 1 : 1);
       let filas = `<tr><td colspan="2"${titleStyle}>${escaparHtml(seccion.title)}</td></tr>`;
+      const cellStyle = box.cellStyle ? ` style="${box.cellStyle}"` : "";
       if (seccion.content) {
-        filas += `<tr><td colspan="2" class="sr-text">${escaparHtml(seccion.content)}</td></tr>`;
+        filas += `<tr><td colspan="2"${cellStyle}>${escaparHtml(seccion.content)}</td></tr>`;
       }
       filas += rows
         .map(
@@ -73,14 +75,19 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
           },
         )
         .join("");
-      return `<table class="sr-table sr-bordered"${boxStyle}><tbody>${filas}</tbody></table>`;
+      return `<table${boxStyle}><tbody>${filas}</tbody></table>`;
     }
 
-    case "referenceBox":
-      return `<table class="sr-table sr-reference" style="font-size:${seccion.fontSize ?? "6pt"}"><tbody>
-        <tr><td class="sr-ref-title">${escaparHtml(seccion.title)}</td></tr>
-        ${seccion.items.map((item) => `<tr><td>${escaparHtml(item)}</td></tr>`).join("")}
+    case "referenceBox": {
+      const ref = seccion as Record<string, unknown>;
+      const refStyle = ref.style ? ` style="${ref.style}"` : "";
+      const refTitleStyle = ref.titleStyle ? ` style="${ref.titleStyle}"` : "";
+      const refCellStyle = ref.cellStyle ? ` style="${ref.cellStyle}"` : "";
+      return `<table${refStyle}><tbody>
+        <tr><td${refTitleStyle}>${escaparHtml(seccion.title)}</td></tr>
+        ${seccion.items.map((item, i) => `<tr><td${i === seccion.items.length - 1 ? (ref.lastCellStyle ? ` style="${ref.lastCellStyle}"` : refCellStyle) : refCellStyle}>${escaparHtml(item)}</td></tr>`).join("")}
       </tbody></table>`;
+    }
 
     case "dataTable": {
       const dtStyleAttr = seccion.style ? ` style="${seccion.style}"` : "";
@@ -89,7 +96,7 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
       const colgroup = seccion.columnWidths
         ? `<colgroup>${seccion.columnWidths.map((w) => `<col style="width:${w}">`).join("")}</colgroup>`
         : "";
-      return `<table class="sr-table sr-data"${dtStyleAttr}>${colgroup}<thead><tr>${seccion.columns
+      return `<table${dtStyleAttr}>${colgroup}<thead><tr>${seccion.columns
         .map((c) => `<th style="${(seccion.cellStyle ?? "") + dtHeaderStyle}">${escaparHtml(c.header)}</th>`)
         .join("")}</tr></thead><tbody>${(seccion.rows ?? [])
         .map((fila) => {
@@ -104,13 +111,17 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
     case "repeat":
       return seccion.sections.map(renderizarSeccion).join("");
 
-    case "repeatDetail":
+    case "repeatDetail": {
+      const rd = seccion as Record<string, unknown>;
+      const rdTitleStyle = rd.titleStyle ? ` style="${rd.titleStyle}"` : "";
+      const rdContentStyle = rd.contentStyle ? ` style="${rd.contentStyle}"` : "";
       return (seccion.items ?? [])
         .map(
           (item) =>
-            `<div class="sr-subtitle">${escaparHtml(item.title)}</div><div class="sr-text">${escaparHtml(item.content)}</div>`,
+            `<div${rdTitleStyle}>${escaparHtml(item.title)}</div><div${rdContentStyle}>${escaparHtml(item.content)}</div>`,
         )
         .join("");
+    }
 
     case "spacer":
       return `<div style="height:${seccion.height ?? "0.3in"}"></div>`;
@@ -141,8 +152,6 @@ function construirCss(config: PlantillaDocumentoConfig): string {
   const ciR = config.contentIndent?.right ?? "0";
   const fiL = config.footerIndent?.left ?? "0";
   const fiR = config.footerIndent?.right ?? "0";
-  const hiL = config.headingIndent?.left ?? "0";
-  const hiR = config.headingIndent?.right ?? "0";
 
   return `
     @page {
@@ -218,81 +227,13 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       background: #fff;
     }
 
-    .sr-title {
-      text-align: center;
-      font-weight: 700;
-      font-size: ${tamano};
-      line-height: 1.6;
-      margin: 14pt 0 5pt;
-      padding-left: ${hiL};
-      padding-right: ${hiR};
-      break-after: avoid;
-    }
-
-    .sr-subtitle {
-      padding-top: 10pt;
-      padding-bottom: 5pt;
-      font-weight: 700;
-      break-after: avoid;
-    }
-
-    .sr-text {
-      white-space: pre-line;
-      line-height: 1.6;
-    }
-
-    .sr-table {
-      width: 100%;
+    table {
       border-collapse: collapse;
-      margin: 0.08in 0;
-      break-inside: auto;
     }
 
-    .sr-bordered,
-    .sr-reference {
-      break-inside: avoid;
-    }
-
-    .sr-table td,
-    .sr-table th {
+    td, th {
       padding: 0 0.03in;
       vertical-align: top;
-    }
-
-
-    .sr-bordered {
-      border: 1px solid #000;
-    }
-
-    .sr-bordered td,
-    .sr-bordered th {
-      border: 1px solid #000;
-    }
-
-
-    .sr-reference {
-      border: 1px solid #000;
-    }
-
-    .sr-reference td {
-      border-left: 1px solid #000;
-      border-right: 1px solid #000;
-      border-bottom: 0;
-    }
-
-    .sr-ref-title {
-      text-align: center;
-      font-weight: 700;
-      border-bottom: 1px solid #000 !important;
-    }
-
-    .sr-reference tr:last-child td {
-      border-bottom: 1px solid #000;
-    }
-
-    .sr-data th,
-    .sr-data td {
-      padding: 0.01in;
     }
 
     .sr-pie-texto {
