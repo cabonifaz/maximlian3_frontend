@@ -238,7 +238,6 @@ function construirCss(config: PlantillaDocumentoConfig): string {
     .sr-table th {
       padding: 0 0.03in;
       vertical-align: top;
-      text-align: left;
     }
 
     .sr-label {
