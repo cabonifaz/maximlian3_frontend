@@ -12,6 +12,7 @@ import type {
   InformeActualizarArchivoRequest,
   InformeCrearRequest,
   InformeCrearResponse,
+  DocumentoInformeGenerado,
   InformeEliminarArchivoRequest,
   InformeExtraerDocumentoRequest,
   InformeExtraccionResponse,
@@ -1501,6 +1502,20 @@ export const informeService = {
     }
 
     return enriquecerRespuestaObtener(normalizarRespuestaObtener(data.result));
+  },
+
+  generarDocumento: async (idPedido: number): Promise<DocumentoInformeGenerado> => {
+    const { data } = await maximilianService.get<ApiResponse<DocumentoInformeGenerado>>("/api/Informe/generarDocumento", {
+      params: {
+        IdPedido: idPedido,
+      },
+    });
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/generarDocumento")) {
+      throw new Error(data.mensaje || "No se pudo generar el documento del informe");
+    }
+
+    return data.result;
   },
 
   generarUrlsArchivo: async (
