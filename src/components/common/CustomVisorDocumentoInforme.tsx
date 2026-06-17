@@ -58,19 +58,21 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
       const boxStyle = box.style ? ` style="${box.style}"` : "";
       const lblStyle = box.labelStyle ? ` style="${box.labelStyle}"` : "";
       const valStyle = box.valueStyle ? ` style="${box.valueStyle}"` : "";
-      const cols = seccion.rows ? 2 : 1;
-      let filas = `<tr><td colspan="${cols}" class="sr-box-title">${escaparHtml(seccion.title)}</td></tr>`;
+      const titleStyle = box.titleStyle ? ` style="${box.titleStyle}"` : "";
+      const rows = (box.rows ?? []) as Record<string, unknown>[];
+      const cols = rows.length > 0 ? 2 : (seccion.content ? 1 : 1);
+      let filas = `<tr><td colspan="2"${titleStyle}>${escaparHtml(seccion.title)}</td></tr>`;
       if (seccion.content) {
-        filas += `<tr><td class="sr-text">${escaparHtml(seccion.content)}</td></tr>`;
+        filas += `<tr><td colspan="2" class="sr-text">${escaparHtml(seccion.content)}</td></tr>`;
       }
-      if (seccion.rows) {
-        filas += seccion.rows
-          .map(
-            (f) =>
-              `<tr><td${lblStyle}>${escaparHtml(f.label)}</td><td${valStyle}>${escaparHtml(f.value)}</td></tr>`,
-          )
-          .join("");
-      }
+      filas += rows
+        .map(
+          (f) => {
+            const rowLbl = f.style ? ` style="${f.style}"` : lblStyle;
+            return `<tr><td${rowLbl}>${escaparHtml(String(f.label ?? ""))}</td><td${valStyle}>${escaparHtml(String(f.value ?? ""))}</td></tr>`;
+          },
+        )
+        .join("");
       return `<table class="sr-table sr-bordered"${boxStyle}><tbody>${filas}</tbody></table>`;
     }
 
@@ -242,7 +244,6 @@ function construirCss(config: PlantillaDocumentoConfig): string {
     .sr-table {
       width: 100%;
       border-collapse: collapse;
-      table-layout: fixed;
       margin: 0.08in 0;
       break-inside: auto;
     }
@@ -268,11 +269,6 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       border: 1px solid #000;
     }
 
-    .sr-box-title {
-      text-align: center;
-      font-weight: 700;
-      border: 1px solid #000;
-    }
 
     .sr-reference {
       border: 1px solid #000;
