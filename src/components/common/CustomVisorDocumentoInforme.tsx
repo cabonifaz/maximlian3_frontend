@@ -499,7 +499,15 @@ function tieneContenidoCelda(celda: unknown, valores: Map<string, string>) {
 
 function esFilaTitulo(fila: unknown[], totalColumnas: number, valores: Map<string, string>) {
   if (fila.some(esImagenDocumento)) return false;
-  return fila.length === 1 || fila.filter((celda) => tieneContenidoCelda(celda, valores)).length === 1 || fila.length < totalColumnas;
+  const celdasConContenido = fila.filter((celda) => tieneContenidoCelda(celda, valores));
+  if (totalColumnas === 1) {
+    const celda = celdasConContenido[0];
+    const textoPlantilla = String(celda ?? "").trim();
+    if (textoPlantilla.includes("{{")) return false;
+    const texto = resolverTextoDocumento(celda, valores).trim();
+    return texto.length > 0 && texto.length <= 80 && texto === texto.toLocaleUpperCase();
+  }
+  return celdasConContenido.length === 1 || fila.length < totalColumnas;
 }
 
 function obtenerPesoBloqueDocumento(
