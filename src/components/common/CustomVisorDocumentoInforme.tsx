@@ -1085,7 +1085,22 @@ function CustomSeccionDocumentoRender({
   );
 }
 
-export function CustomVisorDocumentoInforme({ documento, datosInvestigacion, encabezado }: PropsCustomVisorDocumentoInforme) {
+export function CustomVisorDocumentoInforme(props: PropsCustomVisorDocumentoInforme) {
+  if (props.documento.html) {
+    return (
+      <div className="overflow-x-auto pb-4">
+        <div
+          className="mx-auto min-w-[760px]"
+          dangerouslySetInnerHTML={{ __html: props.documento.html }}
+        />
+      </div>
+    );
+  }
+
+  return <CustomVisorDocumentoJsonInforme {...props} />;
+}
+
+function CustomVisorDocumentoJsonInforme({ documento, datosInvestigacion, encabezado }: PropsCustomVisorDocumentoInforme) {
   const mainRefs = useRef<Array<HTMLElement | null>>([]);
   const margenes = documento.pageSetup?.margins;
   const orientacion = documento.pageSetup?.orientation ?? "portrait";

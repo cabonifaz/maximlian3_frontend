@@ -664,6 +664,7 @@ export interface DocumentoInformeSangria {
 }
 
 export interface DocumentoInformeGenerado {
+  html?: string;
   pageSetup?: DocumentoInformePageSetup;
   layout?: DocumentoInformeLayout;
   pagination?: DocumentoInformePagination;
