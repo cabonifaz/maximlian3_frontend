@@ -540,6 +540,7 @@ export interface DocumentoInformeEstiloBase {
   widthUnit?: "px" | "pt" | "in" | "cm";
   layout?: "fixed" | "auto";
   borders?: "none" | "single";
+  innerHorizontalBorders?: "none" | "single";
   borderSize?: number;
   borderColor?: string;
   borderSpace?: number;
@@ -555,6 +556,7 @@ export interface DocumentoInformeEstiloBase {
   columnWidthsByCols?: Record<string, number[]>;
   headerAlign?: AlineacionDocumentoInforme;
   headerBold?: boolean;
+  titleTextAlign?: AlineacionDocumentoInforme;
   tableAlign?: AlineacionDocumentoInforme;
   textAlign?: AlineacionDocumentoInforme;
   cellAlign?: AlineacionDocumentoInforme;
@@ -602,6 +604,7 @@ export interface DocumentoInformeBloqueTabla {
   widthUnit?: "px" | "pt" | "in" | "cm";
   layout?: "fixed" | "auto";
   borders?: "none" | "single";
+  innerHorizontalBorders?: "none" | "single";
   borderSize?: number;
   borderColor?: string;
   borderSpace?: number;
@@ -617,6 +620,7 @@ export interface DocumentoInformeBloqueTabla {
   columnWidthsByCols?: Record<string, number[]>;
   headerAlign?: AlineacionDocumentoInforme;
   headerBold?: boolean;
+  titleTextAlign?: AlineacionDocumentoInforme;
   tableAlign?: AlineacionDocumentoInforme;
   textAlign?: AlineacionDocumentoInforme;
   cellAlign?: AlineacionDocumentoInforme;

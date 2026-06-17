@@ -45,6 +45,7 @@ type EstilosDocumento = {
   widthUnit?: string;
   layout?: string;
   borders?: string;
+  innerHorizontalBorders?: string;
   borderSize?: number;
   borderColor?: string;
   borderSpace?: number;
@@ -60,6 +61,7 @@ type EstilosDocumento = {
   columnWidthsByCols?: Record<string, number[]>;
   headerAlign?: string;
   headerBold?: boolean;
+  titleTextAlign?: string;
   tableAlign?: string;
   textAlign?: string;
   cellAlign?: string;
@@ -165,17 +167,25 @@ function obtenerEstiloTablaDocumento(estilos: EstilosDocumento): CSSProperties {
   };
 }
 
-function obtenerEstiloCeldaDocumento(estilos: EstilosDocumento): CSSProperties {
+function obtenerEstiloCeldaDocumento(
+  estilos: EstilosDocumento,
+  contexto?: { rowIndex?: number; rowCount?: number },
+): CSSProperties {
   const margenes = estilos.cellMargins;
   const celdaSinBorde = estilos.cellBorders === "none" || estilos.cellBorderValue === "nil" || estilos.cellBorderValue === "none";
   const tieneBorde = estilos.borders === "single" && !celdaSinBorde;
   const tamanoBorde = tieneBorde ? Math.max((estilos.borderSize ?? 8) / 8, 1) : 0;
+  const sinBordesHorizontalesInternos = estilos.innerHorizontalBorders === "none" && tieneBorde && contexto?.rowIndex !== undefined;
+  const esPrimeraFila = contexto?.rowIndex === 0;
+  const esUltimaFila = contexto?.rowIndex === (contexto?.rowCount ?? 0) - 1;
   return {
     paddingTop: obtenerDimensionDocumento(margenes?.top ?? 0, "in"),
     paddingBottom: obtenerDimensionDocumento(margenes?.bottom ?? 0, "in"),
     paddingLeft: obtenerDimensionDocumento(margenes?.left ?? 0.03, "in"),
     paddingRight: obtenerDimensionDocumento(margenes?.right ?? 0.03, "in"),
     borderWidth: tamanoBorde,
+    borderTopWidth: sinBordesHorizontalesInternos && !esPrimeraFila ? 0 : tamanoBorde,
+    borderBottomWidth: sinBordesHorizontalesInternos && !esPrimeraFila && !esUltimaFila ? 0 : tamanoBorde,
     borderStyle: tieneBorde ? "solid" : "none",
     borderColor: estilos.borderColor ? `#${estilos.borderColor}` : undefined,
     textAlign: (estilos.cellAlign ?? estilos.textAlign ?? "left") as CSSProperties["textAlign"],
@@ -186,6 +196,19 @@ function obtenerEstiloCeldaCabeceraDocumento(estilos: EstilosDocumento): CSSProp
   return {
     ...obtenerEstiloCeldaDocumento(estilos),
     textAlign: (estilos.headerTextAlign ?? estilos.headerAlign ?? estilos.cellAlign ?? estilos.textAlign ?? "left") as CSSProperties["textAlign"],
+  };
+}
+
+function obtenerEstiloCeldaTituloDocumento(
+  estilos: EstilosDocumento,
+  contexto?: { rowIndex?: number; rowCount?: number },
+): CSSProperties {
+  return {
+    ...obtenerEstiloCeldaDocumento(estilos, contexto),
+    textAlign: (estilos.titleTextAlign
+      ?? estilos.cellAlign
+      ?? estilos.textAlign
+      ?? "left") as CSSProperties["textAlign"],
   };
 }
 
@@ -835,7 +858,6 @@ function CustomBloqueDocumentoInforme({
     const totalColumnas = obtenerColumnasTabla(bloque);
     const filas = bloque.rows ?? [];
     const anchosColumnas = obtenerAnchosColumnasDocumento(estilosBloque, totalColumnas);
-    const estiloCelda = obtenerEstiloCeldaDocumento(estilosBloque);
 
     if (filas.length === 0 && !bloque.header?.length) return null;
 
@@ -878,10 +900,12 @@ function CustomBloqueDocumentoInforme({
               && tieneContenidoCelda(celdasResueltas[0], valores)
               && celdasResueltas.slice(1).every((celda) => !tieneContenidoCelda(celda, valores));
             const filaTitulo = filaSinValor || esFilaTitulo(fila, totalColumnas, valores);
+            const contextoFila = { rowIndex: indiceFila, rowCount: filas.length };
+            const estiloCelda = obtenerEstiloCeldaDocumento(estilosBloque, contextoFila);
             return (
               <tr key={`${indice}-${indiceFila}`}>
                 {filaTitulo ? (
-                  <td colSpan={totalColumnas} className="font-bold" style={estiloCelda}>
+                  <td colSpan={totalColumnas} className="font-bold" style={obtenerEstiloCeldaTituloDocumento(estilosBloque, contextoFila)}>
                     <CustomContenidoCeldaDocumento
                       celda={filaSinValor ? celdasResueltas[0] : fila.find((celda) => tieneContenidoCelda(celda, valores)) ?? fila[0]}
                       valores={valores}
@@ -893,7 +917,7 @@ function CustomBloqueDocumentoInforme({
                     <td
                       key={`${indice}-${indiceFila}-${indiceCelda}`}
                       className={`align-top ${
-                        indiceCelda === 0 ? "font-semibold text-slate-800" : "text-slate-900"
+                        indiceCelda === 0 && totalColumnas > 1 ? "font-semibold text-slate-800" : "text-slate-900"
                       }`}
                       style={estiloCelda}
                     >
