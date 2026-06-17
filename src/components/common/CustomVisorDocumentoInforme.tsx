@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-// @ts-expect-error Vite raw import bypasses package exports
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import pagedJsSource from "../../../node_modules/pagedjs/dist/paged.polyfill.js?raw";
 import type {
   DocumentoInformeGenerado,
@@ -339,8 +338,13 @@ export function CustomVisorDocumentoInforme({ documento }: PropsCustomVisorDocum
     setTimeout(ajustarAltura, 300);
   }, []);
 
+  const documentoKey = useMemo(
+    () => (documento.sections && documento.document ? JSON.stringify(documento) : null),
+    [documento],
+  );
+
   useEffect(() => {
-    if (!documento.sections || !documento.document || !iframeRef.current) return;
+    if (!documentoKey || !documento.sections || !documento.document || !iframeRef.current) return;
 
     setEstaPaginando(true);
     setError(null);
@@ -375,7 +379,8 @@ ${contenido}
         blobUrlRef.current = null;
       }
     };
-  }, [documento, ajustarAltura]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documentoKey]);
 
   if (documento.sections && documento.document) {
     return (
