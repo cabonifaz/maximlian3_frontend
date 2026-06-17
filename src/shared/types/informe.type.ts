@@ -707,7 +707,8 @@ export type PlantillaSeccion =
   | { type: "referenceBox"; fontSize?: string; title: string; items: string[] }
   | { type: "dataTable"; source?: string; columns: { header: string; field: string }[]; rows?: string[][] }
   | { type: "repeat"; source?: string; sections: PlantillaSeccion[] }
-  | { type: "repeatDetail"; source?: string; titleField?: string; contentField?: string; items?: { title: string; content: string }[] };
+  | { type: "repeatDetail"; source?: string; titleField?: string; contentField?: string; items?: { title: string; content: string }[] }
+  | { type: "spacer"; height?: string };
 
 export interface InformeGenerarUrlsArchivoRequest {
   idPedido: number;

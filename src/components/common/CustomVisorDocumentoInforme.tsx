@@ -95,6 +95,9 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
         )
         .join("");
 
+    case "spacer":
+      return `<div style="height:${seccion.height ?? "0.3in"}"></div>`;
+
     default:
       return "";
   }
