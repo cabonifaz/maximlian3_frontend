@@ -128,6 +128,7 @@ function construirCssPagedJs(config: PlantillaDocumentoConfig): string {
       @top-center {
         content: element(encabezado-logo);
         vertical-align: bottom;
+        text-align: center;
       }
       @bottom-center {
         content: element(pie-pagina);
@@ -138,6 +139,14 @@ function construirCssPagedJs(config: PlantillaDocumentoConfig): string {
     .sr-encabezado-logo {
       position: running(encabezado-logo);
       text-align: ${headerAlign};
+      width: 100%;
+    }
+
+    .sr-encabezado-logo img {
+      display: block;
+      ${headerAlign === "right" ? "margin-left: auto; margin-right: 0;" : ""}
+      ${headerAlign === "left" ? "margin-left: 0; margin-right: auto;" : ""}
+      ${headerAlign !== "left" && headerAlign !== "right" ? "margin-left: auto; margin-right: auto;" : ""}
     }
 
     .sr-pie-pagina {
