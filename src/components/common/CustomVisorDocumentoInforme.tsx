@@ -112,6 +112,8 @@ function construirCssPagedJs(config: PlantillaDocumentoConfig): string {
   const pieTamano = config.footer?.fontSize ?? "7pt";
   const headerAlign = config.header?.align ?? "center";
   const footerAlign = config.footer?.align ?? "left";
+  const headerGapAfter = config.header?.gapAfter ?? "0";
+  const footerGapBefore = config.footer?.gapBefore ?? "0";
 
   const ciL = config.contentIndent?.left ?? "0";
   const ciR = config.contentIndent?.right ?? "0";
@@ -140,6 +142,8 @@ function construirCssPagedJs(config: PlantillaDocumentoConfig): string {
       position: running(encabezado-logo);
       text-align: ${headerAlign};
       width: 100%;
+      padding-bottom: ${headerGapAfter};
+      box-sizing: border-box;
     }
 
     .sr-encabezado-logo img {
@@ -157,6 +161,8 @@ function construirCssPagedJs(config: PlantillaDocumentoConfig): string {
       text-align: ${footerAlign};
       padding-left: ${fiL};
       padding-right: ${fiR};
+      padding-top: ${footerGapBefore};
+      box-sizing: border-box;
     }
 
     .sr-pie-pagina::after {
@@ -188,6 +194,7 @@ function construirCssPagedJs(config: PlantillaDocumentoConfig): string {
       margin: 14pt 0 5pt;
       padding-left: ${hiL};
       padding-right: ${hiR};
+      break-after: avoid;
     }
 
     .sr-contenido {
@@ -199,6 +206,7 @@ function construirCssPagedJs(config: PlantillaDocumentoConfig): string {
       padding-top: 10pt;
       padding-bottom: 5pt;
       font-weight: 700;
+      break-after: avoid;
     }
 
     .sr-text {
@@ -211,6 +219,12 @@ function construirCssPagedJs(config: PlantillaDocumentoConfig): string {
       border-collapse: collapse;
       table-layout: fixed;
       margin: 0.08in 0;
+      break-inside: auto;
+    }
+
+    .sr-bordered,
+    .sr-reference {
+      break-inside: avoid;
     }
 
     .sr-table td,

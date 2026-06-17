@@ -688,8 +688,8 @@ export interface PlantillaDocumentoConfig {
   footerIndent?: PlantillaIndent;
   headingIndent?: PlantillaIndent;
   font?: { family?: string; size?: string; lineSpacing?: number };
-  header?: { logo?: string; logoWidth?: string; logoHeight?: string; align?: string };
-  footer?: { text?: string; fontSize?: string; align?: string; showPageNumber?: boolean };
+  header?: { logo?: string; logoWidth?: string; logoHeight?: string; align?: string; gapAfter?: string };
+  footer?: { text?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string };
 }
 
 export interface PlantillaFilaEtiquetaValor {
