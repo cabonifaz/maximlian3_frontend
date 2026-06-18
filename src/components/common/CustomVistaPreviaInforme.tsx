@@ -1052,7 +1052,7 @@ export function CustomVistaPreviaInformeComparado({
     queryKey: ["informe-documento-generado", idPedidoDocumento],
     queryFn: () => informeService.generarDocumento(idPedidoDocumento),
     enabled: Number.isFinite(idPedidoDocumento) && idPedidoDocumento > 0,
-    staleTime: 0,
+    staleTime: 15 * 60 * 1000,
   });
 
   const { data: opcionesTiempoCredito } = useQuery({
@@ -1077,16 +1077,16 @@ export function CustomVistaPreviaInformeComparado({
     return (
       <div className={className}>
         {contenidoEntreTabsYTarjetas}
-        {estaCargandoDocumento ? (
-          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-500 shadow-sm">
-            Generando vista previa del documento...
-          </div>
-        ) : documentoGenerado ? (
+        {documentoGenerado ? (
           <CustomVisorDocumentoInforme
             documento={documentoGenerado}
             datosInvestigacion={datosInvestigacion}
             encabezado={encabezado}
           />
+        ) : estaCargandoDocumento ? (
+          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-500 shadow-sm">
+            Generando vista previa del documento...
+          </div>
         ) : (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500 shadow-sm">
             {errorDocumento ? "No se pudo generar la vista previa del documento." : "No hay documento disponible para mostrar."}

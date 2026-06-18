@@ -504,6 +504,31 @@ export interface DocumentoInformePageSetup {
   footerDistance?: number;
 }
 
+export interface DocumentoInformeLayout {
+  sectionGap?: number;
+  blockGap?: number;
+  eachGap?: number;
+  unit?: "px" | "pt" | "in" | "cm";
+}
+
+export interface DocumentoInformePagination {
+  maxPageWeightPortrait?: number;
+  maxPageWeightLandscape?: number;
+  maxTableWeightPortrait?: number;
+  maxTableWeightLandscape?: number;
+  keepTablesUnderRows?: number;
+  tableMinWeight?: number;
+  tableRowWeight?: number;
+  tableHeaderWeight?: number;
+  titleRowWeight?: number;
+  longTextCharactersPerWeight?: number;
+  longTextWeight?: number;
+  maxSplitCharacters?: number;
+  reserveEndTableWeight?: number;
+  keepTitleWithNext?: boolean;
+  compactThreshold?: number;
+}
+
 export interface DocumentoInformeEstiloBase {
   fontFamily?: string;
   fontSize?: number;
@@ -516,8 +541,12 @@ export interface DocumentoInformeEstiloBase {
   widthUnit?: "px" | "pt" | "in" | "cm";
   layout?: "fixed" | "auto";
   borders?: "none" | "single";
+  innerHorizontalBorders?: "none" | "single";
   borderSize?: number;
   borderColor?: string;
+  borderSpace?: number;
+  cellBorders?: "none" | "single";
+  cellBorderValue?: "nil" | "none" | "single";
   cellMargins?: {
     top?: number;
     bottom?: number;
@@ -528,10 +557,14 @@ export interface DocumentoInformeEstiloBase {
   columnWidthsByCols?: Record<string, number[]>;
   headerAlign?: AlineacionDocumentoInforme;
   headerBold?: boolean;
+  titleTextAlign?: AlineacionDocumentoInforme;
+  titleSpaceBefore?: number;
+  titleSpaceAfter?: number;
   tableAlign?: AlineacionDocumentoInforme;
   textAlign?: AlineacionDocumentoInforme;
   cellAlign?: AlineacionDocumentoInforme;
   headerTextAlign?: AlineacionDocumentoInforme;
+  whiteSpace?: "normal" | "pre-line" | "pre-wrap";
 }
 
 export interface DocumentoInformeBloqueParrafo {
@@ -555,6 +588,10 @@ export interface DocumentoInformeBloqueImagen {
   width?: number;
   height?: number;
   unit?: "px" | "in" | "cm";
+  tableCell?: {
+    row?: number;
+    col?: number;
+  };
 }
 
 export interface DocumentoInformeBloqueTabla {
@@ -571,8 +608,12 @@ export interface DocumentoInformeBloqueTabla {
   widthUnit?: "px" | "pt" | "in" | "cm";
   layout?: "fixed" | "auto";
   borders?: "none" | "single";
+  innerHorizontalBorders?: "none" | "single";
   borderSize?: number;
   borderColor?: string;
+  borderSpace?: number;
+  cellBorders?: "none" | "single";
+  cellBorderValue?: "nil" | "none" | "single";
   cellMargins?: {
     top?: number;
     bottom?: number;
@@ -583,10 +624,14 @@ export interface DocumentoInformeBloqueTabla {
   columnWidthsByCols?: Record<string, number[]>;
   headerAlign?: AlineacionDocumentoInforme;
   headerBold?: boolean;
+  titleTextAlign?: AlineacionDocumentoInforme;
+  titleSpaceBefore?: number;
+  titleSpaceAfter?: number;
   tableAlign?: AlineacionDocumentoInforme;
   textAlign?: AlineacionDocumentoInforme;
   cellAlign?: AlineacionDocumentoInforme;
   headerTextAlign?: AlineacionDocumentoInforme;
+  whiteSpace?: "normal" | "pre-line" | "pre-wrap";
 }
 
 export interface DocumentoInformeBloqueEach {
@@ -619,12 +664,51 @@ export interface DocumentoInformeSangria {
 }
 
 export interface DocumentoInformeGenerado {
+  html?: string;
+  document?: PlantillaDocumentoConfig;
+  sections?: PlantillaSeccion[];
   pageSetup?: DocumentoInformePageSetup;
+  layout?: DocumentoInformeLayout;
+  pagination?: DocumentoInformePagination;
   styles?: Record<string, DocumentoInformeEstiloBase>;
   header?: DocumentoInformeSeccion;
   footer?: DocumentoInformeSeccion;
   body?: DocumentoInformeBloque[];
 }
+
+export interface PlantillaIndent {
+  left?: string;
+  right?: string;
+}
+
+export interface PlantillaDocumentoConfig {
+  pageSize?: { width?: string; height?: string };
+  margins?: { top?: string; bottom?: string; left?: string; right?: string };
+  contentIndent?: PlantillaIndent;
+  footerIndent?: PlantillaIndent;
+  headingIndent?: PlantillaIndent;
+  font?: { family?: string; size?: string; lineSpacing?: number };
+  header?: { logo?: string; logoWidth?: string; logoHeight?: string; align?: string; gapAfter?: string };
+  footer?: { text?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string };
+}
+
+export interface PlantillaFilaEtiquetaValor {
+  label: string;
+  value: string;
+  separator?: string;
+}
+
+export type PlantillaSeccion =
+  | { type: "heading"; level?: number; text: string; fontSize?: string }
+  | { type: "subtitle"; text: string }
+  | { type: "text"; field: string }
+  | { type: "keyValue"; labelWidth?: string; style?: string; rows: PlantillaFilaEtiquetaValor[] }
+  | { type: "borderedBox"; title: string; content?: string; rows?: PlantillaFilaEtiquetaValor[]; valueAlign?: string }
+  | { type: "referenceBox"; fontSize?: string; title: string; items: string[] }
+  | { type: "dataTable"; source?: string; columns: { header: string; field?: string }[]; rows?: unknown[]; style?: string; cellStyle?: string; headerStyle?: string; columnWidths?: string[] }
+  | { type: "repeat"; source?: string; sections: PlantillaSeccion[] }
+  | { type: "repeatDetail"; source?: string; titleField?: string; contentField?: string; items?: { title: string; content: string }[] }
+  | { type: "spacer"; height?: string };
 
 export interface InformeGenerarUrlsArchivoRequest {
   idPedido: number;
