@@ -7,13 +7,11 @@
     "module": "ESNext",
     "types": ["vite/client"],
     "skipLibCheck": true,
-    "ignoreDeprecations": "6.0",
 
     /* Aliases */
-    "baseUrl": ".",
     "paths": {
-      "@maximilian/*": ["src/*"],
-      "@/*": ["src/*"]
+      "@maximilian/*": ["./src/*"],
+      "@/*": ["./src/*"]
     },
 
     /* Bundler mode */
