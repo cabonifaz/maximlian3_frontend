@@ -207,7 +207,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
     }
 
     .sr-pie-pagina::after {
-      content: "Page " counter(page);
+      content: "${escaparHtml(config.footer?.pageLabel ?? "Page")} " counter(page);
       display: block;
     }
 

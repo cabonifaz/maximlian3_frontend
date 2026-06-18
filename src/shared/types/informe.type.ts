@@ -689,7 +689,7 @@ export interface PlantillaDocumentoConfig {
   headingIndent?: PlantillaIndent;
   font?: { family?: string; size?: string; lineSpacing?: number };
   header?: { logo?: string; logoWidth?: string; logoHeight?: string; align?: string; gapAfter?: string };
-  footer?: { text?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string };
+  footer?: { text?: string; pageLabel?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string };
 }
 
 export interface PlantillaFilaEtiquetaValor {
