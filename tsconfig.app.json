@@ -9,10 +9,9 @@
     "skipLibCheck": true,
 
     /* Aliases */
-    "baseUrl": ".",
     "paths": {
-      "@maximilian/*": ["src/*"],
-      "@/*": ["src/*"]
+      "@maximilian/*": ["./src/*"],
+      "@/*": ["./src/*"]
     },
 
     /* Bundler mode */
