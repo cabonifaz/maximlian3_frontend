@@ -72,16 +72,14 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
         filas += `<tr><td colspan="2"${cellStyle}>${escaparHtml(seccion.content)}</td></tr>`;
       }
       filas += rows
-        .map(
-          (f) => {
-            const rowLbl = f.style ? ` style="${f.style}"` : lblStyle;
-            return `<tr><td${rowLbl}>${escaparHtml(String(f.label ?? ""))}</td><td${valStyle}>${escaparHtml(String(f.value ?? ""))}</td></tr>`;
-          },
-        )
+        .map((f) => {
+          const rowLbl = f.style ? ` style="${f.style}"` : lblStyle;
+          return `<tr><td${rowLbl}>${escaparHtml(String(f.label ?? ""))}</td><td${valStyle}>${escaparHtml(String(f.value ?? ""))}</td></tr>`;
+        })
         .join("");
       return `<table${boxStyle}><tbody>${filas}</tbody></table>`;
     }
-
+    // El "referenceBox" es similar al "borderedBox" pero con un diseño específico para referencias, con un título destacado y una lista de ítems debajo.
     case "referenceBox": {
       const ref = seccion as Record<string, unknown>;
       const refStyle = ref.style ? ` style="${ref.style}"` : "";
@@ -95,13 +93,20 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
 
     case "dataTable": {
       const dtStyleAttr = seccion.style ? ` style="${seccion.style}"` : "";
-      const dtCellStyle = seccion.cellStyle ? ` style="${seccion.cellStyle}"` : "";
-      const dtHeaderStyle = seccion.headerStyle ? `;${seccion.headerStyle}` : "";
+      const dtCellStyle = seccion.cellStyle
+        ? ` style="${seccion.cellStyle}"`
+        : "";
+      const dtHeaderStyle = seccion.headerStyle
+        ? `;${seccion.headerStyle}`
+        : "";
       const colgroup = seccion.columnWidths
         ? `<colgroup>${seccion.columnWidths.map((w) => `<col style="width:${w}">`).join("")}</colgroup>`
         : "";
       return `<table${dtStyleAttr}>${colgroup}<thead><tr>${seccion.columns
-        .map((c) => `<th style="${(seccion.cellStyle ?? "") + dtHeaderStyle}">${escaparHtml(c.header)}</th>`)
+        .map(
+          (c) =>
+            `<th style="${(seccion.cellStyle ?? "") + dtHeaderStyle}">${escaparHtml(c.header)}</th>`,
+        )
         .join("")}</tr></thead><tbody>${(seccion.rows ?? [])
         .map((fila) => {
           const celdas = Array.isArray(fila)
@@ -118,7 +123,9 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
     case "repeatDetail": {
       const rd = seccion as Record<string, unknown>;
       const rdTitleStyle = rd.titleStyle ? ` style="${rd.titleStyle}"` : "";
-      const rdContentStyle = rd.contentStyle ? ` style="${rd.contentStyle}"` : "";
+      const rdContentStyle = rd.contentStyle
+        ? ` style="${rd.contentStyle}"`
+        : "";
       return (seccion.items ?? [])
         .map(
           (item) =>
@@ -266,7 +273,9 @@ function construirHtmlContenido(
   return `${encabezado}${pie}<div class="sr-contenido">${cuerpo}</div>`;
 }
 
-export function CustomVisorDocumentoInforme({ documento }: PropsCustomVisorDocumentoInforme) {
+export function CustomVisorDocumentoInforme({
+  documento,
+}: PropsCustomVisorDocumentoInforme) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const blobUrlRef = useRef<string | null>(null);
   const [estaPaginando, setEstaPaginando] = useState(false);
@@ -286,23 +295,37 @@ export function CustomVisorDocumentoInforme({ documento }: PropsCustomVisorDocum
           return;
         }
       }
-    } catch { /* cross-origin fallback */ }
+    } catch {
+      /* cross-origin fallback */
+    }
     setTimeout(ajustarAltura, 300);
   }, []);
 
   const documentoKey = useMemo(
-    () => (documento.sections && documento.document ? JSON.stringify(documento) : null),
+    () =>
+      documento.sections && documento.document
+        ? JSON.stringify(documento)
+        : null,
     [documento],
   );
 
   useEffect(() => {
-    if (!documentoKey || !documento.sections || !documento.document || !iframeRef.current) return;
+    if (
+      !documentoKey ||
+      !documento.sections ||
+      !documento.document ||
+      !iframeRef.current
+    )
+      return;
 
     setEstaPaginando(true);
     setError(null);
 
     const css = construirCss(documento.document);
-    const contenido = construirHtmlContenido(documento.document, documento.sections);
+    const contenido = construirHtmlContenido(
+      documento.document,
+      documento.sections,
+    );
 
     const htmlCompleto = `<!DOCTYPE html>
 <html>
@@ -335,7 +358,7 @@ ${contenido}
         blobUrlRef.current = null;
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentoKey]);
 
   if (documento.sections && documento.document) {
