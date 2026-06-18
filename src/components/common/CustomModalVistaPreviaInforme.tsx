@@ -10,6 +10,7 @@ interface PropsCustomModalVistaPreviaInforme {
   estaAbierto: boolean;
   datosInvestigacion: DatosInvestigacionAnalista;
   encabezado: EncabezadoVistaPreviaInforme;
+  idInforme?: number;
   idPedido?: number;
   mostrarInformeTraducido?: boolean;
   onCerrar: () => void;
@@ -19,6 +20,7 @@ export function CustomModalVistaPreviaInforme({
   estaAbierto,
   datosInvestigacion,
   encabezado,
+  idInforme,
   idPedido,
   mostrarInformeTraducido = false,
   onCerrar,
@@ -48,6 +50,7 @@ export function CustomModalVistaPreviaInforme({
           <CustomVistaPreviaInformeComparado
             datosInvestigacion={datosInvestigacion}
             encabezado={encabezado}
+            idInforme={idInforme}
             idPedido={idPedido}
             mostrarInformeTraducido={mostrarInformeTraducido}
             className="space-y-3"

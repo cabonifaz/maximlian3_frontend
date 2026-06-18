@@ -140,6 +140,7 @@ export default function RevisionInformeCoordinador() {
           <CustomVistaPreviaInformeComparado
             datosInvestigacion={datosInvestigacion}
             encabezado={encabezado}
+            idInforme={idInformeSeguro > 0 ? idInformeSeguro : undefined}
             idPedido={Number.isFinite(idPedidoNumerico) ? idPedidoNumerico : undefined}
             mostrarInformeTraducido={false}
             className="space-y-3"

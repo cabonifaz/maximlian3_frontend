@@ -131,6 +131,11 @@ interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInves
   idActividadInicial?: number;
 }
 
+interface ParametrosGuardadoInforme {
+  idEstadoInforme: number;
+  abrirConfirmacionFinalizacion?: boolean;
+}
+
 interface CambioExtraccionPendiente {
   ruta: string[];
   etiqueta: string;
@@ -1545,13 +1550,24 @@ function PantallaInvestigacionAnalista({
   const guardarBorrador = (debeRedirigirABandeja: boolean) => {
     marcarSeccionActivaComoBorrador();
     setDebeVolverABandejaTrasGuardarBorrador(debeRedirigirABandeja);
-    guardarInformeMutation.mutate(ID_ESTADO_PEDIDO_BORRADOR);
+    guardarInformeMutation.mutate({ idEstadoInforme: ID_ESTADO_PEDIDO_BORRADOR });
+  };
+
+  const guardarAntesDeFinalizar = () => {
+    if (guardarInformeMutation.isPending) return;
+
+    marcarSeccionActivaComoBorrador();
+    setDebeVolverABandejaTrasGuardarBorrador(false);
+    guardarInformeMutation.mutate({
+      idEstadoInforme: ID_ESTADO_PEDIDO_BORRADOR,
+      abrirConfirmacionFinalizacion: true,
+    });
   };
 
   const archivosImagenesNuevosRef = useRef<Map<string, File>>(new Map());
 
   const guardarInformeMutation = useMutation({
-    mutationFn: async (idEstadoInforme: number) => {
+    mutationFn: async ({ idEstadoInforme }: ParametrosGuardadoInforme) => {
       const idPedidoNumerico = Number(idPedido);
 
       if (!Number.isFinite(idPedidoNumerico) || idPedidoNumerico <= 0) {
@@ -1605,7 +1621,7 @@ function PantallaInvestigacionAnalista({
 
       return informeService.create(payload);
     },
-    onSuccess: async (respuesta, idEstado) => {
+    onSuccess: async (respuesta, { idEstadoInforme, abrirConfirmacionFinalizacion }) => {
       const idsExistentes = datosInvestigacion.locales.flatMap((local) =>
         (local.imagenes ?? [])
           .filter((img) => (img.idInformeLocalImagen ?? 0) > 0)
@@ -1662,16 +1678,19 @@ function PantallaInvestigacionAnalista({
 
       queryClient.invalidateQueries({ queryKey: ["informes"] });
       queryClient.invalidateQueries({ queryKey: ["asignaciones-bandeja-analista"] });
+      queryClient.invalidateQueries({
+        queryKey: ["informe-documento-generado", Number(idInformeResultado), Number(idPedido)],
+      });
       setEstaAbiertoModalFinalizarInvestigacion(false);
       setEstaAbiertoModalConfirmacionPrimerBorrador(false);
 
-      if (idEstado === ID_ESTADO_PEDIDO_FINALIZADO) {
+      if (idEstadoInforme === ID_ESTADO_PEDIDO_FINALIZADO) {
         setDebeVolverABandejaTrasGuardarBorrador(false);
         navigate("/analista");
         return;
       }
 
-      if (idEstado === ID_ESTADO_PEDIDO_BORRADOR && debeVolverABandejaTrasGuardarBorrador) {
+      if (idEstadoInforme === ID_ESTADO_PEDIDO_BORRADOR && debeVolverABandejaTrasGuardarBorrador) {
         setDebeVolverABandejaTrasGuardarBorrador(false);
         navigate("/analista/bandeja");
         return;
@@ -1686,6 +1705,10 @@ function PantallaInvestigacionAnalista({
             datosPedidoInvestigacion: datosPedidoNavegacion,
           },
         });
+      }
+
+      if (abrirConfirmacionFinalizacion) {
+        setEstaAbiertoModalFinalizarInvestigacion(true);
       }
     },
   });
@@ -5396,7 +5419,7 @@ function PantallaInvestigacionAnalista({
         resumen={resumenEncabezado}
         esSoloLectura={esSoloLectura}
         mostrarBotonFinalizar={idSeccionActiva === "datos-generales" && !esSoloLectura}
-        onFinalizarInvestigacion={() => setEstaAbiertoModalFinalizarInvestigacion(true)}
+        onFinalizarInvestigacion={guardarAntesDeFinalizar}
         onExtraerInformacion={permiteExtraccionSeccion ? () => abrirModalExtraccionInformacion("general") : undefined}
         onAbrirArchivos={() => setEstaAbiertoModalArchivosInvestigacion(true)}
       />
@@ -5439,7 +5462,7 @@ function PantallaInvestigacionAnalista({
                 <CustomButton
                   size="sm"
                   disabled={esSoloLectura}
-                  onClick={() => setEstaAbiertoModalFinalizarInvestigacion(true)}
+                  onClick={guardarAntesDeFinalizar}
                 >
                   <Check size={14} />
                   Finalizar Reporte
@@ -5828,13 +5851,14 @@ function PantallaInvestigacionAnalista({
         estaAbierto={estaAbiertoModalFinalizarInvestigacion}
         estaGuardando={guardarInformeMutation.isPending}
         onCerrar={() => setEstaAbiertoModalFinalizarInvestigacion(false)}
-        onConfirmar={() => guardarInformeMutation.mutate(ID_ESTADO_PEDIDO_FINALIZADO)}
+        onConfirmar={() => guardarInformeMutation.mutate({ idEstadoInforme: ID_ESTADO_PEDIDO_FINALIZADO })}
         onVerVistaPreviaInforme={() => setEstaAbiertoVistaPreviaFinalizar(true)}
       />
 
       <CustomModalVistaPreviaInforme
         estaAbierto={estaAbiertoVistaPreviaFinalizar}
         datosInvestigacion={datosInvestigacion}
+        idInforme={idInformeActual}
         idPedido={Number.isFinite(Number(idPedido)) ? Number(idPedido) : undefined}
         encabezado={{
           pais: resumenEncabezado.pais || "-",

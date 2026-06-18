@@ -1504,9 +1504,10 @@ export const informeService = {
     return enriquecerRespuestaObtener(normalizarRespuestaObtener(data.result));
   },
 
-  generarDocumento: async (idPedido: number): Promise<DocumentoInformeGenerado> => {
+  generarDocumento: async (idInforme: number, idPedido: number): Promise<DocumentoInformeGenerado> => {
     const { data } = await maximilianService.get<ApiResponse<DocumentoInformeGenerado>>("/api/Informe/generarDocumento", {
       params: {
+        IdInforme: idInforme,
         IdPedido: idPedido,
       },
     });

@@ -66,6 +66,7 @@ interface PropsTarjetaVistaPreviaInforme {
 interface PropsVistaPreviaInformeComparado {
   datosInvestigacion: DatosInvestigacionAnalista;
   encabezado: EncabezadoVistaPreviaInforme;
+  idInforme?: number;
   idPedido?: number;
   indicadorReporteTraducido?: string;
   mostrarInformeTraducido?: boolean;
@@ -1035,6 +1036,7 @@ function CustomTarjetaVistaPreviaInforme({
 export function CustomVistaPreviaInformeComparado({
   datosInvestigacion,
   encabezado,
+  idInforme,
   idPedido,
   indicadorReporteTraducido = "En traducción",
   mostrarInformeTraducido = true,
@@ -1042,6 +1044,7 @@ export function CustomVistaPreviaInformeComparado({
   contenidoEntreTabsYTarjetas,
 }: PropsVistaPreviaInformeComparado) {
   const [idTabActiva, setIdTabActiva] = useState<IdTabVistaPreviaInforme>("vista-general");
+  const idInformeDocumento = Number(idInforme);
   const idPedidoDocumento = Number(idPedido);
 
   const {
@@ -1049,9 +1052,10 @@ export function CustomVistaPreviaInformeComparado({
     isLoading: estaCargandoDocumento,
     isError: errorDocumento,
   } = useQuery({
-    queryKey: ["informe-documento-generado", idPedidoDocumento],
-    queryFn: () => informeService.generarDocumento(idPedidoDocumento),
-    enabled: Number.isFinite(idPedidoDocumento) && idPedidoDocumento > 0,
+    queryKey: ["informe-documento-generado", idInformeDocumento, idPedidoDocumento],
+    queryFn: () => informeService.generarDocumento(idInformeDocumento, idPedidoDocumento),
+    enabled: Number.isFinite(idInformeDocumento) && idInformeDocumento > 0
+      && Number.isFinite(idPedidoDocumento) && idPedidoDocumento > 0,
     staleTime: 15 * 60 * 1000,
   });
 
@@ -1073,7 +1077,10 @@ export function CustomVistaPreviaInformeComparado({
     [idTabActiva, seccionesVistaPrevia],
   );
 
-  if (Number.isFinite(idPedidoDocumento) && idPedidoDocumento > 0) {
+  if (
+    Number.isFinite(idInformeDocumento) && idInformeDocumento > 0
+    && Number.isFinite(idPedidoDocumento) && idPedidoDocumento > 0
+  ) {
     return (
       <div className={className}>
         {contenidoEntreTabsYTarjetas}
