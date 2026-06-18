@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import pagedJsUrl from "../../../node_modules/pagedjs/dist/paged.polyfill.js?url";
+import pagedJsSource from "../../../node_modules/pagedjs/dist/paged.polyfill.js?raw";
 import type {
   DocumentoInformeGenerado,
   PlantillaDocumentoConfig,
@@ -25,10 +25,6 @@ function escaparHtml(texto: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-}
-
-function escaparAtributo(texto: string): string {
-  return escaparHtml(texto).replace(/'/g, "&#39;");
 }
 
 function renderizarSeccion(seccion: PlantillaSeccion): string {
@@ -335,7 +331,7 @@ export function CustomVisorDocumentoInforme({
 </head>
 <body>
 ${contenido}
-<script src="${escaparAtributo(pagedJsUrl)}"><\/script>
+<script>${pagedJsSource}<\/script>
 </body>
 </html>`;
 
@@ -346,10 +342,6 @@ ${contenido}
 
     const iframe = iframeRef.current;
     iframe.onload = () => setTimeout(ajustarAltura, 800);
-    iframe.onerror = () => {
-      setError("No se pudo cargar la vista previa paginada.");
-      setEstaPaginando(false);
-    };
     iframe.src = url;
 
     return () => {
