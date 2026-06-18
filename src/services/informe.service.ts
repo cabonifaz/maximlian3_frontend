@@ -1519,6 +1519,20 @@ export const informeService = {
     return data.result;
   },
 
+  generarDocumentoDocx: async (idInforme: number, idPedido: number): Promise<void> => {
+    const ruta = "/api/Informe/generarDocumentoDocx";
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ruta, {
+      params: {
+        IdInforme: idInforme,
+        IdPedido: idPedido,
+      },
+    });
+
+    if (!esRespuestaOkCompatibilidad(data, ruta)) {
+      throw new Error(data.mensaje || "No se pudo generar el documento DOCX del informe");
+    }
+  },
+
   generarUrlsArchivo: async (
     payload: InformeGenerarUrlsArchivoRequest,
   ): Promise<InformeGenerarUrlsArchivoResponse> => {
