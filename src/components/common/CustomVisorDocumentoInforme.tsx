@@ -264,10 +264,10 @@ function construirHtmlContenido(
 
 export function CustomVisorDocumentoInforme({ documento }: PropsCustomVisorDocumentoInforme) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const blobUrlRef = useRef<string | null>(null);
   const [estaPaginando, setEstaPaginando] = useState(false);
   const [alturaIframe, setAlturaIframe] = useState(600);
   const [error, setError] = useState<string | null>(null);
+  const [srcdoc, setSrcdoc] = useState<string>("");
 
   const ajustarAltura = useCallback(() => {
     const iframe = iframeRef.current;
@@ -292,7 +292,7 @@ export function CustomVisorDocumentoInforme({ documento }: PropsCustomVisorDocum
   );
 
   useEffect(() => {
-    if (!documentoKey || !documento.sections || !documento.document || !iframeRef.current) return;
+    if (!documentoKey || !documento.sections || !documento.document) return;
 
     setEstaPaginando(true);
     setError(null);
@@ -312,23 +312,13 @@ ${contenido}
 </body>
 </html>`;
 
-    if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
-    const blob = new Blob([htmlCompleto], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    blobUrlRef.current = url;
-
-    const iframe = iframeRef.current;
-    iframe.onload = () => setTimeout(ajustarAltura, 800);
-    iframe.src = url;
-
-    return () => {
-      if (blobUrlRef.current) {
-        URL.revokeObjectURL(blobUrlRef.current);
-        blobUrlRef.current = null;
-      }
-    };
+    setSrcdoc(htmlCompleto);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentoKey]);
+
+  const manejarCargaIframe = useCallback(() => {
+    setTimeout(ajustarAltura, 800);
+  }, [ajustarAltura]);
 
   if (documento.sections && documento.document) {
     return (
@@ -346,6 +336,8 @@ ${contenido}
         <iframe
           ref={iframeRef}
           title="Vista previa del documento"
+          srcDoc={srcdoc}
+          onLoad={manejarCargaIframe}
           style={{
             width: "100%",
             height: `${alturaIframe}px`,
