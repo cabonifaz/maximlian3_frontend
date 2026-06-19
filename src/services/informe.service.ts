@@ -1481,6 +1481,17 @@ export const informeService = {
     return normalizarRespuestaCrear(data.result);
   },
 
+  actualizarEstado: async (idInforme: number, idEstadoInforme: number): Promise<void> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/actualizarEstado", {
+      idInforme,
+      idEstadoInforme,
+    });
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/actualizarEstado")) {
+      throw new Error(data.mensaje || "Error al actualizar el estado del informe");
+    }
+  },
+
   editar: async (payload: InformeCrearRequest): Promise<InformeCrearResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/editar", payload);
 

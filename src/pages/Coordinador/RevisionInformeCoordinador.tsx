@@ -6,9 +6,6 @@ import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/Cu
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import { informeService } from "@maximilian/services/informe.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import { construirPayloadInforme } from "@maximilian/shared/utils/construirPayloadInforme";
 import { obtenerDatosInvestigacionAnalista } from "@maximilian/shared/utils/datos-simulados-investigacion";
 
 const ID_ESTADO_INFORME_APROBADO = 4;
@@ -33,30 +30,6 @@ export default function RevisionInformeCoordinador() {
     queryFn: () => informeService.obtener({ idPedido: Number(idPedido) }),
     enabled:
       !esEjemplo && Number.isFinite(Number(idPedido)) && Number(idPedido) > 0,
-  });
-
-  const { data: opcionesTipoPersona } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA),
-    staleTime: Infinity,
-  });
-
-  const { data: opcionesPais } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.PAIS],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
-    staleTime: Infinity,
-  });
-
-  const { data: opcionesEstadoCliente } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.ESTADO_CLIENTE],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_CLIENTE),
-    staleTime: Infinity,
-  });
-
-  const { data: opcionesSectorEconomico } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.SECTOR_ECONOMICO],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.SECTOR_ECONOMICO),
-    staleTime: Infinity,
   });
 
   const datosInvestigacion =
@@ -85,19 +58,7 @@ export default function RevisionInformeCoordinador() {
   const mutationRevision = useMutation({
     mutationFn: async (idEstadoInforme: number) => {
       if (esEjemplo) return;
-
-      const payload = construirPayloadInforme({
-        idPedido: Number.isFinite(idPedidoNumerico) ? idPedidoNumerico : 0,
-        idInforme: idInformeSeguro,
-        idEstadoInforme,
-        datosInvestigacion: datosInvestigacion!,
-        opcionesTipoPersona,
-        opcionesPais,
-        opcionesEstadoCliente,
-        opcionesSectorEconomico,
-      });
-
-      await informeService.editar(payload);
+      await informeService.actualizarEstado(idInformeSeguro, idEstadoInforme);
     },
     onSuccess: async (_, idEstadoInforme) => {
       if (esEjemplo) {
