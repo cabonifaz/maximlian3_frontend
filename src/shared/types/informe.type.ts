@@ -676,6 +676,11 @@ export interface DocumentoInformeGenerado {
   body?: DocumentoInformeBloque[];
 }
 
+export interface RespuestaDocumentoInformeGenerado {
+  documento: DocumentoInformeGenerado;
+  nombreInforme: string;
+}
+
 export interface PlantillaIndent {
   left?: string;
   right?: string;

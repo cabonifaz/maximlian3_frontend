@@ -13,6 +13,7 @@ import type {
   InformeCrearRequest,
   InformeCrearResponse,
   DocumentoInformeGenerado,
+  RespuestaDocumentoInformeGenerado,
   InformeEliminarArchivoRequest,
   InformeExtraerDocumentoRequest,
   InformeExtraccionResponse,
@@ -1505,7 +1506,9 @@ export const informeService = {
   },
 
   generarDocumento: async (idInforme: number, idPedido: number): Promise<DocumentoInformeGenerado> => {
-    const { data } = await maximilianService.get<ApiResponse<DocumentoInformeGenerado>>("/api/Informe/generarDocumento", {
+    const { data } = await maximilianService.get<
+      ApiResponse<DocumentoInformeGenerado | RespuestaDocumentoInformeGenerado>
+    >("/api/Informe/generarDocumento", {
       params: {
         IdInforme: idInforme,
         IdPedido: idPedido,
@@ -1516,7 +1519,7 @@ export const informeService = {
       throw new Error(data.mensaje || "No se pudo generar el documento del informe");
     }
 
-    return data.result;
+    return "documento" in data.result ? data.result.documento : data.result;
   },
 
   generarDocumentoDocx: async (idInforme: number, idPedido: number): Promise<void> => {
