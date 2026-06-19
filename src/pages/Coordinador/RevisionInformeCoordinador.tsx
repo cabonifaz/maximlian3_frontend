@@ -99,7 +99,7 @@ export default function RevisionInformeCoordinador() {
 
       await informeService.editar(payload);
     },
-    onSuccess: (_, idEstadoInforme) => {
+    onSuccess: async (_, idEstadoInforme) => {
       if (esEjemplo) {
         toast.success(
           idEstadoInforme === ID_ESTADO_INFORME_APROBADO
@@ -107,8 +107,8 @@ export default function RevisionInformeCoordinador() {
             : "Ejemplo rechazado.",
         );
       }
-      queryClient.invalidateQueries({
-        queryKey: ["asignaciones-bandeja-coordinador-revision"],
+      await queryClient.invalidateQueries({
+        queryKey: ["informes-bandeja-coordinador-revision"],
       });
       navigate("/coordinador/revision");
     },

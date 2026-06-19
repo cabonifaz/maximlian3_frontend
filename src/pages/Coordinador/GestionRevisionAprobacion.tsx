@@ -64,6 +64,7 @@ export default function GestionRevisionAprobacion() {
       }),
     enabled: terminoBusqueda === terminoBusquedaConRetardo,
     retry: false,
+    refetchOnMount: "always",
   });
 
   const registros = useMemo<InformeListEntry[]>(

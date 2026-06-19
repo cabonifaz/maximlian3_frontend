@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, LogOut, Check } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { servicioAutenticacion } from "@maximilian/services/autenticacion.service";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import type { UserSession } from "@maximilian/shared/types/autenticacion.type";
@@ -11,6 +12,7 @@ interface PropsEncabezado {
 
 export function Encabezado({ role: initialRole }: PropsEncabezado) {
   const navigate = useNavigate();
+  const clienteConsultas = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [isChangingRole, setIsChangingRole] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -58,6 +60,13 @@ export function Encabezado({ role: initialRole }: PropsEncabezado) {
 
       // Small delay for smooth transition
       await new Promise((resolve) => setTimeout(resolve, 800));
+
+      await clienteConsultas.cancelQueries({
+        predicate: (consulta) => consulta.queryKey[0] !== "masterTable",
+      });
+      clienteConsultas.removeQueries({
+        predicate: (consulta) => consulta.queryKey[0] !== "masterTable",
+      });
 
       const roleNormalized = roleName.toUpperCase();
       if (roleNormalized === "ADMINISTRADOR") {
