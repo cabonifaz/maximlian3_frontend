@@ -6,11 +6,14 @@ import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/Cu
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import { informeService } from "@maximilian/services/informe.service";
-import type { FormatoDescargaInforme } from "@maximilian/shared/types/informe.type";
+import type {
+  FormatoDescargaInforme,
+  InformeActualizarEstadoRequest,
+  InformeObservacion,
+} from "@maximilian/shared/types/informe.type";
 import { obtenerDatosInvestigacionAnalista } from "@maximilian/shared/utils/datos-simulados-investigacion";
 
 const ID_ESTADO_INFORME_APROBADO = 4;
-const ID_ESTADO_INFORME_RECHAZADO = 2;
 
 export default function RevisionInformeCoordinador() {
   const navigate = useNavigate();
@@ -20,7 +23,7 @@ export default function RevisionInformeCoordinador() {
   const idInforme = Number(parametrosBusqueda.get("idInforme"));
   const esEjemplo = parametrosBusqueda.get("ejemplo") === "1";
   const [estaAbiertoModalRechazo, setEstaAbiertoModalRechazo] = useState(false);
-  const [motivoRechazo, setMotivoRechazo] = useState("");
+  const [observacionesRechazo, setObservacionesRechazo] = useState<InformeObservacion[]>([]);
   const datosEjemplo = useMemo(
     () => obtenerDatosInvestigacionAnalista("detalle"),
     [],
@@ -51,15 +54,26 @@ export default function RevisionInformeCoordinador() {
     traductor: "-",
   };
 
+  const {
+    data: observacionesGuardadas,
+    isLoading: estaCargandoObservaciones,
+  } = useQuery({
+    queryKey: ["informe-observaciones", idPedidoNumerico],
+    queryFn: () => informeService.listarObservaciones(idPedidoNumerico),
+    enabled: !esEjemplo && Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0,
+  });
+
   const mutationRevision = useMutation({
-    mutationFn: async (idEstadoInforme: number) => {
+    mutationFn: async (payload: InformeActualizarEstadoRequest) => {
       if (esEjemplo) return;
-      await informeService.actualizarEstado(idInformeSeguro, idEstadoInforme);
+      await informeService.actualizarEstado(payload);
     },
-    onSuccess: async (_, idEstadoInforme) => {
+    onSuccess: async (_, payload) => {
+      setEstaAbiertoModalRechazo(false);
+      setObservacionesRechazo([]);
       if (esEjemplo) {
         toast.success(
-          idEstadoInforme === ID_ESTADO_INFORME_APROBADO
+          payload.idEstadoInforme === ID_ESTADO_INFORME_APROBADO
             ? "Ejemplo aprobado."
             : "Ejemplo rechazado.",
         );
@@ -74,8 +88,106 @@ export default function RevisionInformeCoordinador() {
     },
   });
 
+  const mutationRechazo = useMutation({
+    mutationFn: async (observaciones: InformeObservacion[]) => {
+      if (esEjemplo) return;
+
+      const observacionesNuevas = observaciones.filter(
+        (observacion) => observacion.idInformeObservacion <= 0,
+      );
+      const observacionesOriginales = new Map(
+        (observacionesGuardadas ?? []).map((observacion) => [
+          observacion.idInformeObservacion,
+          observacion,
+        ]),
+      );
+      const observacionesEditadas = observaciones.filter((observacion) => {
+        if (observacion.idInformeObservacion <= 0) return false;
+        const original = observacionesOriginales.get(observacion.idInformeObservacion);
+        return Boolean(
+          original
+          && (original.observacion !== observacion.observacion
+            || original.checked !== observacion.checked),
+        );
+      });
+
+      await Promise.all(
+        observacionesEditadas.map((observacion) =>
+          informeService.editarObservacion(observacion),
+        ),
+      );
+
+      if (observacionesNuevas.length > 0) {
+        await informeService.insertarObservacionesLote({
+          idInforme: idInformeSeguro,
+          idPedido: idPedidoNumerico,
+          observaciones: observacionesNuevas.map(({ observacion, checked }) => ({
+            observacion,
+            checked,
+          })),
+        });
+      }
+    },
+    onSuccess: async () => {
+      setEstaAbiertoModalRechazo(false);
+      setObservacionesRechazo([]);
+      if (esEjemplo) toast.success("Ejemplo rechazado.");
+      await queryClient.invalidateQueries({
+        queryKey: ["informes-bandeja-coordinador-revision"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["informe-observaciones", idPedidoNumerico],
+      });
+      navigate("/coordinador/revision");
+    },
+  });
+
+  const mutationEliminarObservacion = useMutation({
+    mutationFn: (idInformeObservacion: number) =>
+      informeService.eliminarObservacion({ idInformeObservacion }),
+    onSuccess: async (_, idInformeObservacion) => {
+      setObservacionesRechazo((observaciones) =>
+        observaciones.filter(
+          (observacion) => observacion.idInformeObservacion !== idInformeObservacion,
+        ),
+      );
+      await queryClient.invalidateQueries({
+        queryKey: ["informe-observaciones", idPedidoNumerico],
+      });
+    },
+  });
+
   const puedeEditarRevision =
-    !isLoading && !mutationRevision.isPending && Boolean(datosInvestigacion);
+    !isLoading
+    && !estaCargandoObservaciones
+    && !mutationRevision.isPending
+    && !mutationRechazo.isPending
+    && !mutationEliminarObservacion.isPending
+    && Boolean(datosInvestigacion);
+
+  const cerrarModalRechazo = () => {
+    if (mutationRechazo.isPending) return;
+    setEstaAbiertoModalRechazo(false);
+  };
+
+  const abrirModalRechazo = () => {
+    if (observacionesRechazo.length === 0 && observacionesGuardadas) {
+      setObservacionesRechazo(observacionesGuardadas);
+    }
+    setEstaAbiertoModalRechazo(true);
+  };
+
+  const confirmarRechazo = () => {
+    const observacionesValidas = observacionesRechazo
+      .map((observacion) => ({
+        ...observacion,
+        observacion: observacion.observacion.trim(),
+      }))
+      .filter((observacion) => observacion.observacion);
+    if (!observacionesValidas.some((observacion) => observacion.idInformeObservacion <= 0)) return;
+
+    mutationRechazo.mutate(observacionesValidas);
+  };
 
   const descargarDocumento = async (formato: FormatoDescargaInforme) => {
     const etiquetaFormato = formato.slice(1).toUpperCase();
@@ -114,17 +226,25 @@ export default function RevisionInformeCoordinador() {
         onDescargar={(formato) => {
           void descargarDocumento(formato);
         }}
-        onAprobar={() => mutationRevision.mutate(ID_ESTADO_INFORME_APROBADO)}
-        onRechazar={() => setEstaAbiertoModalRechazo(true)}
+        onAprobar={() => mutationRevision.mutate({
+          idInforme: idInformeSeguro,
+          idEstadoInforme: ID_ESTADO_INFORME_APROBADO,
+        })}
+        onRechazar={abrirModalRechazo}
         onVolver={() => navigate("/coordinador/revision")}
       />
 
       <CustomModalRechazoInforme
         estaAbierto={estaAbiertoModalRechazo}
-        motivoRechazo={motivoRechazo}
-        onMotivoRechazoChange={setMotivoRechazo}
-        onCerrar={() => setEstaAbiertoModalRechazo(false)}
-        onConfirmar={() => mutationRevision.mutate(ID_ESTADO_INFORME_RECHAZADO)}
+        observacionesRechazo={observacionesRechazo}
+        onObservacionesRechazoChange={setObservacionesRechazo}
+        onCerrar={cerrarModalRechazo}
+        onConfirmar={confirmarRechazo}
+        onEliminarObservacion={(observacion) => {
+          mutationEliminarObservacion.mutate(observacion.idInformeObservacion);
+        }}
+        idObservacionEliminando={mutationEliminarObservacion.variables}
+        cargando={mutationRechazo.isPending}
       />
     </>
   );

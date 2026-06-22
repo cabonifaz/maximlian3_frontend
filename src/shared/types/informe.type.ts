@@ -464,6 +464,29 @@ export interface InformeCrearResponse {
   imagenesPendientes?: ImagenPendienteSubida[];
 }
 
+export interface InformeActualizarEstadoRequest {
+  idInforme: number;
+  idEstadoInforme: number;
+}
+
+export interface InformeObservacion {
+  idInformeObservacion: number;
+  observacion: string;
+  checked: boolean;
+}
+
+export interface InformeInsertarObservacionesLoteRequest {
+  idInforme: number;
+  idPedido: number;
+  observaciones: Array<Pick<InformeObservacion, "observacion" | "checked">>;
+}
+
+export type InformeEditarObservacionRequest = InformeObservacion;
+
+export interface InformeEliminarObservacionRequest {
+  idInformeObservacion: number;
+}
+
 export interface InformeObtenerResponse {
   idInforme?: number;
   idPedido?: number;

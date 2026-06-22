@@ -24,6 +24,7 @@ import { CustomModalBuscarEjecutivoAnalista } from "@maximilian/components/inves
 import { CustomModalDetalleCuentasAnalista } from "@maximilian/components/investigacion/CustomModalDetalleCuentasInforme";
 import { CustomModalFinalizarInvestigacionAnalista } from "@maximilian/components/investigacion/CustomModalFinalizarInforme";
 import { CustomModalVistaPreviaInforme } from "@maximilian/components/common/CustomModalVistaPreviaInforme";
+import { CustomModalObservacionesRechazoAnalista } from "@maximilian/components/analista/CustomModalObservacionesRechazoAnalista";
 import { CustomModalExtraccionInformacionAnalista } from "@maximilian/components/investigacion/CustomModalProcesamientoInforme";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
@@ -76,6 +77,7 @@ import type {
   InformeBalanceTurquiaRequest,
   InformeConfiguracionExtraccion,
   InformeCrearRequest,
+  InformeObservacion,
   InformeSeccionExtraccionDisponible,
 } from "@maximilian/shared/types/informe.type";
 import type {
@@ -1266,6 +1268,54 @@ function PantallaInvestigacionAnalista({
   );
   const [idInformeActual, setIdInformeActual] = useState<number | undefined>(idInforme);
   const [debeCrearInformePorRechazo, setDebeCrearInformePorRechazo] = useState(esInformeRechazado);
+  const [estaCerradoModalObservacionesRechazo, setEstaCerradoModalObservacionesRechazo] = useState(false);
+  const idPedidoObservaciones = Number(idPedido);
+  const claveObservacionesRechazo = ["informe-observaciones-rechazo", idPedidoObservaciones] as const;
+  const {
+    data: observacionesRechazo = [],
+    isLoading: estaCargandoObservacionesRechazo,
+  } = useQuery({
+    queryKey: claveObservacionesRechazo,
+    queryFn: () => informeService.listarObservaciones(idPedidoObservaciones),
+    enabled: Number.isFinite(idPedidoObservaciones)
+      && idPedidoObservaciones > 0,
+  });
+  const actualizarObservacionRechazoMutation = useMutation({
+    mutationFn: (observacion: InformeObservacion) =>
+      informeService.editarObservacion(observacion),
+    onMutate: async (observacionActualizada) => {
+      await queryClient.cancelQueries({ queryKey: claveObservacionesRechazo });
+      const observacionesAnteriores = queryClient.getQueryData<InformeObservacion[]>(
+        claveObservacionesRechazo,
+      );
+      queryClient.setQueryData<InformeObservacion[]>(
+        claveObservacionesRechazo,
+        (observaciones = []) => observaciones.map((observacion) =>
+          observacion.idInformeObservacion === observacionActualizada.idInformeObservacion
+            ? observacionActualizada
+            : observacion,
+        ),
+      );
+      return { observacionesAnteriores };
+    },
+    onError: (_, __, contexto) => {
+      if (contexto?.observacionesAnteriores) {
+        queryClient.setQueryData(
+          claveObservacionesRechazo,
+          contexto.observacionesAnteriores,
+        );
+      }
+    },
+  });
+  const tieneObservacionesRechazo = observacionesRechazo.length > 0;
+  const tieneObservacionesRechazoPendientes = observacionesRechazo.some(
+    (observacion) => !observacion.checked,
+  );
+  const estaAbiertoModalObservacionesRechazo = tieneObservacionesRechazo
+    && !estaCerradoModalObservacionesRechazo;
+  const debeBloquearFinalizacionPorObservaciones = estaCargandoObservacionesRechazo
+    || actualizarObservacionRechazoMutation.isPending
+    || tieneObservacionesRechazoPendientes;
   const [idSeccionActiva, setIdSeccionActiva] = useState<IdSeccionInvestigacionAnalista>("identificacion");
   const [pestanaAspectosLegales, setPestanaAspectosLegales] = useState<PestanaAspectosLegales>("data");
   const [pestanaRamoOperaciones, setPestanaRamoOperaciones] = useState<PestanaRamoOperaciones>("operaciones");
@@ -1604,6 +1654,11 @@ function PantallaInvestigacionAnalista({
 
   const guardarAntesDeFinalizar = () => {
     if (guardarInformeMutation.isPending) return;
+    if (debeBloquearFinalizacionPorObservaciones) {
+      setEstaCerradoModalObservacionesRechazo(false);
+      toast.error("Debes completar todas las observaciones antes de finalizar el reporte.");
+      return;
+    }
 
     marcarSeccionActivaComoBorrador();
     setDebeVolverABandejaTrasGuardarBorrador(false);
@@ -1737,16 +1792,10 @@ function PantallaInvestigacionAnalista({
       queryClient.invalidateQueries({
         queryKey: ["informe-documento-generado", Number(idInformeResultado), Number(idPedido)],
       });
-      setEstaAbiertoModalFinalizarInvestigacion(false);
       setEstaAbiertoModalConfirmacionPrimerBorrador(false);
 
       if (idEstadoInforme === ID_ESTADO_PEDIDO_FINALIZADO) {
-        const idPedidoNumerico = Number(idPedido);
-        if (!idInformeResultado || idInformeResultado <= 0 || !Number.isFinite(idPedidoNumerico) || idPedidoNumerico <= 0) {
-          throw new Error("No se pudo identificar el informe finalizado para generar el documento PDF.");
-        }
-
-        await informeService.generarDocumentoPdf(idInformeResultado, idPedidoNumerico);
+        setEstaAbiertoModalFinalizarInvestigacion(false);
         setDebeVolverABandejaTrasGuardarBorrador(false);
         navigate("/analista");
         return;
@@ -5523,7 +5572,12 @@ function PantallaInvestigacionAnalista({
               {indiceSeccionActiva === seccionesInvestigacionAnalista.length - 1 ? (
                 <CustomButton
                   size="sm"
-                  disabled={esSoloLectura}
+                  disabled={esSoloLectura || debeBloquearFinalizacionPorObservaciones}
+                  title={
+                    tieneObservacionesRechazoPendientes
+                      ? "Completa todas las observaciones antes de finalizar"
+                      : undefined
+                  }
                   onClick={guardarAntesDeFinalizar}
                 >
                   <Check size={14} />
@@ -5916,6 +5970,27 @@ function PantallaInvestigacionAnalista({
         onConfirmar={() => guardarInformeMutation.mutate({ idEstadoInforme: ID_ESTADO_PEDIDO_FINALIZADO })}
         onVerVistaPreviaInforme={() => setEstaAbiertoVistaPreviaFinalizar(true)}
       />
+
+      {tieneObservacionesRechazo ? (
+        <CustomModalObservacionesRechazoAnalista
+          estaAbierto={estaAbiertoModalObservacionesRechazo}
+          observaciones={observacionesRechazo}
+          estaCargando={estaCargandoObservacionesRechazo}
+          idObservacionActualizando={
+            actualizarObservacionRechazoMutation.isPending
+              ? actualizarObservacionRechazoMutation.variables?.idInformeObservacion
+              : undefined
+          }
+          onAbrir={() => setEstaCerradoModalObservacionesRechazo(false)}
+          onCerrar={() => setEstaCerradoModalObservacionesRechazo(true)}
+          onCambiarEstado={(observacion, checked) => {
+            actualizarObservacionRechazoMutation.mutate({
+              ...observacion,
+              checked,
+            });
+          }}
+        />
+      ) : null}
 
       <CustomModalVistaPreviaInforme
         estaAbierto={estaAbiertoVistaPreviaFinalizar}
