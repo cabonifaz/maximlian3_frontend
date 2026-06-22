@@ -39,22 +39,17 @@ export default function RevisionInformeCoordinador() {
   const idPedidoNumerico = Number(idPedido);
   const idInformeSeguro =
     informeObtenido?.idInforme ?? (Number.isFinite(idInforme) ? idInforme : 0);
-
-  const {
-    data: documentoObtenido,
-    isLoading: estaCargandoDocumento,
-    isError: errorDocumento,
-  } = useQuery({
-    queryKey: ["informe-documento-pdf", idInformeSeguro, idPedidoNumerico],
-    queryFn: () =>
-      informeService.obtenerDocumento(idInformeSeguro, idPedidoNumerico),
-    enabled:
-      !esEjemplo &&
-      idInformeSeguro > 0 &&
-      Number.isFinite(idPedidoNumerico) &&
-      idPedidoNumerico > 0,
-    staleTime: 10 * 60 * 1000,
-  });
+  const puedeDescargar = !esEjemplo
+    && idInformeSeguro > 0
+    && Number.isFinite(idPedidoNumerico)
+    && idPedidoNumerico > 0;
+  const encabezadoVistaPrevia = {
+    pais: datosInvestigacion?.identificacion.pais || "-",
+    fecha: new Date().toLocaleDateString("es-PE"),
+    tipoSolicitud: "-",
+    analista: "-",
+    traductor: "-",
+  };
 
   const mutationRevision = useMutation({
     mutationFn: async (idEstadoInforme: number) => {
@@ -108,10 +103,11 @@ export default function RevisionInformeCoordinador() {
   return (
     <>
       <CustomVisorRevisionInforme
-        documentoUrl={documentoObtenido?.url}
-        nombreDocumento={documentoObtenido?.nombre}
-        estaCargandoDocumento={estaCargandoDocumento}
-        errorDocumento={errorDocumento}
+        datosInvestigacion={datosInvestigacion}
+        encabezado={encabezadoVistaPrevia}
+        idInforme={esEjemplo ? undefined : idInformeSeguro}
+        idPedido={esEjemplo ? undefined : idPedidoNumerico}
+        puedeDescargar={puedeDescargar}
         puedeEditar={puedeEditarRevision}
         esEjemplo={esEjemplo}
         onCerrar={() => navigate("/coordinador/revision")}

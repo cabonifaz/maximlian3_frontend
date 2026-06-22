@@ -1,14 +1,19 @@
 import { CheckCircle2, CircleX, Eye, ShieldCheck } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomDescargaInforme } from "@maximilian/components/coordinador/CustomDescargaInforme";
-import { CustomVisorPdf } from "@maximilian/components/coordinador/CustomVisorPdf";
+import {
+  CustomVistaPreviaInformeComparado,
+  type EncabezadoVistaPreviaInforme,
+} from "@maximilian/components/common/CustomVistaPreviaInforme";
 import type { FormatoDescargaInforme } from "@maximilian/shared/types/informe.type";
+import type { DatosInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomVisorRevisionInforme {
-  documentoUrl?: string;
-  nombreDocumento?: string;
-  estaCargandoDocumento: boolean;
-  errorDocumento: boolean;
+  datosInvestigacion?: DatosInvestigacionAnalista;
+  encabezado: EncabezadoVistaPreviaInforme;
+  idInforme?: number;
+  idPedido?: number;
+  puedeDescargar: boolean;
   puedeEditar: boolean;
   esEjemplo: boolean;
   onCerrar: () => void;
@@ -19,10 +24,11 @@ interface PropsCustomVisorRevisionInforme {
 }
 
 export function CustomVisorRevisionInforme({
-  documentoUrl,
-  nombreDocumento,
-  estaCargandoDocumento,
-  errorDocumento,
+  datosInvestigacion,
+  encabezado,
+  idInforme,
+  idPedido,
+  puedeDescargar,
   puedeEditar,
   esEjemplo,
   onCerrar,
@@ -54,7 +60,7 @@ export function CustomVisorRevisionInforme({
               Cerrar
             </CustomButton>
             <CustomDescargaInforme
-              deshabilitado={!documentoUrl}
+              deshabilitado={!puedeDescargar}
               onDescargar={onDescargar}
             />
           </div>
@@ -63,7 +69,7 @@ export function CustomVisorRevisionInforme({
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-5 py-2">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">
-              {nombreDocumento || "Informe original"}
+              Informe original
             </p>
             <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
               {"(Espa\u00f1ol)"}
@@ -97,20 +103,19 @@ export function CustomVisorRevisionInforme({
         </div>
       </header>
 
-      <main className="min-h-0 w-full flex-1 p-1.5 sm:p-2">
-        {documentoUrl ? (
-          <CustomVisorPdf urlDocumento={documentoUrl} />
-        ) : estaCargandoDocumento ? (
-          <div className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500">
-            {"Obteniendo documento para revisi\u00f3n..."}
-          </div>
-        ) : errorDocumento ? (
-          <div className="rounded-2xl border border-red-200 bg-white px-6 py-12 text-center text-sm text-red-600">
-            {"No se pudo obtener el documento PDF para la revisi\u00f3n."}
-          </div>
+      <main className="min-h-0 w-full flex-1 overflow-y-auto bg-slate-50 p-3 sm:p-4">
+        {datosInvestigacion ? (
+          <CustomVistaPreviaInformeComparado
+            datosInvestigacion={datosInvestigacion}
+            encabezado={encabezado}
+            idInforme={idInforme}
+            idPedido={idPedido}
+            mostrarInformeTraducido={false}
+            className="mx-auto max-w-6xl space-y-3"
+          />
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-500">
-            {"No se encontr\u00f3 un documento PDF para este informe."}
+            {"No se encontr\u00f3 informaci\u00f3n para generar la vista previa."}
           </div>
         )}
       </main>

@@ -114,6 +114,7 @@ import {
 interface PropsPantallaInvestigacionAnalista {
   idPedido?: string;
   idInforme?: number;
+  esInformeRechazado?: boolean;
   modo: ModoInvestigacionAnalista;
   datosPedidoNavegacion?: DatosPedidoNavegacionInvestigacion;
 }
@@ -916,7 +917,7 @@ function construirPayloadCrearInforme({
   const esEdicion = typeof idInforme === "number" && idInforme > 0;
 
   return depurarPayloadInforme({
-    ...(esEdicion ? { idInforme } : {}),
+    idInforme: esEdicion ? idInforme : 0,
     idPedido,
     idTipoPersona: obtenerIdPorTexto(opcionesTipoPersona, identificacion.tipoPersona),
     nombre: identificacion.nombreEmpresa,
@@ -1091,16 +1092,60 @@ function construirPayloadCrearInforme({
       imprimeDatosEjecutivos: ejecutivo.detalleEjecutivo,
     })),
     lstLocales: datosInvestigacion.locales.map((local) => ({
-      idInformeLocal: local.idInformeLocal ?? 0,
+      idInformeLocal: esEdicion ? local.idInformeLocal ?? 0 : 0,
       idTipoLocal: local.idTipoLocal ?? obtenerIdPorTextoONumero(opcionesTipoLocal, local.tipoLocal),
       comentario: local.comentario,
       imagenes: (local.imagenes ?? []).map((imagen) => ({
-        idInformeLocalImagen: imagen.idInformeLocalImagen ?? 0,
+        idInformeLocalImagen: esEdicion ? imagen.idInformeLocalImagen ?? 0 : 0,
         idTipoArchivo: imagen.idTipoArchivo ?? obtenerIdTipoArchivo(imagen.tipo ?? local.imagenTipo),
         nombre: imagen.nombre,
       })),
     })),
   }) as InformeCrearRequest;
+}
+
+function prepararDatosParaNuevoInforme(
+  datos: DatosInvestigacionAnalista,
+): DatosInvestigacionAnalista {
+  return {
+    ...datos,
+    balances: datos.balances.map((balance) => ({
+      ...balance,
+      idInformeBalance: undefined,
+    })),
+    bancos: datos.bancos.map((banco) => ({
+      ...banco,
+      idInformeBanco: undefined,
+    })),
+    companiasRelacionadas: datos.companiasRelacionadas.map((compania) => ({
+      ...compania,
+      idInformeCompaniaRelacionada: undefined,
+    })),
+    importaciones: datos.importaciones.map((registro) => ({
+      ...registro,
+      idInformeExportacionImportacion: undefined,
+    })),
+    exportaciones: datos.exportaciones.map((registro) => ({
+      ...registro,
+      idInformeExportacionImportacion: undefined,
+    })),
+    proveedores: datos.proveedores.map((proveedor) => ({
+      ...proveedor,
+      idInformeProveedor: undefined,
+    })),
+    directorioEjecutivo: datos.directorioEjecutivo.map((ejecutivo) => ({
+      ...ejecutivo,
+      idInformeDirectorioEjecutivo: undefined,
+    })),
+    locales: datos.locales.map((local) => ({
+      ...local,
+      idInformeLocal: undefined,
+      imagenes: local.imagenes?.map((imagen) => ({
+        ...imagen,
+        idInformeLocalImagen: undefined,
+      })),
+    })),
+  };
 }
 
 function PaginacionInvestigacion({
@@ -1195,6 +1240,7 @@ function IndicadorCambioExtraccion({
 function PantallaInvestigacionAnalista({
   idPedido,
   idInforme,
+  esInformeRechazado = false,
   modo,
   datosPedidoNavegacion,
   datosIniciales,
@@ -1215,8 +1261,11 @@ function PantallaInvestigacionAnalista({
   const paisExtraccionRef = useRef<{ idPais?: number; pais?: string; aplicado: boolean }>({ aplicado: false });
   const ciudadExtraccionPendienteRef = useRef<CiudadExtraccionPendiente | null>(null);
 
-  const [datosInvestigacion, setDatosInvestigacion] = useState<DatosInvestigacionAnalista>(datosIniciales);
+  const [datosInvestigacion, setDatosInvestigacion] = useState<DatosInvestigacionAnalista>(() =>
+    esInformeRechazado ? prepararDatosParaNuevoInforme(datosIniciales) : datosIniciales,
+  );
   const [idInformeActual, setIdInformeActual] = useState<number | undefined>(idInforme);
+  const [debeCrearInformePorRechazo, setDebeCrearInformePorRechazo] = useState(esInformeRechazado);
   const [idSeccionActiva, setIdSeccionActiva] = useState<IdSeccionInvestigacionAnalista>("identificacion");
   const [pestanaAspectosLegales, setPestanaAspectosLegales] = useState<PestanaAspectosLegales>("data");
   const [pestanaRamoOperaciones, setPestanaRamoOperaciones] = useState<PestanaRamoOperaciones>("operaciones");
@@ -1598,7 +1647,7 @@ function PantallaInvestigacionAnalista({
 
       const payload = construirPayloadCrearInforme({
         idPedido: idPedidoNumerico,
-        idInforme: idInformeActual,
+        idInforme: debeCrearInformePorRechazo ? 0 : idInformeActual,
         idEstadoInforme,
         datosInvestigacion: { ...datosInvestigacion, locales: localesConNombresDeduplicados },
         opcionesTipoPersona,
@@ -1614,6 +1663,10 @@ function PantallaInvestigacionAnalista({
         opcionesTipoLocal,
         opcionesTipoProveedor,
       });
+
+      if (debeCrearInformePorRechazo) {
+        return informeService.create(payload);
+      }
 
       if (modo === "continuar" || (idInformeActual && idInformeActual > 0)) {
         return informeService.editar(payload);
@@ -1670,10 +1723,13 @@ function PantallaInvestigacionAnalista({
       if (todosLosIds.length > 0) {
         await informeService.actualizarEstadoCargaImagenes(todosLosIds);
       }
-      const idInformeResultado = respuesta.idInforme ?? idInformeActual;
+      const idInformeResultado = respuesta.idInforme ?? (
+        debeCrearInformePorRechazo ? undefined : idInformeActual
+      );
 
       if (idInformeResultado && idInformeResultado > 0) {
         setIdInformeActual(idInformeResultado);
+        setDebeCrearInformePorRechazo(false);
       }
 
       queryClient.invalidateQueries({ queryKey: ["informes"] });
@@ -5971,6 +6027,7 @@ export default function InvestigacionAnalista() {
   const [searchParams] = useSearchParams();
   const modo = (searchParams.get("modo") as ModoInvestigacionAnalista | null) ?? "iniciar";
   const idInforme = searchParams.get("idInforme");
+  const esInformeRechazado = searchParams.get("estado") === "rechazado";
   const idCarga = searchParams.get("carga") ?? "sin-carga";
   const datosPedidoNavegacion = (location.state as { datosPedidoInvestigacion?: DatosPedidoNavegacionInvestigacion } | null)?.datosPedidoInvestigacion;
   const idPedidoNumerico = Number(idPedido);
@@ -6013,6 +6070,7 @@ export default function InvestigacionAnalista() {
           ? idInformeNumerico
           : informeObtenido?.idInforme
       }
+      esInformeRechazado={esInformeRechazado}
       modo={modo}
       datosPedidoNavegacion={datosPedidoNavegacion}
       datosIniciales={datosIniciales}
