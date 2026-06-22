@@ -1098,7 +1098,7 @@ function construirPayloadCrearInforme({
       idTipoLocal: local.idTipoLocal ?? obtenerIdPorTextoONumero(opcionesTipoLocal, local.tipoLocal),
       comentario: local.comentario,
       imagenes: (local.imagenes ?? []).map((imagen) => ({
-        idInformeLocalImagen: esEdicion ? imagen.idInformeLocalImagen ?? 0 : 0,
+        idInformeLocalImagen: imagen.idInformeLocalImagen ?? 0,
         idTipoArchivo: imagen.idTipoArchivo ?? obtenerIdTipoArchivo(imagen.tipo ?? local.imagenTipo),
         nombre: imagen.nombre,
       })),
@@ -1142,10 +1142,6 @@ function prepararDatosParaNuevoInforme(
     locales: datos.locales.map((local) => ({
       ...local,
       idInformeLocal: undefined,
-      imagenes: local.imagenes?.map((imagen) => ({
-        ...imagen,
-        idInformeLocalImagen: undefined,
-      })),
     })),
   };
 }

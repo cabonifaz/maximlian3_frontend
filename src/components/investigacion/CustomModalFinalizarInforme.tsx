@@ -23,7 +23,7 @@ export function CustomModalFinalizarInvestigacionAnalista({
   if (!estaAbierto) return null;
 
   return (
-    <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/35 p-4 backdrop-blur-sm">
+    <div className="fixed left-0 top-0 z-[95] flex h-[100dvh] w-[100dvw] items-center justify-center overflow-hidden bg-slate-900/35 p-4 backdrop-blur-sm">
       <div className="w-full max-w-xl rounded-[28px] bg-white px-6 py-8 shadow-2xl sm:px-10">
         <div className="mx-auto max-w-md text-center">
           <h2 className="text-[18px] font-bold leading-tight text-slate-800 sm:text-[20px]">

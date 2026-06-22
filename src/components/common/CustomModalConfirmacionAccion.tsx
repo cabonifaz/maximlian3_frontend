@@ -35,7 +35,7 @@ export function CustomModalConfirmacionAccion({
   if (!isOpen) return null;
 
   return (
-    <div className={`fixed inset-0 ${zIndexClassName} flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-300`}>
+    <div className={`fixed left-0 top-0 h-[100dvh] w-[100dvw] overflow-hidden ${zIndexClassName} flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-300`}>
       <div
         className={`w-full overflow-hidden rounded-3xl bg-brand-white shadow-2xl animate-in zoom-in-95 duration-300 ${anchoMaximoClassName}`}
       >

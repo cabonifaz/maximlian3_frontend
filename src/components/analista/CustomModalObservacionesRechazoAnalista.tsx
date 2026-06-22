@@ -116,7 +116,7 @@ export function CustomModalObservacionesRechazoAnalista({
       <CustomButton
         variant="wine"
         size="sm"
-        className="fixed bottom-5 right-5 z-[120] shadow-xl"
+        className="fixed bottom-5 right-5 z-[60] shadow-xl"
         onClick={onAbrir}
       >
         <ClipboardCheck size={16} />
@@ -126,7 +126,7 @@ export function CustomModalObservacionesRechazoAnalista({
   }
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[120]">
+    <div className="pointer-events-none fixed inset-0 z-[60]">
       <section
         ref={panelRef}
         className="pointer-events-auto absolute flex max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-2xl border border-amber-200 bg-white shadow-2xl"
