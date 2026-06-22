@@ -464,6 +464,29 @@ export interface InformeCrearResponse {
   imagenesPendientes?: ImagenPendienteSubida[];
 }
 
+export interface InformeActualizarEstadoRequest {
+  idInforme: number;
+  idEstadoInforme: number;
+}
+
+export interface InformeObservacion {
+  idInformeObservacion: number;
+  observacion: string;
+  checked: boolean;
+}
+
+export interface InformeInsertarObservacionesLoteRequest {
+  idInforme: number;
+  idPedido: number;
+  observaciones: Array<Pick<InformeObservacion, "observacion" | "checked">>;
+}
+
+export type InformeEditarObservacionRequest = InformeObservacion;
+
+export interface InformeEliminarObservacionRequest {
+  idInformeObservacion: number;
+}
+
 export interface InformeObtenerResponse {
   idInforme?: number;
   idPedido?: number;
@@ -676,6 +699,18 @@ export interface DocumentoInformeGenerado {
   body?: DocumentoInformeBloque[];
 }
 
+export interface RespuestaDocumentoInformeGenerado {
+  documento: DocumentoInformeGenerado;
+  nombreInforme: string;
+}
+
+export interface DocumentoInformeObtenido {
+  url: string;
+  nombre: string;
+}
+
+export type FormatoDescargaInforme = ".pdf" | ".docx" | ".html" | ".xml";
+
 export interface PlantillaIndent {
   left?: string;
   right?: string;
@@ -689,7 +724,7 @@ export interface PlantillaDocumentoConfig {
   headingIndent?: PlantillaIndent;
   font?: { family?: string; size?: string; lineSpacing?: number };
   header?: { logo?: string; logoWidth?: string; logoHeight?: string; align?: string; gapAfter?: string };
-  footer?: { text?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string };
+  footer?: { text?: string; pageLabel?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string };
 }
 
 export interface PlantillaFilaEtiquetaValor {

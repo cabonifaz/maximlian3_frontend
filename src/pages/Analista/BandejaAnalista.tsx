@@ -155,6 +155,9 @@ export default function BandejaAnalista() {
     if (registro.idInforme > 0) {
       parametros.set("idInforme", String(registro.idInforme));
     }
+    if (registro.estado === "rechazado") {
+      parametros.set("estado", "rechazado");
+    }
 
     navigate(`/analista/investigacion/${registro.idPedido}?${parametros.toString()}`, {
       state: {

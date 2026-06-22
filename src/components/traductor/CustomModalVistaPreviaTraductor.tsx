@@ -10,6 +10,7 @@ import type { DatosInvestigacionAnalista } from "@maximilian/shared/types/invest
 interface PropsCustomModalVistaPreviaTraductor {
   estaAbierto: boolean;
   datosInvestigacion: DatosInvestigacionAnalista;
+  idInforme?: number;
   idPedido?: number;
   onCerrar: () => void;
   indicadorReporteTraducido?: string;
@@ -19,6 +20,7 @@ interface PropsCustomModalVistaPreviaTraductor {
 export function CustomModalVistaPreviaTraductor({
   estaAbierto,
   datosInvestigacion,
+  idInforme,
   idPedido,
   onCerrar,
   indicadorReporteTraducido = "En traducción",
@@ -54,6 +56,7 @@ export function CustomModalVistaPreviaTraductor({
           <CustomVistaPreviaInformeComparado
             datosInvestigacion={datosInvestigacion}
             encabezado={encabezado}
+            idInforme={idInforme}
             idPedido={idPedido}
             indicadorReporteTraducido={indicadorReporteTraducido}
           />

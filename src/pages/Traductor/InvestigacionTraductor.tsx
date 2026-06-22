@@ -5588,6 +5588,7 @@ function PantallaInvestigacionAnalista({
       <CustomModalVistaPreviaTraductor
         estaAbierto={estaAbiertoModalVistaPrevia}
         datosInvestigacion={datosInvestigacion}
+        idInforme={idInformeActual}
         idPedido={Number.isFinite(Number(idPedido)) ? Number(idPedido) : undefined}
         onCerrar={() => setEstaAbiertoModalVistaPrevia(false)}
       />
@@ -5948,6 +5949,7 @@ function PantallaInvestigacionAnalista({
       <CustomModalVistaPreviaInforme
         estaAbierto={estaAbiertoVistaPreviaFinalizar}
         datosInvestigacion={datosInvestigacion}
+        idInforme={idInformeActual}
         idPedido={Number.isFinite(Number(idPedido)) ? Number(idPedido) : undefined}
         encabezado={{
           pais: resumenEncabezado.pais || "-",

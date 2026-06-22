@@ -10,19 +10,27 @@ import type {
   ImagenPendienteSubida,
   InformeAutocompletarRequest,
   InformeActualizarArchivoRequest,
+  InformeActualizarEstadoRequest,
   InformeCrearRequest,
   InformeCrearResponse,
   DocumentoInformeGenerado,
+  DocumentoInformeObtenido,
+  FormatoDescargaInforme,
+  RespuestaDocumentoInformeGenerado,
   InformeEliminarArchivoRequest,
   InformeExtraerDocumentoRequest,
+  InformeEditarObservacionRequest,
+  InformeEliminarObservacionRequest,
   InformeExtraccionResponse,
   InformeGenerarUrlsArchivoRequest,
   InformeGenerarUrlsArchivoResponse,
   InformeInsertarArchivoLoteRequest,
   InformeInsertarArchivoLoteResponse,
+  InformeInsertarObservacionesLoteRequest,
   InformeListEntry,
   InformeListParams,
   InformeListResponse,
+  InformeObservacion,
   InformeObtenerArchivoRequest,
   InformeObtenerArchivoResponse,
   InformeObtenerParams,
@@ -455,6 +463,31 @@ function normalizarRespuestaUrlPrefirmada(resultado: unknown): InformeObtenerUrl
     fileKey: obtenerTexto(registro.fileKey, registro.FileKey, registro.key, registro.Key),
     expiresIn: obtenerNumeroOpcional(registro.expiresIn, registro.ExpiresIn),
   };
+}
+
+function normalizarObservacionesInforme(resultado: unknown): InformeObservacion[] {
+  const registro = obtenerRegistro(resultado);
+  const observaciones = Array.isArray(resultado)
+    ? resultado
+    : obtenerLista(
+        registro.observaciones,
+        registro.Observaciones,
+        registro.lstObservaciones,
+        registro.LstObservaciones,
+        registro.result,
+      );
+
+  return observaciones.map((item) => {
+    const observacion = obtenerRegistro(item);
+    return {
+      idInformeObservacion: obtenerNumero(
+        observacion.idInformeObservacion,
+        observacion.IdInformeObservacion,
+      ),
+      observacion: obtenerTexto(observacion.observacion, observacion.Observacion),
+      checked: obtenerBooleano(observacion.checked, observacion.Checked),
+    };
+  });
 }
 
 function normalizarUrlsArchivoGeneradas(resultado: unknown): InformeUrlArchivoGenerada[] {
@@ -1480,6 +1513,59 @@ export const informeService = {
     return normalizarRespuestaCrear(data.result);
   },
 
+  actualizarEstado: async (payload: InformeActualizarEstadoRequest): Promise<void> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      "/api/Informe/actualizarEstado",
+      payload,
+    );
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/actualizarEstado")) {
+      throw new Error(data.mensaje || "Error al actualizar el estado del informe");
+    }
+  },
+
+  listarObservaciones: async (idPedido: number): Promise<InformeObservacion[]> => {
+    const ruta = "/api/Informe/listarObservaciones";
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ruta, {
+      params: { IdPedido: idPedido },
+    });
+
+    if (!esRespuestaOkCompatibilidad(data, ruta)) {
+      throw new Error(data.mensaje || "No se pudieron obtener las observaciones del informe");
+    }
+
+    return normalizarObservacionesInforme(data.result);
+  },
+
+  insertarObservacionesLote: async (
+    payload: InformeInsertarObservacionesLoteRequest,
+  ): Promise<void> => {
+    const ruta = "/api/Informe/insertarObservacionesLote";
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, payload);
+
+    if (!esRespuestaOkCompatibilidad(data, ruta)) {
+      throw new Error(data.mensaje || "No se pudieron registrar las observaciones");
+    }
+  },
+
+  editarObservacion: async (payload: InformeEditarObservacionRequest): Promise<void> => {
+    const ruta = "/api/Informe/editarObservacion";
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, payload);
+
+    if (!esRespuestaOkCompatibilidad(data, ruta)) {
+      throw new Error(data.mensaje || "No se pudo editar la observación");
+    }
+  },
+
+  eliminarObservacion: async (payload: InformeEliminarObservacionRequest): Promise<void> => {
+    const ruta = "/api/Informe/eliminarObservacion";
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, payload);
+
+    if (!esRespuestaOkCompatibilidad(data, ruta)) {
+      throw new Error(data.mensaje || "No se pudo eliminar la observación");
+    }
+  },
+
   editar: async (payload: InformeCrearRequest): Promise<InformeCrearResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/editar", payload);
 
@@ -1504,15 +1590,39 @@ export const informeService = {
     return enriquecerRespuestaObtener(normalizarRespuestaObtener(data.result));
   },
 
-  generarDocumento: async (idPedido: number): Promise<DocumentoInformeGenerado> => {
-    const { data } = await maximilianService.get<ApiResponse<DocumentoInformeGenerado>>("/api/Informe/generarDocumento", {
+  generarDocumento: async (idInforme: number, idPedido: number): Promise<DocumentoInformeGenerado> => {
+    const { data } = await maximilianService.get<
+      ApiResponse<DocumentoInformeGenerado | RespuestaDocumentoInformeGenerado>
+    >("/api/Informe/generarDocumento", {
       params: {
+        IdInforme: idInforme,
         IdPedido: idPedido,
       },
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Informe/generarDocumento")) {
       throw new Error(data.mensaje || "No se pudo generar el documento del informe");
+    }
+
+    return "documento" in data.result ? data.result.documento : data.result;
+  },
+
+  obtenerDocumento: async (
+    idInforme: number,
+    idPedido: number,
+    formato?: FormatoDescargaInforme,
+  ): Promise<DocumentoInformeObtenido> => {
+    const ruta = "/api/Informe/obtenerDocumento";
+    const { data } = await maximilianService.get<ApiResponse<DocumentoInformeObtenido>>(ruta, {
+      params: {
+        IdInforme: idInforme,
+        IdPedido: idPedido,
+        ...(formato ? { Formato: formato } : {}),
+      },
+    });
+
+    if (!esRespuestaOkCompatibilidad(data, ruta)) {
+      throw new Error(data.mensaje || "No se pudo obtener el documento PDF del informe");
     }
 
     return data.result;
