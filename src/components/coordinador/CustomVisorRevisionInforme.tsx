@@ -1,23 +1,26 @@
-import { CheckCircle2, CircleX, Download, Eye, ShieldCheck } from "lucide-react";
+import { CheckCircle2, CircleX, Eye, ShieldCheck } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
-import { CustomVisorDocumentoInforme } from "@maximilian/components/common/CustomVisorDocumentoInforme";
-import type { DocumentoInformeGenerado } from "@maximilian/shared/types/informe.type";
+import { CustomDescargaInforme } from "@maximilian/components/coordinador/CustomDescargaInforme";
+import { CustomVisorPdf } from "@maximilian/components/coordinador/CustomVisorPdf";
+import type { FormatoDescargaInforme } from "@maximilian/shared/types/informe.type";
 
 interface PropsCustomVisorRevisionInforme {
-  documento?: DocumentoInformeGenerado;
+  documentoUrl?: string;
+  nombreDocumento?: string;
   estaCargandoDocumento: boolean;
   errorDocumento: boolean;
   puedeEditar: boolean;
   esEjemplo: boolean;
   onCerrar: () => void;
-  onDescargar: () => void;
+  onDescargar: (formato: FormatoDescargaInforme) => void;
   onAprobar: () => void;
   onRechazar: () => void;
   onVolver: () => void;
 }
 
 export function CustomVisorRevisionInforme({
-  documento,
+  documentoUrl,
+  nombreDocumento,
   estaCargandoDocumento,
   errorDocumento,
   puedeEditar,
@@ -29,9 +32,9 @@ export function CustomVisorRevisionInforme({
   onVolver,
 }: PropsCustomVisorRevisionInforme) {
   return (
-    <div className="relative flex min-h-[calc(100vh-4rem)] flex-col bg-slate-100">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
-        <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4">
+    <div className="relative flex h-[calc(100vh-4rem)] flex-col overflow-hidden bg-slate-100">
+      <header className="z-30 shrink-0 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-2.5">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
               <ShieldCheck size={20} />
@@ -50,17 +53,17 @@ export function CustomVisorRevisionInforme({
             <CustomButton variant="secondary" size="sm" onClick={onCerrar}>
               Cerrar
             </CustomButton>
-            <CustomButton size="sm" onClick={onDescargar}>
-              <Download size={14} />
-              Descargar PDF
-            </CustomButton>
+            <CustomDescargaInforme
+              deshabilitado={!documentoUrl}
+              onDescargar={onDescargar}
+            />
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-6 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-5 py-2">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">
-              Informe original
+              {nombreDocumento || "Informe original"}
             </p>
             <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
               {"(Espa\u00f1ol)"}
@@ -94,25 +97,25 @@ export function CustomVisorRevisionInforme({
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-8">
-        {documento ? (
-          <CustomVisorDocumentoInforme documento={documento} />
+      <main className="min-h-0 w-full flex-1 p-1.5 sm:p-2">
+        {documentoUrl ? (
+          <CustomVisorPdf urlDocumento={documentoUrl} />
         ) : estaCargandoDocumento ? (
           <div className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500">
-            {"Generando documento para revisi\u00f3n..."}
+            {"Obteniendo documento para revisi\u00f3n..."}
           </div>
         ) : errorDocumento ? (
           <div className="rounded-2xl border border-red-200 bg-white px-6 py-12 text-center text-sm text-red-600">
-            {"No se pudo generar el documento para la revisi\u00f3n."}
+            {"No se pudo obtener el documento PDF para la revisi\u00f3n."}
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-500">
-            {"No se encontr\u00f3 un informe v\u00e1lido para generar el documento."}
+            {"No se encontr\u00f3 un documento PDF para este informe."}
           </div>
         )}
       </main>
 
-      <footer className="sticky bottom-0 z-30 mt-auto flex items-center justify-end gap-3 border-t border-slate-200 bg-white/95 px-6 py-4 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur">
+      <footer className="z-30 flex shrink-0 items-center justify-end gap-3 border-t border-slate-200 bg-white/95 px-5 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur">
         <div className="flex items-center gap-2 text-sm text-slate-500">
           <Eye size={16} />
           {esEjemplo ? "Ejemplo de revisi\u00f3n" : "Revisi\u00f3n activa"}

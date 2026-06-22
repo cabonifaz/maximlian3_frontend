@@ -681,6 +681,13 @@ export interface RespuestaDocumentoInformeGenerado {
   nombreInforme: string;
 }
 
+export interface DocumentoInformeObtenido {
+  url: string;
+  nombre: string;
+}
+
+export type FormatoDescargaInforme = ".pdf" | ".docx" | ".html" | ".xml";
+
 export interface PlantillaIndent {
   left?: string;
   right?: string;

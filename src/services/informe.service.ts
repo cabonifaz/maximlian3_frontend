@@ -13,6 +13,8 @@ import type {
   InformeCrearRequest,
   InformeCrearResponse,
   DocumentoInformeGenerado,
+  DocumentoInformeObtenido,
+  FormatoDescargaInforme,
   RespuestaDocumentoInformeGenerado,
   InformeEliminarArchivoRequest,
   InformeExtraerDocumentoRequest,
@@ -1533,8 +1535,29 @@ export const informeService = {
     return "documento" in data.result ? data.result.documento : data.result;
   },
 
-  generarDocumentoDocx: async (idInforme: number, idPedido: number): Promise<void> => {
-    const ruta = "/api/Informe/generarDocumentoDocx";
+  obtenerDocumento: async (
+    idInforme: number,
+    idPedido: number,
+    formato?: FormatoDescargaInforme,
+  ): Promise<DocumentoInformeObtenido> => {
+    const ruta = "/api/Informe/obtenerDocumento";
+    const { data } = await maximilianService.get<ApiResponse<DocumentoInformeObtenido>>(ruta, {
+      params: {
+        IdInforme: idInforme,
+        IdPedido: idPedido,
+        ...(formato ? { Formato: formato } : {}),
+      },
+    });
+
+    if (!esRespuestaOkCompatibilidad(data, ruta)) {
+      throw new Error(data.mensaje || "No se pudo obtener el documento PDF del informe");
+    }
+
+    return data.result;
+  },
+
+  generarDocumentoPdf: async (idInforme: number, idPedido: number): Promise<void> => {
+    const ruta = "/api/Informe/generarDocumentoPdf";
     const { data } = await maximilianService.get<ApiResponse<unknown>>(ruta, {
       params: {
         IdInforme: idInforme,
@@ -1543,7 +1566,7 @@ export const informeService = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, ruta)) {
-      throw new Error(data.mensaje || "No se pudo generar el documento DOCX del informe");
+      throw new Error(data.mensaje || "No se pudo generar el documento PDF del informe");
     }
   },
 

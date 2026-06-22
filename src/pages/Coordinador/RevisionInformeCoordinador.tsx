@@ -6,6 +6,7 @@ import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/Cu
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import { informeService } from "@maximilian/services/informe.service";
+import type { FormatoDescargaInforme } from "@maximilian/shared/types/informe.type";
 import { obtenerDatosInvestigacionAnalista } from "@maximilian/shared/utils/datos-simulados-investigacion";
 
 const ID_ESTADO_INFORME_APROBADO = 4;
@@ -40,19 +41,19 @@ export default function RevisionInformeCoordinador() {
     informeObtenido?.idInforme ?? (Number.isFinite(idInforme) ? idInforme : 0);
 
   const {
-    data: documentoGenerado,
+    data: documentoObtenido,
     isLoading: estaCargandoDocumento,
     isError: errorDocumento,
   } = useQuery({
-    queryKey: ["informe-documento-generado", idInformeSeguro, idPedidoNumerico],
+    queryKey: ["informe-documento-pdf", idInformeSeguro, idPedidoNumerico],
     queryFn: () =>
-      informeService.generarDocumento(idInformeSeguro, idPedidoNumerico),
+      informeService.obtenerDocumento(idInformeSeguro, idPedidoNumerico),
     enabled:
       !esEjemplo &&
       idInformeSeguro > 0 &&
       Number.isFinite(idPedidoNumerico) &&
       idPedidoNumerico > 0,
-    staleTime: 15 * 60 * 1000,
+    staleTime: 10 * 60 * 1000,
   });
 
   const mutationRevision = useMutation({
@@ -81,18 +82,42 @@ export default function RevisionInformeCoordinador() {
   const puedeEditarRevision =
     !isLoading && !mutationRevision.isPending && Boolean(datosInvestigacion);
 
+  const descargarDocumento = async (formato: FormatoDescargaInforme) => {
+    const etiquetaFormato = formato.slice(1).toUpperCase();
+    const idToast = toast.loading(`Descargando documento ${etiquetaFormato}...`);
+    try {
+      const documentoDescarga = await informeService.obtenerDocumento(
+        idInformeSeguro,
+        idPedidoNumerico,
+        formato,
+      );
+      const enlace = document.createElement("a");
+      enlace.href = documentoDescarga.url;
+      enlace.rel = "noopener noreferrer";
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      toast.dismiss(idToast);
+    } catch {
+      toast.error(`No se pudo descargar el documento ${etiquetaFormato}.`, { id: idToast });
+    }
+  };
+
   if (isLoading) return <PantallaCarga message="Obteniendo informe..." />;
 
   return (
     <>
       <CustomVisorRevisionInforme
-        documento={documentoGenerado}
+        documentoUrl={documentoObtenido?.url}
+        nombreDocumento={documentoObtenido?.nombre}
         estaCargandoDocumento={estaCargandoDocumento}
         errorDocumento={errorDocumento}
         puedeEditar={puedeEditarRevision}
         esEjemplo={esEjemplo}
         onCerrar={() => navigate("/coordinador/revision")}
-        onDescargar={() => window.print()}
+        onDescargar={(formato) => {
+          void descargarDocumento(formato);
+        }}
         onAprobar={() => mutationRevision.mutate(ID_ESTADO_INFORME_APROBADO)}
         onRechazar={() => setEstaAbiertoModalRechazo(true)}
         onVolver={() => navigate("/coordinador/revision")}

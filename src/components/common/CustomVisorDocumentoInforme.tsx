@@ -334,7 +334,7 @@ ${contenido}
 </html>`;
 
     setSrcdoc(htmlCompleto);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentoKey]);
 
   const manejarCargaIframe = useCallback(() => {
@@ -382,7 +382,7 @@ ${contenido}
   return (
     <div className="overflow-x-auto pb-4">
       <div
-        className="mx-auto min-w-[760px]"
+        className="mx-auto min-w-190"
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </div>

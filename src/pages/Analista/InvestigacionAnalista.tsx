@@ -1687,10 +1687,10 @@ function PantallaInvestigacionAnalista({
       if (idEstadoInforme === ID_ESTADO_PEDIDO_FINALIZADO) {
         const idPedidoNumerico = Number(idPedido);
         if (!idInformeResultado || idInformeResultado <= 0 || !Number.isFinite(idPedidoNumerico) || idPedidoNumerico <= 0) {
-          throw new Error("No se pudo identificar el informe finalizado para generar el documento DOCX.");
+          throw new Error("No se pudo identificar el informe finalizado para generar el documento PDF.");
         }
 
-        await informeService.generarDocumentoDocx(idInformeResultado, idPedidoNumerico);
+        await informeService.generarDocumentoPdf(idInformeResultado, idPedidoNumerico);
         setDebeVolverABandejaTrasGuardarBorrador(false);
         navigate("/analista");
         return;
