@@ -163,7 +163,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
   const ciR = config.contentIndent?.right ?? "0";
   const fiL = config.footerIndent?.left ?? "0";
   const fiR = config.footerIndent?.right ?? "0";
-  const bordePagina = config.pageBorder as string | undefined;
+  const bordePagina = config.pageBorder;
 
   return `
     @page {
@@ -212,6 +212,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       display: block;
       ${config.footer?.pageFontSize ? `font-size: ${config.footer.pageFontSize};` : ""}
       ${config.footer?.pageColor ? `color: ${config.footer.pageColor};` : ""}
+      ${config.footer?.pageGapBefore ? `margin-top: ${config.footer.pageGapBefore};` : ""}
     }
 
     body {
@@ -376,6 +377,7 @@ ${contenido}
           ref={iframeRef}
           title="Vista previa del documento"
           srcDoc={srcdoc}
+          scrolling="no"
           onLoad={manejarCargaIframe}
           style={{
             width: "100%",
