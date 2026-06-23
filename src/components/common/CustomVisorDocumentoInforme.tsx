@@ -309,7 +309,7 @@ function construirHtmlContenido(
 
   const cuerpo = secciones.map(renderizarSeccion).join("\n");
 
-  return `${marcaAgua}${encabezado}${pie}<div class="sr-contenido">${cuerpo}</div>`;
+  return `${encabezado}${pie}<div class="sr-contenido">${cuerpo}</div>`;
 }
 
 export function CustomVisorDocumentoInforme({
