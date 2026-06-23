@@ -258,9 +258,6 @@ function construirCss(config: PlantillaDocumentoConfig): string {
     ` : ""}
 
     ${config.watermark?.image ? `
-    .sr-marca-agua {
-      display: none;
-    }
     .sr-marca-agua-overlay {
       position: absolute;
       top: 0;
@@ -307,10 +304,6 @@ function construirHtmlContenido(
   const encabezado = logoUrl
     ? `<div class="sr-encabezado-logo"><img src="${logoUrl}" style="width:${logoW};height:${logoH};object-fit:contain;" /></div>`
     : `<div class="sr-encabezado-logo"></div>`;
-
-  const marcaAgua = config.watermark?.image
-    ? `<div class="sr-marca-agua"><img src="${config.watermark.image}" /></div>`
-    : "";
 
   const pie = `<div class="sr-pie-pagina"><span class="sr-pie-texto">${escaparHtml(pieTexto)}</span></div>`;
 
@@ -367,26 +360,23 @@ export function CustomVisorDocumentoInforme({
       documento.sections,
     );
 
-    const scriptMarcaAgua = documento.document?.watermark?.image ? `
+    const wm = documento.document?.watermark;
+    const scriptMarcaAgua = wm?.image ? `
 <script>
-(function() {
-  var src = document.querySelector(".sr-marca-agua");
-  if (!src) return;
-  var img = src.querySelector("img");
-  if (!img) return;
-  var observer = new MutationObserver(function() {
-    var pages = document.querySelectorAll(".pagedjs_page");
-    if (pages.length === 0) return;
-    pages.forEach(function(page) {
-      if (page.querySelector(".sr-marca-agua-overlay")) return;
-      var overlay = document.createElement("div");
-      overlay.className = "sr-marca-agua-overlay";
-      overlay.appendChild(img.cloneNode(true));
-      page.appendChild(overlay);
-    });
+window.PagedConfig = window.PagedConfig || {};
+var prevAfter = window.PagedConfig.after;
+window.PagedConfig.after = function() {
+  if (prevAfter) prevAfter();
+  var pages = document.querySelectorAll(".pagedjs_page");
+  pages.forEach(function(page) {
+    var overlay = document.createElement("div");
+    overlay.className = "sr-marca-agua-overlay";
+    var img = document.createElement("img");
+    img.src = ${JSON.stringify(wm.image)};
+    overlay.appendChild(img);
+    page.appendChild(overlay);
   });
-  observer.observe(document.body, { childList: true, subtree: true });
-})();
+};
 </script>` : "";
 
     const htmlCompleto = `<!DOCTYPE html>
@@ -394,10 +384,11 @@ export function CustomVisorDocumentoInforme({
 <head>
 <meta charset="utf-8">
 <style>${css}</style>
+${scriptMarcaAgua}
 </head>
 <body>
 ${contenido}
-<script src="${escaparAtributo(pagedJsUrl)}"></script>${scriptMarcaAgua}
+<script src="${escaparAtributo(pagedJsUrl)}"></script>
 </body>
 </html>`;
 
