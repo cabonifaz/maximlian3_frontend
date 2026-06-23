@@ -259,26 +259,24 @@ function construirCss(config: PlantillaDocumentoConfig): string {
 
     ${config.watermark?.image ? `
     .sr-marca-agua {
-      position: running(marca-agua);
+      display: none;
+    }
+    .sr-marca-agua-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       display: flex;
       ${config.watermark.alignItems ? `align-items: ${config.watermark.alignItems};` : ""}
       ${config.watermark.justifyContent ? `justify-content: ${config.watermark.justifyContent};` : ""}
       pointer-events: none;
+      z-index: 0;
     }
-    .sr-marca-agua img {
+    .sr-marca-agua-overlay img {
       ${config.watermark.width ? `width: ${config.watermark.width};` : ""}
       ${config.watermark.height ? `height: ${config.watermark.height};` : ""}
       ${config.watermark.opacity !== undefined ? `opacity: ${config.watermark.opacity};` : ""}
-    }
-    @page {
-      @top-left {
-        content: element(marca-agua);
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-      }
     }
     ` : ""}
 
@@ -369,6 +367,28 @@ export function CustomVisorDocumentoInforme({
       documento.sections,
     );
 
+    const scriptMarcaAgua = documento.document?.watermark?.image ? `
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  var src = document.querySelector(".sr-marca-agua");
+  if (!src) return;
+  var img = src.querySelector("img");
+  if (!img) return;
+  var observer = new MutationObserver(function() {
+    var pages = document.querySelectorAll(".pagedjs_page");
+    if (pages.length === 0) return;
+    pages.forEach(function(page) {
+      if (page.querySelector(".sr-marca-agua-overlay")) return;
+      var overlay = document.createElement("div");
+      overlay.className = "sr-marca-agua-overlay";
+      overlay.appendChild(img.cloneNode(true));
+      page.appendChild(overlay);
+    });
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+});
+</script>` : "";
+
     const htmlCompleto = `<!DOCTYPE html>
 <html>
 <head>
@@ -377,7 +397,7 @@ export function CustomVisorDocumentoInforme({
 </head>
 <body>
 ${contenido}
-<script src="${escaparAtributo(pagedJsUrl)}"></script>
+<script src="${escaparAtributo(pagedJsUrl)}"></script>${scriptMarcaAgua}
 </body>
 </html>`;
 
