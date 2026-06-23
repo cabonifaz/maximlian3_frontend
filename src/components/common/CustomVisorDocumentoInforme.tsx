@@ -163,6 +163,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
   const ciR = config.contentIndent?.right ?? "0";
   const fiL = config.footerIndent?.left ?? "0";
   const fiR = config.footerIndent?.right ?? "0";
+  const bordePagina = config.pageBorder as string | undefined;
 
   return `
     @page {
@@ -236,7 +237,22 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
       margin-bottom: 20px;
       background: #fff;
+      position: relative;
     }
+
+    ${bordePagina ? `
+    .pagedjs_page::before {
+      content: "";
+      position: absolute;
+      top: ${bordePagina.top ?? "0"};
+      bottom: ${bordePagina.bottom ?? "0"};
+      left: ${bordePagina.left ?? "0"};
+      right: ${bordePagina.right ?? "0"};
+      border: ${bordePagina.width ?? "1pt"} solid ${bordePagina.color ?? "#000"};
+      pointer-events: none;
+      z-index: 1;
+    }
+    ` : ""}
 
     table {
       border-collapse: collapse;

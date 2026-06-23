@@ -725,6 +725,7 @@ export interface PlantillaDocumentoConfig {
   font?: { family?: string; size?: string; lineSpacing?: number };
   header?: { logo?: string; logoWidth?: string; logoHeight?: string; align?: string; gapAfter?: string };
   footer?: { text?: string; pageLabel?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string };
+  pageBorder?: { width?: string; color?: string; top?: string; bottom?: string; left?: string; right?: string };
 }
 
 export interface PlantillaFilaEtiquetaValor {
