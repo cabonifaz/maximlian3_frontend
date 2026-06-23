@@ -258,18 +258,27 @@ function construirCss(config: PlantillaDocumentoConfig): string {
     ` : ""}
 
     ${config.watermark?.image ? `
-    .pagedjs_page::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
+    .sr-marca-agua {
+      position: running(marca-agua);
       width: 100%;
       height: 100%;
-      background: url("${escaparAtributo(config.watermark.image)}") no-repeat ${config.watermark.position ?? "center center"};
-      ${config.watermark.width || config.watermark.height ? `background-size: ${config.watermark.width ?? "auto"} ${config.watermark.height ?? "auto"};` : ""}
-      ${config.watermark.opacity !== undefined ? `opacity: ${config.watermark.opacity};` : ""}
+      display: flex;
+      ${config.watermark.alignItems ? `align-items: ${config.watermark.alignItems};` : ""}
+      ${config.watermark.justifyContent ? `justify-content: ${config.watermark.justifyContent};` : ""}
       pointer-events: none;
-      z-index: 0;
+    }
+    .sr-marca-agua img {
+      ${config.watermark.width ? `width: ${config.watermark.width};` : ""}
+      ${config.watermark.height ? `height: ${config.watermark.height};` : ""}
+      ${config.watermark.opacity !== undefined ? `opacity: ${config.watermark.opacity};` : ""}
+    }
+    @page {
+      @top-left {
+        content: element(marca-agua);
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+      }
     }
     ` : ""}
 
@@ -301,11 +310,15 @@ function construirHtmlContenido(
     ? `<div class="sr-encabezado-logo"><img src="${logoUrl}" style="width:${logoW};height:${logoH};object-fit:contain;" /></div>`
     : `<div class="sr-encabezado-logo"></div>`;
 
+  const marcaAgua = config.watermark?.image
+    ? `<div class="sr-marca-agua"><img src="${config.watermark.image}" /></div>`
+    : "";
+
   const pie = `<div class="sr-pie-pagina"><span class="sr-pie-texto">${escaparHtml(pieTexto)}</span></div>`;
 
   const cuerpo = secciones.map(renderizarSeccion).join("\n");
 
-  return `${encabezado}${pie}<div class="sr-contenido">${cuerpo}</div>`;
+  return `${marcaAgua}${encabezado}${pie}<div class="sr-contenido">${cuerpo}</div>`;
 }
 
 export function CustomVisorDocumentoInforme({
