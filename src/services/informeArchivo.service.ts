@@ -192,9 +192,9 @@ export const servicioInformeArchivo = {
   eliminar: async (
     payload: InformeEliminarArchivoRequest,
   ): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+    const { data } = await maximilianService.delete<ApiResponse<unknown>>(
       "/api/informeArchivo/eliminar",
-      payload,
+      { data: payload },
     );
 
     if (!esRespuestaOkCompatibilidad(data, "/api/informeArchivo/eliminar")) {

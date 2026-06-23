@@ -107,7 +107,7 @@ export const servicioInformeObservacion = {
 
   eliminar: async (payload: InformeEliminarObservacionRequest): Promise<void> => {
     const ruta = "/api/informeObservacion/eliminar";
-    const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, payload);
+    const { data } = await maximilianService.delete<ApiResponse<unknown>>(ruta, { data: payload });
 
     if (!esRespuestaOkCompatibilidad(data, ruta)) {
       throw new Error(data.mensaje || "No se pudo eliminar la observación");
