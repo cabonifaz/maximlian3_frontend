@@ -258,22 +258,19 @@ function construirCss(config: PlantillaDocumentoConfig): string {
     ` : ""}
 
     ${config.watermark?.image ? `
-    .sr-marca-agua-overlay {
+    .pagedjs_page::after {
+      content: "";
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      ${config.watermark.alignItems ? `align-items: ${config.watermark.alignItems};` : ""}
-      ${config.watermark.justifyContent ? `justify-content: ${config.watermark.justifyContent};` : ""}
+      right: 0;
+      bottom: 0;
+      background: url("${escaparAtributo(config.watermark.image)}") no-repeat;
+      ${config.watermark.width && config.watermark.height ? `background-size: ${config.watermark.width} ${config.watermark.height};` : ""}
+      ${config.watermark.position ? `background-position: ${config.watermark.position};` : ""}
+      ${config.watermark.opacity !== undefined ? `opacity: ${config.watermark.opacity};` : ""}
       pointer-events: none;
       z-index: 0;
-    }
-    .sr-marca-agua-overlay img {
-      ${config.watermark.width ? `width: ${config.watermark.width};` : ""}
-      ${config.watermark.height ? `height: ${config.watermark.height};` : ""}
-      ${config.watermark.opacity !== undefined ? `opacity: ${config.watermark.opacity};` : ""}
     }
     ` : ""}
 
@@ -360,31 +357,11 @@ export function CustomVisorDocumentoInforme({
       documento.sections,
     );
 
-    const wm = documento.document?.watermark;
-    const scriptMarcaAgua = wm?.image ? `
-<script>
-window.PagedConfig = {
-  auto: true,
-  after: function() {
-    var pages = document.querySelectorAll(".pagedjs_page");
-    pages.forEach(function(page) {
-      var overlay = document.createElement("div");
-      overlay.className = "sr-marca-agua-overlay";
-      var img = document.createElement("img");
-      img.src = ${JSON.stringify(wm.image)};
-      overlay.appendChild(img);
-      page.appendChild(overlay);
-    });
-  }
-};
-</script>` : "";
-
     const htmlCompleto = `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <style>${css}</style>
-${scriptMarcaAgua}
 </head>
 <body>
 ${contenido}
