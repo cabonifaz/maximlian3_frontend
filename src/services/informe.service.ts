@@ -1519,18 +1519,18 @@ export const informeService = {
     return enriquecerRespuestaObtener(normalizarRespuestaObtener(data.result));
   },
 
-  generarDocumento: async (idInforme: number, idPedido: number): Promise<DocumentoInformeGenerado> => {
+  previsualizarDocumento: async (idInforme: number, idPedido: number): Promise<DocumentoInformeGenerado> => {
     const { data } = await maximilianService.get<
       ApiResponse<DocumentoInformeGenerado | RespuestaDocumentoInformeGenerado>
-    >("/api/Informe/generarDocumento", {
+    >("/api/Informe/previsualizarDocumento", {
       params: {
         IdInforme: idInforme,
         IdPedido: idPedido,
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/generarDocumento")) {
-      throw new Error(data.mensaje || "No se pudo generar el documento del informe");
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/previsualizarDocumento")) {
+      throw new Error(data.mensaje || "No se pudo obtener la previsualización del documento");
     }
 
     return "documento" in data.result ? data.result.documento : data.result;
