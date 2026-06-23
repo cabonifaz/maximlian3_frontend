@@ -210,6 +210,8 @@ function construirCss(config: PlantillaDocumentoConfig): string {
     .sr-pie-pagina::after {
       content: "${escaparHtml(config.footer?.pageLabel ?? "Page")} " counter(page);
       display: block;
+      ${config.footer?.pageFontSize ? `font-size: ${config.footer.pageFontSize};` : ""}
+      ${config.footer?.pageColor ? `color: ${config.footer.pageColor};` : ""}
     }
 
     body {
