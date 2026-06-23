@@ -369,7 +369,7 @@ export function CustomVisorDocumentoInforme({
 
     const scriptMarcaAgua = documento.document?.watermark?.image ? `
 <script>
-document.addEventListener("DOMContentLoaded", function() {
+(function() {
   var src = document.querySelector(".sr-marca-agua");
   if (!src) return;
   var img = src.querySelector("img");
@@ -386,7 +386,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   });
   observer.observe(document.body, { childList: true, subtree: true });
-});
+})();
 </script>` : "";
 
     const htmlCompleto = `<!DOCTYPE html>
