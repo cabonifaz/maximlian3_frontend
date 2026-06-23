@@ -59,6 +59,8 @@ import {
   SelectorMaestroConAltaInvestigacionAnalista,
 } from "@maximilian/components/investigacion/ControlesInforme";
 import { informeService } from "@maximilian/services/informe.service";
+import { servicioInformeObservacion } from "@maximilian/services/informeObservacion.service";
+import { servicioInformeLocalImagen } from "@maximilian/services/informeLocalImagen.service";
 import { servicioBanco } from "@maximilian/services/banco.service";
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
@@ -1272,13 +1274,13 @@ function PantallaInvestigacionAnalista({
     isLoading: estaCargandoObservacionesRechazo,
   } = useQuery({
     queryKey: claveObservacionesRechazo,
-    queryFn: () => informeService.listarObservaciones(idPedidoObservaciones),
+    queryFn: () => servicioInformeObservacion.listar(idPedidoObservaciones),
     enabled: Number.isFinite(idPedidoObservaciones)
       && idPedidoObservaciones > 0,
   });
   const actualizarObservacionRechazoMutation = useMutation({
     mutationFn: (observacion: InformeObservacion) =>
-      informeService.editarObservacion(observacion),
+      servicioInformeObservacion.editar(observacion),
     onMutate: async (observacionActualizada) => {
       await queryClient.cancelQueries({ queryKey: claveObservacionesRechazo });
       const observacionesAnteriores = queryClient.getQueryData<InformeObservacion[]>(
@@ -1772,7 +1774,7 @@ function PantallaInvestigacionAnalista({
 
       const todosLosIds = [...new Set([...idsExistentes, ...idsSubidosOk])];
       if (todosLosIds.length > 0) {
-        await informeService.actualizarEstadoCargaImagenes(todosLosIds);
+        await servicioInformeLocalImagen.actualizarEstadoCarga(todosLosIds);
       }
       const idInformeResultado = respuesta.idInforme ?? (
         debeCrearInformePorRechazo ? undefined : idInformeActual

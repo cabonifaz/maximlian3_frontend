@@ -9,7 +9,6 @@ import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra
 import type {
   ImagenPendienteSubida,
   InformeAutocompletarRequest,
-  InformeActualizarArchivoRequest,
   InformeActualizarEstadoRequest,
   InformeCrearRequest,
   InformeCrearResponse,
@@ -17,27 +16,15 @@ import type {
   DocumentoInformeObtenido,
   FormatoDescargaInforme,
   RespuestaDocumentoInformeGenerado,
-  InformeEliminarArchivoRequest,
   InformeExtraerDocumentoRequest,
-  InformeEditarObservacionRequest,
-  InformeEliminarObservacionRequest,
   InformeExtraccionResponse,
-  InformeGenerarUrlsArchivoRequest,
-  InformeGenerarUrlsArchivoResponse,
-  InformeInsertarArchivoLoteRequest,
-  InformeInsertarArchivoLoteResponse,
-  InformeInsertarObservacionesLoteRequest,
   InformeListEntry,
   InformeListParams,
   InformeListResponse,
-  InformeObservacion,
-  InformeObtenerArchivoRequest,
-  InformeObtenerArchivoResponse,
   InformeObtenerParams,
   InformeObtenerUrlPrefirmadaRequest,
   InformeObtenerUrlPrefirmadaResponse,
   InformeObtenerResponse,
-  InformeUrlArchivoGenerada,
 } from "@maximilian/shared/types/informe.type";
 import type {
   AccionBandejaAnalista,
@@ -465,97 +452,6 @@ function normalizarRespuestaUrlPrefirmada(resultado: unknown): InformeObtenerUrl
   };
 }
 
-function normalizarObservacionesInforme(resultado: unknown): InformeObservacion[] {
-  const registro = obtenerRegistro(resultado);
-  const observaciones = Array.isArray(resultado)
-    ? resultado
-    : obtenerLista(
-        registro.observaciones,
-        registro.Observaciones,
-        registro.lstObservaciones,
-        registro.LstObservaciones,
-        registro.result,
-      );
-
-  return observaciones.map((item) => {
-    const observacion = obtenerRegistro(item);
-    return {
-      idInformeObservacion: obtenerNumero(
-        observacion.idInformeObservacion,
-        observacion.IdInformeObservacion,
-      ),
-      observacion: obtenerTexto(observacion.observacion, observacion.Observacion),
-      checked: obtenerBooleano(observacion.checked, observacion.Checked),
-    };
-  });
-}
-
-function normalizarUrlsArchivoGeneradas(resultado: unknown): InformeUrlArchivoGenerada[] {
-  const registro = obtenerRegistro(resultado);
-  const lista = Array.isArray(resultado)
-    ? resultado
-    : obtenerLista(
-      registro.archivos,
-      registro.Archivos,
-      registro.lstArchivos,
-      registro.LstArchivos,
-      registro.urls,
-      registro.Urls,
-      registro.result,
-      registro.Result,
-    );
-  const registros = lista.length > 0 ? lista : Object.keys(registro).length > 0 ? [registro] : [];
-
-  return registros.map((item) => {
-    const archivo = obtenerRegistro(item);
-    const uploadUrl = obtenerTexto(
-      archivo.uploadUrl,
-      archivo.UploadUrl,
-      archivo.urlCarga,
-      archivo.UrlCarga,
-      archivo.urlPrefirmada,
-      archivo.UrlPrefirmada,
-      archivo.urlPreFirmada,
-      archivo.UrlPreFirmada,
-      archivo.url,
-      archivo.Url,
-    );
-    const archivoUrl = obtenerTexto(
-      archivo.archivoUrl,
-      archivo.ArchivoUrl,
-      archivo.urlArchivo,
-      archivo.UrlArchivo,
-      archivo.fileKey,
-      archivo.FileKey,
-      archivo.urlDestino,
-      archivo.UrlDestino,
-      archivo.ruta,
-      archivo.Ruta,
-    ) || uploadUrl.split("?")[0];
-
-    return {
-      nombre: obtenerTexto(
-        archivo.nombre,
-        archivo.Nombre,
-        archivo.nombreArchivo,
-        archivo.NombreArchivo,
-        archivo.fileName,
-        archivo.FileName,
-      ),
-      uploadUrl,
-      archivoUrl,
-    };
-  });
-}
-
-function normalizarRespuestaUrlsArchivo(resultado: unknown): InformeGenerarUrlsArchivoResponse {
-  const registro = obtenerRegistro(resultado);
-
-  return {
-    idInforme: obtenerNumero(registro.idInforme, registro.IdInforme) || undefined,
-    archivos: normalizarUrlsArchivoGeneradas(resultado),
-  };
-}
 
 function normalizarRespuestaExtraccion(resultado: unknown): InformeExtraccionResponse {
   const registro = obtenerRegistro(resultado);
@@ -1524,48 +1420,6 @@ export const informeService = {
     }
   },
 
-  listarObservaciones: async (idPedido: number): Promise<InformeObservacion[]> => {
-    const ruta = "/api/Informe/listarObservaciones";
-    const { data } = await maximilianService.get<ApiResponse<unknown>>(ruta, {
-      params: { IdPedido: idPedido },
-    });
-
-    if (!esRespuestaOkCompatibilidad(data, ruta)) {
-      throw new Error(data.mensaje || "No se pudieron obtener las observaciones del informe");
-    }
-
-    return normalizarObservacionesInforme(data.result);
-  },
-
-  insertarObservacionesLote: async (
-    payload: InformeInsertarObservacionesLoteRequest,
-  ): Promise<void> => {
-    const ruta = "/api/Informe/insertarObservacionesLote";
-    const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, payload);
-
-    if (!esRespuestaOkCompatibilidad(data, ruta)) {
-      throw new Error(data.mensaje || "No se pudieron registrar las observaciones");
-    }
-  },
-
-  editarObservacion: async (payload: InformeEditarObservacionRequest): Promise<void> => {
-    const ruta = "/api/Informe/editarObservacion";
-    const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, payload);
-
-    if (!esRespuestaOkCompatibilidad(data, ruta)) {
-      throw new Error(data.mensaje || "No se pudo editar la observación");
-    }
-  },
-
-  eliminarObservacion: async (payload: InformeEliminarObservacionRequest): Promise<void> => {
-    const ruta = "/api/Informe/eliminarObservacion";
-    const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, payload);
-
-    if (!esRespuestaOkCompatibilidad(data, ruta)) {
-      throw new Error(data.mensaje || "No se pudo eliminar la observación");
-    }
-  },
-
   editar: async (payload: InformeCrearRequest): Promise<InformeCrearResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/editar", payload);
 
@@ -1590,18 +1444,18 @@ export const informeService = {
     return enriquecerRespuestaObtener(normalizarRespuestaObtener(data.result));
   },
 
-  generarDocumento: async (idInforme: number, idPedido: number): Promise<DocumentoInformeGenerado> => {
+  previsualizarDocumento: async (idInforme: number, idPedido: number): Promise<DocumentoInformeGenerado> => {
     const { data } = await maximilianService.get<
       ApiResponse<DocumentoInformeGenerado | RespuestaDocumentoInformeGenerado>
-    >("/api/Informe/generarDocumento", {
+    >("/api/Informe/previsualizarDocumento", {
       params: {
         IdInforme: idInforme,
         IdPedido: idPedido,
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/generarDocumento")) {
-      throw new Error(data.mensaje || "No se pudo generar el documento del informe");
+    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/previsualizarDocumento")) {
+      throw new Error(data.mensaje || "No se pudo obtener la previsualización del documento");
     }
 
     return "documento" in data.result ? data.result.documento : data.result;
@@ -1628,95 +1482,6 @@ export const informeService = {
     return data.result;
   },
 
-  generarUrlsArchivo: async (
-    payload: InformeGenerarUrlsArchivoRequest,
-  ): Promise<InformeGenerarUrlsArchivoResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>(
-      "/api/Informe/generarUrlsArchivo",
-      payload,
-    );
-
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/generarUrlsArchivo")) {
-      throw new Error(data.mensaje || "No se pudieron generar las URLs de los archivos");
-    }
-
-    const respuesta = normalizarRespuestaUrlsArchivo(data.result);
-    if (respuesta.archivos.some((archivo) => !archivo.nombre || !archivo.uploadUrl || !archivo.archivoUrl)) {
-      throw new Error("La respuesta de URLs de archivos es invalida");
-    }
-
-    return respuesta;
-  },
-
-  insertarArchivoLote: async (
-    payload: InformeInsertarArchivoLoteRequest,
-  ): Promise<InformeInsertarArchivoLoteResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>(
-      "/api/Informe/insertarArchivoLote",
-      payload,
-    );
-
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/insertarArchivoLote")) {
-      throw new Error(data.mensaje || "No se pudieron registrar los archivos");
-    }
-
-    return normalizarRespuestaCrear(data.result);
-  },
-
-  obtenerArchivo: async (
-    payload: InformeObtenerArchivoRequest,
-  ): Promise<InformeObtenerArchivoResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>(
-      "/api/Informe/obtenerArchivo",
-      payload,
-    );
-
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/obtenerArchivo")) {
-      throw new Error(data.mensaje || "No se pudo obtener el archivo");
-    }
-
-    const registro = obtenerRegistro(
-      Array.isArray(data.result) ? data.result[0] : data.result,
-    );
-    const downloadUrl = obtenerTexto(
-      typeof data.result === "string" ? data.result : undefined,
-      registro.downloadUrl,
-      registro.DownloadUrl,
-      registro.archivoUrl,
-      registro.ArchivoUrl,
-      registro.url,
-      registro.Url,
-    );
-    if (!downloadUrl) throw new Error("La respuesta del archivo es invalida");
-
-    return { downloadUrl };
-  },
-
-  actualizarArchivo: async (
-    payload: InformeActualizarArchivoRequest,
-  ): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>(
-      "/api/Informe/actualizarArchivo",
-      payload,
-    );
-
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/actualizarArchivo")) {
-      throw new Error(data.mensaje || "No se pudo actualizar el archivo");
-    }
-  },
-
-  eliminarArchivo: async (
-    payload: InformeEliminarArchivoRequest,
-  ): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>(
-      "/api/Informe/eliminarArchivo",
-      payload,
-    );
-
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/eliminarArchivo")) {
-      throw new Error(data.mensaje || "No se pudo eliminar el archivo");
-    }
-  },
 
   obtenerUrlPrefirmada: async (
     payload: InformeObtenerUrlPrefirmadaRequest,
@@ -1749,30 +1514,6 @@ export const informeService = {
     }
   },
 
-  actualizarEstadoCargaImagenes: async (ids: number[]): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/actualizarEstadoCargaImagenes", { ids });
-
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/actualizarEstadoCargaImagenes")) {
-      throw new Error(data.mensaje || "No se pudo actualizar el estado de carga de imágenes");
-    }
-  },
-
-  obtenerUrlsImagenes: async (ids: number[]): Promise<{ idInformeLocalImagen: number; url: string }[]> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/obtenerUrlsImagenes", { ids });
-
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/obtenerUrlsImagenes")) {
-      throw new Error(data.mensaje || "No se pudo obtener las URLs de las imágenes");
-    }
-
-    const lista = Array.isArray(data.result) ? data.result : [];
-    return lista.map((item: unknown) => {
-      const registro = typeof item === "object" && item !== null ? (item as Record<string, unknown>) : {};
-      return {
-        idInformeLocalImagen: obtenerNumero(registro.idInformeLocalImagen, registro.IdInformeLocalImagen) ?? 0,
-        url: obtenerTexto(registro.url, registro.Url, registro.uploadUrl, registro.UploadUrl),
-      };
-    });
-  },
 
   autocompletar: async (payload: InformeAutocompletarRequest): Promise<InformeExtraccionResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/autocompletar", payload, {

@@ -7,7 +7,7 @@ import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
-import { informeService } from "@maximilian/services/informe.service";
+import { servicioInformeLocalImagen } from "@maximilian/services/informeLocalImagen.service";
 import type { RegistroImagenLocalAnalista, RegistroLocalAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import {
@@ -90,7 +90,7 @@ export function CustomModalLocalAnalista({
 
     let cancelado = false;
 
-    informeService.obtenerUrlsImagenes(idsSinUrl).then((urlsObtenidas) => {
+    servicioInformeLocalImagen.obtenerUrls(idsSinUrl).then((urlsObtenidas) => {
       if (cancelado) return;
       const mapaUrls = new Map(urlsObtenidas.map((u) => [u.idInformeLocalImagen, u.url]));
       setImagenes((anterior) =>

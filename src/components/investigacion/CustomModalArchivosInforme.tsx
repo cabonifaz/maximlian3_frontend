@@ -10,6 +10,7 @@ import type { ReferenciaBloqueCargaArchivosAnalista } from "@maximilian/componen
 import type { ArchivoInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { informeService } from "@maximilian/services/informe.service";
+import { servicioInformeArchivo } from "@maximilian/services/informeArchivo.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 
 interface PropsCustomModalArchivosInvestigacionAnalista {
@@ -68,7 +69,7 @@ export function CustomModalArchivosInvestigacionAnalista({
     setIdArchivoDescargando(archivo.id);
     try {
       const downloadUrl = archivo.idInformeArchivo
-        ? (await informeService.obtenerArchivo({
+        ? (await servicioInformeArchivo.obtener({
             idInformeArchivo: archivo.idInformeArchivo,
           })).downloadUrl
         : archivo.urlDescarga;
@@ -127,7 +128,7 @@ export function CustomModalArchivosInvestigacionAnalista({
 
     setIdArchivoActualizando(archivo.id);
     try {
-      await informeService.actualizarArchivo({
+      await servicioInformeArchivo.actualizar({
         idInformeArchivo: archivo.idInformeArchivo,
         idTipoArchivo: cambios.idTipoEvidencia,
         idFaseEvidencia: cambios.idFaseEvidencia ?? null,
@@ -154,7 +155,7 @@ export function CustomModalArchivosInvestigacionAnalista({
     const toastId = toast.loading("Preparando archivos...");
     setEstaGuardandoArchivos(true);
     try {
-      const respuestaUrls = await informeService.generarUrlsArchivo({
+      const respuestaUrls = await servicioInformeArchivo.generarUrls({
         idPedido,
         nombres: archivosNuevos.map((archivo) => archivo.nombre),
       });
@@ -187,7 +188,7 @@ export function CustomModalArchivosInvestigacionAnalista({
 
       if (archivosSubidos.length > 0) {
         toast.loading("Registrando archivos...", { id: toastId });
-        const respuestaInsercion = await informeService.insertarArchivoLote({
+        const respuestaInsercion = await servicioInformeArchivo.insertarLote({
           idInforme: idInformeParaArchivos,
           idPedido,
           archivos: archivosSubidos.map(({ archivo, archivoUrl }) => ({
@@ -231,7 +232,7 @@ export function CustomModalArchivosInvestigacionAnalista({
 
     setEstaEliminando(true);
     try {
-      await informeService.eliminarArchivo({
+      await servicioInformeArchivo.eliminar({
         idInformeArchivo: archivoAEliminar.idInformeArchivo,
       });
       onArchivosChange(archivos.filter((archivo) => archivo.id !== archivoAEliminar.id));

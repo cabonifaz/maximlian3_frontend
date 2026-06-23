@@ -1053,7 +1053,7 @@ export function CustomVistaPreviaInformeComparado({
     isError: errorDocumento,
   } = useQuery({
     queryKey: ["informe-documento-generado", idInformeDocumento, idPedidoDocumento],
-    queryFn: () => informeService.generarDocumento(idInformeDocumento, idPedidoDocumento),
+    queryFn: () => informeService.previsualizarDocumento(idInformeDocumento, idPedidoDocumento),
     enabled: Number.isFinite(idInformeDocumento) && idInformeDocumento > 0
       && Number.isFinite(idPedidoDocumento) && idPedidoDocumento > 0,
     staleTime: 15 * 60 * 1000,
