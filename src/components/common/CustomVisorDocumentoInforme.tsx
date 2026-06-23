@@ -163,6 +163,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
   const ciR = config.contentIndent?.right ?? "0";
   const fiL = config.footerIndent?.left ?? "0";
   const fiR = config.footerIndent?.right ?? "0";
+  const bordePagina = config.pageBorder;
 
   return `
     @page {
@@ -209,6 +210,9 @@ function construirCss(config: PlantillaDocumentoConfig): string {
     .sr-pie-pagina::after {
       content: "${escaparHtml(config.footer?.pageLabel ?? "Page")} " counter(page);
       display: block;
+      ${config.footer?.pageFontSize ? `font-size: ${config.footer.pageFontSize};` : ""}
+      ${config.footer?.pageColor ? `color: ${config.footer.pageColor};` : ""}
+      ${config.footer?.pageGapBefore ? `margin-top: ${config.footer.pageGapBefore};` : ""}
     }
 
     body {
@@ -236,7 +240,22 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
       margin-bottom: 20px;
       background: #fff;
+      position: relative;
     }
+
+    ${bordePagina ? `
+    .pagedjs_page::before {
+      content: "";
+      position: absolute;
+      top: ${bordePagina.top ?? "0"};
+      bottom: ${bordePagina.bottom ?? "0"};
+      left: ${bordePagina.left ?? "0"};
+      right: ${bordePagina.right ?? "0"};
+      border: ${bordePagina.width ?? "1pt"} solid ${bordePagina.color ?? "#000"};
+      pointer-events: none;
+      z-index: 1;
+    }
+    ` : ""}
 
     table {
       border-collapse: collapse;
@@ -358,6 +377,7 @@ ${contenido}
           ref={iframeRef}
           title="Vista previa del documento"
           srcDoc={srcdoc}
+          scrolling="no"
           onLoad={manejarCargaIframe}
           style={{
             width: "100%",
