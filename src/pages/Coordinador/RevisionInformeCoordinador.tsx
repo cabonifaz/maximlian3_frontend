@@ -6,6 +6,7 @@ import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/Cu
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import { informeService } from "@maximilian/services/informe.service";
+import { servicioInformeObservacion } from "@maximilian/services/informeObservacion.service";
 import type {
   FormatoDescargaInforme,
   InformeActualizarEstadoRequest,
@@ -59,7 +60,7 @@ export default function RevisionInformeCoordinador() {
     isLoading: estaCargandoObservaciones,
   } = useQuery({
     queryKey: ["informe-observaciones", idPedidoNumerico],
-    queryFn: () => informeService.listarObservaciones(idPedidoNumerico),
+    queryFn: () => servicioInformeObservacion.listar(idPedidoNumerico),
     enabled: !esEjemplo && Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0,
   });
 
@@ -113,12 +114,12 @@ export default function RevisionInformeCoordinador() {
 
       await Promise.all(
         observacionesEditadas.map((observacion) =>
-          informeService.editarObservacion(observacion),
+          servicioInformeObservacion.editar(observacion),
         ),
       );
 
       if (observacionesNuevas.length > 0) {
-        await informeService.insertarObservacionesLote({
+        await servicioInformeObservacion.insertarLote({
           idInforme: idInformeSeguro,
           idPedido: idPedidoNumerico,
           observaciones: observacionesNuevas.map(({ observacion, checked }) => ({
@@ -144,7 +145,7 @@ export default function RevisionInformeCoordinador() {
 
   const mutationEliminarObservacion = useMutation({
     mutationFn: (idInformeObservacion: number) =>
-      informeService.eliminarObservacion({ idInformeObservacion }),
+      servicioInformeObservacion.eliminar({ idInformeObservacion }),
     onSuccess: async (_, idInformeObservacion) => {
       setObservacionesRechazo((observaciones) =>
         observaciones.filter(
