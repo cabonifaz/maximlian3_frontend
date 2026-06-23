@@ -265,7 +265,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       left: 0;
       right: 0;
       bottom: 0;
-      background: url("${escaparAtributo(config.watermark.image)}") no-repeat;
+      background: url("${config.watermark.image.replace(/"/g, '\\"')}") no-repeat;
       ${config.watermark.width && config.watermark.height ? `background-size: ${config.watermark.width} ${config.watermark.height};` : ""}
       ${config.watermark.position ? `background-position: ${config.watermark.position};` : ""}
       ${config.watermark.opacity !== undefined ? `opacity: ${config.watermark.opacity};` : ""}
