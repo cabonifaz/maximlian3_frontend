@@ -363,19 +363,19 @@ export function CustomVisorDocumentoInforme({
     const wm = documento.document?.watermark;
     const scriptMarcaAgua = wm?.image ? `
 <script>
-window.PagedConfig = window.PagedConfig || {};
-var prevAfter = window.PagedConfig.after;
-window.PagedConfig.after = function() {
-  if (prevAfter) prevAfter();
-  var pages = document.querySelectorAll(".pagedjs_page");
-  pages.forEach(function(page) {
-    var overlay = document.createElement("div");
-    overlay.className = "sr-marca-agua-overlay";
-    var img = document.createElement("img");
-    img.src = ${JSON.stringify(wm.image)};
-    overlay.appendChild(img);
-    page.appendChild(overlay);
-  });
+window.PagedConfig = {
+  auto: true,
+  after: function() {
+    var pages = document.querySelectorAll(".pagedjs_page");
+    pages.forEach(function(page) {
+      var overlay = document.createElement("div");
+      overlay.className = "sr-marca-agua-overlay";
+      var img = document.createElement("img");
+      img.src = ${JSON.stringify(wm.image)};
+      overlay.appendChild(img);
+      page.appendChild(overlay);
+    });
+  }
 };
 </script>` : "";
 
