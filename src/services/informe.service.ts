@@ -25,6 +25,7 @@ import type {
   InformeObtenerUrlPrefirmadaRequest,
   InformeObtenerUrlPrefirmadaResponse,
   InformeObtenerResponse,
+  InformeTraducirRequest,
 } from "@maximilian/shared/types/informe.type";
 import type {
   AccionBandejaAnalista,
@@ -1522,6 +1523,19 @@ export const informeService = {
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Informe/autocompletar")) {
       throw new Error(data.mensaje || "No se pudo autocompletar el documento");
+    }
+
+    return normalizarRespuestaExtraccion(data.result);
+  },
+
+  traducir: async (payload: InformeTraducirRequest): Promise<InformeExtraccionResponse> => {
+    const ruta = "/api/informeTranslation/traducir";
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, payload, {
+      timeout: TIMEOUT_EXTRACCION_MS,
+    });
+
+    if (!esRespuestaOkCompatibilidad(data, ruta)) {
+      throw new Error(data.mensaje || "No se pudo traducir el informe");
     }
 
     return normalizarRespuestaExtraccion(data.result);

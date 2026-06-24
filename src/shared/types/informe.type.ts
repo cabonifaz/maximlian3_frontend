@@ -804,6 +804,28 @@ export interface InformeEliminarArchivoRequest {
 export type AlcanceExtraccionInforme = "general" | IdSeccionInvestigacionAnalista;
 export type InformeConfiguracionExtraccion = Record<string, string[]>;
 
+export type InformeContenidoTraduccionPlano = Record<string, string>;
+
+export interface InformeContenidoTraduccionRamoOperaciones {
+  campos?: InformeContenidoTraduccionPlano;
+  importaciones?: InformeContenidoTraduccionPlano;
+  exportaciones?: InformeContenidoTraduccionPlano;
+}
+
+export interface InformeContenidoTraduccion {
+  identificacion?: InformeContenidoTraduccionPlano;
+  legales?: InformeContenidoTraduccionPlano;
+  ramoOperaciones?: InformeContenidoTraduccionRamoOperaciones;
+  informacionFinanciera?: InformeContenidoTraduccionPlano;
+  bancosProveedores?: InformeContenidoTraduccionPlano;
+  datosGenerales?: InformeContenidoTraduccionPlano;
+}
+
+export interface InformeTraducirRequest {
+  idioma: string;
+  contenido: InformeContenidoTraduccion;
+}
+
 export interface InformeCampoExtraccionDisponible {
   id: number;
   claveCampo: string;

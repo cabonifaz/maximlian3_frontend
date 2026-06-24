@@ -33,6 +33,7 @@ export const TablaMaestraId = {
   NIVEL_CONFIABILIDAD: 61,
   TIPO_EVIDENCIA: 62,
   FASE_EVIDENCIA: 63,
+  OBLIGACION_BOLSA: 64,
   PAGINACION_FRACTAL: 99,
 } as const;
 
@@ -49,6 +50,10 @@ export type EntradaTablaMaestra = {
   string1: string | null;
   string2: string | null;
   string3: string | null;
+  string4?: string | null;
+  string5?: string | null;
+  string6?: string | null;
+  string7?: string | null;
   date1: string | null;
   date2: string | null;
   date3: string | null;
@@ -119,6 +124,7 @@ const descripcionesTablaMaestraPorId: Partial<Record<TablaMaestraId, string>> = 
   [TablaMaestraId.NIVEL_CONFIABILIDAD]: "NIVEL CONFIABILIDAD",
   [TablaMaestraId.TIPO_EVIDENCIA]: "TIPO EVIDENCIA",
   [TablaMaestraId.FASE_EVIDENCIA]: "FASE EVIDENCIA",
+  [TablaMaestraId.OBLIGACION_BOLSA]: "OBLIGACION EN BOLSA",
   [TablaMaestraId.ETAPA_ASIGNACION]: "FASE ASIGNACION",
   [TablaMaestraId.CLASE_CIIU]: "CLASE CIIU",
   [TablaMaestraId.PAGINACION_FRACTAL]: "PAGINACION FRACTAL",

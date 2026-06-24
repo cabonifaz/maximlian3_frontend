@@ -40,7 +40,8 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
   const esEndpointInformeExtraccion =
     url.includes("/api/Informe/obtenerUrlPrefirmada")
     || url.includes("/api/Informe/autocompletar")
-    || url.includes("/api/Informe/extraerDocumento");
+    || url.includes("/api/Informe/extraerDocumento")
+    || url.includes("/api/informeTranslation/traducir");
   const esEndpointDirectorioEjecutivo = url.includes("/api/DirectorioEjecutivo/");
 
   if (esEndpointAsignacion && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION && data.mensaje === "OK") {
@@ -124,6 +125,7 @@ maximilianService.interceptors.response.use(
         && !response.config.url?.includes("/api/Informe/obtenerUrlPrefirmada")
         && !response.config.url?.includes("/api/Informe/autocompletar")
         && !response.config.url?.includes("/api/Informe/extraerDocumento")
+        && !response.config.url?.includes("/api/informeTranslation/traducir")
       ) {
         toast.success(data.mensaje);
       }

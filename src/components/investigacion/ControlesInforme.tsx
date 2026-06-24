@@ -194,6 +194,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   conservarOpcionesLocales = true,
   obtenerEtiquetaOpcion,
   obtenerValorOpcion,
+  permitirCoincidenciaPorId = true,
   ocultarEtiqueta = false,
   construirPayloadAltaNueva,
   renderizarVistaPreviaAltaNueva,
@@ -214,6 +215,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   conservarOpcionesLocales?: boolean;
   obtenerEtiquetaOpcion?: (opcion: EntradaTablaMaestra) => string;
   obtenerValorOpcion?: (opcion: EntradaTablaMaestra) => string;
+  permitirCoincidenciaPorId?: boolean;
   ocultarEtiqueta?: boolean;
   construirPayloadAltaNueva?: (termino: string, opcionesActuales: EntradaTablaMaestra[]) => TablaMaestraCrearRequest;
   renderizarVistaPreviaAltaNueva?: (terminoBusqueda: string) => ReactNode;
@@ -333,9 +335,9 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
       obtenerValorSeleccion(opcion) === valorTextoActual
       || opcion.string1 === valorTextoActual
       || opcion.string2 === valorTextoActual
-      || String(opcion.num1 ?? "") === valorTextoActual
+      || (permitirCoincidenciaPorId && String(opcion.num1 ?? "") === valorTextoActual)
     )?.num1 ?? undefined,
-    [obtenerValorSeleccion, opcionesDisponibles, valorTextoActual],
+    [obtenerValorSeleccion, opcionesDisponibles, permitirCoincidenciaPorId, valorTextoActual],
   );
   const opcionSeleccionada = useMemo(
     () => opcionesDisponibles.find((opcion) => opcion.num1 === valorSeleccionado),

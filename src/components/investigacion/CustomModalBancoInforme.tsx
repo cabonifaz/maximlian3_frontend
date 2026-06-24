@@ -11,6 +11,7 @@ import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service"
 import type { BancoCrearRequest, BancoEditarRequest, BancoListaItem } from "@maximilian/shared/types/banco.type";
 import type { RegistroBancoAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 import {
   seleccionarTextoCampoEditable,
   seleccionarTextoEditableEnContenedor,
@@ -19,12 +20,14 @@ import {
 interface PropsCustomModalBancoAnalista {
   estaAbierto: boolean;
   registroInicial?: RegistroBancoAnalista | null;
+  idIdioma?: number;
   onCerrar: () => void;
   onGuardar: (registro: RegistroBancoAnalista) => void;
 }
 
 interface PropsCustomModalBusquedaBancoAnalista {
   estaAbierto: boolean;
+  idIdioma?: number;
   onCerrar: () => void;
   onSeleccionar: (banco: BancoListaItem) => void;
 }
@@ -32,6 +35,7 @@ interface PropsCustomModalBusquedaBancoAnalista {
 interface PropsCustomModalCrearBancoAnalista {
   estaAbierto: boolean;
   bancoInicial?: BancoListaItem | null;
+  idIdioma?: number;
   onCerrar: () => void;
   onBancoCreado: (banco: BancoListaItem) => void;
 }
@@ -39,6 +43,7 @@ interface PropsCustomModalCrearBancoAnalista {
 export function CustomModalCrearBancoAnalista({
   estaAbierto,
   bancoInicial,
+  idIdioma,
   onCerrar,
   onBancoCreado,
 }: PropsCustomModalCrearBancoAnalista) {
@@ -47,12 +52,13 @@ export function CustomModalCrearBancoAnalista({
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
 
-  const { data: opcionesPais } = useQuery({
+  const { data: opcionesPaisBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.PAIS],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
     enabled: estaAbierto,
     staleTime: Infinity,
   });
+  const opcionesPais = useMemo(() => traducirOpcionesTablaMaestra(opcionesPaisBase, idIdioma), [idIdioma, opcionesPaisBase]);
 
   useEffect(() => {
     if (!estaAbierto) {
@@ -194,6 +200,7 @@ export function CustomModalCrearBancoAnalista({
 
 function CustomModalBusquedaBancoAnalista({
   estaAbierto,
+  idIdioma,
   onCerrar,
   onSeleccionar,
 }: PropsCustomModalBusquedaBancoAnalista) {
@@ -459,6 +466,7 @@ function CustomModalBusquedaBancoAnalista({
       <CustomModalCrearBancoAnalista
         estaAbierto={estaAbiertoModalCrearBanco}
         bancoInicial={bancoEnEdicion}
+        idIdioma={idIdioma}
         onCerrar={() => {
           setEstaAbiertoModalCrearBanco(false);
           setBancoEnEdicion(null);
@@ -493,15 +501,17 @@ function CustomModalBusquedaBancoAnalista({
 export function CustomModalBancoAnalista({
   estaAbierto,
   registroInicial,
+  idIdioma,
   onCerrar,
   onGuardar,
 }: PropsCustomModalBancoAnalista) {
-  const { data: opcionesSector } = useQuery({
+  const { data: opcionesSectorBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.SECTOR_ECONOMICO],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.SECTOR_ECONOMICO),
     enabled: estaAbierto,
     staleTime: Infinity,
   });
+  const opcionesSector = useMemo(() => traducirOpcionesTablaMaestra(opcionesSectorBase, idIdioma), [idIdioma, opcionesSectorBase]);
   const [idBanco, setIdBanco] = useState<number | undefined>(registroInicial?.idBanco);
   const [idPais, setIdPais] = useState<number | undefined>(registroInicial?.idPais);
   const [pais, setPais] = useState(registroInicial?.pais ?? "");
@@ -580,7 +590,7 @@ export function CustomModalBancoAnalista({
               <CustomLabel>Lista de Sectores</CustomLabel>
               <CustomSelectorBuscable
                 label={null}
-                idMaster={TablaMaestraId.SECTOR_ECONOMICO}
+                options={opcionesSector}
                 value={idSectorSeleccionado}
                 onChange={(valor) => {
                   setIdSectorSeleccionado(valor);
@@ -618,6 +628,7 @@ export function CustomModalBancoAnalista({
 
       <CustomModalBusquedaBancoAnalista
         estaAbierto={estaAbiertoModalBusqueda}
+        idIdioma={idIdioma}
         onCerrar={() => setEstaAbiertoModalBusqueda(false)}
         onSeleccionar={(resultado) => {
           setIdBanco(resultado.idBanco);
