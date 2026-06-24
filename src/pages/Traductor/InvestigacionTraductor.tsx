@@ -26,6 +26,7 @@ import { CustomModalBuscarEjecutivoAnalista } from "@maximilian/components/inves
 import { CustomModalDetalleCuentasAnalista } from "@maximilian/components/investigacion/CustomModalDetalleCuentasInforme";
 import { CustomModalFinalizarInvestigacionAnalista } from "@maximilian/components/investigacion/CustomModalFinalizarInforme";
 import { CustomModalVistaPreviaInforme } from "@maximilian/components/common/CustomModalVistaPreviaInforme";
+import { CustomModalObservacionesRechazoAnalista } from "@maximilian/components/analista/CustomModalObservacionesRechazoAnalista";
 import { CustomModalExtraccionInformacionAnalista } from "@maximilian/components/investigacion/CustomModalProcesamientoInforme";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
@@ -60,9 +61,11 @@ import {
   SelectorMaestroConAltaInvestigacionAnalista,
 } from "@maximilian/components/investigacion/ControlesInforme";
 import { informeService } from "@maximilian/services/informe.service";
+import { servicioInformeObservacion } from "@maximilian/services/informeObservacion.service";
 import { servicioInformeLocalImagen } from "@maximilian/services/informeLocalImagen.service";
 import { servicioBanco } from "@maximilian/services/banco.service";
 import { servicioCompania } from "@maximilian/services/compania.service";
+import { servicioCliente } from "@maximilian/services/cliente.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
@@ -79,6 +82,7 @@ import type {
   InformeBalanceTurquiaRequest,
   InformeConfiguracionExtraccion,
   InformeCrearRequest,
+  InformeObservacion,
   InformeSeccionExtraccionDisponible,
 } from "@maximilian/shared/types/informe.type";
 import type {
@@ -117,6 +121,7 @@ import {
 interface PropsPantallaInvestigacionAnalista {
   idPedido?: string;
   idInforme?: number;
+  esInformeRechazado?: boolean;
   modo: ModoInvestigacionAnalista;
   datosPedidoNavegacion?: DatosPedidoNavegacionInvestigacion;
 }
@@ -146,6 +151,11 @@ interface CiudadExtraccionPendiente {
   valor: string;
   idPais: number;
   pais: string;
+}
+
+interface ParametrosGuardadoInforme {
+  idEstadoInforme: number;
+  abrirConfirmacionFinalizacion?: boolean;
 }
 
 function ReferenciaTraduccion({
@@ -1236,6 +1246,46 @@ function construirPayloadCrearInforme({
   }) as InformeCrearRequest;
 }
 
+function prepararDatosParaNuevoInforme(
+  datos: DatosInvestigacionAnalista,
+): DatosInvestigacionAnalista {
+  return {
+    ...datos,
+    balances: datos.balances.map((balance) => ({
+      ...balance,
+      idInformeBalance: undefined,
+    })),
+    bancos: datos.bancos.map((banco) => ({
+      ...banco,
+      idInformeBanco: undefined,
+    })),
+    companiasRelacionadas: datos.companiasRelacionadas.map((compania) => ({
+      ...compania,
+      idInformeCompaniaRelacionada: undefined,
+    })),
+    importaciones: datos.importaciones.map((registro) => ({
+      ...registro,
+      idInformeExportacionImportacion: undefined,
+    })),
+    exportaciones: datos.exportaciones.map((registro) => ({
+      ...registro,
+      idInformeExportacionImportacion: undefined,
+    })),
+    proveedores: datos.proveedores.map((proveedor) => ({
+      ...proveedor,
+      idInformeProveedor: undefined,
+    })),
+    directorioEjecutivo: datos.directorioEjecutivo.map((ejecutivo) => ({
+      ...ejecutivo,
+      idInformeDirectorioEjecutivo: undefined,
+    })),
+    locales: datos.locales.map((local) => ({
+      ...local,
+      idInformeLocal: undefined,
+    })),
+  };
+}
+
 function PaginacionInvestigacion({
   paginaActual,
   totalRegistros,
@@ -1328,6 +1378,7 @@ function IndicadorCambioExtraccion({
 function PantallaInvestigacionAnalista({
   idPedido,
   idInforme,
+  esInformeRechazado = false,
   modo,
   datosPedidoNavegacion,
   datosIniciales,
@@ -1347,10 +1398,64 @@ function PantallaInvestigacionAnalista({
   const contenedorPantallaRef = useRef<HTMLDivElement>(null);
   const paisExtraccionRef = useRef<{ idPais?: number; pais?: string; aplicado: boolean }>({ aplicado: false });
   const ciudadExtraccionPendienteRef = useRef<CiudadExtraccionPendiente | null>(null);
+  const debeCrearInformeInicial = modo === "iniciar" || esInformeRechazado;
 
-  const [datosInvestigacion, setDatosInvestigacion] = useState<DatosInvestigacionAnalista>(datosIniciales);
+  const [datosInvestigacion, setDatosInvestigacion] = useState<DatosInvestigacionAnalista>(() =>
+    debeCrearInformeInicial ? prepararDatosParaNuevoInforme(datosIniciales) : datosIniciales,
+  );
   const [datosInvestigacionOriginales] = useState<DatosInvestigacionAnalista>(datosIniciales);
-  const [idInformeActual, setIdInformeActual] = useState<number | undefined>(idInforme);
+  const [idInformeActual, setIdInformeActual] = useState<number | undefined>(
+    debeCrearInformeInicial ? undefined : idInforme,
+  );
+  const [debeCrearInformeTraduccion, setDebeCrearInformeTraduccion] = useState(debeCrearInformeInicial);
+  const [estaCerradoModalObservacionesRechazo, setEstaCerradoModalObservacionesRechazo] = useState(false);
+  const idPedidoObservaciones = Number(idPedido);
+  const claveObservacionesRechazo = ["informe-observaciones-rechazo-traductor", idPedidoObservaciones] as const;
+  const {
+    data: observacionesRechazo = [],
+    isLoading: estaCargandoObservacionesRechazo,
+  } = useQuery({
+    queryKey: claveObservacionesRechazo,
+    queryFn: () => servicioInformeObservacion.listar(idPedidoObservaciones),
+    enabled: Number.isFinite(idPedidoObservaciones)
+      && idPedidoObservaciones > 0,
+  });
+  const actualizarObservacionRechazoMutation = useMutation({
+    mutationFn: (observacion: InformeObservacion) =>
+      servicioInformeObservacion.editar(observacion),
+    onMutate: async (observacionActualizada) => {
+      await queryClient.cancelQueries({ queryKey: claveObservacionesRechazo });
+      const observacionesAnteriores = queryClient.getQueryData<InformeObservacion[]>(
+        claveObservacionesRechazo,
+      );
+      queryClient.setQueryData<InformeObservacion[]>(
+        claveObservacionesRechazo,
+        (observaciones = []) => observaciones.map((observacion) =>
+          observacion.idInformeObservacion === observacionActualizada.idInformeObservacion
+            ? observacionActualizada
+            : observacion,
+        ),
+      );
+      return { observacionesAnteriores };
+    },
+    onError: (_, __, contexto) => {
+      if (contexto?.observacionesAnteriores) {
+        queryClient.setQueryData(
+          claveObservacionesRechazo,
+          contexto.observacionesAnteriores,
+        );
+      }
+    },
+  });
+  const tieneObservacionesRechazo = observacionesRechazo.length > 0;
+  const tieneObservacionesRechazoPendientes = observacionesRechazo.some(
+    (observacion) => !observacion.checked,
+  );
+  const estaAbiertoModalObservacionesRechazo = tieneObservacionesRechazo
+    && !estaCerradoModalObservacionesRechazo;
+  const debeBloquearFinalizacionPorObservaciones = estaCargandoObservacionesRechazo
+    || actualizarObservacionRechazoMutation.isPending
+    || tieneObservacionesRechazoPendientes;
   const [idSeccionActiva, setIdSeccionActiva] = useState<IdSeccionInvestigacionAnalista>("identificacion");
   const [pestanaAspectosLegales, setPestanaAspectosLegales] = useState<PestanaAspectosLegales>("data");
   const [pestanaRamoOperaciones, setPestanaRamoOperaciones] = useState<PestanaRamoOperaciones>("operaciones");
@@ -1560,6 +1665,18 @@ function PantallaInvestigacionAnalista({
     staleTime: Infinity,
   });
 
+  const { data: opcionesTipoTramite } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_TRAMITE],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_TRAMITE),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesIdioma } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.IDIOMA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.IDIOMA),
+    staleTime: Infinity,
+  });
+
   const { data: opcionesCargoDirectorio } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.CARGO_DIRECTORIO],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CARGO_DIRECTORIO),
@@ -1576,6 +1693,16 @@ function PantallaInvestigacionAnalista({
     enabled: Boolean(idPedido),
   });
 
+  const { data: tarifarioPedidoSeleccionado } = useQuery({
+    queryKey: ["tarifario-obtener-resumen-traductor", registroPedidoSeleccionado?.idTarifario, registroPedidoSeleccionado?.idCliente],
+    queryFn: () =>
+      servicioCliente.getTarifarioById({
+        idTarifario: registroPedidoSeleccionado!.idTarifario,
+        idCliente: registroPedidoSeleccionado!.idCliente,
+      }),
+    enabled: Boolean(registroPedidoSeleccionado?.idTarifario && registroPedidoSeleccionado?.idCliente),
+  });
+
   const { data: registroAsignacionPedido } = useQuery({
     queryKey: ["asignacion-resumen-traductor", idPedido],
     queryFn: async () => {
@@ -1587,16 +1714,6 @@ function PantallaInvestigacionAnalista({
       });
 
       return respuesta.lstPedido.find((registro) => String(registro.idPedido) === idPedido) ?? null;
-    },
-    enabled: Boolean(idPedido),
-  });
-
-  const { data: registroPedidoListado } = useQuery({
-    queryKey: ["pedido-lista-resumen-traductor", idPedido],
-    queryFn: async () => {
-      if (!idPedido?.trim()) return null;
-      const respuesta = await pedidoService.list({ idPedido: Number(idPedido), numPag: 1 });
-      return respuesta.lstPedido.find((registro) => registro.idPedido === Number(idPedido)) ?? null;
     },
     enabled: Boolean(idPedido),
   });
@@ -1643,13 +1760,29 @@ function PantallaInvestigacionAnalista({
   const guardarBorrador = (debeRedirigirABandeja: boolean) => {
     marcarSeccionActivaComoBorrador();
     setDebeVolverABandejaTrasGuardarBorrador(debeRedirigirABandeja);
-    guardarInformeMutation.mutate(ID_ESTADO_PEDIDO_BORRADOR);
+    guardarInformeMutation.mutate({ idEstadoInforme: ID_ESTADO_PEDIDO_BORRADOR });
+  };
+
+  const guardarAntesDeFinalizar = () => {
+    if (guardarInformeMutation.isPending) return;
+    if (debeBloquearFinalizacionPorObservaciones) {
+      setEstaCerradoModalObservacionesRechazo(false);
+      toast.error("Debes completar todas las observaciones antes de finalizar el reporte.");
+      return;
+    }
+
+    marcarSeccionActivaComoBorrador();
+    setDebeVolverABandejaTrasGuardarBorrador(false);
+    guardarInformeMutation.mutate({
+      idEstadoInforme: ID_ESTADO_PEDIDO_BORRADOR,
+      abrirConfirmacionFinalizacion: true,
+    });
   };
 
   const archivosImagenesNuevosRef = useRef<Map<string, File>>(new Map());
 
   const guardarInformeMutation = useMutation({
-    mutationFn: async (idEstadoInforme: number) => {
+    mutationFn: async ({ idEstadoInforme }: ParametrosGuardadoInforme) => {
       const idPedidoNumerico = Number(idPedido);
 
       if (!Number.isFinite(idPedidoNumerico) || idPedidoNumerico <= 0) {
@@ -1680,7 +1813,7 @@ function PantallaInvestigacionAnalista({
 
       const payload = construirPayloadCrearInforme({
         idPedido: idPedidoNumerico,
-        idInforme: idInformeActual,
+        idInforme: debeCrearInformeTraduccion ? 0 : idInformeActual,
         idEstadoInforme,
         datosInvestigacion: { ...datosInvestigacion, locales: localesConNombresDeduplicados },
         opcionesTipoPersona,
@@ -1697,13 +1830,17 @@ function PantallaInvestigacionAnalista({
         opcionesTipoProveedor,
       });
 
+      if (debeCrearInformeTraduccion) {
+        return informeService.create(payload);
+      }
+
       if (modo === "continuar" || (idInformeActual && idInformeActual > 0)) {
         return informeService.editar(payload);
       }
 
       return informeService.create(payload);
     },
-    onSuccess: async (respuesta, idEstado) => {
+    onSuccess: async (respuesta, { idEstadoInforme, abrirConfirmacionFinalizacion }) => {
       const idsExistentes = datosInvestigacion.locales.flatMap((local) =>
         (local.imagenes ?? [])
           .filter((img) => (img.idInformeLocalImagen ?? 0) > 0)
@@ -1753,24 +1890,35 @@ function PantallaInvestigacionAnalista({
         await servicioInformeLocalImagen.actualizarEstadoCarga(todosLosIds);
       }
 
-      const idInformeResultado = respuesta.idInforme ?? idInformeActual;
+      const idInformeResultado = respuesta.idInforme ?? (
+        debeCrearInformeTraduccion ? undefined : idInformeActual
+      );
 
       if (idInformeResultado && idInformeResultado > 0) {
         setIdInformeActual(idInformeResultado);
+        setDebeCrearInformeTraduccion(false);
       }
 
       queryClient.invalidateQueries({ queryKey: ["informes"] });
       queryClient.invalidateQueries({ queryKey: ["asignaciones-bandeja-traductor"] });
-      setEstaAbiertoModalFinalizarInvestigacion(false);
+      queryClient.invalidateQueries({
+        queryKey: ["informe-documento-generado", Number(idInformeResultado), Number(idPedido)],
+      });
       setEstaAbiertoModalConfirmacionPrimerBorrador(false);
 
-      if (idEstado === ID_ESTADO_PEDIDO_FINALIZADO) {
+      if (abrirConfirmacionFinalizacion) {
+        setEstaAbiertoModalFinalizarInvestigacion(true);
+        return;
+      }
+
+      if (idEstadoInforme === ID_ESTADO_PEDIDO_FINALIZADO) {
+        setEstaAbiertoModalFinalizarInvestigacion(false);
         setDebeVolverABandejaTrasGuardarBorrador(false);
         navigate("/traductor");
         return;
       }
 
-      if (idEstado === ID_ESTADO_PEDIDO_BORRADOR && debeVolverABandejaTrasGuardarBorrador) {
+      if (idEstadoInforme === ID_ESTADO_PEDIDO_BORRADOR && debeVolverABandejaTrasGuardarBorrador) {
         setDebeVolverABandejaTrasGuardarBorrador(false);
         navigate("/traductor/bandeja");
         return;
@@ -1810,6 +1958,24 @@ function PantallaInvestigacionAnalista({
     if (!idPaisSeleccionado) return opcionesCiudad;
     return opcionesCiudad?.filter((opcion) => opcion.num2 === idPaisSeleccionado);
   }, [idPaisSeleccionado, opcionesCiudad]);
+  const tipoInformeResumen = useMemo(() => {
+    const idTipoTramite = tarifarioPedidoSeleccionado?.idTipoTramite;
+    if (!idTipoTramite) {
+      return datosPedidoNavegacion?.tipoTramite
+        || registroAsignacionPedido?.tipoTramite
+        || datosInvestigacion.resumen.prioridad;
+    }
+
+    const opcionTipoTramite = opcionesTipoTramite?.find(
+      (opcion) => opcion.num1 === idTipoTramite,
+    );
+
+    return opcionTipoTramite?.string2
+      || opcionTipoTramite?.string1
+      || datosPedidoNavegacion?.tipoTramite
+      || registroAsignacionPedido?.tipoTramite
+      || datosInvestigacion.resumen.prioridad;
+  }, [datosInvestigacion.resumen.prioridad, datosPedidoNavegacion?.tipoTramite, opcionesTipoTramite, registroAsignacionPedido?.tipoTramite, tarifarioPedidoSeleccionado?.idTipoTramite]);
   const resumenEncabezado = useMemo(
     () => ({
       ...datosInvestigacion.resumen,
@@ -1824,13 +1990,9 @@ function PantallaInvestigacionAnalista({
         || nombrePaisInforme
         || datosInvestigacion.identificacion.pais
         || datosInvestigacion.resumen.pais,
-      prioridad:
-        datosPedidoNavegacion?.tipoTramite
-        || registroAsignacionPedido?.tipoTramite
-        || registroPedidoListado?.tipoTramite
-        || datosInvestigacion.resumen.prioridad,
+      prioridad: tipoInformeResumen,
     }),
-    [datosInvestigacion.identificacion.pais, datosInvestigacion.resumen, datosPedidoNavegacion, nombrePaisInforme, registroAsignacionPedido, registroPedidoListado, registroPedidoSeleccionado],
+    [datosInvestigacion.identificacion.pais, datosInvestigacion.resumen, datosPedidoNavegacion, nombrePaisInforme, registroAsignacionPedido, registroPedidoSeleccionado, tipoInformeResumen],
   );
   const nombrePlantilla = useMemo(() => {
     const idPlantilla = datosPedidoNavegacion?.idPlantilla ?? registroPedidoSeleccionado?.idPlantilla;
@@ -1840,6 +2002,14 @@ function PantallaInvestigacionAnalista({
       (opcion) => opcion.num1 === idPlantilla,
     )?.string1 ?? "";
   }, [datosPedidoNavegacion?.idPlantilla, opcionesPlantillaInforme, registroPedidoSeleccionado?.idPlantilla]);
+  const nombreIdioma = useMemo(() => {
+    const idIdioma = registroPedidoSeleccionado?.idIdioma;
+    if (!idIdioma) return "";
+
+    return opcionesIdioma?.find(
+      (opcion) => opcion.num1 === idIdioma,
+    )?.string1 ?? "";
+  }, [opcionesIdioma, registroPedidoSeleccionado?.idIdioma]);
 
   useEffect(() => {
     if (idTipoPersonaInicial && idTipoPersonaSeleccionado == null) {
@@ -5485,10 +5655,11 @@ function PantallaInvestigacionAnalista({
       <ResumenPedidoInvestigacionAnalista
         idPedido={String(datosPedidoNavegacion?.idPedido ?? idPedido ?? "")}
         plantilla={nombrePlantilla}
+        idioma={nombreIdioma}
         resumen={resumenEncabezado}
         esSoloLectura={esSoloLectura}
         mostrarBotonFinalizar={idSeccionActiva === "datos-generales" && !esSoloLectura}
-        onFinalizarInvestigacion={() => setEstaAbiertoModalFinalizarInvestigacion(true)}
+        onFinalizarInvestigacion={guardarAntesDeFinalizar}
         onExtraerInformacion={permiteExtraccionSeccion ? () => abrirModalExtraccionInformacion("general") : undefined}
         onAbrirArchivos={() => setEstaAbiertoModalArchivosInvestigacion(true)}
         onVistaPrevia={() => setEstaAbiertoModalVistaPrevia(true)}
@@ -5534,8 +5705,13 @@ function PantallaInvestigacionAnalista({
               {indiceSeccionActiva === seccionesInvestigacionAnalista.length - 1 ? (
                 <CustomButton
                   size="sm"
-                  disabled={esSoloLectura}
-                  onClick={() => setEstaAbiertoModalFinalizarInvestigacion(true)}
+                  disabled={esSoloLectura || debeBloquearFinalizacionPorObservaciones}
+                  title={
+                    tieneObservacionesRechazoPendientes
+                      ? "Completa todas las observaciones antes de finalizar"
+                      : undefined
+                  }
+                  onClick={guardarAntesDeFinalizar}
                 >
                   <Check size={14} />
                   Finalizar Traducción
@@ -5941,11 +6117,32 @@ function PantallaInvestigacionAnalista({
         estaAbierto={estaAbiertoModalFinalizarInvestigacion}
         estaGuardando={guardarInformeMutation.isPending}
         onCerrar={() => setEstaAbiertoModalFinalizarInvestigacion(false)}
-        onConfirmar={() => guardarInformeMutation.mutate(ID_ESTADO_PEDIDO_FINALIZADO)}
+        onConfirmar={() => guardarInformeMutation.mutate({ idEstadoInforme: ID_ESTADO_PEDIDO_FINALIZADO })}
         onVerVistaPreviaInforme={() => setEstaAbiertoVistaPreviaFinalizar(true)}
         tipoProceso="traducción"
         descripcionDestino="Al confirmar, este informe traducido será enviado al coordinador para revisión y aprobación."
       />
+
+      {tieneObservacionesRechazo ? (
+        <CustomModalObservacionesRechazoAnalista
+          estaAbierto={estaAbiertoModalObservacionesRechazo}
+          observaciones={observacionesRechazo}
+          estaCargando={estaCargandoObservacionesRechazo}
+          idObservacionActualizando={
+            actualizarObservacionRechazoMutation.isPending
+              ? actualizarObservacionRechazoMutation.variables?.idInformeObservacion
+              : undefined
+          }
+          onAbrir={() => setEstaCerradoModalObservacionesRechazo(false)}
+          onCerrar={() => setEstaCerradoModalObservacionesRechazo(true)}
+          onCambiarEstado={(observacion, checked) => {
+            actualizarObservacionRechazoMutation.mutate({
+              ...observacion,
+              checked,
+            });
+          }}
+        />
+      ) : null}
 
       <CustomModalVistaPreviaInforme
         estaAbierto={estaAbiertoVistaPreviaFinalizar}
@@ -6058,6 +6255,7 @@ export default function InvestigacionTraductor() {
   const [searchParams] = useSearchParams();
   const modo = (searchParams.get("modo") as ModoInvestigacionAnalista | null) ?? "iniciar";
   const idInforme = searchParams.get("idInforme");
+  const esInformeRechazado = searchParams.get("estado") === "rechazado";
   const idCarga = searchParams.get("carga") ?? "sin-carga";
   const datosPedidoNavegacion = (location.state as { datosPedidoInvestigacion?: DatosPedidoNavegacionInvestigacion } | null)?.datosPedidoInvestigacion;
   const idPedidoNumerico = Number(idPedido);
@@ -6099,6 +6297,7 @@ export default function InvestigacionTraductor() {
           ? idInformeNumerico
           : informeObtenido?.idInforme
       }
+      esInformeRechazado={esInformeRechazado}
       modo={modo}
       datosPedidoNavegacion={datosPedidoNavegacion}
       datosIniciales={datosIniciales}

@@ -475,6 +475,7 @@ interface PropsMenuSeccionesInvestigacionAnalista {
 interface PropsResumenPedidoInvestigacionAnalista {
   idPedido?: string;
   plantilla?: string;
+  idioma?: string;
   resumen: ResumenInvestigacionAnalista;
   esSoloLectura: boolean;
   mostrarBotonFinalizar: boolean;
@@ -736,6 +737,7 @@ export function MenuSeccionesInvestigacionAnalista({
 export function ResumenPedidoInvestigacionAnalista({
   idPedido,
   plantilla,
+  idioma,
   resumen,
   esSoloLectura,
   onExtraerInformacion,
@@ -753,7 +755,7 @@ export function ResumenPedidoInvestigacionAnalista({
             Datos del Pedido
           </p>
 
-          <div className="grid gap-4 md:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
             <div className="border-l-[4px] border-brand-black pl-3">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">
                 id Pedido
@@ -775,6 +777,10 @@ export function ResumenPedidoInvestigacionAnalista({
             <div className="xl:border-l xl:border-gray-100 xl:pl-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">Plantilla</p>
               <p className="mt-1 text-sm font-bold text-slate-900">{plantilla || "-"}</p>
+            </div>
+            <div className="xl:border-l xl:border-gray-100 xl:pl-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">Idioma</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">{idioma || "-"}</p>
             </div>
           </div>
         </div>

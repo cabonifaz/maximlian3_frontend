@@ -63,6 +63,7 @@ import { servicioInformeObservacion } from "@maximilian/services/informeObservac
 import { servicioInformeLocalImagen } from "@maximilian/services/informeLocalImagen.service";
 import { servicioBanco } from "@maximilian/services/banco.service";
 import { servicioCompania } from "@maximilian/services/compania.service";
+import { servicioCliente } from "@maximilian/services/cliente.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
@@ -1522,6 +1523,18 @@ function PantallaInvestigacionAnalista({
     staleTime: Infinity,
   });
 
+  const { data: opcionesTipoTramite } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_TRAMITE],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_TRAMITE),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesIdioma } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.IDIOMA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.IDIOMA),
+    staleTime: Infinity,
+  });
+
   const { data: opcionesCargoDirectorio } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.CARGO_DIRECTORIO],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CARGO_DIRECTORIO),
@@ -1538,6 +1551,16 @@ function PantallaInvestigacionAnalista({
     enabled: Boolean(idPedido),
   });
 
+  const { data: tarifarioPedidoSeleccionado } = useQuery({
+    queryKey: ["tarifario-obtener-resumen-analista", registroPedidoSeleccionado?.idTarifario, registroPedidoSeleccionado?.idCliente],
+    queryFn: () =>
+      servicioCliente.getTarifarioById({
+        idTarifario: registroPedidoSeleccionado!.idTarifario,
+        idCliente: registroPedidoSeleccionado!.idCliente,
+      }),
+    enabled: Boolean(registroPedidoSeleccionado?.idTarifario && registroPedidoSeleccionado?.idCliente),
+  });
+
   const { data: registroAsignacionPedido } = useQuery({
     queryKey: ["asignacion-resumen-analista", idPedido],
     queryFn: async () => {
@@ -1549,16 +1572,6 @@ function PantallaInvestigacionAnalista({
       });
 
       return respuesta.lstPedido.find((registro) => String(registro.idPedido) === idPedido) ?? null;
-    },
-    enabled: Boolean(idPedido),
-  });
-
-  const { data: registroPedidoListado } = useQuery({
-    queryKey: ["pedido-lista-resumen-analista", idPedido],
-    queryFn: async () => {
-      if (!idPedido?.trim()) return null;
-      const respuesta = await pedidoService.list({ idPedido: Number(idPedido), numPag: 1 });
-      return respuesta.lstPedido.find((registro) => registro.idPedido === Number(idPedido)) ?? null;
     },
     enabled: Boolean(idPedido),
   });
@@ -1843,6 +1856,24 @@ function PantallaInvestigacionAnalista({
     if (!idPaisSeleccionado) return opcionesCiudad;
     return opcionesCiudad?.filter((opcion) => opcion.num2 === idPaisSeleccionado);
   }, [idPaisSeleccionado, opcionesCiudad]);
+  const tipoInformeResumen = useMemo(() => {
+    const idTipoTramite = tarifarioPedidoSeleccionado?.idTipoTramite;
+    if (!idTipoTramite) {
+      return datosPedidoNavegacion?.tipoTramite
+        || registroAsignacionPedido?.tipoTramite
+        || datosInvestigacion.resumen.prioridad;
+    }
+
+    const opcionTipoTramite = opcionesTipoTramite?.find(
+      (opcion) => opcion.num1 === idTipoTramite,
+    );
+
+    return opcionTipoTramite?.string2
+      || opcionTipoTramite?.string1
+      || datosPedidoNavegacion?.tipoTramite
+      || registroAsignacionPedido?.tipoTramite
+      || datosInvestigacion.resumen.prioridad;
+  }, [datosInvestigacion.resumen.prioridad, datosPedidoNavegacion?.tipoTramite, opcionesTipoTramite, registroAsignacionPedido?.tipoTramite, tarifarioPedidoSeleccionado?.idTipoTramite]);
   const resumenEncabezado = useMemo(
     () => ({
       ...datosInvestigacion.resumen,
@@ -1857,13 +1888,9 @@ function PantallaInvestigacionAnalista({
         || nombrePaisInforme
         || datosInvestigacion.identificacion.pais
         || datosInvestigacion.resumen.pais,
-      prioridad:
-        datosPedidoNavegacion?.tipoTramite
-        || registroAsignacionPedido?.tipoTramite
-        || registroPedidoListado?.tipoTramite
-        || datosInvestigacion.resumen.prioridad,
+      prioridad: tipoInformeResumen,
     }),
-    [datosInvestigacion.identificacion.pais, datosInvestigacion.resumen, datosPedidoNavegacion, nombrePaisInforme, registroAsignacionPedido, registroPedidoListado, registroPedidoSeleccionado],
+    [datosInvestigacion.identificacion.pais, datosInvestigacion.resumen, datosPedidoNavegacion, nombrePaisInforme, registroAsignacionPedido, registroPedidoSeleccionado, tipoInformeResumen],
   );
   const nombrePlantilla = useMemo(() => {
     const idPlantilla = datosPedidoNavegacion?.idPlantilla ?? registroPedidoSeleccionado?.idPlantilla;
@@ -1873,6 +1900,14 @@ function PantallaInvestigacionAnalista({
       (opcion) => opcion.num1 === idPlantilla,
     )?.string1 ?? "";
   }, [datosPedidoNavegacion?.idPlantilla, opcionesPlantillaInforme, registroPedidoSeleccionado?.idPlantilla]);
+  const nombreIdioma = useMemo(() => {
+    const idIdioma = registroPedidoSeleccionado?.idIdioma;
+    if (!idIdioma) return "";
+
+    return opcionesIdioma?.find(
+      (opcion) => opcion.num1 === idIdioma,
+    )?.string1 ?? "";
+  }, [opcionesIdioma, registroPedidoSeleccionado?.idIdioma]);
 
   useEffect(() => {
     if (idTipoPersonaInicial && idTipoPersonaSeleccionado == null) {
@@ -5525,6 +5560,7 @@ function PantallaInvestigacionAnalista({
       <ResumenPedidoInvestigacionAnalista
         idPedido={String(datosPedidoNavegacion?.idPedido ?? idPedido ?? "")}
         plantilla={nombrePlantilla}
+        idioma={nombreIdioma}
         resumen={resumenEncabezado}
         esSoloLectura={esSoloLectura}
         mostrarBotonFinalizar={idSeccionActiva === "datos-generales" && !esSoloLectura}
