@@ -157,6 +157,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
   const headerAlign = config.header?.align ?? "center";
   const footerAlign = config.footer?.align ?? "left";
   const headerGapAfter = config.header?.gapAfter ?? "0";
+  const headerMarginTop = config.header?.marginTop ?? "0";
   const footerGapBefore = config.footer?.gapBefore ?? "0";
 
   const ciL = config.contentIndent?.left ?? "0";
@@ -172,7 +173,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
 
       @top-center {
         content: element(encabezado-logo);
-        vertical-align: bottom;
+        vertical-align: ${config.header?.marginTop ? "top" : "bottom"};
       }
       @bottom-center {
         content: element(pie-pagina);
@@ -184,6 +185,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       position: running(encabezado-logo);
       text-align: ${headerAlign};
       width: 100%;
+      padding-top: ${headerMarginTop};
       padding-bottom: ${headerGapAfter};
       box-sizing: border-box;
     }
