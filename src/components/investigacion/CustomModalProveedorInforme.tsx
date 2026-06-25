@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -9,6 +9,7 @@ import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/compone
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { RegistroProveedorAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 import {
   normalizarMontoDosDecimales,
   normalizarMontoDecimales,
@@ -21,6 +22,7 @@ import {
 interface PropsCustomModalProveedorAnalista {
   estaAbierto: boolean;
   registroInicial?: RegistroProveedorAnalista | null;
+  idIdioma?: number;
   onCerrar: () => void;
   onGuardar: (registro: RegistroProveedorAnalista) => void;
 }
@@ -28,6 +30,7 @@ interface PropsCustomModalProveedorAnalista {
 export function CustomModalProveedorAnalista({
   estaAbierto,
   registroInicial,
+  idIdioma,
   onCerrar,
   onGuardar,
 }: PropsCustomModalProveedorAnalista) {
@@ -46,31 +49,36 @@ export function CustomModalProveedorAnalista({
   const [tipoCambio, setTipoCambio] = useState(registroInicial?.tipoCambio ?? "");
   const [limiteCredito, setLimiteCredito] = useState(registroInicial?.limiteCredito ?? "");
   const [promedioMensual, setPromedioMensual] = useState(registroInicial?.promedioMensual ?? "");
-  const { data: opcionesTipoProveedor } = useQuery({
+  const { data: opcionesTipoProveedorBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_PROVEEDOR],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PROVEEDOR),
     staleTime: Infinity,
   });
-  const { data: opcionesPais } = useQuery({
+  const { data: opcionesPaisBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.PAIS],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
     staleTime: Infinity,
   });
-  const { data: opcionesTaxId } = useQuery({
+  const { data: opcionesTaxIdBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_REG_TRIBUTARIO],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_REG_TRIBUTARIO),
     staleTime: Infinity,
   });
-  const { data: opcionesMoneda } = useQuery({
+  const { data: opcionesMonedaBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.MONEDA],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
     staleTime: Infinity,
   });
-  const { data: opcionesLimiteCredito } = useQuery({
+  const { data: opcionesLimiteCreditoBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.LIMITE_CREDITO_PROVEEDOR],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.LIMITE_CREDITO_PROVEEDOR),
     staleTime: Infinity,
   });
+  const opcionesTipoProveedor = useMemo(() => traducirOpcionesTablaMaestra(opcionesTipoProveedorBase, idIdioma), [idIdioma, opcionesTipoProveedorBase]);
+  const opcionesPais = useMemo(() => traducirOpcionesTablaMaestra(opcionesPaisBase, idIdioma), [idIdioma, opcionesPaisBase]);
+  const opcionesTaxId = useMemo(() => traducirOpcionesTablaMaestra(opcionesTaxIdBase, idIdioma), [idIdioma, opcionesTaxIdBase]);
+  const opcionesMoneda = useMemo(() => traducirOpcionesTablaMaestra(opcionesMonedaBase, idIdioma), [idIdioma, opcionesMonedaBase]);
+  const opcionesLimiteCredito = useMemo(() => traducirOpcionesTablaMaestra(opcionesLimiteCreditoBase, idIdioma), [idIdioma, opcionesLimiteCreditoBase]);
 
   if (!estaAbierto) return null;
 

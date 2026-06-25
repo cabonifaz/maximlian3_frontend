@@ -16,6 +16,12 @@ interface PropsCustomVisorRevisionInforme {
   puedeDescargar: boolean;
   puedeEditar: boolean;
   esEjemplo: boolean;
+  tituloInforme?: string;
+  idiomaInforme?: string;
+  mostrarAccionesRevision?: boolean;
+  mostrarInformeTraducido?: boolean;
+  mostrarPie?: boolean;
+  mostrarCerrar?: boolean;
   onCerrar: () => void;
   onDescargar: (formato: FormatoDescargaInforme) => void;
   onAprobar: () => void;
@@ -31,6 +37,12 @@ export function CustomVisorRevisionInforme({
   puedeDescargar,
   puedeEditar,
   esEjemplo,
+  tituloInforme = "Informe original",
+  idiomaInforme = "Espa\u00f1ol",
+  mostrarAccionesRevision = true,
+  mostrarInformeTraducido = false,
+  mostrarPie = true,
+  mostrarCerrar = true,
   onCerrar,
   onDescargar,
   onAprobar,
@@ -50,15 +62,17 @@ export function CustomVisorRevisionInforme({
               <p className="text-sm text-slate-500">
                 {esEjemplo
                   ? "Vista de ejemplo para el flujo de aprobaci\u00f3n."
-                  : "Revisi\u00f3n del informe original en espa\u00f1ol."}
+                  : `Revisi\u00f3n de ${tituloInforme.toLowerCase()}.`}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <CustomButton variant="secondary" size="sm" onClick={onCerrar}>
-              Cerrar
-            </CustomButton>
+            {mostrarCerrar ? (
+              <CustomButton variant="secondary" size="sm" onClick={onCerrar}>
+                Cerrar
+              </CustomButton>
+            ) : null}
             <CustomDescargaInforme
               deshabilitado={!puedeDescargar}
               onDescargar={onDescargar}
@@ -69,35 +83,39 @@ export function CustomVisorRevisionInforme({
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-5 py-2">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">
-              Informe original
+              {tituloInforme}
             </p>
             <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-              {"(Espa\u00f1ol)"}
+              ({idiomaInforme})
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <CustomButton
-              variant="secondary"
-              size="sm"
-              className="border-green-400 text-green-600"
-              disabled={!puedeEditar}
-              onClick={onAprobar}
-            >
-              <CheckCircle2 size={14} />
-              Aprobar
-            </CustomButton>
-            <CustomButton
-              variant="secondary"
-              size="sm"
-              className="border-red-400 text-red-500"
-              disabled={!puedeEditar}
-              onClick={onRechazar}
-            >
-              <CircleX size={14} />
-              Rechazar
-            </CustomButton>
+            {mostrarAccionesRevision ? (
+              <>
+                <CustomButton
+                  variant="secondary"
+                  size="sm"
+                  className="border-green-400 text-green-600"
+                  disabled={!puedeEditar}
+                  onClick={onAprobar}
+                >
+                  <CheckCircle2 size={14} />
+                  Aprobar
+                </CustomButton>
+                <CustomButton
+                  variant="secondary"
+                  size="sm"
+                  className="border-red-400 text-red-500"
+                  disabled={!puedeEditar}
+                  onClick={onRechazar}
+                >
+                  <CircleX size={14} />
+                  Rechazar
+                </CustomButton>
+              </>
+            ) : null}
             <span className="rounded-full bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-              Original
+              {mostrarInformeTraducido ? "Traducido" : "Original"}
             </span>
           </div>
         </div>
@@ -110,7 +128,7 @@ export function CustomVisorRevisionInforme({
             encabezado={encabezado}
             idInforme={idInforme}
             idPedido={idPedido}
-            mostrarInformeTraducido={false}
+            mostrarInformeTraducido={mostrarInformeTraducido}
             className="mx-auto max-w-6xl space-y-3"
           />
         ) : (
@@ -120,15 +138,17 @@ export function CustomVisorRevisionInforme({
         )}
       </main>
 
-      <footer className="z-30 flex shrink-0 items-center justify-end gap-3 border-t border-slate-200 bg-white/95 px-5 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur">
-        <div className="flex items-center gap-2 text-sm text-slate-500">
-          <Eye size={16} />
-          {esEjemplo ? "Ejemplo de revisi\u00f3n" : "Revisi\u00f3n activa"}
-        </div>
-        <CustomButton variant="secondary" size="sm" onClick={onVolver}>
-          Volver a informes
-        </CustomButton>
-      </footer>
+      {mostrarPie ? (
+        <footer className="z-30 flex shrink-0 items-center justify-end gap-3 border-t border-slate-200 bg-white/95 px-5 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur">
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <Eye size={16} />
+            {esEjemplo ? "Ejemplo de revisi\u00f3n" : "Revisi\u00f3n activa"}
+          </div>
+          <CustomButton variant="secondary" size="sm" onClick={onVolver}>
+            Volver a informes
+          </CustomButton>
+        </footer>
+      ) : null}
     </div>
   );
 }

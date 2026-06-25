@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -8,6 +8,7 @@ import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service"
 import type { RegistroImportacionExportacionAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 import {
   normalizarMontoDosDecimales,
   sanitizarMontoDosDecimales,
@@ -24,6 +25,7 @@ interface PropsCustomModalOperacionAnalista {
   titulo: string;
   subtitulo: string;
   registroInicial?: RegistroImportacionExportacionAnalista | null;
+  idIdioma?: number;
   onCerrar: () => void;
   onGuardar: (registro: RegistroImportacionExportacionAnalista) => void;
 }
@@ -33,6 +35,7 @@ export function CustomModalOperacionAnalista({
   titulo,
   subtitulo,
   registroInicial,
+  idIdioma,
   onCerrar,
   onGuardar,
 }: PropsCustomModalOperacionAnalista) {
@@ -45,17 +48,19 @@ export function CustomModalOperacionAnalista({
   const [paises, setPaises] = useState(registroInicial?.paises ?? "");
   const [productos, setProductos] = useState(registroInicial?.productos ?? "");
   const [operaciones, setOperaciones] = useState(registroInicial?.operaciones ?? "");
-  const { data: opcionesMeses } = useQuery<EntradaTablaMaestra[]>({
+  const { data: opcionesMesesBase } = useQuery<EntradaTablaMaestra[]>({
     queryKey: ["masterTable", TablaMaestraId.MES],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MES),
     staleTime: Infinity,
   });
-  const { data: opcionesMoneda } = useQuery<EntradaTablaMaestra[]>({
+  const { data: opcionesMonedaBase } = useQuery<EntradaTablaMaestra[]>({
     queryKey: ["masterTable", TablaMaestraId.MONEDA],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
     staleTime: Infinity,
   });
 
+  const opcionesMeses = useMemo(() => traducirOpcionesTablaMaestra(opcionesMesesBase, idIdioma), [idIdioma, opcionesMesesBase]);
+  const opcionesMoneda = useMemo(() => traducirOpcionesTablaMaestra(opcionesMonedaBase, idIdioma), [idIdioma, opcionesMonedaBase]);
   const opcionesMesesOrdenadas = [...(opcionesMeses ?? [])].sort((a, b) => (a.num1 ?? 0) - (b.num1 ?? 0));
   const idMesActual = idMes ?? opcionesMesesOrdenadas.find((opcion) => opcion.string1 === registroInicial?.mes)?.num1 ?? undefined;
   const mesActual = opcionesMesesOrdenadas.find((opcion) => opcion.num1 === idMesActual)?.string1 ?? registroInicial?.mes ?? "";

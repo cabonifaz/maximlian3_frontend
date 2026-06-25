@@ -21,6 +21,7 @@ import type {
   DetalleRatiosBalanceAnalista,
 } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 import {
   obtenerConfiguracionEstadoFinanciero,
   obtenerTipoEntradaCampoEstadoFinanciero,
@@ -39,6 +40,7 @@ interface PropsCustomModalDetalleCuentasAnalista {
   onGuardar: (detalle: DetalleCuentasBalanceAnalista) => void;
   detalleInicial?: DetalleCuentasBalanceAnalista;
   tipoEstadoFinanciero?: string;
+  idIdioma?: number;
 }
 
 function crearDetalleVacio(): DetalleCuentasBalanceAnalista {
@@ -557,6 +559,7 @@ export function CustomModalDetalleCuentasAnalista({
   onGuardar,
   detalleInicial,
   tipoEstadoFinanciero,
+  idIdioma,
 }: PropsCustomModalDetalleCuentasAnalista) {
   const detalleBase = useMemo(
     () => detalleInicial ?? crearDetalleVacio(),
@@ -565,17 +568,19 @@ export function CustomModalDetalleCuentasAnalista({
   const [detalle, setDetalle] =
     useState<DetalleCuentasBalanceAnalista>(detalleBase);
   const [pestanaActiva, setPestanaActiva] = useState("balance-general");
-  const { data: opcionesMoneda } = useQuery({
+  const { data: opcionesMonedaBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.MONEDA],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
     staleTime: Infinity,
   });
-  const { data: opcionesNivelConfiabilidad } = useQuery({
+  const { data: opcionesNivelConfiabilidadBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.NIVEL_CONFIABILIDAD],
     queryFn: () =>
       servicioTablaMaestra.list(TablaMaestraId.NIVEL_CONFIABILIDAD),
     staleTime: Infinity,
   });
+  const opcionesMoneda = useMemo(() => traducirOpcionesTablaMaestra(opcionesMonedaBase, idIdioma), [idIdioma, opcionesMonedaBase]);
+  const opcionesNivelConfiabilidad = useMemo(() => traducirOpcionesTablaMaestra(opcionesNivelConfiabilidadBase, idIdioma), [idIdioma, opcionesNivelConfiabilidadBase]);
 
   useEffect(() => {
     setDetalle(detalleBase);

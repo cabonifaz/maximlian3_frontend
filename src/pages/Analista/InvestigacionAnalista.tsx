@@ -63,6 +63,7 @@ import { servicioInformeObservacion } from "@maximilian/services/informeObservac
 import { servicioInformeLocalImagen } from "@maximilian/services/informeLocalImagen.service";
 import { servicioBanco } from "@maximilian/services/banco.service";
 import { servicioCompania } from "@maximilian/services/compania.service";
+import { servicioCliente } from "@maximilian/services/cliente.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
@@ -301,21 +302,18 @@ function esTextoAfirmativo(valor?: string) {
 function obtenerIdObligacionBolsa(valor?: string) {
   const texto = valor?.trim().toLowerCase() ?? "";
   if (texto === "si" || texto === "sí" || texto === "true" || texto === "1") return 1;
-  if (texto === "no" || texto === "false" || texto === "2") return 2;
+  if (texto === "no" || texto === "false" || texto === "0" || texto === "2") return 0;
   return undefined;
 }
 
-function obtenerTextoObligacionBolsa(valor?: string) {
+function obtenerTextoObligacionBolsa(
+  opciones: { num1: number | null; string1: string | null }[] | undefined,
+  valor?: string,
+) {
   const id = obtenerIdObligacionBolsa(valor);
-  if (id === 1) return "Sí";
-  if (id === 2) return "No";
+  if (id != null) return opciones?.find((opcion) => opcion.num1 === id)?.string1?.trim() ?? "";
   return "";
 }
-
-const opcionesBooleanasBolsa = [
-  { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 1, num2: null, num3: null, string1: "Sí", string2: null, string3: null, date1: null, date2: null, date3: null },
-  { idEmpresa: 0, idTablaMaestra: null, idMaestro: 0, descripcion: "", num1: 2, num2: null, num3: null, string1: "No", string2: null, string3: null, date1: null, date2: null, date3: null },
-];
 
 const CAMPOS_MONETARIOS_EXTRACCION = new Set([
   "aspectosLegales.capitalInicial",
@@ -1474,6 +1472,12 @@ function PantallaInvestigacionAnalista({
     staleTime: Infinity,
   });
 
+  const { data: opcionesObligacionBolsa } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.OBLIGACION_BOLSA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.OBLIGACION_BOLSA),
+    staleTime: Infinity,
+  });
+
   const { data: opcionesMes } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.MES],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MES),
@@ -1522,6 +1526,18 @@ function PantallaInvestigacionAnalista({
     staleTime: Infinity,
   });
 
+  const { data: opcionesTipoTramite } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_TRAMITE],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_TRAMITE),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesIdioma } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.IDIOMA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.IDIOMA),
+    staleTime: Infinity,
+  });
+
   const { data: opcionesCargoDirectorio } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.CARGO_DIRECTORIO],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CARGO_DIRECTORIO),
@@ -1538,6 +1554,16 @@ function PantallaInvestigacionAnalista({
     enabled: Boolean(idPedido),
   });
 
+  const { data: tarifarioPedidoSeleccionado } = useQuery({
+    queryKey: ["tarifario-obtener-resumen-analista", registroPedidoSeleccionado?.idTarifario, registroPedidoSeleccionado?.idCliente],
+    queryFn: () =>
+      servicioCliente.getTarifarioById({
+        idTarifario: registroPedidoSeleccionado!.idTarifario,
+        idCliente: registroPedidoSeleccionado!.idCliente,
+      }),
+    enabled: Boolean(registroPedidoSeleccionado?.idTarifario && registroPedidoSeleccionado?.idCliente),
+  });
+
   const { data: registroAsignacionPedido } = useQuery({
     queryKey: ["asignacion-resumen-analista", idPedido],
     queryFn: async () => {
@@ -1549,16 +1575,6 @@ function PantallaInvestigacionAnalista({
       });
 
       return respuesta.lstPedido.find((registro) => String(registro.idPedido) === idPedido) ?? null;
-    },
-    enabled: Boolean(idPedido),
-  });
-
-  const { data: registroPedidoListado } = useQuery({
-    queryKey: ["pedido-lista-resumen-analista", idPedido],
-    queryFn: async () => {
-      if (!idPedido?.trim()) return null;
-      const respuesta = await pedidoService.list({ idPedido: Number(idPedido), numPag: 1 });
-      return respuesta.lstPedido.find((registro) => registro.idPedido === Number(idPedido)) ?? null;
     },
     enabled: Boolean(idPedido),
   });
@@ -1843,6 +1859,24 @@ function PantallaInvestigacionAnalista({
     if (!idPaisSeleccionado) return opcionesCiudad;
     return opcionesCiudad?.filter((opcion) => opcion.num2 === idPaisSeleccionado);
   }, [idPaisSeleccionado, opcionesCiudad]);
+  const tipoInformeResumen = useMemo(() => {
+    const idTipoTramite = tarifarioPedidoSeleccionado?.idTipoTramite;
+    if (!idTipoTramite) {
+      return datosPedidoNavegacion?.tipoTramite
+        || registroAsignacionPedido?.tipoTramite
+        || datosInvestigacion.resumen.prioridad;
+    }
+
+    const opcionTipoTramite = opcionesTipoTramite?.find(
+      (opcion) => opcion.num1 === idTipoTramite,
+    );
+
+    return opcionTipoTramite?.string2
+      || opcionTipoTramite?.string1
+      || datosPedidoNavegacion?.tipoTramite
+      || registroAsignacionPedido?.tipoTramite
+      || datosInvestigacion.resumen.prioridad;
+  }, [datosInvestigacion.resumen.prioridad, datosPedidoNavegacion?.tipoTramite, opcionesTipoTramite, registroAsignacionPedido?.tipoTramite, tarifarioPedidoSeleccionado?.idTipoTramite]);
   const resumenEncabezado = useMemo(
     () => ({
       ...datosInvestigacion.resumen,
@@ -1857,13 +1891,9 @@ function PantallaInvestigacionAnalista({
         || nombrePaisInforme
         || datosInvestigacion.identificacion.pais
         || datosInvestigacion.resumen.pais,
-      prioridad:
-        datosPedidoNavegacion?.tipoTramite
-        || registroAsignacionPedido?.tipoTramite
-        || registroPedidoListado?.tipoTramite
-        || datosInvestigacion.resumen.prioridad,
+      prioridad: tipoInformeResumen,
     }),
-    [datosInvestigacion.identificacion.pais, datosInvestigacion.resumen, datosPedidoNavegacion, nombrePaisInforme, registroAsignacionPedido, registroPedidoListado, registroPedidoSeleccionado],
+    [datosInvestigacion.identificacion.pais, datosInvestigacion.resumen, datosPedidoNavegacion, nombrePaisInforme, registroAsignacionPedido, registroPedidoSeleccionado, tipoInformeResumen],
   );
   const nombrePlantilla = useMemo(() => {
     const idPlantilla = datosPedidoNavegacion?.idPlantilla ?? registroPedidoSeleccionado?.idPlantilla;
@@ -1873,6 +1903,14 @@ function PantallaInvestigacionAnalista({
       (opcion) => opcion.num1 === idPlantilla,
     )?.string1 ?? "";
   }, [datosPedidoNavegacion?.idPlantilla, opcionesPlantillaInforme, registroPedidoSeleccionado?.idPlantilla]);
+  const nombreIdioma = useMemo(() => {
+    const idIdioma = registroPedidoSeleccionado?.idIdioma;
+    if (!idIdioma) return "";
+
+    return opcionesIdioma?.find(
+      (opcion) => opcion.num1 === idIdioma,
+    )?.string1 ?? "";
+  }, [opcionesIdioma, registroPedidoSeleccionado?.idIdioma]);
 
   useEffect(() => {
     if (idTipoPersonaInicial && idTipoPersonaSeleccionado == null) {
@@ -2494,8 +2532,12 @@ function PantallaInvestigacionAnalista({
 
     if (rutaTexto === "aspectosLegales.obligacionBolsa") {
       const texto = valorTexto.toLowerCase();
-      if (texto === "no" || texto === "false" || texto === "2") return { valor: "No", valorFormulario: "false" };
-      if (texto === "si" || texto === "sí" || texto === "true" || texto === "1") return { valor: "Sí", valorFormulario: "true" };
+      if (texto === "no" || texto === "false" || texto === "0" || texto === "2") {
+        return { valor: obtenerTextoObligacionBolsa(opcionesObligacionBolsa, "0") || "NO", valorFormulario: "0" };
+      }
+      if (texto === "si" || texto === "sí" || texto === "true" || texto === "1") {
+        return { valor: obtenerTextoObligacionBolsa(opcionesObligacionBolsa, "1") || "SI", valorFormulario: "1" };
+      }
       return { valor: valorTexto };
     }
 
@@ -4220,10 +4262,10 @@ function PantallaInvestigacionAnalista({
         <CampoInvestigacionAnalista etiqueta="Valor de las Acciones" valor={datosInvestigacion.aspectosLegales.valorAcciones} soloLectura={esSoloLectura} tipoEntrada="decimal" adornoFinal={isoOperacionesCambioDivisas} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.valorAcciones")} onChange={(valor) => actualizarAspectosLegales("valorAcciones", valor)} />
         <CustomSelectorBuscable
           label={<span className="inline-flex items-center gap-2"><span>Obligación en Bolsa</span>{obtenerIndicadorCambioExtraccion("aspectosLegales.obligacionBolsa")}</span>}
-          options={opcionesBooleanasBolsa}
+          options={opcionesObligacionBolsa}
           value={obtenerIdObligacionBolsa(datosInvestigacion.aspectosLegales.obligacionBolsa)}
-          displayValue={obtenerTextoObligacionBolsa(datosInvestigacion.aspectosLegales.obligacionBolsa)}
-          onChange={(valor) => actualizarAspectosLegales("obligacionBolsa", valor === 1 ? "true" : "false")}
+          displayValue={obtenerTextoObligacionBolsa(opcionesObligacionBolsa, datosInvestigacion.aspectosLegales.obligacionBolsa)}
+          onChange={(valor) => actualizarAspectosLegales("obligacionBolsa", String(valor))}
           onClear={() => actualizarAspectosLegales("obligacionBolsa", "")}
           optional
           mostrarTextoOpcionalEnLabel={false}
@@ -5525,6 +5567,7 @@ function PantallaInvestigacionAnalista({
       <ResumenPedidoInvestigacionAnalista
         idPedido={String(datosPedidoNavegacion?.idPedido ?? idPedido ?? "")}
         plantilla={nombrePlantilla}
+        idioma={nombreIdioma}
         resumen={resumenEncabezado}
         esSoloLectura={esSoloLectura}
         mostrarBotonFinalizar={idSeccionActiva === "datos-generales" && !esSoloLectura}

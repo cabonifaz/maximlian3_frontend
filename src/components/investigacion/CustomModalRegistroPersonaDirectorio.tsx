@@ -17,6 +17,7 @@ interface PropsCustomModalRegistroPersonaDirectorioAnalista {
   estaAbierto: boolean;
   registroInicial?: RegistroPersonaDirectorioAnalista | null;
   nombreInicial?: string;
+  idIdioma?: number;
   onCerrar: () => void;
   onGuardar: (registro: RegistroPersonaDirectorioAnalista) => void;
 }
@@ -43,55 +44,85 @@ function normalizarFechaApi(fecha: string) {
   return `${ano}-${mes}-${dia}T00:00:00.000Z`;
 }
 
+function traducirOpcionesTablaMaestra(
+  opciones: EntradaTablaMaestra[] | undefined,
+  idIdioma?: number,
+) {
+  if (idIdioma !== 2 && idIdioma !== 3) return opciones;
+
+  const claveString1 = idIdioma === 2 ? "string4" : "string6";
+  const claveString2 = idIdioma === 2 ? "string5" : "string7";
+
+  return opciones?.map((opcion) => {
+    const textoPrincipal = opcion[claveString1]?.trim();
+    const textoSecundario = opcion[claveString2]?.trim();
+
+    return {
+      ...opcion,
+      string1: textoPrincipal || opcion.string1,
+      string2: textoSecundario || opcion.string2,
+      string3: textoSecundario || opcion.string3,
+    };
+  });
+}
+
 export function CustomModalRegistroPersonaDirectorioAnalista({
   estaAbierto,
   registroInicial,
   nombreInicial,
+  idIdioma,
   onCerrar,
   onGuardar,
 }: PropsCustomModalRegistroPersonaDirectorioAnalista) {
   const [fechaNacimiento, setFechaNacimiento] = useState(registroInicial?.fechaNacimiento ?? "");
-  const { data: opcionesTipoPersona } = useQuery({
+  const { data: opcionesTipoPersonaBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA),
     enabled: estaAbierto,
     staleTime: Infinity,
   });
 
-  const { data: opcionesPais } = useQuery({
+  const { data: opcionesPaisBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.PAIS],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
     enabled: estaAbierto,
     staleTime: Infinity,
   });
 
-  const { data: opcionesTipoDocumento } = useQuery({
+  const { data: opcionesTipoDocumentoBase } = useQuery({
     queryKey: ["masterTable", ID_MAESTRO_TIPO_DOCUMENTO],
     queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_TIPO_DOCUMENTO),
     enabled: estaAbierto,
     staleTime: Infinity,
   });
 
-  const { data: opcionesTipoIdFiscal } = useQuery({
+  const { data: opcionesTipoIdFiscalBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_REG_TRIBUTARIO],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_REG_TRIBUTARIO),
     enabled: estaAbierto,
     staleTime: Infinity,
   });
 
-  const { data: opcionesEstadoCivil } = useQuery({
+  const { data: opcionesEstadoCivilBase } = useQuery({
     queryKey: ["masterTable", ID_MAESTRO_ESTADO_CIVIL],
     queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_ESTADO_CIVIL),
     enabled: estaAbierto,
     staleTime: Infinity,
   });
 
-  const { data: opcionesProfesion } = useQuery({
+  const { data: opcionesProfesionBase } = useQuery({
     queryKey: ["masterTable", ID_MAESTRO_PROFESION],
     queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_PROFESION),
     enabled: estaAbierto,
     staleTime: Infinity,
   });
+
+  const opcionesTipoPersona = useMemo(() => traducirOpcionesTablaMaestra(opcionesTipoPersonaBase, idIdioma), [idIdioma, opcionesTipoPersonaBase]);
+  const opcionesPais = useMemo(() => traducirOpcionesTablaMaestra(opcionesPaisBase, idIdioma), [idIdioma, opcionesPaisBase]);
+  const opcionesTipoDocumento = useMemo(() => traducirOpcionesTablaMaestra(opcionesTipoDocumentoBase, idIdioma), [idIdioma, opcionesTipoDocumentoBase]);
+  const opcionesTipoIdFiscal = useMemo(() => traducirOpcionesTablaMaestra(opcionesTipoIdFiscalBase, idIdioma), [idIdioma, opcionesTipoIdFiscalBase]);
+  const opcionesEstadoCivil = useMemo(() => traducirOpcionesTablaMaestra(opcionesEstadoCivilBase, idIdioma), [idIdioma, opcionesEstadoCivilBase]);
+  const opcionesProfesion = useMemo(() => traducirOpcionesTablaMaestra(opcionesProfesionBase, idIdioma), [idIdioma, opcionesProfesionBase]);
 
   const opcionesNacionalidad = useMemo(
     () => opcionesPais?.map((opcion) => ({

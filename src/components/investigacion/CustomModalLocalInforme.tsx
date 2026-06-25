@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Eye, Image as IconoImagen, Trash2, Upload, X } from "lucide-react";
@@ -10,6 +10,7 @@ import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service"
 import { servicioInformeLocalImagen } from "@maximilian/services/informeLocalImagen.service";
 import type { RegistroImagenLocalAnalista, RegistroLocalAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 import {
   seleccionarTextoCampoEditable,
   seleccionarTextoEditableEnContenedor,
@@ -19,6 +20,7 @@ interface PropsCustomModalLocalAnalista {
   estaAbierto: boolean;
   registroInicial?: RegistroLocalAnalista | null;
   soloLectura?: boolean;
+  idIdioma?: number;
   onCerrar: () => void;
   onGuardar: (registro: RegistroLocalAnalista) => void;
 }
@@ -31,6 +33,7 @@ export function CustomModalLocalAnalista({
   estaAbierto,
   registroInicial,
   soloLectura = false,
+  idIdioma,
   onCerrar,
   onGuardar,
 }: PropsCustomModalLocalAnalista) {
@@ -106,11 +109,12 @@ export function CustomModalLocalAnalista({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estaAbierto, registroInicial]);
 
-  const { data: opcionesTipoLocal } = useQuery({
+  const { data: opcionesTipoLocalBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_LOCAL],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_LOCAL),
     staleTime: Infinity,
   });
+  const opcionesTipoLocal = useMemo(() => traducirOpcionesTablaMaestra(opcionesTipoLocalBase, idIdioma), [idIdioma, opcionesTipoLocalBase]);
 
   useEffect(() => {
     return () => {

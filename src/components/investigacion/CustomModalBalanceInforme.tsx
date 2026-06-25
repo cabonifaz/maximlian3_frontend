@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -8,6 +8,7 @@ import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigac
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { RegistroBalanceAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 import {
   normalizarMontoDosDecimales,
   sanitizarMontoDosDecimales,
@@ -18,6 +19,7 @@ import {
 interface PropsCustomModalBalanceAnalista {
   estaAbierto: boolean;
   registroInicial?: RegistroBalanceAnalista | null;
+  idIdioma?: number;
   onCerrar: () => void;
   onGuardar: (registro: Omit<RegistroBalanceAnalista, "codigo" | "periodo" | "balanceGeneral" | "perdidaGanancia" | "cuentas" | "detalleCuentas">) => void;
 }
@@ -40,6 +42,7 @@ function compararFechasDdMmYyyy(a: string, b: string): number {
 export function CustomModalBalanceAnalista({
   estaAbierto,
   registroInicial,
+  idIdioma,
   onCerrar,
   onGuardar,
 }: PropsCustomModalBalanceAnalista) {
@@ -53,21 +56,24 @@ export function CustomModalBalanceAnalista({
   const [errorFechas, setErrorFechas] = useState("");
   const hoy = new Date();
   const fechaActual = `${String(hoy.getDate()).padStart(2, "0")}/${String(hoy.getMonth() + 1).padStart(2, "0")}/${hoy.getFullYear()}`;
-  const { data: opcionesMoneda } = useQuery({
+  const { data: opcionesMonedaBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.MONEDA],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
     staleTime: Infinity,
   });
-  const { data: opcionesTipoBalance } = useQuery({
+  const { data: opcionesTipoBalanceBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_BALANCE],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_BALANCE),
     staleTime: Infinity,
   });
-  const { data: opcionesEstadoFinanciero } = useQuery({
+  const { data: opcionesEstadoFinancieroBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.ESTADO_FINANCIERO],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_FINANCIERO),
     staleTime: Infinity,
   });
+  const opcionesMoneda = useMemo(() => traducirOpcionesTablaMaestra(opcionesMonedaBase, idIdioma), [idIdioma, opcionesMonedaBase]);
+  const opcionesTipoBalance = useMemo(() => traducirOpcionesTablaMaestra(opcionesTipoBalanceBase, idIdioma), [idIdioma, opcionesTipoBalanceBase]);
+  const opcionesEstadoFinanciero = useMemo(() => traducirOpcionesTablaMaestra(opcionesEstadoFinancieroBase, idIdioma), [idIdioma, opcionesEstadoFinancieroBase]);
 
   if (!estaAbierto) return null;
 

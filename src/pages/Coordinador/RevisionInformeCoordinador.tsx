@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/CustomModalRechazoInforme";
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import { informeService } from "@maximilian/services/informe.service";
 import { servicioInformeObservacion } from "@maximilian/services/informeObservacion.service";
@@ -22,7 +23,10 @@ export default function RevisionInformeCoordinador() {
   const { idPedido } = useParams();
   const [parametrosBusqueda] = useSearchParams();
   const idInforme = Number(parametrosBusqueda.get("idInforme"));
+  const idInformeOriginal = Number(parametrosBusqueda.get("idInformeOriginal"));
+  const idIdioma = Number(parametrosBusqueda.get("idIdioma"));
   const esEjemplo = parametrosBusqueda.get("ejemplo") === "1";
+  const tieneInformeOriginal = Number.isFinite(idInformeOriginal) && idInformeOriginal > 0;
   const [estaAbiertoModalRechazo, setEstaAbiertoModalRechazo] = useState(false);
   const [observacionesRechazo, setObservacionesRechazo] = useState<InformeObservacion[]>([]);
   const datosEjemplo = useMemo(
@@ -47,6 +51,15 @@ export default function RevisionInformeCoordinador() {
     && idInformeSeguro > 0
     && Number.isFinite(idPedidoNumerico)
     && idPedidoNumerico > 0;
+  const puedeDescargarOriginal = !esEjemplo
+    && tieneInformeOriginal
+    && Number.isFinite(idPedidoNumerico)
+    && idPedidoNumerico > 0;
+  const idiomaInformeTraducido = idIdioma === 2
+    ? "Ingl\u00e9s"
+    : idIdioma === 3
+      ? "Portugu\u00e9s"
+      : "Traducido";
   const encabezadoVistaPrevia = {
     pais: datosInvestigacion?.identificacion.pais || "-",
     fecha: new Date().toLocaleDateString("es-PE"),
@@ -190,12 +203,12 @@ export default function RevisionInformeCoordinador() {
     mutationRechazo.mutate(observacionesValidas);
   };
 
-  const descargarDocumento = async (formato: FormatoDescargaInforme) => {
+  const descargarDocumento = async (formato: FormatoDescargaInforme, idInformeDescarga = idInformeSeguro) => {
     const etiquetaFormato = formato.slice(1).toUpperCase();
     const idToast = toast.loading(`Descargando documento ${etiquetaFormato}...`);
     try {
       const documentoDescarga = await informeService.obtenerDocumento(
-        idInformeSeguro,
+        idInformeDescarga,
         idPedidoNumerico,
         formato,
       );
@@ -212,6 +225,86 @@ export default function RevisionInformeCoordinador() {
   };
 
   if (isLoading) return <PantallaCarga message="Obteniendo informe..." />;
+
+  if (tieneInformeOriginal) {
+    return (
+      <>
+        <div className="flex h-[calc(100vh-4rem)] min-h-0 flex-col overflow-hidden bg-slate-100">
+          <div className="grid min-h-0 flex-1 gap-3 overflow-hidden p-3 xl:grid-cols-2">
+            <CustomVisorRevisionInforme
+              datosInvestigacion={datosInvestigacion}
+              encabezado={encabezadoVistaPrevia}
+              idInforme={idInformeOriginal}
+              idPedido={esEjemplo ? undefined : idPedidoNumerico}
+              puedeDescargar={puedeDescargarOriginal}
+              puedeEditar={false}
+              esEjemplo={esEjemplo}
+              tituloInforme="Informe original"
+              idiomaInforme={"Espa\u00f1ol"}
+              mostrarAccionesRevision={false}
+              mostrarPie={false}
+              mostrarCerrar={false}
+              onCerrar={() => navigate("/coordinador/revision")}
+              onDescargar={(formato) => {
+                void descargarDocumento(formato, idInformeOriginal);
+              }}
+              onAprobar={() => undefined}
+              onRechazar={() => undefined}
+              onVolver={() => navigate("/coordinador/revision")}
+            />
+
+            <CustomVisorRevisionInforme
+              datosInvestigacion={datosInvestigacion}
+              encabezado={encabezadoVistaPrevia}
+              idInforme={esEjemplo ? undefined : idInformeSeguro}
+              idPedido={esEjemplo ? undefined : idPedidoNumerico}
+              puedeDescargar={puedeDescargar}
+              puedeEditar={puedeEditarRevision}
+              esEjemplo={esEjemplo}
+              tituloInforme="Informe traducido"
+              idiomaInforme={idiomaInformeTraducido}
+              mostrarAccionesRevision
+              mostrarInformeTraducido
+              mostrarPie={false}
+              mostrarCerrar={false}
+              onCerrar={() => navigate("/coordinador/revision")}
+              onDescargar={(formato) => {
+                void descargarDocumento(formato);
+              }}
+              onAprobar={() => mutationRevision.mutate({
+                idInforme: idInformeSeguro,
+                idEstadoInforme: ID_ESTADO_INFORME_APROBADO,
+              })}
+              onRechazar={abrirModalRechazo}
+              onVolver={() => navigate("/coordinador/revision")}
+            />
+          </div>
+
+          <footer className="z-30 flex shrink-0 items-center justify-end gap-3 border-t border-slate-200 bg-white/95 px-5 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur">
+            <div className="text-sm text-slate-500">
+              {"Revisi\u00f3n activa"}
+            </div>
+            <CustomButton variant="secondary" size="sm" onClick={() => navigate("/coordinador/revision")}>
+              Volver a informes
+            </CustomButton>
+          </footer>
+        </div>
+
+        <CustomModalRechazoInforme
+          estaAbierto={estaAbiertoModalRechazo}
+          observacionesRechazo={observacionesRechazo}
+          onObservacionesRechazoChange={setObservacionesRechazo}
+          onCerrar={cerrarModalRechazo}
+          onConfirmar={confirmarRechazo}
+          onEliminarObservacion={(observacion) => {
+            mutationEliminarObservacion.mutate(observacion.idInformeObservacion);
+          }}
+          idObservacionEliminando={mutationEliminarObservacion.variables}
+          cargando={mutationRechazo.isPending}
+        />
+      </>
+    );
+  }
 
   return (
     <>
