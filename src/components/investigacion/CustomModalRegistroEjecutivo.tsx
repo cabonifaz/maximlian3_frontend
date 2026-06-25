@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -11,6 +11,7 @@ import type {
   RegistroPersonaDirectorioAnalista,
 } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 import { seleccionarTextoEditableEnContenedor } from "@maximilian/shared/utils/formato-monto.util";
 
 interface PropsCustomModalRegistroEjecutivoAnalista {
@@ -19,6 +20,7 @@ interface PropsCustomModalRegistroEjecutivoAnalista {
   personaSeleccionada?: RegistroPersonaDirectorioAnalista | null;
   mensajeBusquedaEjecutivo?: string;
   requiereEjecutivoRegistrado?: boolean;
+  idIdioma?: number;
   onCerrar: () => void;
   onBuscarEjecutivo: () => void;
   onGuardar: (registro: Omit<RegistroDirectorioEjecutivoAnalista, "id">) => void;
@@ -30,6 +32,7 @@ export function CustomModalRegistroEjecutivoAnalista({
   personaSeleccionada,
   mensajeBusquedaEjecutivo,
   requiereEjecutivoRegistrado = false,
+  idIdioma,
   onCerrar,
   onBuscarEjecutivo,
   onGuardar,
@@ -43,12 +46,13 @@ export function CustomModalRegistroEjecutivoAnalista({
   const [porcentajeParticipacion, setPorcentajeParticipacion] = useState(
     limpiarPorcentaje(registroInicial?.porcentaje),
   );
-  const { data: opcionesCargo } = useQuery({
+  const { data: opcionesCargoBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.CARGO_DIRECTORIO],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CARGO_DIRECTORIO),
     enabled: estaAbierto,
     staleTime: Infinity,
   });
+  const opcionesCargo = useMemo(() => traducirOpcionesTablaMaestra(opcionesCargoBase, idIdioma), [idIdioma, opcionesCargoBase]);
 
   const cargoMaestroRegistro = opcionesCargo
     ?.find((opcion) => Number(opcion.num1) === Number(registroInicial?.idCargo))

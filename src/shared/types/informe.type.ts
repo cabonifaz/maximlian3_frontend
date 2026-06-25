@@ -15,6 +15,7 @@ export interface InformeListParams {
 
 export interface InformeListEntry {
   idInforme: number;
+  idInformeOriginal?: number | null;
   idPedido: number;
   idEstado: number;
   idIdioma?: number;
@@ -726,6 +727,7 @@ export interface PlantillaDocumentoConfig {
   header?: { logo?: string; logoWidth?: string; logoHeight?: string; align?: string; gapAfter?: string };
   footer?: { text?: string; pageLabel?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string; pageFontSize?: string; pageColor?: string; pageGapBefore?: string };
   pageBorder?: { width?: string; color?: string; top?: string; bottom?: string; left?: string; right?: string };
+  watermark?: { image?: string; width?: string; height?: string; opacity?: number; position?: string };
 }
 
 export interface PlantillaFilaEtiquetaValor {
@@ -802,6 +804,28 @@ export interface InformeEliminarArchivoRequest {
 
 export type AlcanceExtraccionInforme = "general" | IdSeccionInvestigacionAnalista;
 export type InformeConfiguracionExtraccion = Record<string, string[]>;
+
+export type InformeContenidoTraduccionPlano = Record<string, string>;
+
+export interface InformeContenidoTraduccionRamoOperaciones {
+  campos?: InformeContenidoTraduccionPlano;
+  importaciones?: InformeContenidoTraduccionPlano;
+  exportaciones?: InformeContenidoTraduccionPlano;
+}
+
+export interface InformeContenidoTraduccion {
+  identificacion?: InformeContenidoTraduccionPlano;
+  legales?: InformeContenidoTraduccionPlano;
+  ramoOperaciones?: InformeContenidoTraduccionRamoOperaciones;
+  informacionFinanciera?: InformeContenidoTraduccionPlano;
+  bancosProveedores?: InformeContenidoTraduccionPlano;
+  datosGenerales?: InformeContenidoTraduccionPlano;
+}
+
+export interface InformeTraducirRequest {
+  idioma: string;
+  contenido: InformeContenidoTraduccion;
+}
 
 export interface InformeCampoExtraccionDisponible {
   id: number;

@@ -18,6 +18,7 @@ interface PropsCustomModalListaPersonasAnalista {
   estaAbierto: boolean;
   opcionesTipoPersona?: EntradaTablaMaestra[];
   opcionesPais?: EntradaTablaMaestra[];
+  idIdioma?: number;
   onCerrar: () => void;
   onGuardar: (empresa: EmpresaRelacionadaAnalista) => void;
 }
@@ -59,6 +60,7 @@ export function CustomModalListaPersonasAnalista({
   estaAbierto,
   opcionesTipoPersona,
   opcionesPais,
+  idIdioma,
   onCerrar,
   onGuardar,
 }: PropsCustomModalListaPersonasAnalista) {
@@ -416,6 +418,7 @@ export function CustomModalListaPersonasAnalista({
         estaAbierto={estaAbiertoModalRegistro}
         opcionesTipoPersona={opcionesTipoPersona}
         opcionesPais={opcionesPais}
+        idIdioma={idIdioma}
         registroInicial={registroEdicion}
         onCerrar={() => {
           setRegistroEdicion(null);

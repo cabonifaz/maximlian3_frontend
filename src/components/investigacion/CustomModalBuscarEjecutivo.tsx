@@ -7,13 +7,16 @@ import { CustomModalConfirmacionAccion } from "@maximilian/components/common/Cus
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomModalRegistroPersonaDirectorioAnalista } from "@maximilian/components/investigacion/CustomModalRegistroPersonaDirectorio";
 import { servicioDirectorioEjecutivo } from "@maximilian/services/directorioEjecutivo.service";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 
 interface PropsCustomModalBuscarEjecutivoAnalista {
   estaAbierto: boolean;
   registros: RegistroPersonaDirectorioAnalista[];
   busquedaInicial?: string;
+  idIdioma?: number;
   onCerrar: () => void;
   onSeleccionar: (registro: RegistroPersonaDirectorioAnalista) => void;
   onAgregarEmpresaPersona: () => void;
@@ -23,6 +26,7 @@ export function CustomModalBuscarEjecutivoAnalista({
   estaAbierto,
   registros: _registros,
   busquedaInicial = "",
+  idIdioma,
   onCerrar,
   onSeleccionar,
   onAgregarEmpresaPersona,
@@ -35,6 +39,20 @@ export function CustomModalBuscarEjecutivoAnalista({
   const [idPais, setIdPais] = useState<number | undefined>(undefined);
   const [descripcion, setDescripcion] = useState(busquedaInicial);
   const [busquedaActiva, setBusquedaActiva] = useState(busquedaInicial);
+  const { data: opcionesTipoPersonaBase } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
+  const { data: opcionesPaisBase } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.PAIS],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
+  const opcionesTipoPersona = useMemo(() => traducirOpcionesTablaMaestra(opcionesTipoPersonaBase, idIdioma), [idIdioma, opcionesTipoPersonaBase]);
+  const opcionesPais = useMemo(() => traducirOpcionesTablaMaestra(opcionesPaisBase, idIdioma), [idIdioma, opcionesPaisBase]);
 
   const {
     data: respuestaDirectorio,
@@ -145,7 +163,7 @@ export function CustomModalBuscarEjecutivoAnalista({
             <div className="grid gap-5 rounded-3xl border border-slate-100 bg-slate-50/70 p-5 md:grid-cols-3">
               <CustomSelectorBuscable
                 label="Tipo Persona"
-                idMaster={TablaMaestraId.TIPO_PERSONA}
+                options={opcionesTipoPersona}
                 value={idTipoPersona}
                 onChange={setIdTipoPersona}
                 onClear={() => setIdTipoPersona(undefined)}
@@ -155,7 +173,7 @@ export function CustomModalBuscarEjecutivoAnalista({
               />
               <CustomSelectorBuscable
                 label="País"
-                idMaster={TablaMaestraId.PAIS}
+                options={opcionesPais}
                 value={idPais}
                 onChange={setIdPais}
                 onClear={() => setIdPais(undefined)}
@@ -311,6 +329,7 @@ export function CustomModalBuscarEjecutivoAnalista({
         key={`${registroEdicion?.id ?? "sin-registro"}-${registroEdicion ? "abierto" : "cerrado"}`}
         estaAbierto={registroEdicion != null}
         registroInicial={registroEdicion}
+        idIdioma={idIdioma}
         onCerrar={() => setRegistroEdicion(null)}
         onGuardar={(registro) => {
           setRegistroEdicion(null);

@@ -1,5 +1,5 @@
 import { Download, Trash2, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -12,12 +12,14 @@ import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { informeService } from "@maximilian/services/informe.service";
 import { servicioInformeArchivo } from "@maximilian/services/informeArchivo.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 
 interface PropsCustomModalArchivosInvestigacionAnalista {
   estaAbierto: boolean;
   idPedido?: number;
   idInforme?: number;
   archivos: ArchivoInvestigacionAnalista[];
+  idIdioma?: number;
   onCerrar: () => void;
   onInformeCreado?: (idInforme: number) => void;
   onArchivosChange: (archivos: ArchivoInvestigacionAnalista[]) => void;
@@ -33,11 +35,32 @@ function obtenerExtensionArchivo(nombre: string) {
   return nombre.split(".").pop()?.toUpperCase() ?? "—";
 }
 
+function esOpcionEvidencia(opcion?: {
+  string1?: string | null;
+  string2?: string | null;
+  string3?: string | null;
+  string4?: string | null;
+  string5?: string | null;
+  string6?: string | null;
+  string7?: string | null;
+}) {
+  return [
+    opcion?.string1,
+    opcion?.string2,
+    opcion?.string3,
+    opcion?.string4,
+    opcion?.string5,
+    opcion?.string6,
+    opcion?.string7,
+  ].some((texto) => texto?.trim().toLowerCase().includes("evid"));
+}
+
 export function CustomModalArchivosInvestigacionAnalista({
   estaAbierto,
   idPedido,
   idInforme,
   archivos,
+  idIdioma,
   onCerrar,
   onInformeCreado,
   onArchivosChange,
@@ -48,18 +71,20 @@ export function CustomModalArchivosInvestigacionAnalista({
   const [archivoAEliminar, setArchivoAEliminar] = useState<ArchivoInvestigacionAnalista | null>(null);
   const [estaEliminando, setEstaEliminando] = useState(false);
   const [estaGuardandoArchivos, setEstaGuardandoArchivos] = useState(false);
-  const { data: opcionesTipoEvidencia } = useQuery({
+  const { data: opcionesTipoEvidenciaBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_EVIDENCIA],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_EVIDENCIA),
     enabled: estaAbierto,
     staleTime: Infinity,
   });
-  const { data: opcionesFaseEvidencia } = useQuery({
+  const { data: opcionesFaseEvidenciaBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.FASE_EVIDENCIA],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.FASE_EVIDENCIA),
     enabled: estaAbierto,
     staleTime: Infinity,
   });
+  const opcionesTipoEvidencia = useMemo(() => traducirOpcionesTablaMaestra(opcionesTipoEvidenciaBase, idIdioma), [idIdioma, opcionesTipoEvidenciaBase]);
+  const opcionesFaseEvidencia = useMemo(() => traducirOpcionesTablaMaestra(opcionesFaseEvidenciaBase, idIdioma), [idIdioma, opcionesFaseEvidenciaBase]);
 
   if (!estaAbierto) return null;
 
@@ -103,13 +128,9 @@ export function CustomModalArchivosInvestigacionAnalista({
 
   const esTipoEvidencia = (archivo: ArchivoInvestigacionAnalista) => {
     const idTipoEvidencia = obtenerIdTipoEvidencia(archivo);
-    const textoTipo = opcionesTipoEvidencia
-      ?.find((opcion) => opcion.num1 === idTipoEvidencia)
-      ?.string1
-      ?.trim()
-      .toLowerCase();
+    const opcionTipo = opcionesTipoEvidencia?.find((opcion) => opcion.num1 === idTipoEvidencia);
 
-    return textoTipo?.includes("evidencia") ?? archivo.tipoDocumento === "Evidencia";
+    return esOpcionEvidencia(opcionTipo) || archivo.tipoDocumento === "Evidencia";
   };
 
   const archivosNuevos = archivos.filter((archivo) => !archivo.esPersistido && archivo.archivo);
@@ -310,11 +331,8 @@ export function CustomModalArchivosInvestigacionAnalista({
                             value={obtenerIdTipoEvidencia(archivo)}
                             disabled={idArchivoActualizando === archivo.id}
                             onChange={(valor) => {
-                              const textoTipo = opcionesTipoEvidencia
-                                ?.find((opcion) => opcion.num1 === valor)
-                                ?.string1
-                                ?.trim();
-                              const evidenciaSeleccionada = textoTipo?.toLowerCase().includes("evidencia") ?? false;
+                              const opcionTipo = opcionesTipoEvidencia?.find((opcion) => opcion.num1 === valor);
+                              const evidenciaSeleccionada = esOpcionEvidencia(opcionTipo);
                               const cambios = {
                                 idTipoEvidencia: valor,
                                 tipoDocumento: evidenciaSeleccionada ? "Evidencia" as const : "Informativo" as const,

@@ -136,7 +136,7 @@ export function CustomModalExtraccionInformacionAnalista({
   };
 
   const manejarExtraer = async () => {
-    if (archivosSeleccionados.length === 0 || (seccionesConOpciones.length > 0 && totalCamposSeleccionados === 0)) return;
+    if ((!ocultarCargaArchivos && archivosSeleccionados.length === 0) || (seccionesConOpciones.length > 0 && totalCamposSeleccionados === 0)) return;
 
     const configuracionSecciones = seccionesConOpciones.reduce<InformeConfiguracionExtraccion>((acumulado, seccion) => {
       const idsSeleccionados = camposSeleccionadosPorSeccion[seccion.claveSeccion] ?? [];
@@ -360,7 +360,7 @@ export function CustomModalExtraccionInformacionAnalista({
           <CustomButton
             size="sm"
             onClick={manejarExtraer}
-            disabled={archivosSeleccionados.length === 0 || (seccionesConOpciones.length > 0 && totalCamposSeleccionados === 0)}
+            disabled={(!ocultarCargaArchivos && archivosSeleccionados.length === 0) || (seccionesConOpciones.length > 0 && totalCamposSeleccionados === 0)}
             loading={estaProcesando}
             loadingText={textoBotonAccionCargando}
           >

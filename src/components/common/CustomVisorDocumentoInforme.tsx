@@ -257,6 +257,23 @@ function construirCss(config: PlantillaDocumentoConfig): string {
     }
     ` : ""}
 
+    ${config.watermark?.image ? `
+    .pagedjs_page::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("${config.watermark.image.replace(/"/g, '\\"')}") no-repeat;
+      ${config.watermark.width && config.watermark.height ? `background-size: ${config.watermark.width} ${config.watermark.height};` : ""}
+      ${config.watermark.position ? `background-position: ${config.watermark.position};` : ""}
+      ${config.watermark.opacity !== undefined ? `opacity: ${config.watermark.opacity};` : ""}
+      pointer-events: none;
+      z-index: 0;
+    }
+    ` : ""}
+
     table {
       border-collapse: collapse;
     }

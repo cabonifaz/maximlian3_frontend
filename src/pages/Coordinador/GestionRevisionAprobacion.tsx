@@ -88,6 +88,9 @@ export default function GestionRevisionAprobacion() {
     if (registro.idIdioma != null) {
       parametros.set("idIdioma", String(registro.idIdioma));
     }
+    if (registro.idInformeOriginal != null && registro.idInformeOriginal > 0) {
+      parametros.set("idInformeOriginal", String(registro.idInformeOriginal));
+    }
     navigate(`/coordinador/revision/${registro.idPedido}?${parametros.toString()}`);
   };
 

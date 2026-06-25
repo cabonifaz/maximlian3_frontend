@@ -28,6 +28,10 @@ function obtenerModoPorAccion(accion: AccionBandejaAnalista) {
   return "detalle";
 }
 
+function obtenerCargaNavegacion() {
+  return String(Date.now());
+}
+
 function formatearFechaAsignacion(valor?: string) {
   const texto = valor?.trim() ?? "";
   if (!texto || texto.startsWith("0001-01-01")) return "-";
@@ -46,13 +50,12 @@ function normalizarEstadoDesdeAsignacion(registro: AssignmentOrderEntry): Regist
   if (estado.includes("pend")) return "pendiente-aprobacion";
   if (estado.includes("rechaz")) return "rechazado";
   if (estado.includes("aprob")) return "aprobado";
+  if (estado.includes("asign")) return "asignado";
   if (estado.includes("proceso") || estado.includes("curso") || (registro.idInforme ?? 0) > 0) return "en-proceso";
   return "asignado";
 }
 
 function obtenerAccionDesdeAsignacion(registro: AssignmentOrderEntry): AccionBandejaAnalista {
-  if ((registro.idInforme ?? 0) > 0) return "continuar";
-
   const estado = normalizarEstadoDesdeAsignacion(registro);
   if (estado === "asignado") return "iniciar";
   if (estado === "en-proceso" || estado === "rechazado") return "continuar";
@@ -148,12 +151,15 @@ export default function BandejaTraductor() {
 
   const irADetalle = (registro: RegistroBandejaAnalista) => {
     const modo = obtenerModoPorAccion(registro.accion);
-    const parametros = new URLSearchParams({ modo, carga: String(Date.now()) });
+    const parametros = new URLSearchParams({ modo, carga: obtenerCargaNavegacion() });
 
     clienteConsulta.removeQueries({ queryKey: ["informe-obtener-traductor", registro.idPedido] });
 
     if (registro.idInforme > 0) {
       parametros.set("idInforme", String(registro.idInforme));
+    }
+    if (registro.estado === "rechazado") {
+      parametros.set("estado", "rechazado");
     }
 
     navigate(`/traductor/traduccion/${registro.idPedido}?${parametros.toString()}`, {
