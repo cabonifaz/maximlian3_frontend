@@ -324,6 +324,7 @@ function normalizarFilaInforme(fila: unknown): InformeListEntry {
 
   return {
     idInforme: obtenerNumero(registro.idInforme, registro.IdInforme),
+    idInformeOriginal: obtenerNumeroOpcional(registro.idInformeOriginal, registro.IdInformeOriginal) ?? null,
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido),
     idEstado,
     idIdioma: obtenerNumeroOpcional(registro.idIdioma, registro.IdIdioma),

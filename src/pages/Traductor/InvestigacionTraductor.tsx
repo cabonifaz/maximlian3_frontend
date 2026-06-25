@@ -669,11 +669,6 @@ const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
   datosGenerales: ["informacionGeneral", "opinionCredito"],
 };
 
-const RUTAS_TRADUCIBLES_IA = new Set(
-  Object.entries(CAMPOS_TRADUCIBLES_POR_SECCION)
-    .filter(([seccion]) => ["identificacion", "aspectosLegales", "operacionPrincipal", "informacionFinanciera", "referencias", "datosGenerales"].includes(seccion))
-    .flatMap(([seccion, campos]) => campos.map((campo) => `${seccion}.${campo}`)),
-);
 function construirSeccionesDisponiblesExtraccion(alcance: AlcanceExtraccionInforme): InformeSeccionExtraccionDisponible[] {
   const entradasConfiguracion = alcance === "general"
     ? Object.entries(CONFIGURACION_EXTRACCION_POR_SECCION)
@@ -4546,11 +4541,11 @@ function PantallaInvestigacionAnalista({
 
     return typeof valor === "string" ? valor : "";
   };
-  const obtenerAyudaTraduccion = (ruta: string, mostrarReferencia = true) =>
+  const obtenerAyudaTraduccion = (ruta: string) =>
     combinarAyudasCampo({
       textoOriginal: obtenerTextoOriginal(ruta),
       indicadorCambio: obtenerIndicadorCambioExtraccion(ruta),
-      mostrarReferencia: mostrarReferencia && RUTAS_TRADUCIBLES_IA.has(ruta),
+      mostrarReferencia: false,
     });
 
   const botonExtraSeccion = !esSoloLectura && permiteExtraccionSeccion ? (

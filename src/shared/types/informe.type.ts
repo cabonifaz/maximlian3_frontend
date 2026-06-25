@@ -15,6 +15,7 @@ export interface InformeListParams {
 
 export interface InformeListEntry {
   idInforme: number;
+  idInformeOriginal?: number | null;
   idPedido: number;
   idEstado: number;
   idIdioma?: number;
