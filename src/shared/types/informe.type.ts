@@ -725,7 +725,7 @@ export interface PlantillaDocumentoConfig {
   headingIndent?: PlantillaIndent;
   font?: { family?: string; size?: string; lineSpacing?: number };
   header?: { logo?: string; logoWidth?: string; logoHeight?: string; align?: string; gapAfter?: string; marginTop?: string };
-  footer?: { text?: string; pageLabel?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string; pageFontSize?: string; pageColor?: string; pageGapBefore?: string };
+  footer?: { text?: string; pageLabel?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string; marginBottom?: string; pageFontSize?: string; pageColor?: string; pageGapBefore?: string };
   pageBorder?: { width?: string; color?: string; top?: string; bottom?: string; left?: string; right?: string };
   watermark?: { image?: string; width?: string; height?: string; opacity?: number; position?: string };
 }

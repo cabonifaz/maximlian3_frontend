@@ -159,6 +159,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
   const headerGapAfter = config.header?.gapAfter ?? "0";
   const headerMarginTop = config.header?.marginTop ?? "0";
   const footerGapBefore = config.footer?.gapBefore ?? "0";
+  const footerMarginBottom = config.footer?.marginBottom ?? "0";
 
   const ciL = config.contentIndent?.left ?? "0";
   const ciR = config.contentIndent?.right ?? "0";
@@ -177,7 +178,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       }
       @bottom-center {
         content: element(pie-pagina);
-        vertical-align: top;
+        vertical-align: ${config.footer?.marginBottom ? "bottom" : "top"};
       }
     }
 
@@ -206,6 +207,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       padding-left: ${fiL};
       padding-right: ${fiR};
       padding-top: ${footerGapBefore};
+      padding-bottom: ${footerMarginBottom};
       box-sizing: border-box;
     }
 
