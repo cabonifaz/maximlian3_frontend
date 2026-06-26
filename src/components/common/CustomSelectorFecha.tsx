@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, type Locale } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { Calendar } from "@maximilian/components/common/shadcn/calendar";
@@ -19,6 +19,8 @@ interface CustomSelectorFechaProps {
   optional?: boolean;
   error?: string;
   placeholder?: string;
+  formatoVisual?: string;
+  localeVisual?: Locale;
 }
 
 export function CustomSelectorFecha({
@@ -30,6 +32,8 @@ export function CustomSelectorFecha({
   optional,
   error,
   placeholder = "dd/mm/aaaa",
+  formatoVisual = "dd/MM/yyyy",
+  localeVisual = es,
 }: CustomSelectorFechaProps) {
   const [open, setOpen] = useState(false);
 
@@ -54,7 +58,7 @@ export function CustomSelectorFecha({
           } rounded-xl text-sm text-left focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all cursor-pointer hover:border-gray-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400`}
         >
           {value ? (
-            <span className="text-gray-900">{format(value, "dd/MM/yyyy")}</span>
+            <span className="text-gray-900">{formatearFechaVisual(value, formatoVisual, localeVisual)}</span>
           ) : (
             <span className="text-gray-400">{placeholder}</span>
           )}
@@ -67,7 +71,7 @@ export function CustomSelectorFecha({
               mode="single"
               selected={value}
               onSelect={handleSelect}
-              locale={es}
+              locale={localeVisual}
               captionLayout="dropdown"
             />
             <div className="border-t border-gray-100 p-2">
@@ -85,4 +89,12 @@ export function CustomSelectorFecha({
       {error && <p className="text-xs text-red-500">{error}</p>}
     </div>
   );
+}
+
+function formatearFechaVisual(fecha: Date, formatoVisual: string, localeVisual: Locale) {
+  try {
+    return format(fecha, formatoVisual || "dd/MM/yyyy", { locale: localeVisual });
+  } catch {
+    return format(fecha, "dd/MM/yyyy");
+  }
 }

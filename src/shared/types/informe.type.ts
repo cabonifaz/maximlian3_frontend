@@ -356,6 +356,7 @@ export interface InformePedidoRequest {
 export interface InformeCrearRequest {
   idInforme?: number;
   idPedido: number;
+  idFormatoFecha: number;
   idTipoPersona: number;
   nombre: string;
   nombreComercial: string;
@@ -491,6 +492,7 @@ export interface InformeEliminarObservacionRequest {
 export interface InformeObtenerResponse {
   idInforme?: number;
   idPedido?: number;
+  idFormatoFecha?: number;
   idTipoPersona?: number;
   idPais?: number;
   taxIdType?: number;

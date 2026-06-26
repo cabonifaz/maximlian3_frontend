@@ -115,6 +115,7 @@ import {
   obtenerClaveEstadoFinanciero,
   obtenerValorCampoEstadoFinanciero,
 } from "@maximilian/shared/utils/estados-financieros.util";
+import { ProveedorFormatoFechaInforme } from "@maximilian/shared/contexts/formato-fecha-informe.context";
 
 interface PropsPantallaInvestigacionAnalista {
   idPedido?: string;
@@ -127,6 +128,7 @@ interface PropsPantallaInvestigacionAnalista {
 interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInvestigacionAnalista {
   datosIniciales: DatosInvestigacionAnalista;
   archivosIniciales?: ArchivoInvestigacionAnalista[];
+  idFormatoFechaInicial?: number;
   idTipoPersonaInicial?: number;
   idPaisInicial?: number;
   idTipoRegTributarioInicial?: number;
@@ -883,6 +885,7 @@ function depurarPayloadInforme(valor: unknown): unknown {
 function construirPayloadCrearInforme({
   idPedido,
   idInforme,
+  idFormatoFecha,
   idEstadoInforme,
   datosInvestigacion,
   opcionesTipoPersona,
@@ -900,6 +903,7 @@ function construirPayloadCrearInforme({
 }: {
   idPedido: number;
   idInforme?: number;
+  idFormatoFecha: number;
   idEstadoInforme: number;
   datosInvestigacion: DatosInvestigacionAnalista;
   opcionesTipoPersona: { num1: number | null; string1: string | null }[] | undefined;
@@ -921,6 +925,7 @@ function construirPayloadCrearInforme({
   return depurarPayloadInforme({
     idInforme: esEdicion ? idInforme : 0,
     idPedido,
+    idFormatoFecha,
     idTipoPersona: obtenerIdPorTexto(opcionesTipoPersona, identificacion.tipoPersona),
     nombre: identificacion.nombreEmpresa,
     nombreComercial: identificacion.nombreComercial,
@@ -1243,6 +1248,7 @@ function PantallaInvestigacionAnalista({
   datosPedidoNavegacion,
   datosIniciales,
   archivosIniciales = [],
+  idFormatoFechaInicial,
   idTipoPersonaInicial,
   idPaisInicial,
   idTipoRegTributarioInicial,
@@ -1374,6 +1380,7 @@ function PantallaInvestigacionAnalista({
   const [mostrarFormClaseCiiu, setMostrarFormClaseCiiu] = useState(false);
   const [estaAbiertoModalFinalizarInvestigacion, setEstaAbiertoModalFinalizarInvestigacion] = useState(false);
   const [estaAbiertoVistaPreviaFinalizar, setEstaAbiertoVistaPreviaFinalizar] = useState(false);
+  const [idFormatoFechaInforme, setIdFormatoFechaInforme] = useState(idFormatoFechaInicial ?? 2);
   const [estaAbiertoModalConfirmacionPrimerBorrador, setEstaAbiertoModalConfirmacionPrimerBorrador] = useState(false);
   const [estaAbiertoModalEjecutivo, setEstaAbiertoModalEjecutivo] = useState(false);
   const [estaAbiertoModalBuscarEjecutivo, setEstaAbiertoModalBuscarEjecutivo] = useState(false);
@@ -1535,6 +1542,12 @@ function PantallaInvestigacionAnalista({
   const { data: opcionesIdioma } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.IDIOMA],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.IDIOMA),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesFormatoFechaInforme } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.FORMATO_FECHA_INFORME],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.FORMATO_FECHA_INFORME),
     staleTime: Infinity,
   });
 
@@ -1717,6 +1730,7 @@ function PantallaInvestigacionAnalista({
       const payload = construirPayloadCrearInforme({
         idPedido: idPedidoNumerico,
         idInforme: debeCrearInformePorRechazo ? 0 : idInformeActual,
+        idFormatoFecha: idFormatoFechaInforme,
         idEstadoInforme,
         datosInvestigacion: { ...datosInvestigacion, locales: localesConNombresDeduplicados },
         opcionesTipoPersona,
@@ -1911,6 +1925,12 @@ function PantallaInvestigacionAnalista({
       (opcion) => opcion.num1 === idIdioma,
     )?.string1 ?? "";
   }, [opcionesIdioma, registroPedidoSeleccionado?.idIdioma]);
+  const formatoFechaInformeVisual = useMemo(
+    () =>
+      opcionesFormatoFechaInforme?.find((opcion) => opcion.num1 === idFormatoFechaInforme)?.string2?.trim()
+      || "dd/MM/yyyy",
+    [idFormatoFechaInforme, opcionesFormatoFechaInforme],
+  );
 
   useEffect(() => {
     if (idTipoPersonaInicial && idTipoPersonaSeleccionado == null) {
@@ -5563,17 +5583,22 @@ function PantallaInvestigacionAnalista({
   };
 
   return (
+    <ProveedorFormatoFechaInforme formato={formatoFechaInformeVisual}>
     <div ref={contenedorPantallaRef} className="space-y-6">
       <ResumenPedidoInvestigacionAnalista
         idPedido={String(datosPedidoNavegacion?.idPedido ?? idPedido ?? "")}
         plantilla={nombrePlantilla}
         idioma={nombreIdioma}
+        idFormatoFechaInforme={idFormatoFechaInforme}
+        formatoFechaInformeDisplay={formatoFechaInformeVisual}
         resumen={resumenEncabezado}
         esSoloLectura={esSoloLectura}
         mostrarBotonFinalizar={idSeccionActiva === "datos-generales" && !esSoloLectura}
         onFinalizarInvestigacion={guardarAntesDeFinalizar}
         onExtraerInformacion={permiteExtraccionSeccion ? () => abrirModalExtraccionInformacion("general") : undefined}
         onAbrirArchivos={() => setEstaAbiertoModalArchivosInvestigacion(true)}
+        onFormatoFechaInformeChange={setIdFormatoFechaInforme}
+        formatoFechaInformeSoloLectura={esSoloLectura}
       />
 
       <div className="grid gap-6 xl:grid-cols-[240px_minmax(0,1fr)]">
@@ -6134,6 +6159,7 @@ function PantallaInvestigacionAnalista({
         <p><span className="font-bold">Ejecutivo:</span> {indiceEjecutivoAEliminar != null ? datosInvestigacion.directorioEjecutivo[indiceEjecutivoAEliminar]?.nombreCompleto ?? "-" : "-"}</p>
       </CustomModalConfirmacionEliminacion>
     </div>
+    </ProveedorFormatoFechaInforme>
   );
 }
 
@@ -6191,6 +6217,7 @@ export default function InvestigacionAnalista() {
       datosPedidoNavegacion={datosPedidoNavegacion}
       datosIniciales={datosIniciales}
       archivosIniciales={informeObtenido?.archivosInvestigacion}
+      idFormatoFechaInicial={informeObtenido?.idFormatoFecha}
       idTipoPersonaInicial={informeObtenido?.idTipoPersona}
       idPaisInicial={informeObtenido?.idPais}
       idTipoRegTributarioInicial={informeObtenido?.taxIdType}

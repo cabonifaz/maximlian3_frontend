@@ -1091,6 +1091,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   return {
     idInforme: obtenerNumero(registro.idInforme, registro.IdInforme) || undefined,
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido) || undefined,
+    idFormatoFecha: obtenerNumeroOpcional(registro.idFormatoFecha, registro.IdFormatoFecha),
     idTipoPersona: obtenerNumeroOpcional(registro.idTipoPersona, registro.IdTipoPersona),
     idPais: obtenerNumeroOpcional(registro.idPais, registro.IdPais),
     taxIdType: obtenerNumeroOpcional(registro.taxIdType, registro.TaxIdType),
@@ -1530,7 +1531,7 @@ export const informeService = {
   },
 
   traducir: async (payload: InformeTraducirRequest): Promise<InformeExtraccionResponse> => {
-    const ruta = "/api/informeTranslation/traducir";
+    const ruta = "/api/Informe/traducir";
     const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, payload, {
       timeout: TIMEOUT_EXTRACCION_MS,
     });

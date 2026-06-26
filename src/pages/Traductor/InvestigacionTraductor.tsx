@@ -132,6 +132,7 @@ import {
   obtenerValorCampoEstadoFinanciero,
 } from "@maximilian/shared/utils/estados-financieros.util";
 import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
+import { ProveedorFormatoFechaInforme } from "@maximilian/shared/contexts/formato-fecha-informe.context";
 
 interface PropsPantallaInvestigacionAnalista {
   idPedido?: string;
@@ -144,6 +145,7 @@ interface PropsPantallaInvestigacionAnalista {
 interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInvestigacionAnalista {
   datosIniciales: DatosInvestigacionAnalista;
   archivosIniciales?: ArchivoInvestigacionAnalista[];
+  idFormatoFechaInicial?: number;
   idTipoPersonaInicial?: number;
   idPaisInicial?: number;
   idTipoRegTributarioInicial?: number;
@@ -1319,6 +1321,7 @@ function depurarPayloadInforme(valor: unknown): unknown {
 function construirPayloadCrearInforme({
   idPedido,
   idInforme,
+  idFormatoFecha,
   idEstadoInforme,
   datosInvestigacion,
   opcionesTipoPersona,
@@ -1336,6 +1339,7 @@ function construirPayloadCrearInforme({
 }: {
   idPedido: number;
   idInforme?: number;
+  idFormatoFecha: number;
   idEstadoInforme: number;
   datosInvestigacion: DatosInvestigacionAnalista;
   opcionesTipoPersona:
@@ -1382,6 +1386,7 @@ function construirPayloadCrearInforme({
   return depurarPayloadInforme({
     ...(esEdicion ? { idInforme } : {}),
     idPedido,
+    idFormatoFecha,
     idTipoPersona: obtenerIdPorTexto(
       opcionesTipoPersona,
       identificacion.tipoPersona,
@@ -1840,6 +1845,7 @@ function PantallaInvestigacionAnalista({
   datosPedidoNavegacion,
   datosIniciales,
   archivosIniciales = [],
+  idFormatoFechaInicial,
   idTipoPersonaInicial,
   idPaisInicial,
   idTipoRegTributarioInicial,
@@ -2063,6 +2069,7 @@ function PantallaInvestigacionAnalista({
   ] = useState(false);
   const [estaAbiertoVistaPreviaFinalizar, setEstaAbiertoVistaPreviaFinalizar] =
     useState(false);
+  const [idFormatoFechaInforme] = useState(idFormatoFechaInicial ?? 2);
   const [
     estaAbiertoModalConfirmacionPrimerBorrador,
     setEstaAbiertoModalConfirmacionPrimerBorrador,
@@ -2258,6 +2265,12 @@ function PantallaInvestigacionAnalista({
   const { data: opcionesIdiomaBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.IDIOMA],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.IDIOMA),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesFormatoFechaInforme } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.FORMATO_FECHA_INFORME],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.FORMATO_FECHA_INFORME),
     staleTime: Infinity,
   });
 
@@ -2548,6 +2561,7 @@ function PantallaInvestigacionAnalista({
       const payload = construirPayloadCrearInforme({
         idPedido: idPedidoNumerico,
         idInforme: debeCrearInformeTraduccion ? 0 : idInformeActual,
+        idFormatoFecha: idFormatoFechaInforme,
         idEstadoInforme,
         datosInvestigacion: {
           ...datosInvestigacion,
@@ -2807,6 +2821,12 @@ function PantallaInvestigacionAnalista({
       opcionesIdioma?.find((opcion) => opcion.num1 === idIdioma)?.string1 ?? ""
     );
   }, [opcionesIdioma, registroPedidoSeleccionado?.idIdioma]);
+  const formatoFechaInformeVisual = useMemo(
+    () =>
+      opcionesFormatoFechaInforme?.find((opcion) => opcion.num1 === idFormatoFechaInforme)?.string2?.trim()
+      || "dd/MM/yyyy",
+    [idFormatoFechaInforme, opcionesFormatoFechaInforme],
+  );
 
   useEffect(() => {
     if (idIdiomaTraduccion !== 2 && idIdiomaTraduccion !== 3) return;
@@ -9038,11 +9058,14 @@ function PantallaInvestigacionAnalista({
   };
 
   return (
+    <ProveedorFormatoFechaInforme formato={formatoFechaInformeVisual} idIdioma={idIdiomaTraduccion}>
     <div ref={contenedorPantallaRef} className="space-y-6">
       <ResumenPedidoInvestigacionAnalista
         idPedido={String(datosPedidoNavegacion?.idPedido ?? idPedido ?? "")}
         plantilla={nombrePlantilla}
         idioma={nombreIdioma}
+        idFormatoFechaInforme={idFormatoFechaInforme}
+        formatoFechaInformeDisplay={formatoFechaInformeVisual}
         resumen={resumenEncabezado}
         esSoloLectura={esSoloLectura}
         mostrarBotonFinalizar={
@@ -9058,6 +9081,7 @@ function PantallaInvestigacionAnalista({
         onVistaPrevia={() => setEstaAbiertoModalVistaPrevia(true)}
         textoBotonArchivos={`Archivos (${archivosInvestigacion.length})`}
         textoBotonAccionIa="Traducir con IA"
+        formatoFechaInformeSoloLectura
         textoBotonFinalizar="Finalizar Traducción"
       />
 
@@ -9851,6 +9875,7 @@ function PantallaInvestigacionAnalista({
         </p>
       </CustomModalConfirmacionEliminacion>
     </div>
+    </ProveedorFormatoFechaInforme>
   );
 }
 
@@ -9923,6 +9948,7 @@ export default function InvestigacionTraductor() {
       datosPedidoNavegacion={datosPedidoNavegacion}
       datosIniciales={datosIniciales}
       archivosIniciales={informeObtenido?.archivosInvestigacion}
+      idFormatoFechaInicial={informeObtenido?.idFormatoFecha}
       idTipoPersonaInicial={informeObtenido?.idTipoPersona}
       idPaisInicial={informeObtenido?.idPais}
       idTipoRegTributarioInicial={informeObtenido?.taxIdType}

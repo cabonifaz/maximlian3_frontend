@@ -34,6 +34,7 @@ export const TablaMaestraId = {
   TIPO_EVIDENCIA: 62,
   FASE_EVIDENCIA: 63,
   OBLIGACION_BOLSA: 64,
+  FORMATO_FECHA_INFORME: 65,
   PAGINACION_FRACTAL: 99,
 } as const;
 
@@ -125,6 +126,7 @@ const descripcionesTablaMaestraPorId: Partial<Record<TablaMaestraId, string>> = 
   [TablaMaestraId.TIPO_EVIDENCIA]: "TIPO EVIDENCIA",
   [TablaMaestraId.FASE_EVIDENCIA]: "FASE EVIDENCIA",
   [TablaMaestraId.OBLIGACION_BOLSA]: "OBLIGACION EN BOLSA",
+  [TablaMaestraId.FORMATO_FECHA_INFORME]: "FORMATO FECHA INFORME",
   [TablaMaestraId.ETAPA_ASIGNACION]: "FASE ASIGNACION",
   [TablaMaestraId.CLASE_CIIU]: "CLASE CIIU",
   [TablaMaestraId.PAGINACION_FRACTAL]: "PAGINACION FRACTAL",

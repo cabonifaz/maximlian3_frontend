@@ -14,6 +14,7 @@ import {
 import {
   obtenerDescripcionTablaMaestra,
   obtenerSiguienteNumTablaMaestra,
+  TablaMaestraId,
   type EntradaTablaMaestra,
   type TablaMaestraCrearRequest,
   type TablaMaestraGuardarResponse,
@@ -478,6 +479,8 @@ interface PropsResumenPedidoInvestigacionAnalista {
   idPedido?: string;
   plantilla?: string;
   idioma?: string;
+  idFormatoFechaInforme?: number;
+  formatoFechaInformeDisplay?: string;
   resumen: ResumenInvestigacionAnalista;
   esSoloLectura: boolean;
   mostrarBotonFinalizar: boolean;
@@ -485,10 +488,12 @@ interface PropsResumenPedidoInvestigacionAnalista {
   onExtraerInformacion?: () => void;
   onAbrirArchivos?: () => void;
   onVistaPrevia?: () => void;
+  onFormatoFechaInformeChange?: (idFormato: number) => void;
   accionesSecundarias?: ReactNode;
   textoBotonArchivos?: string;
   textoBotonAccionIa?: string;
   textoBotonFinalizar?: string;
+  formatoFechaInformeSoloLectura?: boolean;
 }
 
 export function CampoInvestigacionAnalista({
@@ -740,15 +745,21 @@ export function ResumenPedidoInvestigacionAnalista({
   idPedido,
   plantilla,
   idioma,
+  idFormatoFechaInforme = 2,
+  formatoFechaInformeDisplay,
   resumen,
   esSoloLectura,
   onExtraerInformacion,
   onAbrirArchivos,
   onVistaPrevia,
+  onFormatoFechaInformeChange,
   accionesSecundarias,
   textoBotonArchivos = "Adjuntar archivos",
+  formatoFechaInformeSoloLectura = false,
   textoBotonAccionIa = "Extraer Información",
 }: PropsResumenPedidoInvestigacionAnalista) {
+  const estaBloqueadoFormatoFecha = formatoFechaInformeSoloLectura || !onFormatoFechaInformeChange;
+
   return (
     <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-5">
@@ -787,38 +798,52 @@ export function ResumenPedidoInvestigacionAnalista({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={onAbrirArchivos}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.02] hover:bg-slate-800 active:scale-[0.98]"
-          >
-            <Paperclip size={14} />
-            {textoBotonArchivos}
-          </button>
-          {onVistaPrevia ? (
-            <CustomButton
-              variant="secondary"
-              size="sm"
-              onClick={onVistaPrevia}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={onAbrirArchivos}
+              className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.02] hover:bg-slate-800 active:scale-[0.98]"
             >
-              <FileText size={14} />
-              Vista previa
-            </CustomButton>
-          ) : null}
-          {onExtraerInformacion ? (
-            <CustomButton
-              size="sm"
-              disabled={esSoloLectura}
-              className="bg-[#2563eb] text-white hover:bg-[#1d4ed8] shadow-md shadow-blue-500/20"
-              onClick={onExtraerInformacion}
-            >
-              <Sparkles size={14} />
-              {textoBotonAccionIa}
-            </CustomButton>
-          ) : null}
-          {accionesSecundarias}
-          
+              <Paperclip size={14} />
+              {textoBotonArchivos}
+            </button>
+            {onVistaPrevia ? (
+              <CustomButton
+                variant="secondary"
+                size="sm"
+                onClick={onVistaPrevia}
+              >
+                <FileText size={14} />
+                Vista previa
+              </CustomButton>
+            ) : null}
+            {onExtraerInformacion ? (
+              <CustomButton
+                size="sm"
+                disabled={esSoloLectura}
+                className="bg-[#2563eb] text-white hover:bg-[#1d4ed8] shadow-md shadow-blue-500/20"
+                onClick={onExtraerInformacion}
+              >
+                <Sparkles size={14} />
+                {textoBotonAccionIa}
+              </CustomButton>
+            ) : null}
+            {accionesSecundarias}
+          </div>
+
+          <div className="min-w-[220px]">
+            <CustomSelectorBuscable
+              label="Formato de fecha"
+              idMaster={TablaMaestraId.FORMATO_FECHA_INFORME}
+              value={idFormatoFechaInforme}
+              displayValue={formatoFechaInformeDisplay}
+              onChange={(valor) => onFormatoFechaInformeChange?.(valor)}
+              obtenerEtiquetaOpcion={(opcion) => opcion.string2?.trim() || opcion.string1?.trim() || ""}
+              placeholder="Seleccione formato"
+              disabled={estaBloqueadoFormatoFecha}
+            />
+          </div>
         </div>
       </div>
     </section>
