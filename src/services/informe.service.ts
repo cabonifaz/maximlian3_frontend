@@ -1433,10 +1433,11 @@ export const informeService = {
     return normalizarRespuestaCrear(data.result);
   },
 
-  obtener: async ({ idPedido }: InformeObtenerParams): Promise<InformeObtenerResponse> => {
+  obtener: async ({ idPedido, idInforme }: InformeObtenerParams): Promise<InformeObtenerResponse> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Informe/obtener", {
       params: {
         IdPedido: idPedido,
+        IdInforme: idInforme && idInforme > 0 ? idInforme : undefined,
       },
     });
 

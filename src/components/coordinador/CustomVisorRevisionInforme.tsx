@@ -49,6 +49,9 @@ export function CustomVisorRevisionInforme({
   onRechazar,
   onVolver,
 }: PropsCustomVisorRevisionInforme) {
+  const tieneDocumento = Number.isFinite(Number(idInforme)) && Number(idInforme) > 0
+    && Number.isFinite(Number(idPedido)) && Number(idPedido) > 0;
+
   return (
     <div className="relative flex h-[calc(100vh-4rem)] flex-col overflow-hidden bg-slate-100">
       <header className="z-30 shrink-0 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
@@ -122,7 +125,7 @@ export function CustomVisorRevisionInforme({
       </header>
 
       <main className="min-h-0 w-full flex-1 overflow-y-auto bg-slate-50 p-3 sm:p-4">
-        {datosInvestigacion ? (
+        {datosInvestigacion || tieneDocumento ? (
           <CustomVistaPreviaInformeComparado
             datosInvestigacion={datosInvestigacion}
             encabezado={encabezado}

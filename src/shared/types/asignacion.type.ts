@@ -3,9 +3,11 @@ export type AssignmentRole = "analyst" | "translator";
 export interface AssignmentOrderEntry {
   idAsignacion?: number;
   idInforme?: number;
+  idInformeOriginal?: number | null;
   analistaIdAsignacion?: number;
   traductorIdAsignacion?: number;
   idPedido: number;
+  codigoPedido?: string;
   pais?: string;
   fechaAsignacion?: string;
   idIdioma?: number;

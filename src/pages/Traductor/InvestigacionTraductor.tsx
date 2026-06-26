@@ -144,6 +144,7 @@ interface PropsPantallaInvestigacionAnalista {
 
 interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInvestigacionAnalista {
   datosIniciales: DatosInvestigacionAnalista;
+  datosOriginalesIniciales?: DatosInvestigacionAnalista;
   archivosIniciales?: ArchivoInvestigacionAnalista[];
   idFormatoFechaInicial?: number;
   idTipoPersonaInicial?: number;
@@ -170,32 +171,45 @@ interface CiudadExtraccionPendiente {
   pais: string;
 }
 
+interface ReferenciaTraduccionActiva {
+  ruta: string[];
+  etiqueta: string;
+  textoOriginal: string;
+  textoTraducido: string;
+}
+
 interface ParametrosGuardadoInforme {
   idEstadoInforme: number;
   abrirConfirmacionFinalizacion?: boolean;
 }
 
-function ReferenciaTraduccion({ textoOriginal }: { textoOriginal?: string }) {
-  const textoReferencia = textoOriginal?.trim() || "Sin referencia disponible";
-
+function ReferenciaTraduccion({ onClick }: { onClick: () => void }) {
   return (
-    <span className="group relative inline-flex">
-      <span className="inline-flex items-center text-sky-500">
+    <button
+      type="button"
+      onMouseDown={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
+      }}
+      className="inline-flex items-center text-sky-500 transition-colors hover:text-sky-600"
+      aria-label="Revisar traduccion"
+    >
         <Info size={15} />
-      </span>
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-64 -translate-x-1/2 rounded-lg bg-brand-black px-3 py-2 text-center text-xs font-medium text-white shadow-lg group-hover:block">
-        {textoReferencia}
-      </span>
-    </span>
+    </button>
   );
 }
 
 function combinarAyudasCampo({
-  textoOriginal,
+  onReferencia,
   indicadorCambio,
   mostrarReferencia = true,
 }: {
-  textoOriginal?: string;
+  onReferencia?: () => void;
   indicadorCambio?: ReactNode;
   mostrarReferencia?: boolean;
 }) {
@@ -204,7 +218,7 @@ function combinarAyudasCampo({
   return (
     <>
       {mostrarReferencia ? (
-        <ReferenciaTraduccion textoOriginal={textoOriginal} />
+        <ReferenciaTraduccion onClick={() => onReferencia?.()} />
       ) : null}
       {indicadorCambio}
     </>
@@ -776,6 +790,34 @@ const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
   ],
   datosGenerales: ["informacionGeneral", "opinionCredito"],
 };
+
+function esRutaTraduccionIA(ruta: string) {
+  const segmentos = ruta.split(".");
+  if (segmentos.length < 2) return false;
+
+  const [seccion, segundoSegmento, tercerSegmento] = segmentos;
+  if (
+    (seccion === "importaciones" || seccion === "exportaciones") &&
+    /^\d+$/.test(segundoSegmento ?? "")
+  ) {
+    return (CAMPOS_TRADUCIBLES_POR_SECCION[seccion] ?? []).includes(
+      tercerSegmento ?? "",
+    );
+  }
+
+  const mapaSecciones: Record<string, string> = {
+    identificacion: "identificacion",
+    aspectosLegales: "legales",
+    operacionPrincipal: "ramoOperaciones",
+    informacionFinanciera: "informacionFinanciera",
+    referencias: "bancosProveedores",
+    datosGenerales: "datosGenerales",
+  };
+  const claveTraduccion = mapaSecciones[seccion] ?? seccion;
+  return (CAMPOS_TRADUCIBLES_POR_SECCION[claveTraduccion] ?? []).includes(
+    segundoSegmento ?? "",
+  );
+}
 
 function construirSeccionesDisponiblesExtraccion(
   alcance: AlcanceExtraccionInforme,
@@ -1844,6 +1886,7 @@ function PantallaInvestigacionAnalista({
   modo,
   datosPedidoNavegacion,
   datosIniciales,
+  datosOriginalesIniciales,
   archivosIniciales = [],
   idFormatoFechaInicial,
   idTipoPersonaInicial,
@@ -1877,7 +1920,7 @@ function PantallaInvestigacionAnalista({
         : datosIniciales,
     );
   const [datosInvestigacionOriginales] =
-    useState<DatosInvestigacionAnalista>(datosIniciales);
+    useState<DatosInvestigacionAnalista>(datosOriginalesIniciales ?? datosIniciales);
   const [idInformeActual, setIdInformeActual] = useState<number | undefined>(
     debeCrearInformeInicial ? undefined : idInforme,
   );
@@ -2099,6 +2142,10 @@ function PantallaInvestigacionAnalista({
     string | null
   >(null);
   const [valorTraducidoCambioActivo, setValorTraducidoCambioActivo] =
+    useState("");
+  const [referenciaTraduccionActiva, setReferenciaTraduccionActiva] =
+    useState<ReferenciaTraduccionActiva | null>(null);
+  const [valorReferenciaTraduccion, setValorReferenciaTraduccion] =
     useState("");
   const [ciudadExtraccionPendiente, setCiudadExtraccionPendiente] =
     useState<CiudadExtraccionPendiente | null>(null);
@@ -2701,8 +2748,18 @@ function PantallaInvestigacionAnalista({
       setDebeVolverABandejaTrasGuardarBorrador(false);
 
       if (modo === "iniciar" && idInformeResultado && idPedido) {
+        const parametrosContinuacion = new URLSearchParams({
+          modo: "continuar",
+          idInforme: String(idInformeResultado),
+        });
+        if (datosPedidoNavegacion?.idInformeOriginal) {
+          parametrosContinuacion.set(
+            "idInformeOriginal",
+            String(datosPedidoNavegacion.idInformeOriginal),
+          );
+        }
         navigate(
-          `/traductor/traduccion/${idPedido}?modo=continuar&idInforme=${idInformeResultado}`,
+          `/traductor/traduccion/${idPedido}?${parametrosContinuacion.toString()}`,
           {
             replace: true,
             state: {
@@ -3497,6 +3554,26 @@ function PantallaInvestigacionAnalista({
       actualizarValorEnRuta(anterior, ruta, valor),
     );
   };
+
+  const obtenerValorInvestigacionPorRuta = (
+    origen: DatosInvestigacionAnalista,
+    ruta: string[],
+  ) =>
+    ruta.reduce<unknown>((acumulado, segmento) => {
+      if (Array.isArray(acumulado) && /^\d+$/.test(segmento)) {
+        return acumulado[Number(segmento)];
+      }
+
+      if (
+        typeof acumulado === "object" &&
+        acumulado !== null &&
+        segmento in acumulado
+      ) {
+        return (acumulado as Record<string, unknown>)[segmento];
+      }
+
+      return "";
+    }, origen as unknown);
 
   const asignarCiudadExtraccionPendiente = (
     ciudad: CiudadExtraccionPendiente | null,
@@ -4708,6 +4785,25 @@ function PantallaInvestigacionAnalista({
       onClick={() => setIdCambioExtraccionActivo(id)}
     />
   );
+
+  const abrirReferenciaTraduccion = (rutaTexto: string) => {
+    const ruta = rutaTexto.split(".");
+    const textoOriginal = String(
+      obtenerValorInvestigacionPorRuta(datosInvestigacionOriginales, ruta) ?? "",
+    ).trim();
+    if (!textoOriginal) return;
+
+    const textoTraducido = String(
+      obtenerValorInvestigacionPorRuta(datosInvestigacion, ruta) ?? "",
+    );
+    setReferenciaTraduccionActiva({
+      ruta,
+      etiqueta: humanizarClaveExtraccion(ruta[ruta.length - 1] ?? rutaTexto),
+      textoOriginal,
+      textoTraducido,
+    });
+    setValorReferenciaTraduccion(textoTraducido);
+  };
 
   useEffect(() => {
     if (!idCambioExtraccionActivo) {
@@ -6182,26 +6278,23 @@ function PantallaInvestigacionAnalista({
 
   const permiteExtraccionSeccion = idSeccionActiva !== "balances";
   const obtenerTextoOriginal = (ruta: string) => {
-    const valor = ruta.split(".").reduce<unknown>((acumulado, segmento) => {
-      if (
-        typeof acumulado === "object" &&
-        acumulado !== null &&
-        segmento in acumulado
-      ) {
-        return (acumulado as Record<string, unknown>)[segmento];
-      }
-
-      return "";
-    }, datosInvestigacionOriginales as unknown);
+    const valor = obtenerValorInvestigacionPorRuta(
+      datosInvestigacionOriginales,
+      ruta.split("."),
+    );
 
     return typeof valor === "string" ? valor : "";
   };
-  const obtenerAyudaTraduccion = (ruta: string) =>
-    combinarAyudasCampo({
-      textoOriginal: obtenerTextoOriginal(ruta),
+  const obtenerAyudaTraduccion = (ruta: string) => {
+    const textoOriginal = obtenerTextoOriginal(ruta);
+
+    return combinarAyudasCampo({
+      onReferencia: () => abrirReferenciaTraduccion(ruta),
       indicadorCambio: obtenerIndicadorCambioExtraccion(ruta),
-      mostrarReferencia: false,
+      mostrarReferencia:
+        esRutaTraduccionIA(ruta) && Boolean(textoOriginal.trim()),
     });
+  };
 
   const botonExtraSeccion =
     !esSoloLectura && permiteExtraccionSeccion ? (
@@ -9713,6 +9806,61 @@ function PantallaInvestigacionAnalista({
         </div>
       </CustomModalConfirmacionAccion>
 
+      <CustomModalConfirmacionAccion
+        isOpen={referenciaTraduccionActiva != null}
+        onClose={() => setReferenciaTraduccionActiva(null)}
+        onConfirm={() => {
+          if (!referenciaTraduccionActiva) return;
+          actualizarCampoInvestigacion(
+            referenciaTraduccionActiva.ruta,
+            valorReferenciaTraduccion,
+          );
+          setReferenciaTraduccionActiva(null);
+        }}
+        title="Revisar traducción"
+        descripcion={referenciaTraduccionActiva?.etiqueta ?? ""}
+        textoConfirmar="Guardar traducción"
+        textoCargandoConfirmar="Guardando..."
+        varianteConfirmar="secondary"
+        anchoMaximoClassName="max-w-7xl max-h-[92vh] flex flex-col"
+        zIndexClassName="z-[120]"
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="space-y-2">
+            <CustomLabel>Texto original</CustomLabel>
+            <textarea
+              value={referenciaTraduccionActiva?.textoOriginal ?? ""}
+              readOnly
+              rows={Math.min(
+                18,
+                Math.max(
+                  7,
+                  Math.ceil(
+                    (referenciaTraduccionActiva?.textoOriginal.length ?? 0) /
+                      70,
+                  ),
+                ),
+              )}
+              className="min-h-48 max-h-[58vh] w-full resize-y rounded-xl border border-gray-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600 outline-none"
+            />
+          </label>
+          <label className="space-y-2">
+            <CustomLabel>Texto traducido</CustomLabel>
+            <textarea
+              value={valorReferenciaTraduccion}
+              rows={Math.min(
+                18,
+                Math.max(7, Math.ceil(valorReferenciaTraduccion.length / 70)),
+              )}
+              onChange={(event) =>
+                setValorReferenciaTraduccion(event.target.value)
+              }
+              className="min-h-48 max-h-[58vh] w-full resize-y rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+            />
+          </label>
+        </div>
+      </CustomModalConfirmacionAccion>
+
       <CustomModalFinalizarInvestigacionAnalista
         estaAbierto={estaAbiertoModalFinalizarInvestigacion}
         estaGuardando={guardarInformeMutation.isPending}
@@ -9886,6 +10034,7 @@ export default function InvestigacionTraductor() {
   const modo =
     (searchParams.get("modo") as ModoInvestigacionAnalista | null) ?? "iniciar";
   const idInforme = searchParams.get("idInforme");
+  const idInformeOriginal = searchParams.get("idInformeOriginal");
   const esInformeRechazado = searchParams.get("estado") === "rechazado";
   const idCarga = searchParams.get("carga") ?? "sin-carga";
   const datosPedidoNavegacion = (
@@ -9896,6 +10045,9 @@ export default function InvestigacionTraductor() {
   const idPedidoNumerico = Number(idPedido);
   const idInformeClave = idInforme ?? "sin-informe";
   const idInformeNumerico = Number(idInforme);
+  const idInformeOriginalNumerico = Number(
+    idInformeOriginal ?? datosPedidoNavegacion?.idInformeOriginal,
+  );
   const usaDatosBackend =
     Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0;
   const datosBaseInvestigacion = useMemo(
@@ -9912,8 +10064,34 @@ export default function InvestigacionTraductor() {
     queryFn: () =>
       informeService.obtener({
         idPedido: idPedidoNumerico,
+        idInforme: Number.isFinite(idInformeNumerico) && idInformeNumerico > 0
+          ? idInformeNumerico
+          : undefined,
       }),
     enabled: usaDatosBackend,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+  });
+
+  const {
+    data: informeOriginalObtenido,
+    isLoading: estaCargandoInformeOriginal,
+  } = useQuery({
+    queryKey: [
+      "informe-obtener-original-traductor",
+      idInformeOriginalNumerico,
+      idCarga,
+    ],
+    queryFn: () =>
+      informeService.obtener({
+        idPedido: idPedidoNumerico,
+        idInforme: idInformeOriginalNumerico,
+      }),
+    enabled:
+      usaDatosBackend &&
+      Number.isFinite(idInformeOriginalNumerico) &&
+      idInformeOriginalNumerico > 0,
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: "always",
@@ -9930,7 +10108,7 @@ export default function InvestigacionTraductor() {
     ? String(informeObtenido?.idInforme ?? "cargando")
     : "local";
 
-  if (usaDatosBackend && estaCargandoInforme) {
+  if (usaDatosBackend && (estaCargandoInforme || estaCargandoInformeOriginal)) {
     return <PantallaCarga message="Cargando informacion del informe..." />;
   }
 
@@ -9947,6 +10125,7 @@ export default function InvestigacionTraductor() {
       modo={modo}
       datosPedidoNavegacion={datosPedidoNavegacion}
       datosIniciales={datosIniciales}
+      datosOriginalesIniciales={informeOriginalObtenido?.datosInvestigacion}
       archivosIniciales={informeObtenido?.archivosInvestigacion}
       idFormatoFechaInicial={informeObtenido?.idFormatoFecha}
       idTipoPersonaInicial={informeObtenido?.idTipoPersona}

@@ -21,7 +21,9 @@ export type AccionBandejaAnalista = "iniciar" | "continuar" | "detalle";
 
 export interface DatosPedidoNavegacionInvestigacion {
   idPedido: number;
+  idInformeOriginal?: number | null;
   idPlantilla?: number;
+  codigoPedido?: string;
   investigado: string;
   pais: string;
   tipoTramite: string;
@@ -40,8 +42,10 @@ export interface TarjetaResumenAnalista {
 
 export interface RegistroBandejaAnalista {
   idInforme: number;
+  idInformeOriginal?: number | null;
   idPedido: number;
   idPlantilla?: number;
+  codigoPedido?: string;
   codigo: string;
   investigado: string;
   pais: string;

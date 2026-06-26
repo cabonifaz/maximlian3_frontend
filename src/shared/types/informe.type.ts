@@ -513,6 +513,7 @@ export interface InformeObtenerResponse {
 
 export interface InformeObtenerParams {
   idPedido: number;
+  idInforme?: number;
 }
 
 export type AlineacionDocumentoInforme = "left" | "center" | "right" | "justify";
