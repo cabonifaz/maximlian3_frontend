@@ -204,6 +204,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       line-height: 1.0;
       font-family: ${fuente};
       text-align: ${footerAlign};
+      white-space: pre-line;
       padding-left: ${fiL};
       padding-right: ${fiR};
       padding-top: ${footerGapBefore};
