@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { Download, X } from "lucide-react";
+import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import {
   CustomVistaPreviaInformeComparado,
@@ -23,7 +23,7 @@ export function CustomModalVistaPreviaTraductor({
   idInforme,
   idPedido,
   onCerrar,
-  indicadorReporteTraducido = "En traducción",
+  indicadorReporteTraducido = "Traducido",
   footer,
 }: PropsCustomModalVistaPreviaTraductor) {
   if (!estaAbierto) return null;
@@ -37,44 +37,41 @@ export function CustomModalVistaPreviaTraductor({
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[94vh] w-full max-w-7xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl">
-        <div className="flex items-center justify-between bg-[#151d33] px-7 py-5 text-white">
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+      onClick={onCerrar}
+    >
+      <div
+        className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-5">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/55">Vista previa del informe</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Vista previa</p>
+            <h2 className="mt-0.5 text-lg font-bold text-slate-800">Reporte de Investigacion</h2>
           </div>
-          <button
-            type="button"
-            onClick={onCerrar}
-            className="rounded-full p-2 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <X size={18} />
-          </button>
+          <CustomButton variant="ghost" size="icon" onClick={onCerrar} aria-label="Cerrar vista previa">
+            <X size={20} className="text-slate-500" />
+          </CustomButton>
         </div>
 
-        <div className="overflow-y-auto bg-slate-50 px-6 py-6">
+        <div className="flex-1 overflow-y-auto bg-slate-50 px-6 py-6">
           <CustomVistaPreviaInformeComparado
             datosInvestigacion={datosInvestigacion}
             encabezado={encabezado}
             idInforme={idInforme}
             idPedido={idPedido}
             indicadorReporteTraducido={indicadorReporteTraducido}
+            mostrarInformeTraducido
+            className="space-y-3"
           />
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-gray-100 bg-white px-7 py-5">
-          {footer ?? (
-            <>
-              <CustomButton variant="secondary" size="sm" onClick={onCerrar}>
-                Cerrar
-              </CustomButton>
-              <CustomButton size="sm" onClick={() => window.print()}>
-                <Download size={14} />
-                Descargar PDF
-              </CustomButton>
-            </>
-          )}
-        </div>
+        {footer ? (
+          <div className="flex justify-end gap-3 border-t border-gray-100 bg-white px-7 py-5">
+            {footer}
+          </div>
+        ) : null}
       </div>
     </div>
   );
