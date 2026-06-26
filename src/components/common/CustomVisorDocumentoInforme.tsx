@@ -211,13 +211,14 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       box-sizing: border-box;
     }
 
+    ${config.footer?.showPageNumber !== false ? `
     .sr-pie-pagina::after {
       content: "${escaparHtml(config.footer?.pageLabel ?? "Page")} " counter(page);
       display: block;
       ${config.footer?.pageFontSize ? `font-size: ${config.footer.pageFontSize};` : ""}
       ${config.footer?.pageColor ? `color: ${config.footer.pageColor};` : ""}
       ${config.footer?.pageGapBefore ? `margin-top: ${config.footer.pageGapBefore};` : ""}
-    }
+    }` : ""}
 
     body {
       font-family: ${fuente};
