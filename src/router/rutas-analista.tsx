@@ -35,12 +35,10 @@ export const rutasAnalista: RouteObject[] = [
       },
       {
         path: "banco-informacion",
-        element: (
-          <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
-            <h1 className="text-2xl font-bold text-brand-black">Banco de Información</h1>
-            <p className="mt-3 text-sm text-gray-500">Página en construcción...</p>
-          </div>
-        ),
+        lazy: () =>
+          import("@maximilian/pages/Analista/BancoInformacionAnalista").then((m) => ({
+            Component: m.default,
+          })),
       },
     ],
   },
