@@ -733,6 +733,11 @@ export interface PlantillaDocumentoConfig {
   watermark?: { image?: string; width?: string; height?: string; opacity?: number; position?: string };
 }
 
+export interface PlantillaCeldaTabla {
+  text: string;
+  style?: string;
+}
+
 export interface PlantillaFilaEtiquetaValor {
   label: string;
   value: string;
@@ -743,7 +748,7 @@ export type PlantillaSeccion =
   | { type: "heading"; level?: number; text: string; fontSize?: string }
   | { type: "subtitle"; text: string }
   | { type: "text"; field: string }
-  | { type: "keyValue"; labelWidth?: string; style?: string; rows: PlantillaFilaEtiquetaValor[] }
+  | { type: "keyValue"; style?: string; rows: PlantillaCeldaTabla[][] }
   | { type: "borderedBox"; title: string; content?: string; rows?: PlantillaFilaEtiquetaValor[]; valueAlign?: string }
   | { type: "referenceBox"; fontSize?: string; title: string; items: string[] }
   | { type: "dataTable"; source?: string; columns: { header: string; field?: string }[]; rows?: unknown[]; style?: string; cellStyle?: string; headerStyle?: string; columnWidths?: string[] }
