@@ -279,10 +279,6 @@ function construirCss(config: PlantillaDocumentoConfig): string {
     }
     ` : ""}
 
-    table {
-      border-collapse: collapse;
-    }
-
     td, th {
       padding: 0 0.03in;
       vertical-align: top;
