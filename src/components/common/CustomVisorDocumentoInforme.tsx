@@ -50,11 +50,10 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
     case "keyValue": {
       const kv = seccion as Record<string, unknown>;
       const kvStyle = kv.style ? ` style="${kv.style}"` : "";
-      const kvLblStyle = kv.labelStyle ? ` style="${kv.labelStyle}"` : "";
       return `<table${kvStyle}><tbody>${seccion.rows
         .map(
-          (f) =>
-            `<tr><td${kvLblStyle}>${escaparHtml(f.label)}</td><td>${escaparHtml(f.separator ?? "")}${escaparHtml(f.value)}</td></tr>`,
+          (row) =>
+            `<tr>${row.map((cell) => `<td${cell.style ? ` style="${cell.style}"` : ""}>${escaparHtml(cell.text)}</td>`).join("")}</tr>`,
         )
         .join("")}</tbody></table>`;
     }
