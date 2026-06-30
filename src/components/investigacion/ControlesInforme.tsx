@@ -315,9 +315,17 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
         ) ??
         opcionesActualizadas.find((opcionActual) => normalizarTexto(opcionActual.string1 ?? "") === terminoNormalizado) ??
         opcionesActualizadas.find((opcionActual) => normalizarTexto(opcionActual.descripcion ?? "") === terminoNormalizado);
+      const opcionNormalizada =
+        opcion && payload.inputText
+          ? {
+              ...opcion,
+              string1: payload.inputText,
+              string2: payload.inputText2 ?? opcion.string2,
+            }
+          : opcion;
 
       return {
-        opcion,
+        opcion: opcionNormalizada,
         respuesta,
         termino,
       };
@@ -329,7 +337,12 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
 
     const opcionesLocales = estadoOpcionesLocales.clave === claveOpciones ? estadoOpcionesLocales.opciones : [];
     const opcionesExtras = opcionesLocales.filter(
-      (opcionLocal) => !opcionesBase.some((opcionBase) => opcionBase.string1 === opcionLocal.string1),
+      (opcionLocal) =>
+        !opcionesBase.some((opcionBase) =>
+          opcionBase.num1 === opcionLocal.num1 ||
+          normalizarTexto(opcionBase.string1 ?? "") === normalizarTexto(opcionLocal.string1 ?? "") ||
+          normalizarTexto(opcionBase.string2 ?? "") === normalizarTexto(opcionLocal.string2 ?? ""),
+        ),
     );
     const opcionesActuales = [...opcionesBase, ...opcionesExtras];
     const valorLimpio = valorTextoActual.trim();
