@@ -183,8 +183,14 @@ interface ParametrosGuardadoInforme {
   abrirConfirmacionFinalizacion?: boolean;
 }
 
-function ReferenciaTraduccion({ onClick }: { onClick: () => void }) {
-  return (
+function ReferenciaTraduccion({
+  onClick,
+  textoTooltip,
+}: {
+  onClick?: () => void;
+  textoTooltip?: string;
+}) {
+  const contenido = (
     <button
       type="button"
       onMouseDown={(event) => {
@@ -194,22 +200,35 @@ function ReferenciaTraduccion({ onClick }: { onClick: () => void }) {
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        onClick();
+        onClick?.();
       }}
       className="inline-flex items-center text-sky-500 transition-colors hover:text-sky-600"
-      aria-label="Revisar traduccion"
+      aria-label="Ver valor original"
     >
-        <Info size={15} />
+      <Info size={15} />
     </button>
+  );
+
+  if (!textoTooltip?.trim()) return contenido;
+
+  return (
+    <span className="group relative inline-flex">
+      {contenido}
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 hidden w-64 -translate-x-1/2 rounded-lg bg-brand-black px-3 py-2 text-center text-xs font-medium text-white shadow-lg group-hover:block">
+        {textoTooltip}
+      </span>
+    </span>
   );
 }
 
 function combinarAyudasCampo({
   onReferencia,
+  textoTooltipReferencia,
   indicadorCambio,
   mostrarReferencia = true,
 }: {
   onReferencia?: () => void;
+  textoTooltipReferencia?: string;
   indicadorCambio?: ReactNode;
   mostrarReferencia?: boolean;
 }) {
@@ -218,7 +237,10 @@ function combinarAyudasCampo({
   return (
     <>
       {mostrarReferencia ? (
-        <ReferenciaTraduccion onClick={() => onReferencia?.()} />
+        <ReferenciaTraduccion
+          onClick={onReferencia}
+          textoTooltip={textoTooltipReferencia}
+        />
       ) : null}
       {indicadorCambio}
     </>
@@ -790,6 +812,23 @@ const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
   ],
   datosGenerales: ["informacionGeneral", "opinionCredito"],
 };
+
+const RUTAS_SELECTORES_CON_REFERENCIA_ORIGINAL = new Set([
+  "identificacion.tipoPersona",
+  "identificacion.pais",
+  "identificacion.operacionesCambio",
+  "identificacion.tipoIdentificacionFiscal",
+  "identificacion.ciudadEstadoProvincia",
+  "identificacion.estadoActual",
+  "aspectosLegales.tipoEmpresa",
+  "aspectosLegales.ciudadRegistro",
+  "aspectosLegales.operacionesCambioDivisas",
+  "aspectosLegales.obligacionBolsa",
+  "aspectosLegales.monedaTipoCambio",
+  "operacionPrincipal.sector",
+  "operacionPrincipal.categoriaCiiu",
+  "operacionPrincipal.claseCiiu",
+]);
 
 function esRutaTraduccionIA(ruta: string) {
   const segmentos = ruta.split(".");
@@ -6296,12 +6335,20 @@ function PantallaInvestigacionAnalista({
   };
   const obtenerAyudaTraduccion = (ruta: string) => {
     const textoOriginal = obtenerTextoOriginal(ruta);
+    const tieneTextoOriginal = Boolean(textoOriginal.trim());
+    const esCampoIA = esRutaTraduccionIA(ruta);
+    const esSelectorConReferencia =
+      RUTAS_SELECTORES_CON_REFERENCIA_ORIGINAL.has(ruta);
 
     return combinarAyudasCampo({
-      onReferencia: () => abrirReferenciaTraduccion(ruta),
+      onReferencia: esCampoIA
+        ? () => abrirReferenciaTraduccion(ruta)
+        : undefined,
+      textoTooltipReferencia: esSelectorConReferencia
+        ? `Original: ${textoOriginal.trim()}`
+        : undefined,
       indicadorCambio: obtenerIndicadorCambioExtraccion(ruta),
-      mostrarReferencia:
-        esRutaTraduccionIA(ruta) && Boolean(textoOriginal.trim()),
+      mostrarReferencia: tieneTextoOriginal && (esCampoIA || esSelectorConReferencia),
     });
   };
 
