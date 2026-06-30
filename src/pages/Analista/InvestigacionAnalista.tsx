@@ -1272,15 +1272,26 @@ function PantallaInvestigacionAnalista({
   const [debeCrearInformePorRechazo, setDebeCrearInformePorRechazo] = useState(esInformeRechazado);
   const [estaCerradoModalObservacionesRechazo, setEstaCerradoModalObservacionesRechazo] = useState(false);
   const idPedidoObservaciones = Number(idPedido);
-  const claveObservacionesRechazo = ["informe-observaciones-rechazo", idPedidoObservaciones] as const;
+  const idInformeObservaciones = Number(idInforme);
+  const claveObservacionesRechazo = [
+    "informe-observaciones-rechazo",
+    idPedidoObservaciones,
+    idInformeObservaciones,
+  ] as const;
   const {
     data: observacionesRechazo = [],
     isLoading: estaCargandoObservacionesRechazo,
   } = useQuery({
     queryKey: claveObservacionesRechazo,
-    queryFn: () => servicioInformeObservacion.listar(idPedidoObservaciones),
+    queryFn: () =>
+      servicioInformeObservacion.listar({
+        idPedido: idPedidoObservaciones,
+        idInforme: idInformeObservaciones,
+      }),
     enabled: Number.isFinite(idPedidoObservaciones)
-      && idPedidoObservaciones > 0,
+      && idPedidoObservaciones > 0
+      && Number.isFinite(idInformeObservaciones)
+      && idInformeObservaciones > 0,
   });
   const actualizarObservacionRechazoMutation = useMutation({
     mutationFn: (observacion: InformeObservacion) =>
@@ -6175,7 +6186,8 @@ export default function InvestigacionAnalista() {
   const idPedidoNumerico = Number(idPedido);
   const idInformeClave = idInforme ?? "sin-informe";
   const idInformeNumerico = Number(idInforme);
-  const usaDatosBackend = modo !== "iniciar" && Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0;
+  const tieneIdInforme = Number.isFinite(idInformeNumerico) && idInformeNumerico > 0;
+  const usaDatosBackend = modo !== "iniciar" && Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0 && tieneIdInforme;
   const datosBaseInvestigacion = useMemo(() => obtenerDatosInvestigacionAnalista("iniciar"), []);
   const datosEjemploInvestigacion = useMemo(() => obtenerDatosInvestigacionAnalista(modo), [modo]);
 
@@ -6183,6 +6195,7 @@ export default function InvestigacionAnalista() {
     queryKey: ["informe-obtener-analista", idPedidoNumerico, idCarga],
     queryFn: () => informeService.obtener({
       idPedido: idPedidoNumerico,
+      idInforme: idInformeNumerico,
     }),
     enabled: usaDatosBackend,
     staleTime: 0,
@@ -6208,7 +6221,7 @@ export default function InvestigacionAnalista() {
       key={`${idPedido ?? "sin-id"}-${modo}-${idInformeClave}-${idCarga}-${claveDatos}`}
       idPedido={idPedido}
       idInforme={
-        Number.isFinite(idInformeNumerico) && idInformeNumerico > 0
+        tieneIdInforme
           ? idInformeNumerico
           : informeObtenido?.idInforme
       }

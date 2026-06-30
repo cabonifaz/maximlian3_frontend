@@ -1932,18 +1932,27 @@ function PantallaInvestigacionAnalista({
     setEstaCerradoModalObservacionesRechazo,
   ] = useState(false);
   const idPedidoObservaciones = Number(idPedido);
+  const idInformeObservaciones = Number(idInforme);
   const claveObservacionesRechazo = [
     "informe-observaciones-rechazo-traductor",
     idPedidoObservaciones,
+    idInformeObservaciones,
   ] as const;
   const {
     data: observacionesRechazo = [],
     isLoading: estaCargandoObservacionesRechazo,
   } = useQuery({
     queryKey: claveObservacionesRechazo,
-    queryFn: () => servicioInformeObservacion.listar(idPedidoObservaciones),
+    queryFn: () =>
+      servicioInformeObservacion.listar({
+        idPedido: idPedidoObservaciones,
+        idInforme: idInformeObservaciones,
+      }),
     enabled:
-      Number.isFinite(idPedidoObservaciones) && idPedidoObservaciones > 0,
+      Number.isFinite(idPedidoObservaciones) &&
+      idPedidoObservaciones > 0 &&
+      Number.isFinite(idInformeObservaciones) &&
+      idInformeObservaciones > 0,
   });
   const actualizarObservacionRechazoMutation = useMutation({
     mutationFn: (observacion: InformeObservacion) =>
@@ -10048,6 +10057,8 @@ export default function InvestigacionTraductor() {
   const idInformeOriginalNumerico = Number(
     idInformeOriginal ?? datosPedidoNavegacion?.idInformeOriginal,
   );
+  const tieneIdInforme = Number.isFinite(idInformeNumerico) && idInformeNumerico > 0;
+  const tieneIdInformeOriginal = Number.isFinite(idInformeOriginalNumerico) && idInformeOriginalNumerico > 0;
   const usaDatosBackend =
     Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0;
   const datosBaseInvestigacion = useMemo(
@@ -10064,11 +10075,9 @@ export default function InvestigacionTraductor() {
     queryFn: () =>
       informeService.obtener({
         idPedido: idPedidoNumerico,
-        idInforme: Number.isFinite(idInformeNumerico) && idInformeNumerico > 0
-          ? idInformeNumerico
-          : undefined,
+        idInforme: idInformeNumerico,
       }),
-    enabled: usaDatosBackend,
+    enabled: usaDatosBackend && tieneIdInforme,
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: "always",
@@ -10088,10 +10097,7 @@ export default function InvestigacionTraductor() {
         idPedido: idPedidoNumerico,
         idInforme: idInformeOriginalNumerico,
       }),
-    enabled:
-      usaDatosBackend &&
-      Number.isFinite(idInformeOriginalNumerico) &&
-      idInformeOriginalNumerico > 0,
+    enabled: usaDatosBackend && tieneIdInformeOriginal,
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: "always",
@@ -10100,6 +10106,8 @@ export default function InvestigacionTraductor() {
   const datosIniciales = (() => {
     if (informeObtenido?.datosInvestigacion)
       return informeObtenido.datosInvestigacion;
+    if (informeOriginalObtenido?.datosInvestigacion)
+      return informeOriginalObtenido.datosInvestigacion;
     if (usaDatosBackend) return datosBaseInvestigacion;
     return datosEjemploInvestigacion;
   })();
@@ -10117,7 +10125,7 @@ export default function InvestigacionTraductor() {
       key={`${idPedido ?? "sin-id"}-${modo}-${idInformeClave}-${idCarga}-${claveDatos}`}
       idPedido={idPedido}
       idInforme={
-        Number.isFinite(idInformeNumerico) && idInformeNumerico > 0
+        tieneIdInforme
           ? idInformeNumerico
           : informeObtenido?.idInforme
       }
