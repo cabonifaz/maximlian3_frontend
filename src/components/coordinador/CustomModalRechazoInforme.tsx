@@ -227,28 +227,29 @@ export function CustomModalRechazoInforme({
                 Nueva observacion
               </CustomLabel>
               <span className="text-xs font-medium text-slate-400">
-                Enter para agregar
+                Ctrl + Enter para agregar
               </span>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <input
+              <textarea
                 id="observacion-rechazo"
                 value={observacionActual}
                 onChange={(event) => setObservacionActual(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") {
+                  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
                     event.preventDefault();
                     agregarObservacion();
                   }
                 }}
                 placeholder="Ej. Corregir la seccion de referencias bancarias"
-                className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:bg-white focus:ring-2 focus:ring-brand-black/5"
+                rows={3}
+                className="min-h-24 min-w-0 flex-1 resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:bg-white focus:ring-2 focus:ring-brand-black/5"
                 disabled={cargando}
               />
               <CustomButton
                 type="button"
                 size="compact"
-                className="h-11 min-w-28 rounded-xl"
+                className="min-h-11 min-w-28 rounded-xl sm:self-end"
                 disabled={!observacionActual.trim() || cargando}
                 onClick={agregarObservacion}
               >
