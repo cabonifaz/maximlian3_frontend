@@ -281,10 +281,32 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
       });
 
       const terminoNormalizado = normalizarTexto(termino);
+      const textosPayload = [
+        payload.inputText,
+        payload.inputText2,
+        payload.string1,
+        payload.string2,
+        payload.string3,
+        payload.string4,
+        payload.string5,
+        payload.string6,
+        payload.string7,
+      ]
+        .map((texto) => normalizarTexto(texto ?? ""))
+        .filter(Boolean);
+      const coincideConPayload = (opcionActual: EntradaTablaMaestra) =>
+        [
+          opcionActual.string1,
+          opcionActual.string2,
+          opcionActual.string3,
+          opcionActual.string4,
+          opcionActual.string5,
+          opcionActual.string6,
+          opcionActual.string7,
+        ].some((texto) => textosPayload.includes(normalizarTexto(texto ?? "")));
       const opcion =
         opcionesActualizadas.find((opcionActual) =>
-          normalizarTexto(opcionActual.string1 ?? "") === normalizarTexto(payload.string1 ?? "")
-          && normalizarTexto(opcionActual.string2 ?? "") === normalizarTexto(payload.string2 ?? "")
+          coincideConPayload(opcionActual)
           && (payload.num2 == null || opcionActual.num2 === payload.num2)
         ) ??
         opcionesActualizadas.find((opcionActual) =>

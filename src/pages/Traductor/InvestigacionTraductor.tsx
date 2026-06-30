@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -116,8 +116,10 @@ import type {
 } from "@maximilian/shared/types/investigacion.type";
 import {
   type EntradaTablaMaestra,
+  type TablaMaestraCrearRequest,
   TablaMaestraId,
   obtenerDescripcionTablaMaestra,
+  obtenerSiguienteNumTablaMaestra,
 } from "@maximilian/shared/types/tabla-maestra.type";
 import {
   normalizarMontoDosDecimales,
@@ -1950,6 +1952,7 @@ function PantallaInvestigacionAnalista({
     null,
   );
   const debeAplicarTraduccionDirectaRef = useRef(false);
+  const selectoresTraducidosInicializadosRef = useRef(false);
   const debeCrearInformeInicial = modo === "iniciar" || esInformeRechazado;
 
   const [datosInvestigacion, setDatosInvestigacion] =
@@ -2932,9 +2935,64 @@ function PantallaInvestigacionAnalista({
       || "dd/MM/yyyy",
     [idFormatoFechaInforme, opcionesFormatoFechaInforme],
   );
+  const construirPayloadAltaNuevaTraducida = useCallback(
+    ({
+      idMaestro,
+      termino,
+      opcionesActuales,
+      num2 = null,
+      codigo,
+    }: {
+      idMaestro: number;
+      termino: string;
+      opcionesActuales: EntradaTablaMaestra[];
+      num2?: number | null;
+      codigo?: string | null;
+    }): TablaMaestraCrearRequest => {
+      const texto = termino.trim();
+      const codigoLimpio = codigo?.trim() || null;
+      const payload: TablaMaestraCrearRequest = {
+        idMaestro,
+        idIdioma: idIdiomaTraduccion,
+        inputText: texto,
+        inputText2: codigoLimpio,
+        descripcion: obtenerDescripcionTablaMaestra(idMaestro),
+        num1: obtenerSiguienteNumTablaMaestra(opcionesActuales),
+        num2,
+        num3: null,
+        string1: null,
+        string2: null,
+        string3: null,
+        string4: null,
+        string5: null,
+        string6: null,
+        string7: null,
+        date1: null,
+        date2: null,
+        date3: null,
+      };
+
+      return payload;
+    },
+    [idIdiomaTraduccion],
+  );
 
   useEffect(() => {
     if (idIdiomaTraduccion !== 2 && idIdiomaTraduccion !== 3) return;
+    if (selectoresTraducidosInicializadosRef.current) return;
+    const opcionesRequeridas = [
+      opcionesTipoPersona,
+      opcionesPais,
+      opcionesTipoRegTributario,
+      opcionesEstadoCliente,
+      opcionesTipoEmpresa,
+      opcionesCiudad,
+      opcionesSectorEconomico,
+      opcionesActividadEconomica,
+      opcionesClaseCiiu,
+      opcionesMoneda,
+    ];
+    if (opcionesRequeridas.some((opciones) => !opciones)) return;
 
     const obtenerId = (
       idActual: number | undefined,
@@ -3032,6 +3090,8 @@ function PantallaInvestigacionAnalista({
       opcionesClaseCiiuBase,
       datosInvestigacion.operacionPrincipal.claseCiiu,
     );
+
+    selectoresTraducidosInicializadosRef.current = true;
 
     setDatosInvestigacion((anterior) => {
       const identificacion = {
@@ -6503,6 +6563,14 @@ function PantallaInvestigacionAnalista({
         idMaestro={TablaMaestraId.CIUDAD}
         permiteAltaNueva
         num2AltaNueva={idPaisSeleccionado ?? null}
+        construirPayloadAltaNueva={(termino, opcionesActuales) =>
+          construirPayloadAltaNuevaTraducida({
+            idMaestro: TablaMaestraId.CIUDAD,
+            termino,
+            opcionesActuales,
+            num2: idPaisSeleccionado ?? null,
+          })
+        }
         conservarOpcionesLocales={false}
         marcador="Seleccione o agregue ciudad/estado/provincia"
         adicionalEtiqueta={obtenerAyudaTraduccion(
@@ -6557,6 +6625,13 @@ function PantallaInvestigacionAnalista({
         opcionesTablaMaestra={opcionesEstadoCliente}
         idMaestro={TablaMaestraId.ESTADO_CLIENTE}
         permiteAltaNueva
+        construirPayloadAltaNueva={(termino, opcionesActuales) =>
+          construirPayloadAltaNuevaTraducida({
+            idMaestro: TablaMaestraId.ESTADO_CLIENTE,
+            termino,
+            opcionesActuales,
+          })
+        }
         marcador="Seleccione o agregue estado actual"
         adicionalEtiqueta={obtenerAyudaTraduccion(
           "identificacion.estadoActual",
@@ -6697,6 +6772,13 @@ function PantallaInvestigacionAnalista({
           opcionesTablaMaestra={opcionesTipoEmpresa}
           idMaestro={TablaMaestraId.TIPO_EMPRESA}
           permiteAltaNueva
+          construirPayloadAltaNueva={(termino, opcionesActuales) =>
+            construirPayloadAltaNuevaTraducida({
+              idMaestro: TablaMaestraId.TIPO_EMPRESA,
+              termino,
+              opcionesActuales,
+            })
+          }
           marcador="Seleccione tipo de empresa"
           adicionalEtiqueta={obtenerAyudaTraduccion(
             "aspectosLegales.tipoEmpresa",
@@ -6722,6 +6804,13 @@ function PantallaInvestigacionAnalista({
           opcionesTablaMaestra={opcionesCiudad}
           idMaestro={TablaMaestraId.CIUDAD}
           permiteAltaNueva
+          construirPayloadAltaNueva={(termino, opcionesActuales) =>
+            construirPayloadAltaNuevaTraducida({
+              idMaestro: TablaMaestraId.CIUDAD,
+              termino,
+              opcionesActuales,
+            })
+          }
           marcador="Seleccione ciudad de registro"
           adicionalEtiqueta={obtenerAyudaTraduccion(
             "aspectosLegales.ciudadRegistro",
@@ -7390,23 +7479,15 @@ function PantallaInvestigacionAnalista({
 
         if (existeCodigoCiiu(opcionesActuales, codigoLimpio)) return;
 
-        await servicioTablaMaestra.crear({
-          idMaestro,
-          descripcion: obtenerDescripcionTablaMaestra(idMaestro),
-          string1: textoLimpio,
-          string2: codigoLimpio,
-          string3: null,
-          num1:
-            opcionesActuales.reduce(
-              (maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0),
-              0,
-            ) + 1,
-          num2: idPadre,
-          num3: null,
-          date1: null,
-          date2: null,
-          date3: null,
-        });
+        await servicioTablaMaestra.crear(
+          construirPayloadAltaNuevaTraducida({
+            idMaestro,
+            termino: textoLimpio,
+            opcionesActuales,
+            num2: idPadre,
+            codigo: codigoLimpio,
+          }),
+        );
 
         await queryClient.invalidateQueries({
           queryKey: ["masterTable", idMaestro],
@@ -7518,6 +7599,13 @@ function PantallaInvestigacionAnalista({
           opcionesTablaMaestra={opcionesSectorEconomico}
           idMaestro={TablaMaestraId.SECTOR_ECONOMICO}
           permiteAltaNueva
+          construirPayloadAltaNueva={(termino, opcionesActuales) =>
+            construirPayloadAltaNuevaTraducida({
+              idMaestro: TablaMaestraId.SECTOR_ECONOMICO,
+              termino,
+              opcionesActuales,
+            })
+          }
           marcador="Seleccione sector"
           adicionalEtiqueta={obtenerAyudaTraduccion(
             "operacionPrincipal.sector",
@@ -7808,6 +7896,13 @@ function PantallaInvestigacionAnalista({
                 opcionesTablaMaestra={opcionesTiempoCreditoVentas}
                 idMaestro={TablaMaestraId.TIEMPO_CREDITO_VENTAS}
                 permiteAltaNueva
+                construirPayloadAltaNueva={(termino, opcionesActuales) =>
+                  construirPayloadAltaNuevaTraducida({
+                    idMaestro: TablaMaestraId.TIEMPO_CREDITO_VENTAS,
+                    termino,
+                    opcionesActuales,
+                  })
+                }
                 marcador="Seleccione tiempo"
                 obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")}
                 adicionalEtiqueta={obtenerAyudaTraduccion(
@@ -8030,6 +8125,13 @@ function PantallaInvestigacionAnalista({
                 opcionesTablaMaestra={opcionesTiempoCreditoVentas}
                 idMaestro={TablaMaestraId.TIEMPO_CREDITO_VENTAS}
                 permiteAltaNueva
+                construirPayloadAltaNueva={(termino, opcionesActuales) =>
+                  construirPayloadAltaNuevaTraducida({
+                    idMaestro: TablaMaestraId.TIEMPO_CREDITO_VENTAS,
+                    termino,
+                    opcionesActuales,
+                  })
+                }
                 marcador="Seleccione tiempo"
                 obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")}
                 adicionalEtiqueta={obtenerAyudaTraduccion(
@@ -8179,6 +8281,13 @@ function PantallaInvestigacionAnalista({
                 opcionesTablaMaestra={opcionesTiempoCreditoVentas}
                 idMaestro={TablaMaestraId.TIEMPO_CREDITO_VENTAS}
                 permiteAltaNueva
+                construirPayloadAltaNueva={(termino, opcionesActuales) =>
+                  construirPayloadAltaNuevaTraducida({
+                    idMaestro: TablaMaestraId.TIEMPO_CREDITO_VENTAS,
+                    termino,
+                    opcionesActuales,
+                  })
+                }
                 marcador="Seleccione tiempo"
                 obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")}
                 adicionalEtiqueta={obtenerAyudaTraduccion(

@@ -64,6 +64,9 @@ export type MasterTableResponse = EntradaTablaMaestra[];
 
 export interface TablaMaestraCrearRequest {
   idMaestro: number;
+  idIdioma?: number | null;
+  inputText?: string | null;
+  inputText2?: string | null;
   descripcion?: string;
   num1?: number | null;
   num2?: number | null;
@@ -71,6 +74,10 @@ export interface TablaMaestraCrearRequest {
   string1?: string | null;
   string2?: string | null;
   string3?: string | null;
+  string4?: string | null;
+  string5?: string | null;
+  string6?: string | null;
+  string7?: string | null;
   date1?: string | null;
   date2?: string | null;
   date3?: string | null;
@@ -83,6 +90,9 @@ export interface TablaMaestraEditarRequest extends TablaMaestraCrearRequest {
 export interface TablaMaestraGuardarResponse {
   idTablaMaestra?: number;
   idMaestro?: number;
+  idIdioma?: number | null;
+  inputText?: string | null;
+  inputText2?: string | null;
   descripcion?: string;
   num1?: number | null;
   num2?: number | null;
@@ -90,6 +100,10 @@ export interface TablaMaestraGuardarResponse {
   string1?: string | null;
   string2?: string | null;
   string3?: string | null;
+  string4?: string | null;
+  string5?: string | null;
+  string6?: string | null;
+  string7?: string | null;
   date1?: string | null;
   date2?: string | null;
   date3?: string | null;
