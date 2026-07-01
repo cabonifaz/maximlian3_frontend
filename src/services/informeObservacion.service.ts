@@ -7,6 +7,11 @@ import type {
   InformeObservacion,
 } from "@maximilian/shared/types/informe.type";
 
+interface InformeObservacionListarParams {
+  idPedido: number;
+  idInforme?: number;
+}
+
 function obtenerRegistro(...valores: unknown[]): Record<string, unknown> {
   for (const v of valores) {
     if (v && typeof v === "object" && !Array.isArray(v)) return v as Record<string, unknown>;
@@ -72,10 +77,19 @@ function normalizarObservacionesInforme(resultado: unknown): InformeObservacion[
 }
 
 export const servicioInformeObservacion = {
-  listar: async (idPedido: number): Promise<InformeObservacion[]> => {
+  listar: async (
+    parametros: number | InformeObservacionListarParams,
+  ): Promise<InformeObservacion[]> => {
+    const idPedido =
+      typeof parametros === "number" ? parametros : parametros.idPedido;
+    const idInforme =
+      typeof parametros === "number" ? undefined : parametros.idInforme;
     const ruta = "/api/informeObservacion/listar";
     const { data } = await maximilianService.get<ApiResponse<unknown>>(ruta, {
-      params: { IdPedido: idPedido },
+      params: {
+        IdPedido: idPedido,
+        IdInforme: idInforme && idInforme > 0 ? idInforme : undefined,
+      },
     });
 
     if (!esRespuestaOkCompatibilidad(data, ruta)) {

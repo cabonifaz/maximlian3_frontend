@@ -1,4 +1,4 @@
-import { CheckCircle2, ClipboardCheck, Maximize2, Move, X } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronUp, ClipboardCheck, Maximize2, Move, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import type { InformeObservacion } from "@maximilian/shared/types/informe.type";
@@ -24,6 +24,9 @@ export function CustomModalObservacionesRechazoAnalista({
 }: PropsCustomModalObservacionesRechazoAnalista) {
   const [posicion, setPosicion] = useState<{ x: number; y: number } | null>(null);
   const [dimensiones, setDimensiones] = useState<{ ancho: number; alto: number } | null>(null);
+  const [observacionesDesplegadas, setObservacionesDesplegadas] = useState<Set<number>>(
+    () => new Set(),
+  );
   const panelRef = useRef<HTMLDivElement>(null);
   const arrastreRef = useRef<{ desplazamientoX: number; desplazamientoY: number } | null>(null);
   const redimensionRef = useRef<{
@@ -33,6 +36,18 @@ export function CustomModalObservacionesRechazoAnalista({
     altoInicial: number;
   } | null>(null);
   const totalCumplidas = observaciones.filter((observacion) => observacion.checked).length;
+
+  const alternarObservacionDesplegada = (idInformeObservacion: number) => {
+    setObservacionesDesplegadas((idsActuales) => {
+      const nuevosIds = new Set(idsActuales);
+      if (nuevosIds.has(idInformeObservacion)) {
+        nuevosIds.delete(idInformeObservacion);
+      } else {
+        nuevosIds.add(idInformeObservacion);
+      }
+      return nuevosIds;
+    });
+  };
 
   const iniciarArrastre = (evento: React.PointerEvent<HTMLDivElement>) => {
     if (!panelRef.current) return;
@@ -176,19 +191,51 @@ export function CustomModalObservacionesRechazoAnalista({
                       : "border-slate-200 bg-white"
                   }`}
                 >
-                  <label className="flex cursor-pointer items-start gap-3">
+                  <div className="flex items-start gap-3">
                     <input
                       type="checkbox"
                       checked={observacion.checked}
                       disabled={idObservacionActualizando === observacion.idInformeObservacion}
                       onChange={(evento) => onCambiarEstado(observacion, evento.target.checked)}
                       className="mt-1 h-4 w-4 accent-emerald-600"
+                      aria-label={`Marcar observacion ${indice + 1} como cumplida`}
                     />
-                    <span className={`text-sm leading-6 ${observacion.checked ? "text-slate-500 line-through" : "text-slate-700"}`}>
-                      <strong className="mr-1">{indice + 1}.</strong>
-                      {observacion.observacion}
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={[
+                          "block text-sm leading-6",
+                          observacion.checked ? "text-slate-500 line-through" : "text-slate-700",
+                          observacionesDesplegadas.has(observacion.idInformeObservacion)
+                            ? "whitespace-pre-wrap break-words"
+                            : "overflow-hidden text-ellipsis whitespace-nowrap",
+                        ].join(" ")}
+                      >
+                        <strong className="mr-1">{indice + 1}.</strong>
+                        {observacion.observacion}
+                      </span>
+                      <button
+                        type="button"
+                        className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-wine hover:text-brand-black"
+                        onClick={(evento) => {
+                          evento.preventDefault();
+                          evento.stopPropagation();
+                          alternarObservacionDesplegada(observacion.idInformeObservacion);
+                        }}
+                      >
+                        {observacionesDesplegadas.has(observacion.idInformeObservacion) ? (
+                          <>
+                            <ChevronUp size={14} />
+                            Ver menos
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown size={14} />
+                            Desplegar mas texto
+                          </>
+                        )}
+                      </button>
                     </span>
-                  </label>
+                  </div>
                 </li>
               ))}
             </ul>

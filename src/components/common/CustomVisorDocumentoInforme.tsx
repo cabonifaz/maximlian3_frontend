@@ -50,11 +50,10 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
     case "keyValue": {
       const kv = seccion as Record<string, unknown>;
       const kvStyle = kv.style ? ` style="${kv.style}"` : "";
-      const kvLblStyle = kv.labelStyle ? ` style="${kv.labelStyle}"` : "";
       return `<table${kvStyle}><tbody>${seccion.rows
         .map(
-          (f) =>
-            `<tr><td${kvLblStyle}>${escaparHtml(f.label)}</td><td>${escaparHtml(f.separator ?? "")}${escaparHtml(f.value)}</td></tr>`,
+          (row) =>
+            `<tr>${row.map((cell) => `<td${cell.style ? ` style="${cell.style}"` : ""}>${escaparHtml(cell.text)}</td>`).join("")}</tr>`,
         )
         .join("")}</tbody></table>`;
     }
@@ -157,7 +156,9 @@ function construirCss(config: PlantillaDocumentoConfig): string {
   const headerAlign = config.header?.align ?? "center";
   const footerAlign = config.footer?.align ?? "left";
   const headerGapAfter = config.header?.gapAfter ?? "0";
+  const headerMarginTop = config.header?.marginTop ?? "0";
   const footerGapBefore = config.footer?.gapBefore ?? "0";
+  const footerMarginBottom = config.footer?.marginBottom ?? "0";
 
   const ciL = config.contentIndent?.left ?? "0";
   const ciR = config.contentIndent?.right ?? "0";
@@ -172,11 +173,11 @@ function construirCss(config: PlantillaDocumentoConfig): string {
 
       @top-center {
         content: element(encabezado-logo);
-        vertical-align: bottom;
+        vertical-align: ${config.header?.marginTop ? "top" : "bottom"};
       }
       @bottom-center {
         content: element(pie-pagina);
-        vertical-align: top;
+        vertical-align: ${config.footer?.marginBottom ? "bottom" : "top"};
       }
     }
 
@@ -184,6 +185,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       position: running(encabezado-logo);
       text-align: ${headerAlign};
       width: 100%;
+      padding-top: ${headerMarginTop};
       padding-bottom: ${headerGapAfter};
       box-sizing: border-box;
     }
@@ -201,19 +203,22 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       line-height: 1.0;
       font-family: ${fuente};
       text-align: ${footerAlign};
+      white-space: pre-line;
       padding-left: ${fiL};
       padding-right: ${fiR};
       padding-top: ${footerGapBefore};
+      padding-bottom: ${footerMarginBottom};
       box-sizing: border-box;
     }
 
+    ${config.footer?.showPageNumber !== false ? `
     .sr-pie-pagina::after {
       content: "${escaparHtml(config.footer?.pageLabel ?? "Page")} " counter(page);
       display: block;
       ${config.footer?.pageFontSize ? `font-size: ${config.footer.pageFontSize};` : ""}
       ${config.footer?.pageColor ? `color: ${config.footer.pageColor};` : ""}
       ${config.footer?.pageGapBefore ? `margin-top: ${config.footer.pageGapBefore};` : ""}
-    }
+    }` : ""}
 
     body {
       font-family: ${fuente};
@@ -273,10 +278,6 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       z-index: 0;
     }
     ` : ""}
-
-    table {
-      border-collapse: collapse;
-    }
 
     td, th {
       padding: 0 0.03in;

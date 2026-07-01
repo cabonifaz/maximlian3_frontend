@@ -34,6 +34,7 @@ export const TablaMaestraId = {
   TIPO_EVIDENCIA: 62,
   FASE_EVIDENCIA: 63,
   OBLIGACION_BOLSA: 64,
+  FORMATO_FECHA_INFORME: 65,
   PAGINACION_FRACTAL: 99,
 } as const;
 
@@ -63,6 +64,9 @@ export type MasterTableResponse = EntradaTablaMaestra[];
 
 export interface TablaMaestraCrearRequest {
   idMaestro: number;
+  idIdioma?: number | null;
+  inputText?: string | null;
+  inputText2?: string | null;
   descripcion?: string;
   num1?: number | null;
   num2?: number | null;
@@ -70,6 +74,10 @@ export interface TablaMaestraCrearRequest {
   string1?: string | null;
   string2?: string | null;
   string3?: string | null;
+  string4?: string | null;
+  string5?: string | null;
+  string6?: string | null;
+  string7?: string | null;
   date1?: string | null;
   date2?: string | null;
   date3?: string | null;
@@ -82,6 +90,9 @@ export interface TablaMaestraEditarRequest extends TablaMaestraCrearRequest {
 export interface TablaMaestraGuardarResponse {
   idTablaMaestra?: number;
   idMaestro?: number;
+  idIdioma?: number | null;
+  inputText?: string | null;
+  inputText2?: string | null;
   descripcion?: string;
   num1?: number | null;
   num2?: number | null;
@@ -89,6 +100,10 @@ export interface TablaMaestraGuardarResponse {
   string1?: string | null;
   string2?: string | null;
   string3?: string | null;
+  string4?: string | null;
+  string5?: string | null;
+  string6?: string | null;
+  string7?: string | null;
   date1?: string | null;
   date2?: string | null;
   date3?: string | null;
@@ -125,6 +140,7 @@ const descripcionesTablaMaestraPorId: Partial<Record<TablaMaestraId, string>> = 
   [TablaMaestraId.TIPO_EVIDENCIA]: "TIPO EVIDENCIA",
   [TablaMaestraId.FASE_EVIDENCIA]: "FASE EVIDENCIA",
   [TablaMaestraId.OBLIGACION_BOLSA]: "OBLIGACION EN BOLSA",
+  [TablaMaestraId.FORMATO_FECHA_INFORME]: "FORMATO FECHA INFORME",
   [TablaMaestraId.ETAPA_ASIGNACION]: "FASE ASIGNACION",
   [TablaMaestraId.CLASE_CIIU]: "CLASE CIIU",
   [TablaMaestraId.PAGINACION_FRACTAL]: "PAGINACION FRACTAL",

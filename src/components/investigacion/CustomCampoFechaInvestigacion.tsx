@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
+import { useFormatoFechaInforme } from "@maximilian/shared/contexts/formato-fecha-informe.context";
 
 interface PropsCustomCampoFechaInvestigacion {
   etiqueta: string;
@@ -23,6 +24,8 @@ export function CustomCampoFechaInvestigacion({
   error,
   className,
 }: PropsCustomCampoFechaInvestigacion) {
+  const { formato, locale } = useFormatoFechaInforme();
+
   return (
     <div className={`space-y-2 ${className ?? ""}`}>
       <CustomLabel as="p" className="text-sm font-bold text-gray-700">
@@ -37,6 +40,8 @@ export function CustomCampoFechaInvestigacion({
         disabled={soloLectura}
         error={error}
         placeholder="dd/mm/yyyy"
+        formatoVisual={formato}
+        localeVisual={locale}
       />
       {nombre ? <input type="hidden" name={nombre} value={valor} /> : null}
     </div>

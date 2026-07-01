@@ -356,6 +356,7 @@ export interface InformePedidoRequest {
 export interface InformeCrearRequest {
   idInforme?: number;
   idPedido: number;
+  idFormatoFecha: number;
   idTipoPersona: number;
   nombre: string;
   nombreComercial: string;
@@ -491,6 +492,7 @@ export interface InformeEliminarObservacionRequest {
 export interface InformeObtenerResponse {
   idInforme?: number;
   idPedido?: number;
+  idFormatoFecha?: number;
   idTipoPersona?: number;
   idPais?: number;
   taxIdType?: number;
@@ -511,6 +513,7 @@ export interface InformeObtenerResponse {
 
 export interface InformeObtenerParams {
   idPedido: number;
+  idInforme?: number;
 }
 
 export type AlineacionDocumentoInforme = "left" | "center" | "right" | "justify";
@@ -724,10 +727,15 @@ export interface PlantillaDocumentoConfig {
   footerIndent?: PlantillaIndent;
   headingIndent?: PlantillaIndent;
   font?: { family?: string; size?: string; lineSpacing?: number };
-  header?: { logo?: string; logoWidth?: string; logoHeight?: string; align?: string; gapAfter?: string };
-  footer?: { text?: string; pageLabel?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string; pageFontSize?: string; pageColor?: string; pageGapBefore?: string };
+  header?: { logo?: string; logoWidth?: string; logoHeight?: string; align?: string; gapAfter?: string; marginTop?: string };
+  footer?: { text?: string; pageLabel?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string; marginBottom?: string; pageFontSize?: string; pageColor?: string; pageGapBefore?: string };
   pageBorder?: { width?: string; color?: string; top?: string; bottom?: string; left?: string; right?: string };
   watermark?: { image?: string; width?: string; height?: string; opacity?: number; position?: string };
+}
+
+export interface PlantillaCeldaTabla {
+  text: string;
+  style?: string;
 }
 
 export interface PlantillaFilaEtiquetaValor {
@@ -740,7 +748,7 @@ export type PlantillaSeccion =
   | { type: "heading"; level?: number; text: string; fontSize?: string }
   | { type: "subtitle"; text: string }
   | { type: "text"; field: string }
-  | { type: "keyValue"; labelWidth?: string; style?: string; rows: PlantillaFilaEtiquetaValor[] }
+  | { type: "keyValue"; style?: string; rows: PlantillaCeldaTabla[][] }
   | { type: "borderedBox"; title: string; content?: string; rows?: PlantillaFilaEtiquetaValor[]; valueAlign?: string }
   | { type: "referenceBox"; fontSize?: string; title: string; items: string[] }
   | { type: "dataTable"; source?: string; columns: { header: string; field?: string }[]; rows?: unknown[]; style?: string; cellStyle?: string; headerStyle?: string; columnWidths?: string[] }
