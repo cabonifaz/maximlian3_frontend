@@ -7,6 +7,7 @@ import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service"
 import { informeService } from "@maximilian/services/informe.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { CustomVisorDocumentoInforme } from "@maximilian/components/common/CustomVisorDocumentoInforme";
+import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 
 interface FilaVistaPreviaInforme {
   etiqueta: string;
@@ -64,7 +65,7 @@ interface PropsTarjetaVistaPreviaInforme {
 }
 
 interface PropsVistaPreviaInformeComparado {
-  datosInvestigacion: DatosInvestigacionAnalista;
+  datosInvestigacion?: DatosInvestigacionAnalista;
   encabezado: EncabezadoVistaPreviaInforme;
   idInforme?: number;
   idPedido?: number;
@@ -1046,6 +1047,8 @@ export function CustomVistaPreviaInformeComparado({
   const [idTabActiva, setIdTabActiva] = useState<IdTabVistaPreviaInforme>("vista-general");
   const idInformeDocumento = Number(idInforme);
   const idPedidoDocumento = Number(idPedido);
+  const puedeMostrarDocumento = Number.isFinite(idInformeDocumento) && idInformeDocumento > 0
+    && Number.isFinite(idPedidoDocumento) && idPedidoDocumento > 0;
 
   const {
     data: documentoGenerado,
@@ -1054,19 +1057,21 @@ export function CustomVistaPreviaInformeComparado({
   } = useQuery({
     queryKey: ["informe-documento-generado", idInformeDocumento, idPedidoDocumento],
     queryFn: () => informeService.previsualizarDocumento(idInformeDocumento, idPedidoDocumento),
-    enabled: Number.isFinite(idInformeDocumento) && idInformeDocumento > 0
-      && Number.isFinite(idPedidoDocumento) && idPedidoDocumento > 0,
+    enabled: puedeMostrarDocumento,
     staleTime: 15 * 60 * 1000,
   });
 
   const { data: opcionesTiempoCredito } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIEMPO_CREDITO_VENTAS],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIEMPO_CREDITO_VENTAS),
+    enabled: !puedeMostrarDocumento && Boolean(datosInvestigacion),
     staleTime: Infinity,
   });
 
   const seccionesVistaPrevia = useMemo(
-    () => obtenerSeccionesVistaPreviaInforme(datosInvestigacion, opcionesTiempoCredito),
+    () => datosInvestigacion
+      ? obtenerSeccionesVistaPreviaInforme(datosInvestigacion, opcionesTiempoCredito)
+      : [],
     [datosInvestigacion, opcionesTiempoCredito],
   );
 
@@ -1077,28 +1082,35 @@ export function CustomVistaPreviaInformeComparado({
     [idTabActiva, seccionesVistaPrevia],
   );
 
-  if (
-    Number.isFinite(idInformeDocumento) && idInformeDocumento > 0
-    && Number.isFinite(idPedidoDocumento) && idPedidoDocumento > 0
-  ) {
+  if (puedeMostrarDocumento) {
     return (
       <div className={className}>
         {contenidoEntreTabsYTarjetas}
-        {documentoGenerado ? (
+        {estaCargandoDocumento ? (
+          <div className="min-h-[calc(100vh-12rem)] rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <PantallaCarga message="Generando vista previa del documento..." />
+          </div>
+        ) : documentoGenerado ? (
           <CustomVisorDocumentoInforme
             documento={documentoGenerado}
             datosInvestigacion={datosInvestigacion}
             encabezado={encabezado}
           />
-        ) : estaCargandoDocumento ? (
-          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-500 shadow-sm">
-            Generando vista previa del documento...
-          </div>
         ) : (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500 shadow-sm">
             {errorDocumento ? "No se pudo generar la vista previa del documento." : "No hay documento disponible para mostrar."}
           </div>
         )}
+      </div>
+    );
+  }
+
+  if (!datosInvestigacion) {
+    return (
+      <div className={className}>
+        <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500 shadow-sm">
+          No hay informacion disponible para mostrar.
+        </div>
       </div>
     );
   }

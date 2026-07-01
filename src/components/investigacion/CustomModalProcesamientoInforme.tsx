@@ -11,6 +11,8 @@ import type {
 } from "@maximilian/shared/types/informe.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
+export type ModoProcesamientoInforme = "revision" | "directo";
+
 interface PropsCustomModalExtraccionInformacionAnalista {
   estaAbierto: boolean;
   alcance: AlcanceExtraccionInforme;
@@ -22,16 +24,21 @@ interface PropsCustomModalExtraccionInformacionAnalista {
     alcance: AlcanceExtraccionInforme,
     especificaciones: string,
     configuracionSecciones: InformeConfiguracionExtraccion,
+    modo: ModoProcesamientoInforme,
   ) => Promise<void> | void;
   etiquetaContexto?: string;
   textoBotonAccion?: string;
   textoBotonAccionCargando?: string;
+  textoBotonAccionDirecta?: string;
+  textoBotonAccionDirectaCargando?: string;
   textoEspecificaciones?: string;
   marcadorEspecificaciones?: string;
   verboAccion?: string;
   archivosDisponibles?: File[];
   ocultarCargaArchivos?: boolean;
   ocultarEspecificaciones?: boolean;
+  ocultarCancelar?: boolean;
+  mostrarAccionDirecta?: boolean;
 }
 
 function formatearTamanoArchivo(tamano: number) {
@@ -72,16 +79,21 @@ export function CustomModalExtraccionInformacionAnalista({
   etiquetaContexto = "Demo de extracción",
   textoBotonAccion = "Extraer información",
   textoBotonAccionCargando = "Extrayendo...",
+  textoBotonAccionDirecta = "Aplicar directamente",
+  textoBotonAccionDirectaCargando = "Aplicando...",
   textoEspecificaciones = "Especificaciones",
   marcadorEspecificaciones = "Ingrese instrucciones para la IA",
   verboAccion = "Extraer",
   archivosDisponibles = [],
   ocultarCargaArchivos = false,
   ocultarEspecificaciones = false,
+  ocultarCancelar = false,
+  mostrarAccionDirecta = false,
 }: PropsCustomModalExtraccionInformacionAnalista) {
   const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>([]);
   const [especificaciones, setEspecificaciones] = useState("");
   const [estaProcesando, setEstaProcesando] = useState(false);
+  const [modoProcesando, setModoProcesando] = useState<ModoProcesamientoInforme | null>(null);
   const [camposSeleccionadosPorSeccion, setCamposSeleccionadosPorSeccion] = useState<Record<string, number[]>>({});
 
   const titulo = tituloSeccion
@@ -135,7 +147,7 @@ export function CustomModalExtraccionInformacionAnalista({
     onCerrar();
   };
 
-  const manejarExtraer = async () => {
+  const manejarExtraer = async (modo: ModoProcesamientoInforme = "revision") => {
     if ((!ocultarCargaArchivos && archivosSeleccionados.length === 0) || (seccionesConOpciones.length > 0 && totalCamposSeleccionados === 0)) return;
 
     const configuracionSecciones = seccionesConOpciones.reduce<InformeConfiguracionExtraccion>((acumulado, seccion) => {
@@ -156,13 +168,15 @@ export function CustomModalExtraccionInformacionAnalista({
     }, {});
 
     setEstaProcesando(true);
+    setModoProcesando(modo);
     try {
-      await onExtraer(archivosSeleccionados, alcance, especificaciones, configuracionSecciones);
+      await onExtraer(archivosSeleccionados, alcance, especificaciones, configuracionSecciones, modo);
       setArchivosSeleccionados([]);
       setEspecificaciones("");
       setCamposSeleccionadosPorSeccion({});
       onCerrar();
     } finally {
+      setModoProcesando(null);
       setEstaProcesando(false);
     }
   };
@@ -174,13 +188,15 @@ export function CustomModalExtraccionInformacionAnalista({
   };
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
-      <div className="flex h-[calc(100vh-2rem)] max-h-[960px] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+    <div className="fixed inset-0 z-[110] flex min-h-screen items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
+      <div className="flex max-h-[calc(100vh-2rem)] min-h-0 w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex items-start justify-between border-b border-gray-100 px-7 py-6">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
-              {etiquetaContexto}
-            </p>
+            {etiquetaContexto ? (
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
+                {etiquetaContexto}
+              </p>
+            ) : null}
             <h2 className="mt-2 text-2xl font-bold text-brand-black">{titulo}</h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">{descripcion}</p>
           </div>
@@ -354,14 +370,29 @@ export function CustomModalExtraccionInformacionAnalista({
         </div>
 
         <div className="flex justify-end gap-3 border-t border-gray-100 bg-gray-50/50 px-7 py-5">
-          <CustomButton variant="secondary" size="sm" onClick={manejarCerrar} disabled={estaProcesando}>
-            Cancelar
-          </CustomButton>
+          {ocultarCancelar ? null : (
+            <CustomButton variant="secondary" size="sm" onClick={manejarCerrar} disabled={estaProcesando}>
+              Cancelar
+            </CustomButton>
+          )}
+          {mostrarAccionDirecta ? (
+            <CustomButton
+              variant="secondary"
+              size="sm"
+              onClick={() => manejarExtraer("directo")}
+              disabled={(!ocultarCargaArchivos && archivosSeleccionados.length === 0) || (seccionesConOpciones.length > 0 && totalCamposSeleccionados === 0)}
+              loading={estaProcesando && modoProcesando === "directo"}
+              loadingText={textoBotonAccionDirectaCargando}
+            >
+              <Sparkles size={14} />
+              {textoBotonAccionDirecta}
+            </CustomButton>
+          ) : null}
           <CustomButton
             size="sm"
-            onClick={manejarExtraer}
+            onClick={() => manejarExtraer("revision")}
             disabled={(!ocultarCargaArchivos && archivosSeleccionados.length === 0) || (seccionesConOpciones.length > 0 && totalCamposSeleccionados === 0)}
-            loading={estaProcesando}
+            loading={estaProcesando && modoProcesando === "revision"}
             loadingText={textoBotonAccionCargando}
           >
             <Sparkles size={14} />

@@ -122,9 +122,11 @@ export default function BandejaTraductor() {
     () =>
       (respuestaAsignaciones?.lstPedido ?? []).map((registro) => ({
         idInforme: registro.idInforme ?? 0,
+        idInformeOriginal: registro.idInformeOriginal ?? null,
         idPedido: registro.idPedido,
         idPlantilla: registro.idPlantilla,
-        codigo: String(registro.idPedido),
+        codigoPedido: registro.codigoPedido,
+        codigo: registro.codigoPedido || String(registro.idPedido),
         investigado: registro.investigado,
         pais: registro.pais || "-",
         fecha: formatearFechaAsignacion(registro.fechaAsignacion),
@@ -158,6 +160,12 @@ export default function BandejaTraductor() {
     if (registro.idInforme > 0) {
       parametros.set("idInforme", String(registro.idInforme));
     }
+    if (registro.idInformeOriginal && registro.idInformeOriginal > 0) {
+      parametros.set("idInformeOriginal", String(registro.idInformeOriginal));
+      clienteConsulta.removeQueries({
+        queryKey: ["informe-obtener-original-traductor", registro.idInformeOriginal],
+      });
+    }
     if (registro.estado === "rechazado") {
       parametros.set("estado", "rechazado");
     }
@@ -166,7 +174,9 @@ export default function BandejaTraductor() {
       state: {
         datosPedidoInvestigacion: {
           idPedido: registro.idPedido,
+          idInformeOriginal: registro.idInformeOriginal,
           idPlantilla: registro.idPlantilla,
+          codigoPedido: registro.codigoPedido,
           investigado: registro.investigado,
           pais: registro.pais,
           tipoTramite: registro.tipo,

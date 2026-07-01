@@ -179,9 +179,11 @@ function normalizarPedido(registro: unknown): AssignmentOrderEntry {
   return {
     idAsignacion: obtenerNumero(fila.idAsignacion, fila.IdAsignacion, analistaIdAsignacion, traductorIdAsignacion),
     idInforme: obtenerNumero(fila.idInforme, fila.IdInforme),
+    idInformeOriginal: obtenerNumero(fila.idInformeOriginal, fila.IdInformeOriginal) ?? null,
     analistaIdAsignacion,
     traductorIdAsignacion,
     idPedido: obtenerNumero(fila.idPedido, fila.IdPedido)!,
+    codigoPedido: obtenerTexto(fila.codigoPedido, fila.CodigoPedido, fila.codigo, fila.Codigo),
     pais: obtenerTexto(fila.pais, fila.Pais, fila.nombrePais, fila.NombrePais) || "-",
     fechaAsignacion: obtenerTexto(fila.fechaAsignacion, fila.FechaAsignacion, fila.fecha, fila.Fecha),
     idIdioma: obtenerNumero(fila.idIdioma, fila.IdIdioma),

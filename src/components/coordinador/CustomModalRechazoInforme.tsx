@@ -217,8 +217,8 @@ export function CustomModalRechazoInforme({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
-          <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-6 py-5">
+          <div className="shrink-0 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm">
             <div className="mb-2.5 flex items-center justify-between gap-3">
               <CustomLabel
                 htmlFor="observacion-rechazo"
@@ -227,28 +227,29 @@ export function CustomModalRechazoInforme({
                 Nueva observacion
               </CustomLabel>
               <span className="text-xs font-medium text-slate-400">
-                Enter para agregar
+                Ctrl + Enter para agregar
               </span>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <input
+              <textarea
                 id="observacion-rechazo"
                 value={observacionActual}
                 onChange={(event) => setObservacionActual(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") {
+                  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
                     event.preventDefault();
                     agregarObservacion();
                   }
                 }}
                 placeholder="Ej. Corregir la seccion de referencias bancarias"
-                className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:bg-white focus:ring-2 focus:ring-brand-black/5"
+                rows={3}
+                className="min-h-24 min-w-0 flex-1 resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:bg-white focus:ring-2 focus:ring-brand-black/5"
                 disabled={cargando}
               />
               <CustomButton
                 type="button"
                 size="compact"
-                className="h-11 min-w-28 rounded-xl"
+                className="min-h-11 min-w-28 rounded-xl sm:self-end"
                 disabled={!observacionActual.trim() || cargando}
                 onClick={agregarObservacion}
               >
@@ -258,8 +259,8 @@ export function CustomModalRechazoInforme({
             </div>
           </div>
 
-          <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5">
-            <div className="flex items-center justify-between gap-3">
+          <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5">
+            <div className="mb-3 flex shrink-0 items-center justify-between gap-3">
               <CustomLabel as="p" className="text-sm font-bold text-slate-700">
                 Observaciones para corregir
               </CustomLabel>
@@ -270,7 +271,7 @@ export function CustomModalRechazoInforme({
             </div>
 
             {observacionesRechazo.length > 0 ? (
-              <ol className="max-h-60 space-y-2.5 overflow-y-auto pr-1">
+              <ol className="min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1">
                 {observacionesRechazo.map((observacion, indice) => {
                   const estaEditando = indiceEdicion === indice;
 
@@ -308,7 +309,16 @@ export function CustomModalRechazoInforme({
                                   event.target.value,
                                 )
                               }
-                              className="min-h-16 flex-1 resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700 outline-none placeholder:text-slate-300 focus:border-brand-wine focus:bg-white focus:ring-2 focus:ring-brand-wine/10"
+                              rows={Math.min(
+                                14,
+                                Math.max(
+                                  5,
+                                  Math.ceil(
+                                    observacion.observacion.length / 72,
+                                  ),
+                                ),
+                              )}
+                              className="min-h-32 max-h-[42vh] flex-1 resize-y rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700 outline-none placeholder:text-slate-300 focus:border-brand-wine focus:bg-white focus:ring-2 focus:ring-brand-wine/10"
                               placeholder={`Observacion ${indice + 1}`}
                               disabled={cargando}
                               autoFocus
@@ -366,7 +376,7 @@ export function CustomModalRechazoInforme({
                 })}
               </ol>
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-7 text-center text-sm text-slate-500">
+              <div className="flex min-h-0 flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-7 text-center text-sm text-slate-500">
                 Agrega al menos una observacion para rechazar el informe.
               </div>
             )}

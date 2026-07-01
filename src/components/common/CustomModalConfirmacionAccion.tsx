@@ -46,7 +46,7 @@ export function CustomModalConfirmacionAccion({
           </CustomButton>
         </div>
 
-        <div className="space-y-4 px-8 py-6">
+        <div className="min-h-0 space-y-4 overflow-y-auto px-8 py-6">
           <p className="text-sm text-gray-600">{descripcion}</p>
           <div className="space-y-1 rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-700">
             {children}

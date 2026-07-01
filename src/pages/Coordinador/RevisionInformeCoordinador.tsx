@@ -5,7 +5,6 @@ import { useNavigate, useParams, useSearchParams } from "react-router";
 import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/CustomModalRechazoInforme";
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
-import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import { informeService } from "@maximilian/services/informe.service";
 import { servicioInformeObservacion } from "@maximilian/services/informeObservacion.service";
 import type {
@@ -34,19 +33,10 @@ export default function RevisionInformeCoordinador() {
     [],
   );
 
-  const { data: informeObtenido, isLoading } = useQuery({
-    queryKey: ["coordinador-revision-detalle", idPedido],
-    queryFn: () => informeService.obtener({ idPedido: Number(idPedido) }),
-    enabled:
-      !esEjemplo && Number.isFinite(Number(idPedido)) && Number(idPedido) > 0,
-  });
-
-  const datosInvestigacion =
-    informeObtenido?.datosInvestigacion ??
-    (esEjemplo ? datosEjemplo : undefined);
+  const datosInvestigacion = esEjemplo ? datosEjemplo : undefined;
   const idPedidoNumerico = Number(idPedido);
   const idInformeSeguro =
-    informeObtenido?.idInforme ?? (Number.isFinite(idInforme) ? idInforme : 0);
+    Number.isFinite(idInforme) ? idInforme : 0;
   const puedeDescargar = !esEjemplo
     && idInformeSeguro > 0
     && Number.isFinite(idPedidoNumerico)
@@ -172,12 +162,11 @@ export default function RevisionInformeCoordinador() {
   });
 
   const puedeEditarRevision =
-    !isLoading
-    && !estaCargandoObservaciones
+    !estaCargandoObservaciones
     && !mutationRevision.isPending
     && !mutationRechazo.isPending
     && !mutationEliminarObservacion.isPending
-    && Boolean(datosInvestigacion);
+    && (Boolean(datosInvestigacion) || puedeDescargar);
 
   const cerrarModalRechazo = () => {
     if (mutationRechazo.isPending) return;
@@ -223,8 +212,6 @@ export default function RevisionInformeCoordinador() {
       toast.error(`No se pudo descargar el documento ${etiquetaFormato}.`, { id: idToast });
     }
   };
-
-  if (isLoading) return <PantallaCarga message="Obteniendo informe..." />;
 
   if (tieneInformeOriginal) {
     return (

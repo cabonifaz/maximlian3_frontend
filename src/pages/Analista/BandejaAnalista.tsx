@@ -28,6 +28,10 @@ function obtenerModoPorAccion(accion: AccionBandejaAnalista) {
   return "detalle";
 }
 
+function obtenerCargaNavegacion() {
+  return String(Date.now());
+}
+
 function formatearFechaAsignacion(valor?: string) {
   const texto = valor?.trim() ?? "";
   if (!texto || texto.startsWith("0001-01-01")) return "-";
@@ -119,9 +123,11 @@ export default function BandejaAnalista() {
     () =>
       (respuestaAsignaciones?.lstPedido ?? []).map((registro) => ({
         idInforme: registro.idInforme ?? 0,
+        idInformeOriginal: registro.idInformeOriginal ?? null,
         idPedido: registro.idPedido,
         idPlantilla: registro.idPlantilla,
-        codigo: String(registro.idPedido),
+        codigoPedido: registro.codigoPedido,
+        codigo: registro.codigoPedido || String(registro.idPedido),
         investigado: registro.investigado,
         pais: registro.pais || "-",
         fecha: formatearFechaAsignacion(registro.fechaAsignacion),
@@ -148,7 +154,7 @@ export default function BandejaAnalista() {
 
   const irADetalle = (registro: RegistroBandejaAnalista) => {
     const modo = obtenerModoPorAccion(registro.accion);
-    const parametros = new URLSearchParams({ modo, carga: String(Date.now()) });
+    const parametros = new URLSearchParams({ modo, carga: obtenerCargaNavegacion() });
 
     clienteConsulta.removeQueries({ queryKey: ["informe-obtener-analista", registro.idPedido] });
 
@@ -163,7 +169,9 @@ export default function BandejaAnalista() {
       state: {
         datosPedidoInvestigacion: {
           idPedido: registro.idPedido,
+          idInformeOriginal: registro.idInformeOriginal,
           idPlantilla: registro.idPlantilla,
+          codigoPedido: registro.codigoPedido,
           investigado: registro.investigado,
           pais: registro.pais,
           tipoTramite: registro.tipo,
