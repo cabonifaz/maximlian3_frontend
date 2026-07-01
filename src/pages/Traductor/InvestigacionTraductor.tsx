@@ -192,6 +192,7 @@ function ReferenciaTraduccion({
   onClick?: () => void;
   textoTooltip?: string;
 }) {
+  const esClickeable = Boolean(onClick);
   const contenido = (
     <button
       type="button"
@@ -204,8 +205,14 @@ function ReferenciaTraduccion({
         event.stopPropagation();
         onClick?.();
       }}
-      className="inline-flex items-center text-sky-500 transition-colors hover:text-sky-600"
+      className={[
+        "inline-flex items-center text-sky-500 transition-all hover:text-sky-600",
+        esClickeable
+          ? "cursor-pointer rounded-full border border-sky-200 bg-sky-50 p-0.5 shadow-sm hover:border-sky-400 hover:bg-sky-100 hover:shadow"
+          : "",
+      ].join(" ")}
       aria-label="Ver valor original"
+      title={esClickeable ? "Abrir comparacion de traduccion" : undefined}
     >
       <Info size={15} />
     </button>
