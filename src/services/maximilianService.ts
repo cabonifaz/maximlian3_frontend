@@ -43,6 +43,7 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
     || url.includes("/api/Informe/extraerDocumento")
     || url.includes("/api/Informe/traducir");
   const esEndpointDirectorioEjecutivo = url.includes("/api/DirectorioEjecutivo/");
+  const esEndpointCompaniaNoticia = url.includes("/api/Compania/noticia/");
 
   if (esEndpointAsignacion && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION && data.mensaje === "OK") {
     return true;
@@ -61,6 +62,10 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
   }
 
   if (esEndpointDirectorioEjecutivo && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "OK" || Boolean(data.result);
+  }
+
+  if (esEndpointCompaniaNoticia && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
     return data.mensaje === "OK" || Boolean(data.result);
   }
 

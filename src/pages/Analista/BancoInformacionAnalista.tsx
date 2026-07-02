@@ -1,31 +1,18 @@
 import { useMemo, useState, type ReactNode } from "react";
 import {
-  Building2,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
   Download,
-  FileText,
   Filter,
-  Plus,
   Search,
-  UploadCloud,
   X,
 } from "lucide-react";
+import { CustomBancoNoticias } from "@maximilian/components/common/CustomBancoNoticias";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 
 type PestanaBancoInformacion = "noticias" | "credito" | "empresas";
 type PestanaDetalleCredito = "balance" | "ganancias" | "ratios";
-
-interface NoticiaBancoInformacion {
-  id: number;
-  empresa: string;
-  titulo: string;
-  descripcion: string;
-  fecha: string;
-  autor: string;
-  adjuntos: string[];
-}
 
 interface ReporteCreditoBancoInformacion {
   id: number;
@@ -45,39 +32,6 @@ interface EmpresaBancoInformacion {
   actividadComercial: string;
   trabajadores: number;
 }
-
-const noticiasMock: NoticiaBancoInformacion[] = [
-  {
-    id: 1,
-    empresa: "Global Bank Corp",
-    titulo: "Analisis de volatilidad en mercados emergentes",
-    descripcion:
-      "Un estudio detallado sobre las fluctuaciones recientes en las divisas de LATAM y Asia-Pacifico. Se identifican patrones de riesgo asociados a cambios en politica monetaria global y su impacto directo en carteras de inversion diversificadas.",
-    fecha: "12 OCT 2023",
-    autor: "Riesgo Global",
-    adjuntos: ["reporte_volatilidad_final.pdf", "anexo_metodologia_riesgo.xlsx"],
-  },
-  {
-    id: 2,
-    empresa: "EuroFin Solutions",
-    titulo: "Nuevas regulaciones tributarias en la UE",
-    descripcion:
-      "La Comision Europea ha publicado el borrador final para la directiva de transparencia fiscal digital. Las instituciones financieras deben preparar sus sistemas para el reporte automatico de transacciones transfronterizas antes del cierre de 2024.",
-    fecha: "10 OCT 2023",
-    autor: "Legal Compliance",
-    adjuntos: ["directiva_ue_resumen.pdf"],
-  },
-  {
-    id: 3,
-    empresa: "Credit Financial Group",
-    titulo: "Reporte de solvencia bancaria Q3",
-    descripcion:
-      "Los indicadores de liquidez muestran una tendencia positiva en el sector bancario nacional. El ratio de cobertura de liquidez promedio ha superado el 120%, fortaleciendo la posicion ante posibles escenarios de estres financiero.",
-    fecha: "08 OCT 2023",
-    autor: "Analisis Financiero",
-    adjuntos: ["reporte_solvencia_q3.pdf", "anexo_ratios.xlsx"],
-  },
-];
 
 const reportesCreditoMock: ReporteCreditoBancoInformacion[] = [
   { id: 1, empresa: "Empresa Textilera Peruana", pais: "Peru", fecha: "30 ENE 2026", tipo: "Balance desagregado", estado: "Vigente" },
@@ -170,15 +124,9 @@ const camposRatios = ["Indice de liquidez", "Capital de trabajo", "Tasa de endeu
 export default function BancoInformacionAnalista() {
   const [pestanaActiva, setPestanaActiva] = useState<PestanaBancoInformacion>("noticias");
   const [busqueda, setBusqueda] = useState("");
-  const [noticiaDetalle, setNoticiaDetalle] = useState<NoticiaBancoInformacion | null>(null);
-  const [estaAbiertoModalNoticia, setEstaAbiertoModalNoticia] = useState(false);
   const [reporteDetalle, setReporteDetalle] = useState<ReporteCreditoBancoInformacion | null>(null);
   const [estaAbiertoModalExportar, setEstaAbiertoModalExportar] = useState(false);
 
-  const noticiasFiltradas = useMemo(
-    () => filtrarPorBusqueda(noticiasMock, busqueda, ["titulo", "empresa", "descripcion"]),
-    [busqueda],
-  );
   const reportesFiltrados = useMemo(
     () => filtrarPorBusqueda(reportesCreditoMock, busqueda, ["empresa", "pais", "tipo", "estado"]),
     [busqueda],
@@ -229,13 +177,7 @@ export default function BancoInformacionAnalista() {
         </div>
       </div>
 
-      {pestanaActiva === "noticias" ? (
-        <SeccionNoticias
-          noticias={noticiasFiltradas}
-          onAgregar={() => setEstaAbiertoModalNoticia(true)}
-          onVerDetalle={setNoticiaDetalle}
-        />
-      ) : null}
+      {pestanaActiva === "noticias" ? <CustomBancoNoticias busqueda={busqueda} /> : null}
       {pestanaActiva === "credito" ? (
         <SeccionCredito reportes={reportesFiltrados} onVerDetalle={setReporteDetalle} />
       ) : null}
@@ -243,64 +185,13 @@ export default function BancoInformacionAnalista() {
         <SeccionEmpresas empresas={empresasFiltradas} onExportar={() => setEstaAbiertoModalExportar(true)} />
       ) : null}
 
-      <CustomPaginacion texto={obtenerTextoPaginacion(pestanaActiva, noticiasFiltradas.length, reportesFiltrados.length, empresasFiltradas.length)} />
+      {pestanaActiva !== "noticias" ? (
+        <CustomPaginacion texto={obtenerTextoPaginacion(pestanaActiva, reportesFiltrados.length, empresasFiltradas.length)} />
+      ) : null}
 
-      <CustomModalDetalleNoticia noticia={noticiaDetalle} onCerrar={() => setNoticiaDetalle(null)} />
-      <CustomModalAgregarNoticia estaAbierto={estaAbiertoModalNoticia} onCerrar={() => setEstaAbiertoModalNoticia(false)} />
       <CustomModalDetalleCredito reporte={reporteDetalle} onCerrar={() => setReporteDetalle(null)} />
       <CustomModalExportarEmpresas estaAbierto={estaAbiertoModalExportar} onCerrar={() => setEstaAbiertoModalExportar(false)} />
     </div>
-  );
-}
-
-function SeccionNoticias({
-  noticias,
-  onAgregar,
-  onVerDetalle,
-}: {
-  noticias: NoticiaBancoInformacion[];
-  onAgregar: () => void;
-  onVerDetalle: (noticia: NoticiaBancoInformacion) => void;
-}) {
-  return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-300">Noticias recientes</p>
-        <CustomButton size="sm" onClick={onAgregar}>
-          <Plus size={14} />
-          Agregar Noticia
-        </CustomButton>
-      </div>
-
-      <div className="space-y-4">
-        {noticias.map((noticia) => (
-          <article key={noticia.id} className="rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="min-w-0 space-y-3">
-                <div className="flex flex-wrap items-center gap-3 text-[11px] font-semibold text-slate-400">
-                  <span className="rounded-md bg-slate-50 px-2 py-1 text-slate-500">Empresa relacionada: {noticia.empresa}</span>
-                  <span className="inline-flex items-center gap-1">
-                    <CalendarDays size={12} />
-                    {noticia.fecha}
-                  </span>
-                </div>
-                <div>
-                  <h2 className="text-base font-bold text-slate-950">{noticia.titulo}</h2>
-                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">{noticia.descripcion}</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400">
-                  <span>Hace 2 horas</span>
-                  <span>{noticia.autor}</span>
-                </div>
-              </div>
-              <CustomButton size="sm" onClick={() => onVerDetalle(noticia)} className="shrink-0">
-                Ver Detalle
-              </CustomButton>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
   );
 }
 
@@ -400,120 +291,6 @@ function SeccionEmpresas({
         </div>
       </div>
     </section>
-  );
-}
-
-function CustomModalDetalleNoticia({
-  noticia,
-  onCerrar,
-}: {
-  noticia: NoticiaBancoInformacion | null;
-  onCerrar: () => void;
-}) {
-  if (!noticia) return null;
-
-  return (
-    <CustomModalBase ancho="max-w-5xl" onCerrar={onCerrar}>
-      <div className="flex items-start justify-between border-b border-slate-100 px-8 py-6">
-        <h2 className="text-base font-bold text-slate-950">Detalle de Noticia</h2>
-        <BotonCerrar onCerrar={onCerrar} />
-      </div>
-      <div className="grid gap-8 px-8 py-6 lg:grid-cols-[1fr_280px]">
-        <div className="space-y-7">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Titulo del articulo</p>
-            <h3 className="mt-3 text-2xl font-bold leading-tight text-slate-950">{noticia.titulo}</h3>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Descripcion</p>
-            <p className="mt-3 text-sm leading-7 text-slate-500">{noticia.descripcion}</p>
-          </div>
-          <div className="border-t border-slate-100 pt-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Empresa relacionada</p>
-            <p className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-800">
-              <Building2 size={14} />
-              {noticia.empresa}
-            </p>
-          </div>
-        </div>
-        <div>
-          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Documentos adjuntos</p>
-          <div className="space-y-3">
-            {noticia.adjuntos.map((adjunto) => (
-              <div key={adjunto} className="rounded-lg border border-slate-100 bg-white p-3 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 text-slate-500">
-                    <FileText size={16} />
-                  </span>
-                  <span className="min-w-0 truncate text-xs font-bold text-slate-700">{adjunto}</span>
-                </div>
-                <div className="mt-3 flex gap-4 text-[10px] font-bold uppercase tracking-wide">
-                  <button className="text-slate-950" type="button">Descargar</button>
-                  <button className="text-slate-400" type="button">Ver</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="flex justify-end border-t border-slate-100 px-8 py-5">
-        <CustomButton size="sm" onClick={onCerrar}>Cerrar</CustomButton>
-      </div>
-    </CustomModalBase>
-  );
-}
-
-function CustomModalAgregarNoticia({
-  estaAbierto,
-  onCerrar,
-}: {
-  estaAbierto: boolean;
-  onCerrar: () => void;
-}) {
-  if (!estaAbierto) return null;
-
-  return (
-    <CustomModalBase ancho="max-w-2xl" onCerrar={onCerrar}>
-      <div className="flex items-center justify-between border-b border-slate-100 px-8 py-6">
-        <h2 className="text-lg font-bold text-slate-950">Agregar Nueva Noticia</h2>
-        <BotonCerrar onCerrar={onCerrar} />
-      </div>
-      <div className="space-y-5 px-8 py-6">
-        <CampoTextoMock etiqueta="Titulo" marcador="Ej. Actualizacion de protocolos de seguridad" obligatorio />
-        <label className="block space-y-2">
-          <EtiquetaFormulario texto="Descripcion" obligatorio />
-          <textarea
-            className="min-h-36 w-full resize-none rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-300"
-            placeholder="Detalle la informacion de la noticia o reporte aqui..."
-          />
-        </label>
-        <CampoTextoMock etiqueta="Seleccionar Empresa" marcador="Seleccione una empresa..." obligatorio />
-        <div className="space-y-2">
-          <EtiquetaFormulario texto="Archivos adjuntos" />
-          <div className="flex min-h-36 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 text-center">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm">
-              <UploadCloud size={18} />
-            </span>
-            <p className="mt-3 text-sm font-bold text-slate-600">Haga clic o arrastre archivos aqui</p>
-            <p className="text-xs text-slate-400">Soporta PDF, DOCX, JPG (Max 10MB)</p>
-          </div>
-          <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2 shadow-sm">
-            <FileText size={16} className="text-blue-500" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-bold text-slate-700">REPORTE_TECNICO_V1.PDF</p>
-              <p className="text-[11px] text-slate-400">2.4 MB - Completado</p>
-            </div>
-            <button type="button" className="text-slate-300">
-              <X size={14} />
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="flex justify-end gap-3 border-t border-slate-100 px-8 py-5">
-        <CustomButton variant="secondary" size="compact" onClick={onCerrar}>Cancelar</CustomButton>
-        <CustomButton size="compact" onClick={onCerrar}>Guardar</CustomButton>
-      </div>
-    </CustomModalBase>
   );
 }
 
@@ -714,11 +491,9 @@ function filtrarPorBusqueda<T extends object>(registros: T[], busqueda: string, 
 
 function obtenerTextoPaginacion(
   pestana: PestanaBancoInformacion,
-  totalNoticias: number,
   totalReportes: number,
   totalEmpresas: number,
 ) {
-  if (pestana === "noticias") return `Mostrando ${totalNoticias} de 24 noticias`;
   if (pestana === "credito") return `Mostrando ${totalReportes} de 24 reportes`;
 
   return `Mostrando ${totalEmpresas} de 342 empresas`;
