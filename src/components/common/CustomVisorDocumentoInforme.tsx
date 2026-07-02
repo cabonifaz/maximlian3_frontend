@@ -284,6 +284,10 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       vertical-align: top;
     }
 
+    tr {
+      break-inside: avoid;
+    }
+
     .sr-pie-texto {
       ${pieTexto ? "" : "display: none;"}
     }
