@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import pagedJsUrl from "../../../node_modules/pagedjs/dist/paged.polyfill.js?url";
 import type {
   DocumentoInformeGenerado,
+  FooterCell,
   PlantillaDocumentoConfig,
   PlantillaSeccion,
 } from "@maximilian/shared/types/informe.type";
@@ -202,7 +203,9 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       font-size: ${pieTamano};
       line-height: 1.0;
       font-family: ${fuente};
-      text-align: ${footerAlign};
+      ${config.footer?.layout === "table" ? "" : `text-align: ${footerAlign};`}
+      ${config.footer?.containerStyle ? config.footer.containerStyle + ";" : ""}
+      ${config.footer?.footerExtend ? `margin-left:-${config.footer.footerExtend};margin-right:-${config.footer.footerExtend};` : ""}
       white-space: pre-line;
       padding-left: ${fiL};
       padding-right: ${fiR};
@@ -211,14 +214,35 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       box-sizing: border-box;
     }
 
+    ${config.footer?.layout === "table" ? `
+    .sr-pie-tabla {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .sr-pie-pagnum {
+      width: ${config.footer?.pageColWidth ?? "auto"};
+      ${config.footer?.pageBgColor ? `background-color: ${config.footer.pageBgColor};` : ""}
+      ${config.footer?.pageColor ? `color: ${config.footer.pageColor};` : ""}
+      text-align: center;
+      vertical-align: middle;
+      font-size: ${pieTamano};
+      padding: 2pt 4pt;
+    }
+    .sr-pie-pagnum::after {
+      content: "${escaparHtml(config.footer?.pageLabel ?? "Page")} " counter(page)${config.footer?.pageTotal ? ` " ${escaparHtml(config.footer?.pageTotalLabel ?? "of")} " counter(pages)` : ""};
+    }` : `
     ${config.footer?.showPageNumber !== false ? `
     .sr-pie-pagina::after {
       content: "${escaparHtml(config.footer?.pageLabel ?? "Page")} " counter(page);
-      display: block;
+      ${config.footer?.pageStyle ? config.footer.pageStyle + ";" : ""}
       ${config.footer?.pageFontSize ? `font-size: ${config.footer.pageFontSize};` : ""}
       ${config.footer?.pageColor ? `color: ${config.footer.pageColor};` : ""}
       ${config.footer?.pageGapBefore ? `margin-top: ${config.footer.pageGapBefore};` : ""}
     }` : ""}
+    .sr-pie-texto {
+      ${pieTexto ? "" : "display: none;"}
+    }`}
 
     body {
       font-family: ${fuente};
@@ -288,9 +312,6 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       break-inside: avoid;
     }
 
-    .sr-pie-texto {
-      ${pieTexto ? "" : "display: none;"}
-    }
   `;
 }
 
@@ -307,7 +328,25 @@ function construirHtmlContenido(
     ? `<div class="sr-encabezado-logo"><img src="${logoUrl}" style="width:${logoW};height:${logoH};object-fit:contain;" /></div>`
     : `<div class="sr-encabezado-logo"></div>`;
 
-  const pie = `<div class="sr-pie-pagina"><span class="sr-pie-texto">${escaparHtml(pieTexto)}</span></div>`;
+  const renderFooterCell = (cell: FooterCell): string => {
+    const attrs = [
+      cell.class ? `class="${cell.class}"` : "",
+      cell.style ? `style="${cell.style}"` : "",
+      cell.colspan ? `colspan="${cell.colspan}"` : "",
+    ].filter(Boolean).join(" ");
+    let content = "";
+    if (cell.rows) {
+      content = `<table style="width:100%;border-collapse:collapse;table-layout:fixed"><tbody>${cell.rows.map(r => `<tr>${r.cells.map(renderFooterCell).join("")}</tr>`).join("")}</tbody></table>`;
+    } else if (cell.image) {
+      content = `<img src="${cell.image}" style="width:${cell.imageWidth ?? "auto"};height:${cell.imageHeight ?? "auto"};object-fit:contain;" />`;
+    } else {
+      content = escaparHtml(cell.text ?? "");
+    }
+    return `<td${attrs ? ` ${attrs}` : ""}>${content}</td>`;
+  };
+  const pie = config.footer?.layout === "table"
+    ? `<div class="sr-pie-pagina"><table class="sr-pie-tabla"><tbody>${(config.footer.rows ?? []).map(row => `<tr>${row.cells.map(renderFooterCell).join("")}</tr>`).join("")}</tbody></table></div>`
+    : `<div class="sr-pie-pagina"><span class="sr-pie-texto">${escaparHtml(pieTexto)}</span></div>`;
 
   const cuerpo = secciones.map(renderizarSeccion).join("\n");
 

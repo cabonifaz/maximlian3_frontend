@@ -720,6 +720,21 @@ export interface PlantillaIndent {
   right?: string;
 }
 
+export interface FooterCell {
+  class?: string;
+  style?: string;
+  text?: string;
+  colspan?: number;
+  image?: string;
+  imageWidth?: string;
+  imageHeight?: string;
+  rows?: FooterRow[];
+}
+
+export interface FooterRow {
+  cells: FooterCell[];
+}
+
 export interface PlantillaDocumentoConfig {
   pageSize?: { width?: string; height?: string };
   margins?: { top?: string; bottom?: string; left?: string; right?: string };
@@ -728,7 +743,8 @@ export interface PlantillaDocumentoConfig {
   headingIndent?: PlantillaIndent;
   font?: { family?: string; size?: string; lineSpacing?: number };
   header?: { logo?: string; logoWidth?: string; logoHeight?: string; align?: string; gapAfter?: string; marginTop?: string };
-  footer?: { text?: string; pageLabel?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string; marginBottom?: string; pageFontSize?: string; pageColor?: string; pageGapBefore?: string };
+  footer?: { text?: string; pageLabel?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string; marginBottom?: string; pageFontSize?: string; pageColor?: string; pageGapBefore?: string; containerStyle?: string; pageStyle?: string; pageAlign?: string; layout?: string; pageBgColor?: string; pageColWidth?: string; pageTotal?: boolean; pageTotalLabel?: string; footerExtend?: string; rows?: FooterRow[] };
+
   pageBorder?: { width?: string; color?: string; top?: string; bottom?: string; left?: string; right?: string };
   watermark?: { image?: string; width?: string; height?: string; opacity?: number; position?: string };
 }
