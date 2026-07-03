@@ -761,18 +761,20 @@ export interface PlantillaFilaEtiquetaValor {
   separator?: string;
 }
 
+type PlantillaSeccionBase = { pageBreak?: boolean };
+
 export type PlantillaSeccion =
-  | { type: "heading"; level?: number; text: string; fontSize?: string }
-  | { type: "subtitle"; text: string }
-  | { type: "text"; field: string }
-  | { type: "keyValue"; style?: string; rows: PlantillaCeldaTabla[][] }
-  | { type: "borderedBox"; title: string; content?: string; rows?: PlantillaFilaEtiquetaValor[]; valueAlign?: string }
-  | { type: "referenceBox"; fontSize?: string; title: string; items: string[] }
-  | { type: "dataTable"; source?: string; columns: { header: string; field?: string }[]; rows?: unknown[]; style?: string; cellStyle?: string; headerStyle?: string; columnWidths?: string[] }
-  | { type: "repeat"; source?: string; sections: PlantillaSeccion[] }
-  | { type: "repeatDetail"; source?: string; titleField?: string; contentField?: string; items?: { title: string; content: string }[] }
-  | { type: "spacer"; height?: string }
-  | { type: "inline"; style?: string; runs: { text: string; style?: string }[] };
+  | PlantillaSeccionBase & { type: "heading"; level?: number; text: string; fontSize?: string; style?: string }
+  | PlantillaSeccionBase & { type: "subtitle"; text: string }
+  | PlantillaSeccionBase & { type: "text"; field: string }
+  | PlantillaSeccionBase & { type: "keyValue"; style?: string; rows: PlantillaCeldaTabla[][] }
+  | PlantillaSeccionBase & { type: "borderedBox"; title: string; content?: string; rows?: PlantillaFilaEtiquetaValor[]; valueAlign?: string }
+  | PlantillaSeccionBase & { type: "referenceBox"; fontSize?: string; title: string; items: string[] }
+  | PlantillaSeccionBase & { type: "dataTable"; source?: string; columns: { header: string; field?: string }[]; rows?: unknown[]; style?: string; cellStyle?: string; headerStyle?: string; columnWidths?: string[] }
+  | PlantillaSeccionBase & { type: "repeat"; source?: string; sections: PlantillaSeccion[] }
+  | PlantillaSeccionBase & { type: "repeatDetail"; source?: string; titleField?: string; contentField?: string; items?: { title: string; content: string }[] }
+  | PlantillaSeccionBase & { type: "spacer"; height?: string }
+  | PlantillaSeccionBase & { type: "inline"; style?: string; runs: { text: string; style?: string }[] };
 
 export interface InformeGenerarUrlsArchivoRequest {
   idPedido: number;
