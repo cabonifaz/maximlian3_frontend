@@ -310,6 +310,11 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       position: relative;
     }
 
+    .pagedjs_page_content {
+      position: relative;
+      z-index: 1;
+    }
+
     ${bordePagina ? `
     .pagedjs_page::before {
       content: "";
@@ -336,6 +341,23 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       ${config.watermark.width && config.watermark.height ? `background-size: ${config.watermark.width} ${config.watermark.height};` : ""}
       ${config.watermark.position ? `background-position: ${config.watermark.position};` : ""}
       ${config.watermark.opacity !== undefined ? `opacity: ${config.watermark.opacity};` : ""}
+      pointer-events: none;
+      z-index: 0;
+    }
+    ` : ""}
+
+    ${config.firstPageWatermark?.image ? `
+    .pagedjs_first_page::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("${config.firstPageWatermark.image.replace(/"/g, '\\"')}") no-repeat;
+      ${config.firstPageWatermark.width && config.firstPageWatermark.height ? `background-size: ${config.firstPageWatermark.width} ${config.firstPageWatermark.height};` : ""}
+      ${config.firstPageWatermark.position ? `background-position: ${config.firstPageWatermark.position};` : ""}
+      ${config.firstPageWatermark.opacity !== undefined ? `opacity: ${config.firstPageWatermark.opacity};` : ""}
       pointer-events: none;
       z-index: 0;
     }

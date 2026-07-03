@@ -748,6 +748,7 @@ export interface PlantillaDocumentoConfig {
 
   pageBorder?: { width?: string; color?: string; top?: string; bottom?: string; left?: string; right?: string };
   watermark?: { image?: string; width?: string; height?: string; opacity?: number; position?: string };
+  firstPageWatermark?: { image?: string; width?: string; height?: string; opacity?: number; position?: string };
 }
 
 export interface PlantillaCeldaTabla {
