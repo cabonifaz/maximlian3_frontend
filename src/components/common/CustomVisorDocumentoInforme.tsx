@@ -181,6 +181,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
         vertical-align: ${config.footer?.marginBottom ? "bottom" : "top"};
       }
     }
+    ${config.firstPageFooter ? `@page :first { @bottom-center { content: element(pie-pagina-p1); vertical-align: ${config.footer?.marginBottom ? "bottom" : "top"}; } }` : ""}
 
     .sr-encabezado-logo {
       position: running(encabezado-logo);
@@ -213,6 +214,18 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       padding-bottom: ${footerMarginBottom};
       box-sizing: border-box;
     }
+
+    ${config.firstPageFooter ? `
+    .sr-pie-pagina-p1 {
+      position: running(pie-pagina-p1);
+      font-size: ${pieTamano};
+      line-height: 1.0;
+      font-family: ${fuente};
+      ${config.firstPageFooter.containerStyle ? config.firstPageFooter.containerStyle + ";" : ""}
+      ${config.firstPageFooter.footerExtend ? `margin-left:-${config.firstPageFooter.footerExtend};margin-right:-${config.firstPageFooter.footerExtend};` : ""}
+      padding-top: ${config.firstPageFooter.gapBefore ?? "0"};
+      box-sizing: border-box;
+    }` : ""}
 
     ${config.footer?.layout === "table" ? `
     .sr-pie-tabla {
@@ -348,9 +361,15 @@ function construirHtmlContenido(
     ? `<div class="sr-pie-pagina"><table class="sr-pie-tabla"><tbody>${(config.footer.rows ?? []).map(row => `<tr>${row.cells.map(renderFooterCell).join("")}</tr>`).join("")}</tbody></table></div>`
     : `<div class="sr-pie-pagina"><span class="sr-pie-texto">${escaparHtml(pieTexto)}</span></div>`;
 
+  const pieP1 = config.firstPageFooter?.layout === "table" && config.firstPageFooter.rows
+    ? `<div class="sr-pie-pagina-p1"><table class="sr-pie-tabla"><tbody>${config.firstPageFooter.rows.map(row => `<tr>${row.cells.map(renderFooterCell).join("")}</tr>`).join("")}</tbody></table></div>`
+    : config.firstPageFooter
+    ? `<div class="sr-pie-pagina-p1"></div>`
+    : "";
+
   const cuerpo = secciones.map(renderizarSeccion).join("\n");
 
-  return `${encabezado}${pie}<div class="sr-contenido">${cuerpo}</div>`;
+  return `${encabezado}${pie}${pieP1}<div class="sr-contenido">${cuerpo}</div>`;
 }
 
 export function CustomVisorDocumentoInforme({
