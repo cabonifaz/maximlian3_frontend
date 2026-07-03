@@ -1,13 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, CalendarDays, Clock3, FileText, Loader2, Plus, Search, Trash2, UploadCloud, User, X } from "lucide-react";
+import {
+  Building2,
+  CalendarDays,
+  Clock3,
+  FileText,
+  Loader2,
+  Plus,
+  Search,
+  Trash2,
+  UploadCloud,
+  User,
+  X,
+} from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { servicioCompaniaNoticia } from "@maximilian/services/companiaNoticia.service";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
+import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   CompaniaNoticiaArchivo,
   CompaniaNoticiaCrearRequest,
@@ -15,14 +28,18 @@ import type {
 } from "@maximilian/shared/types/companiaNoticia.type";
 import { CustomButton } from "./CustomButton";
 import { CustomLabel } from "./CustomLabel";
+import { CustomSelectorBuscable } from "./CustomSelectorBuscable";
 import { CustomSelectorFecha } from "./CustomSelectorFecha";
 
 const esquemaNoticia = z.object({
-  idCompania: z.coerce.number().int("Ingrese un ID valido").min(1, "Seleccione una compania"),
+  idCompania: z.coerce
+    .number()
+    .int("Ingrese un ID valido")
+    .min(1, "Seleccione una compania"),
   titulo: z.string().trim().min(1, "Ingrese el titulo"),
   descripcion: z.string().trim().min(1, "Ingrese la descripcion"),
   fechaNoticia: z.string().trim().min(1, "Ingrese la fecha"),
-  categoria: z.string().trim().optional(),
+  idCategoria: z.coerce.number().int("Seleccione una categoria valida").min(1, "Seleccione una categoria"),
 });
 
 type FormularioNoticiaEntrada = z.input<typeof esquemaNoticia>;
@@ -39,7 +56,7 @@ const valoresIniciales: FormularioNoticiaEntrada = {
   titulo: "",
   descripcion: "",
   fechaNoticia: new Date().toISOString().slice(0, 10),
-  categoria: "",
+  idCategoria: 0,
 };
 
 export function CustomBancoNoticias({
@@ -49,10 +66,16 @@ export function CustomBancoNoticias({
 }: PropsCustomBancoNoticias) {
   const queryClient = useQueryClient();
   const [estaAbiertoModalNoticia, setEstaAbiertoModalNoticia] = useState(false);
-  const [noticiaDetalle, setNoticiaDetalle] = useState<CompaniaNoticiaListaItem | null>(null);
-  const [companiaDetalle, setCompaniaDetalle] = useState<CompaniaListaItem | null>(null);
-  const [idNoticiaCargandoDetalle, setIdNoticiaCargandoDetalle] = useState<number | null>(null);
-  const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>([]);
+  const [noticiaDetalle, setNoticiaDetalle] =
+    useState<CompaniaNoticiaListaItem | null>(null);
+  const [companiaDetalle, setCompaniaDetalle] =
+    useState<CompaniaListaItem | null>(null);
+  const [idNoticiaCargandoDetalle, setIdNoticiaCargandoDetalle] = useState<
+    number | null
+  >(null);
+  const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>(
+    [],
+  );
   const [claveInputArchivo, setClaveInputArchivo] = useState(0);
 
   const {
@@ -109,6 +132,7 @@ export function CustomBancoNoticias({
   const totalRegistros = respuestaNoticias?.totalRegistros ?? noticias.length;
   const idCompaniaSeleccionada = watch("idCompania");
   const fechaNoticiaSeleccionada = watch("fechaNoticia");
+  const idCategoriaSeleccionada = watch("idCategoria");
 
   const etiquetaPaginacion = useMemo(
     () => `Mostrando ${noticias.length} de ${totalRegistros} noticias`,
@@ -123,13 +147,19 @@ export function CustomBancoNoticias({
   };
 
   const guardarNoticia = (datos: FormularioNoticia) => {
+    const opcionesCategoria =
+      queryClient.getQueryData<EntradaTablaMaestra[]>(["masterTable", TablaMaestraId.CATEGORIA_NOTICIA])
+      ?? [];
+    const categoriaSeleccionada = opcionesCategoria.find((opcion) => opcion.num1 === datos.idCategoria);
+    const categoria = obtenerEtiquetaTablaMaestra(categoriaSeleccionada) || String(datos.idCategoria);
+
     crearNoticiaMutation.mutate({
       payload: {
         idCompania: datos.idCompania,
         titulo: datos.titulo.trim(),
         descripcion: datos.descripcion.trim(),
         fechaNoticia: new Date(`${datos.fechaNoticia}T00:00:00`).toISOString(),
-        categoria: datos.categoria?.trim() ?? "",
+        categoria,
         archivos: archivosSeleccionados.map(convertirArchivo),
       },
       archivos: archivosSeleccionados,
@@ -158,7 +188,9 @@ export function CustomBancoNoticias({
       compania = null;
     } finally {
       setCompaniaDetalle(compania);
-      setNoticiaDetalle(detalleNoticia ? { ...noticia, ...detalleNoticia } : noticia);
+      setNoticiaDetalle(
+        detalleNoticia ? { ...noticia, ...detalleNoticia } : noticia,
+      );
       setIdNoticiaCargandoDetalle(null);
     }
   };
@@ -167,9 +199,14 @@ export function CustomBancoNoticias({
     <>
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-300">Noticias recientes</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-300">
+            Noticias recientes
+          </p>
           {mostrarBotonAgregar ? (
-            <CustomButton size="sm" onClick={() => setEstaAbiertoModalNoticia(true)}>
+            <CustomButton
+              size="sm"
+              onClick={() => setEstaAbiertoModalNoticia(true)}
+            >
               <Plus size={14} />
               Agregar Noticia
             </CustomButton>
@@ -181,11 +218,15 @@ export function CustomBancoNoticias({
         ) : isError ? (
           <EstadoNoticias
             texto="No se pudieron cargar las noticias."
-            accion={(
-              <CustomButton variant="secondary" size="sm" onClick={() => void refetch()}>
+            accion={
+              <CustomButton
+                variant="secondary"
+                size="sm"
+                onClick={() => void refetch()}
+              >
                 Reintentar
               </CustomButton>
-            )}
+            }
           />
         ) : noticias.length === 0 ? (
           <EstadoNoticias texto="No hay noticias registradas." />
@@ -200,7 +241,10 @@ export function CustomBancoNoticias({
                   <div className="min-w-0 flex-1 space-y-4">
                     <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-400">
                       <span className="rounded-md bg-slate-50 px-3 py-1.5 text-slate-600 shadow-sm ring-1 ring-slate-100">
-                        Empresa relacionada: <span className="text-slate-950">{noticia.compania}</span>
+                        Empresa relacionada:{" "}
+                        <span className="text-slate-950">
+                          {noticia.compania}
+                        </span>
                       </span>
                       <span className="inline-flex items-center gap-1.5 uppercase tracking-wide">
                         <CalendarDays size={14} className="text-slate-300" />
@@ -208,7 +252,9 @@ export function CustomBancoNoticias({
                       </span>
                     </div>
                     <div className="space-y-3">
-                      <h2 className="text-lg font-bold text-slate-950">{noticia.titulo}</h2>
+                      <h2 className="text-lg font-bold text-slate-950">
+                        {noticia.titulo}
+                      </h2>
                       <p className="line-clamp-2 max-w-4xl text-sm font-semibold leading-6 text-slate-400">
                         {noticia.descripcion}
                       </p>
@@ -230,7 +276,9 @@ export function CustomBancoNoticias({
                     size="sm"
                     onClick={() => void verDetalleNoticia(noticia)}
                     className="h-10 shrink-0 rounded-lg px-6 text-[11px] font-black uppercase tracking-wide"
-                    loading={idNoticiaCargandoDetalle === noticia.idCompaniaNoticia}
+                    loading={
+                      idNoticiaCargandoDetalle === noticia.idCompaniaNoticia
+                    }
                     loadingText="Cargando..."
                   >
                     VER DETALLE
@@ -257,27 +305,48 @@ export function CustomBancoNoticias({
 
       {estaAbiertoModalNoticia ? (
         <CustomModalBase ancho="max-w-2xl" onCerrar={cerrarModalNoticia}>
-          <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit(guardarNoticia)}>
+          <form
+            className="flex min-h-0 flex-1 flex-col"
+            onSubmit={handleSubmit(guardarNoticia)}
+          >
             <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-8 py-6">
-              <h2 className="text-lg font-bold text-slate-950">Agregar Nueva Noticia</h2>
+              <h2 className="text-lg font-bold text-slate-950">
+                Agregar Nueva Noticia
+              </h2>
               <BotonCerrar onCerrar={cerrarModalNoticia} />
             </div>
             <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-8 py-6">
               <CampoSelectorCompania
-                valor={typeof idCompaniaSeleccionada === "number" ? idCompaniaSeleccionada : Number(idCompaniaSeleccionada)}
+                valor={
+                  typeof idCompaniaSeleccionada === "number"
+                    ? idCompaniaSeleccionada
+                    : Number(idCompaniaSeleccionada)
+                }
                 error={errors.idCompania?.message}
                 onSeleccionar={(compania) => {
-                  setValue("idCompania", compania.idCompania, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+                  setValue("idCompania", compania.idCompania, {
+                    shouldDirty: true,
+                    shouldTouch: true,
+                    shouldValidate: true,
+                  });
                 }}
               />
-              <CampoFormulario etiqueta="Titulo" error={errors.titulo?.message} requerido>
+              <CampoFormulario
+                etiqueta="Titulo"
+                error={errors.titulo?.message}
+                requerido
+              >
                 <input
                   className="h-11 w-full rounded-lg border border-slate-100 bg-slate-50 px-3 text-sm text-slate-600 outline-none focus:border-slate-300"
                   placeholder="Ej. Actualizacion de protocolos de seguridad"
                   {...register("titulo")}
                 />
               </CampoFormulario>
-              <CampoFormulario etiqueta="Descripcion" error={errors.descripcion?.message} requerido>
+              <CampoFormulario
+                etiqueta="Descripcion"
+                error={errors.descripcion?.message}
+                requerido
+              >
                 <textarea
                   className="min-h-36 w-full resize-none rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-300"
                   placeholder="Detalle la informacion de la noticia o reporte aqui..."
@@ -288,7 +357,9 @@ export function CustomBancoNoticias({
                 <CustomSelectorFecha
                   label="Fecha"
                   required
-                  value={convertirTextoFechaADate(String(fechaNoticiaSeleccionada ?? ""))}
+                  value={convertirTextoFechaADate(
+                    String(fechaNoticiaSeleccionada ?? ""),
+                  )}
                   onChange={(fecha) => {
                     setValue("fechaNoticia", convertirDateATextoFecha(fecha), {
                       shouldDirty: true,
@@ -299,20 +370,38 @@ export function CustomBancoNoticias({
                   error={errors.fechaNoticia?.message}
                   placeholder="Seleccione fecha"
                 />
-                <CampoFormulario etiqueta="Categoria" error={errors.categoria?.message}>
-                  <input
-                    className="h-11 w-full rounded-lg border border-slate-100 bg-slate-50 px-3 text-sm text-slate-600 outline-none focus:border-slate-300"
-                    placeholder="Ej. Riesgo"
-                    {...register("categoria")}
-                  />
-                </CampoFormulario>
+                <CustomSelectorBuscable
+                  label="Categoria"
+                  idMaster={TablaMaestraId.CATEGORIA_NOTICIA}
+                  value={typeof idCategoriaSeleccionada === "number" ? idCategoriaSeleccionada : Number(idCategoriaSeleccionada)}
+                  onChange={(valor) => {
+                    setValue("idCategoria", valor, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                      shouldValidate: true,
+                    });
+                  }}
+                  error={errors.idCategoria?.message}
+                  placeholder="Seleccione categoria"
+                  required
+                  dropdownZIndexClassName="z-[130]"
+                  overlayZIndexClassName="z-[129]"
+                  obtenerEtiquetaOpcion={obtenerEtiquetaTablaMaestra}
+                />
               </div>
               <CampoArchivos
                 archivos={archivosSeleccionados}
                 claveInputArchivo={claveInputArchivo}
-                onCambiarArchivos={(archivos) => setArchivosSeleccionados((anteriores) => [...anteriores, ...archivos])}
+                onCambiarArchivos={(archivos) =>
+                  setArchivosSeleccionados((anteriores) => [
+                    ...anteriores,
+                    ...archivos,
+                  ])
+                }
                 onEliminarArchivo={(indiceArchivo) =>
-                  setArchivosSeleccionados((anteriores) => anteriores.filter((_, indice) => indice !== indiceArchivo))
+                  setArchivosSeleccionados((anteriores) =>
+                    anteriores.filter((_, indice) => indice !== indiceArchivo),
+                  )
                 }
               />
             </div>
@@ -355,77 +444,162 @@ function CustomModalDetalleNoticia({
 
   return (
     <CustomModalBase ancho="max-w-5xl" onCerrar={onCerrar}>
-      <div className="flex shrink-0 items-start justify-between border-b border-slate-100 px-8 py-6">
-        <h2 className="text-base font-bold text-slate-950">Detalle de Noticia</h2>
+      <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 bg-slate-50/60 px-8 py-6">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            Banco de informacion
+          </p>
+          <h2 className="mt-1 text-lg font-bold text-slate-950">
+            Detalle de Noticia
+          </h2>
+        </div>
         <BotonCerrar onCerrar={onCerrar} />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="grid gap-8 px-8 py-6 lg:grid-cols-[1fr_280px]">
-        <div className="space-y-7">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Titulo del articulo</p>
-            <h3 className="mt-3 text-2xl font-bold leading-tight text-slate-950">{noticia.titulo}</h3>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Descripcion</p>
-            <p className="mt-3 text-sm leading-7 text-slate-500">{noticia.descripcion}</p>
-          </div>
-          <div className="border-t border-slate-100 pt-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Empresa relacionada</p>
-            <p className="mt-3 text-sm font-bold text-slate-800">{compania?.nombreCompleto ?? noticia.compania}</p>
-            <div className="mt-3 grid gap-3 text-xs font-semibold text-slate-500 sm:grid-cols-2">
-              <DetalleCompania etiqueta="Documento" valor={compania?.numeroDocumento} />
-              <DetalleCompania etiqueta="Pais" valor={compania?.pais} />
-              <DetalleCompania etiqueta="Telefono" valor={compania?.telefono} />
-              <DetalleCompania etiqueta="Direccion" valor={compania?.direccion} />
+        <div className="grid gap-8 px-8 py-7 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
+                {noticia.categoria ? (
+                  <span className="rounded-md bg-brand-wine/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-brand-wine">
+                    {noticia.categoria}
+                  </span>
+                ) : null}
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                  <CalendarDays size={13} />
+                  {formatearFecha(noticia.fechaNoticia)}
+                </span>
+              </div>
+              <h3 className="text-2xl font-bold leading-tight text-slate-950 md:text-3xl">
+                {noticia.titulo}
+              </h3>
             </div>
-          </div>
-        </div>
-        <div>
-          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Documentos adjuntos</p>
-          <div className="space-y-3">
-            {noticia.archivos.length === 0 ? (
-              <p className="rounded-lg border border-slate-100 bg-slate-50 p-4 text-xs font-semibold text-slate-400">
-                Sin documentos adjuntos
+
+            <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                Descripcion
               </p>
-            ) : (
-              noticia.archivos.map((archivo) => (
-                <div
-                  key={`${archivo.idCompaniaNoticiaArchivo}-${archivo.nombreArchivo}`}
-                  className="rounded-lg border border-slate-100 bg-white p-3 shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 text-slate-500">
-                      <FileText size={16} />
-                    </span>
-                    <span className="min-w-0 truncate text-xs font-bold text-slate-700">{archivo.nombreArchivo}</span>
-                  </div>
-                  {(archivo.downloadUrl || archivo.archivoUrl) ? (
-                    <div className="mt-3 text-[10px] font-bold uppercase tracking-wide">
-                      <a className="text-slate-950" href={archivo.downloadUrl || archivo.archivoUrl} download={archivo.nombreArchivo}>
-                        Descargar
-                      </a>
-                    </div>
-                  ) : null}
+              <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">
+                {noticia.descripcion}
+              </p>
+            </section>
+
+            <section className="rounded-xl border border-slate-100 bg-slate-50 p-5">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-slate-700 shadow-sm ring-1 ring-slate-100">
+                  <Building2 size={18} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                    Empresa relacionada
+                  </p>
+                  <p className="mt-2 text-base font-bold text-slate-900">
+                    {compania?.nombreCompleto ?? noticia.compania}
+                  </p>
                 </div>
-              ))
-            )}
+              </div>
+              <div className="mt-5 grid gap-3 text-xs font-semibold text-slate-500 sm:grid-cols-2">
+                <DetalleCompania
+                  etiqueta="Documento"
+                  valor={compania?.numeroDocumento}
+                />
+                <DetalleCompania etiqueta="Pais" valor={compania?.pais} />
+                <DetalleCompania
+                  etiqueta="Telefono"
+                  valor={compania?.telefono}
+                />
+                <DetalleCompania
+                  etiqueta="Direccion"
+                  valor={compania?.direccion}
+                  className="sm:col-span-2"
+                />
+              </div>
+            </section>
           </div>
-        </div>
+
+          <aside className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                Documentos adjuntos
+              </p>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-500">
+                {noticia.archivos.length}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {noticia.archivos.length === 0 ? (
+                <p className="rounded-lg border border-slate-100 bg-slate-50 p-4 text-xs font-semibold text-slate-400">
+                  Sin documentos adjuntos
+                </p>
+              ) : (
+                noticia.archivos.map((archivo) => (
+                  <div
+                    key={`${archivo.idCompaniaNoticiaArchivo}-${archivo.nombreArchivo}`}
+                    className="rounded-lg border border-slate-100 bg-slate-50 p-3"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-slate-500 shadow-sm ring-1 ring-slate-100">
+                        <FileText size={16} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="break-words text-xs font-bold leading-5 text-slate-700">
+                          {archivo.nombreArchivo}
+                        </p>
+                        {archivo.formatoArchivo ? (
+                          <p className="mt-1 truncate text-[10px] font-semibold text-slate-400">
+                            {archivo.formatoArchivo}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                    {archivo.downloadUrl || archivo.archivoUrl ? (
+                      <div className="mt-3">
+                        <a
+                          className="inline-flex h-8 items-center justify-center rounded-md bg-slate-950 px-3 text-[10px] font-bold uppercase tracking-wide text-white transition hover:bg-slate-800"
+                          href={archivo.downloadUrl || archivo.archivoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          download={archivo.nombreArchivo}
+                        >
+                          Descargar
+                        </a>
+                      </div>
+                    ) : null}
+                  </div>
+                ))
+              )}
+            </div>
+          </aside>
         </div>
       </div>
-      <div className="flex shrink-0 justify-end border-t border-slate-100 px-8 py-5">
-        <CustomButton size="sm" onClick={onCerrar}>Cerrar</CustomButton>
+      <div className="flex shrink-0 justify-end border-t border-slate-100 bg-slate-50/60 px-8 py-5">
+        <CustomButton variant="secondary" size="sm" onClick={onCerrar}>
+          Cerrar
+        </CustomButton>
       </div>
     </CustomModalBase>
   );
 }
 
-function DetalleCompania({ etiqueta, valor }: { etiqueta: string; valor?: string }) {
+function DetalleCompania({
+  etiqueta,
+  valor,
+  className = "",
+}: {
+  etiqueta: string;
+  valor?: string;
+  className?: string;
+}) {
   return (
-    <div>
-      <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{etiqueta}</span>
-      <span className="mt-1 block text-slate-700">{valor || "-"}</span>
+    <div
+      className={`rounded-lg border border-slate-100 bg-white px-3 py-2 ${className}`}
+    >
+      <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+        {etiqueta}
+      </span>
+      <span className="mt-1 block break-words text-slate-700">
+        {valor || "-"}
+      </span>
     </div>
   );
 }
@@ -443,11 +617,16 @@ function CampoFormulario({
 }) {
   return (
     <div className="space-y-2">
-      <CustomLabel required={requerido} className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+      <CustomLabel
+        required={requerido}
+        className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400"
+      >
         {etiqueta}
       </CustomLabel>
       {children}
-      {error ? <p className="text-xs font-semibold text-red-500">{error}</p> : null}
+      {error ? (
+        <p className="text-xs font-semibold text-red-500">{error}</p>
+      ) : null}
     </div>
   );
 }
@@ -463,7 +642,8 @@ function CampoSelectorCompania({
 }) {
   const [busquedaCompania, setBusquedaCompania] = useState("");
   const [estaAbierto, setEstaAbierto] = useState(false);
-  const [companiaActual, setCompaniaActual] = useState<CompaniaListaItem | null>(null);
+  const [companiaActual, setCompaniaActual] =
+    useState<CompaniaListaItem | null>(null);
 
   const {
     data: respuestaCompanias,
@@ -472,13 +652,17 @@ function CampoSelectorCompania({
     refetch,
   } = useQuery({
     queryKey: ["companiasNoticia", { busqueda: busquedaCompania, numPag: 1 }],
-    queryFn: () => servicioCompania.list({ busqueda: busquedaCompania, numPag: 1 }),
+    queryFn: () =>
+      servicioCompania.list({ busqueda: busquedaCompania, numPag: 1 }),
     enabled: estaAbierto,
   });
 
   const companias = respuestaCompanias?.lstCompania ?? [];
-  const companiaEncontrada = companias.find((compania) => compania.idCompania === valor);
-  const companiaSeleccionada = companiaActual?.idCompania === valor ? companiaActual : companiaEncontrada;
+  const companiaEncontrada = companias.find(
+    (compania) => compania.idCompania === valor,
+  );
+  const companiaSeleccionada =
+    companiaActual?.idCompania === valor ? companiaActual : companiaEncontrada;
 
   useEffect(() => {
     if (companiaEncontrada) {
@@ -488,7 +672,10 @@ function CampoSelectorCompania({
 
   return (
     <div className="space-y-2">
-      <CustomLabel required className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+      <CustomLabel
+        required
+        className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400"
+      >
         Compania
       </CustomLabel>
       <div className="relative">
@@ -499,8 +686,12 @@ function CampoSelectorCompania({
             error ? "border-red-500" : "border-slate-100 hover:border-slate-300"
           }`}
         >
-          <span className={`min-w-0 truncate ${companiaSeleccionada ? "text-slate-700" : "text-slate-400"}`}>
-            {companiaSeleccionada ? obtenerEtiquetaCompania(companiaSeleccionada) : "Buscar y seleccionar compania..."}
+          <span
+            className={`min-w-0 truncate ${companiaSeleccionada ? "text-slate-700" : "text-slate-400"}`}
+          >
+            {companiaSeleccionada
+              ? obtenerEtiquetaCompania(companiaSeleccionada)
+              : "Buscar y seleccionar compania..."}
           </span>
           <Search size={16} className="shrink-0 text-slate-400" />
         </button>
@@ -509,7 +700,10 @@ function CampoSelectorCompania({
           <div className="absolute left-0 right-0 top-full z-[120] mt-2 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-2xl">
             <div className="border-b border-slate-100 p-2">
               <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                <Search
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300"
+                />
                 <input
                   value={busquedaCompania}
                   onChange={(event) => setBusquedaCompania(event.target.value)}
@@ -526,13 +720,21 @@ function CampoSelectorCompania({
                 </div>
               ) : isError ? (
                 <div className="space-y-3 px-4 py-5 text-center">
-                  <p className="text-xs font-semibold text-slate-400">No se pudieron cargar las companias.</p>
-                  <CustomButton variant="secondary" size="sm" onClick={() => void refetch()}>
+                  <p className="text-xs font-semibold text-slate-400">
+                    No se pudieron cargar las companias.
+                  </p>
+                  <CustomButton
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void refetch()}
+                  >
                     Reintentar
                   </CustomButton>
                 </div>
               ) : companias.length === 0 ? (
-                <p className="px-4 py-5 text-center text-xs font-semibold text-slate-400">No se encontraron companias.</p>
+                <p className="px-4 py-5 text-center text-xs font-semibold text-slate-400">
+                  No se encontraron companias.
+                </p>
               ) : (
                 companias.map((compania) => (
                   <button
@@ -544,14 +746,23 @@ function CampoSelectorCompania({
                       setEstaAbierto(false);
                     }}
                     className={`flex w-full items-start gap-3 px-4 py-3 text-left text-sm transition hover:bg-slate-50 ${
-                      valor === compania.idCompania ? "bg-slate-50 text-slate-950" : "text-slate-600"
+                      valor === compania.idCompania
+                        ? "bg-slate-50 text-slate-950"
+                        : "text-slate-600"
                     }`}
                   >
-                    <Building2 size={16} className="mt-0.5 shrink-0 text-slate-400" />
+                    <Building2
+                      size={16}
+                      className="mt-0.5 shrink-0 text-slate-400"
+                    />
                     <span className="min-w-0">
-                      <span className="block truncate font-semibold">{obtenerEtiquetaCompania(compania)}</span>
+                      <span className="block truncate font-semibold">
+                        {obtenerEtiquetaCompania(compania)}
+                      </span>
                       {compania.numeroDocumento ? (
-                        <span className="block truncate text-xs text-slate-400">{compania.numeroDocumento}</span>
+                        <span className="block truncate text-xs text-slate-400">
+                          {compania.numeroDocumento}
+                        </span>
                       ) : null}
                     </span>
                   </button>
@@ -561,7 +772,9 @@ function CampoSelectorCompania({
           </div>
         ) : null}
       </div>
-      {error ? <p className="text-xs font-semibold text-red-500">{error}</p> : null}
+      {error ? (
+        <p className="text-xs font-semibold text-red-500">{error}</p>
+      ) : null}
     </div>
   );
 }
@@ -579,7 +792,10 @@ function CampoArchivos({
 }) {
   return (
     <div className="space-y-2">
-      <CustomLabel optional className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+      <CustomLabel
+        optional
+        className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400"
+      >
         Archivos adjuntos
       </CustomLabel>
       <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 text-center">
@@ -588,13 +804,19 @@ function CampoArchivos({
           type="file"
           multiple
           className="sr-only"
-          onChange={(event) => onCambiarArchivos(Array.from(event.target.files ?? []))}
+          onChange={(event) =>
+            onCambiarArchivos(Array.from(event.target.files ?? []))
+          }
         />
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm">
           <UploadCloud size={18} />
         </span>
-        <span className="mt-3 text-sm font-bold text-slate-600">Haga clic o arrastre archivos aqui</span>
-        <span className="text-xs text-slate-400">Soporta documentos e imagenes adjuntas</span>
+        <span className="mt-3 text-sm font-bold text-slate-600">
+          Haga clic o arrastre archivos aqui
+        </span>
+        <span className="text-xs text-slate-400">
+          Soporta documentos e imagenes adjuntas
+        </span>
       </label>
       {archivos.length > 0 ? (
         <div className="space-y-2">
@@ -605,8 +827,12 @@ function CampoArchivos({
             >
               <FileText size={16} className="text-blue-500" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-bold text-slate-700">{archivo.name}</p>
-                <p className="text-[11px] text-slate-400">{formatearTamano(archivo.size)}</p>
+                <p className="truncate text-xs font-bold text-slate-700">
+                  {archivo.name}
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  {formatearTamano(archivo.size)}
+                </p>
               </div>
               <CustomButton
                 type="button"
@@ -626,7 +852,13 @@ function CampoArchivos({
   );
 }
 
-function EstadoNoticias({ texto, accion }: { texto: string; accion?: React.ReactNode }) {
+function EstadoNoticias({
+  texto,
+  accion,
+}: {
+  texto: string;
+  accion?: React.ReactNode;
+}) {
   return (
     <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-slate-100 bg-white p-6 text-center text-sm font-semibold text-slate-400">
       <p>{texto}</p>
@@ -651,7 +883,9 @@ function CustomModalBase({
         if (event.target === event.currentTarget) onCerrar();
       }}
     >
-      <div className={`flex max-h-[92vh] w-full flex-col overflow-hidden rounded-xl bg-white shadow-2xl ${ancho}`}>
+      <div
+        className={`flex max-h-[92vh] w-full flex-col overflow-hidden rounded-xl bg-white shadow-2xl ${ancho}`}
+      >
         {children}
       </div>
     </div>
@@ -684,10 +918,15 @@ function convertirArchivo(archivo: File): CompaniaNoticiaArchivo {
   };
 }
 
-async function subirArchivosNoticia(archivosRespuesta: CompaniaNoticiaArchivo[], archivosLocales: File[]) {
+async function subirArchivosNoticia(
+  archivosRespuesta: CompaniaNoticiaArchivo[],
+  archivosLocales: File[],
+) {
   if (archivosLocales.length === 0) return;
 
-  const archivosConUrl = archivosRespuesta.filter((archivo) => archivo.uploadUrl);
+  const archivosConUrl = archivosRespuesta.filter(
+    (archivo) => archivo.uploadUrl,
+  );
   if (archivosConUrl.length !== archivosLocales.length) {
     throw new Error("La respuesta de carga de archivos es invalida");
   }
@@ -695,8 +934,9 @@ async function subirArchivosNoticia(archivosRespuesta: CompaniaNoticiaArchivo[],
   await Promise.all(
     archivosLocales.map(async (archivoLocal, indice) => {
       const archivoRespuesta =
-        archivosConUrl.find((archivo) => archivo.nombreArchivo === archivoLocal.name)
-        ?? archivosConUrl[indice];
+        archivosConUrl.find(
+          (archivo) => archivo.nombreArchivo === archivoLocal.name,
+        ) ?? archivosConUrl[indice];
 
       if (!archivoRespuesta?.uploadUrl) {
         throw new Error("No se pudo obtener la URL de carga del archivo");
@@ -736,7 +976,11 @@ function formatearTiempoRelativo(fecha: string) {
   if (Number.isNaN(fechaParseada.getTime())) return "-";
 
   const hoy = new Date();
-  const inicioHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
+  const inicioHoy = new Date(
+    hoy.getFullYear(),
+    hoy.getMonth(),
+    hoy.getDate(),
+  ).getTime();
   const inicioFecha = new Date(
     fechaParseada.getFullYear(),
     fechaParseada.getMonth(),
@@ -759,6 +1003,10 @@ function formatearTamano(tamano: number) {
 
 function obtenerEtiquetaCompania(compania: CompaniaListaItem) {
   return compania.nombreCompleto || `Compania ${compania.idCompania}`;
+}
+
+function obtenerEtiquetaTablaMaestra(opcion?: EntradaTablaMaestra) {
+  return opcion?.string1 || opcion?.descripcion || opcion?.string2 || "";
 }
 
 function convertirTextoFechaADate(fecha: string) {
