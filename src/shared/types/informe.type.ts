@@ -771,7 +771,8 @@ export type PlantillaSeccion =
   | { type: "dataTable"; source?: string; columns: { header: string; field?: string }[]; rows?: unknown[]; style?: string; cellStyle?: string; headerStyle?: string; columnWidths?: string[] }
   | { type: "repeat"; source?: string; sections: PlantillaSeccion[] }
   | { type: "repeatDetail"; source?: string; titleField?: string; contentField?: string; items?: { title: string; content: string }[] }
-  | { type: "spacer"; height?: string };
+  | { type: "spacer"; height?: string }
+  | { type: "inline"; style?: string; runs: { text: string; style?: string }[] };
 
 export interface InformeGenerarUrlsArchivoRequest {
   idPedido: number;

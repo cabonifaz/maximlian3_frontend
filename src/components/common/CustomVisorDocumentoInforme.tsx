@@ -48,6 +48,15 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
     case "text":
       return `<div${secStyle}>${escaparHtml(seccion.field)}</div>`;
 
+    case "inline": {
+      const runs = (seccion.runs ?? []).map((r) =>
+        r.style
+          ? `<span style="${r.style}">${escaparHtml(r.text)}</span>`
+          : escaparHtml(r.text)
+      ).join("");
+      return `<div${secStyle}>${runs}</div>`;
+    }
+
     case "keyValue": {
       const kv = seccion as Record<string, unknown>;
       const kvStyle = kv.style ? ` style="${kv.style}"` : "";
