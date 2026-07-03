@@ -102,6 +102,7 @@ import type {
 import {
   TablaMaestraId,
   obtenerDescripcionTablaMaestra,
+  type EntradaTablaMaestra,
 } from "@maximilian/shared/types/tabla-maestra.type";
 import {
   normalizarMontoDosDecimales,
@@ -169,6 +170,34 @@ interface ValorExtraidoNormalizado {
 const FILAS_POR_PAGINA_INVESTIGACION = 5;
 const ID_ESTADO_PEDIDO_BORRADOR = 3;
 const ID_ESTADO_PEDIDO_FINALIZADO = 5;
+
+function obtenerTraduccionTipoEmpresaAnalista(opcion: EntradaTablaMaestra, idIdioma?: number) {
+  if (idIdioma === 2) return opcion.string4?.trim() ?? "";
+  if (idIdioma === 3) return opcion.string6?.trim() ?? "";
+  return "";
+}
+
+function obtenerEtiquetaTipoEmpresaAnalista(opcion: EntradaTablaMaestra, idIdioma?: number) {
+  const textoPrincipal = opcion.string1?.trim() ?? "";
+  const textoTraduccion = obtenerTraduccionTipoEmpresaAnalista(opcion, idIdioma);
+  return [textoPrincipal, textoTraduccion].filter(Boolean).join(" - ");
+}
+
+function renderizarTipoEmpresaAnalista(opcion: EntradaTablaMaestra, idIdioma?: number) {
+  const textoPrincipal = opcion.string1?.trim() ?? "";
+  const textoTraduccion = obtenerTraduccionTipoEmpresaAnalista(opcion, idIdioma);
+
+  if (!textoTraduccion) return textoPrincipal;
+
+  return (
+    <span className="inline-flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5 whitespace-normal break-words leading-snug">
+      <span>{textoPrincipal}</span>
+      <span className="shrink-0 text-slate-300">-</span>
+      <span className="text-slate-400">{textoTraduccion}</span>
+    </span>
+  );
+}
+
 function obtenerTotalPaginas(totalRegistros: number) {
   return Math.max(1, Math.ceil(totalRegistros / FILAS_POR_PAGINA_INVESTIGACION));
 }
@@ -4238,6 +4267,7 @@ function PantallaInvestigacionAnalista({
         opcion.string1 === datosInvestigacion.aspectosLegales.monedaTipoCambio
         || String(opcion.num1 ?? "") === datosInvestigacion.aspectosLegales.monedaTipoCambio,
     );
+    const idIdiomaInforme = registroPedidoSeleccionado?.idIdioma;
 
     return (
       <div className="grid gap-5 md:grid-cols-2">
@@ -4248,6 +4278,9 @@ function PantallaInvestigacionAnalista({
           opcionesTablaMaestra={opcionesTipoEmpresa}
           idMaestro={TablaMaestraId.TIPO_EMPRESA}
           permiteAltaNueva
+          obtenerEtiquetaOpcion={(opcion) => obtenerEtiquetaTipoEmpresaAnalista(opcion, idIdiomaInforme)}
+          renderizarOpcion={(opcion) => renderizarTipoEmpresaAnalista(opcion, idIdiomaInforme)}
+          renderizarValorSeleccionado={(opcion) => renderizarTipoEmpresaAnalista(opcion, idIdiomaInforme)}
           marcador="Seleccione tipo de empresa"
           adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.tipoEmpresa")}
           onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)}
