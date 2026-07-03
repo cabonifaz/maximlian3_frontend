@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, type PointerEvent as ReactPointerEvent } from "react";
+import { Minus, Plus, RotateCcw } from "lucide-react";
 import pagedJsUrl from "../../../node_modules/pagedjs/dist/paged.polyfill.js?url";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
 import type {
   DocumentoInformeGenerado,
   PlantillaDocumentoConfig,
@@ -10,6 +12,7 @@ import type { DatosInvestigacionAnalista } from "@maximilian/shared/types/invest
 interface PropsCustomVisorDocumentoInforme {
   documento: DocumentoInformeGenerado;
   datosInvestigacion?: DatosInvestigacionAnalista;
+  ocuparAltoDisponible?: boolean;
   encabezado?: {
     pais: string;
     fecha: string;
@@ -18,6 +21,11 @@ interface PropsCustomVisorDocumentoInforme {
     traductor: string;
   };
 }
+
+const ZOOM_MINIMO_INFORME = 0.35;
+const ZOOM_MAXIMO_INFORME = 1.6;
+const PASO_ZOOM_INFORME = 0.1;
+const ANCHO_PAGINA_FALLBACK_PX = 794;
 
 function escaparHtml(texto: string): string {
   return texto
@@ -29,6 +37,23 @@ function escaparHtml(texto: string): string {
 
 function escaparAtributo(texto: string): string {
   return escaparHtml(texto).replace(/'/g, "&#39;");
+}
+
+function convertirLongitudCssAPx(valor?: string): number {
+  if (!valor) return ANCHO_PAGINA_FALLBACK_PX;
+
+  const coincidencia = valor.trim().match(/^([\d.]+)\s*(in|cm|mm|px|pt)?$/i);
+  if (!coincidencia) return ANCHO_PAGINA_FALLBACK_PX;
+
+  const numero = Number(coincidencia[1]);
+  if (!Number.isFinite(numero) || numero <= 0) return ANCHO_PAGINA_FALLBACK_PX;
+
+  const unidad = coincidencia[2]?.toLowerCase() ?? "px";
+  if (unidad === "in") return numero * 96;
+  if (unidad === "cm") return (numero / 2.54) * 96;
+  if (unidad === "mm") return (numero / 25.4) * 96;
+  if (unidad === "pt") return (numero / 72) * 96;
+  return numero;
 }
 
 function renderizarSeccion(seccion: PlantillaSeccion): string {
@@ -312,12 +337,24 @@ function construirHtmlContenido(
 
 export function CustomVisorDocumentoInforme({
   documento,
+  ocuparAltoDisponible = false,
 }: PropsCustomVisorDocumentoInforme) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const contenedorScrollRef = useRef<HTMLDivElement>(null);
+  const posicionArrastreRef = useRef({
+    x: 0,
+    y: 0,
+    scrollLeft: 0,
+    scrollTop: 0,
+  });
   const [estaPaginando, setEstaPaginando] = useState(false);
   const [alturaIframe, setAlturaIframe] = useState(600);
   const [error, setError] = useState<string | null>(null);
   const [srcdoc, setSrcdoc] = useState<string>("");
+  const [zoomInforme, setZoomInforme] = useState(1);
+  const [anchoDisponibleInforme, setAnchoDisponibleInforme] = useState(0);
+  const [zoomModificadoPorUsuario, setZoomModificadoPorUsuario] = useState(false);
+  const [estaArrastrandoInforme, setEstaArrastrandoInforme] = useState(false);
 
   const ajustarAltura = useCallback(() => {
     const iframe = iframeRef.current;
@@ -346,11 +383,45 @@ export function CustomVisorDocumentoInforme({
     [documento],
   );
 
+  const anchoPaginaPx = useMemo(
+    () => convertirLongitudCssAPx(documento.document?.pageSize?.width),
+    [documento.document?.pageSize?.width],
+  );
+
+  const zoomAjustadoInforme = useMemo(() => {
+    if (anchoDisponibleInforme <= 0) return 1;
+    const espacioUtil = Math.max(280, anchoDisponibleInforme - 32);
+    const zoomAjustado = Math.min(1, espacioUtil / anchoPaginaPx);
+    return Math.max(ZOOM_MINIMO_INFORME, Number(zoomAjustado.toFixed(2)));
+  }, [anchoDisponibleInforme, anchoPaginaPx]);
+
+  useEffect(() => {
+    const contenedor = contenedorScrollRef.current;
+    if (!contenedor) return;
+
+    const actualizarAncho = () => {
+      setAnchoDisponibleInforme(contenedor.clientWidth);
+    };
+
+    actualizarAncho();
+    const observador = new ResizeObserver(actualizarAncho);
+    observador.observe(contenedor);
+
+    return () => observador.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!zoomModificadoPorUsuario) {
+      setZoomInforme(zoomAjustadoInforme);
+    }
+  }, [zoomAjustadoInforme, zoomModificadoPorUsuario]);
+
   useEffect(() => {
     if (!documentoKey || !documento.sections || !documento.document) return;
 
     setEstaPaginando(true);
     setError(null);
+    setZoomModificadoPorUsuario(false);
 
     const css = construirCss(documento.document);
     const contenido = construirHtmlContenido(
@@ -378,9 +449,118 @@ ${contenido}
     setTimeout(ajustarAltura, 800);
   }, [ajustarAltura]);
 
+  const acercarInforme = useCallback(() => {
+    setZoomModificadoPorUsuario(true);
+    setZoomInforme((zoomActual) => Math.min(ZOOM_MAXIMO_INFORME, Number((zoomActual + PASO_ZOOM_INFORME).toFixed(2))));
+  }, []);
+
+  const alejarInforme = useCallback(() => {
+    setZoomModificadoPorUsuario(true);
+    setZoomInforme((zoomActual) => Math.max(ZOOM_MINIMO_INFORME, Number((zoomActual - PASO_ZOOM_INFORME).toFixed(2))));
+  }, []);
+
+  const restablecerZoomInforme = useCallback(() => {
+    setZoomModificadoPorUsuario(false);
+    setZoomInforme(zoomAjustadoInforme);
+  }, [zoomAjustadoInforme]);
+
+  const iniciarArrastreInforme = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const contenedor = contenedorScrollRef.current;
+    if (!contenedor || event.pointerType !== "mouse" || event.button !== 0) return;
+
+    const objetivo = event.target as HTMLElement;
+    if (objetivo.closest("button, a, input, textarea, select")) return;
+
+    posicionArrastreRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      scrollLeft: contenedor.scrollLeft,
+      scrollTop: contenedor.scrollTop,
+    };
+    setEstaArrastrandoInforme(true);
+    contenedor.setPointerCapture(event.pointerId);
+  }, []);
+
+  const moverArrastreInforme = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const contenedor = contenedorScrollRef.current;
+    if (!contenedor || !estaArrastrandoInforme) return;
+
+    event.preventDefault();
+    const posicionInicial = posicionArrastreRef.current;
+    contenedor.scrollLeft = posicionInicial.scrollLeft - (event.clientX - posicionInicial.x);
+    contenedor.scrollTop = posicionInicial.scrollTop - (event.clientY - posicionInicial.y);
+  }, [estaArrastrandoInforme]);
+
+  const terminarArrastreInforme = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const contenedor = contenedorScrollRef.current;
+    if (!contenedor || !estaArrastrandoInforme) return;
+
+    setEstaArrastrandoInforme(false);
+    if (contenedor.hasPointerCapture(event.pointerId)) {
+      contenedor.releasePointerCapture(event.pointerId);
+    }
+  }, [estaArrastrandoInforme]);
+
+  const porcentajeZoom = Math.round(zoomInforme * 100);
+  const puedeAlejar = zoomInforme > ZOOM_MINIMO_INFORME;
+  const puedeAcercar = zoomInforme < ZOOM_MAXIMO_INFORME;
+  const classNameContenedorVisor = `flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm ${
+    ocuparAltoDisponible ? "h-full min-h-0" : "h-[min(72vh,760px)]"
+  }`;
+  const classNameContenedorScroll = `min-h-0 flex-1 overflow-auto px-2 py-4 sm:px-4 ${
+    estaArrastrandoInforme ? "cursor-grabbing select-none" : "cursor-grab"
+  }`;
+
+  const controlesZoom = (
+    <div className="sticky top-0 z-20 flex flex-wrap items-center justify-end gap-2 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur sm:px-4">
+      <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <CustomButton
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 rounded-none text-slate-600 hover:bg-slate-100"
+          onClick={alejarInforme}
+          disabled={!puedeAlejar}
+          aria-label="Alejar vista del informe"
+          title="Alejar"
+        >
+          <Minus size={16} />
+        </CustomButton>
+        <span className="min-w-16 border-x border-slate-200 px-3 text-center text-xs font-bold tabular-nums text-slate-600">
+          {porcentajeZoom}%
+        </span>
+        <CustomButton
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 rounded-none text-slate-600 hover:bg-slate-100"
+          onClick={acercarInforme}
+          disabled={!puedeAcercar}
+          aria-label="Acercar vista del informe"
+          title="Acercar"
+        >
+          <Plus size={16} />
+        </CustomButton>
+      </div>
+      <CustomButton
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="h-9 px-3 text-xs"
+        onClick={restablecerZoomInforme}
+        disabled={!zoomModificadoPorUsuario && zoomInforme === zoomAjustadoInforme}
+        title="Ajustar al ancho"
+      >
+        <RotateCcw size={14} />
+        Ajustar
+      </CustomButton>
+    </div>
+  );
+
   if (documento.sections && documento.document) {
     return (
-      <div className="overflow-x-auto pb-4">
+      <div className={classNameContenedorVisor}>
+        {controlesZoom}
         {estaPaginando && (
           <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-500 shadow-sm">
             Generando vista previa...
@@ -391,19 +571,39 @@ ${contenido}
             {error}
           </div>
         )}
-        <iframe
-          ref={iframeRef}
-          title="Vista previa del documento"
-          srcDoc={srcdoc}
-          scrolling="no"
-          onLoad={manejarCargaIframe}
-          style={{
-            width: "100%",
-            height: `${alturaIframe}px`,
-            border: "none",
-            display: estaPaginando ? "none" : "block",
-          }}
-        />
+        <div
+          ref={contenedorScrollRef}
+          className={classNameContenedorScroll}
+          onPointerDown={iniciarArrastreInforme}
+          onPointerMove={moverArrastreInforme}
+          onPointerUp={terminarArrastreInforme}
+          onPointerCancel={terminarArrastreInforme}
+        >
+          <div
+            className="mx-auto"
+            style={{
+              width: `${anchoPaginaPx * zoomInforme}px`,
+              height: `${alturaIframe * zoomInforme}px`,
+            }}
+          >
+            <iframe
+              ref={iframeRef}
+              title="Vista previa del documento"
+              srcDoc={srcdoc}
+              scrolling="no"
+              onLoad={manejarCargaIframe}
+              style={{
+                width: `${anchoPaginaPx}px`,
+                height: `${alturaIframe}px`,
+                border: "none",
+                display: estaPaginando ? "none" : "block",
+                transform: `scale(${zoomInforme})`,
+                transformOrigin: "top left",
+                pointerEvents: "none",
+              }}
+            />
+          </div>
+        </div>
       </div>
     );
   }
@@ -418,11 +618,25 @@ ${contenido}
   }
 
   return (
-    <div className="overflow-x-auto pb-4">
+    <div className={classNameContenedorVisor}>
+      {controlesZoom}
       <div
-        className="mx-auto min-w-190"
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+        ref={contenedorScrollRef}
+        className={classNameContenedorScroll}
+        onPointerDown={iniciarArrastreInforme}
+        onPointerMove={moverArrastreInforme}
+        onPointerUp={terminarArrastreInforme}
+        onPointerCancel={terminarArrastreInforme}
+      >
+        <div
+          className="mx-auto min-w-190 origin-top"
+          style={{
+            transform: `scale(${zoomInforme})`,
+            width: `${anchoPaginaPx * zoomInforme}px`,
+          }}
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      </div>
     </div>
   );
 }

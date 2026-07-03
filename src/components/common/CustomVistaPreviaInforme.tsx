@@ -71,6 +71,7 @@ interface PropsVistaPreviaInformeComparado {
   idPedido?: number;
   indicadorReporteTraducido?: string;
   mostrarInformeTraducido?: boolean;
+  ocuparAltoDisponibleDocumento?: boolean;
   className?: string;
   contenidoEntreTabsYTarjetas?: ReactNode;
 }
@@ -1041,6 +1042,7 @@ export function CustomVistaPreviaInformeComparado({
   idPedido,
   indicadorReporteTraducido = "En traducción",
   mostrarInformeTraducido = true,
+  ocuparAltoDisponibleDocumento = false,
   className = "space-y-6",
   contenidoEntreTabsYTarjetas,
 }: PropsVistaPreviaInformeComparado) {
@@ -1095,6 +1097,7 @@ export function CustomVistaPreviaInformeComparado({
             documento={documentoGenerado}
             datosInvestigacion={datosInvestigacion}
             encabezado={encabezado}
+            ocuparAltoDisponible={ocuparAltoDisponibleDocumento}
           />
         ) : (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500 shadow-sm">

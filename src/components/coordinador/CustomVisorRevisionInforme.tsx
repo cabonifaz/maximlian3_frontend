@@ -22,6 +22,7 @@ interface PropsCustomVisorRevisionInforme {
   mostrarInformeTraducido?: boolean;
   mostrarPie?: boolean;
   mostrarCerrar?: boolean;
+  ocuparAltoDisponible?: boolean;
   onCerrar: () => void;
   onDescargar: (formato: FormatoDescargaInforme) => void;
   onAprobar: () => void;
@@ -43,6 +44,7 @@ export function CustomVisorRevisionInforme({
   mostrarInformeTraducido = false,
   mostrarPie = true,
   mostrarCerrar = true,
+  ocuparAltoDisponible = false,
   onCerrar,
   onDescargar,
   onAprobar,
@@ -53,7 +55,7 @@ export function CustomVisorRevisionInforme({
     && Number.isFinite(Number(idPedido)) && Number(idPedido) > 0;
 
   return (
-    <div className="relative flex h-[calc(100vh-4rem)] flex-col overflow-hidden bg-slate-100">
+    <div className={`relative flex min-h-0 flex-col overflow-hidden bg-slate-100 ${ocuparAltoDisponible ? "h-full" : "h-[calc(100vh-4rem)]"}`}>
       <header className="z-30 shrink-0 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-2.5">
           <div className="flex items-center gap-3">
@@ -124,7 +126,7 @@ export function CustomVisorRevisionInforme({
         </div>
       </header>
 
-      <main className="min-h-0 w-full flex-1 overflow-y-auto bg-slate-50 p-3 sm:p-4">
+      <main className="min-h-0 w-full flex-1 overflow-hidden bg-slate-50 p-3 sm:p-4">
         {datosInvestigacion || tieneDocumento ? (
           <CustomVistaPreviaInformeComparado
             datosInvestigacion={datosInvestigacion}
@@ -132,7 +134,8 @@ export function CustomVisorRevisionInforme({
             idInforme={idInforme}
             idPedido={idPedido}
             mostrarInformeTraducido={mostrarInformeTraducido}
-            className="mx-auto max-w-6xl space-y-3"
+            ocuparAltoDisponibleDocumento={ocuparAltoDisponible}
+            className="mx-auto flex h-full max-w-6xl flex-col space-y-3"
           />
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-500">

@@ -19,8 +19,14 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { servicioCompaniaNoticia } from "@maximilian/services/companiaNoticia.service";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
-import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+import {
+  obtenerDescripcionTablaMaestra,
+  obtenerSiguienteNumTablaMaestra,
+  TablaMaestraId,
+  type EntradaTablaMaestra,
+} from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   CompaniaNoticiaArchivo,
   CompaniaNoticiaCrearRequest,
@@ -125,6 +131,72 @@ export function CustomBancoNoticias({
     },
     onError: () => {
       toast.error("No se pudo completar el registro de la noticia.");
+    },
+  });
+
+  const crearCategoriaMutation = useMutation({
+    mutationFn: async (terminoBusqueda: string) => {
+      const categoria = terminoBusqueda.trim();
+      const opcionesActuales = await queryClient.fetchQuery({
+        queryKey: ["masterTable", TablaMaestraId.CATEGORIA_NOTICIA],
+        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CATEGORIA_NOTICIA),
+        staleTime: 0,
+      });
+      const categoriaExistente = opcionesActuales.find(
+        (opcion) =>
+          normalizarTexto(obtenerEtiquetaTablaMaestra(opcion)) ===
+          normalizarTexto(categoria),
+      );
+
+      if (categoriaExistente) return categoriaExistente;
+
+      const num1 = obtenerSiguienteNumTablaMaestra(opcionesActuales);
+
+      await servicioTablaMaestra.crear({
+        idMaestro: TablaMaestraId.CATEGORIA_NOTICIA,
+        descripcion: obtenerDescripcionTablaMaestra(
+          TablaMaestraId.CATEGORIA_NOTICIA,
+        ),
+        num1,
+        num2: null,
+        num3: null,
+        string1: categoria,
+        string2: null,
+        string3: null,
+        date1: null,
+        date2: null,
+        date3: null,
+      });
+
+      await queryClient.invalidateQueries({
+        queryKey: ["masterTable", TablaMaestraId.CATEGORIA_NOTICIA],
+      });
+
+      const opcionesActualizadas = await queryClient.fetchQuery({
+        queryKey: ["masterTable", TablaMaestraId.CATEGORIA_NOTICIA],
+        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CATEGORIA_NOTICIA),
+        staleTime: 0,
+      });
+
+      return (
+        opcionesActualizadas.find(
+          (opcion) =>
+            normalizarTexto(obtenerEtiquetaTablaMaestra(opcion)) ===
+            normalizarTexto(categoria),
+        ) ?? opcionesActualizadas.find((opcion) => opcion.num1 === num1)
+      );
+    },
+    onSuccess: (categoriaCreada) => {
+      if (!categoriaCreada?.num1) return;
+
+      setValue("idCategoria", categoriaCreada.num1, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
+    },
+    onError: () => {
+      toast.error("No se pudo agregar la categoria.");
     },
   });
 
@@ -387,6 +459,26 @@ export function CustomBancoNoticias({
                   dropdownZIndexClassName="z-[130]"
                   overlayZIndexClassName="z-[129]"
                   obtenerEtiquetaOpcion={obtenerEtiquetaTablaMaestra}
+                  loading={crearCategoriaMutation.isPending}
+                  puedeAgregarNuevo={(terminoBusqueda) =>
+                    terminoBusqueda.trim().length > 0
+                  }
+                  renderizarVistaPreviaAltaNueva={(terminoBusqueda) => {
+                    const categoria = terminoBusqueda.trim();
+                    if (!categoria) return null;
+
+                    return (
+                      <p className="mb-2 text-xs font-semibold text-slate-400">
+                        Nueva categoria:{" "}
+                        <span className="font-bold text-brand-wine">
+                          {categoria}
+                        </span>
+                      </p>
+                    );
+                  }}
+                  onAddNew={(terminoBusqueda) =>
+                    crearCategoriaMutation.mutate(terminoBusqueda)
+                  }
                 />
               </div>
               <CampoArchivos
@@ -1007,6 +1099,14 @@ function obtenerEtiquetaCompania(compania: CompaniaListaItem) {
 
 function obtenerEtiquetaTablaMaestra(opcion?: EntradaTablaMaestra) {
   return opcion?.string1 || opcion?.descripcion || opcion?.string2 || "";
+}
+
+function normalizarTexto(valor: string) {
+  return valor
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 }
 
 function convertirTextoFechaADate(fecha: string) {
