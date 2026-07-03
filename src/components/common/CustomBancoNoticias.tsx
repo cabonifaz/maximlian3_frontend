@@ -219,19 +219,13 @@ export function CustomBancoNoticias({
   };
 
   const guardarNoticia = (datos: FormularioNoticia) => {
-    const opcionesCategoria =
-      queryClient.getQueryData<EntradaTablaMaestra[]>(["masterTable", TablaMaestraId.CATEGORIA_NOTICIA])
-      ?? [];
-    const categoriaSeleccionada = opcionesCategoria.find((opcion) => opcion.num1 === datos.idCategoria);
-    const categoria = obtenerEtiquetaTablaMaestra(categoriaSeleccionada) || String(datos.idCategoria);
-
     crearNoticiaMutation.mutate({
       payload: {
         idCompania: datos.idCompania,
         titulo: datos.titulo.trim(),
         descripcion: datos.descripcion.trim(),
         fechaNoticia: new Date(`${datos.fechaNoticia}T00:00:00`).toISOString(),
-        categoria,
+        idCategoria: datos.idCategoria,
         archivos: archivosSeleccionados.map(convertirArchivo),
       },
       archivos: archivosSeleccionados,

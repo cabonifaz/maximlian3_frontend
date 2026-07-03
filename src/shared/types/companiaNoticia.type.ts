@@ -41,7 +41,7 @@ export interface CompaniaNoticiaCrearRequest {
   titulo: string;
   descripcion: string;
   fechaNoticia: string;
-  categoria: string;
+  idCategoria: number;
   archivos: CompaniaNoticiaArchivo[];
 }
 
