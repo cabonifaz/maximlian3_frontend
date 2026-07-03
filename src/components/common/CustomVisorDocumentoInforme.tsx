@@ -185,6 +185,8 @@ function construirCss(config: PlantillaDocumentoConfig): string {
   const interlineado = config.font?.lineSpacing ?? 1.15;
   const pieTexto = escaparHtml(config.footer?.text ?? "");
   const pieTamano = config.footer?.fontSize ?? "7pt";
+  const piePeso = config.footer?.fontWeight ?? "normal";
+  const pieEstilo = config.footer?.fontStyle ?? "normal";
   const headerAlign = config.header?.align ?? "center";
   const footerAlign = config.footer?.align ?? "left";
   const headerGapAfter = config.header?.gapAfter ?? "0";
@@ -233,6 +235,8 @@ function construirCss(config: PlantillaDocumentoConfig): string {
     .sr-pie-pagina {
       position: running(pie-pagina);
       font-size: ${pieTamano};
+      font-weight: ${piePeso};
+      font-style: ${pieEstilo};
       line-height: 1.0;
       font-family: ${fuente};
       ${config.footer?.layout === "table" ? "" : `text-align: ${footerAlign};`}
