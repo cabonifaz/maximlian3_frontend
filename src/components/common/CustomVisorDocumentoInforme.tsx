@@ -70,7 +70,13 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
       html = `<table${kvStyle}><tbody>${seccion.rows
         .map(
           (row) =>
-            `<tr>${row.map((cell) => `<td${cell.style ? ` style="${cell.style}"` : ""}>${escaparHtml(cell.text)}</td>`).join("")}</tr>`,
+            `<tr>${row.map((cell) => {
+              const attrs = [
+                cell.colspan && cell.colspan > 1 ? `colspan="${cell.colspan}"` : "",
+                cell.style ? `style="${cell.style}"` : "",
+              ].filter(Boolean).join(" ");
+              return `<td${attrs ? ` ${attrs}` : ""}>${escaparHtml(cell.text)}</td>`;
+            }).join("")}</tr>`,
         )
         .join("")}</tbody></table>`;
       break;

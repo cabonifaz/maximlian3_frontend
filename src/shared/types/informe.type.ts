@@ -754,6 +754,7 @@ export interface PlantillaDocumentoConfig {
 export interface PlantillaCeldaTabla {
   text: string;
   style?: string;
+  colspan?: number;
 }
 
 export interface PlantillaFilaEtiquetaValor {
