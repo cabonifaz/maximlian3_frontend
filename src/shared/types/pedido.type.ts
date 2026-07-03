@@ -62,7 +62,7 @@ export interface CreatePedidoRequest {
   numeroDocumento: string;
   nombreCliente: string;
   idTipoPersona: number;
-  idCompania: number;
+  idCompania: number | null;
   numeroDocumentoInvestigado: string;
   investigarRazonSocialNombres: string;
   idTarifario: number;

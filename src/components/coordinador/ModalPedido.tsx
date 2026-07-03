@@ -1111,6 +1111,7 @@ export function ModalPedido({
     guardarPedido({
       ...datosComunes,
       codigo: data.autogenerarCodigo ? null : (data.codigo ?? ""),
+      idCompania: null,
       idEstado: 1,
       archivos: [],
     });

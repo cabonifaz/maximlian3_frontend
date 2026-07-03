@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, CalendarDays, Clock3, FileText, Loader2, Plus, Search, Trash2, UploadCloud, User, X } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { servicioCompaniaNoticia } from "@maximilian/services/companiaNoticia.service";
@@ -49,6 +50,8 @@ export function CustomBancoNoticias({
   const queryClient = useQueryClient();
   const [estaAbiertoModalNoticia, setEstaAbiertoModalNoticia] = useState(false);
   const [noticiaDetalle, setNoticiaDetalle] = useState<CompaniaNoticiaListaItem | null>(null);
+  const [companiaDetalle, setCompaniaDetalle] = useState<CompaniaListaItem | null>(null);
+  const [idNoticiaCargandoDetalle, setIdNoticiaCargandoDetalle] = useState<number | null>(null);
   const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>([]);
   const [claveInputArchivo, setClaveInputArchivo] = useState(0);
 
@@ -82,10 +85,23 @@ export function CustomBancoNoticias({
   });
 
   const crearNoticiaMutation = useMutation({
-    mutationFn: (payload: CompaniaNoticiaCrearRequest) => servicioCompaniaNoticia.crear(payload),
+    mutationFn: async ({
+      payload,
+      archivos,
+    }: {
+      payload: CompaniaNoticiaCrearRequest;
+      archivos: File[];
+    }) => {
+      const respuesta = await servicioCompaniaNoticia.crear(payload);
+      await subirArchivosNoticia(respuesta.archivos, archivos);
+      return respuesta;
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["companiaNoticia"] });
       cerrarModalNoticia();
+    },
+    onError: () => {
+      toast.error("No se pudo completar el registro de la noticia.");
     },
   });
 
@@ -108,13 +124,43 @@ export function CustomBancoNoticias({
 
   const guardarNoticia = (datos: FormularioNoticia) => {
     crearNoticiaMutation.mutate({
-      idCompania: datos.idCompania,
-      titulo: datos.titulo.trim(),
-      descripcion: datos.descripcion.trim(),
-      fechaNoticia: new Date(`${datos.fechaNoticia}T00:00:00`).toISOString(),
-      categoria: datos.categoria?.trim() ?? "",
-      archivos: archivosSeleccionados.map(convertirArchivo),
+      payload: {
+        idCompania: datos.idCompania,
+        titulo: datos.titulo.trim(),
+        descripcion: datos.descripcion.trim(),
+        fechaNoticia: new Date(`${datos.fechaNoticia}T00:00:00`).toISOString(),
+        categoria: datos.categoria?.trim() ?? "",
+        archivos: archivosSeleccionados.map(convertirArchivo),
+      },
+      archivos: archivosSeleccionados,
     });
+  };
+
+  const verDetalleNoticia = async (noticia: CompaniaNoticiaListaItem) => {
+    setIdNoticiaCargandoDetalle(noticia.idCompaniaNoticia);
+    setNoticiaDetalle(null);
+    setCompaniaDetalle(null);
+
+    let detalleNoticia: CompaniaNoticiaListaItem | null = null;
+    let compania: CompaniaListaItem | null = null;
+    try {
+      [detalleNoticia, compania] = await Promise.all([
+        servicioCompaniaNoticia.obtener({
+          idCompaniaNoticia: noticia.idCompaniaNoticia,
+          idCompania: noticia.idCompania,
+        }),
+        servicioCompania.obtener({
+          idCompania: noticia.idCompania,
+        }),
+      ]);
+    } catch {
+      detalleNoticia = null;
+      compania = null;
+    } finally {
+      setCompaniaDetalle(compania);
+      setNoticiaDetalle(detalleNoticia ? { ...noticia, ...detalleNoticia } : noticia);
+      setIdNoticiaCargandoDetalle(null);
+    }
   };
 
   return (
@@ -182,8 +228,10 @@ export function CustomBancoNoticias({
                   </div>
                   <CustomButton
                     size="sm"
-                    onClick={() => setNoticiaDetalle(noticia)}
+                    onClick={() => void verDetalleNoticia(noticia)}
                     className="h-10 shrink-0 rounded-lg px-6 text-[11px] font-black uppercase tracking-wide"
+                    loading={idNoticiaCargandoDetalle === noticia.idCompaniaNoticia}
+                    loadingText="Cargando..."
                   >
                     VER DETALLE
                   </CustomButton>
@@ -198,16 +246,23 @@ export function CustomBancoNoticias({
         <p>{etiquetaPaginacion}</p>
       </div>
 
-      <CustomModalDetalleNoticia noticia={noticiaDetalle} onCerrar={() => setNoticiaDetalle(null)} />
+      <CustomModalDetalleNoticia
+        noticia={noticiaDetalle}
+        compania={companiaDetalle}
+        onCerrar={() => {
+          setNoticiaDetalle(null);
+          setCompaniaDetalle(null);
+        }}
+      />
 
       {estaAbiertoModalNoticia ? (
         <CustomModalBase ancho="max-w-2xl" onCerrar={cerrarModalNoticia}>
-          <form onSubmit={handleSubmit(guardarNoticia)}>
-            <div className="flex items-center justify-between border-b border-slate-100 px-8 py-6">
+          <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit(guardarNoticia)}>
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-8 py-6">
               <h2 className="text-lg font-bold text-slate-950">Agregar Nueva Noticia</h2>
               <BotonCerrar onCerrar={cerrarModalNoticia} />
             </div>
-            <div className="space-y-5 px-8 py-6">
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-8 py-6">
               <CampoSelectorCompania
                 valor={typeof idCompaniaSeleccionada === "number" ? idCompaniaSeleccionada : Number(idCompaniaSeleccionada)}
                 error={errors.idCompania?.message}
@@ -261,7 +316,7 @@ export function CustomBancoNoticias({
                 }
               />
             </div>
-            <div className="flex justify-end gap-3 border-t border-slate-100 px-8 py-5">
+            <div className="flex shrink-0 justify-end gap-3 border-t border-slate-100 px-8 py-5">
               <CustomButton
                 type="button"
                 variant="secondary"
@@ -289,20 +344,23 @@ export function CustomBancoNoticias({
 
 function CustomModalDetalleNoticia({
   noticia,
+  compania,
   onCerrar,
 }: {
   noticia: CompaniaNoticiaListaItem | null;
+  compania: CompaniaListaItem | null;
   onCerrar: () => void;
 }) {
   if (!noticia) return null;
 
   return (
     <CustomModalBase ancho="max-w-5xl" onCerrar={onCerrar}>
-      <div className="flex items-start justify-between border-b border-slate-100 px-8 py-6">
+      <div className="flex shrink-0 items-start justify-between border-b border-slate-100 px-8 py-6">
         <h2 className="text-base font-bold text-slate-950">Detalle de Noticia</h2>
         <BotonCerrar onCerrar={onCerrar} />
       </div>
-      <div className="grid gap-8 px-8 py-6 lg:grid-cols-[1fr_280px]">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="grid gap-8 px-8 py-6 lg:grid-cols-[1fr_280px]">
         <div className="space-y-7">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Titulo del articulo</p>
@@ -314,7 +372,13 @@ function CustomModalDetalleNoticia({
           </div>
           <div className="border-t border-slate-100 pt-5">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Empresa relacionada</p>
-            <p className="mt-3 text-sm font-bold text-slate-800">{noticia.compania}</p>
+            <p className="mt-3 text-sm font-bold text-slate-800">{compania?.nombreCompleto ?? noticia.compania}</p>
+            <div className="mt-3 grid gap-3 text-xs font-semibold text-slate-500 sm:grid-cols-2">
+              <DetalleCompania etiqueta="Documento" valor={compania?.numeroDocumento} />
+              <DetalleCompania etiqueta="Pais" valor={compania?.pais} />
+              <DetalleCompania etiqueta="Telefono" valor={compania?.telefono} />
+              <DetalleCompania etiqueta="Direccion" valor={compania?.direccion} />
+            </div>
           </div>
         </div>
         <div>
@@ -336,13 +400,10 @@ function CustomModalDetalleNoticia({
                     </span>
                     <span className="min-w-0 truncate text-xs font-bold text-slate-700">{archivo.nombreArchivo}</span>
                   </div>
-                  {archivo.archivoUrl ? (
-                    <div className="mt-3 flex gap-4 text-[10px] font-bold uppercase tracking-wide">
-                      <a className="text-slate-950" href={archivo.archivoUrl} target="_blank" rel="noreferrer">
+                  {(archivo.downloadUrl || archivo.archivoUrl) ? (
+                    <div className="mt-3 text-[10px] font-bold uppercase tracking-wide">
+                      <a className="text-slate-950" href={archivo.downloadUrl || archivo.archivoUrl} download={archivo.nombreArchivo}>
                         Descargar
-                      </a>
-                      <a className="text-slate-400" href={archivo.archivoUrl} target="_blank" rel="noreferrer">
-                        Ver
                       </a>
                     </div>
                   ) : null}
@@ -351,11 +412,21 @@ function CustomModalDetalleNoticia({
             )}
           </div>
         </div>
+        </div>
       </div>
-      <div className="flex justify-end border-t border-slate-100 px-8 py-5">
+      <div className="flex shrink-0 justify-end border-t border-slate-100 px-8 py-5">
         <CustomButton size="sm" onClick={onCerrar}>Cerrar</CustomButton>
       </div>
     </CustomModalBase>
+  );
+}
+
+function DetalleCompania({ etiqueta, valor }: { etiqueta: string; valor?: string }) {
+  return (
+    <div>
+      <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{etiqueta}</span>
+      <span className="mt-1 block text-slate-700">{valor || "-"}</span>
+    </div>
   );
 }
 
@@ -580,7 +651,7 @@ function CustomModalBase({
         if (event.target === event.currentTarget) onCerrar();
       }}
     >
-      <div className={`max-h-[92vh] w-full overflow-y-auto rounded-xl bg-white shadow-2xl ${ancho}`}>
+      <div className={`flex max-h-[92vh] w-full flex-col overflow-hidden rounded-xl bg-white shadow-2xl ${ancho}`}>
         {children}
       </div>
     </div>
@@ -600,14 +671,50 @@ function BotonCerrar({ onCerrar }: { onCerrar: () => void }) {
 }
 
 function convertirArchivo(archivo: File): CompaniaNoticiaArchivo {
+  const tipoArchivo = archivo.type || "application/octet-stream";
+
   return {
     idCompaniaNoticiaArchivo: 0,
     idTipoArchivo: 0,
     nombreArchivo: archivo.name,
-    formatoArchivo: archivo.type,
+    formatoArchivo: tipoArchivo,
     archivoUrl: "",
+    downloadUrl: "",
     uploadUrl: "",
   };
+}
+
+async function subirArchivosNoticia(archivosRespuesta: CompaniaNoticiaArchivo[], archivosLocales: File[]) {
+  if (archivosLocales.length === 0) return;
+
+  const archivosConUrl = archivosRespuesta.filter((archivo) => archivo.uploadUrl);
+  if (archivosConUrl.length !== archivosLocales.length) {
+    throw new Error("La respuesta de carga de archivos es invalida");
+  }
+
+  await Promise.all(
+    archivosLocales.map(async (archivoLocal, indice) => {
+      const archivoRespuesta =
+        archivosConUrl.find((archivo) => archivo.nombreArchivo === archivoLocal.name)
+        ?? archivosConUrl[indice];
+
+      if (!archivoRespuesta?.uploadUrl) {
+        throw new Error("No se pudo obtener la URL de carga del archivo");
+      }
+
+      const respuesta = await fetch(archivoRespuesta.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": archivoLocal.type || "application/octet-stream",
+        },
+        body: archivoLocal,
+      });
+
+      if (!respuesta.ok) {
+        throw new Error("No se pudo subir el archivo adjunto");
+      }
+    }),
+  );
 }
 
 function formatearFecha(fecha: string) {

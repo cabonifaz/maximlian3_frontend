@@ -4,6 +4,7 @@ export interface CompaniaNoticiaArchivo {
   nombreArchivo: string;
   formatoArchivo: string;
   archivoUrl: string;
+  downloadUrl: string;
   uploadUrl: string;
 }
 
@@ -54,4 +55,5 @@ export interface CompaniaNoticiaEliminarRequest {
 
 export interface CompaniaNoticiaGuardarResponse {
   idCompaniaNoticia?: number;
+  archivos: CompaniaNoticiaArchivo[];
 }

@@ -58,9 +58,15 @@ function normalizarArchivo(item: unknown): CompaniaNoticiaArchivo {
       registro.IdCompaniaNoticiaArchivo,
     ) ?? 0,
     idTipoArchivo: obtenerNumero(registro.idTipoArchivo, registro.IdTipoArchivo) ?? 0,
-    nombreArchivo: obtenerTexto(registro.nombreArchivo, registro.NombreArchivo) || "Archivo adjunto",
-    formatoArchivo: obtenerTexto(registro.formatoArchivo, registro.FormatoArchivo),
+    nombreArchivo: obtenerTexto(
+      registro.nombreArchivo,
+      registro.NombreArchivo,
+      registro.archivoUrl,
+      registro.ArchivoUrl,
+    ) || "Archivo adjunto",
+    formatoArchivo: obtenerTexto(registro.formatoArchivo, registro.FormatoArchivo, registro.tipoArchivo, registro.TipoArchivo),
     archivoUrl: obtenerTexto(registro.archivoUrl, registro.ArchivoUrl),
+    downloadUrl: obtenerTexto(registro.downloadUrl, registro.DownloadUrl),
     uploadUrl: obtenerTexto(registro.uploadUrl, registro.UploadUrl),
   };
 }
@@ -127,6 +133,7 @@ function normalizarGuardado(resultado: unknown): CompaniaNoticiaGuardarResponse 
 
   return {
     idCompaniaNoticia: obtenerNumero(registro.idCompaniaNoticia, registro.IdCompaniaNoticia),
+    archivos: obtenerLista(registro.archivos, registro.Archivos, registro.lstArchivos, registro.LstArchivos).map(normalizarArchivo),
   };
 }
 
