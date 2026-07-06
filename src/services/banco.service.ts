@@ -99,6 +99,47 @@ function normalizarGuardado(resultado: unknown): BancoGuardarResponse {
   };
 }
 
+const cacheBancoObtener = new Map<string, BancoListaItem | null>();
+const solicitudesBancoObtener = new Map<string, Promise<BancoListaItem | null>>();
+
+function obtenerClaveBanco(params: BancoObtenerParams) {
+  return JSON.stringify({
+    idBanco: params.idBanco ?? null,
+    nombre: params.nombre?.trim() || null,
+  });
+}
+
+async function obtenerBanco(params: BancoObtenerParams): Promise<BancoListaItem | null> {
+  const clave = obtenerClaveBanco(params);
+  if (cacheBancoObtener.has(clave)) return cacheBancoObtener.get(clave) ?? null;
+
+  const solicitudExistente = solicitudesBancoObtener.get(clave);
+  if (solicitudExistente) return solicitudExistente;
+
+  const solicitud = maximilianService
+    .get<ApiResponse<unknown>>("/api/Banco/obtener", {
+      params: {
+        IdBanco: params.idBanco,
+        Nombre: params.nombre,
+      },
+    })
+    .then(({ data }) => {
+      if (!esRespuestaOkCompatibilidad(data, "/api/Banco/obtener")) {
+        throw new Error(data.mensaje || "Error al obtener el banco");
+      }
+
+      const banco = normalizarLista(data.result).lstBanco[0] ?? null;
+      cacheBancoObtener.set(clave, banco);
+      return banco;
+    })
+    .finally(() => {
+      solicitudesBancoObtener.delete(clave);
+    });
+
+  solicitudesBancoObtener.set(clave, solicitud);
+  return solicitud;
+}
+
 export const servicioBanco = {
   list: async (params: BancoListParams): Promise<BancoListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Banco/listar", {
@@ -116,18 +157,7 @@ export const servicioBanco = {
   },
 
   obtener: async (params: BancoObtenerParams): Promise<BancoListaItem | null> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Banco/obtener", {
-      params: {
-        IdBanco: params.idBanco,
-        Nombre: params.nombre,
-      },
-    });
-
-    if (!esRespuestaOkCompatibilidad(data, "/api/Banco/obtener")) {
-      throw new Error(data.mensaje || "Error al obtener el banco");
-    }
-
-    return normalizarLista(data.result).lstBanco[0] ?? null;
+    return obtenerBanco(params);
   },
 
   crear: async (payload: BancoCrearRequest): Promise<BancoGuardarResponse> => {
@@ -137,6 +167,7 @@ export const servicioBanco = {
       throw new Error(data.mensaje || "Error al crear el banco");
     }
 
+    cacheBancoObtener.clear();
     return normalizarGuardado(data.result);
   },
 
@@ -147,6 +178,7 @@ export const servicioBanco = {
       throw new Error(data.mensaje || "Error al editar el banco");
     }
 
+    cacheBancoObtener.clear();
     return normalizarGuardado(data.result);
   },
 
@@ -156,5 +188,7 @@ export const servicioBanco = {
     if (!esRespuestaOkCompatibilidad(data, "/api/Banco/eliminar")) {
       throw new Error(data.mensaje || "Error al eliminar el banco");
     }
+
+    cacheBancoObtener.clear();
   },
 };

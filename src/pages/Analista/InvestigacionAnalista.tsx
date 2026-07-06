@@ -67,6 +67,7 @@ import { servicioCliente } from "@maximilian/services/cliente.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { usePrecargaTablaMaestra } from "@maximilian/hooks/usePrecargaTablaMaestra";
 import {
   obtenerDatosInvestigacionAnalista,
   seccionesInvestigacionAnalista,
@@ -1475,6 +1476,29 @@ function PantallaInvestigacionAnalista({
       profesion: "Ingeniero",
       referenciaAdicional: "",
     },
+  ]);
+
+  usePrecargaTablaMaestra([
+    TablaMaestraId.TIPO_PERSONA,
+    TablaMaestraId.PAIS,
+    TablaMaestraId.TIPO_REG_TRIBUTARIO,
+    TablaMaestraId.ESTADO_CLIENTE,
+    TablaMaestraId.CIUDAD,
+    TablaMaestraId.TIPO_EMPRESA,
+    TablaMaestraId.MONEDA,
+    TablaMaestraId.OBLIGACION_BOLSA,
+    TablaMaestraId.MES,
+    TablaMaestraId.SECTOR_ECONOMICO,
+    TablaMaestraId.ACTIVIDAD_ECONOMICA,
+    TablaMaestraId.CLASE_CIIU,
+    TablaMaestraId.TIPO_LOCAL,
+    TablaMaestraId.TIPO_PROVEEDOR,
+    TablaMaestraId.TIEMPO_CREDITO_VENTAS,
+    TablaMaestraId.PLANTILLA_INFORME,
+    TablaMaestraId.TIPO_TRAMITE,
+    TablaMaestraId.IDIOMA,
+    TablaMaestraId.FORMATO_FECHA_INFORME,
+    TablaMaestraId.CARGO_DIRECTORIO,
   ]);
 
   const { data: opcionesTipoPersona } = useQuery({
