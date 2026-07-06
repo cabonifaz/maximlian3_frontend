@@ -19,14 +19,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { servicioCompaniaNoticia } from "@maximilian/services/companiaNoticia.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
-import {
-  obtenerDescripcionTablaMaestra,
-  obtenerSiguienteNumTablaMaestra,
-  TablaMaestraId,
-  type EntradaTablaMaestra,
-} from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   CompaniaNoticiaArchivo,
   CompaniaNoticiaCrearRequest,
@@ -34,7 +27,6 @@ import type {
 } from "@maximilian/shared/types/companiaNoticia.type";
 import { CustomButton } from "./CustomButton";
 import { CustomLabel } from "./CustomLabel";
-import { CustomSelectorBuscable } from "./CustomSelectorBuscable";
 import { CustomSelectorFecha } from "./CustomSelectorFecha";
 
 const esquemaNoticia = z.object({
@@ -45,7 +37,7 @@ const esquemaNoticia = z.object({
   titulo: z.string().trim().min(1, "Ingrese el titulo"),
   descripcion: z.string().trim().min(1, "Ingrese la descripcion"),
   fechaNoticia: z.string().trim().min(1, "Ingrese la fecha"),
-  idCategoria: z.coerce.number().int("Seleccione una categoria valida").min(1, "Seleccione una categoria"),
+  categoria: z.string().trim().min(1, "Ingrese la categoria"),
 });
 
 type FormularioNoticiaEntrada = z.input<typeof esquemaNoticia>;
@@ -62,7 +54,7 @@ const valoresIniciales: FormularioNoticiaEntrada = {
   titulo: "",
   descripcion: "",
   fechaNoticia: new Date().toISOString().slice(0, 10),
-  idCategoria: 0,
+  categoria: "",
 };
 
 export function CustomBancoNoticias({
@@ -134,77 +126,10 @@ export function CustomBancoNoticias({
     },
   });
 
-  const crearCategoriaMutation = useMutation({
-    mutationFn: async (terminoBusqueda: string) => {
-      const categoria = terminoBusqueda.trim();
-      const opcionesActuales = await queryClient.fetchQuery({
-        queryKey: ["masterTable", TablaMaestraId.CATEGORIA_NOTICIA],
-        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CATEGORIA_NOTICIA),
-        staleTime: 0,
-      });
-      const categoriaExistente = opcionesActuales.find(
-        (opcion) =>
-          normalizarTexto(obtenerEtiquetaTablaMaestra(opcion)) ===
-          normalizarTexto(categoria),
-      );
-
-      if (categoriaExistente) return categoriaExistente;
-
-      const num1 = obtenerSiguienteNumTablaMaestra(opcionesActuales);
-
-      await servicioTablaMaestra.crear({
-        idMaestro: TablaMaestraId.CATEGORIA_NOTICIA,
-        descripcion: obtenerDescripcionTablaMaestra(
-          TablaMaestraId.CATEGORIA_NOTICIA,
-        ),
-        num1,
-        num2: null,
-        num3: null,
-        string1: categoria,
-        string2: null,
-        string3: null,
-        date1: null,
-        date2: null,
-        date3: null,
-      });
-
-      await queryClient.invalidateQueries({
-        queryKey: ["masterTable", TablaMaestraId.CATEGORIA_NOTICIA],
-      });
-
-      const opcionesActualizadas = await queryClient.fetchQuery({
-        queryKey: ["masterTable", TablaMaestraId.CATEGORIA_NOTICIA],
-        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CATEGORIA_NOTICIA),
-        staleTime: 0,
-      });
-
-      return (
-        opcionesActualizadas.find(
-          (opcion) =>
-            normalizarTexto(obtenerEtiquetaTablaMaestra(opcion)) ===
-            normalizarTexto(categoria),
-        ) ?? opcionesActualizadas.find((opcion) => opcion.num1 === num1)
-      );
-    },
-    onSuccess: (categoriaCreada) => {
-      if (!categoriaCreada?.num1) return;
-
-      setValue("idCategoria", categoriaCreada.num1, {
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true,
-      });
-    },
-    onError: () => {
-      toast.error("No se pudo agregar la categoria.");
-    },
-  });
-
   const noticias = respuestaNoticias?.lstCompaniaNoticia ?? [];
   const totalRegistros = respuestaNoticias?.totalRegistros ?? noticias.length;
   const idCompaniaSeleccionada = watch("idCompania");
   const fechaNoticiaSeleccionada = watch("fechaNoticia");
-  const idCategoriaSeleccionada = watch("idCategoria");
 
   const etiquetaPaginacion = useMemo(
     () => `Mostrando ${noticias.length} de ${totalRegistros} noticias`,
@@ -225,7 +150,7 @@ export function CustomBancoNoticias({
         titulo: datos.titulo.trim(),
         descripcion: datos.descripcion.trim(),
         fechaNoticia: new Date(`${datos.fechaNoticia}T00:00:00`).toISOString(),
-        idCategoria: datos.idCategoria,
+        categoria: datos.categoria.trim(),
         archivos: archivosSeleccionados.map(convertirArchivo),
       },
       archivos: archivosSeleccionados,
@@ -436,44 +361,17 @@ export function CustomBancoNoticias({
                   error={errors.fechaNoticia?.message}
                   placeholder="Seleccione fecha"
                 />
-                <CustomSelectorBuscable
-                  label="Categoria"
-                  idMaster={TablaMaestraId.CATEGORIA_NOTICIA}
-                  value={typeof idCategoriaSeleccionada === "number" ? idCategoriaSeleccionada : Number(idCategoriaSeleccionada)}
-                  onChange={(valor) => {
-                    setValue("idCategoria", valor, {
-                      shouldDirty: true,
-                      shouldTouch: true,
-                      shouldValidate: true,
-                    });
-                  }}
-                  error={errors.idCategoria?.message}
-                  placeholder="Seleccione categoria"
-                  required
-                  dropdownZIndexClassName="z-[130]"
-                  overlayZIndexClassName="z-[129]"
-                  obtenerEtiquetaOpcion={obtenerEtiquetaTablaMaestra}
-                  loading={crearCategoriaMutation.isPending}
-                  puedeAgregarNuevo={(terminoBusqueda) =>
-                    terminoBusqueda.trim().length > 0
-                  }
-                  renderizarVistaPreviaAltaNueva={(terminoBusqueda) => {
-                    const categoria = terminoBusqueda.trim();
-                    if (!categoria) return null;
-
-                    return (
-                      <p className="mb-2 text-xs font-semibold text-slate-400">
-                        Nueva categoria:{" "}
-                        <span className="font-bold text-brand-wine">
-                          {categoria}
-                        </span>
-                      </p>
-                    );
-                  }}
-                  onAddNew={(terminoBusqueda) =>
-                    crearCategoriaMutation.mutate(terminoBusqueda)
-                  }
-                />
+                <CampoFormulario
+                  etiqueta="Categoria"
+                  error={errors.categoria?.message}
+                  requerido
+                >
+                  <input
+                    className="h-11 w-full rounded-lg border border-slate-100 bg-slate-50 px-3 text-sm text-slate-600 outline-none focus:border-slate-300"
+                    placeholder="Ej. Financiero"
+                    {...register("categoria")}
+                  />
+                </CampoFormulario>
               </div>
               <CampoArchivos
                 archivos={archivosSeleccionados}
@@ -1089,18 +987,6 @@ function formatearTamano(tamano: number) {
 
 function obtenerEtiquetaCompania(compania: CompaniaListaItem) {
   return compania.nombreCompleto || `Compania ${compania.idCompania}`;
-}
-
-function obtenerEtiquetaTablaMaestra(opcion?: EntradaTablaMaestra) {
-  return opcion?.string1 || opcion?.descripcion || opcion?.string2 || "";
-}
-
-function normalizarTexto(valor: string) {
-  return valor
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
 }
 
 function convertirTextoFechaADate(fecha: string) {

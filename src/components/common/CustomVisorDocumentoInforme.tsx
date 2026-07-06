@@ -27,6 +27,7 @@ const ZOOM_MINIMO_INFORME = 0.35;
 const ZOOM_MAXIMO_INFORME = 1.6;
 const PASO_ZOOM_INFORME = 0.1;
 const ANCHO_PAGINA_FALLBACK_PX = 794;
+const TIPO_MENSAJE_PAGEDJS_LISTO = "maximilian:pagedjs-listo";
 
 function escaparHtml(texto: string): string {
   return texto
@@ -38,6 +39,10 @@ function escaparHtml(texto: string): string {
 
 function escaparAtributo(texto: string): string {
   return escaparHtml(texto).replace(/'/g, "&#39;");
+}
+
+function escaparScriptJson(valor: string): string {
+  return JSON.stringify(valor).replace(/</g, "\\u003c");
 }
 
 function convertirLongitudCssAPx(valor?: string): number {
@@ -481,6 +486,7 @@ export function CustomVisorDocumentoInforme({
   const [alturaIframe, setAlturaIframe] = useState(600);
   const [error, setError] = useState<string | null>(null);
   const [srcdoc, setSrcdoc] = useState<string>("");
+  const [tokenRenderDocumento, setTokenRenderDocumento] = useState("");
   const [zoomInforme, setZoomInforme] = useState(1);
   const [anchoDisponibleInforme, setAnchoDisponibleInforme] = useState(0);
   const [zoomModificadoPorUsuario, setZoomModificadoPorUsuario] = useState(false);
@@ -492,9 +498,18 @@ export function CustomVisorDocumentoInforme({
     try {
       const doc = iframe.contentDocument;
       if (doc) {
-        const altura = doc.documentElement.scrollHeight;
-        if (altura > 100) {
-          setAlturaIframe(altura + 40);
+        const paginas = doc.querySelectorAll(".pagedjs_page");
+        const contenedorPaginas = doc.querySelector(".pagedjs_pages") as HTMLElement | null;
+        const altura = Math.max(
+          doc.documentElement.scrollHeight,
+          doc.body?.scrollHeight ?? 0,
+          contenedorPaginas?.scrollHeight ?? 0,
+        );
+        const paginasConContenido = Array.from(paginas).some((pagina) =>
+          (pagina.textContent ?? "").trim().length > 0 || Boolean(pagina.querySelector("img, table")),
+        );
+        if (altura > 100 && paginas.length > 0 && paginasConContenido) {
+          setAlturaIframe(altura + (paginas.length > 0 ? 60 : 40));
           setEstaPaginando(false);
           return;
         }
@@ -552,6 +567,9 @@ export function CustomVisorDocumentoInforme({
     setEstaPaginando(true);
     setError(null);
     setZoomModificadoPorUsuario(false);
+    setAlturaIframe(600);
+    const tokenRender = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    setTokenRenderDocumento(tokenRender);
 
     const css = construirCss(documento.document);
     const contenido = construirHtmlContenido(
@@ -568,6 +586,67 @@ export function CustomVisorDocumentoInforme({
 <body>
 ${contenido}
 <script src="${escaparAtributo(pagedJsUrl)}"></script>
+<script>
+(function () {
+  var token = ${escaparScriptJson(tokenRender)};
+  var intentos = 0;
+  var alturaAnterior = 0;
+  var lecturasEstables = 0;
+
+  function obtenerAltura() {
+    var paginas = document.querySelector(".pagedjs_pages");
+    return Math.max(
+      document.documentElement ? document.documentElement.scrollHeight : 0,
+      document.body ? document.body.scrollHeight : 0,
+      paginas ? paginas.scrollHeight : 0
+    );
+  }
+
+  function tieneContenidoRenderizado() {
+    var paginas = Array.prototype.slice.call(document.querySelectorAll(".pagedjs_page"));
+    if (!paginas.length) return false;
+    return paginas.some(function (pagina) {
+      return (pagina.textContent || "").trim().length > 0 || Boolean(pagina.querySelector("img, table"));
+    });
+  }
+
+  function revisar() {
+    intentos += 1;
+    var altura = obtenerAltura();
+    var contenidoListo = tieneContenidoRenderizado();
+
+    if (Math.abs(altura - alturaAnterior) <= 2) {
+      lecturasEstables += 1;
+    } else {
+      lecturasEstables = 0;
+      alturaAnterior = altura;
+    }
+
+    if (contenidoListo && altura > 100 && (lecturasEstables >= 2 || intentos >= 60)) {
+      window.parent.postMessage({
+        tipo: ${escaparScriptJson(TIPO_MENSAJE_PAGEDJS_LISTO)},
+        token: token,
+        altura: altura
+      }, "*");
+      return;
+    }
+
+    if (intentos >= 120) {
+      window.parent.postMessage({
+        tipo: ${escaparScriptJson(TIPO_MENSAJE_PAGEDJS_LISTO)},
+        token: token,
+        altura: altura,
+        forzado: true
+      }, "*");
+      return;
+    }
+
+    window.setTimeout(revisar, 150);
+  }
+
+  window.setTimeout(revisar, 150);
+})();
+</script>
 </body>
 </html>`;
 
@@ -576,8 +655,31 @@ ${contenido}
   }, [documentoKey]);
 
   const manejarCargaIframe = useCallback(() => {
-    setTimeout(ajustarAltura, 800);
+    setTimeout(ajustarAltura, 2500);
   }, [ajustarAltura]);
+
+  useEffect(() => {
+    const manejarMensaje = (event: MessageEvent) => {
+      const data = event.data as {
+        tipo?: string;
+        token?: string;
+        altura?: number;
+      } | null;
+
+      if (!data || data.tipo !== TIPO_MENSAJE_PAGEDJS_LISTO || data.token !== tokenRenderDocumento) return;
+
+      if (typeof data.altura === "number" && data.altura > 100) {
+        setAlturaIframe(data.altura + 60);
+      }
+      setEstaPaginando(false);
+    };
+
+    window.addEventListener("message", manejarMensaje);
+
+    return () => {
+      window.removeEventListener("message", manejarMensaje);
+    };
+  }, [tokenRenderDocumento]);
 
   const acercarInforme = useCallback(() => {
     setZoomModificadoPorUsuario(true);
@@ -717,6 +819,7 @@ ${contenido}
             }}
           >
             <iframe
+              key={tokenRenderDocumento}
               ref={iframeRef}
               title="Vista previa del documento"
               srcDoc={srcdoc}
@@ -726,7 +829,8 @@ ${contenido}
                 width: `${anchoPaginaPx}px`,
                 height: `${alturaIframe}px`,
                 border: "none",
-                display: estaPaginando ? "none" : "block",
+                display: "block",
+                visibility: estaPaginando ? "hidden" : "visible",
                 transform: `scale(${zoomInforme})`,
                 transformOrigin: "top left",
                 pointerEvents: "none",
