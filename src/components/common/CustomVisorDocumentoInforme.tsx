@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo, type PointerEvent as ReactPointerEvent } from "react";
-import { Minus, Plus, RotateCcw } from "lucide-react";
+import { Hand, MousePointer2, Minus, Plus, RotateCcw } from "lucide-react";
 import pagedJsUrl from "../../../node_modules/pagedjs/dist/paged.polyfill.js?url";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import type {
@@ -28,6 +28,7 @@ const ZOOM_MAXIMO_INFORME = 1.6;
 const PASO_ZOOM_INFORME = 0.1;
 const ANCHO_PAGINA_FALLBACK_PX = 794;
 const TIPO_MENSAJE_PAGEDJS_LISTO = "maximilian:pagedjs-listo";
+type ModoInteraccionInforme = "arrastrar" | "seleccionar";
 
 function escaparHtml(texto: string): string {
   return texto
@@ -491,6 +492,7 @@ export function CustomVisorDocumentoInforme({
   const [anchoDisponibleInforme, setAnchoDisponibleInforme] = useState(0);
   const [zoomModificadoPorUsuario, setZoomModificadoPorUsuario] = useState(false);
   const [estaArrastrandoInforme, setEstaArrastrandoInforme] = useState(false);
+  const [modoInteraccionInforme, setModoInteraccionInforme] = useState<ModoInteraccionInforme>("arrastrar");
 
   const ajustarAltura = useCallback(() => {
     const iframe = iframeRef.current;
@@ -697,6 +699,8 @@ ${contenido}
   }, [zoomAjustadoInforme]);
 
   const iniciarArrastreInforme = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (modoInteraccionInforme !== "arrastrar") return;
+
     const contenedor = contenedorScrollRef.current;
     if (!contenedor || event.pointerType !== "mouse" || event.button !== 0) return;
 
@@ -711,9 +715,11 @@ ${contenido}
     };
     setEstaArrastrandoInforme(true);
     contenedor.setPointerCapture(event.pointerId);
-  }, []);
+  }, [modoInteraccionInforme]);
 
   const moverArrastreInforme = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (modoInteraccionInforme !== "arrastrar") return;
+
     const contenedor = contenedorScrollRef.current;
     if (!contenedor || !estaArrastrandoInforme) return;
 
@@ -721,7 +727,7 @@ ${contenido}
     const posicionInicial = posicionArrastreRef.current;
     contenedor.scrollLeft = posicionInicial.scrollLeft - (event.clientX - posicionInicial.x);
     contenedor.scrollTop = posicionInicial.scrollTop - (event.clientY - posicionInicial.y);
-  }, [estaArrastrandoInforme]);
+  }, [estaArrastrandoInforme, modoInteraccionInforme]);
 
   const terminarArrastreInforme = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     const contenedor = contenedorScrollRef.current;
@@ -736,15 +742,52 @@ ${contenido}
   const porcentajeZoom = Math.round(zoomInforme * 100);
   const puedeAlejar = zoomInforme > ZOOM_MINIMO_INFORME;
   const puedeAcercar = zoomInforme < ZOOM_MAXIMO_INFORME;
+  const estaModoArrastrarInforme = modoInteraccionInforme === "arrastrar";
   const classNameContenedorVisor = `flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm ${
     ocuparAltoDisponible ? "h-full min-h-0" : "h-[min(72vh,760px)]"
   }`;
   const classNameContenedorScroll = `min-h-0 flex-1 overflow-auto px-2 py-4 sm:px-4 ${
-    estaArrastrandoInforme ? "cursor-grabbing select-none" : "cursor-grab"
+    estaModoArrastrarInforme
+      ? estaArrastrandoInforme
+        ? "cursor-grabbing select-none"
+        : "cursor-grab select-none"
+      : "cursor-text"
   }`;
 
   const controlesZoom = (
     <div className="sticky top-0 z-20 flex flex-wrap items-center justify-end gap-2 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur sm:px-4">
+      <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <CustomButton
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={`h-9 w-9 rounded-none ${
+            estaModoArrastrarInforme
+              ? "bg-slate-900 text-white hover:bg-slate-800"
+              : "text-slate-600 hover:bg-slate-100"
+          }`}
+          onClick={() => setModoInteraccionInforme("arrastrar")}
+          aria-label="Mover informe arrastrando"
+          title="Mover"
+        >
+          <Hand size={16} />
+        </CustomButton>
+        <CustomButton
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={`h-9 w-9 rounded-none border-l border-slate-200 ${
+            !estaModoArrastrarInforme
+              ? "bg-slate-900 text-white hover:bg-slate-800"
+              : "text-slate-600 hover:bg-slate-100"
+          }`}
+          onClick={() => setModoInteraccionInforme("seleccionar")}
+          aria-label="Seleccionar texto del informe"
+          title="Seleccionar texto"
+        >
+          <MousePointer2 size={16} />
+        </CustomButton>
+      </div>
       <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <CustomButton
           type="button"
@@ -833,7 +876,7 @@ ${contenido}
                 visibility: estaPaginando ? "hidden" : "visible",
                 transform: `scale(${zoomInforme})`,
                 transformOrigin: "top left",
-                pointerEvents: "none",
+                pointerEvents: estaModoArrastrarInforme ? "none" : "auto",
               }}
             />
           </div>
@@ -863,7 +906,7 @@ ${contenido}
         onPointerCancel={terminarArrastreInforme}
       >
         <div
-          className="mx-auto min-w-190 origin-top"
+          className={`mx-auto min-w-190 origin-top ${estaModoArrastrarInforme ? "select-none" : "select-text"}`}
           style={{
             transform: `scale(${zoomInforme})`,
             width: `${anchoPaginaPx * zoomInforme}px`,
