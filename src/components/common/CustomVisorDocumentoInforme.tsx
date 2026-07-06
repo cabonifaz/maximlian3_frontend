@@ -4,6 +4,7 @@ import pagedJsUrl from "../../../node_modules/pagedjs/dist/paged.polyfill.js?url
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import type {
   DocumentoInformeGenerado,
+  FooterCell,
   PlantillaDocumentoConfig,
   PlantillaSeccion,
 } from "@maximilian/shared/types/informe.type";
@@ -58,29 +59,52 @@ function convertirLongitudCssAPx(valor?: string): number {
 
 function renderizarSeccion(seccion: PlantillaSeccion): string {
   const sec = seccion as Record<string, unknown>;
-  const secStyle = sec.style ? ` style="${sec.style}"` : "";
+  const secStyle = sec.style
+    ? ` style="${sec.style}"`
+    : "";
+  let html = "";
 
   switch (seccion.type) {
     case "heading": {
       const tag = seccion.level === 1 ? "h1" : "h2";
-      return `<${tag}${secStyle}>${escaparHtml(seccion.text)}</${tag}>`;
+      html = `<${tag}${secStyle}>${escaparHtml(seccion.text)}</${tag}>`;
+      break;
     }
 
     case "subtitle":
-      return `<div${secStyle}>${escaparHtml(seccion.text)}</div>`;
+      html = `<div${secStyle}>${escaparHtml(seccion.text)}</div>`;
+      break;
 
     case "text":
-      return `<div${secStyle}>${escaparHtml(seccion.field)}</div>`;
+      html = `<div${secStyle}>${escaparHtml(seccion.field)}</div>`;
+      break;
+
+    case "inline": {
+      const runs = (seccion.runs ?? []).map((r) =>
+        r.style
+          ? `<span style="${r.style}">${escaparHtml(r.text)}</span>`
+          : escaparHtml(r.text)
+      ).join("");
+      html = `<div${secStyle}>${runs}</div>`;
+      break;
+    }
 
     case "keyValue": {
       const kv = seccion as Record<string, unknown>;
       const kvStyle = kv.style ? ` style="${kv.style}"` : "";
-      return `<table${kvStyle}><tbody>${seccion.rows
+      html = `<table${kvStyle}><tbody>${seccion.rows
         .map(
           (row) =>
-            `<tr>${row.map((cell) => `<td${cell.style ? ` style="${cell.style}"` : ""}>${escaparHtml(cell.text)}</td>`).join("")}</tr>`,
+            `<tr>${row.map((cell) => {
+              const attrs = [
+                cell.colspan && cell.colspan > 1 ? `colspan="${cell.colspan}"` : "",
+                cell.style ? `style="${cell.style}"` : "",
+              ].filter(Boolean).join(" ");
+              return `<td${attrs ? ` ${attrs}` : ""}>${escaparHtml(cell.text)}</td>`;
+            }).join("")}</tr>`,
         )
         .join("")}</tbody></table>`;
+      break;
     }
 
     case "borderedBox": {
@@ -101,18 +125,21 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
           return `<tr><td${rowLbl}>${escaparHtml(String(f.label ?? ""))}</td><td${valStyle}>${escaparHtml(String(f.value ?? ""))}</td></tr>`;
         })
         .join("");
-      return `<table${boxStyle}><tbody>${filas}</tbody></table>`;
+      html = `<table${boxStyle}><tbody>${filas}</tbody></table>`;
+      break;
     }
+
     // El "referenceBox" es similar al "borderedBox" pero con un diseño específico para referencias, con un título destacado y una lista de ítems debajo.
     case "referenceBox": {
       const ref = seccion as Record<string, unknown>;
       const refStyle = ref.style ? ` style="${ref.style}"` : "";
       const refTitleStyle = ref.titleStyle ? ` style="${ref.titleStyle}"` : "";
       const refCellStyle = ref.cellStyle ? ` style="${ref.cellStyle}"` : "";
-      return `<table${refStyle}><tbody>
+      html = `<table${refStyle}><tbody>
         <tr><td${refTitleStyle}>${escaparHtml(seccion.title)}</td></tr>
         ${seccion.items.map((item, i) => `<tr><td${i === seccion.items.length - 1 ? (ref.lastCellStyle ? ` style="${ref.lastCellStyle}"` : refCellStyle) : refCellStyle}>${escaparHtml(item)}</td></tr>`).join("")}
       </tbody></table>`;
+      break;
     }
 
     case "dataTable": {
@@ -126,7 +153,7 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
       const colgroup = seccion.columnWidths
         ? `<colgroup>${seccion.columnWidths.map((w) => `<col style="width:${w}">`).join("")}</colgroup>`
         : "";
-      return `<table${dtStyleAttr}>${colgroup}<thead><tr>${seccion.columns
+      html = `<table${dtStyleAttr}>${colgroup}<thead><tr>${seccion.columns
         .map(
           (c) =>
             `<th style="${(seccion.cellStyle ?? "") + dtHeaderStyle}">${escaparHtml(c.header)}</th>`,
@@ -139,10 +166,12 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
           return `<tr>${celdas.map((celda) => `<td${dtCellStyle}>${escaparHtml(String(celda ?? ""))}</td>`).join("")}</tr>`;
         })
         .join("")}</tbody></table>`;
+      break;
     }
 
     case "repeat":
-      return seccion.sections.map(renderizarSeccion).join("");
+      html = seccion.sections.map(renderizarSeccion).join("");
+      break;
 
     case "repeatDetail": {
       const rd = seccion as Record<string, unknown>;
@@ -150,20 +179,23 @@ function renderizarSeccion(seccion: PlantillaSeccion): string {
       const rdContentStyle = rd.contentStyle
         ? ` style="${rd.contentStyle}"`
         : "";
-      return (seccion.items ?? [])
+      html = (seccion.items ?? [])
         .map(
           (item) =>
             `<div${rdTitleStyle}>${escaparHtml(item.title)}</div><div${rdContentStyle}>${escaparHtml(item.content)}</div>`,
         )
         .join("");
+      break;
     }
 
     case "spacer":
-      return `<div style="height:${seccion.height ?? "0.3in"}"></div>`;
-
-    default:
-      return "";
+      html = `<div style="height:${seccion.height ?? "0.3in"}"></div>`;
+      break;
   }
+
+  return seccion.pageBreak
+    ? `<div class="sr-salto-pagina" aria-hidden="true">&nbsp;</div>${html}`
+    : html;
 }
 
 function construirCss(config: PlantillaDocumentoConfig): string {
@@ -178,6 +210,8 @@ function construirCss(config: PlantillaDocumentoConfig): string {
   const interlineado = config.font?.lineSpacing ?? 1.15;
   const pieTexto = escaparHtml(config.footer?.text ?? "");
   const pieTamano = config.footer?.fontSize ?? "7pt";
+  const piePeso = config.footer?.fontWeight ?? "normal";
+  const pieEstilo = config.footer?.fontStyle ?? "normal";
   const headerAlign = config.header?.align ?? "center";
   const footerAlign = config.footer?.align ?? "left";
   const headerGapAfter = config.header?.gapAfter ?? "0";
@@ -205,6 +239,7 @@ function construirCss(config: PlantillaDocumentoConfig): string {
         vertical-align: ${config.footer?.marginBottom ? "bottom" : "top"};
       }
     }
+    ${config.firstPageFooter ? `@page :first { @bottom-center { content: element(pie-pagina-p1); vertical-align: ${config.footer?.marginBottom ? "bottom" : "top"}; } }` : ""}
 
     .sr-encabezado-logo {
       position: running(encabezado-logo);
@@ -225,9 +260,13 @@ function construirCss(config: PlantillaDocumentoConfig): string {
     .sr-pie-pagina {
       position: running(pie-pagina);
       font-size: ${pieTamano};
+      font-weight: ${piePeso};
+      font-style: ${pieEstilo};
       line-height: 1.0;
       font-family: ${fuente};
-      text-align: ${footerAlign};
+      ${config.footer?.layout === "table" ? "" : `text-align: ${footerAlign};`}
+      ${config.footer?.containerStyle ? config.footer.containerStyle + ";" : ""}
+      ${config.footer?.footerExtend ? `margin-left:-${config.footer.footerExtend};margin-right:-${config.footer.footerExtend};` : ""}
       white-space: pre-line;
       padding-left: ${fiL};
       padding-right: ${fiR};
@@ -236,14 +275,47 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       box-sizing: border-box;
     }
 
+    ${config.firstPageFooter ? `
+    .sr-pie-pagina-p1 {
+      position: running(pie-pagina-p1);
+      font-size: ${pieTamano};
+      line-height: 1.0;
+      font-family: ${fuente};
+      ${config.firstPageFooter.containerStyle ? config.firstPageFooter.containerStyle + ";" : ""}
+      ${config.firstPageFooter.footerExtend ? `margin-left:-${config.firstPageFooter.footerExtend};margin-right:-${config.firstPageFooter.footerExtend};` : ""}
+      padding-top: ${config.firstPageFooter.gapBefore ?? "0"};
+      box-sizing: border-box;
+    }` : ""}
+
+    ${config.footer?.layout === "table" ? `
+    .sr-pie-tabla {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .sr-pie-pagnum {
+      width: ${config.footer?.pageColWidth ?? "auto"};
+      ${config.footer?.pageBgColor ? `background-color: ${config.footer.pageBgColor};` : ""}
+      ${config.footer?.pageColor ? `color: ${config.footer.pageColor};` : ""}
+      text-align: center;
+      vertical-align: middle;
+      font-size: ${pieTamano};
+      padding: 2pt 4pt;
+    }
+    .sr-pie-pagnum::after {
+      content: "${escaparHtml(config.footer?.pageLabel ?? "Page")} " counter(page)${config.footer?.pageTotal ? ` " ${escaparHtml(config.footer?.pageTotalLabel ?? "of")} " counter(pages)` : ""};
+    }` : `
     ${config.footer?.showPageNumber !== false ? `
     .sr-pie-pagina::after {
       content: "${escaparHtml(config.footer?.pageLabel ?? "Page")} " counter(page);
-      display: block;
+      ${config.footer?.pageStyle ? config.footer.pageStyle + ";" : ""}
       ${config.footer?.pageFontSize ? `font-size: ${config.footer.pageFontSize};` : ""}
       ${config.footer?.pageColor ? `color: ${config.footer.pageColor};` : ""}
       ${config.footer?.pageGapBefore ? `margin-top: ${config.footer.pageGapBefore};` : ""}
     }` : ""}
+    .sr-pie-texto {
+      ${pieTexto ? "" : "display: none;"}
+    }`}
 
     body {
       font-family: ${fuente};
@@ -271,6 +343,11 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       margin-bottom: 20px;
       background: #fff;
       position: relative;
+    }
+
+    .pagedjs_page_content {
+      position: relative;
+      z-index: 1;
     }
 
     ${bordePagina ? `
@@ -304,6 +381,23 @@ function construirCss(config: PlantillaDocumentoConfig): string {
     }
     ` : ""}
 
+    ${config.firstPageWatermark?.image ? `
+    .pagedjs_first_page::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("${config.firstPageWatermark.image.replace(/"/g, '\\"')}") no-repeat;
+      ${config.firstPageWatermark.width && config.firstPageWatermark.height ? `background-size: ${config.firstPageWatermark.width} ${config.firstPageWatermark.height};` : ""}
+      ${config.firstPageWatermark.position ? `background-position: ${config.firstPageWatermark.position};` : ""}
+      ${config.firstPageWatermark.opacity !== undefined ? `opacity: ${config.firstPageWatermark.opacity};` : ""}
+      pointer-events: none;
+      z-index: 0;
+    }
+    ` : ""}
+
     td, th {
       padding: 0 0.03in;
       vertical-align: top;
@@ -313,9 +407,17 @@ function construirCss(config: PlantillaDocumentoConfig): string {
       break-inside: avoid;
     }
 
-    .sr-pie-texto {
-      ${pieTexto ? "" : "display: none;"}
+    .sr-salto-pagina {
+      display: block;
+      break-before: page;
+      page-break-before: always;
+      height: 1px;
+      line-height: 1px;
+      font-size: 1px;
+      color: transparent;
+      overflow: hidden;
     }
+
   `;
 }
 
@@ -332,11 +434,35 @@ function construirHtmlContenido(
     ? `<div class="sr-encabezado-logo"><img src="${logoUrl}" style="width:${logoW};height:${logoH};object-fit:contain;" /></div>`
     : `<div class="sr-encabezado-logo"></div>`;
 
-  const pie = `<div class="sr-pie-pagina"><span class="sr-pie-texto">${escaparHtml(pieTexto)}</span></div>`;
+  const renderFooterCell = (cell: FooterCell): string => {
+    const attrs = [
+      cell.class ? `class="${cell.class}"` : "",
+      cell.style ? `style="${cell.style}"` : "",
+      cell.colspan ? `colspan="${cell.colspan}"` : "",
+    ].filter(Boolean).join(" ");
+    let content = "";
+    if (cell.rows) {
+      content = `<table style="width:100%;border-collapse:collapse;table-layout:fixed"><tbody>${cell.rows.map(r => `<tr>${r.cells.map(renderFooterCell).join("")}</tr>`).join("")}</tbody></table>`;
+    } else if (cell.image) {
+      content = `<img src="${cell.image}" style="width:${cell.imageWidth ?? "auto"};height:${cell.imageHeight ?? "auto"};object-fit:contain;" />`;
+    } else {
+      content = escaparHtml(cell.text ?? "");
+    }
+    return `<td${attrs ? ` ${attrs}` : ""}>${content}</td>`;
+  };
+  const pie = config.footer?.layout === "table"
+    ? `<div class="sr-pie-pagina"><table class="sr-pie-tabla"><tbody>${(config.footer.rows ?? []).map(row => `<tr>${row.cells.map(renderFooterCell).join("")}</tr>`).join("")}</tbody></table></div>`
+    : `<div class="sr-pie-pagina"><span class="sr-pie-texto">${escaparHtml(pieTexto)}</span></div>`;
+
+  const pieP1 = config.firstPageFooter?.layout === "table" && config.firstPageFooter.rows
+    ? `<div class="sr-pie-pagina-p1"><table class="sr-pie-tabla"><tbody>${config.firstPageFooter.rows.map(row => `<tr>${row.cells.map(renderFooterCell).join("")}</tr>`).join("")}</tbody></table></div>`
+    : config.firstPageFooter
+    ? `<div class="sr-pie-pagina-p1"></div>`
+    : "";
 
   const cuerpo = secciones.map(renderizarSeccion).join("\n");
 
-  return `${encabezado}${pie}<div class="sr-contenido">${cuerpo}</div>`;
+  return `${encabezado}${pie}${pieP1}<div class="sr-contenido">${cuerpo}</div>`;
 }
 
 export function CustomVisorDocumentoInforme({
