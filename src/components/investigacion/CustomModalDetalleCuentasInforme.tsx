@@ -41,6 +41,7 @@ interface PropsCustomModalDetalleCuentasAnalista {
   detalleInicial?: DetalleCuentasBalanceAnalista;
   tipoEstadoFinanciero?: string;
   idIdioma?: number;
+  soloLectura?: boolean;
 }
 
 function crearDetalleVacio(): DetalleCuentasBalanceAnalista {
@@ -560,6 +561,7 @@ export function CustomModalDetalleCuentasAnalista({
   detalleInicial,
   tipoEstadoFinanciero,
   idIdioma,
+  soloLectura = false,
 }: PropsCustomModalDetalleCuentasAnalista) {
   const detalleBase = useMemo(
     () => detalleInicial ?? crearDetalleVacio(),
@@ -805,8 +807,11 @@ export function CustomModalDetalleCuentasAnalista({
         ),
     );
 
-  const renderizarControlesHabilitacion = () => (
-    <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 md:flex-row">
+  const renderizarControlesHabilitacion = () => {
+    if (soloLectura) return null;
+
+    return (
+      <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 md:flex-row">
       <label
         className={`flex flex-1 cursor-pointer items-center justify-between gap-4 rounded-md border px-4 py-3 text-sm font-semibold transition-colors ${
           registrosHabilitados
@@ -853,7 +858,8 @@ export function CustomModalDetalleCuentasAnalista({
         </label>
       ) : null}
     </div>
-  );
+    );
+  };
 
   const renderizarSelectorTipoBalanceTurquia = () => {
     if (!esEstadoFinancieroTurquia) return null;
@@ -913,6 +919,7 @@ export function CustomModalDetalleCuentasAnalista({
             required
             mostrarTextoOpcionalEnLabel={false}
             placeholder="Seleccione el alcance"
+            disabled={soloLectura}
           />
           <p className="text-xs text-slate-500">
             Consolidado aplica al grupo económico. Individual aplica a una sola
@@ -938,7 +945,7 @@ export function CustomModalDetalleCuentasAnalista({
             onChange={(valor) =>
               actualizarBalanceGeneral("totalCorrientes", valor)
             }
-            deshabilitado={!registrosHabilitados}
+            deshabilitado={soloLectura || !registrosHabilitados}
           />
           <CampoDetalle
             etiqueta="Total Activo No Corriente"
@@ -946,7 +953,7 @@ export function CustomModalDetalleCuentasAnalista({
             onChange={(valor) =>
               actualizarBalanceGeneral("totalNoCorrientes", valor)
             }
-            deshabilitado={!registrosHabilitados}
+            deshabilitado={soloLectura || !registrosHabilitados}
           />
           <CampoDetalle
             etiqueta="Total Activo"
@@ -958,7 +965,9 @@ export function CustomModalDetalleCuentasAnalista({
             destacado
             claseContenedor="my-2"
             deshabilitado
-            onCalcular={() => mutacionCalcular.mutate("total-activo")}
+            onCalcular={
+              soloLectura ? undefined : () => mutacionCalcular.mutate("total-activo")
+            }
             calculando={
               mutacionCalcular.isPending &&
               mutacionCalcular.variables === "total-activo"
@@ -976,7 +985,7 @@ export function CustomModalDetalleCuentasAnalista({
             onChange={(valor) =>
               actualizarBalanceGeneral("totalPasivosCorrientes", valor)
             }
-            deshabilitado={!registrosHabilitados}
+            deshabilitado={soloLectura || !registrosHabilitados}
           />
           <CampoDetalle
             etiqueta="Total Pasivo No Corriente"
@@ -984,7 +993,7 @@ export function CustomModalDetalleCuentasAnalista({
             onChange={(valor) =>
               actualizarBalanceGeneral("totalPasivosNoCorrientes", valor)
             }
-            deshabilitado={!registrosHabilitados}
+            deshabilitado={soloLectura || !registrosHabilitados}
           />
           <CampoDetalle
             etiqueta="Total Pasivos"
@@ -996,7 +1005,9 @@ export function CustomModalDetalleCuentasAnalista({
             destacado
             claseContenedor="my-2"
             deshabilitado
-            onCalcular={() => mutacionCalcular.mutate("total-pasivos")}
+            onCalcular={
+              soloLectura ? undefined : () => mutacionCalcular.mutate("total-pasivos")
+            }
             calculando={
               mutacionCalcular.isPending &&
               mutacionCalcular.variables === "total-pasivos"
@@ -1010,7 +1021,7 @@ export function CustomModalDetalleCuentasAnalista({
             negrita
             destacado
             claseContenedor="my-2"
-            deshabilitado={!registrosHabilitados && !totalesHabilitados}
+            deshabilitado={soloLectura || (!registrosHabilitados && !totalesHabilitados)}
           />
           <CampoDetalle
             etiqueta="Total Pasivos + Patrimonio"
@@ -1022,8 +1033,10 @@ export function CustomModalDetalleCuentasAnalista({
             destacado
             claseContenedor="my-2"
             deshabilitado
-            onCalcular={() =>
-              mutacionCalcular.mutate("total-pasivo-patrimonio")
+            onCalcular={
+              soloLectura
+                ? undefined
+                : () => mutacionCalcular.mutate("total-pasivo-patrimonio")
             }
             calculando={
               mutacionCalcular.isPending &&
@@ -1080,7 +1093,7 @@ export function CustomModalDetalleCuentasAnalista({
                     ? !totalesHabilitados
                     : !registrosHabilitados
                   : false;
-              const deshabilitado = deshabilitadoBase || esCalculado;
+              const deshabilitado = soloLectura || deshabilitadoBase || esCalculado;
               const tipoEntradaCampo =
                 obtenerTipoEntradaCampoEstadoFinanciero(campo);
               const grupoVisual = esEstadoFinancieroTurquia
@@ -1306,7 +1319,7 @@ export function CustomModalDetalleCuentasAnalista({
                   mostrarComoPorcentaje={esRatioPorcentaje}
                   deshabilitado={deshabilitado}
                   onCalcular={
-                    esCalculado && !esSeccionRatios
+                    esCalculado && !esSeccionRatios && !soloLectura
                       ? () => mutacionCalcular.mutate(campo.id)
                       : undefined
                   }
@@ -1324,8 +1337,11 @@ export function CustomModalDetalleCuentasAnalista({
     </div>
   );
 
-  const renderizarBotonCalcularRatios = () => (
-    <CustomButton
+  const renderizarBotonCalcularRatios = () => {
+    if (soloLectura) return null;
+
+    return (
+      <CustomButton
       type="button"
       variant="wine"
       size="sm"
@@ -1337,7 +1353,8 @@ export function CustomModalDetalleCuentasAnalista({
       <Calculator size={16} />
       Calcular ratios
     </CustomButton>
-  );
+    );
+  };
 
   const tabs = [
     {
@@ -1367,7 +1384,7 @@ export function CustomModalDetalleCuentasAnalista({
                   onChange={(valor) =>
                     actualizarBalanceGeneral("totalCorrientes", valor)
                   }
-                  deshabilitado={!registrosHabilitados}
+                  deshabilitado={soloLectura || !registrosHabilitados}
                 />
                 <CampoDetalle
                   etiqueta="Total No Corrientes"
@@ -1375,7 +1392,7 @@ export function CustomModalDetalleCuentasAnalista({
                   onChange={(valor) =>
                     actualizarBalanceGeneral("totalNoCorrientes", valor)
                   }
-                  deshabilitado={!registrosHabilitados}
+                  deshabilitado={soloLectura || !registrosHabilitados}
                 />
                 <CampoDetalle
                   etiqueta="Otros Activos"
@@ -1383,7 +1400,7 @@ export function CustomModalDetalleCuentasAnalista({
                   onChange={(valor) =>
                     actualizarBalanceGeneral("otrosActivos", valor)
                   }
-                  deshabilitado={!registrosHabilitados}
+                  deshabilitado={soloLectura || !registrosHabilitados}
                 />
                 <CampoDetalle
                   etiqueta="Total Activos"
@@ -1394,7 +1411,7 @@ export function CustomModalDetalleCuentasAnalista({
                   negrita
                   destacado
                   claseContenedor="my-2"
-                  deshabilitado={!totalesHabilitados}
+                  deshabilitado={soloLectura || !totalesHabilitados}
                 />
               </div>
 
@@ -1408,7 +1425,7 @@ export function CustomModalDetalleCuentasAnalista({
                   onChange={(valor) =>
                     actualizarBalanceGeneral("totalPasivosCorrientes", valor)
                   }
-                  deshabilitado={!registrosHabilitados}
+                  deshabilitado={soloLectura || !registrosHabilitados}
                 />
                 <CampoDetalle
                   etiqueta="Total Pasivos No Corrientes"
@@ -1416,7 +1433,7 @@ export function CustomModalDetalleCuentasAnalista({
                   onChange={(valor) =>
                     actualizarBalanceGeneral("totalPasivosNoCorrientes", valor)
                   }
-                  deshabilitado={!registrosHabilitados}
+                  deshabilitado={soloLectura || !registrosHabilitados}
                 />
                 <CampoDetalle
                   etiqueta="Otros Pasivos"
@@ -1424,7 +1441,7 @@ export function CustomModalDetalleCuentasAnalista({
                   onChange={(valor) =>
                     actualizarBalanceGeneral("otrosPasivos", valor)
                   }
-                  deshabilitado={!registrosHabilitados}
+                  deshabilitado={soloLectura || !registrosHabilitados}
                 />
                 <CampoDetalle
                   etiqueta="Total Pasivos"
@@ -1435,7 +1452,7 @@ export function CustomModalDetalleCuentasAnalista({
                   negrita
                   destacado
                   claseContenedor="my-2"
-                  deshabilitado={!totalesHabilitados}
+                  deshabilitado={soloLectura || !totalesHabilitados}
                 />
                 <CampoDetalle
                   etiqueta="Patrimonio"
@@ -1444,7 +1461,7 @@ export function CustomModalDetalleCuentasAnalista({
                     actualizarBalanceGeneral("patrimonio", valor)
                   }
                   permitirNegativo
-                  deshabilitado={!registrosHabilitados}
+                  deshabilitado={soloLectura || !registrosHabilitados}
                 />
                 <CampoDetalle
                   etiqueta="Total Pasivo y Patrimonio"
@@ -1455,7 +1472,7 @@ export function CustomModalDetalleCuentasAnalista({
                   negrita
                   destacado
                   claseContenedor="my-2"
-                  deshabilitado={!totalesHabilitados}
+                  deshabilitado={soloLectura || !totalesHabilitados}
                 />
               </div>
             </div>
@@ -1480,6 +1497,7 @@ export function CustomModalDetalleCuentasAnalista({
                 onChange={(valor) =>
                   actualizarEstadoGanancias("ventasNetas", valor)
                 }
+                deshabilitado={soloLectura}
               />
               <CampoDetalle
                 etiqueta="Utilidad / Ganancia"
@@ -1488,6 +1506,7 @@ export function CustomModalDetalleCuentasAnalista({
                   actualizarEstadoGanancias("utilidadGanancia", valor)
                 }
                 permitirNegativo
+                deshabilitado={soloLectura}
               />
             </div>
           )}
@@ -1669,7 +1688,7 @@ export function CustomModalDetalleCuentasAnalista({
       tabVariant="underline"
       maxWidth="max-w-6xl"
       footer={
-        <div className="flex justify-end gap-3">
+        soloLectura ? null : <div className="flex justify-end gap-3">
           <CustomButton
             size="sm"
             onClick={() => onGuardar(limpiarCerosDetalle(detalle))}

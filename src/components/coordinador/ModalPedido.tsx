@@ -1100,17 +1100,21 @@ export function ModalPedido({
     };
 
     if (esModoEdicion) {
+      const { idCompania: _idCompania, ...datosEdicion } = datosComunes;
       guardarPedido({
-        ...datosComunes,
+        ...datosEdicion,
         idPedido: pedidoId!,
+        IdEmpresaAtencion: data.idEmpresaAtencion,
         idEstado: pedido!.idEstado,
       });
       return;
     }
 
+    const { idCompania: _idCompania, ...datosCreacion } = datosComunes;
     guardarPedido({
-      ...datosComunes,
+      ...datosCreacion,
       codigo: data.autogenerarCodigo ? null : (data.codigo ?? ""),
+      IdEmpresaAtencion: data.idEmpresaAtencion,
       idEstado: 1,
       archivos: [],
     });

@@ -43,6 +43,9 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
     || url.includes("/api/Informe/extraerDocumento")
     || url.includes("/api/Informe/traducir");
   const esEndpointDirectorioEjecutivo = url.includes("/api/DirectorioEjecutivo/");
+  const esEndpointCompaniaNoticia = url.includes("/api/Compania/noticia/");
+  const esEndpointCompaniaNoticiaBalance = url.includes("/api/Compania/companianoticiabalance/");
+  const esEndpointCompaniaNoticiaDetalle = url.includes("/api/Compania/companianoticiadetalle/");
 
   if (esEndpointAsignacion && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION && data.mensaje === "OK") {
     return true;
@@ -61,6 +64,18 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
   }
 
   if (esEndpointDirectorioEjecutivo && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "OK" || Boolean(data.result);
+  }
+
+  if (esEndpointCompaniaNoticia && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "OK" || Boolean(data.result);
+  }
+
+  if (esEndpointCompaniaNoticiaBalance && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "OK" || Boolean(data.result);
+  }
+
+  if (esEndpointCompaniaNoticiaDetalle && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
     return data.mensaje === "OK" || Boolean(data.result);
   }
 

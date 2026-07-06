@@ -182,7 +182,7 @@ export function CustomTabla<T>({
                 const isSelected = selectedIds?.has(id) ?? false;
                 return (
                   <tr
-                    key={id}
+                    key={`${id}-${index}`}
                     className={`hover:bg-gray-50/50 transition-colors ${isSelected ? "bg-brand-wine/5" : ""}`}
                   >
                     {selectable && (

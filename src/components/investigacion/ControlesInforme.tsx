@@ -195,6 +195,8 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   conservarOpcionesLocales = true,
   obtenerEtiquetaOpcion,
   obtenerValorOpcion,
+  renderizarOpcion,
+  renderizarValorSeleccionado,
   permitirCoincidenciaPorId = true,
   ocultarEtiqueta = false,
   construirPayloadAltaNueva,
@@ -216,6 +218,8 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   conservarOpcionesLocales?: boolean;
   obtenerEtiquetaOpcion?: (opcion: EntradaTablaMaestra) => string;
   obtenerValorOpcion?: (opcion: EntradaTablaMaestra) => string;
+  renderizarOpcion?: (opcion: EntradaTablaMaestra) => ReactNode;
+  renderizarValorSeleccionado?: (opcion: EntradaTablaMaestra) => ReactNode;
   permitirCoincidenciaPorId?: boolean;
   ocultarEtiqueta?: boolean;
   construirPayloadAltaNueva?: (termino: string, opcionesActuales: EntradaTablaMaestra[]) => TablaMaestraCrearRequest;
@@ -462,6 +466,8 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
       placeholder={marcador ?? `Seleccione ${etiqueta.toLowerCase()}`}
       disabled={soloLectura}
       obtenerEtiquetaOpcion={obtenerEtiquetaOpcion}
+      renderizarOpcion={renderizarOpcion}
+      renderizarValorSeleccionado={renderizarValorSeleccionado}
       renderizarVistaPreviaAltaNueva={renderizarVistaPreviaAltaNueva}
       puedeAgregarNuevo={puedeAgregarNuevo}
     />
