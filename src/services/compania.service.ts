@@ -99,6 +99,8 @@ function normalizarLista(resultado: unknown): CompaniaListResponse {
     registro.LstCompania,
     registro.lstCompanias,
     registro.LstCompanias,
+    registro.lstCompaniaNoticiasDetalle,
+    registro.LstCompaniaNoticiasDetalle,
     registro.companias,
     registro.Companias,
     registro.result,

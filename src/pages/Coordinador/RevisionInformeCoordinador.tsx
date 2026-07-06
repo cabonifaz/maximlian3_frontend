@@ -15,6 +15,7 @@ import type {
 import { obtenerDatosInvestigacionAnalista } from "@maximilian/shared/utils/datos-simulados-investigacion";
 
 const ID_ESTADO_INFORME_APROBADO = 4;
+type TabInformeComparado = "original" | "traducido";
 
 export default function RevisionInformeCoordinador() {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function RevisionInformeCoordinador() {
   const tieneInformeOriginal = Number.isFinite(idInformeOriginal) && idInformeOriginal > 0;
   const [estaAbiertoModalRechazo, setEstaAbiertoModalRechazo] = useState(false);
   const [observacionesRechazo, setObservacionesRechazo] = useState<InformeObservacion[]>([]);
+  const [tabInformeComparado, setTabInformeComparado] = useState<TabInformeComparado>("original");
   const datosEjemplo = useMemo(
     () => obtenerDatosInvestigacionAnalista("detalle"),
     [],
@@ -217,54 +219,87 @@ export default function RevisionInformeCoordinador() {
     return (
       <>
         <div className="flex h-[calc(100vh-4rem)] min-h-0 flex-col overflow-hidden bg-slate-100">
-          <div className="grid min-h-0 flex-1 gap-3 overflow-hidden p-3 xl:grid-cols-2">
-            <CustomVisorRevisionInforme
-              datosInvestigacion={datosInvestigacion}
-              encabezado={encabezadoVistaPrevia}
-              idInforme={idInformeOriginal}
-              idPedido={esEjemplo ? undefined : idPedidoNumerico}
-              puedeDescargar={puedeDescargarOriginal}
-              puedeEditar={false}
-              esEjemplo={esEjemplo}
-              tituloInforme="Informe original"
-              idiomaInforme={"Espa\u00f1ol"}
-              mostrarAccionesRevision={false}
-              mostrarPie={false}
-              mostrarCerrar={false}
-              onCerrar={() => navigate("/coordinador/revision")}
-              onDescargar={(formato) => {
-                void descargarDocumento(formato, idInformeOriginal);
-              }}
-              onAprobar={() => undefined}
-              onRechazar={() => undefined}
-              onVolver={() => navigate("/coordinador/revision")}
-            />
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3">
+            <div className="grid shrink-0 grid-cols-2 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm xl:hidden">
+              <button
+                type="button"
+                onClick={() => setTabInformeComparado("original")}
+                className={`rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                  tabInformeComparado === "original"
+                    ? "bg-brand-black text-white shadow-sm"
+                    : "text-slate-500 hover:bg-slate-100"
+                }`}
+              >
+                Original
+              </button>
+              <button
+                type="button"
+                onClick={() => setTabInformeComparado("traducido")}
+                className={`rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                  tabInformeComparado === "traducido"
+                    ? "bg-brand-black text-white shadow-sm"
+                    : "text-slate-500 hover:bg-slate-100"
+                }`}
+              >
+                Traducido
+              </button>
+            </div>
 
-            <CustomVisorRevisionInforme
-              datosInvestigacion={datosInvestigacion}
-              encabezado={encabezadoVistaPrevia}
-              idInforme={esEjemplo ? undefined : idInformeSeguro}
-              idPedido={esEjemplo ? undefined : idPedidoNumerico}
-              puedeDescargar={puedeDescargar}
-              puedeEditar={puedeEditarRevision}
-              esEjemplo={esEjemplo}
-              tituloInforme="Informe traducido"
-              idiomaInforme={idiomaInformeTraducido}
-              mostrarAccionesRevision
-              mostrarInformeTraducido
-              mostrarPie={false}
-              mostrarCerrar={false}
-              onCerrar={() => navigate("/coordinador/revision")}
-              onDescargar={(formato) => {
-                void descargarDocumento(formato);
-              }}
-              onAprobar={() => mutationRevision.mutate({
-                idInforme: idInformeSeguro,
-                idEstadoInforme: ID_ESTADO_INFORME_APROBADO,
-              })}
-              onRechazar={abrirModalRechazo}
-              onVolver={() => navigate("/coordinador/revision")}
-            />
+            <div className="grid min-h-0 flex-1 gap-3 overflow-hidden xl:grid-cols-2">
+              <div className={`${tabInformeComparado === "original" ? "h-full min-h-0" : "hidden h-full min-h-0"} xl:block`}>
+                <CustomVisorRevisionInforme
+                  datosInvestigacion={datosInvestigacion}
+                  encabezado={encabezadoVistaPrevia}
+                  idInforme={idInformeOriginal}
+                  idPedido={esEjemplo ? undefined : idPedidoNumerico}
+                  puedeDescargar={puedeDescargarOriginal}
+                  puedeEditar={false}
+                  esEjemplo={esEjemplo}
+                  tituloInforme="Informe original"
+                  idiomaInforme={"Espa\u00f1ol"}
+                  mostrarAccionesRevision={false}
+                  mostrarPie={false}
+                  mostrarCerrar={false}
+                  ocuparAltoDisponible
+                  onCerrar={() => navigate("/coordinador/revision")}
+                  onDescargar={(formato) => {
+                    void descargarDocumento(formato, idInformeOriginal);
+                  }}
+                  onAprobar={() => undefined}
+                  onRechazar={() => undefined}
+                  onVolver={() => navigate("/coordinador/revision")}
+                />
+              </div>
+
+              <div className={`${tabInformeComparado === "traducido" ? "h-full min-h-0" : "hidden h-full min-h-0"} xl:block`}>
+                <CustomVisorRevisionInforme
+                  datosInvestigacion={datosInvestigacion}
+                  encabezado={encabezadoVistaPrevia}
+                  idInforme={esEjemplo ? undefined : idInformeSeguro}
+                  idPedido={esEjemplo ? undefined : idPedidoNumerico}
+                  puedeDescargar={puedeDescargar}
+                  puedeEditar={puedeEditarRevision}
+                  esEjemplo={esEjemplo}
+                  tituloInforme="Informe traducido"
+                  idiomaInforme={idiomaInformeTraducido}
+                  mostrarAccionesRevision
+                  mostrarInformeTraducido
+                  mostrarPie={false}
+                  mostrarCerrar={false}
+                  ocuparAltoDisponible
+                  onCerrar={() => navigate("/coordinador/revision")}
+                  onDescargar={(formato) => {
+                    void descargarDocumento(formato);
+                  }}
+                  onAprobar={() => mutationRevision.mutate({
+                    idInforme: idInformeSeguro,
+                    idEstadoInforme: ID_ESTADO_INFORME_APROBADO,
+                  })}
+                  onRechazar={abrirModalRechazo}
+                  onVolver={() => navigate("/coordinador/revision")}
+                />
+              </div>
+            </div>
           </div>
 
           <footer className="z-30 flex shrink-0 items-center justify-end gap-3 border-t border-slate-200 bg-white/95 px-5 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur">
