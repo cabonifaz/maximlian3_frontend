@@ -1,7 +1,8 @@
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
 import type { DatosInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
+import type { DocumentoInformeGenerado } from "@maximilian/shared/types/informe.type";
 import { seccionesInvestigacionAnalista } from "@maximilian/shared/utils/datos-simulados-investigacion";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import { informeService } from "@maximilian/services/informe.service";
@@ -1047,21 +1048,13 @@ export function CustomVistaPreviaInformeComparado({
   contenidoEntreTabsYTarjetas,
 }: PropsVistaPreviaInformeComparado) {
   const [idTabActiva, setIdTabActiva] = useState<IdTabVistaPreviaInforme>("vista-general");
+  const [documentoGenerado, setDocumentoGenerado] = useState<DocumentoInformeGenerado | null>(null);
+  const [estaCargandoDocumento, setEstaCargandoDocumento] = useState(false);
+  const [errorDocumento, setErrorDocumento] = useState(false);
   const idInformeDocumento = Number(idInforme);
   const idPedidoDocumento = Number(idPedido);
   const puedeMostrarDocumento = Number.isFinite(idInformeDocumento) && idInformeDocumento > 0
     && Number.isFinite(idPedidoDocumento) && idPedidoDocumento > 0;
-
-  const {
-    data: documentoGenerado,
-    isLoading: estaCargandoDocumento,
-    isError: errorDocumento,
-  } = useQuery({
-    queryKey: ["informe-documento-generado", idInformeDocumento, idPedidoDocumento],
-    queryFn: () => informeService.previsualizarDocumento(idInformeDocumento, idPedidoDocumento),
-    enabled: puedeMostrarDocumento,
-    staleTime: 15 * 60 * 1000,
-  });
 
   const { data: opcionesTiempoCredito } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIEMPO_CREDITO_VENTAS],
@@ -1069,6 +1062,40 @@ export function CustomVistaPreviaInformeComparado({
     enabled: !puedeMostrarDocumento && Boolean(datosInvestigacion),
     staleTime: Infinity,
   });
+
+  useEffect(() => {
+    let estaCancelado = false;
+
+    if (!puedeMostrarDocumento) {
+      setDocumentoGenerado(null);
+      setEstaCargandoDocumento(false);
+      setErrorDocumento(false);
+      return;
+    }
+
+    setDocumentoGenerado(null);
+    setEstaCargandoDocumento(true);
+    setErrorDocumento(false);
+
+    void informeService
+      .previsualizarDocumento(idInformeDocumento, idPedidoDocumento)
+      .then((documento) => {
+        if (estaCancelado) return;
+        setDocumentoGenerado(documento);
+      })
+      .catch(() => {
+        if (estaCancelado) return;
+        setErrorDocumento(true);
+      })
+      .finally(() => {
+        if (estaCancelado) return;
+        setEstaCargandoDocumento(false);
+      });
+
+    return () => {
+      estaCancelado = true;
+    };
+  }, [idInformeDocumento, idPedidoDocumento, puedeMostrarDocumento]);
 
   const seccionesVistaPrevia = useMemo(
     () => datosInvestigacion

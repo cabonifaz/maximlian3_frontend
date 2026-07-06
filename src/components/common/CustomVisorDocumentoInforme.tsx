@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo, type PointerEvent as ReactPointerEvent } from "react";
-import { Minus, Plus, RotateCcw } from "lucide-react";
+import { Hand, MousePointer2, Minus, Plus, RotateCcw } from "lucide-react";
 import pagedJsUrl from "../../../node_modules/pagedjs/dist/paged.polyfill.js?url";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import type {
@@ -27,6 +27,8 @@ const ZOOM_MINIMO_INFORME = 0.35;
 const ZOOM_MAXIMO_INFORME = 1.6;
 const PASO_ZOOM_INFORME = 0.1;
 const ANCHO_PAGINA_FALLBACK_PX = 794;
+const TIPO_MENSAJE_PAGEDJS_LISTO = "maximilian:pagedjs-listo";
+type ModoInteraccionInforme = "arrastrar" | "seleccionar";
 
 function escaparHtml(texto: string): string {
   return texto
@@ -38,6 +40,10 @@ function escaparHtml(texto: string): string {
 
 function escaparAtributo(texto: string): string {
   return escaparHtml(texto).replace(/'/g, "&#39;");
+}
+
+function escaparScriptJson(valor: string): string {
+  return JSON.stringify(valor).replace(/</g, "\\u003c");
 }
 
 function convertirLongitudCssAPx(valor?: string): number {
@@ -481,10 +487,12 @@ export function CustomVisorDocumentoInforme({
   const [alturaIframe, setAlturaIframe] = useState(600);
   const [error, setError] = useState<string | null>(null);
   const [srcdoc, setSrcdoc] = useState<string>("");
+  const [tokenRenderDocumento, setTokenRenderDocumento] = useState("");
   const [zoomInforme, setZoomInforme] = useState(1);
   const [anchoDisponibleInforme, setAnchoDisponibleInforme] = useState(0);
   const [zoomModificadoPorUsuario, setZoomModificadoPorUsuario] = useState(false);
   const [estaArrastrandoInforme, setEstaArrastrandoInforme] = useState(false);
+  const [modoInteraccionInforme, setModoInteraccionInforme] = useState<ModoInteraccionInforme>("arrastrar");
 
   const ajustarAltura = useCallback(() => {
     const iframe = iframeRef.current;
@@ -492,9 +500,18 @@ export function CustomVisorDocumentoInforme({
     try {
       const doc = iframe.contentDocument;
       if (doc) {
-        const altura = doc.documentElement.scrollHeight;
-        if (altura > 100) {
-          setAlturaIframe(altura + 40);
+        const paginas = doc.querySelectorAll(".pagedjs_page");
+        const contenedorPaginas = doc.querySelector(".pagedjs_pages") as HTMLElement | null;
+        const altura = Math.max(
+          doc.documentElement.scrollHeight,
+          doc.body?.scrollHeight ?? 0,
+          contenedorPaginas?.scrollHeight ?? 0,
+        );
+        const paginasConContenido = Array.from(paginas).some((pagina) =>
+          (pagina.textContent ?? "").trim().length > 0 || Boolean(pagina.querySelector("img, table")),
+        );
+        if (altura > 100 && paginas.length > 0 && paginasConContenido) {
+          setAlturaIframe(altura + (paginas.length > 0 ? 60 : 40));
           setEstaPaginando(false);
           return;
         }
@@ -552,6 +569,9 @@ export function CustomVisorDocumentoInforme({
     setEstaPaginando(true);
     setError(null);
     setZoomModificadoPorUsuario(false);
+    setAlturaIframe(600);
+    const tokenRender = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    setTokenRenderDocumento(tokenRender);
 
     const css = construirCss(documento.document);
     const contenido = construirHtmlContenido(
@@ -568,6 +588,67 @@ export function CustomVisorDocumentoInforme({
 <body>
 ${contenido}
 <script src="${escaparAtributo(pagedJsUrl)}"></script>
+<script>
+(function () {
+  var token = ${escaparScriptJson(tokenRender)};
+  var intentos = 0;
+  var alturaAnterior = 0;
+  var lecturasEstables = 0;
+
+  function obtenerAltura() {
+    var paginas = document.querySelector(".pagedjs_pages");
+    return Math.max(
+      document.documentElement ? document.documentElement.scrollHeight : 0,
+      document.body ? document.body.scrollHeight : 0,
+      paginas ? paginas.scrollHeight : 0
+    );
+  }
+
+  function tieneContenidoRenderizado() {
+    var paginas = Array.prototype.slice.call(document.querySelectorAll(".pagedjs_page"));
+    if (!paginas.length) return false;
+    return paginas.some(function (pagina) {
+      return (pagina.textContent || "").trim().length > 0 || Boolean(pagina.querySelector("img, table"));
+    });
+  }
+
+  function revisar() {
+    intentos += 1;
+    var altura = obtenerAltura();
+    var contenidoListo = tieneContenidoRenderizado();
+
+    if (Math.abs(altura - alturaAnterior) <= 2) {
+      lecturasEstables += 1;
+    } else {
+      lecturasEstables = 0;
+      alturaAnterior = altura;
+    }
+
+    if (contenidoListo && altura > 100 && (lecturasEstables >= 2 || intentos >= 60)) {
+      window.parent.postMessage({
+        tipo: ${escaparScriptJson(TIPO_MENSAJE_PAGEDJS_LISTO)},
+        token: token,
+        altura: altura
+      }, "*");
+      return;
+    }
+
+    if (intentos >= 120) {
+      window.parent.postMessage({
+        tipo: ${escaparScriptJson(TIPO_MENSAJE_PAGEDJS_LISTO)},
+        token: token,
+        altura: altura,
+        forzado: true
+      }, "*");
+      return;
+    }
+
+    window.setTimeout(revisar, 150);
+  }
+
+  window.setTimeout(revisar, 150);
+})();
+</script>
 </body>
 </html>`;
 
@@ -576,8 +657,31 @@ ${contenido}
   }, [documentoKey]);
 
   const manejarCargaIframe = useCallback(() => {
-    setTimeout(ajustarAltura, 800);
+    setTimeout(ajustarAltura, 2500);
   }, [ajustarAltura]);
+
+  useEffect(() => {
+    const manejarMensaje = (event: MessageEvent) => {
+      const data = event.data as {
+        tipo?: string;
+        token?: string;
+        altura?: number;
+      } | null;
+
+      if (!data || data.tipo !== TIPO_MENSAJE_PAGEDJS_LISTO || data.token !== tokenRenderDocumento) return;
+
+      if (typeof data.altura === "number" && data.altura > 100) {
+        setAlturaIframe(data.altura + 60);
+      }
+      setEstaPaginando(false);
+    };
+
+    window.addEventListener("message", manejarMensaje);
+
+    return () => {
+      window.removeEventListener("message", manejarMensaje);
+    };
+  }, [tokenRenderDocumento]);
 
   const acercarInforme = useCallback(() => {
     setZoomModificadoPorUsuario(true);
@@ -595,6 +699,8 @@ ${contenido}
   }, [zoomAjustadoInforme]);
 
   const iniciarArrastreInforme = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (modoInteraccionInforme !== "arrastrar") return;
+
     const contenedor = contenedorScrollRef.current;
     if (!contenedor || event.pointerType !== "mouse" || event.button !== 0) return;
 
@@ -609,9 +715,11 @@ ${contenido}
     };
     setEstaArrastrandoInforme(true);
     contenedor.setPointerCapture(event.pointerId);
-  }, []);
+  }, [modoInteraccionInforme]);
 
   const moverArrastreInforme = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (modoInteraccionInforme !== "arrastrar") return;
+
     const contenedor = contenedorScrollRef.current;
     if (!contenedor || !estaArrastrandoInforme) return;
 
@@ -619,7 +727,7 @@ ${contenido}
     const posicionInicial = posicionArrastreRef.current;
     contenedor.scrollLeft = posicionInicial.scrollLeft - (event.clientX - posicionInicial.x);
     contenedor.scrollTop = posicionInicial.scrollTop - (event.clientY - posicionInicial.y);
-  }, [estaArrastrandoInforme]);
+  }, [estaArrastrandoInforme, modoInteraccionInforme]);
 
   const terminarArrastreInforme = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     const contenedor = contenedorScrollRef.current;
@@ -634,15 +742,52 @@ ${contenido}
   const porcentajeZoom = Math.round(zoomInforme * 100);
   const puedeAlejar = zoomInforme > ZOOM_MINIMO_INFORME;
   const puedeAcercar = zoomInforme < ZOOM_MAXIMO_INFORME;
+  const estaModoArrastrarInforme = modoInteraccionInforme === "arrastrar";
   const classNameContenedorVisor = `flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm ${
     ocuparAltoDisponible ? "h-full min-h-0" : "h-[min(72vh,760px)]"
   }`;
   const classNameContenedorScroll = `min-h-0 flex-1 overflow-auto px-2 py-4 sm:px-4 ${
-    estaArrastrandoInforme ? "cursor-grabbing select-none" : "cursor-grab"
+    estaModoArrastrarInforme
+      ? estaArrastrandoInforme
+        ? "cursor-grabbing select-none"
+        : "cursor-grab select-none"
+      : "cursor-text"
   }`;
 
   const controlesZoom = (
     <div className="sticky top-0 z-20 flex flex-wrap items-center justify-end gap-2 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur sm:px-4">
+      <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <CustomButton
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={`h-9 w-9 rounded-none ${
+            estaModoArrastrarInforme
+              ? "bg-slate-900 text-white hover:bg-slate-800"
+              : "text-slate-600 hover:bg-slate-100"
+          }`}
+          onClick={() => setModoInteraccionInforme("arrastrar")}
+          aria-label="Mover informe arrastrando"
+          title="Mover"
+        >
+          <Hand size={16} />
+        </CustomButton>
+        <CustomButton
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={`h-9 w-9 rounded-none border-l border-slate-200 ${
+            !estaModoArrastrarInforme
+              ? "bg-slate-900 text-white hover:bg-slate-800"
+              : "text-slate-600 hover:bg-slate-100"
+          }`}
+          onClick={() => setModoInteraccionInforme("seleccionar")}
+          aria-label="Seleccionar texto del informe"
+          title="Seleccionar texto"
+        >
+          <MousePointer2 size={16} />
+        </CustomButton>
+      </div>
       <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <CustomButton
           type="button"
@@ -717,6 +862,7 @@ ${contenido}
             }}
           >
             <iframe
+              key={tokenRenderDocumento}
               ref={iframeRef}
               title="Vista previa del documento"
               srcDoc={srcdoc}
@@ -726,10 +872,11 @@ ${contenido}
                 width: `${anchoPaginaPx}px`,
                 height: `${alturaIframe}px`,
                 border: "none",
-                display: estaPaginando ? "none" : "block",
+                display: "block",
+                visibility: estaPaginando ? "hidden" : "visible",
                 transform: `scale(${zoomInforme})`,
                 transformOrigin: "top left",
-                pointerEvents: "none",
+                pointerEvents: estaModoArrastrarInforme ? "none" : "auto",
               }}
             />
           </div>
@@ -759,7 +906,7 @@ ${contenido}
         onPointerCancel={terminarArrastreInforme}
       >
         <div
-          className="mx-auto min-w-190 origin-top"
+          className={`mx-auto min-w-190 origin-top ${estaModoArrastrarInforme ? "select-none" : "select-text"}`}
           style={{
             transform: `scale(${zoomInforme})`,
             width: `${anchoPaginaPx * zoomInforme}px`,
