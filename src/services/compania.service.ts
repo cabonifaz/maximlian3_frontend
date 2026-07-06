@@ -41,7 +41,7 @@ function obtenerBooleano(...valores: unknown[]): boolean {
     if (typeof valor === "number") return valor === 1;
     if (typeof valor === "string") {
       const texto = valor.trim().toLowerCase();
-      if (["1", "true", "si", "sí", "s"].includes(texto)) return true;
+      if (["1", "true", "si", "s"].includes(texto)) return true;
       if (["0", "false", "no", "n"].includes(texto)) return false;
     }
   }
@@ -130,6 +130,49 @@ function normalizarGuardado(resultado: unknown): CompaniaGuardarResponse {
   };
 }
 
+const cacheCompaniaObtener = new Map<string, CompaniaListaItem | null>();
+const solicitudesCompaniaObtener = new Map<string, Promise<CompaniaListaItem | null>>();
+
+function obtenerClaveCompania(params: CompaniaObtenerParams) {
+  return JSON.stringify({
+    idCompania: params.idCompania ?? null,
+    numDocumento: params.numDocumento?.trim() || null,
+    nombre: params.nombre?.trim() || null,
+  });
+}
+
+async function obtenerCompania(params: CompaniaObtenerParams): Promise<CompaniaListaItem | null> {
+  const clave = obtenerClaveCompania(params);
+  if (cacheCompaniaObtener.has(clave)) return cacheCompaniaObtener.get(clave) ?? null;
+
+  const solicitudExistente = solicitudesCompaniaObtener.get(clave);
+  if (solicitudExistente) return solicitudExistente;
+
+  const solicitud = maximilianService
+    .get<ApiResponse<unknown>>("/api/Compania/obtener", {
+      params: {
+        IdCompania: params.idCompania,
+        NumDocumento: params.numDocumento,
+        Nombre: params.nombre,
+      },
+    })
+    .then(({ data }) => {
+      if (!esRespuestaOkCompatibilidad(data, "/api/Compania/obtener")) {
+        throw new Error(data.mensaje || "Error al obtener la compania");
+      }
+
+      const compania = normalizarLista(data.result).lstCompania[0] ?? null;
+      cacheCompaniaObtener.set(clave, compania);
+      return compania;
+    })
+    .finally(() => {
+      solicitudesCompaniaObtener.delete(clave);
+    });
+
+  solicitudesCompaniaObtener.set(clave, solicitud);
+  return solicitud;
+}
+
 export const servicioCompania = {
   list: async (params: CompaniaListParams): Promise<CompaniaListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Compania/listar", {
@@ -140,35 +183,24 @@ export const servicioCompania = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/listar")) {
-      throw new Error(data.mensaje || "Error al listar las compañías");
+      throw new Error(data.mensaje || "Error al listar las companias");
     }
 
     return normalizarLista(data.result);
   },
 
   obtener: async (params: CompaniaObtenerParams): Promise<CompaniaListaItem | null> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Compania/obtener", {
-      params: {
-        IdCompania: params.idCompania,
-        NumDocumento: params.numDocumento,
-        Nombre: params.nombre,
-      },
-    });
-
-    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/obtener")) {
-      throw new Error(data.mensaje || "Error al obtener la compañía");
-    }
-
-    return normalizarLista(data.result).lstCompania[0] ?? null;
+    return obtenerCompania(params);
   },
 
   crear: async (payload: CompaniaCrearRequest): Promise<CompaniaGuardarResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/crear", [payload]);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/crear")) {
-      throw new Error(data.mensaje || "Error al crear la compañía");
+      throw new Error(data.mensaje || "Error al crear la compania");
     }
 
+    cacheCompaniaObtener.clear();
     return normalizarGuardado(data.result);
   },
 
@@ -186,9 +218,10 @@ export const servicioCompania = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/editar", payload);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/editar")) {
-      throw new Error(data.mensaje || "Error al editar la compañía");
+      throw new Error(data.mensaje || "Error al editar la compania");
     }
 
+    cacheCompaniaObtener.clear();
     return normalizarGuardado(data.result);
   },
 
@@ -196,7 +229,9 @@ export const servicioCompania = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/eliminar", payload);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/eliminar")) {
-      throw new Error(data.mensaje || "Error al eliminar la compañía");
+      throw new Error(data.mensaje || "Error al eliminar la compania");
     }
+
+    cacheCompaniaObtener.clear();
   },
 };

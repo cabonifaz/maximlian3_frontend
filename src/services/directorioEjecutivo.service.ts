@@ -137,6 +137,51 @@ function normalizarGuardado(resultado: unknown): DirectorioEjecutivoGuardarRespo
   };
 }
 
+const cacheDirectorioObtener = new Map<string, RegistroPersonaDirectorioAnalista | null>();
+const solicitudesDirectorioObtener = new Map<string, Promise<RegistroPersonaDirectorioAnalista | null>>();
+
+function obtenerClaveDirectorio(params: DirectorioEjecutivoObtenerParams) {
+  return JSON.stringify({
+    idDirectorioEjecutivo: params.idDirectorioEjecutivo ?? null,
+    nombreCompleto: params.nombreCompleto?.trim() || null,
+    numeroDocumento: params.numeroDocumento?.trim() || null,
+  });
+}
+
+async function obtenerDirectorio(
+  params: DirectorioEjecutivoObtenerParams,
+): Promise<RegistroPersonaDirectorioAnalista | null> {
+  const clave = obtenerClaveDirectorio(params);
+  if (cacheDirectorioObtener.has(clave)) return cacheDirectorioObtener.get(clave) ?? null;
+
+  const solicitudExistente = solicitudesDirectorioObtener.get(clave);
+  if (solicitudExistente) return solicitudExistente;
+
+  const solicitud = maximilianService
+    .get<ApiResponse<unknown>>("/api/DirectorioEjecutivo/obtener", {
+      params: {
+        IdDirectorioEjecutivo: params.idDirectorioEjecutivo,
+        NombreCompleto: params.nombreCompleto,
+        NumeroDocumento: params.numeroDocumento,
+      },
+    })
+    .then(({ data }) => {
+      if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/obtener")) {
+        throw new Error(data.mensaje || "Error al obtener el directorio ejecutivo");
+      }
+
+      const registro = normalizarListadoDirectorio(data.result).registros[0] ?? null;
+      cacheDirectorioObtener.set(clave, registro);
+      return registro;
+    })
+    .finally(() => {
+      solicitudesDirectorioObtener.delete(clave);
+    });
+
+  solicitudesDirectorioObtener.set(clave, solicitud);
+  return solicitud;
+}
+
 export const servicioDirectorioEjecutivo = {
   listar: async (params: DirectorioEjecutivoListarParams): Promise<DirectorioEjecutivoListarResponse> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/DirectorioEjecutivo/listar", {
@@ -154,19 +199,7 @@ export const servicioDirectorioEjecutivo = {
   },
 
   obtener: async (params: DirectorioEjecutivoObtenerParams): Promise<RegistroPersonaDirectorioAnalista | null> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/DirectorioEjecutivo/obtener", {
-      params: {
-        IdDirectorioEjecutivo: params.idDirectorioEjecutivo,
-        NombreCompleto: params.nombreCompleto,
-        NumeroDocumento: params.numeroDocumento,
-      },
-    });
-
-    if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/obtener")) {
-      throw new Error(data.mensaje || "Error al obtener el directorio ejecutivo");
-    }
-
-    return normalizarListadoDirectorio(data.result).registros[0] ?? null;
+    return obtenerDirectorio(params);
   },
 
   crear: async (payload: DirectorioEjecutivoGuardarRequest): Promise<DirectorioEjecutivoGuardarResponse> => {
@@ -176,6 +209,7 @@ export const servicioDirectorioEjecutivo = {
       throw new Error(data.mensaje || "Error al crear el registro de terceros");
     }
 
+    cacheDirectorioObtener.clear();
     return normalizarGuardado(data.result);
   },
 
@@ -186,6 +220,7 @@ export const servicioDirectorioEjecutivo = {
       throw new Error(data.mensaje || "Error al editar el registro de terceros");
     }
 
+    cacheDirectorioObtener.clear();
     return normalizarGuardado(data.result);
   },
 
@@ -195,5 +230,7 @@ export const servicioDirectorioEjecutivo = {
     if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/eliminar")) {
       throw new Error(data.mensaje || "Error al eliminar el registro de terceros");
     }
+
+    cacheDirectorioObtener.clear();
   },
 };

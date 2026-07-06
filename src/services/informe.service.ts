@@ -2,10 +2,9 @@ import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianServ
 import { servicioBanco } from "./banco.service";
 import { servicioCompania } from "./compania.service";
 import { servicioDirectorioEjecutivo } from "./directorioEjecutivo.service";
-import { servicioTablaMaestra } from "./tablaMaestra.service";
+import { servicioTablaMaestra, type OpcionesTablaMaestraPorId } from "./tablaMaestra.service";
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   ImagenPendienteSubida,
   InformeAutocompletarRequest,
@@ -1112,41 +1111,43 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
 }
 
 async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Promise<InformeObtenerResponse> {
-  const [
-    sectores,
-    tiposLocal,
-    tiposBalance,
-    estadosFinancieros,
-    monedas,
-    tiposProveedor,
-    limitesCreditoProveedor,
-    paises,
-    tiposDocumento,
-    tiposPersona,
-    estadosCliente,
-    tiposEmpresa,
-    ciudades,
-    actividadesEconomicas,
-    clasesCiiu,
-    tiemposCreditoVentas,
-  ]: EntradaTablaMaestra[][] = await Promise.all([
-    servicioTablaMaestra.list(TablaMaestraId.SECTOR_ECONOMICO).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.TIPO_LOCAL).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.TIPO_BALANCE).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.ESTADO_FINANCIERO).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.MONEDA).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.TIPO_PROVEEDOR).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.LIMITE_CREDITO_PROVEEDOR).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.PAIS).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.TIPO_REG_TRIBUTARIO).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.ESTADO_CLIENTE).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.TIPO_EMPRESA).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.CIUDAD).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.ACTIVIDAD_ECONOMICA).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.CLASE_CIIU).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.TIEMPO_CREDITO_VENTAS).catch(() => []),
-  ]);
+  const idsTablaMaestra = [
+    TablaMaestraId.SECTOR_ECONOMICO,
+    TablaMaestraId.TIPO_LOCAL,
+    TablaMaestraId.TIPO_BALANCE,
+    TablaMaestraId.ESTADO_FINANCIERO,
+    TablaMaestraId.MONEDA,
+    TablaMaestraId.TIPO_PROVEEDOR,
+    TablaMaestraId.LIMITE_CREDITO_PROVEEDOR,
+    TablaMaestraId.PAIS,
+    TablaMaestraId.TIPO_REG_TRIBUTARIO,
+    TablaMaestraId.TIPO_PERSONA,
+    TablaMaestraId.ESTADO_CLIENTE,
+    TablaMaestraId.TIPO_EMPRESA,
+    TablaMaestraId.CIUDAD,
+    TablaMaestraId.ACTIVIDAD_ECONOMICA,
+    TablaMaestraId.CLASE_CIIU,
+    TablaMaestraId.TIEMPO_CREDITO_VENTAS,
+  ];
+  const opcionesTablaMaestra = await servicioTablaMaestra
+    .listarPorIds(idsTablaMaestra)
+    .catch((): OpcionesTablaMaestraPorId => ({}));
+  const sectores = opcionesTablaMaestra[TablaMaestraId.SECTOR_ECONOMICO] ?? [];
+  const tiposLocal = opcionesTablaMaestra[TablaMaestraId.TIPO_LOCAL] ?? [];
+  const tiposBalance = opcionesTablaMaestra[TablaMaestraId.TIPO_BALANCE] ?? [];
+  const estadosFinancieros = opcionesTablaMaestra[TablaMaestraId.ESTADO_FINANCIERO] ?? [];
+  const monedas = opcionesTablaMaestra[TablaMaestraId.MONEDA] ?? [];
+  const tiposProveedor = opcionesTablaMaestra[TablaMaestraId.TIPO_PROVEEDOR] ?? [];
+  const limitesCreditoProveedor = opcionesTablaMaestra[TablaMaestraId.LIMITE_CREDITO_PROVEEDOR] ?? [];
+  const paises = opcionesTablaMaestra[TablaMaestraId.PAIS] ?? [];
+  const tiposDocumento = opcionesTablaMaestra[TablaMaestraId.TIPO_REG_TRIBUTARIO] ?? [];
+  const tiposPersona = opcionesTablaMaestra[TablaMaestraId.TIPO_PERSONA] ?? [];
+  const estadosCliente = opcionesTablaMaestra[TablaMaestraId.ESTADO_CLIENTE] ?? [];
+  const tiposEmpresa = opcionesTablaMaestra[TablaMaestraId.TIPO_EMPRESA] ?? [];
+  const ciudades = opcionesTablaMaestra[TablaMaestraId.CIUDAD] ?? [];
+  const actividadesEconomicas = opcionesTablaMaestra[TablaMaestraId.ACTIVIDAD_ECONOMICA] ?? [];
+  const clasesCiiu = opcionesTablaMaestra[TablaMaestraId.CLASE_CIIU] ?? [];
+  const tiemposCreditoVentas = opcionesTablaMaestra[TablaMaestraId.TIEMPO_CREDITO_VENTAS] ?? [];
 
   const companias: RegistroCompaniaInvestigacion[] = await Promise.all(
     respuesta.datosInvestigacion.companiasRelacionadas.map(async (compania): Promise<RegistroCompaniaInvestigacion> => {
