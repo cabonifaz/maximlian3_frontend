@@ -24,6 +24,7 @@ interface PropsCustomVisorRevisionInforme {
   mostrarPie?: boolean;
   mostrarCerrar?: boolean;
   mostrarRegresar?: boolean;
+  mostrarEncabezadoRevision?: boolean;
   ocuparAltoDisponible?: boolean;
   onCerrar: () => void;
   onDescargar: (formato: FormatoDescargaInforme) => void;
@@ -46,10 +47,9 @@ export function CustomVisorRevisionInforme({
   mostrarAccionesRevision = true,
   mostrarInformeTraducido = false,
   mostrarPie = true,
-  mostrarCerrar = true,
   mostrarRegresar = true,
+  mostrarEncabezadoRevision = true,
   ocuparAltoDisponible = false,
-  onCerrar,
   onDescargar,
   onAprobar,
   onRechazar,
@@ -57,65 +57,69 @@ export function CustomVisorRevisionInforme({
 }: PropsCustomVisorRevisionInforme) {
   const tieneDocumento = Number.isFinite(Number(idInforme)) && Number(idInforme) > 0
     && Number.isFinite(Number(idPedido)) && Number(idPedido) > 0;
+  const renderControlesRevision = (className: string) => (
+    <div className={className}>
+      {mostrarAccionesRevision ? (
+        <>
+          <CustomButton
+            variant="secondary"
+            size="sm"
+            className="border-green-400 text-green-600"
+            disabled={!puedeEditar}
+            onClick={onAprobar}
+          >
+            <CheckCircle2 size={14} />
+            Aprobar
+          </CustomButton>
+          <CustomButton
+            variant="secondary"
+            size="sm"
+            className="border-red-400 text-red-500"
+            disabled={!puedeEditar}
+            onClick={onRechazar}
+          >
+            <CircleX size={14} />
+            Rechazar
+          </CustomButton>
+        </>
+      ) : null}
+      <CustomDescargaInforme
+        deshabilitado={!puedeDescargar}
+        puedeDescargarXml={puedeDescargarXml}
+        onDescargar={onDescargar}
+      />
+    </div>
+  );
 
   return (
     <div className={`relative flex min-h-0 flex-col overflow-hidden bg-slate-100 ${ocuparAltoDisponible ? "h-full" : "h-[calc(100vh-4rem)]"}`}>
       <header className="z-30 shrink-0 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
-        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-2.5">
-          <div className="flex items-center gap-3">
-            {mostrarRegresar ? (
-              <CustomButton variant="secondary" size="sm" onClick={onVolver}>
-                <ArrowLeft size={14} />
-                Regresar
-              </CustomButton>
-            ) : null}
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-              <ShieldCheck size={20} />
+        <div className={`flex flex-wrap items-center gap-4 px-5 py-2.5 ${mostrarRegresar || !mostrarInformeTraducido ? "justify-between" : "justify-end"}`}>
+          {mostrarRegresar || (!mostrarInformeTraducido && mostrarEncabezadoRevision) ? (
+            <div className="flex items-center gap-3">
+              {mostrarRegresar ? (
+                <CustomButton variant="secondary" size="sm" onClick={onVolver}>
+                  <ArrowLeft size={14} />
+                  Regresar
+                </CustomButton>
+              ) : null}
+              {!mostrarInformeTraducido && mostrarEncabezadoRevision ? (
+                <>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                    <ShieldCheck size={20} />
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold text-brand-black">{"Revisi\u00f3n y Aprobaci\u00f3n"}</h1>
+                    <p className="text-sm text-slate-500">
+                      {`Revision de ${tituloInforme.toLowerCase()}.`}
+                    </p>
+                  </div>
+                </>
+              ) : null}
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-brand-black">{"Revisi\u00f3n y Aprobaci\u00f3n"}</h1>
-              <p className="text-sm text-slate-500">
-                {`Revision de ${tituloInforme.toLowerCase()}.`}
-              </p>
-            </div>
-          </div>
+          ) : null}
 
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {mostrarCerrar ? (
-              <CustomButton variant="secondary" size="sm" onClick={onCerrar}>
-                Cerrar
-              </CustomButton>
-            ) : null}
-            {mostrarAccionesRevision ? (
-              <>
-                <CustomButton
-                  variant="secondary"
-                  size="sm"
-                  className="border-green-400 text-green-600"
-                  disabled={!puedeEditar}
-                  onClick={onAprobar}
-                >
-                  <CheckCircle2 size={14} />
-                  Aprobar
-                </CustomButton>
-                <CustomButton
-                  variant="secondary"
-                  size="sm"
-                  className="border-red-400 text-red-500"
-                  disabled={!puedeEditar}
-                  onClick={onRechazar}
-                >
-                  <CircleX size={14} />
-                  Rechazar
-                </CustomButton>
-              </>
-            ) : null}
-            <CustomDescargaInforme
-              deshabilitado={!puedeDescargar}
-              puedeDescargarXml={puedeDescargarXml}
-              onDescargar={onDescargar}
-            />
-          </div>
+          {renderControlesRevision("flex flex-wrap items-center justify-end gap-2")}
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-5 py-2">

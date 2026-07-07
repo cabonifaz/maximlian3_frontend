@@ -32,13 +32,13 @@ interface ClientMutationParams {
 }
 
 const CLIENT_COLUMNS = [
-  { label: "Nombre" },
-  { label: "País" },
-  { label: "Tipo de Persona" },
-  { label: "Teléfono" },
-  { label: "Correo" },
-  { label: "Estado" },
-  { label: "Acciones", className: "text-right" },
+  { label: "Nombre", width: "24%" },
+  { label: "País", width: "12%" },
+  { label: "Tipo de Persona", width: "14%" },
+  { label: "Teléfono", width: "13%" },
+  { label: "Correo", width: "22%" },
+  { label: "Estado", width: "9%" },
+  { label: "Acciones", className: "text-right", width: "6%" },
 ];
 
 export default function GestionClientes() {

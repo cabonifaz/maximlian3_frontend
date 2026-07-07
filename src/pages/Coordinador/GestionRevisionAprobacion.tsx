@@ -95,12 +95,12 @@ export default function GestionRevisionAprobacion() {
   };
 
   const columnas = [
-    { label: "ID Pedido" },
-    { label: "Investigado" },
-    { label: "Vigencia" },
-    { label: "Tipo" },
-    { label: "Estado", className: "text-center" },
-    { label: "Acción", className: "text-right" },
+    { label: "ID Pedido", width: "10%" },
+    { label: "Investigado", width: "30%" },
+    { label: "Vigencia", width: "14%" },
+    { label: "Tipo", width: "18%" },
+    { label: "Estado", className: "text-center", width: "16%" },
+    { label: "Acción", className: "text-right", width: "12%" },
   ];
 
   return (

@@ -185,13 +185,13 @@ export default function BandejaAnalista() {
   };
 
   const columnas = [
-    { label: "ID Pedido" },
-    { label: "Investigado" },
-    { label: "País" },
-    { label: "Fecha" },
-    { label: "Tipo" },
-    { label: "Estado", className: "text-center" },
-    { label: "Acción", className: "text-right" },
+    { label: "ID Pedido", width: "10%" },
+    { label: "Investigado", width: "28%" },
+    { label: "País", width: "14%" },
+    { label: "Fecha", width: "12%" },
+    { label: "Tipo", width: "14%" },
+    { label: "Estado", className: "text-center", width: "12%" },
+    { label: "Acción", className: "text-right", width: "10%" },
   ];
 
   return (

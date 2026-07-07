@@ -11,6 +11,7 @@ import { CustomButton } from "./CustomButton";
 export interface TableColumn {
   label: string;
   className?: string;
+  width?: string;
 }
 
 interface CustomTablaProps<T> {
@@ -108,11 +109,18 @@ export function CustomTabla<T>({
   const colCount = columns.length + (selectable ? 1 : 0);
   const pages = getPaginationPages(paginaActual, totalPages);
   const navDisabled = !!(isLoading || isError);
+  const anchoColumnaDefecto = `${100 / Math.max(columns.length, 1)}%`;
 
   return (
     <div className="bg-brand-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full min-w-[900px] table-fixed text-left border-collapse [&_td]:max-w-0 [&_td]:break-words [&_td]:align-middle">
+          <colgroup>
+            {selectable ? <col className="w-10" /> : null}
+            {columns.map((col, i) => (
+              <col key={i} style={{ width: col.width ?? anchoColumnaDefecto }} />
+            ))}
+          </colgroup>
           <thead>
             <tr className="border-b border-gray-100">
               {selectable && (

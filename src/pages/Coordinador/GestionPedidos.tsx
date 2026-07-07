@@ -30,13 +30,13 @@ import { pedidoService } from "@maximilian/services/pedido.service";
 import { type PedidoListEntry } from "@maximilian/shared/types/pedido.type";
 
 const PEDIDO_COLUMNS = [
-  { label: "Cliente" },
-  { label: "Investigado" },
-  { label: "Idioma del Informe", className: "text-center" },
-  { label: "Logo Imprimible", className: "text-center" },
-  { label: "Estado", className: "text-center" },
-  { label: "", className: "text-center w-14" },
-  { label: "Acciones", className: "text-right" },
+  { label: "Cliente", width: "24%" },
+  { label: "Investigado", width: "23%" },
+  { label: "Idioma del Informe", className: "text-center", width: "14%" },
+  { label: "Logo Imprimible", className: "text-center", width: "13%" },
+  { label: "Estado", className: "text-center", width: "14%" },
+  { label: "", className: "text-center w-14", width: "5%" },
+  { label: "Acciones", className: "text-right", width: "7%" },
 ];
 
 const ESTADO_OPTIONS = [

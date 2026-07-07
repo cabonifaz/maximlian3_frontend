@@ -344,13 +344,13 @@ function SeccionEmpresas({
 
       <CustomTabla
         columns={[
-          { label: "Razon Social" },
-          { label: "Documento" },
-          { label: "Pais" },
-          { label: "Direccion" },
-          { label: "Telefono" },
-          { label: "Actividad Comercial" },
-          { label: "N° de Empleados", className: "text-right" },
+          { label: "Razon Social", width: "22%" },
+          { label: "Documento", width: "12%" },
+          { label: "Pais", width: "10%" },
+          { label: "Direccion", width: "22%" },
+          { label: "Telefono", width: "12%" },
+          { label: "Actividad Comercial", width: "16%" },
+          { label: "N° de Empleados", className: "text-right", width: "6%" },
         ]}
         data={empresas}
         getId={(empresa) => empresa.idCompania}

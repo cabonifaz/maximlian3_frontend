@@ -35,14 +35,14 @@ interface UpdateUserMutationParams {
 }
 
 const USER_COLUMNS = [
-  { label: "Nombre" },
-  { label: "Apellido Paterno" },
-  { label: "Apellido Materno" },
-  { label: "Nombre de Usuario" },
-  { label: "Rol(es)" },
-  { label: "Correo" },
-  { label: "Estado" },
-  { label: "" },
+  { label: "Nombre", width: "14%" },
+  { label: "Apellido Paterno", width: "13%" },
+  { label: "Apellido Materno", width: "13%" },
+  { label: "Nombre de Usuario", width: "15%" },
+  { label: "Rol(es)", width: "15%" },
+  { label: "Correo", width: "20%" },
+  { label: "Estado", width: "7%" },
+  { label: "", width: "3%" },
 ];
 
 const ID_MAESTRO_ESTADO_USUARIO = 100;

@@ -2,10 +2,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { ArrowLeft } from "lucide-react";
 import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/CustomModalRechazoInforme";
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
-import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { informeService } from "@maximilian/services/informe.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { servicioInformeObservacion } from "@maximilian/services/informeObservacion.service";
@@ -238,13 +236,6 @@ export default function RevisionInformeCoordinador() {
       <>
         <div className="flex h-[calc(100vh-4rem)] min-h-0 flex-col overflow-hidden bg-slate-100">
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3">
-            <div className="flex shrink-0 items-center justify-start">
-              <CustomButton variant="secondary" size="sm" onClick={() => navigate("/coordinador/revision")}>
-                <ArrowLeft size={14} />
-                Regresar
-              </CustomButton>
-            </div>
-
             <div className="grid shrink-0 grid-cols-2 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm xl:hidden">
               <button
                 type="button"
@@ -286,7 +277,8 @@ export default function RevisionInformeCoordinador() {
                   mostrarAccionesRevision={false}
                   mostrarPie={false}
                   mostrarCerrar={false}
-                  mostrarRegresar={false}
+                  mostrarRegresar
+                  mostrarEncabezadoRevision={false}
                   ocuparAltoDisponible
                   onCerrar={() => navigate("/coordinador/revision")}
                   onDescargar={(formato) => {
