@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router";
@@ -6,13 +6,13 @@ import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/Cu
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { informeService } from "@maximilian/services/informe.service";
+import { pedidoService } from "@maximilian/services/pedido.service";
 import { servicioInformeObservacion } from "@maximilian/services/informeObservacion.service";
 import type {
   FormatoDescargaInforme,
   InformeActualizarEstadoRequest,
   InformeObservacion,
 } from "@maximilian/shared/types/informe.type";
-import { obtenerDatosInvestigacionAnalista } from "@maximilian/shared/utils/datos-simulados-investigacion";
 
 const ID_ESTADO_INFORME_APROBADO = 4;
 type TabInformeComparado = "original" | "traducido";
@@ -25,26 +25,18 @@ export default function RevisionInformeCoordinador() {
   const idInforme = Number(parametrosBusqueda.get("idInforme"));
   const idInformeOriginal = Number(parametrosBusqueda.get("idInformeOriginal"));
   const idIdioma = Number(parametrosBusqueda.get("idIdioma"));
-  const esEjemplo = parametrosBusqueda.get("ejemplo") === "1";
   const tieneInformeOriginal = Number.isFinite(idInformeOriginal) && idInformeOriginal > 0;
   const [estaAbiertoModalRechazo, setEstaAbiertoModalRechazo] = useState(false);
   const [observacionesRechazo, setObservacionesRechazo] = useState<InformeObservacion[]>([]);
   const [tabInformeComparado, setTabInformeComparado] = useState<TabInformeComparado>("original");
-  const datosEjemplo = useMemo(
-    () => obtenerDatosInvestigacionAnalista("detalle"),
-    [],
-  );
-
-  const datosInvestigacion = esEjemplo ? datosEjemplo : undefined;
+  const datosInvestigacion = undefined;
   const idPedidoNumerico = Number(idPedido);
   const idInformeSeguro =
     Number.isFinite(idInforme) ? idInforme : 0;
-  const puedeDescargar = !esEjemplo
-    && idInformeSeguro > 0
+  const puedeDescargar = idInformeSeguro > 0
     && Number.isFinite(idPedidoNumerico)
     && idPedidoNumerico > 0;
-  const puedeDescargarOriginal = !esEjemplo
-    && tieneInformeOriginal
+  const puedeDescargarOriginal = tieneInformeOriginal
     && Number.isFinite(idPedidoNumerico)
     && idPedidoNumerico > 0;
   const idiomaInformeTraducido = idIdioma === 2
@@ -53,12 +45,19 @@ export default function RevisionInformeCoordinador() {
       ? "Portugu\u00e9s"
       : "Traducido";
   const encabezadoVistaPrevia = {
-    pais: datosInvestigacion?.identificacion.pais || "-",
+    pais: "-",
     fecha: new Date().toLocaleDateString("es-PE"),
     tipoSolicitud: "-",
     analista: "-",
     traductor: "-",
   };
+
+  const { data: pedido } = useQuery({
+    queryKey: ["pedido-revision-descarga", idPedidoNumerico],
+    queryFn: () => pedidoService.getById(idPedidoNumerico),
+    enabled: Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0,
+  });
+  const puedeDescargarXml = pedido?.idPlantilla === 5;
 
   const {
     data: observacionesGuardadas,
@@ -66,24 +65,16 @@ export default function RevisionInformeCoordinador() {
   } = useQuery({
     queryKey: ["informe-observaciones", idPedidoNumerico],
     queryFn: () => servicioInformeObservacion.listar(idPedidoNumerico),
-    enabled: !esEjemplo && Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0,
+    enabled: Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0,
   });
 
   const mutationRevision = useMutation({
     mutationFn: async (payload: InformeActualizarEstadoRequest) => {
-      if (esEjemplo) return;
       await informeService.actualizarEstado(payload);
     },
-    onSuccess: async (_, payload) => {
+    onSuccess: async () => {
       setEstaAbiertoModalRechazo(false);
       setObservacionesRechazo([]);
-      if (esEjemplo) {
-        toast.success(
-          payload.idEstadoInforme === ID_ESTADO_INFORME_APROBADO
-            ? "Ejemplo aprobado."
-            : "Ejemplo rechazado.",
-        );
-      }
       await queryClient.invalidateQueries({
         queryKey: ["informes-bandeja-coordinador-revision"],
       });
@@ -96,8 +87,6 @@ export default function RevisionInformeCoordinador() {
 
   const mutationRechazo = useMutation({
     mutationFn: async (observaciones: InformeObservacion[]) => {
-      if (esEjemplo) return;
-
       const observacionesNuevas = observaciones.filter(
         (observacion) => observacion.idInformeObservacion <= 0,
       );
@@ -137,7 +126,6 @@ export default function RevisionInformeCoordinador() {
     onSuccess: async () => {
       setEstaAbiertoModalRechazo(false);
       setObservacionesRechazo([]);
-      if (esEjemplo) toast.success("Ejemplo rechazado.");
       await queryClient.invalidateQueries({
         queryKey: ["informes-bandeja-coordinador-revision"],
       });
@@ -195,6 +183,11 @@ export default function RevisionInformeCoordinador() {
   };
 
   const descargarDocumento = async (formato: FormatoDescargaInforme, idInformeDescarga = idInformeSeguro) => {
+    if (formato === ".xml" && !puedeDescargarXml) {
+      toast.error("La descarga XML solo esta disponible para la plantilla permitida.");
+      return;
+    }
+
     const etiquetaFormato = formato.slice(1).toUpperCase();
     const idToast = toast.loading(`Descargando documento ${etiquetaFormato}...`);
     try {
@@ -251,10 +244,10 @@ export default function RevisionInformeCoordinador() {
                   datosInvestigacion={datosInvestigacion}
                   encabezado={encabezadoVistaPrevia}
                   idInforme={idInformeOriginal}
-                  idPedido={esEjemplo ? undefined : idPedidoNumerico}
+                  idPedido={idPedidoNumerico}
                   puedeDescargar={puedeDescargarOriginal}
+                  puedeDescargarXml={puedeDescargarXml}
                   puedeEditar={false}
-                  esEjemplo={esEjemplo}
                   tituloInforme="Informe original"
                   idiomaInforme={"Espa\u00f1ol"}
                   mostrarAccionesRevision={false}
@@ -275,11 +268,11 @@ export default function RevisionInformeCoordinador() {
                 <CustomVisorRevisionInforme
                   datosInvestigacion={datosInvestigacion}
                   encabezado={encabezadoVistaPrevia}
-                  idInforme={esEjemplo ? undefined : idInformeSeguro}
-                  idPedido={esEjemplo ? undefined : idPedidoNumerico}
+                  idInforme={idInformeSeguro}
+                  idPedido={idPedidoNumerico}
                   puedeDescargar={puedeDescargar}
+                  puedeDescargarXml={puedeDescargarXml}
                   puedeEditar={puedeEditarRevision}
-                  esEjemplo={esEjemplo}
                   tituloInforme="Informe traducido"
                   idiomaInforme={idiomaInformeTraducido}
                   mostrarAccionesRevision
@@ -333,11 +326,11 @@ export default function RevisionInformeCoordinador() {
       <CustomVisorRevisionInforme
         datosInvestigacion={datosInvestigacion}
         encabezado={encabezadoVistaPrevia}
-        idInforme={esEjemplo ? undefined : idInformeSeguro}
-        idPedido={esEjemplo ? undefined : idPedidoNumerico}
+        idInforme={idInformeSeguro}
+        idPedido={idPedidoNumerico}
         puedeDescargar={puedeDescargar}
+        puedeDescargarXml={puedeDescargarXml}
         puedeEditar={puedeEditarRevision}
-        esEjemplo={esEjemplo}
         onCerrar={() => navigate("/coordinador/revision")}
         onDescargar={(formato) => {
           void descargarDocumento(formato);

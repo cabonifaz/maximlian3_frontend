@@ -69,9 +69,9 @@ import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import { usePrecargaTablaMaestra } from "@maximilian/hooks/usePrecargaTablaMaestra";
 import {
-  obtenerDatosInvestigacionAnalista,
+  crearDatosInvestigacionVacios,
   seccionesInvestigacionAnalista,
-} from "@maximilian/shared/utils/datos-simulados-investigacion";
+} from "@maximilian/shared/utils/investigacion.util";
 import type {
   AlcanceExtraccionInforme,
   InformeBalanceBancoRequest,
@@ -129,6 +129,7 @@ interface PropsPantallaInvestigacionAnalista {
 
 interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInvestigacionAnalista {
   datosIniciales: DatosInvestigacionAnalista;
+  esPendienteAprobacionInformacion?: boolean;
   archivosIniciales?: ArchivoInvestigacionAnalista[];
   idFormatoFechaInicial?: number;
   idTipoPersonaInicial?: number;
@@ -171,6 +172,22 @@ interface ValorExtraidoNormalizado {
 const FILAS_POR_PAGINA_INVESTIGACION = 5;
 const ID_ESTADO_PEDIDO_BORRADOR = 3;
 const ID_ESTADO_PEDIDO_FINALIZADO = 5;
+
+function esEstadoPendienteAprobacionInformacion({
+  estado,
+  estadoInforme,
+}: {
+  estado?: string;
+  estadoInforme?: string;
+}) {
+  const textoEstado = `${estado ?? ""} ${estadoInforme ?? ""}`
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  return textoEstado.includes("pendiente") && textoEstado.includes("aprob");
+}
 
 function obtenerTraduccionTipoEmpresaAnalista(opcion: EntradaTablaMaestra, idIdioma?: number) {
   if (idIdioma === 2) return opcion.string4?.trim() ?? "";
@@ -251,8 +268,28 @@ function convertirFechaIso(valor?: string) {
   return `${ano.padStart(4, "0")}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}T00:00:00.000Z`;
 }
 
-function obtenerIdPorTexto(opciones: { num1: number | null; string1: string | null }[] | undefined, valor: string) {
-  return opciones?.find((opcion) => opcion.string1?.trim().toLowerCase() === valor.trim().toLowerCase())?.num1 ?? 0;
+function obtenerIdPorTexto(
+  opciones: { num1: number | null; string1: string | null; string2?: string | null }[] | undefined,
+  valor: string,
+) {
+  const texto = valor.trim().toLowerCase();
+  if (!texto) return 0;
+
+  const id = Number.parseInt(valor.trim(), 10);
+  if (/^\d+$/.test(valor.trim()) && Number.isFinite(id) && opciones?.some((opcion) => opcion.num1 === id)) {
+    return id;
+  }
+
+  return opciones?.find((opcion) => {
+    const textoCompuesto = [opcion.string2?.trim(), opcion.string1?.trim()]
+      .filter(Boolean)
+      .join(" - ")
+      .toLowerCase();
+
+    return textoCompuesto === texto
+      || opcion.string1?.trim().toLowerCase() === texto
+      || opcion.string2?.trim().toLowerCase() === texto;
+  })?.num1 ?? 0;
 }
 
 function obtenerIdPorTextoONumero(opciones: { num1: number | null; string1: string | null }[] | undefined, valor: string) {
@@ -267,16 +304,21 @@ function obtenerIdCiiuPorValor(
 ) {
   const texto = valor.trim().toLowerCase();
   if (!texto) return 0;
-  const id = Number.parseInt(valor.trim(), 10);
-  if (Number.isFinite(id) && opciones?.some((opcion) => opcion.num1 === id)) return id;
   const codigo = valor.match(/^\d+/)?.[0] ?? "";
 
-  return opciones?.find((opcion) => {
+  const opcionPorCodigoOTexto = opciones?.find((opcion) => {
     const textoCompuesto = [opcion.string2?.trim(), opcion.string1?.trim()].filter(Boolean).join(" - ").toLowerCase();
     return textoCompuesto === texto
       || opcion.string1?.trim().toLowerCase() === texto
       || (!!codigo && opcion.string2?.trim() === codigo);
-  })?.num1 ?? 0;
+  });
+  if (opcionPorCodigoOTexto?.num1) return opcionPorCodigoOTexto.num1;
+
+  const esIdNumerico = /^\d+$/.test(valor.trim());
+  const id = esIdNumerico ? Number.parseInt(valor.trim(), 10) : 0;
+  if (esIdNumerico && Number.isFinite(id) && opciones?.some((opcion) => opcion.num1 === id)) return id;
+
+  return 0;
 }
 
 function obtenerTextoPorId(opciones: { num1: number | null; string1: string | null }[] | undefined, id?: number) {
@@ -1277,6 +1319,7 @@ function PantallaInvestigacionAnalista({
   modo,
   datosPedidoNavegacion,
   datosIniciales,
+  esPendienteAprobacionInformacion = false,
   archivosIniciales = [],
   idFormatoFechaInicial,
   idTipoPersonaInicial,
@@ -1290,7 +1333,7 @@ function PantallaInvestigacionAnalista({
 }: PropsContenidoPantallaInvestigacionAnalista) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const esSoloLectura = modo === "detalle";
+  const esSoloLectura = modo === "detalle" || esPendienteAprobacionInformacion;
   const contenedorPantallaRef = useRef<HTMLDivElement>(null);
   const paisExtraccionRef = useRef<{ idPais?: number; pais?: string; aplicado: boolean }>({ aplicado: false });
   const ciudadExtraccionPendienteRef = useRef<CiudadExtraccionPendiente | null>(null);
@@ -5759,6 +5802,7 @@ function PantallaInvestigacionAnalista({
         idPedido={Number.isFinite(Number(idPedido)) ? Number(idPedido) : undefined}
         idInforme={idInformeActual}
         archivos={archivosInvestigacion}
+        soloLectura={esSoloLectura}
         onCerrar={() => setEstaAbiertoModalArchivosInvestigacion(false)}
         onInformeCreado={(nuevoIdInforme) => {
           setIdInformeActual(nuevoIdInforme);
@@ -6245,8 +6289,7 @@ export default function InvestigacionAnalista() {
   const idInformeNumerico = Number(idInforme);
   const tieneIdInforme = Number.isFinite(idInformeNumerico) && idInformeNumerico > 0;
   const usaDatosBackend = modo !== "iniciar" && Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0 && tieneIdInforme;
-  const datosBaseInvestigacion = useMemo(() => obtenerDatosInvestigacionAnalista("iniciar"), []);
-  const datosEjemploInvestigacion = useMemo(() => obtenerDatosInvestigacionAnalista(modo), [modo]);
+  const datosBaseInvestigacion = useMemo(() => crearDatosInvestigacionVacios(), []);
 
   const { data: informeObtenido, isLoading: estaCargandoInforme } = useQuery({
     queryKey: ["informe-obtener-analista", idPedidoNumerico, idCarga],
@@ -6263,8 +6306,7 @@ export default function InvestigacionAnalista() {
   const datosIniciales = (() => {
     if (modo === "iniciar") return datosBaseInvestigacion;
     if (informeObtenido?.datosInvestigacion) return informeObtenido.datosInvestigacion;
-    if (usaDatosBackend) return datosBaseInvestigacion;
-    return datosEjemploInvestigacion;
+    return datosBaseInvestigacion;
   })();
 
   const claveDatos = usaDatosBackend ? String(informeObtenido?.idInforme ?? "cargando") : "local";
@@ -6286,6 +6328,10 @@ export default function InvestigacionAnalista() {
       modo={modo}
       datosPedidoNavegacion={datosPedidoNavegacion}
       datosIniciales={datosIniciales}
+      esPendienteAprobacionInformacion={esEstadoPendienteAprobacionInformacion({
+        estado: informeObtenido?.estado,
+        estadoInforme: informeObtenido?.estadoInforme,
+      })}
       archivosIniciales={informeObtenido?.archivosInvestigacion}
       idFormatoFechaInicial={informeObtenido?.idFormatoFecha}
       idTipoPersonaInicial={informeObtenido?.idTipoPersona}

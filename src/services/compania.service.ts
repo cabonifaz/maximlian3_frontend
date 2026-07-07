@@ -178,7 +178,7 @@ export const servicioCompania = {
     const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Compania/listar", {
       params: {
         Busqueda: params.busqueda,
-        NumPag: params.numPag,
+        ...(typeof params.numPag === "number" ? { NumPag: params.numPag } : {}),
       },
     });
 

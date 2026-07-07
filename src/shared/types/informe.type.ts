@@ -492,6 +492,9 @@ export interface InformeEliminarObservacionRequest {
 export interface InformeObtenerResponse {
   idInforme?: number;
   idPedido?: number;
+  idEstadoInforme?: number;
+  estadoInforme?: string;
+  estado?: EstadoInvestigacionAnalista;
   idFormatoFecha?: number;
   idTipoPersona?: number;
   idPais?: number;
