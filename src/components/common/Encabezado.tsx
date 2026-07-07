@@ -52,14 +52,7 @@ export function Encabezado({ role: initialRole }: PropsEncabezado) {
 
     try {
       const role = sesionUsuario?.roles.find((r) => r.rol === roleName);
-      if (role) {
-        sessionStorage.setItem("selected_role", role.rol);
-        sessionStorage.setItem("selected_role_id", role.idRol.toString());
-        setSelectedRole(roleName);
-      }
-
-      // Small delay for smooth transition
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      if (!role) return;
 
       await clienteConsultas.cancelQueries({
         predicate: (consulta) => consulta.queryKey[0] !== "masterTable",
@@ -67,6 +60,10 @@ export function Encabezado({ role: initialRole }: PropsEncabezado) {
       clienteConsultas.removeQueries({
         predicate: (consulta) => consulta.queryKey[0] !== "masterTable",
       });
+
+      sessionStorage.setItem("selected_role", role.rol);
+      sessionStorage.setItem("selected_role_id", role.idRol.toString());
+      setSelectedRole(roleName);
 
       const roleNormalized = roleName.toUpperCase();
       if (roleNormalized === "ADMINISTRADOR") {
