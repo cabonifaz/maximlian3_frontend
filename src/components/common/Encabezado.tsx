@@ -31,7 +31,6 @@ export function Encabezado({ role: initialRole }: PropsEncabezado) {
     setIsLoggingOut(true);
     try {
       await servicioAutenticacion.logout();
-      sessionStorage.clear();
       // Small artificial delay to make the transition feel smoother
       await new Promise((resolve) => setTimeout(resolve, 800));
       navigate("/iniciar-sesion");

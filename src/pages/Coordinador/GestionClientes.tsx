@@ -226,7 +226,9 @@ export default function GestionClientes() {
   const renderRow = (client: ClientListEntry, index: number) => (
     <>
       <td className="px-6 py-4">
-        <span className="text-sm font-bold text-brand-black">{client.nombre}</span>
+        <span className="block truncate text-sm font-bold text-brand-black" title={client.nombre}>
+          {client.nombre}
+        </span>
       </td>
       <td className="px-6 py-4">
         <span className="text-sm text-gray-600">{client.pais || "-"}</span>
@@ -237,10 +239,14 @@ export default function GestionClientes() {
         </span>
       </td>
       <td className="px-6 py-4">
-        <span className="text-sm text-gray-600 font-medium">{client.telefono}</span>
+        <span className="block truncate text-sm font-medium text-gray-600" title={client.telefono}>
+          {client.telefono}
+        </span>
       </td>
       <td className="px-6 py-4">
-        <span className="text-sm text-gray-500">{client.correo}</span>
+        <span className="block truncate text-sm text-gray-500" title={client.correo}>
+          {client.correo}
+        </span>
       </td>
       <td className="px-6 py-4">
         {client.estado?.toLowerCase() === "activo" ? (

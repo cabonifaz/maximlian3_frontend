@@ -157,10 +157,14 @@ export default function PedidoManagement() {
   const renderRow = (pedido: PedidoListEntry) => (
     <>
       <td className="px-6 py-4">
-        <span className="text-sm font-bold text-brand-black">{pedido.cliente}</span>
+        <span className="block truncate text-sm font-bold text-brand-black" title={pedido.cliente}>
+          {pedido.cliente}
+        </span>
       </td>
       <td className="px-6 py-4">
-        <span className="text-sm text-gray-600">{pedido.investigado}</span>
+        <span className="block truncate text-sm text-gray-600" title={pedido.investigado}>
+          {pedido.investigado}
+        </span>
       </td>
       <td className="px-6 py-4 text-center">
         <span className="text-sm text-gray-600">{pedido.idioma}</span>

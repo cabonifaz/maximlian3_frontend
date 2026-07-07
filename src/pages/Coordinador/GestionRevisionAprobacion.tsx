@@ -1,20 +1,34 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
-import { BadgeCheck, CheckCircle2, CircleX, ClipboardList, Search, SlidersHorizontal, TriangleAlert } from "lucide-react";
+import {
+  BadgeCheck,
+  CheckCircle2,
+  CircleX,
+  ClipboardList,
+  Search,
+  SlidersHorizontal,
+  TriangleAlert,
+} from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { informeService } from "@maximilian/services/informe.service";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { InformeListEntry } from "@maximilian/shared/types/informe.type";
 import type { TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { obtenerColorEstadoAnalista } from "@maximilian/shared/utils/investigacion.util";
 
 function obtenerIconoTarjeta(id: string) {
-  if (id === "pendiente") return <ClipboardList size={18} className="text-orange-500" />;
-  if (id === "aprobado") return <CheckCircle2 size={18} className="text-emerald-500" />;
-  if (id === "rechazado") return <CircleX size={18} className="text-rose-500" />;
-  if (id === "vigente") return <BadgeCheck size={18} className="text-slate-600" />;
+  if (id === "pendiente")
+    return <ClipboardList size={18} className="text-orange-500" />;
+  if (id === "aprobado")
+    return <CheckCircle2 size={18} className="text-emerald-500" />;
+  if (id === "rechazado")
+    return <CircleX size={18} className="text-rose-500" />;
+  if (id === "vigente")
+    return <BadgeCheck size={18} className="text-slate-600" />;
   return <TriangleAlert size={18} className="text-red-400" />;
 }
 
@@ -23,11 +37,14 @@ function obtenerBadgeVigencia(registro: InformeListEntry) {
   const textoNormalizado = texto.toLowerCase();
   const esVencido = textoNormalizado.includes("venc");
   const dias = texto.match(/\d+/)?.[0];
-  const esVencimientoInmediato = !esVencido && dias != null && Number(dias) <= 1;
-  const color = registro.vigenciaColor
-    || (esVencido ? "#dc2626" : esVencimientoInmediato ? "#b45309" : "#166534");
-  const fondo = registro.vigenciaFondo
-    || (esVencido ? "#fef2f2" : esVencimientoInmediato ? "#fffbeb" : "#ecfdf5");
+  const esVencimientoInmediato =
+    !esVencido && dias != null && Number(dias) <= 1;
+  const color =
+    registro.vigenciaColor ||
+    (esVencido ? "#dc2626" : esVencimientoInmediato ? "#b45309" : "#166534");
+  const fondo =
+    registro.vigenciaFondo ||
+    (esVencido ? "#fef2f2" : esVencimientoInmediato ? "#fffbeb" : "#ecfdf5");
 
   return (
     <span
@@ -56,7 +73,12 @@ export default function GestionRevisionAprobacion() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["informes-bandeja-coordinador-revision", paginaActual, terminoBusquedaConRetardo],
+    queryKey: [
+      "informes-bandeja-coordinador-revision",
+      "con-plantilla",
+      paginaActual,
+      terminoBusquedaConRetardo,
+    ],
     queryFn: () =>
       informeService.list({
         numPag: paginaActual,
@@ -72,13 +94,44 @@ export default function GestionRevisionAprobacion() {
     [respuestaInformes?.lstInforme],
   );
 
+  const { data: opcionesPlantillaInforme } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.PLANTILLA_INFORME],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLANTILLA_INFORME),
+    staleTime: Infinity,
+  });
+
   const resumenTarjetas = useMemo<TarjetaResumenAnalista[]>(() => {
     return [
-      { id: "pendiente", titulo: "Pendiente", valor: respuestaInformes?.pendienteAprobacion ?? 0, colorIcono: "text-orange-500" },
-      { id: "aprobado", titulo: "Aprobado", valor: respuestaInformes?.aprobado ?? 0, colorIcono: "text-emerald-500" },
-      { id: "rechazado", titulo: "Rechazado", valor: respuestaInformes?.rechazado ?? 0, colorIcono: "text-rose-500" },
-      { id: "vigente", titulo: "Vigentes", valor: respuestaInformes?.vigente ?? 0, colorIcono: "text-slate-600" },
-      { id: "vencido", titulo: "Vencidos", valor: respuestaInformes?.vencido ?? 0, colorIcono: "text-red-400" },
+      {
+        id: "pendiente",
+        titulo: "Pendiente",
+        valor: respuestaInformes?.pendienteAprobacion ?? 0,
+        colorIcono: "text-orange-500",
+      },
+      {
+        id: "aprobado",
+        titulo: "Aprobado",
+        valor: respuestaInformes?.aprobado ?? 0,
+        colorIcono: "text-emerald-500",
+      },
+      {
+        id: "rechazado",
+        titulo: "Rechazado",
+        valor: respuestaInformes?.rechazado ?? 0,
+        colorIcono: "text-rose-500",
+      },
+      {
+        id: "vigente",
+        titulo: "Vigentes",
+        valor: respuestaInformes?.vigente ?? 0,
+        colorIcono: "text-slate-600",
+      },
+      {
+        id: "vencido",
+        titulo: "Vencidos",
+        valor: respuestaInformes?.vencido ?? 0,
+        colorIcono: "text-red-400",
+      },
     ];
   }, [respuestaInformes]);
 
@@ -91,17 +144,33 @@ export default function GestionRevisionAprobacion() {
     if (registro.idInformeOriginal != null && registro.idInformeOriginal > 0) {
       parametros.set("idInformeOriginal", String(registro.idInformeOriginal));
     }
-    navigate(`/coordinador/revision/${registro.idPedido}?${parametros.toString()}`);
+    navigate(
+      `/coordinador/revision/${registro.idPedido}?${parametros.toString()}`,
+    );
   };
 
   const columnas = [
-    { label: "ID Pedido", width: "10%" },
-    { label: "Investigado", width: "30%" },
-    { label: "Vigencia", width: "14%" },
-    { label: "Tipo", width: "18%" },
-    { label: "Estado", className: "text-center", width: "16%" },
+    { label: "ID Pedido", width: "9%" },
+    { label: "Investigado", width: "29%" },
+    { label: "Vigencia", width: "13%" },
+    { label: "Tipo", width: "10%" },
+    { label: "Estado", className: "text-center", width: "14%" },
+    { label: "Plantilla", className: "text-center", width: "13%" },
     { label: "Acción", className: "text-right", width: "12%" },
   ];
+
+  const obtenerNombrePlantilla = (idPlantilla?: number) => {
+    if (!idPlantilla) return "-";
+    const opcionPlantilla = opcionesPlantillaInforme?.find(
+      (opcion) => opcion.num1 === idPlantilla,
+    );
+
+    return (
+      opcionPlantilla?.string1 ||
+      opcionPlantilla?.descripcion ||
+      `Plantilla ${idPlantilla}`
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -119,7 +188,9 @@ export default function GestionRevisionAprobacion() {
                 {tarjeta.titulo}
               </span>
             </div>
-            <p className={`text-3xl font-bold ${tarjeta.id === "vencido" ? "text-red-500" : "text-brand-black"}`}>
+            <p
+              className={`text-3xl font-bold ${tarjeta.id === "vencido" ? "text-red-500" : "text-brand-black"}`}
+            >
               {tarjeta.valor}
             </p>
           </article>
@@ -144,7 +215,7 @@ export default function GestionRevisionAprobacion() {
               <input
                 value={terminoBusqueda}
                 onChange={(event) => setTerminoBusqueda(event.target.value)}
-                placeholder="Buscar por ID o Empresa..."
+                placeholder="Buscar por Investigado..."
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white pl-11 pr-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
               />
             </label>
@@ -157,7 +228,6 @@ export default function GestionRevisionAprobacion() {
               <SlidersHorizontal size={16} />
               Filtros
             </CustomButton>
-
           </div>
         </div>
 
@@ -181,15 +251,27 @@ export default function GestionRevisionAprobacion() {
                 #{registro.idPedido}
               </td>
               <td className="max-w-48 px-6 py-4 text-sm font-semibold text-slate-700">
-                <span className="line-clamp-1">{registro.investigado}</span>
+                <span className="block truncate" title={registro.investigado}>
+                  {registro.investigado}
+                </span>
               </td>
               <td className="px-6 py-4">{obtenerBadgeVigencia(registro)}</td>
-              <td className="px-6 py-4 text-sm text-slate-500">{registro.tipo}</td>
+              <td className="px-6 py-4 text-sm text-slate-500">
+                {registro.tipo}
+              </td>
               <td className="px-6 py-4 text-center">
                 <span
                   className={`inline-flex rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wide ${obtenerColorEstadoAnalista(registro.estado)}`}
                 >
                   {registro.estadoInforme}
+                </span>
+              </td>
+              <td className="px-6 py-4 text-center text-sm font-semibold leading-5 text-slate-500">
+                <span
+                  className="block whitespace-normal break-words"
+                  title={obtenerNombrePlantilla(registro.idPlantilla)}
+                >
+                  {obtenerNombrePlantilla(registro.idPlantilla)}
                 </span>
               </td>
               <td className="px-6 py-4">
@@ -199,7 +281,9 @@ export default function GestionRevisionAprobacion() {
                     className="h-10 w-36 justify-center px-3 text-[11px] uppercase tracking-[0.12em]"
                     onClick={() => abrirRevision(registro)}
                   >
-                    {registro.estado === "pendiente-aprobacion" ? "Revisar" : "Ver Informe"}
+                    {registro.estado === "pendiente-aprobacion"
+                      ? "Revisar"
+                      : "Ver Informe"}
                   </CustomButton>
                 </div>
               </td>
@@ -210,4 +294,3 @@ export default function GestionRevisionAprobacion() {
     </div>
   );
 }
-

@@ -242,8 +242,8 @@ export function CustomModalRechazoInforme({
                   }
                 }}
                 placeholder="Ej. Corregir la seccion de referencias bancarias"
-                rows={3}
-                className="min-h-24 min-w-0 flex-1 resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:bg-white focus:ring-2 focus:ring-brand-black/5"
+                rows={4}
+                className="max-h-32 min-h-24 min-w-0 flex-1 resize-none overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:bg-white focus:ring-2 focus:ring-brand-black/5"
                 disabled={cargando}
               />
               <CustomButton
@@ -324,7 +324,10 @@ export function CustomModalRechazoInforme({
                               autoFocus
                             />
                           ) : (
-                            <p className="min-h-8 flex-1 whitespace-pre-wrap break-words py-0.5 text-sm font-medium leading-6 text-slate-700">
+                            <p
+                              className="line-clamp-3 min-h-8 flex-1 whitespace-pre-line break-words py-0.5 text-sm font-medium leading-6 text-slate-700"
+                              title={observacion.observacion.trim() || "Observacion sin texto"}
+                            >
                               {observacion.observacion.trim() || "Observacion sin texto"}
                             </p>
                           )}

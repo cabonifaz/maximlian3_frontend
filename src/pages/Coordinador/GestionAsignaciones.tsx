@@ -378,8 +378,16 @@ export default function GestionAsignaciones() {
 
     return (
       <>
-        <td className="px-6 py-4 text-sm font-semibold text-brand-black">{asignacion.cliente}</td>
-        <td className="px-6 py-4 text-sm text-slate-600">{asignacion.investigado}</td>
+        <td className="px-6 py-4 text-sm font-semibold text-brand-black">
+          <span className="block truncate" title={asignacion.cliente}>
+            {asignacion.cliente}
+          </span>
+        </td>
+        <td className="px-6 py-4 text-sm text-slate-600">
+          <span className="block truncate" title={asignacion.investigado}>
+            {asignacion.investigado}
+          </span>
+        </td>
         <td className="px-6 py-4 text-sm text-slate-600">{asignacion.analista || "-"}</td>
         <td className="px-6 py-4 text-sm text-slate-600">{asignacion.traductor || "-"}</td>
         <td className="px-6 py-4 text-center">

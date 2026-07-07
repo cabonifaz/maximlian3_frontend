@@ -283,7 +283,11 @@ export default function GestionUsuarios() {
           )}
         </div>
       </td>
-      <td className="px-6 py-4 text-gray-600">{user.correo}</td>
+      <td className="px-6 py-4 text-gray-600">
+        <span className="block truncate" title={user.correo}>
+          {user.correo}
+        </span>
+      </td>
       <td className="px-6 py-4">
         <span
           className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${

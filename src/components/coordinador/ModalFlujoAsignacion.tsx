@@ -403,8 +403,16 @@ export function ModalFlujoAsignacion({
 
   const renderPedidoRow = (pedido: PedidoListEntry) => (
     <>
-      <td className="px-6 py-4 text-sm font-semibold text-brand-black">{pedido.cliente}</td>
-      <td className="px-6 py-4 text-sm text-slate-600">{pedido.investigado}</td>
+      <td className="px-6 py-4 text-sm font-semibold text-brand-black">
+        <span className="block truncate" title={pedido.cliente}>
+          {pedido.cliente}
+        </span>
+      </td>
+      <td className="px-6 py-4 text-sm text-slate-600">
+        <span className="block truncate" title={pedido.investigado}>
+          {pedido.investigado}
+        </span>
+      </td>
       <td className="px-6 py-4 text-sm text-slate-600">{pedido.idioma}</td>
       <td className="px-6 py-4 text-sm text-slate-600">{pedido.tipoTramite || "-"}</td>
       <td className="px-6 py-4">{getBadgeVigencia(pedido.vigencia)}</td>

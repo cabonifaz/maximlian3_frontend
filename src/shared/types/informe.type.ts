@@ -19,6 +19,7 @@ export interface InformeListEntry {
   idPedido: number;
   idEstado: number;
   idIdioma?: number;
+  idPlantilla?: number;
   codigo: string;
   investigado: string;
   pais: string;

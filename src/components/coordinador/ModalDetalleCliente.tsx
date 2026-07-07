@@ -825,8 +825,16 @@ export function ModalDetalleCliente({
                                 <input type="checkbox" checked={selectedContactIndex === i} onChange={() => setSelectedContactIndex(selectedContactIndex === i ? null : i)} className="accent-brand-wine cursor-pointer w-4 h-4" />
                               </td>
                               <td className="px-4 py-3 text-gray-600">{c.nombres}</td>
-                              <td className="px-4 py-3 text-gray-600">{c.correo}</td>
-                              <td className="px-4 py-3 text-gray-600">{c.telefono}</td>
+                              <td className="px-4 py-3 text-gray-600">
+                                <span className="block max-w-44 truncate" title={c.correo}>
+                                  {c.correo}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">
+                                <span className="block max-w-36 truncate" title={c.telefono}>
+                                  {c.telefono}
+                                </span>
+                              </td>
                               <td className="px-4 py-3 text-gray-600">{c.tipoContacto}</td>
                               <td className="px-4 py-3 text-gray-600">{c.areaTrabajo}</td>
                               <td className="px-4 py-3 text-center">

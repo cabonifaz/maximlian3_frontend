@@ -55,8 +55,11 @@ export function CustomVisorRevisionInforme({
   onRechazar,
   onVolver,
 }: PropsCustomVisorRevisionInforme) {
-  const tieneDocumento = Number.isFinite(Number(idInforme)) && Number(idInforme) > 0
-    && Number.isFinite(Number(idPedido)) && Number(idPedido) > 0;
+  const tieneDocumento =
+    Number.isFinite(Number(idInforme)) &&
+    Number(idInforme) > 0 &&
+    Number.isFinite(Number(idPedido)) &&
+    Number(idPedido) > 0;
   const renderControlesRevision = (className: string) => (
     <div className={className}>
       {mostrarAccionesRevision ? (
@@ -92,10 +95,15 @@ export function CustomVisorRevisionInforme({
   );
 
   return (
-    <div className={`relative flex min-h-0 flex-col overflow-hidden bg-slate-100 ${ocuparAltoDisponible ? "h-full" : "h-[calc(100vh-4rem)]"}`}>
+    <div
+      className={`relative flex min-h-0 flex-col overflow-hidden bg-slate-100 ${ocuparAltoDisponible ? "h-full" : "h-[calc(100vh-4rem)]"}`}
+    >
       <header className="z-30 shrink-0 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
-        <div className={`flex flex-wrap items-center gap-4 px-5 py-2.5 ${mostrarRegresar || !mostrarInformeTraducido ? "justify-between" : "justify-end"}`}>
-          {mostrarRegresar || (!mostrarInformeTraducido && mostrarEncabezadoRevision) ? (
+        <div
+          className={`flex flex-wrap items-center gap-4 px-5 py-2.5 ${mostrarRegresar || !mostrarInformeTraducido ? "justify-between" : "justify-end"}`}
+        >
+          {mostrarRegresar ||
+          (!mostrarInformeTraducido && mostrarEncabezadoRevision) ? (
             <div className="flex items-center gap-3">
               {mostrarRegresar ? (
                 <CustomButton variant="secondary" size="sm" onClick={onVolver}>
@@ -109,7 +117,9 @@ export function CustomVisorRevisionInforme({
                     <ShieldCheck size={20} />
                   </div>
                   <div>
-                    <h1 className="text-xl font-bold text-brand-black">{"Revisi\u00f3n y Aprobaci\u00f3n"}</h1>
+                    <h1 className="text-xl font-bold text-brand-black">
+                      {"Revisi\u00f3n y Aprobaci\u00f3n"}
+                    </h1>
                     <p className="text-sm text-slate-500">
                       {`Revision de ${tituloInforme.toLowerCase()}.`}
                     </p>
@@ -119,13 +129,15 @@ export function CustomVisorRevisionInforme({
             </div>
           ) : null}
 
-          {renderControlesRevision("flex flex-wrap items-center justify-end gap-2")}
+          {renderControlesRevision(
+            "flex flex-wrap items-center justify-end gap-2",
+          )}
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-5 py-2">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">
-              {tituloInforme}{mostrarInformeTraducido ? " (Traducido)" : ""}
+              {tituloInforme}
             </p>
             <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
               ({idiomaInforme})
@@ -157,7 +169,9 @@ export function CustomVisorRevisionInforme({
           />
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-500">
-            {"No se encontr\u00f3 informaci\u00f3n para generar la vista previa."}
+            {
+              "No se encontr\u00f3 informaci\u00f3n para generar la vista previa."
+            }
           </div>
         )}
       </main>

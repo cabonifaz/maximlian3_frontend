@@ -379,7 +379,9 @@ function SeccionEmpresas({
               {empresa.direccion}
             </td>
             <td className="px-6 py-4 text-sm text-slate-500">
-              {empresa.telefono}
+              <span className="block truncate" title={empresa.telefono}>
+                {empresa.telefono}
+              </span>
             </td>
             <td className="max-w-[300px] px-6 py-4 text-sm text-slate-500">
               {empresa.actividadComercial}

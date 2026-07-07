@@ -1,4 +1,5 @@
 import { signOut } from "aws-amplify/auth";
+import { clienteConsultas } from "@maximilian/lib/clienteConsultas";
 
 const MENSAJE_SESION_EXPIRADA = "La sesion ha expirado";
 const CLAVE_MENSAJE_SESION = "auth_message";
@@ -15,6 +16,13 @@ export function consumirMensajeSesion() {
   return mensaje;
 }
 
+export function limpiarDatosSesionLocal() {
+  clienteConsultas.clear();
+  sessionStorage.removeItem("selected_role");
+  sessionStorage.removeItem("selected_role_id");
+  sessionStorage.removeItem("user_session");
+}
+
 export async function cerrarSesionExpirada() {
   if (redireccionEnCurso) return;
   redireccionEnCurso = true;
@@ -26,9 +34,7 @@ export async function cerrarSesionExpirada() {
   } catch (error) {
     console.error("Error al cerrar sesion expirada:", error);
   } finally {
-    sessionStorage.removeItem("selected_role");
-    sessionStorage.removeItem("selected_role_id");
-    sessionStorage.removeItem("user_session");
+    limpiarDatosSesionLocal();
     window.location.assign("/iniciar-sesion");
   }
 }
