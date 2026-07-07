@@ -6737,7 +6737,7 @@ function PantallaInvestigacionAnalista({
               />
             </label>
             <div className="flex flex-wrap gap-2">
-              {companiasExtraccionPendientes.length > 0 ? (
+              {!esSoloLectura && companiasExtraccionPendientes.length > 0 ? (
                 <button
                   type="button"
                   onClick={() =>
@@ -6788,14 +6788,15 @@ function PantallaInvestigacionAnalista({
                         {empresa.pais}
                       </td>
                       <td className="px-4 py-4 text-right text-slate-400">
-                        <button
-                          type="button"
-                          disabled={esSoloLectura}
-                          onClick={() => setIndiceCompaniaAEliminar(indiceReal)}
-                          className="ml-auto inline-flex text-red-600 transition-colors hover:text-red-700 disabled:cursor-not-allowed disabled:text-slate-300"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {!esSoloLectura ? (
+                          <button
+                            type="button"
+                            onClick={() => setIndiceCompaniaAEliminar(indiceReal)}
+                            className="ml-auto inline-flex text-red-600 transition-colors hover:text-red-700"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        ) : <span className="text-sm text-slate-300">-</span>}
                       </td>
                     </tr>
                   );
@@ -8575,28 +8576,32 @@ function PantallaInvestigacionAnalista({
                           setEstaAbiertoModalDetalleBalance(true);
                         }}
                       >
-                        <Plus size={14} />
+                        {esSoloLectura ? <Eye size={14} /> : <Plus size={14} />}
                       </button>
                     </td>
                     <td className="px-4 py-4 text-right text-slate-400">
                       <div className="flex justify-end gap-3">
-                        <button
-                          type="button"
-                          className="cursor-pointer transition-colors hover:text-slate-600"
-                          onClick={() => {
-                            setIndiceBalanceSeleccionado(indiceReal);
-                            setEstaAbiertoModalBalance(true);
-                          }}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          className="cursor-pointer transition-colors hover:text-slate-600"
-                          onClick={() => setIndiceBalanceAEliminar(indiceReal)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {!esSoloLectura ? (
+                          <>
+                            <button
+                              type="button"
+                              className="cursor-pointer transition-colors hover:text-slate-600"
+                              onClick={() => {
+                                setIndiceBalanceSeleccionado(indiceReal);
+                                setEstaAbiertoModalBalance(true);
+                              }}
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              className="cursor-pointer transition-colors hover:text-slate-600"
+                              onClick={() => setIndiceBalanceAEliminar(indiceReal)}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        ) : <span className="text-sm text-slate-300">-</span>}
                       </div>
                     </td>
                   </tr>
@@ -8860,25 +8865,29 @@ function PantallaInvestigacionAnalista({
                       </td>
                       <td className="px-4 py-4 text-right text-slate-400">
                         <div className="flex justify-end gap-3">
-                          <button
-                            type="button"
-                            className="cursor-pointer transition-colors hover:text-slate-600"
-                            onClick={() => {
-                              setIndiceProveedorSeleccionado(indiceReal);
-                              setEstaAbiertoModalProveedor(true);
-                            }}
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            className="cursor-pointer transition-colors hover:text-slate-600"
-                            onClick={() =>
-                              setIndiceProveedorAEliminar(indiceReal)
-                            }
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          {!esSoloLectura ? (
+                            <>
+                              <button
+                                type="button"
+                                className="cursor-pointer transition-colors hover:text-slate-600"
+                                onClick={() => {
+                                  setIndiceProveedorSeleccionado(indiceReal);
+                                  setEstaAbiertoModalProveedor(true);
+                                }}
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                className="cursor-pointer transition-colors hover:text-slate-600"
+                                onClick={() =>
+                                  setIndiceProveedorAEliminar(indiceReal)
+                                }
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          ) : <span className="text-sm text-slate-300">-</span>}
                         </div>
                       </td>
                     </tr>
@@ -9090,23 +9099,27 @@ function PantallaInvestigacionAnalista({
                       </td>
                       <td className="px-4 py-4 text-right text-slate-400">
                         <div className="flex justify-end gap-3">
-                          <button
-                            type="button"
-                            className="cursor-pointer transition-colors hover:text-slate-600"
-                            onClick={() => {
-                              setIndiceBancoSeleccionado(indiceReal);
-                              setEstaAbiertoModalBanco(true);
-                            }}
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            className="cursor-pointer transition-colors hover:text-slate-600"
-                            onClick={() => setIndiceBancoAEliminar(indiceReal)}
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          {!esSoloLectura ? (
+                            <>
+                              <button
+                                type="button"
+                                className="cursor-pointer transition-colors hover:text-slate-600"
+                                onClick={() => {
+                                  setIndiceBancoSeleccionado(indiceReal);
+                                  setEstaAbiertoModalBanco(true);
+                                }}
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                className="cursor-pointer transition-colors hover:text-slate-600"
+                                onClick={() => setIndiceBancoAEliminar(indiceReal)}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          ) : <span className="text-sm text-slate-300">-</span>}
                         </div>
                       </td>
                     </tr>
@@ -9169,7 +9182,7 @@ function PantallaInvestigacionAnalista({
           />
         </label>
         <div className="flex flex-wrap gap-3">
-          {ejecutivosExtraccionPendientes.length > 0 && (
+          {!esSoloLectura && ejecutivosExtraccionPendientes.length > 0 && (
             <CustomButton
               variant="secondary"
               size="sm"
@@ -9277,28 +9290,30 @@ function PantallaInvestigacionAnalista({
                     </td>
                     <td className="px-4 py-4 text-right text-slate-400">
                       <div className="flex justify-end gap-3">
-                        <button
-                          type="button"
-                          className="cursor-pointer transition-colors hover:text-slate-600"
-                          disabled={esSoloLectura}
-                          onClick={() => {
-                            setIndiceEjecutivoSeleccionado(indiceReal);
-                            setPersonaDirectorioSeleccionada(null);
-                            setEstaAbiertoModalEjecutivo(true);
-                          }}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          className="cursor-pointer transition-colors hover:text-slate-600"
-                          disabled={esSoloLectura}
-                          onClick={() =>
-                            setIndiceEjecutivoAEliminar(indiceReal)
-                          }
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {!esSoloLectura ? (
+                          <>
+                            <button
+                              type="button"
+                              className="cursor-pointer transition-colors hover:text-slate-600"
+                              onClick={() => {
+                                setIndiceEjecutivoSeleccionado(indiceReal);
+                                setPersonaDirectorioSeleccionada(null);
+                                setEstaAbiertoModalEjecutivo(true);
+                              }}
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              className="cursor-pointer transition-colors hover:text-slate-600"
+                              onClick={() =>
+                                setIndiceEjecutivoAEliminar(indiceReal)
+                              }
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        ) : <span className="text-sm text-slate-300">-</span>}
                       </div>
                     </td>
                   </tr>
@@ -9654,6 +9669,7 @@ function PantallaInvestigacionAnalista({
                 ?.tipoEstadoFinanciero
             : undefined
         }
+        soloLectura={esSoloLectura}
         onCerrar={() => {
           setIndiceBalanceSeleccionado(null);
           setEstaAbiertoModalDetalleBalance(false);
@@ -9665,7 +9681,7 @@ function PantallaInvestigacionAnalista({
         isOpen={indiceBalanceAEliminar !== null}
         onClose={() => setIndiceBalanceAEliminar(null)}
         onConfirm={() => {
-          if (indiceBalanceAEliminar == null) return;
+          if (indiceBalanceAEliminar == null || esSoloLectura) return;
           setDatosInvestigacion((anterior) => ({
             ...anterior,
             balances: anterior.balances.filter(
@@ -9728,7 +9744,7 @@ function PantallaInvestigacionAnalista({
         isOpen={indiceProveedorAEliminar !== null}
         onClose={() => setIndiceProveedorAEliminar(null)}
         onConfirm={() => {
-          if (indiceProveedorAEliminar == null) return;
+          if (indiceProveedorAEliminar == null || esSoloLectura) return;
           setDatosInvestigacion((anterior) => ({
             ...anterior,
             proveedores: anterior.proveedores.filter(
@@ -9752,7 +9768,7 @@ function PantallaInvestigacionAnalista({
         isOpen={indiceBancoAEliminar !== null}
         onClose={() => setIndiceBancoAEliminar(null)}
         onConfirm={() => {
-          if (indiceBancoAEliminar == null) return;
+          if (indiceBancoAEliminar == null || esSoloLectura) return;
           setDatosInvestigacion((anterior) => ({
             ...anterior,
             bancos: anterior.bancos.filter(
@@ -9775,7 +9791,7 @@ function PantallaInvestigacionAnalista({
         isOpen={indiceCompaniaAEliminar !== null}
         onClose={() => setIndiceCompaniaAEliminar(null)}
         onConfirm={() => {
-          if (indiceCompaniaAEliminar == null) return;
+          if (indiceCompaniaAEliminar == null || esSoloLectura) return;
           setDatosInvestigacion((anterior) => ({
             ...anterior,
             companiasRelacionadas: anterior.companiasRelacionadas.filter(
@@ -10237,7 +10253,7 @@ function PantallaInvestigacionAnalista({
         isOpen={indiceEjecutivoAEliminar !== null}
         onClose={() => setIndiceEjecutivoAEliminar(null)}
         onConfirm={() => {
-          if (indiceEjecutivoAEliminar == null) return;
+          if (indiceEjecutivoAEliminar == null || esSoloLectura) return;
           setDatosInvestigacion((anterior) => ({
             ...anterior,
             directorioEjecutivo: anterior.directorioEjecutivo.filter(
