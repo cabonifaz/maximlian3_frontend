@@ -2,12 +2,15 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router";
+import { ArrowLeft } from "lucide-react";
 import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/CustomModalRechazoInforme";
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { informeService } from "@maximilian/services/informe.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { servicioInformeObservacion } from "@maximilian/services/informeObservacion.service";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   FormatoDescargaInforme,
   InformeActualizarEstadoRequest,
@@ -39,11 +42,6 @@ export default function RevisionInformeCoordinador() {
   const puedeDescargarOriginal = tieneInformeOriginal
     && Number.isFinite(idPedidoNumerico)
     && idPedidoNumerico > 0;
-  const idiomaInformeTraducido = idIdioma === 2
-    ? "Ingl\u00e9s"
-    : idIdioma === 3
-      ? "Portugu\u00e9s"
-      : "Traducido";
   const encabezadoVistaPrevia = {
     pais: "-",
     fecha: new Date().toLocaleDateString("es-PE"),
@@ -58,6 +56,33 @@ export default function RevisionInformeCoordinador() {
     enabled: Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0,
   });
   const puedeDescargarXml = pedido?.idPlantilla === 5;
+  const idPlantillaPedido = pedido?.idPlantilla;
+  const idIdiomaPedido = pedido?.idIdioma || idIdioma;
+
+  const { data: opcionesPlantillaInforme } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.PLANTILLA_INFORME],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLANTILLA_INFORME),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesIdioma } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.IDIOMA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.IDIOMA),
+    staleTime: Infinity,
+  });
+
+  const opcionPlantillaInforme = opcionesPlantillaInforme?.find(
+    (opcion) => opcion.num1 === idPlantillaPedido,
+  );
+  const nombrePlantillaInforme = idPlantillaPedido
+    ? opcionPlantillaInforme?.string1 || opcionPlantillaInforme?.descripcion || `Plantilla ${idPlantillaPedido}`
+    : "";
+  const opcionIdioma = opcionesIdioma?.find((opcion) => opcion.num1 === idIdiomaPedido);
+  const idiomaInformeTraducido = idIdiomaPedido
+    ? opcionIdioma?.string1
+      || opcionIdioma?.descripcion
+      || (idIdiomaPedido === 2 ? "Ingl\u00e9s" : idIdiomaPedido === 3 ? "Portugu\u00e9s" : "Traducido")
+    : "Traducido";
 
   const {
     data: observacionesGuardadas,
@@ -213,6 +238,13 @@ export default function RevisionInformeCoordinador() {
       <>
         <div className="flex h-[calc(100vh-4rem)] min-h-0 flex-col overflow-hidden bg-slate-100">
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3">
+            <div className="flex shrink-0 items-center justify-start">
+              <CustomButton variant="secondary" size="sm" onClick={() => navigate("/coordinador/revision")}>
+                <ArrowLeft size={14} />
+                Regresar
+              </CustomButton>
+            </div>
+
             <div className="grid shrink-0 grid-cols-2 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm xl:hidden">
               <button
                 type="button"
@@ -250,9 +282,11 @@ export default function RevisionInformeCoordinador() {
                   puedeEditar={false}
                   tituloInforme="Informe original"
                   idiomaInforme={"Espa\u00f1ol"}
+                  tipoPlantilla={nombrePlantillaInforme}
                   mostrarAccionesRevision={false}
                   mostrarPie={false}
                   mostrarCerrar={false}
+                  mostrarRegresar={false}
                   ocuparAltoDisponible
                   onCerrar={() => navigate("/coordinador/revision")}
                   onDescargar={(formato) => {
@@ -275,10 +309,12 @@ export default function RevisionInformeCoordinador() {
                   puedeEditar={puedeEditarRevision}
                   tituloInforme="Informe traducido"
                   idiomaInforme={idiomaInformeTraducido}
+                  tipoPlantilla={nombrePlantillaInforme}
                   mostrarAccionesRevision
                   mostrarInformeTraducido
                   mostrarPie={false}
                   mostrarCerrar={false}
+                  mostrarRegresar={false}
                   ocuparAltoDisponible
                   onCerrar={() => navigate("/coordinador/revision")}
                   onDescargar={(formato) => {
@@ -294,15 +330,6 @@ export default function RevisionInformeCoordinador() {
               </div>
             </div>
           </div>
-
-          <footer className="z-30 flex shrink-0 items-center justify-end gap-3 border-t border-slate-200 bg-white/95 px-5 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur">
-            <div className="text-sm text-slate-500">
-              {"Revisi\u00f3n activa"}
-            </div>
-            <CustomButton variant="secondary" size="sm" onClick={() => navigate("/coordinador/revision")}>
-              Volver a informes
-            </CustomButton>
-          </footer>
         </div>
 
         <CustomModalRechazoInforme
@@ -331,6 +358,11 @@ export default function RevisionInformeCoordinador() {
         puedeDescargar={puedeDescargar}
         puedeDescargarXml={puedeDescargarXml}
         puedeEditar={puedeEditarRevision}
+        tituloInforme={idIdiomaPedido && idIdiomaPedido !== 1 ? "Informe traducido" : "Informe original"}
+        idiomaInforme={idIdiomaPedido && idIdiomaPedido !== 1 ? idiomaInformeTraducido : "Espa\u00f1ol"}
+        tipoPlantilla={nombrePlantillaInforme}
+        mostrarInformeTraducido={Boolean(idIdiomaPedido && idIdiomaPedido !== 1)}
+        mostrarPie={false}
         onCerrar={() => navigate("/coordinador/revision")}
         onDescargar={(formato) => {
           void descargarDocumento(formato);
