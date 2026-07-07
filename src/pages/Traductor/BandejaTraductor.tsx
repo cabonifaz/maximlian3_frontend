@@ -46,6 +46,12 @@ function formatearFechaAsignacion(valor?: string) {
 }
 
 function normalizarEstadoDesdeAsignacion(registro: AssignmentOrderEntry): RegistroBandejaAnalista["estado"] {
+  if (registro.idEstado === 5) return "pendiente-aprobacion";
+  if (registro.idEstado === 4) return "aprobado";
+  if (registro.idEstado === 3) return "en-proceso";
+  if (registro.idEstado === 2) return "rechazado";
+  if (registro.idEstado === 1) return "asignado";
+
   const estado = (registro.estado ?? "").trim().toLowerCase();
   if (estado.includes("pend")) return "pendiente-aprobacion";
   if (estado.includes("rechaz")) return "rechazado";

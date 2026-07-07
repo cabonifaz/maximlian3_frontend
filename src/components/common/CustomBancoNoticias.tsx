@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type UIEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Building2,
   CalendarDays,
@@ -17,6 +17,7 @@ import {
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { servicioCompaniaNoticia } from "@maximilian/services/companiaNoticia.service";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
@@ -205,7 +206,7 @@ export function CustomBancoNoticias({
         </div>
 
         {isLoading ? (
-          <EstadoNoticias texto="Cargando noticias..." />
+          <EstadoCargandoNoticias />
         ) : isError ? (
           <EstadoNoticias
             texto="No se pudieron cargar las noticias."
@@ -625,6 +626,7 @@ function CampoSelectorCompania({
   onSeleccionar: (compania: CompaniaListaItem) => void;
 }) {
   const [busquedaCompania, setBusquedaCompania] = useState("");
+  const busquedaCompaniaConRetardo = useRetardo(busquedaCompania);
   const [estaAbierto, setEstaAbierto] = useState(false);
   const [companiaActual, setCompaniaActual] =
     useState<CompaniaListaItem | null>(null);
@@ -632,16 +634,37 @@ function CampoSelectorCompania({
   const {
     data: respuestaCompanias,
     isFetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
     isError,
     refetch,
-  } = useQuery({
-    queryKey: ["companiasNoticia", { busqueda: busquedaCompania, numPag: 1 }],
-    queryFn: () =>
-      servicioCompania.list({ busqueda: busquedaCompania, numPag: 1 }),
+  } = useInfiniteQuery({
+    queryKey: ["companiasNoticia", { busqueda: busquedaCompaniaConRetardo }],
+    queryFn: ({ pageParam }) =>
+      servicioCompania.list({
+        busqueda: busquedaCompaniaConRetardo,
+        numPag: pageParam,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (ultimaPagina, paginas) => {
+      const siguientePagina = paginas.length + 1;
+      return siguientePagina <= ultimaPagina.totalPaginas
+        ? siguientePagina
+        : undefined;
+    },
     enabled: estaAbierto,
   });
 
-  const companias = respuestaCompanias?.lstCompania ?? [];
+  const companias = useMemo(() => {
+    const mapaCompanias = new Map<number, CompaniaListaItem>();
+    respuestaCompanias?.pages.forEach((pagina) => {
+      pagina.lstCompania.forEach((compania) => {
+        mapaCompanias.set(compania.idCompania, compania);
+      });
+    });
+    return Array.from(mapaCompanias.values());
+  }, [respuestaCompanias?.pages]);
   const companiaEncontrada = companias.find(
     (compania) => compania.idCompania === valor,
   );
@@ -653,6 +676,16 @@ function CampoSelectorCompania({
       setCompaniaActual(companiaEncontrada);
     }
   }, [companiaEncontrada]);
+
+  const cargarSiguientePagina = (event: UIEvent<HTMLDivElement>) => {
+    const elemento = event.currentTarget;
+    const llegoAlFinal =
+      elemento.scrollTop + elemento.clientHeight >= elemento.scrollHeight - 24;
+
+    if (llegoAlFinal && hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -697,8 +730,8 @@ function CampoSelectorCompania({
                 />
               </div>
             </div>
-            <div className="max-h-56 overflow-y-auto">
-              {isFetching ? (
+            <div className="max-h-56 overflow-y-auto" onScroll={cargarSiguientePagina}>
+              {isFetching && companias.length === 0 ? (
                 <div className="flex justify-center px-4 py-6 text-slate-400">
                   <Loader2 size={16} className="animate-spin" />
                 </div>
@@ -720,37 +753,44 @@ function CampoSelectorCompania({
                   No se encontraron companias.
                 </p>
               ) : (
-                companias.map((compania) => (
-                  <button
-                    key={compania.idCompania}
-                    type="button"
-                    onClick={() => {
-                      setCompaniaActual(compania);
-                      onSeleccionar(compania);
-                      setEstaAbierto(false);
-                    }}
-                    className={`flex w-full items-start gap-3 px-4 py-3 text-left text-sm transition hover:bg-slate-50 ${
-                      valor === compania.idCompania
-                        ? "bg-slate-50 text-slate-950"
-                        : "text-slate-600"
-                    }`}
-                  >
-                    <Building2
-                      size={16}
-                      className="mt-0.5 shrink-0 text-slate-400"
-                    />
-                    <span className="min-w-0">
-                      <span className="block truncate font-semibold">
-                        {obtenerEtiquetaCompania(compania)}
-                      </span>
-                      {compania.numeroDocumento ? (
-                        <span className="block truncate text-xs text-slate-400">
-                          {compania.numeroDocumento}
+                <>
+                  {companias.map((compania) => (
+                    <button
+                      key={compania.idCompania}
+                      type="button"
+                      onClick={() => {
+                        setCompaniaActual(compania);
+                        onSeleccionar(compania);
+                        setEstaAbierto(false);
+                      }}
+                      className={`flex w-full items-start gap-3 px-4 py-3 text-left text-sm transition hover:bg-slate-50 ${
+                        valor === compania.idCompania
+                          ? "bg-slate-50 text-slate-950"
+                          : "text-slate-600"
+                      }`}
+                    >
+                      <Building2
+                        size={16}
+                        className="mt-0.5 shrink-0 text-slate-400"
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate font-semibold">
+                          {obtenerEtiquetaCompania(compania)}
                         </span>
-                      ) : null}
-                    </span>
-                  </button>
-                ))
+                        {compania.numeroDocumento ? (
+                          <span className="block truncate text-xs text-slate-400">
+                            {compania.numeroDocumento}
+                          </span>
+                        ) : null}
+                      </span>
+                    </button>
+                  ))}
+                  {isFetchingNextPage ? (
+                    <div className="flex justify-center px-4 py-3 text-slate-400">
+                      <Loader2 size={16} className="animate-spin" />
+                    </div>
+                  ) : null}
+                </>
               )}
             </div>
           </div>
@@ -847,6 +887,15 @@ function EstadoNoticias({
     <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-slate-100 bg-white p-6 text-center text-sm font-semibold text-slate-400">
       <p>{texto}</p>
       {accion}
+    </div>
+  );
+}
+
+function EstadoCargandoNoticias() {
+  return (
+    <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-slate-100 bg-white p-6 text-center">
+      <Loader2 className="h-10 w-10 animate-spin text-brand-wine" />
+      <p className="text-sm font-medium text-gray-500">Cargando...</p>
     </div>
   );
 }

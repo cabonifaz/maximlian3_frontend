@@ -5,18 +5,19 @@ import type { FormatoDescargaInforme } from "@maximilian/shared/types/informe.ty
 
 interface PropsCustomDescargaInforme {
   deshabilitado?: boolean;
+  puedeDescargarXml?: boolean;
   onDescargar: (formato: FormatoDescargaInforme) => void;
 }
 
 const FORMATOS: Array<{ valor: FormatoDescargaInforme; etiqueta: string }> = [
   { valor: ".pdf", etiqueta: "PDF" },
   { valor: ".docx", etiqueta: "DOCX" },
-  { valor: ".html", etiqueta: "HTML" },
   { valor: ".xml", etiqueta: "XML" },
 ];
 
 export function CustomDescargaInforme({
   deshabilitado = false,
+  puedeDescargarXml = false,
   onDescargar,
 }: PropsCustomDescargaInforme) {
   const [estaAbierto, setEstaAbierto] = useState(false);
@@ -60,7 +61,7 @@ export function CustomDescargaInforme({
           <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Descargar como
           </p>
-          {FORMATOS.map((formato) => (
+          {FORMATOS.filter((formato) => formato.valor !== ".xml" || puedeDescargarXml).map((formato) => (
             <CustomButton
               key={formato.valor}
               variant="ghost"

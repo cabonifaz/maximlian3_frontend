@@ -20,7 +20,7 @@ const variantClasses: Record<NonNullable<CustomButtonProps["variant"]>, string> 
 };
 
 const sizeClasses: Record<NonNullable<CustomButtonProps["size"]>, string> = {
-  sm: "px-4 py-2 text-sm", // Ajustado a text-sm según tu ejemplo
+  sm: "px-4 py-2 text-sm",
   compact: "px-6 py-2.5 text-sm",
   md: "px-8 py-3",
   icon: "p-2",

@@ -20,6 +20,7 @@ interface PropsCustomModalArchivosInvestigacionAnalista {
   idInforme?: number;
   archivos: ArchivoInvestigacionAnalista[];
   idIdioma?: number;
+  soloLectura?: boolean;
   onCerrar: () => void;
   onInformeCreado?: (idInforme: number) => void;
   onArchivosChange: (archivos: ArchivoInvestigacionAnalista[]) => void;
@@ -61,6 +62,7 @@ export function CustomModalArchivosInvestigacionAnalista({
   idInforme,
   archivos,
   idIdioma,
+  soloLectura = false,
   onCerrar,
   onInformeCreado,
   onArchivosChange,
@@ -105,6 +107,7 @@ export function CustomModalArchivosInvestigacionAnalista({
   };
 
   const agregarArchivos = (listaArchivos: File[]) => {
+    if (soloLectura) return;
     if (!listaArchivos.length) return;
 
     const nuevosArchivos: ArchivoInvestigacionAnalista[] = listaArchivos.map((archivo) => ({
@@ -145,6 +148,7 @@ export function CustomModalArchivosInvestigacionAnalista({
     archivo: ArchivoInvestigacionAnalista,
     cambios: Pick<ArchivoInvestigacionAnalista, "idTipoEvidencia" | "idFaseEvidencia" | "tipoDocumento">,
   ) => {
+    if (soloLectura) return;
     if (!archivo.idInformeArchivo || !cambios.idTipoEvidencia) return;
 
     setIdArchivoActualizando(archivo.id);
@@ -163,6 +167,7 @@ export function CustomModalArchivosInvestigacionAnalista({
   };
 
   const guardarArchivosNuevos = async () => {
+    if (soloLectura) return;
     if (!idPedido || archivosNuevos.length === 0) return;
     if (archivosNuevosSinTipo.length > 0) {
       toast.error("Selecciona el tipo de todos los archivos antes de adjuntar.");
@@ -249,6 +254,7 @@ export function CustomModalArchivosInvestigacionAnalista({
   };
 
   const eliminarArchivoPersistido = async () => {
+    if (soloLectura) return;
     if (!archivoAEliminar?.idInformeArchivo) return;
 
     setEstaEliminando(true);
@@ -279,11 +285,13 @@ export function CustomModalArchivosInvestigacionAnalista({
         </div>
 
         <div className="flex gap-4 px-8 py-6">
-          <CustomBloqueCargaArchivosAnalista
-            ref={bloqueCargaRef}
-            textoIndicativo="Arrastra archivos aquí o haz clic para subir"
-            onAgregarArchivos={agregarArchivos}
-          />
+          {!soloLectura ? (
+            <CustomBloqueCargaArchivosAnalista
+              ref={bloqueCargaRef}
+              textoIndicativo="Arrastra archivos aqui o haz clic para subir"
+              onAgregarArchivos={agregarArchivos}
+            />
+          ) : null}
 
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <div className="max-h-80 overflow-y-auto rounded-xl border border-gray-100">
@@ -329,7 +337,7 @@ export function CustomModalArchivosInvestigacionAnalista({
                           <CustomSelectorBuscable
                             options={opcionesTipoEvidencia}
                             value={obtenerIdTipoEvidencia(archivo)}
-                            disabled={idArchivoActualizando === archivo.id}
+                            disabled={soloLectura || idArchivoActualizando === archivo.id}
                             onChange={(valor) => {
                               const opcionTipo = opcionesTipoEvidencia?.find((opcion) => opcion.num1 === valor);
                               const evidenciaSeleccionada = esOpcionEvidencia(opcionTipo);
@@ -374,7 +382,7 @@ export function CustomModalArchivosInvestigacionAnalista({
                             <CustomSelectorBuscable
                               options={opcionesFaseEvidencia}
                               value={archivo.idFaseEvidencia}
-                              disabled={idArchivoActualizando === archivo.id}
+                              disabled={soloLectura || idArchivoActualizando === archivo.id}
                               onChange={(valor) => {
                                 const cambios = {
                                   idTipoEvidencia: obtenerIdTipoEvidencia(archivo),
@@ -424,20 +432,22 @@ export function CustomModalArchivosInvestigacionAnalista({
                                 <Download size={15} />
                               </button>
                             ) : null}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (archivo.esPersistido) {
-                                  setArchivoAEliminar(archivo);
-                                  return;
-                                }
-                                onArchivosChange(archivos.filter((item) => item.id !== archivo.id));
-                              }}
-                              className="rounded-lg p-1.5 text-gray-400 transition-all hover:bg-red-50 hover:text-red-500"
-                              title={archivo.esPersistido ? "Eliminar archivo" : "Quitar archivo"}
-                            >
-                              <Trash2 size={15} />
-                            </button>
+                            {!soloLectura ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (archivo.esPersistido) {
+                                    setArchivoAEliminar(archivo);
+                                    return;
+                                  }
+                                  onArchivosChange(archivos.filter((item) => item.id !== archivo.id));
+                                }}
+                                className="rounded-lg p-1.5 text-gray-400 transition-all hover:bg-red-50 hover:text-red-500"
+                                title={archivo.esPersistido ? "Eliminar archivo" : "Quitar archivo"}
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -449,6 +459,7 @@ export function CustomModalArchivosInvestigacionAnalista({
           </div>
         </div>
 
+        {!soloLectura ? (
         <div className="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/50 px-8 py-5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs font-medium text-slate-500">
             {archivosNuevosSinTipo.length > 0
@@ -468,6 +479,7 @@ export function CustomModalArchivosInvestigacionAnalista({
             Adjuntar archivos
           </CustomButton>
         </div>
+        ) : null}
       </div>
 
       <CustomModalConfirmacionEliminacion

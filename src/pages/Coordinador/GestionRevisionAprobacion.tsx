@@ -8,7 +8,7 @@ import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { informeService } from "@maximilian/services/informe.service";
 import type { InformeListEntry } from "@maximilian/shared/types/informe.type";
 import type { TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
-import { obtenerColorEstadoAnalista } from "@maximilian/shared/utils/datos-simulados-investigacion";
+import { obtenerColorEstadoAnalista } from "@maximilian/shared/utils/investigacion.util";
 
 function obtenerIconoTarjeta(id: string) {
   if (id === "pendiente") return <ClipboardList size={18} className="text-orange-500" />;
@@ -161,19 +161,14 @@ export default function GestionRevisionAprobacion() {
           </div>
         </div>
 
-        {isError ? (
-          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
-            No se pudo cargar la bandeja del backend. Se muestra el informe de ejemplo para revisión.
-          </div>
-        ) : null}
-
         <CustomTabla
           columns={columnas}
           data={registros}
           getId={(registro) => registro.idInforme}
           isLoading={isLoading}
-          isError={false}
+          isError={isError}
           onRetry={() => void refetch()}
+          errorMessage="No se pudo cargar la bandeja de revision."
           paginaActual={paginaActual}
           totalPages={respuestaInformes?.totalPaginas ?? 1}
           totalRecords={respuestaInformes?.totalRegistros ?? 0}
@@ -215,3 +210,4 @@ export default function GestionRevisionAprobacion() {
     </div>
   );
 }
+

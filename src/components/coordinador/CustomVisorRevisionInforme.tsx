@@ -14,8 +14,8 @@ interface PropsCustomVisorRevisionInforme {
   idInforme?: number;
   idPedido?: number;
   puedeDescargar: boolean;
+  puedeDescargarXml?: boolean;
   puedeEditar: boolean;
-  esEjemplo: boolean;
   tituloInforme?: string;
   idiomaInforme?: string;
   mostrarAccionesRevision?: boolean;
@@ -36,8 +36,8 @@ export function CustomVisorRevisionInforme({
   idInforme,
   idPedido,
   puedeDescargar,
+  puedeDescargarXml = false,
   puedeEditar,
-  esEjemplo,
   tituloInforme = "Informe original",
   idiomaInforme = "Espa\u00f1ol",
   mostrarAccionesRevision = true,
@@ -65,9 +65,7 @@ export function CustomVisorRevisionInforme({
             <div>
               <h1 className="text-xl font-bold text-brand-black">{"Revisi\u00f3n y Aprobaci\u00f3n"}</h1>
               <p className="text-sm text-slate-500">
-                {esEjemplo
-                  ? "Vista de ejemplo para el flujo de aprobaci\u00f3n."
-                  : `Revisi\u00f3n de ${tituloInforme.toLowerCase()}.`}
+                {`Revision de ${tituloInforme.toLowerCase()}.`}
               </p>
             </div>
           </div>
@@ -80,6 +78,7 @@ export function CustomVisorRevisionInforme({
             ) : null}
             <CustomDescargaInforme
               deshabilitado={!puedeDescargar}
+              puedeDescargarXml={puedeDescargarXml}
               onDescargar={onDescargar}
             />
           </div>
@@ -148,7 +147,7 @@ export function CustomVisorRevisionInforme({
         <footer className="z-30 flex shrink-0 items-center justify-end gap-3 border-t border-slate-200 bg-white/95 px-5 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur">
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <Eye size={16} />
-            {esEjemplo ? "Ejemplo de revisi\u00f3n" : "Revisi\u00f3n activa"}
+            Revision activa
           </div>
           <CustomButton variant="secondary" size="sm" onClick={onVolver}>
             Volver a informes

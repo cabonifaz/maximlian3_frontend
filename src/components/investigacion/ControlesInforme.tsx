@@ -375,9 +375,10 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
       obtenerValorSeleccion(opcion) === valorTextoActual
       || opcion.string1 === valorTextoActual
       || opcion.string2 === valorTextoActual
+      || obtenerEtiquetaOpcion?.(opcion) === valorTextoActual
       || (permitirCoincidenciaPorId && String(opcion.num1 ?? "") === valorTextoActual)
     )?.num1 ?? undefined,
-    [obtenerValorSeleccion, opcionesDisponibles, permitirCoincidenciaPorId, valorTextoActual],
+    [obtenerEtiquetaOpcion, obtenerValorSeleccion, opcionesDisponibles, permitirCoincidenciaPorId, valorTextoActual],
   );
   const opcionSeleccionada = useMemo(
     () => opcionesDisponibles.find((opcion) => opcion.num1 === valorSeleccionado),

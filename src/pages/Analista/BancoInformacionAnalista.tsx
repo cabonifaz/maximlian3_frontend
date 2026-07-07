@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Download,
   Filter,
+  Loader2,
   Search,
 } from "lucide-react";
 import { CustomBancoNoticias } from "@maximilian/components/common/CustomBancoNoticias";
@@ -26,11 +27,15 @@ const etiquetasPestanas: Record<PestanaBancoInformacion, string> = {
 };
 
 export default function BancoInformacionAnalista() {
-  const [pestanaActiva, setPestanaActiva] = useState<PestanaBancoInformacion>("noticias");
+  const [pestanaActiva, setPestanaActiva] =
+    useState<PestanaBancoInformacion>("noticias");
   const [busqueda, setBusqueda] = useState("");
   const [paginaEmpresas, setPaginaEmpresas] = useState(1);
-  const [reporteDetalle, setReporteDetalle] = useState<CompaniaNoticiaBalanceListaItem | null>(null);
-  const [idReporteCargandoDetalle, setIdReporteCargandoDetalle] = useState<number | null>(null);
+  const [reporteDetalle, setReporteDetalle] =
+    useState<CompaniaNoticiaBalanceListaItem | null>(null);
+  const [idReporteCargandoDetalle, setIdReporteCargandoDetalle] = useState<
+    number | null
+  >(null);
 
   const {
     data: respuestaCredito,
@@ -87,7 +92,9 @@ export default function BancoInformacionAnalista() {
     },
   });
 
-  const verDetalleCredito = async (reporte: CompaniaNoticiaBalanceListaItem) => {
+  const verDetalleCredito = async (
+    reporte: CompaniaNoticiaBalanceListaItem,
+  ) => {
     setIdReporteCargandoDetalle(reporte.idInformeBalance);
     try {
       const detalle = await servicioCompaniaNoticiaBalance.obtener({
@@ -105,12 +112,17 @@ export default function BancoInformacionAnalista() {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-950">Banco de Informacion</h1>
+        <h1 className="text-2xl font-bold text-slate-950">
+          Banco de Informacion
+        </h1>
       </div>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <label className="relative flex-1">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+          <Search
+            size={16}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"
+          />
           <input
             value={busqueda}
             onChange={(event) => {
@@ -118,10 +130,18 @@ export default function BancoInformacionAnalista() {
               setPaginaEmpresas(1);
             }}
             className="h-12 w-full rounded-xl border border-slate-100 bg-white pl-11 pr-4 text-sm text-slate-600 outline-none transition focus:border-slate-300 focus:ring-4 focus:ring-slate-100"
-            placeholder={pestanaActiva === "empresas" ? "Buscar por Razon Social o RUC..." : "Buscar noticias, reportes o articulos..."}
+            placeholder={
+              pestanaActiva === "empresas"
+                ? "Buscar por Razon Social o RUC..."
+                : "Buscar noticias, reportes o articulos..."
+            }
           />
         </label>
-        <CustomButton variant="secondary" size="sm" className="h-12 rounded-xl bg-white text-slate-600">
+        <CustomButton
+          variant="secondary"
+          size="sm"
+          className="h-12 rounded-xl bg-white text-slate-600"
+        >
           <Filter size={14} />
           {pestanaActiva === "empresas" ? "Filtros Avanzados" : "Filtros"}
         </CustomButton>
@@ -129,24 +149,28 @@ export default function BancoInformacionAnalista() {
 
       <div className="border-b border-slate-100">
         <div className="flex gap-8">
-          {(Object.keys(etiquetasPestanas) as PestanaBancoInformacion[]).map((pestana) => (
-            <button
-              key={pestana}
-              type="button"
-              onClick={() => setPestanaActiva(pestana)}
-              className={`border-b-2 px-1 pb-4 text-[11px] font-bold uppercase tracking-[0.16em] transition ${
-                pestanaActiva === pestana
-                  ? "border-slate-950 text-slate-950"
-                  : "border-transparent text-slate-400 hover:text-slate-700"
-              }`}
-            >
-              {etiquetasPestanas[pestana]}
-            </button>
-          ))}
+          {(Object.keys(etiquetasPestanas) as PestanaBancoInformacion[]).map(
+            (pestana) => (
+              <button
+                key={pestana}
+                type="button"
+                onClick={() => setPestanaActiva(pestana)}
+                className={`border-b-2 px-1 pb-4 text-[11px] font-bold uppercase tracking-[0.16em] transition ${
+                  pestanaActiva === pestana
+                    ? "border-slate-950 text-slate-950"
+                    : "border-transparent text-slate-400 hover:text-slate-700"
+                }`}
+              >
+                {etiquetasPestanas[pestana]}
+              </button>
+            ),
+          )}
         </div>
       </div>
 
-      {pestanaActiva === "noticias" ? <CustomBancoNoticias busqueda={busqueda} /> : null}
+      {pestanaActiva === "noticias" ? (
+        <CustomBancoNoticias busqueda={busqueda} />
+      ) : null}
       {pestanaActiva === "credito" ? (
         <SeccionCredito
           reportes={reportesCredito}
@@ -182,7 +206,10 @@ export default function BancoInformacionAnalista() {
         />
       ) : null}
 
-      <CustomModalDetalleCredito reporte={reporteDetalle} onCerrar={() => setReporteDetalle(null)} />
+      <CustomModalDetalleCredito
+        reporte={reporteDetalle}
+        onCerrar={() => setReporteDetalle(null)}
+      />
     </div>
   );
 }
@@ -204,57 +231,72 @@ function SeccionCredito({
 }) {
   return (
     <section className="space-y-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-300">Reportes de credito actualizados</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-300">
+        Reportes de credito actualizados
+      </p>
       {estaCargando ? (
-        <EstadoBancoInformacion texto="Cargando informacion crediticia..." />
+        <EstadoCargandoBancoInformacion />
       ) : hayError ? (
         <EstadoBancoInformacion
           texto="No se pudo cargar la informacion crediticia."
-          accion={(
+          accion={
             <CustomButton variant="secondary" size="sm" onClick={onReintentar}>
               Reintentar
             </CustomButton>
-          )}
+          }
         />
       ) : reportes.length === 0 ? (
         <EstadoBancoInformacion texto="No hay informacion crediticia registrada." />
       ) : (
-      <div className="grid gap-5 lg:grid-cols-2">
-        {reportes.map((reporte) => (
-          <article key={reporte.idInformeBalance} className="rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  <IndicadorPais pais={reporte.pais} />
-                  <h2 className="text-base font-bold text-slate-950">{reporte.compania}</h2>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400">
-                    <CalendarDays size={12} />
-                    {formatearRangoFecha(reporte.fecha, reporte.fechaFin)}
+        <div className="grid gap-5 lg:grid-cols-2">
+          {reportes.map((reporte) => (
+            <article
+              key={reporte.idInformeBalance}
+              className="rounded-lg border border-slate-100 bg-white p-5 shadow-sm"
+            >
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <IndicadorPais pais={reporte.pais} />
+                    <h2 className="text-base font-bold text-slate-950">
+                      {reporte.compania}
+                    </h2>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+                      <CalendarDays size={12} />
+                      {formatearRangoFecha(reporte.fecha, reporte.fechaFin)}
+                    </span>
+                  </div>
+                  <span className="inline-flex rounded-md bg-slate-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    {obtenerEtiquetaBalance(reporte.tipo)}
                   </span>
+                  <p className="text-xs font-semibold text-slate-400">
+                    Estado:{" "}
+                    <span
+                      className={
+                        reporte.estado === "Vigente"
+                          ? "text-emerald-500"
+                          : "text-slate-400"
+                      }
+                    >
+                      {reporte.estado}
+                    </span>
+                  </p>
                 </div>
-                <span className="inline-flex rounded-md bg-slate-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                  {obtenerEtiquetaBalance(reporte.tipo)}
-                </span>
-                <p className="text-xs font-semibold text-slate-400">
-                  Estado:{" "}
-                  <span className={reporte.estado === "Vigente" ? "text-emerald-500" : "text-slate-400"}>
-                    {reporte.estado}
-                  </span>
-                </p>
+                <CustomButton
+                  size="sm"
+                  onClick={() => onVerDetalle(reporte)}
+                  className="shrink-0"
+                  loading={
+                    idReporteCargandoDetalle === reporte.idInformeBalance
+                  }
+                  loadingText="Cargando..."
+                >
+                  Ver Detalle
+                </CustomButton>
               </div>
-              <CustomButton
-                size="sm"
-                onClick={() => onVerDetalle(reporte)}
-                className="shrink-0"
-                loading={idReporteCargandoDetalle === reporte.idInformeBalance}
-                loadingText="Cargando..."
-              >
-                Ver Detalle
-              </CustomButton>
-            </div>
-          </article>
-        ))}
-      </div>
+            </article>
+          ))}
+        </div>
       )}
     </section>
   );
@@ -286,7 +328,9 @@ function SeccionEmpresas({
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-300">Listado de empresas registradas</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-300">
+          Listado de empresas registradas
+        </p>
         <button
           type="button"
           onClick={onExportar}
@@ -306,7 +350,7 @@ function SeccionEmpresas({
           { label: "Direccion" },
           { label: "Telefono" },
           { label: "Actividad Comercial" },
-          { label: "Trab.", className: "text-right" },
+          { label: "N° de Empleados", className: "text-right" },
         ]}
         data={empresas}
         getId={(empresa) => empresa.idCompania}
@@ -322,15 +366,27 @@ function SeccionEmpresas({
         entityLabel="empresas"
         renderRow={(empresa) => (
           <>
-            <td className="px-6 py-4 text-sm font-bold text-slate-800">{empresa.razonSocial}</td>
-            <td className="px-6 py-4 text-sm font-semibold text-slate-500">{empresa.numeroDocumento}</td>
+            <td className="px-6 py-4 text-sm font-bold text-slate-800">
+              {empresa.razonSocial}
+            </td>
+            <td className="px-6 py-4 text-sm font-semibold text-slate-500">
+              {empresa.numeroDocumento}
+            </td>
             <td className="px-6 py-4">
               <IndicadorPais pais={empresa.pais} />
             </td>
-            <td className="max-w-[220px] px-6 py-4 text-sm text-slate-500">{empresa.direccion}</td>
-            <td className="px-6 py-4 text-sm text-slate-500">{empresa.telefono}</td>
-            <td className="max-w-[300px] px-6 py-4 text-sm text-slate-500">{empresa.actividadComercial}</td>
-            <td className="px-6 py-4 text-right text-sm font-semibold text-slate-700">{empresa.trabajadores}</td>
+            <td className="max-w-[220px] px-6 py-4 text-sm text-slate-500">
+              {empresa.direccion}
+            </td>
+            <td className="px-6 py-4 text-sm text-slate-500">
+              {empresa.telefono}
+            </td>
+            <td className="max-w-[300px] px-6 py-4 text-sm text-slate-500">
+              {empresa.actividadComercial}
+            </td>
+            <td className="px-6 py-4 text-right text-sm font-semibold text-slate-700">
+              {empresa.trabajadores}
+            </td>
           </>
         )}
       />
@@ -338,11 +394,26 @@ function SeccionEmpresas({
   );
 }
 
-function EstadoBancoInformacion({ texto, accion }: { texto: string; accion?: ReactNode }) {
+function EstadoBancoInformacion({
+  texto,
+  accion,
+}: {
+  texto: string;
+  accion?: ReactNode;
+}) {
   return (
     <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-slate-100 bg-white p-6 text-center text-sm font-semibold text-slate-400">
       <p>{texto}</p>
       {accion}
+    </div>
+  );
+}
+
+function EstadoCargandoBancoInformacion() {
+  return (
+    <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-slate-100 bg-white p-6 text-center">
+      <Loader2 className="h-10 w-10 animate-spin text-brand-wine" />
+      <p className="text-sm font-medium text-gray-500">Cargando...</p>
     </div>
   );
 }
@@ -398,15 +469,25 @@ function CustomModalDetalleCredito({
   );
 }
 
-function IndicadorPais({ pais, compacto = false }: { pais: string; compacto?: boolean }) {
+function IndicadorPais({
+  pais,
+  compacto = false,
+}: {
+  pais: string;
+  compacto?: boolean;
+}) {
   const iniciales = pais.slice(0, 3).toUpperCase();
 
   return (
-    <span className={`inline-flex items-center gap-2 ${compacto ? "align-middle" : ""}`}>
+    <span
+      className={`inline-flex items-center gap-2 ${compacto ? "align-middle" : ""}`}
+    >
       <span className="inline-flex h-3.5 w-5 items-center justify-center rounded-[3px] bg-slate-900 text-[7px] font-bold text-white">
         {iniciales}
       </span>
-      {!compacto ? <span className="text-sm font-semibold text-slate-600">{pais}</span> : null}
+      {!compacto ? (
+        <span className="text-sm font-semibold text-slate-600">{pais}</span>
+      ) : null}
     </span>
   );
 }
@@ -416,7 +497,10 @@ function CustomPaginacion({ texto }: { texto: string }) {
     <div className="flex items-center justify-between pt-4 text-xs text-slate-400">
       <p>{texto}</p>
       <div className="flex items-center gap-2">
-        <button type="button" className="rounded-lg p-2 text-slate-300 hover:bg-slate-100">
+        <button
+          type="button"
+          className="rounded-lg p-2 text-slate-300 hover:bg-slate-100"
+        >
           <ChevronLeft size={14} />
         </button>
         {[1, 2, 3].map((pagina) => (
@@ -428,7 +512,10 @@ function CustomPaginacion({ texto }: { texto: string }) {
             {pagina}
           </button>
         ))}
-        <button type="button" className="rounded-lg p-2 text-slate-300 hover:bg-slate-100">
+        <button
+          type="button"
+          className="rounded-lg p-2 text-slate-300 hover:bg-slate-100"
+        >
           <ChevronRight size={14} />
         </button>
       </div>
@@ -469,7 +556,8 @@ function obtenerTextoPaginacion(
   totalReportes: number,
   totalRegistrosReportes: number | undefined,
 ) {
-  if (pestana === "credito") return `Mostrando ${totalReportes} de ${totalRegistrosReportes ?? totalReportes} reportes`;
+  if (pestana === "credito")
+    return `Mostrando ${totalReportes} de ${totalRegistrosReportes ?? totalReportes} reportes`;
 
   return "";
 }

@@ -282,10 +282,10 @@ function normalizarEstado(...valores: unknown[]): EstadoInvestigacionAnalista {
     }
 
     if (typeof valor === "number") {
-      if (valor === 5) return "rechazado";
+      if (valor === 5) return "pendiente-aprobacion";
       if (valor === 4) return "aprobado";
-      if (valor === 3) return "pendiente-aprobacion";
-      if (valor === 2) return "en-proceso";
+      if (valor === 3) return "en-proceso";
+      if (valor === 2) return "rechazado";
       if (valor === 1) return "asignado";
     }
   }
@@ -1090,6 +1090,34 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   return {
     idInforme: obtenerNumero(registro.idInforme, registro.IdInforme) || undefined,
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido) || undefined,
+    idEstadoInforme: obtenerNumeroOpcional(
+      registro.idEstadoInforme,
+      registro.IdEstadoInforme,
+      registro.idEstado,
+      registro.IdEstado,
+      registro.estado,
+      registro.Estado,
+    ),
+    estadoInforme: obtenerTexto(
+      registro.estadoInforme,
+      registro.EstadoInforme,
+      registro.descripcionEstado,
+      registro.DescripcionEstado,
+      registro.estado,
+      registro.Estado,
+    ) || undefined,
+    estado: normalizarEstado(
+      registro.estadoInforme,
+      registro.EstadoInforme,
+      registro.descripcionEstado,
+      registro.DescripcionEstado,
+      registro.estado,
+      registro.Estado,
+      registro.idEstadoInforme,
+      registro.IdEstadoInforme,
+      registro.idEstado,
+      registro.IdEstado,
+    ),
     idFormatoFecha: obtenerNumeroOpcional(registro.idFormatoFecha, registro.IdFormatoFecha),
     idTipoPersona: obtenerNumeroOpcional(registro.idTipoPersona, registro.IdTipoPersona),
     idPais: obtenerNumeroOpcional(registro.idPais, registro.IdPais),
