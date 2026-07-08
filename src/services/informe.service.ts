@@ -76,6 +76,15 @@ function obtenerNumeroOpcional(...valores: unknown[]): number | undefined {
   return undefined;
 }
 
+function obtenerIndicadorBinario(...valores: unknown[]): 0 | 1 {
+  for (const valor of valores) {
+    if (valor === 1 || valor === "1" || valor === true) return 1;
+    if (valor === 0 || valor === "0" || valor === false) return 0;
+  }
+
+  return 0;
+}
+
 function obtenerTexto(...valores: unknown[]): string {
   for (const valor of valores) {
     if (typeof valor === "string") {
@@ -326,6 +335,11 @@ function normalizarFilaInforme(fila: unknown): InformeListEntry {
     idInformeOriginal: obtenerNumeroOpcional(registro.idInformeOriginal, registro.IdInformeOriginal) ?? null,
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido),
     idEstado,
+    idFase: obtenerNumeroOpcional(registro.idFase, registro.IdFase),
+    requiereTraduccion: obtenerIndicadorBinario(
+      registro.requiereTraduccion,
+      registro.RequiereTraduccion,
+    ),
     idIdioma: obtenerNumeroOpcional(registro.idIdioma, registro.IdIdioma),
     idPlantilla: obtenerNumeroOpcional(registro.idPlantilla, registro.IdPlantilla),
     codigo: obtenerTexto(registro.codigo, registro.Codigo, registro.codigoPedido, registro.CodigoPedido) || "-",

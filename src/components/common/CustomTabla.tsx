@@ -9,7 +9,7 @@ import { type ReactNode, useEffect, useRef } from "react";
 import { CustomButton } from "./CustomButton";
 
 export interface TableColumn {
-  label: string;
+  label: ReactNode;
   className?: string;
   width?: string;
 }
@@ -137,9 +137,13 @@ export function CustomTabla<T>({
               {columns.map((col, i) => (
                 <th
                   key={i}
-                  className={`px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider ${col.className ?? ""}`}
+                  className={`px-6 py-4 text-xs font-semibold text-gray-400 ${col.className ?? ""}`}
                 >
-                  {col.label}
+                  {typeof col.label === "string" ? (
+                    <span className="uppercase tracking-wider">{col.label}</span>
+                  ) : (
+                    col.label
+                  )}
                 </th>
               ))}
             </tr>
