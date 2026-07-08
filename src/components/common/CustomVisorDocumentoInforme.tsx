@@ -16,6 +16,7 @@ interface PropsCustomVisorDocumentoInforme {
   ocuparAltoDisponible?: boolean;
   tituloBarra?: string;
   subtituloBarra?: string;
+  onEstadoRenderizacionChange?: (estaRenderizando: boolean) => void;
   encabezado?: {
     pais: string;
     fecha: string;
@@ -478,6 +479,7 @@ export function CustomVisorDocumentoInforme({
   ocuparAltoDisponible = false,
   tituloBarra,
   subtituloBarra,
+  onEstadoRenderizacionChange,
 }: PropsCustomVisorDocumentoInforme) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const contenedorScrollRef = useRef<HTMLDivElement>(null);
@@ -498,6 +500,11 @@ export function CustomVisorDocumentoInforme({
   const [estaArrastrandoInforme, setEstaArrastrandoInforme] = useState(false);
   const [modoInteraccionInforme, setModoInteraccionInforme] = useState<ModoInteraccionInforme>("arrastrar");
 
+  const finalizarRenderizadoDocumento = useCallback(() => {
+    setEstaPaginando(false);
+    onEstadoRenderizacionChange?.(false);
+  }, [onEstadoRenderizacionChange]);
+
   const ajustarAltura = useCallback(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
@@ -516,15 +523,15 @@ export function CustomVisorDocumentoInforme({
         );
         if (altura > 100 && paginas.length > 0 && paginasConContenido) {
           setAlturaIframe(altura + (paginas.length > 0 ? 60 : 40));
-          setEstaPaginando(false);
+          finalizarRenderizadoDocumento();
           return;
         }
       }
     } catch {
       /* cross-origin fallback */
     }
-    setTimeout(ajustarAltura, 300);
-  }, []);
+    setError("No se pudo calcular la altura final del informe.");
+  }, [finalizarRenderizadoDocumento]);
 
   const documentoKey = useMemo(
     () =>
@@ -563,19 +570,19 @@ export function CustomVisorDocumentoInforme({
 
   useEffect(() => {
     if (!zoomModificadoPorUsuario) {
-      setZoomInforme(zoomAjustadoInforme);
+      const idTemporizador = window.setTimeout(() => {
+        setZoomInforme(zoomAjustadoInforme);
+      }, 0);
+
+      return () => window.clearTimeout(idTemporizador);
     }
   }, [zoomAjustadoInforme, zoomModificadoPorUsuario]);
 
   useEffect(() => {
     if (!documentoKey || !documento.sections || !documento.document) return;
+    let estaActivo = true;
 
-    setEstaPaginando(true);
-    setError(null);
-    setZoomModificadoPorUsuario(false);
-    setAlturaIframe(600);
     const tokenRender = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    setTokenRenderDocumento(tokenRender);
 
     const css = construirCss(documento.document);
     const contenido = construirHtmlContenido(
@@ -590,6 +597,14 @@ export function CustomVisorDocumentoInforme({
 <style>${css}</style>
 </head>
 <body>
+<script>
+window.__maximilianPagedCompleto = false;
+window.PagedConfig = {
+  after: function () {
+    window.__maximilianPagedCompleto = true;
+  }
+};
+</script>
 ${contenido}
 <script src="${escaparAtributo(pagedJsUrl)}"></script>
 <script>
@@ -597,6 +612,7 @@ ${contenido}
   var token = ${escaparScriptJson(tokenRender)};
   var intentos = 0;
   var alturaAnterior = 0;
+  var paginasAnteriores = 0;
   var lecturasEstables = 0;
 
   function obtenerAltura() {
@@ -611,24 +627,46 @@ ${contenido}
   function tieneContenidoRenderizado() {
     var paginas = Array.prototype.slice.call(document.querySelectorAll(".pagedjs_page"));
     if (!paginas.length) return false;
-    return paginas.some(function (pagina) {
+    return paginas.every(function (pagina) {
       return (pagina.textContent || "").trim().length > 0 || Boolean(pagina.querySelector("img, table"));
     });
+  }
+
+  function imagenesListas() {
+    var imagenes = Array.prototype.slice.call(document.images || []);
+    return imagenes.every(function (imagen) {
+      return imagen.complete && (imagen.naturalWidth > 0 || imagen.getAttribute("src") === "");
+    });
+  }
+
+  function fuentesListas() {
+    return !document.fonts || document.fonts.status === "loaded";
   }
 
   function revisar() {
     intentos += 1;
     var altura = obtenerAltura();
+    var paginas = document.querySelectorAll(".pagedjs_page").length;
     var contenidoListo = tieneContenidoRenderizado();
+    var recursosListos = imagenesListas() && fuentesListas();
+    var pagedCompleto = Boolean(window.__maximilianPagedCompleto);
 
-    if (Math.abs(altura - alturaAnterior) <= 2) {
+    if (Math.abs(altura - alturaAnterior) <= 2 && paginas === paginasAnteriores) {
       lecturasEstables += 1;
     } else {
       lecturasEstables = 0;
       alturaAnterior = altura;
+      paginasAnteriores = paginas;
     }
 
-    if (contenidoListo && altura > 100 && (lecturasEstables >= 2 || intentos >= 60)) {
+    if (
+      contenidoListo &&
+      recursosListos &&
+      altura > 100 &&
+      paginas > 0 &&
+      (pagedCompleto || intentos >= 80) &&
+      lecturasEstables >= 8
+    ) {
       window.parent.postMessage({
         tipo: ${escaparScriptJson(TIPO_MENSAJE_PAGEDJS_LISTO)},
         token: token,
@@ -656,9 +694,21 @@ ${contenido}
 </body>
 </html>`;
 
-    setSrcdoc(htmlCompleto);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documentoKey]);
+    window.setTimeout(() => {
+      if (!estaActivo) return;
+      setEstaPaginando(true);
+      onEstadoRenderizacionChange?.(true);
+      setError(null);
+      setZoomModificadoPorUsuario(false);
+      setAlturaIframe(600);
+      setTokenRenderDocumento(tokenRender);
+      setSrcdoc(htmlCompleto);
+    }, 0);
+
+    return () => {
+      estaActivo = false;
+    };
+  }, [documentoKey, documento.document, documento.sections, onEstadoRenderizacionChange]);
 
   const manejarCargaIframe = useCallback(() => {
     setTimeout(ajustarAltura, 2500);
@@ -677,7 +727,7 @@ ${contenido}
       if (typeof data.altura === "number" && data.altura > 100) {
         setAlturaIframe(data.altura + 60);
       }
-      setEstaPaginando(false);
+      finalizarRenderizadoDocumento();
     };
 
     window.addEventListener("message", manejarMensaje);
@@ -685,7 +735,7 @@ ${contenido}
     return () => {
       window.removeEventListener("message", manejarMensaje);
     };
-  }, [tokenRenderDocumento]);
+  }, [finalizarRenderizadoDocumento, tokenRenderDocumento]);
 
   const acercarInforme = useCallback(() => {
     setZoomModificadoPorUsuario(true);
