@@ -9,9 +9,9 @@ import type {
 export interface InformeListParams {
   busqueda?: string;
   idPedido?: number;
-  idEstado?: number;
-  idPlantilla?: number;
-  idTipoTramite?: number;
+  idEstado?: string;
+  idPlantilla?: string;
+  idTipoTramite?: string;
   numPag?: number;
 }
 

@@ -128,9 +128,9 @@ export default function GestionRevisionAprobacion() {
   const [estiloFiltroEncabezado, setEstiloFiltroEncabezado] =
     useState<CSSProperties>({});
   const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
-  const idPlantillaFiltro = filtroPlantillas[0];
-  const idEstadoFiltro = filtroEstados[0];
-  const idTipoTramiteFiltro = filtroTipos[0];
+  const idPlantillaFiltro = filtroPlantillas.join(",") || undefined;
+  const idEstadoFiltro = filtroEstados.join(",") || undefined;
+  const idTipoTramiteFiltro = filtroTipos.join(",") || undefined;
   const {
     data: respuestaInformes,
     isLoading,
@@ -254,8 +254,7 @@ export default function GestionRevisionAprobacion() {
     const estaAbierto = filtroEncabezadoAbierto === clave;
     const tieneFiltro = valores.length > 0;
     const actualizarSeleccion = (ids: number[]) => {
-      const idAgregado = ids.find((id) => !valores.includes(id));
-      onChange(idAgregado != null ? [idAgregado] : ids.slice(0, 1));
+      onChange(ids);
       setPaginaActual(1);
     };
 
