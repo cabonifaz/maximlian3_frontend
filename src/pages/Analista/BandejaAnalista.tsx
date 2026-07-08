@@ -277,13 +277,13 @@ export default function BandejaAnalista() {
   };
 
   const columnas = [
-    { label: "ID Pedido", width: "10%" },
-    { label: "Investigado", width: "28%" },
+    { label: "ID Pedido", width: "9%" },
+    { label: "Investigado", width: "32%" },
     { label: "País", width: "14%" },
-    { label: "Fecha", width: "12%" },
-    { label: "Tipo", width: "14%" },
+    { label: "Fecha", width: "11%" },
+    { label: "Tipo", className: "text-center", width: "8%" },
     { label: "Estado", className: "text-center", width: "12%" },
-    { label: "Acción", className: "text-right", width: "10%" },
+    { label: "Acción", className: "text-right", width: "14%" },
   ];
 
   return (
@@ -373,7 +373,7 @@ export default function BandejaAnalista() {
               <td className="px-6 py-4 text-sm text-slate-500">
                 {registro.fecha}
               </td>
-              <td className="px-6 py-4 text-sm text-slate-500">
+              <td className="px-3 py-4 text-center text-sm text-slate-500">
                 {registro.tipo}
               </td>
               <td className="px-6 py-4 text-center">
