@@ -29,12 +29,12 @@ interface ModalFlujoAsignacionProps {
 }
 
 const PEDIDO_COLUMNS = [
-  { label: "Cliente" },
-  { label: "Investigado" },
-  { label: "Idioma del informe" },
-  { label: "Tipo de tramite" },
-  { label: "Vencimiento" },
-  { label: "Ver detalle", className: "text-center" },
+  { label: "Cliente", width: "24%" },
+  { label: "Investigado", width: "24%" },
+  { label: "Idioma del informe", width: "14%" },
+  { label: "Tipo de tramite", width: "16%" },
+  { label: "Vencimiento", width: "14%" },
+  { label: "Ver detalle", className: "text-center", width: "8%" },
 ];
 
 const ASIGNACIONES_INICIALES: AssignmentRoleSelection[] = [
@@ -403,8 +403,16 @@ export function ModalFlujoAsignacion({
 
   const renderPedidoRow = (pedido: PedidoListEntry) => (
     <>
-      <td className="px-6 py-4 text-sm font-semibold text-brand-black">{pedido.cliente}</td>
-      <td className="px-6 py-4 text-sm text-slate-600">{pedido.investigado}</td>
+      <td className="px-6 py-4 text-sm font-semibold text-brand-black">
+        <span className="block truncate" title={pedido.cliente}>
+          {pedido.cliente}
+        </span>
+      </td>
+      <td className="px-6 py-4 text-sm text-slate-600">
+        <span className="block truncate" title={pedido.investigado}>
+          {pedido.investigado}
+        </span>
+      </td>
       <td className="px-6 py-4 text-sm text-slate-600">{pedido.idioma}</td>
       <td className="px-6 py-4 text-sm text-slate-600">{pedido.tipoTramite || "-"}</td>
       <td className="px-6 py-4">{getBadgeVigencia(pedido.vigencia)}</td>
@@ -575,7 +583,13 @@ export function ModalFlujoAsignacion({
       <p className="text-2xl font-bold text-brand-black">Pedidos seleccionados: {cantidadSeleccionados}</p>
 
       <div className="overflow-hidden rounded-2xl border border-gray-100">
-        <table className="w-full border-collapse text-left">
+        <table className="w-full table-fixed border-collapse text-left [&_td]:max-w-0 [&_td]:break-words">
+          <colgroup>
+            <col className="w-[12%]" />
+            <col className="w-[24%]" />
+            <col className="w-[44%]" />
+            <col className="w-[20%]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-gray-100">
               <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-400">Nro.</th>

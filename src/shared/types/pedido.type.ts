@@ -21,6 +21,8 @@ export interface PedidoListEntry {
   descripcionEstado: string;
   colorLetra: string;
   colorFondo: string;
+  idFase?: number;
+  requiereTraduccion?: 0 | 1;
   vigencia: string | number;
   asignaciones: PedidoAsignacionEntry[];
 }

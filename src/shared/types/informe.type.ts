@@ -10,6 +10,8 @@ export interface InformeListParams {
   busqueda?: string;
   idPedido?: number;
   idEstado?: number;
+  idPlantilla?: number;
+  idTipoTramite?: number;
   numPag?: number;
 }
 
@@ -18,7 +20,10 @@ export interface InformeListEntry {
   idInformeOriginal?: number | null;
   idPedido: number;
   idEstado: number;
+  idFase?: number;
+  requiereTraduccion?: 0 | 1;
   idIdioma?: number;
+  idPlantilla?: number;
   codigo: string;
   investigado: string;
   pais: string;

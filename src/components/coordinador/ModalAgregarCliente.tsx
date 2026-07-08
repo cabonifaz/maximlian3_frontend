@@ -734,8 +734,16 @@ export function ModalAgregarCliente({
                                 />
                               </td>
                               <td className="px-4 py-3 text-gray-600">{contact.nombre}</td>
-                              <td className="px-4 py-3 text-gray-600">{contact.correo}</td>
-                              <td className="px-4 py-3 text-gray-600">{contact.telefono}</td>
+                              <td className="px-4 py-3 text-gray-600">
+                                <span className="block max-w-44 truncate" title={contact.correo}>
+                                  {contact.correo}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">
+                                <span className="block max-w-36 truncate" title={contact.telefono}>
+                                  {contact.telefono}
+                                </span>
+                              </td>
                               <td className="px-4 py-3 text-gray-600">{contact.tipoContactoLabel}</td>
                               <td className="px-4 py-3 text-gray-600">{contact.areaTrabajoLabel}</td>
                               <td className="px-4 py-3 text-center">

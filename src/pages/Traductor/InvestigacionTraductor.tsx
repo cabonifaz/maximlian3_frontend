@@ -904,6 +904,51 @@ function esRutaTraduccionIA(ruta: string) {
   );
 }
 
+function obtenerTraduccionTipoEmpresaTraductor(
+  opcion: EntradaTablaMaestra,
+  idIdioma?: number,
+) {
+  if (idIdioma === 2) return opcion.string4?.trim() ?? "";
+  if (idIdioma === 3) return opcion.string6?.trim() ?? "";
+  return "";
+}
+
+function obtenerEtiquetaTipoEmpresaTraductor(
+  opcion: EntradaTablaMaestra,
+  idIdioma?: number,
+) {
+  const textoTraducido =
+    obtenerTraduccionTipoEmpresaTraductor(opcion, idIdioma) ||
+    opcion.string1?.trim() ||
+    "";
+  const textoEspanol = opcion.string1?.trim() ?? "";
+
+  return [textoTraducido, textoEspanol]
+    .filter((texto, indice, textos) => texto && textos.indexOf(texto) === indice)
+    .join(" - ");
+}
+
+function renderizarTipoEmpresaTraductor(
+  opcion: EntradaTablaMaestra,
+  idIdioma?: number,
+) {
+  const textoTraducido =
+    obtenerTraduccionTipoEmpresaTraductor(opcion, idIdioma) ||
+    opcion.string1?.trim() ||
+    "";
+  const textoEspanol = opcion.string1?.trim() ?? "";
+
+  if (!textoEspanol || textoEspanol === textoTraducido) return textoTraducido;
+
+  return (
+    <span className="inline-flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5 whitespace-normal break-words leading-snug">
+      <span>{textoTraducido}</span>
+      <span className="shrink-0 text-slate-300">-</span>
+      <span className="text-slate-400">{textoEspanol}</span>
+    </span>
+  );
+}
+
 function construirSeccionesDisponiblesExtraccion(
   alcance: AlcanceExtraccionInforme,
 ): InformeSeccionExtraccionDisponible[] {
@@ -6838,9 +6883,23 @@ function PantallaInvestigacionAnalista({
           etiqueta="Tipo de Empresa"
           valor={datosInvestigacion.aspectosLegales.tipoEmpresa}
           soloLectura={esSoloLectura}
-          opcionesTablaMaestra={opcionesTipoEmpresa}
+          opcionesTablaMaestra={opcionesTipoEmpresaBase}
           idMaestro={TablaMaestraId.TIPO_EMPRESA}
           permiteAltaNueva
+          obtenerEtiquetaOpcion={(opcion) =>
+            obtenerEtiquetaTipoEmpresaTraductor(opcion, idIdiomaTraduccion)
+          }
+          obtenerValorOpcion={(opcion) =>
+            obtenerTraduccionTipoEmpresaTraductor(opcion, idIdiomaTraduccion) ||
+            opcion.string1 ||
+            ""
+          }
+          renderizarOpcion={(opcion) =>
+            renderizarTipoEmpresaTraductor(opcion, idIdiomaTraduccion)
+          }
+          renderizarValorSeleccionado={(opcion) =>
+            renderizarTipoEmpresaTraductor(opcion, idIdiomaTraduccion)
+          }
           construirPayloadAltaNueva={(termino, opcionesActuales) =>
             construirPayloadAltaNuevaTraducida({
               idMaestro: TablaMaestraId.TIPO_EMPRESA,

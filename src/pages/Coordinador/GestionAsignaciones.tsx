@@ -8,18 +8,19 @@ import { ModalFlujoAsignacion } from "@maximilian/components/coordinador/ModalFl
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { AssignmentOrderEntry } from "@maximilian/shared/types/asignacion.type";
 import type { PedidoListEntry } from "@maximilian/shared/types/pedido.type";
-import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
 const ASSIGNMENT_COLUMNS = [
-  { label: "Cliente" },
-  { label: "Investigado" },
-  { label: "Analista" },
-  { label: "Traductor" },
-  { label: "Estado", className: "text-center" },
-  { label: "Vencimiento" },
-  { label: "Acciones", className: "text-right" },
+  { label: "Cliente", width: "21%" },
+  { label: "Investigado", width: "20%" },
+  { label: "Analista", width: "15%" },
+  { label: "Traductor", width: "15%" },
+  { label: "Estado", className: "text-center", width: "14%" },
+  { label: "Vencimiento", width: "9%" },
+  { label: "Acciones", className: "text-right", width: "6%" },
 ];
 
 const ID_ROL_TRADUCTOR = 4;
@@ -27,6 +28,61 @@ const ID_ROL_ANALISTA = 3;
 
 function tieneAsignado(nombre?: string) {
   return !!nombre && nombre !== "-" && nombre !== "Sin Asignacion";
+}
+
+function esColorHexadecimal(valor?: string | null) {
+  return /^#(?:[0-9a-fA-F]{3}){1,2}$/.test(valor?.trim() ?? "");
+}
+
+function expandirColorHexadecimal(color: string) {
+  const valor = color.trim();
+  if (valor.length === 4) {
+    return `#${valor[1]}${valor[1]}${valor[2]}${valor[2]}${valor[3]}${valor[3]}`;
+  }
+
+  return valor;
+}
+
+function obtenerColorTextoContraste(colorFondo: string) {
+  const color = expandirColorHexadecimal(colorFondo).replace("#", "");
+  const rojo = Number.parseInt(color.slice(0, 2), 16);
+  const verde = Number.parseInt(color.slice(2, 4), 16);
+  const azul = Number.parseInt(color.slice(4, 6), 16);
+  const luminancia = (0.299 * rojo + 0.587 * verde + 0.114 * azul) / 255;
+
+  return luminancia > 0.62 ? "#334155" : "#FFFFFF";
+}
+
+function obtenerNumeroTablaMaestra(opcion: EntradaTablaMaestra) {
+  const registro = opcion as EntradaTablaMaestra & { Num1?: number | string | null };
+  const valor = opcion.num1 ?? registro.Num1;
+  const numero = typeof valor === "string" ? Number(valor) : valor;
+
+  return Number.isFinite(numero) ? numero : undefined;
+}
+
+function obtenerTextoTablaMaestra(
+  opcion: EntradaTablaMaestra | undefined,
+  clave: "string2" | "string3",
+) {
+  if (!opcion) return undefined;
+  const registro = opcion as EntradaTablaMaestra & {
+    String2?: string | null;
+    String3?: string | null;
+  };
+
+  return (opcion[clave] ?? registro[clave === "string2" ? "String2" : "String3"])?.trim();
+}
+
+function obtenerColorFondoEstadoRespaldo(idEstado?: number) {
+  const coloresPorEstado: Record<number, string> = {
+    1: "#EDE9FE",
+    2: "#DBEAFE",
+    3: "#DCFCE7",
+    4: "#F1F5F9",
+  };
+
+  return idEstado ? coloresPorEstado[idEstado] : undefined;
 }
 
 function construirOpcionesEliminacion(asignacion: AssignmentOrderEntry): EntradaTablaMaestra[] {
@@ -69,6 +125,28 @@ function construirOpcionesEliminacion(asignacion: AssignmentOrderEntry): Entrada
   }
 
   return opciones;
+}
+
+function obtenerColoresEstadoAsignacion(
+  asignacion: AssignmentOrderEntry,
+  opcionesEstadoAsignacion?: EntradaTablaMaestra[],
+) {
+  const opcionEstado = opcionesEstadoAsignacion?.find(
+    (opcion) => obtenerNumeroTablaMaestra(opcion) === asignacion.idEstado,
+  );
+  const colorFondoMaestro = obtenerTextoTablaMaestra(opcionEstado, "string2");
+  const colorLetraMaestro = obtenerTextoTablaMaestra(opcionEstado, "string3");
+  const colorFondoRespaldo = obtenerColorFondoEstadoRespaldo(asignacion.idEstado);
+  const colorFondo = esColorHexadecimal(colorFondoMaestro)
+    ? expandirColorHexadecimal(colorFondoMaestro!)
+    : colorFondoRespaldo || asignacion.estadoColorFondo || "#f1f5f9";
+  const colorLetra = esColorHexadecimal(colorLetraMaestro)
+    ? expandirColorHexadecimal(colorLetraMaestro!)
+    : esColorHexadecimal(colorFondoMaestro) || colorFondoRespaldo
+      ? obtenerColorTextoContraste(colorFondo)
+      : asignacion.estadoColorLetra || "#475569";
+
+  return { colorFondo, colorLetra };
 }
 
 function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: string) {
@@ -273,6 +351,12 @@ export default function GestionAsignaciones() {
       }),
   });
 
+  const { data: opcionesEstadoAsignacion } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.ESTADO_ASIGNACION],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_ASIGNACION),
+    staleTime: Infinity,
+  });
+
   const anularAsignacionMutation = useMutation({
     mutationFn: ({ idAsignacion }: { idAsignacion: number }) =>
       servicioAsignacion.delete({ idAsignacion }),
@@ -289,21 +373,32 @@ export default function GestionAsignaciones() {
     }
   };
 
-  const renderRow = (asignacion: AssignmentOrderEntry) => (
-    <>
-      <td className="px-6 py-4 text-sm font-semibold text-brand-black">{asignacion.cliente}</td>
-      <td className="px-6 py-4 text-sm text-slate-600">{asignacion.investigado}</td>
-      <td className="px-6 py-4 text-sm text-slate-600">{asignacion.analista || "-"}</td>
-      <td className="px-6 py-4 text-sm text-slate-600">{asignacion.traductor || "-"}</td>
-      <td className="px-6 py-4 text-center">
-        {getEstadoBadge(
-          asignacion.estado || "-",
-          asignacion.estadoColorLetra || "#475569",
-          asignacion.estadoColorFondo || "#f1f5f9",
-        )}
-      </td>
-      <td className="px-6 py-4">{getVigenciaBadge(asignacion)}</td>
-      <td className="px-6 py-4 text-right">
+  const renderRow = (asignacion: AssignmentOrderEntry) => {
+    const coloresEstado = obtenerColoresEstadoAsignacion(asignacion, opcionesEstadoAsignacion);
+
+    return (
+      <>
+        <td className="px-6 py-4 text-sm font-semibold text-brand-black">
+          <span className="block truncate" title={asignacion.cliente}>
+            {asignacion.cliente}
+          </span>
+        </td>
+        <td className="px-6 py-4 text-sm text-slate-600">
+          <span className="block truncate" title={asignacion.investigado}>
+            {asignacion.investigado}
+          </span>
+        </td>
+        <td className="px-6 py-4 text-sm text-slate-600">{asignacion.analista || "-"}</td>
+        <td className="px-6 py-4 text-sm text-slate-600">{asignacion.traductor || "-"}</td>
+        <td className="px-6 py-4 text-center">
+          {getEstadoBadge(
+            asignacion.estado || "-",
+            coloresEstado.colorLetra,
+            coloresEstado.colorFondo,
+          )}
+        </td>
+        <td className="px-6 py-4">{getVigenciaBadge(asignacion)}</td>
+        <td className="px-6 py-4 text-right">
         <button
           onClick={(e) => {
             if (idMenuActivo === asignacion.idPedido) {
@@ -368,9 +463,10 @@ export default function GestionAsignaciones() {
             </div>
           </>
         )}
-      </td>
-    </>
-  );
+        </td>
+      </>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -382,7 +478,7 @@ export default function GestionAsignaciones() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Buscar por nombre del cliente, analista o traductor"
+              placeholder="Buscar por nombre del cliente, investigado, analista o traductor"
               value={terminoBusqueda}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -417,7 +513,7 @@ export default function GestionAsignaciones() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="w-full max-w-xs">
         <CustomSelectorBuscable
-          idMaster={98}
+          idMaster={TablaMaestraId.ESTADO_ASIGNACION}
           value={idEstadoFiltro}
           onChange={(idEstado) => {
             setIdEstadoFiltro(idEstado);

@@ -7,6 +7,8 @@ import {
   Edit,
   Eye,
   Filter,
+  FileSearch,
+  Languages,
   MoreHorizontal,
   Plus,
   Search,
@@ -30,13 +32,14 @@ import { pedidoService } from "@maximilian/services/pedido.service";
 import { type PedidoListEntry } from "@maximilian/shared/types/pedido.type";
 
 const PEDIDO_COLUMNS = [
-  { label: "Cliente" },
-  { label: "Investigado" },
-  { label: "Idioma del Informe", className: "text-center" },
-  { label: "Logo Imprimible", className: "text-center" },
-  { label: "Estado", className: "text-center" },
-  { label: "", className: "text-center w-14" },
-  { label: "Acciones", className: "text-right" },
+  { label: "Cliente", width: "22%" },
+  { label: "Investigado", width: "21%" },
+  { label: "Idioma del Informe", className: "text-center", width: "13%" },
+  { label: "Logo Imprimible", className: "text-center", width: "12%" },
+  { label: "Estado", className: "text-center", width: "13%" },
+  { label: "Fase", className: "text-center", width: "8%" },
+  { label: "", className: "text-center w-14", width: "4%" },
+  { label: "Acciones", className: "text-right", width: "7%" },
 ];
 
 const ESTADO_OPTIONS = [
@@ -68,6 +71,56 @@ function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: str
 
 function esPedidoCancelado(pedido: PedidoListEntry) {
   return pedido.estado === 5;
+}
+
+function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
+  const requiereTraduccion = pedido.requiereTraduccion === 1;
+  const esFaseTraduccion = requiereTraduccion && pedido.idFase === 2;
+  const estiloFaseActiva = {
+    backgroundColor: pedido.colorFondo || "#f1f5f9",
+    color: pedido.colorLetra || "#475569",
+  };
+
+  const claseAnalista = esFaseTraduccion
+    ? "border-green-200 bg-green-50 text-green-600"
+    : "border-transparent";
+
+  if (!requiereTraduccion) {
+    return (
+      <div className="mx-auto flex w-16 items-center justify-center" title="No requiere traduccion">
+        <span
+          className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseAnalista}`}
+          style={esFaseTraduccion ? undefined : estiloFaseActiva}
+        >
+          <FileSearch size={14} />
+        </span>
+      </div>
+    );
+  }
+
+  const claseTraduccion = esFaseTraduccion
+    ? "border-transparent"
+    : "border-slate-200 bg-slate-50 text-slate-300";
+
+  return (
+    <div className="relative mx-auto flex w-16 items-center justify-between" title="Analista / Traduccion">
+      <span
+        className={`absolute left-4 right-4 top-1/2 h-1 -translate-y-1/2 rounded-full ${esFaseTraduccion ? "bg-green-200" : "bg-slate-200"}`}
+      />
+      <span
+        className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseAnalista}`}
+        style={esFaseTraduccion ? undefined : estiloFaseActiva}
+      >
+        <FileSearch size={14} />
+      </span>
+      <span
+        className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseTraduccion}`}
+        style={esFaseTraduccion ? estiloFaseActiva : undefined}
+      >
+        <Languages size={14} />
+      </span>
+    </div>
+  );
 }
 
 export default function PedidoManagement() {
@@ -157,10 +210,14 @@ export default function PedidoManagement() {
   const renderRow = (pedido: PedidoListEntry) => (
     <>
       <td className="px-6 py-4">
-        <span className="text-sm font-bold text-brand-black">{pedido.cliente}</span>
+        <span className="block truncate text-sm font-bold text-brand-black" title={pedido.cliente}>
+          {pedido.cliente}
+        </span>
       </td>
       <td className="px-6 py-4">
-        <span className="text-sm text-gray-600">{pedido.investigado}</span>
+        <span className="block truncate text-sm text-gray-600" title={pedido.investigado}>
+          {pedido.investigado}
+        </span>
       </td>
       <td className="px-6 py-4 text-center">
         <span className="text-sm text-gray-600">{pedido.idioma}</span>
@@ -172,6 +229,9 @@ export default function PedidoManagement() {
         <div className="flex justify-center">
           {getEstadoBadge(pedido.descripcionEstado, pedido.colorLetra, pedido.colorFondo)}
         </div>
+      </td>
+      <td className="px-6 py-4 text-center">
+        {obtenerIndicadorFasePedido(pedido)}
       </td>
       <td className="px-6 py-4 text-center">
         {pedido.fechaMod ? (

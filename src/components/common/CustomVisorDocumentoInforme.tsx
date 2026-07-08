@@ -14,6 +14,9 @@ interface PropsCustomVisorDocumentoInforme {
   documento: DocumentoInformeGenerado;
   datosInvestigacion?: DatosInvestigacionAnalista;
   ocuparAltoDisponible?: boolean;
+  tituloBarra?: string;
+  subtituloBarra?: string;
+  onEstadoRenderizacionChange?: (estaRenderizando: boolean) => void;
   encabezado?: {
     pais: string;
     fecha: string;
@@ -474,6 +477,9 @@ function construirHtmlContenido(
 export function CustomVisorDocumentoInforme({
   documento,
   ocuparAltoDisponible = false,
+  tituloBarra,
+  subtituloBarra,
+  onEstadoRenderizacionChange,
 }: PropsCustomVisorDocumentoInforme) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const contenedorScrollRef = useRef<HTMLDivElement>(null);
@@ -494,6 +500,11 @@ export function CustomVisorDocumentoInforme({
   const [estaArrastrandoInforme, setEstaArrastrandoInforme] = useState(false);
   const [modoInteraccionInforme, setModoInteraccionInforme] = useState<ModoInteraccionInforme>("arrastrar");
 
+  const finalizarRenderizadoDocumento = useCallback(() => {
+    setEstaPaginando(false);
+    onEstadoRenderizacionChange?.(false);
+  }, [onEstadoRenderizacionChange]);
+
   const ajustarAltura = useCallback(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
@@ -512,15 +523,15 @@ export function CustomVisorDocumentoInforme({
         );
         if (altura > 100 && paginas.length > 0 && paginasConContenido) {
           setAlturaIframe(altura + (paginas.length > 0 ? 60 : 40));
-          setEstaPaginando(false);
+          finalizarRenderizadoDocumento();
           return;
         }
       }
     } catch {
       /* cross-origin fallback */
     }
-    setTimeout(ajustarAltura, 300);
-  }, []);
+    setError("No se pudo calcular la altura final del informe.");
+  }, [finalizarRenderizadoDocumento]);
 
   const documentoKey = useMemo(
     () =>
@@ -559,19 +570,19 @@ export function CustomVisorDocumentoInforme({
 
   useEffect(() => {
     if (!zoomModificadoPorUsuario) {
-      setZoomInforme(zoomAjustadoInforme);
+      const idTemporizador = window.setTimeout(() => {
+        setZoomInforme(zoomAjustadoInforme);
+      }, 0);
+
+      return () => window.clearTimeout(idTemporizador);
     }
   }, [zoomAjustadoInforme, zoomModificadoPorUsuario]);
 
   useEffect(() => {
     if (!documentoKey || !documento.sections || !documento.document) return;
+    let estaActivo = true;
 
-    setEstaPaginando(true);
-    setError(null);
-    setZoomModificadoPorUsuario(false);
-    setAlturaIframe(600);
     const tokenRender = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    setTokenRenderDocumento(tokenRender);
 
     const css = construirCss(documento.document);
     const contenido = construirHtmlContenido(
@@ -586,6 +597,14 @@ export function CustomVisorDocumentoInforme({
 <style>${css}</style>
 </head>
 <body>
+<script>
+window.__maximilianPagedCompleto = false;
+window.PagedConfig = {
+  after: function () {
+    window.__maximilianPagedCompleto = true;
+  }
+};
+</script>
 ${contenido}
 <script src="${escaparAtributo(pagedJsUrl)}"></script>
 <script>
@@ -593,6 +612,7 @@ ${contenido}
   var token = ${escaparScriptJson(tokenRender)};
   var intentos = 0;
   var alturaAnterior = 0;
+  var paginasAnteriores = 0;
   var lecturasEstables = 0;
 
   function obtenerAltura() {
@@ -607,24 +627,46 @@ ${contenido}
   function tieneContenidoRenderizado() {
     var paginas = Array.prototype.slice.call(document.querySelectorAll(".pagedjs_page"));
     if (!paginas.length) return false;
-    return paginas.some(function (pagina) {
+    return paginas.every(function (pagina) {
       return (pagina.textContent || "").trim().length > 0 || Boolean(pagina.querySelector("img, table"));
     });
+  }
+
+  function imagenesListas() {
+    var imagenes = Array.prototype.slice.call(document.images || []);
+    return imagenes.every(function (imagen) {
+      return imagen.complete && (imagen.naturalWidth > 0 || imagen.getAttribute("src") === "");
+    });
+  }
+
+  function fuentesListas() {
+    return !document.fonts || document.fonts.status === "loaded";
   }
 
   function revisar() {
     intentos += 1;
     var altura = obtenerAltura();
+    var paginas = document.querySelectorAll(".pagedjs_page").length;
     var contenidoListo = tieneContenidoRenderizado();
+    var recursosListos = imagenesListas() && fuentesListas();
+    var pagedCompleto = Boolean(window.__maximilianPagedCompleto);
 
-    if (Math.abs(altura - alturaAnterior) <= 2) {
+    if (Math.abs(altura - alturaAnterior) <= 2 && paginas === paginasAnteriores) {
       lecturasEstables += 1;
     } else {
       lecturasEstables = 0;
       alturaAnterior = altura;
+      paginasAnteriores = paginas;
     }
 
-    if (contenidoListo && altura > 100 && (lecturasEstables >= 2 || intentos >= 60)) {
+    if (
+      contenidoListo &&
+      recursosListos &&
+      altura > 100 &&
+      paginas > 0 &&
+      (pagedCompleto || intentos >= 80) &&
+      lecturasEstables >= 8
+    ) {
       window.parent.postMessage({
         tipo: ${escaparScriptJson(TIPO_MENSAJE_PAGEDJS_LISTO)},
         token: token,
@@ -652,9 +694,21 @@ ${contenido}
 </body>
 </html>`;
 
-    setSrcdoc(htmlCompleto);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documentoKey]);
+    window.setTimeout(() => {
+      if (!estaActivo) return;
+      setEstaPaginando(true);
+      onEstadoRenderizacionChange?.(true);
+      setError(null);
+      setZoomModificadoPorUsuario(false);
+      setAlturaIframe(600);
+      setTokenRenderDocumento(tokenRender);
+      setSrcdoc(htmlCompleto);
+    }, 0);
+
+    return () => {
+      estaActivo = false;
+    };
+  }, [documentoKey, documento.document, documento.sections, onEstadoRenderizacionChange]);
 
   const manejarCargaIframe = useCallback(() => {
     setTimeout(ajustarAltura, 2500);
@@ -673,7 +727,7 @@ ${contenido}
       if (typeof data.altura === "number" && data.altura > 100) {
         setAlturaIframe(data.altura + 60);
       }
-      setEstaPaginando(false);
+      finalizarRenderizadoDocumento();
     };
 
     window.addEventListener("message", manejarMensaje);
@@ -681,7 +735,7 @@ ${contenido}
     return () => {
       window.removeEventListener("message", manejarMensaje);
     };
-  }, [tokenRenderDocumento]);
+  }, [finalizarRenderizadoDocumento, tokenRenderDocumento]);
 
   const acercarInforme = useCallback(() => {
     setZoomModificadoPorUsuario(true);
@@ -755,80 +809,97 @@ ${contenido}
   }`;
 
   const controlesZoom = (
-    <div className="sticky top-0 z-20 flex flex-wrap items-center justify-end gap-2 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur sm:px-4">
-      <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur sm:px-4">
+      <div className="min-w-0">
+        {tituloBarra ? (
+          <>
+            <p className="truncate text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">
+              {tituloBarra}
+            </p>
+            {subtituloBarra ? (
+              <p className="mt-0.5 truncate text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                ({subtituloBarra})
+              </p>
+            ) : null}
+          </>
+        ) : null}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <CustomButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={`h-9 w-9 rounded-none ${
+              estaModoArrastrarInforme
+                ? "bg-slate-900 text-white hover:bg-slate-800"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+            onClick={() => setModoInteraccionInforme("arrastrar")}
+            aria-label="Mover informe arrastrando"
+            title="Mover"
+          >
+            <Hand size={16} />
+          </CustomButton>
+          <CustomButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={`h-9 w-9 rounded-none border-l border-slate-200 ${
+              !estaModoArrastrarInforme
+                ? "bg-slate-900 text-white hover:bg-slate-800"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+            onClick={() => setModoInteraccionInforme("seleccionar")}
+            aria-label="Seleccionar texto del informe"
+            title="Seleccionar texto"
+          >
+            <MousePointer2 size={16} />
+          </CustomButton>
+        </div>
+        <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <CustomButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-none text-slate-600 hover:bg-slate-100"
+            onClick={alejarInforme}
+            disabled={!puedeAlejar}
+            aria-label="Alejar vista del informe"
+            title="Alejar"
+          >
+            <Minus size={16} />
+          </CustomButton>
+          <span className="min-w-16 border-x border-slate-200 px-3 text-center text-xs font-bold tabular-nums text-slate-600">
+            {porcentajeZoom}%
+          </span>
+          <CustomButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-none text-slate-600 hover:bg-slate-100"
+            onClick={acercarInforme}
+            disabled={!puedeAcercar}
+            aria-label="Acercar vista del informe"
+            title="Acercar"
+          >
+            <Plus size={16} />
+          </CustomButton>
+        </div>
         <CustomButton
           type="button"
-          variant="ghost"
-          size="icon"
-          className={`h-9 w-9 rounded-none ${
-            estaModoArrastrarInforme
-              ? "bg-slate-900 text-white hover:bg-slate-800"
-              : "text-slate-600 hover:bg-slate-100"
-          }`}
-          onClick={() => setModoInteraccionInforme("arrastrar")}
-          aria-label="Mover informe arrastrando"
-          title="Mover"
+          variant="secondary"
+          size="sm"
+          className="h-9 px-3 text-xs"
+          onClick={restablecerZoomInforme}
+          disabled={!zoomModificadoPorUsuario && zoomInforme === zoomAjustadoInforme}
+          title="Ajustar al ancho"
         >
-          <Hand size={16} />
-        </CustomButton>
-        <CustomButton
-          type="button"
-          variant="ghost"
-          size="icon"
-          className={`h-9 w-9 rounded-none border-l border-slate-200 ${
-            !estaModoArrastrarInforme
-              ? "bg-slate-900 text-white hover:bg-slate-800"
-              : "text-slate-600 hover:bg-slate-100"
-          }`}
-          onClick={() => setModoInteraccionInforme("seleccionar")}
-          aria-label="Seleccionar texto del informe"
-          title="Seleccionar texto"
-        >
-          <MousePointer2 size={16} />
+          <RotateCcw size={14} />
+          Ajustar
         </CustomButton>
       </div>
-      <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <CustomButton
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 rounded-none text-slate-600 hover:bg-slate-100"
-          onClick={alejarInforme}
-          disabled={!puedeAlejar}
-          aria-label="Alejar vista del informe"
-          title="Alejar"
-        >
-          <Minus size={16} />
-        </CustomButton>
-        <span className="min-w-16 border-x border-slate-200 px-3 text-center text-xs font-bold tabular-nums text-slate-600">
-          {porcentajeZoom}%
-        </span>
-        <CustomButton
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 rounded-none text-slate-600 hover:bg-slate-100"
-          onClick={acercarInforme}
-          disabled={!puedeAcercar}
-          aria-label="Acercar vista del informe"
-          title="Acercar"
-        >
-          <Plus size={16} />
-        </CustomButton>
-      </div>
-      <CustomButton
-        type="button"
-        variant="secondary"
-        size="sm"
-        className="h-9 px-3 text-xs"
-        onClick={restablecerZoomInforme}
-        disabled={!zoomModificadoPorUsuario && zoomInforme === zoomAjustadoInforme}
-        title="Ajustar al ancho"
-      >
-        <RotateCcw size={14} />
-        Ajustar
-      </CustomButton>
     </div>
   );
 

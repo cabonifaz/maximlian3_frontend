@@ -35,14 +35,14 @@ interface UpdateUserMutationParams {
 }
 
 const USER_COLUMNS = [
-  { label: "Nombre" },
-  { label: "Apellido Paterno" },
-  { label: "Apellido Materno" },
-  { label: "Nombre de Usuario" },
-  { label: "Rol(es)" },
-  { label: "Correo" },
-  { label: "Estado" },
-  { label: "" },
+  { label: "Nombre", width: "14%" },
+  { label: "Apellido Paterno", width: "13%" },
+  { label: "Apellido Materno", width: "13%" },
+  { label: "Nombre de Usuario", width: "15%" },
+  { label: "Rol(es)", width: "15%" },
+  { label: "Correo", width: "20%" },
+  { label: "Estado", width: "7%" },
+  { label: "", width: "3%" },
 ];
 
 const ID_MAESTRO_ESTADO_USUARIO = 100;
@@ -283,7 +283,11 @@ export default function GestionUsuarios() {
           )}
         </div>
       </td>
-      <td className="px-6 py-4 text-gray-600">{user.correo}</td>
+      <td className="px-6 py-4 text-gray-600">
+        <span className="block truncate" title={user.correo}>
+          {user.correo}
+        </span>
+      </td>
       <td className="px-6 py-4">
         <span
           className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${

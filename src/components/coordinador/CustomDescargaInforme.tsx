@@ -44,12 +44,13 @@ export function CustomDescargaInforme({
       <CustomButton
         size="sm"
         disabled={deshabilitado}
+        aria-label="Descargar informe"
         aria-haspopup="menu"
         aria-expanded={estaAbierto}
+        title="Descargar informe"
         onClick={() => setEstaAbierto((valorActual) => !valorActual)}
       >
         <Download size={14} />
-        Descargar
         <ChevronDown size={14} />
       </CustomButton>
 

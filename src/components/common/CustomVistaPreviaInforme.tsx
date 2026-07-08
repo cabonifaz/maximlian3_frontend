@@ -70,6 +70,8 @@ interface PropsVistaPreviaInformeComparado {
   encabezado: EncabezadoVistaPreviaInforme;
   idInforme?: number;
   idPedido?: number;
+  tituloBarraDocumento?: string;
+  subtituloBarraDocumento?: string;
   indicadorReporteTraducido?: string;
   mostrarInformeTraducido?: boolean;
   ocuparAltoDisponibleDocumento?: boolean;
@@ -1041,6 +1043,8 @@ export function CustomVistaPreviaInformeComparado({
   encabezado,
   idInforme,
   idPedido,
+  tituloBarraDocumento,
+  subtituloBarraDocumento,
   indicadorReporteTraducido = "En traducción",
   mostrarInformeTraducido = true,
   ocuparAltoDisponibleDocumento = false,
@@ -1050,6 +1054,7 @@ export function CustomVistaPreviaInformeComparado({
   const [idTabActiva, setIdTabActiva] = useState<IdTabVistaPreviaInforme>("vista-general");
   const [documentoGenerado, setDocumentoGenerado] = useState<DocumentoInformeGenerado | null>(null);
   const [estaCargandoDocumento, setEstaCargandoDocumento] = useState(false);
+  const [estaRenderizandoDocumento, setEstaRenderizandoDocumento] = useState(false);
   const [errorDocumento, setErrorDocumento] = useState(false);
   const idInformeDocumento = Number(idInforme);
   const idPedidoDocumento = Number(idPedido);
@@ -1069,22 +1074,26 @@ export function CustomVistaPreviaInformeComparado({
     if (!puedeMostrarDocumento) {
       setDocumentoGenerado(null);
       setEstaCargandoDocumento(false);
+      setEstaRenderizandoDocumento(false);
       setErrorDocumento(false);
       return;
     }
 
     setDocumentoGenerado(null);
     setEstaCargandoDocumento(true);
+    setEstaRenderizandoDocumento(false);
     setErrorDocumento(false);
 
     void informeService
       .previsualizarDocumento(idInformeDocumento, idPedidoDocumento)
       .then((documento) => {
         if (estaCancelado) return;
+        setEstaRenderizandoDocumento(true);
         setDocumentoGenerado(documento);
       })
       .catch(() => {
         if (estaCancelado) return;
+        setEstaRenderizandoDocumento(false);
         setErrorDocumento(true);
       })
       .finally(() => {
@@ -1120,12 +1129,22 @@ export function CustomVistaPreviaInformeComparado({
             <PantallaCarga message="Generando vista previa del documento..." />
           </div>
         ) : documentoGenerado ? (
-          <CustomVisorDocumentoInforme
-            documento={documentoGenerado}
-            datosInvestigacion={datosInvestigacion}
-            encabezado={encabezado}
-            ocuparAltoDisponible={ocuparAltoDisponibleDocumento}
-          />
+          <div className="relative min-h-0">
+            {estaRenderizandoDocumento ? (
+              <div className="absolute inset-0 z-30 flex min-h-[calc(100vh-12rem)] items-center justify-center rounded-3xl border border-slate-200 bg-white/95 shadow-sm backdrop-blur-sm">
+                <PantallaCarga message="Renderizando informe..." />
+              </div>
+            ) : null}
+            <CustomVisorDocumentoInforme
+              documento={documentoGenerado}
+              datosInvestigacion={datosInvestigacion}
+              encabezado={encabezado}
+              ocuparAltoDisponible={ocuparAltoDisponibleDocumento}
+              tituloBarra={tituloBarraDocumento}
+              subtituloBarra={subtituloBarraDocumento}
+              onEstadoRenderizacionChange={setEstaRenderizandoDocumento}
+            />
+          </div>
         ) : (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500 shadow-sm">
             {errorDocumento ? "No se pudo generar la vista previa del documento." : "No hay documento disponible para mostrar."}

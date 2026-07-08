@@ -344,13 +344,13 @@ function SeccionEmpresas({
 
       <CustomTabla
         columns={[
-          { label: "Razon Social" },
-          { label: "Documento" },
-          { label: "Pais" },
-          { label: "Direccion" },
-          { label: "Telefono" },
-          { label: "Actividad Comercial" },
-          { label: "N° de Empleados", className: "text-right" },
+          { label: "Razon Social", width: "22%" },
+          { label: "Documento", width: "12%" },
+          { label: "Pais", width: "10%" },
+          { label: "Direccion", width: "22%" },
+          { label: "Telefono", width: "12%" },
+          { label: "Actividad Comercial", width: "16%" },
+          { label: "N° de Empleados", className: "text-right", width: "6%" },
         ]}
         data={empresas}
         getId={(empresa) => empresa.idCompania}
@@ -379,7 +379,9 @@ function SeccionEmpresas({
               {empresa.direccion}
             </td>
             <td className="px-6 py-4 text-sm text-slate-500">
-              {empresa.telefono}
+              <span className="block truncate" title={empresa.telefono}>
+                {empresa.telefono}
+              </span>
             </td>
             <td className="max-w-[300px] px-6 py-4 text-sm text-slate-500">
               {empresa.actividadComercial}

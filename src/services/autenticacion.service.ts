@@ -12,6 +12,7 @@ import maximilianService from "./maximilianService";
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type { LoginValidatorResponse } from "@maximilian/shared/types/autenticacion.type";
+import { limpiarDatosSesionLocal } from "./sesion.service";
 
 export const servicioAutenticacion = {
   login: async (credentials: DatosFormularioInicioSesion) => {
@@ -76,6 +77,7 @@ export const servicioAutenticacion = {
   logout: async () => {
     try {
       await signOut();
+      limpiarDatosSesionLocal();
     } catch (error) {
       console.error("Error signing out", error);
       throw error;

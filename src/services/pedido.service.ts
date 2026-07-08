@@ -29,6 +29,27 @@ function obtenerNumero(...valores: unknown[]): number {
   return 0;
 }
 
+function obtenerNumeroOpcional(...valores: unknown[]): number | undefined {
+  for (const valor of valores) {
+    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
+    if (typeof valor === "string" && valor.trim() !== "") {
+      const numero = Number(valor);
+      if (Number.isFinite(numero)) return numero;
+    }
+  }
+
+  return undefined;
+}
+
+function obtenerIndicadorBinario(...valores: unknown[]): 0 | 1 {
+  for (const valor of valores) {
+    if (valor === 1 || valor === "1" || valor === true) return 1;
+    if (valor === 0 || valor === "0" || valor === false) return 0;
+  }
+
+  return 0;
+}
+
 function obtenerTexto(...valores: unknown[]): string {
   for (const valor of valores) {
     if (typeof valor === "string") {
@@ -103,6 +124,8 @@ function normalizarFilaPedido(fila: unknown): PedidoListEntry {
     descripcionEstado: obtenerTexto(registro.descripcionEstado, registro.estadoDescripcion, registro.estado, registro.Estado) || "-",
     colorLetra: obtenerTexto(registro.colorLetra, registro.estadoColorLetra, registro.ColorLetra) || "#475569",
     colorFondo: obtenerTexto(registro.colorFondo, registro.estadoColorFondo, registro.ColorFondo) || "#f1f5f9",
+    idFase: obtenerNumeroOpcional(registro.idFase, registro.IdFase),
+    requiereTraduccion: obtenerIndicadorBinario(registro.requiereTraduccion, registro.RequiereTraduccion),
     vigencia: obtenerTexto(registro.vigencia, registro.Vigencia) || String(obtenerNumero(registro.vigencia, registro.Vigencia)),
     asignaciones: normalizarAsignaciones(registro.asignaciones),
   };

@@ -1,20 +1,49 @@
-import { useMemo, useState } from "react";
+import { type CSSProperties, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
-import { BadgeCheck, CheckCircle2, CircleX, ClipboardList, Search, SlidersHorizontal, TriangleAlert } from "lucide-react";
+import {
+  BadgeCheck,
+  CheckCircle2,
+  CircleX,
+  ClipboardList,
+  FileSearch,
+  Filter,
+  Languages,
+  Search,
+  TriangleAlert,
+} from "lucide-react";
+import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { informeService } from "@maximilian/services/informe.service";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { InformeListEntry } from "@maximilian/shared/types/informe.type";
 import type { TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
+import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { obtenerColorEstadoAnalista } from "@maximilian/shared/utils/investigacion.util";
 
+type ClaveFiltroRevision = "tipo" | "estado" | "plantilla";
+
+function normalizarOpcionesFiltro(
+  opciones?: EntradaTablaMaestra[],
+  campoTexto: "string1" | "string2" = "string1",
+) {
+  return opciones?.map((opcion) => ({
+    ...opcion,
+    string1: opcion[campoTexto] || opcion.string1 || opcion.descripcion,
+  }));
+}
+
 function obtenerIconoTarjeta(id: string) {
-  if (id === "pendiente") return <ClipboardList size={18} className="text-orange-500" />;
-  if (id === "aprobado") return <CheckCircle2 size={18} className="text-emerald-500" />;
-  if (id === "rechazado") return <CircleX size={18} className="text-rose-500" />;
-  if (id === "vigente") return <BadgeCheck size={18} className="text-slate-600" />;
+  if (id === "pendiente")
+    return <ClipboardList size={18} className="text-orange-500" />;
+  if (id === "aprobado")
+    return <CheckCircle2 size={18} className="text-emerald-500" />;
+  if (id === "rechazado")
+    return <CircleX size={18} className="text-rose-500" />;
+  if (id === "vigente")
+    return <BadgeCheck size={18} className="text-slate-600" />;
   return <TriangleAlert size={18} className="text-red-400" />;
 }
 
@@ -23,11 +52,14 @@ function obtenerBadgeVigencia(registro: InformeListEntry) {
   const textoNormalizado = texto.toLowerCase();
   const esVencido = textoNormalizado.includes("venc");
   const dias = texto.match(/\d+/)?.[0];
-  const esVencimientoInmediato = !esVencido && dias != null && Number(dias) <= 1;
-  const color = registro.vigenciaColor
-    || (esVencido ? "#dc2626" : esVencimientoInmediato ? "#b45309" : "#166534");
-  const fondo = registro.vigenciaFondo
-    || (esVencido ? "#fef2f2" : esVencimientoInmediato ? "#fffbeb" : "#ecfdf5");
+  const esVencimientoInmediato =
+    !esVencido && dias != null && Number(dias) <= 1;
+  const color =
+    registro.vigenciaColor ||
+    (esVencido ? "#dc2626" : esVencimientoInmediato ? "#b45309" : "#166534");
+  const fondo =
+    registro.vigenciaFondo ||
+    (esVencido ? "#fef2f2" : esVencimientoInmediato ? "#fffbeb" : "#ecfdf5");
 
   return (
     <span
@@ -44,23 +76,83 @@ function obtenerBadgeVigencia(registro: InformeListEntry) {
   );
 }
 
+function obtenerClasesFaseActiva(estado: InformeListEntry["estado"]) {
+  return `${obtenerColorEstadoAnalista(estado)} border-transparent`;
+}
+
+function obtenerIndicadorFase(registro: InformeListEntry) {
+  const requiereTraduccion = registro.requiereTraduccion === 1;
+  const esFaseTraduccion = requiereTraduccion && registro.idFase === 2;
+  const clasesAnalista = esFaseTraduccion
+    ? "border-green-200 bg-green-50 text-green-600"
+    : obtenerClasesFaseActiva(registro.estado);
+  if (!requiereTraduccion) {
+    return (
+      <div className="mx-auto flex w-16 items-center justify-center" title="No requiere traduccion">
+        <span className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${clasesAnalista}`}>
+          <FileSearch size={14} />
+        </span>
+      </div>
+    );
+  }
+
+  const clasesTraduccion = esFaseTraduccion
+    ? obtenerClasesFaseActiva(registro.estado)
+    : "border-slate-200 bg-slate-50 text-slate-300";
+  const clasesLinea = esFaseTraduccion
+    ? "bg-green-200"
+    : "bg-slate-200";
+
+  return (
+    <div className="relative mx-auto flex w-16 items-center justify-between" title="Analista / Traduccion">
+      <span className={`absolute left-4 right-4 top-1/2 h-1 -translate-y-1/2 rounded-full ${clasesLinea}`} />
+      <span className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${clasesAnalista}`}>
+        <FileSearch size={14} />
+      </span>
+      <span className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${clasesTraduccion}`}>
+        <Languages size={14} />
+      </span>
+    </div>
+  );
+}
+
 export default function GestionRevisionAprobacion() {
   const navigate = useNavigate();
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
+  const [filtroPlantillas, setFiltroPlantillas] = useState<number[]>([]);
+  const [filtroEstados, setFiltroEstados] = useState<number[]>([]);
+  const [filtroTipos, setFiltroTipos] = useState<number[]>([]);
+  const [filtroEncabezadoAbierto, setFiltroEncabezadoAbierto] =
+    useState<ClaveFiltroRevision | null>(null);
+  const [estiloFiltroEncabezado, setEstiloFiltroEncabezado] =
+    useState<CSSProperties>({});
   const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
-
+  const idPlantillaFiltro = filtroPlantillas[0];
+  const idEstadoFiltro = filtroEstados[0];
+  const idTipoTramiteFiltro = filtroTipos[0];
   const {
     data: respuestaInformes,
     isLoading,
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["informes-bandeja-coordinador-revision", paginaActual, terminoBusquedaConRetardo],
+    queryKey: [
+      "informes-bandeja-coordinador-revision",
+      "con-plantilla",
+      paginaActual,
+      terminoBusquedaConRetardo,
+      idPlantillaFiltro,
+      idEstadoFiltro,
+      idTipoTramiteFiltro,
+    ],
     queryFn: () =>
       informeService.list({
         numPag: paginaActual,
         busqueda: terminoBusquedaConRetardo.trim() || undefined,
+        idPlantilla: idPlantillaFiltro,
+        idEstado: idEstadoFiltro,
+        idTipoTramite: idTipoTramiteFiltro,
       }),
     enabled: terminoBusqueda === terminoBusquedaConRetardo,
     retry: false,
@@ -72,13 +164,69 @@ export default function GestionRevisionAprobacion() {
     [respuestaInformes?.lstInforme],
   );
 
+  const { data: opcionesPlantillaInforme } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.PLANTILLA_INFORME],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLANTILLA_INFORME),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesTipoTramite } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_TRAMITE],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_TRAMITE),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesEstadoInforme } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.ESTADO_INFORME],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_INFORME),
+    staleTime: Infinity,
+  });
+
+  const opcionesPlantillaFiltro = useMemo(
+    () => normalizarOpcionesFiltro(opcionesPlantillaInforme),
+    [opcionesPlantillaInforme],
+  );
+  const opcionesTipoFiltro = useMemo(
+    () => normalizarOpcionesFiltro(opcionesTipoTramite, "string2"),
+    [opcionesTipoTramite],
+  );
+  const opcionesEstadoFiltro = useMemo(
+    () => normalizarOpcionesFiltro(opcionesEstadoInforme),
+    [opcionesEstadoInforme],
+  );
+
   const resumenTarjetas = useMemo<TarjetaResumenAnalista[]>(() => {
     return [
-      { id: "pendiente", titulo: "Pendiente", valor: respuestaInformes?.pendienteAprobacion ?? 0, colorIcono: "text-orange-500" },
-      { id: "aprobado", titulo: "Aprobado", valor: respuestaInformes?.aprobado ?? 0, colorIcono: "text-emerald-500" },
-      { id: "rechazado", titulo: "Rechazado", valor: respuestaInformes?.rechazado ?? 0, colorIcono: "text-rose-500" },
-      { id: "vigente", titulo: "Vigentes", valor: respuestaInformes?.vigente ?? 0, colorIcono: "text-slate-600" },
-      { id: "vencido", titulo: "Vencidos", valor: respuestaInformes?.vencido ?? 0, colorIcono: "text-red-400" },
+      {
+        id: "pendiente",
+        titulo: "Pendiente",
+        valor: respuestaInformes?.pendienteAprobacion ?? 0,
+        colorIcono: "text-orange-500",
+      },
+      {
+        id: "aprobado",
+        titulo: "Aprobado",
+        valor: respuestaInformes?.aprobado ?? 0,
+        colorIcono: "text-emerald-500",
+      },
+      {
+        id: "rechazado",
+        titulo: "Rechazado",
+        valor: respuestaInformes?.rechazado ?? 0,
+        colorIcono: "text-rose-500",
+      },
+      {
+        id: "vigente",
+        titulo: "Vigentes",
+        valor: respuestaInformes?.vigente ?? 0,
+        colorIcono: "text-slate-600",
+      },
+      {
+        id: "vencido",
+        titulo: "Vencidos",
+        valor: respuestaInformes?.vencido ?? 0,
+        colorIcono: "text-red-400",
+      },
     ];
   }, [respuestaInformes]);
 
@@ -91,17 +239,122 @@ export default function GestionRevisionAprobacion() {
     if (registro.idInformeOriginal != null && registro.idInformeOriginal > 0) {
       parametros.set("idInformeOriginal", String(registro.idInformeOriginal));
     }
-    navigate(`/coordinador/revision/${registro.idPedido}?${parametros.toString()}`);
+    navigate(
+      `/coordinador/revision/${registro.idPedido}?${parametros.toString()}`,
+    );
+  };
+
+  const crearEncabezadoFiltro = (
+    clave: ClaveFiltroRevision,
+    titulo: string,
+    opciones: EntradaTablaMaestra[] | undefined,
+    valores: number[],
+    onChange: (ids: number[]) => void,
+  ) => {
+    const estaAbierto = filtroEncabezadoAbierto === clave;
+    const tieneFiltro = valores.length > 0;
+    const actualizarSeleccion = (ids: number[]) => {
+      const idAgregado = ids.find((id) => !valores.includes(id));
+      onChange(idAgregado != null ? [idAgregado] : ids.slice(0, 1));
+      setPaginaActual(1);
+    };
+
+    return (
+      <div className="relative normal-case">
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+            {titulo}
+          </span>
+          <button
+            type="button"
+            aria-label={`Filtrar por ${titulo}`}
+            title={`Filtrar por ${titulo}`}
+            className={`relative flex h-8 w-8 items-center justify-center rounded-lg border transition ${
+              estaAbierto || tieneFiltro
+                ? "border-brand-wine/30 bg-brand-wine/10 text-brand-wine"
+                : "border-gray-200 bg-white text-gray-400 hover:border-brand-wine/30 hover:text-brand-wine"
+            }`}
+            onClick={(event) => {
+              const rect = event.currentTarget.getBoundingClientRect();
+              setEstiloFiltroEncabezado({
+                top: rect.bottom + 8,
+                left: Math.min(rect.left, window.innerWidth - 280),
+              });
+              setFiltroEncabezadoAbierto((actual) =>
+                actual === clave ? null : clave,
+              );
+            }}
+          >
+            <Filter size={15} />
+            {tieneFiltro ? (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-wine px-1 text-[10px] font-bold text-white">
+                {valores.length}
+              </span>
+            ) : null}
+          </button>
+        </div>
+
+        {estaAbierto ? (
+          <>
+            <div
+              className="fixed inset-0 z-[90]"
+              onClick={() => setFiltroEncabezadoAbierto(null)}
+            />
+            <div
+              className="fixed z-[91] w-64 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-2xl shadow-slate-950/15"
+              style={estiloFiltroEncabezado}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <MultiCustomSelectorBuscable
+                label={titulo}
+                triggerIcon={Filter}
+                options={opciones}
+                value={valores}
+                onChange={actualizarSeleccion}
+                resumirSelecciones
+                placeholder="Seleccione"
+              />
+            </div>
+          </>
+        ) : null}
+      </div>
+    );
   };
 
   const columnas = [
-    { label: "ID Pedido" },
-    { label: "Investigado" },
-    { label: "Vigencia" },
-    { label: "Tipo" },
-    { label: "Estado", className: "text-center" },
-    { label: "Acción", className: "text-right" },
+    { label: "ID Pedido", width: "7%" },
+    { label: "Investigado", width: "22%" },
+    { label: "Vigencia", width: "11%" },
+    {
+      label: crearEncabezadoFiltro("tipo", "Tipo", opcionesTipoFiltro, filtroTipos, setFiltroTipos),
+      width: "10%",
+    },
+    {
+      label: crearEncabezadoFiltro("estado", "Estado", opcionesEstadoFiltro, filtroEstados, setFiltroEstados),
+      className: "text-center",
+      width: "13%",
+    },
+    {
+      label: crearEncabezadoFiltro("plantilla", "Plantilla", opcionesPlantillaFiltro, filtroPlantillas, setFiltroPlantillas),
+      className: "text-center",
+      width: "15%",
+    },
+    { label: "Fase", className: "text-center", width: "8%" },
+    { label: "Accion", className: "text-right", width: "12%" },
   ];
+
+  const obtenerNombrePlantilla = (idPlantilla?: number) => {
+    if (!idPlantilla) return "-";
+    const opcionPlantilla = opcionesPlantillaInforme?.find(
+      (opcion) => opcion.num1 === idPlantilla,
+    );
+
+    return (
+      opcionPlantilla?.string1 ||
+      opcionPlantilla?.descripcion ||
+      `Plantilla ${idPlantilla}`
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -119,7 +372,9 @@ export default function GestionRevisionAprobacion() {
                 {tarjeta.titulo}
               </span>
             </div>
-            <p className={`text-3xl font-bold ${tarjeta.id === "vencido" ? "text-red-500" : "text-brand-black"}`}>
+            <p
+              className={`text-3xl font-bold ${tarjeta.id === "vencido" ? "text-red-500" : "text-brand-black"}`}
+            >
               {tarjeta.valor}
             </p>
           </article>
@@ -144,22 +399,13 @@ export default function GestionRevisionAprobacion() {
               <input
                 value={terminoBusqueda}
                 onChange={(event) => setTerminoBusqueda(event.target.value)}
-                placeholder="Buscar por ID o Empresa..."
+                placeholder="Buscar por Investigado..."
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white pl-11 pr-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
               />
             </label>
-
-            <CustomButton
-              variant="secondary"
-              size="md"
-              className="h-12 min-w-28 text-sm font-semibold"
-            >
-              <SlidersHorizontal size={16} />
-              Filtros
-            </CustomButton>
-
           </div>
         </div>
+
 
         <CustomTabla
           columns={columnas}
@@ -181,16 +427,31 @@ export default function GestionRevisionAprobacion() {
                 #{registro.idPedido}
               </td>
               <td className="max-w-48 px-6 py-4 text-sm font-semibold text-slate-700">
-                <span className="line-clamp-1">{registro.investigado}</span>
+                <span className="block truncate" title={registro.investigado}>
+                  {registro.investigado}
+                </span>
               </td>
               <td className="px-6 py-4">{obtenerBadgeVigencia(registro)}</td>
-              <td className="px-6 py-4 text-sm text-slate-500">{registro.tipo}</td>
+              <td className="px-6 py-4 text-sm text-slate-500">
+                {registro.tipo}
+              </td>
               <td className="px-6 py-4 text-center">
                 <span
                   className={`inline-flex rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wide ${obtenerColorEstadoAnalista(registro.estado)}`}
                 >
                   {registro.estadoInforme}
                 </span>
+              </td>
+              <td className="px-6 py-4 text-center text-sm font-semibold leading-5 text-slate-500">
+                <span
+                  className="block whitespace-normal break-words"
+                  title={obtenerNombrePlantilla(registro.idPlantilla)}
+                >
+                  {obtenerNombrePlantilla(registro.idPlantilla)}
+                </span>
+              </td>
+              <td className="px-6 py-4 text-center">
+                {obtenerIndicadorFase(registro)}
               </td>
               <td className="px-6 py-4">
                 <div className="flex justify-end">
@@ -199,7 +460,9 @@ export default function GestionRevisionAprobacion() {
                     className="h-10 w-36 justify-center px-3 text-[11px] uppercase tracking-[0.12em]"
                     onClick={() => abrirRevision(registro)}
                   >
-                    {registro.estado === "pendiente-aprobacion" ? "Revisar" : "Ver Informe"}
+                    {registro.estado === "pendiente-aprobacion"
+                      ? "Revisar"
+                      : "Ver Informe"}
                   </CustomButton>
                 </div>
               </td>
@@ -210,4 +473,3 @@ export default function GestionRevisionAprobacion() {
     </div>
   );
 }
-
