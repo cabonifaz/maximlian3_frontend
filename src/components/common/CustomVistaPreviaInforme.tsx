@@ -1129,7 +1129,7 @@ export function CustomVistaPreviaInformeComparado({
             <PantallaCarga message="Generando vista previa del documento..." />
           </div>
         ) : documentoGenerado ? (
-          <div className="relative min-h-0">
+          <div className={`relative min-h-0 ${ocuparAltoDisponibleDocumento ? "flex-1" : ""}`}>
             {estaRenderizandoDocumento ? (
               <div className="absolute inset-0 z-30 flex min-h-[calc(100vh-12rem)] items-center justify-center rounded-3xl border border-slate-200 bg-white/95 shadow-sm backdrop-blur-sm">
                 <PantallaCarga message="Renderizando informe..." />

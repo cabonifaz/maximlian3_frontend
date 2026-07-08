@@ -355,6 +355,7 @@ export default function RevisionInformeCoordinador() {
         tipoPlantilla={nombrePlantillaInforme}
         mostrarInformeTraducido={Boolean(idIdiomaPedido && idIdiomaPedido !== 1)}
         mostrarPie={false}
+        ocuparAltoDisponible
         onCerrar={() => navigate("/coordinador/revision")}
         onDescargar={(formato) => {
           void descargarDocumento(formato);
