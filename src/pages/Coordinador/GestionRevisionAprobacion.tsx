@@ -321,8 +321,8 @@ export default function GestionRevisionAprobacion() {
   };
 
   const columnas = [
-    { label: "ID Pedido", width: "7%" },
-    { label: "Investigado", width: "22%" },
+    { label: "ID Pedido", width: "8%" },
+    { label: "Investigado", width: "21%" },
     { label: "Vigencia", width: "11%" },
     {
       label: crearEncabezadoFiltro("tipo", "Tipo", opcionesTipoFiltro, filtroTipos, setFiltroTipos),

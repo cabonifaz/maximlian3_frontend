@@ -277,8 +277,8 @@ export default function BandejaAnalista() {
   };
 
   const columnas = [
-    { label: "ID Pedido", width: "9%" },
-    { label: "Investigado", width: "32%" },
+    { label: "ID Pedido", width: "10%" },
+    { label: "Investigado", width: "31%" },
     { label: "País", width: "14%" },
     { label: "Fecha", width: "11%" },
     { label: "Tipo", className: "text-center", width: "8%" },
