@@ -14,6 +14,8 @@ interface PropsCustomVisorDocumentoInforme {
   documento: DocumentoInformeGenerado;
   datosInvestigacion?: DatosInvestigacionAnalista;
   ocuparAltoDisponible?: boolean;
+  tituloBarra?: string;
+  subtituloBarra?: string;
   encabezado?: {
     pais: string;
     fecha: string;
@@ -474,6 +476,8 @@ function construirHtmlContenido(
 export function CustomVisorDocumentoInforme({
   documento,
   ocuparAltoDisponible = false,
+  tituloBarra,
+  subtituloBarra,
 }: PropsCustomVisorDocumentoInforme) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const contenedorScrollRef = useRef<HTMLDivElement>(null);
@@ -755,80 +759,97 @@ ${contenido}
   }`;
 
   const controlesZoom = (
-    <div className="sticky top-0 z-20 flex flex-wrap items-center justify-end gap-2 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur sm:px-4">
-      <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur sm:px-4">
+      <div className="min-w-0">
+        {tituloBarra ? (
+          <>
+            <p className="truncate text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">
+              {tituloBarra}
+            </p>
+            {subtituloBarra ? (
+              <p className="mt-0.5 truncate text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                ({subtituloBarra})
+              </p>
+            ) : null}
+          </>
+        ) : null}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <CustomButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={`h-9 w-9 rounded-none ${
+              estaModoArrastrarInforme
+                ? "bg-slate-900 text-white hover:bg-slate-800"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+            onClick={() => setModoInteraccionInforme("arrastrar")}
+            aria-label="Mover informe arrastrando"
+            title="Mover"
+          >
+            <Hand size={16} />
+          </CustomButton>
+          <CustomButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={`h-9 w-9 rounded-none border-l border-slate-200 ${
+              !estaModoArrastrarInforme
+                ? "bg-slate-900 text-white hover:bg-slate-800"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+            onClick={() => setModoInteraccionInforme("seleccionar")}
+            aria-label="Seleccionar texto del informe"
+            title="Seleccionar texto"
+          >
+            <MousePointer2 size={16} />
+          </CustomButton>
+        </div>
+        <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <CustomButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-none text-slate-600 hover:bg-slate-100"
+            onClick={alejarInforme}
+            disabled={!puedeAlejar}
+            aria-label="Alejar vista del informe"
+            title="Alejar"
+          >
+            <Minus size={16} />
+          </CustomButton>
+          <span className="min-w-16 border-x border-slate-200 px-3 text-center text-xs font-bold tabular-nums text-slate-600">
+            {porcentajeZoom}%
+          </span>
+          <CustomButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-none text-slate-600 hover:bg-slate-100"
+            onClick={acercarInforme}
+            disabled={!puedeAcercar}
+            aria-label="Acercar vista del informe"
+            title="Acercar"
+          >
+            <Plus size={16} />
+          </CustomButton>
+        </div>
         <CustomButton
           type="button"
-          variant="ghost"
-          size="icon"
-          className={`h-9 w-9 rounded-none ${
-            estaModoArrastrarInforme
-              ? "bg-slate-900 text-white hover:bg-slate-800"
-              : "text-slate-600 hover:bg-slate-100"
-          }`}
-          onClick={() => setModoInteraccionInforme("arrastrar")}
-          aria-label="Mover informe arrastrando"
-          title="Mover"
+          variant="secondary"
+          size="sm"
+          className="h-9 px-3 text-xs"
+          onClick={restablecerZoomInforme}
+          disabled={!zoomModificadoPorUsuario && zoomInforme === zoomAjustadoInforme}
+          title="Ajustar al ancho"
         >
-          <Hand size={16} />
-        </CustomButton>
-        <CustomButton
-          type="button"
-          variant="ghost"
-          size="icon"
-          className={`h-9 w-9 rounded-none border-l border-slate-200 ${
-            !estaModoArrastrarInforme
-              ? "bg-slate-900 text-white hover:bg-slate-800"
-              : "text-slate-600 hover:bg-slate-100"
-          }`}
-          onClick={() => setModoInteraccionInforme("seleccionar")}
-          aria-label="Seleccionar texto del informe"
-          title="Seleccionar texto"
-        >
-          <MousePointer2 size={16} />
+          <RotateCcw size={14} />
+          Ajustar
         </CustomButton>
       </div>
-      <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <CustomButton
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 rounded-none text-slate-600 hover:bg-slate-100"
-          onClick={alejarInforme}
-          disabled={!puedeAlejar}
-          aria-label="Alejar vista del informe"
-          title="Alejar"
-        >
-          <Minus size={16} />
-        </CustomButton>
-        <span className="min-w-16 border-x border-slate-200 px-3 text-center text-xs font-bold tabular-nums text-slate-600">
-          {porcentajeZoom}%
-        </span>
-        <CustomButton
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 rounded-none text-slate-600 hover:bg-slate-100"
-          onClick={acercarInforme}
-          disabled={!puedeAcercar}
-          aria-label="Acercar vista del informe"
-          title="Acercar"
-        >
-          <Plus size={16} />
-        </CustomButton>
-      </div>
-      <CustomButton
-        type="button"
-        variant="secondary"
-        size="sm"
-        className="h-9 px-3 text-xs"
-        onClick={restablecerZoomInforme}
-        disabled={!zoomModificadoPorUsuario && zoomInforme === zoomAjustadoInforme}
-        title="Ajustar al ancho"
-      >
-        <RotateCcw size={14} />
-        Ajustar
-      </CustomButton>
     </div>
   );
 

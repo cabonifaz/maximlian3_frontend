@@ -60,6 +60,8 @@ export function CustomVisorRevisionInforme({
     Number(idInforme) > 0 &&
     Number.isFinite(Number(idPedido)) &&
     Number(idPedido) > 0;
+  const textoPlantilla = tipoPlantilla || "Plantilla no definida";
+
   const renderControlesRevision = (className: string) => (
     <div className={className}>
       {mostrarAccionesRevision ? (
@@ -100,11 +102,11 @@ export function CustomVisorRevisionInforme({
     >
       <header className="z-30 shrink-0 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
         <div
-          className={`flex flex-wrap items-center gap-4 px-5 py-2.5 ${mostrarRegresar || !mostrarInformeTraducido ? "justify-between" : "justify-end"}`}
+          className={`grid items-center gap-3 px-5 py-2.5 ${mostrarRegresar || !mostrarInformeTraducido ? "grid-cols-[auto_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}
         >
           {mostrarRegresar ||
           (!mostrarInformeTraducido && mostrarEncabezadoRevision) ? (
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               {mostrarRegresar ? (
                 <CustomButton variant="secondary" size="sm" onClick={onVolver}>
                   <ArrowLeft size={14} />
@@ -129,30 +131,20 @@ export function CustomVisorRevisionInforme({
             </div>
           ) : null}
 
+          <div
+            className={`min-w-0 ${mostrarRegresar || !mostrarInformeTraducido ? "justify-self-center text-center" : "justify-self-start text-left"}`}
+          >
+            <p className="truncate text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+              Plantilla
+            </p>
+            <p className="truncate text-xs font-bold uppercase tracking-[0.14em] text-slate-600">
+              {textoPlantilla}
+            </p>
+          </div>
+
           {renderControlesRevision(
             "flex flex-wrap items-center justify-end gap-2",
           )}
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-5 py-2">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">
-              {tituloInforme}
-            </p>
-            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-              ({idiomaInforme})
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {tipoPlantilla ? (
-              <span className="rounded-full bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                Plantilla: {tipoPlantilla}
-              </span>
-            ) : null}
-            <span className="rounded-full bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-              {mostrarInformeTraducido ? "Traducido" : "Original"}
-            </span>
-          </div>
         </div>
       </header>
 
@@ -165,6 +157,8 @@ export function CustomVisorRevisionInforme({
             idPedido={idPedido}
             mostrarInformeTraducido={mostrarInformeTraducido}
             ocuparAltoDisponibleDocumento={ocuparAltoDisponible}
+            tituloBarraDocumento={tituloInforme}
+            subtituloBarraDocumento={idiomaInforme}
             className="mx-auto flex h-full max-w-6xl flex-col space-y-3"
           />
         ) : (

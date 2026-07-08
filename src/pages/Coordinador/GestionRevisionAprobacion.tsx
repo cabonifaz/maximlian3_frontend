@@ -6,10 +6,11 @@ import {
   CheckCircle2,
   CircleX,
   ClipboardList,
+  Filter,
   Search,
-  SlidersHorizontal,
   TriangleAlert,
 } from "lucide-react";
+import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
@@ -17,8 +18,21 @@ import { informeService } from "@maximilian/services/informe.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { InformeListEntry } from "@maximilian/shared/types/informe.type";
 import type { TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { obtenerColorEstadoAnalista } from "@maximilian/shared/utils/investigacion.util";
+
+const OPCIONES_ESTADO_INFORME = [
+  { num1: 5, string1: "Pendiente Aprobacion" },
+  { num1: 4, string1: "Aprobado" },
+  { num1: 2, string1: "Rechazado" },
+] as EntradaTablaMaestra[];
+
+function normalizarOpcionesFiltro(opciones?: EntradaTablaMaestra[]) {
+  return opciones?.map((opcion) => ({
+    ...opcion,
+    string1: opcion.string1 || opcion.descripcion,
+  }));
+}
 
 function obtenerIconoTarjeta(id: string) {
   if (id === "pendiente")
@@ -65,7 +79,31 @@ export default function GestionRevisionAprobacion() {
   const navigate = useNavigate();
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
+  const [filtroPlantillas, setFiltroPlantillas] = useState<number[]>([]);
+  const [filtroEstados, setFiltroEstados] = useState<number[]>([]);
+  const [filtroTipos, setFiltroTipos] = useState<number[]>([]);
+  const [estaAbiertoFiltro, setEstaAbiertoFiltro] = useState(false);
   const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
+  const plantillasFiltroClave = useMemo(
+    () => [...filtroPlantillas].sort((a, b) => a - b).join(","),
+    [filtroPlantillas],
+  );
+  const estadosFiltroClave = useMemo(
+    () => [...filtroEstados].sort((a, b) => a - b).join(","),
+    [filtroEstados],
+  );
+  const tiposFiltroClave = useMemo(
+    () => [...filtroTipos].sort((a, b) => a - b).join(","),
+    [filtroTipos],
+  );
+  const cantidadFiltrosAplicados =
+    filtroPlantillas.length + filtroEstados.length + filtroTipos.length;
+  const limpiarFiltros = () => {
+    setFiltroPlantillas([]);
+    setFiltroEstados([]);
+    setFiltroTipos([]);
+    setPaginaActual(1);
+  };
 
   const {
     data: respuestaInformes,
@@ -78,11 +116,17 @@ export default function GestionRevisionAprobacion() {
       "con-plantilla",
       paginaActual,
       terminoBusquedaConRetardo,
+      plantillasFiltroClave,
+      estadosFiltroClave,
+      tiposFiltroClave,
     ],
     queryFn: () =>
       informeService.list({
         numPag: paginaActual,
         busqueda: terminoBusquedaConRetardo.trim() || undefined,
+        idPlantilla: plantillasFiltroClave || undefined,
+        idEstado: estadosFiltroClave || undefined,
+        idTipoTramite: tiposFiltroClave || undefined,
       }),
     enabled: terminoBusqueda === terminoBusquedaConRetardo,
     retry: false,
@@ -99,6 +143,21 @@ export default function GestionRevisionAprobacion() {
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLANTILLA_INFORME),
     staleTime: Infinity,
   });
+
+  const { data: opcionesTipoTramite } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_TRAMITE],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_TRAMITE),
+    staleTime: Infinity,
+  });
+
+  const opcionesPlantillaFiltro = useMemo(
+    () => normalizarOpcionesFiltro(opcionesPlantillaInforme),
+    [opcionesPlantillaInforme],
+  );
+  const opcionesTipoFiltro = useMemo(
+    () => normalizarOpcionesFiltro(opcionesTipoTramite),
+    [opcionesTipoTramite],
+  );
 
   const resumenTarjetas = useMemo<TarjetaResumenAnalista[]>(() => {
     return [
@@ -134,6 +193,37 @@ export default function GestionRevisionAprobacion() {
       },
     ];
   }, [respuestaInformes]);
+
+  const registrosFiltrados = useMemo(() => {
+    let lista = registros;
+
+    if (filtroPlantillas.length > 0) {
+      const plantillasSeleccionadas = new Set(filtroPlantillas);
+      lista = lista.filter(
+        (registro) => registro.idPlantilla != null && plantillasSeleccionadas.has(registro.idPlantilla),
+      );
+    }
+
+    if (filtroEstados.length > 0) {
+      const estadosSeleccionados = new Set(filtroEstados);
+      lista = lista.filter((registro) => estadosSeleccionados.has(registro.idEstado));
+    }
+
+    if (filtroTipos.length > 0) {
+      const tiposSeleccionados = new Set(
+        opcionesTipoFiltro
+          ?.filter((opcion) => opcion.num1 != null && filtroTipos.includes(opcion.num1))
+          .map((opcion) => (opcion.string1 || "").trim().toLowerCase())
+          .filter(Boolean) ?? [],
+      );
+
+      if (tiposSeleccionados.size > 0) {
+        lista = lista.filter((registro) => tiposSeleccionados.has(registro.tipo.trim().toLowerCase()));
+      }
+    }
+
+    return lista;
+  }, [filtroEstados, filtroPlantillas, filtroTipos, opcionesTipoFiltro, registros]);
 
   const abrirRevision = (registro: InformeListEntry) => {
     const parametros = new URLSearchParams();
@@ -220,20 +310,130 @@ export default function GestionRevisionAprobacion() {
               />
             </label>
 
-            <CustomButton
-              variant="secondary"
-              size="md"
-              className="h-12 min-w-28 text-sm font-semibold"
-            >
-              <SlidersHorizontal size={16} />
-              Filtros
-            </CustomButton>
+            <div className="relative">
+              <CustomButton
+                variant="secondary"
+                size="md"
+                className={`h-12 min-w-28 rounded-xl text-sm font-semibold shadow-sm ${
+                  estaAbiertoFiltro || cantidadFiltrosAplicados > 0
+                    ? "border-brand-wine/30 bg-brand-wine/5 text-brand-wine"
+                    : ""
+                }`}
+                onClick={() => setEstaAbiertoFiltro((abierto) => !abierto)}
+              >
+                <Filter size={16} />
+                Filtros
+                {cantidadFiltrosAplicados > 0 ? (
+                  <span className="ml-1 rounded-full bg-brand-wine px-2 py-0.5 text-[11px] font-bold text-white">
+                    {cantidadFiltrosAplicados}
+                  </span>
+                ) : null}
+              </CustomButton>
+
+              {estaAbiertoFiltro ? (
+                <>
+                  <div
+                    className="fixed inset-0 z-[90]"
+                    onClick={() => setEstaAbiertoFiltro(false)}
+                  />
+                  <div className="absolute right-0 top-full z-[91] mt-2 w-[min(38rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/15">
+                    <div
+                      className="bg-white"
+                      role="menu"
+                      aria-labelledby="titulo-filtros-revision"
+                    >
+                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-3 py-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-wine/10 text-brand-wine">
+                            <Filter size={14} />
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <h2
+                              id="titulo-filtros-revision"
+                              className="text-sm font-bold text-slate-900"
+                            >
+                              Filtros de revision
+                            </h2>
+                            {cantidadFiltrosAplicados > 0 ? (
+                              <p className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500">
+                                {cantidadFiltrosAplicados} activos
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        {cantidadFiltrosAplicados > 0 ? (
+                          <button
+                            type="button"
+                            className="h-7 rounded-lg border border-brand-wine/20 bg-white px-2 text-[11px] font-bold text-brand-wine transition hover:bg-brand-wine/10"
+                            onClick={limpiarFiltros}
+                          >
+                            Limpiar
+                          </button>
+                        ) : null}
+                      </div>
+
+                      <div className="grid gap-2 bg-slate-50/80 p-2 sm:grid-cols-3">
+                        <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
+                          <MultiCustomSelectorBuscable
+                            label="Plantilla"
+                            triggerIcon={Filter}
+                            options={opcionesPlantillaFiltro}
+                            value={filtroPlantillas}
+                            onChange={(ids) => {
+                              setFiltroPlantillas(ids);
+                              setPaginaActual(1);
+                            }}
+                            resumirSelecciones
+                            mostrarAccionSeleccionarTodos
+                            placeholder="Seleccione"
+                          />
+                        </div>
+
+                        <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
+                          <MultiCustomSelectorBuscable
+                            label="Estado"
+                            triggerIcon={Filter}
+                            options={OPCIONES_ESTADO_INFORME}
+                            value={filtroEstados}
+                            onChange={(ids) => {
+                              setFiltroEstados(ids);
+                              setPaginaActual(1);
+                            }}
+                            resumirSelecciones
+                            mostrarAccionSeleccionarTodos
+                            placeholder="Seleccione"
+                          />
+                        </div>
+
+                        <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
+                          <MultiCustomSelectorBuscable
+                            label="Tipo"
+                            triggerIcon={Filter}
+                            options={opcionesTipoFiltro}
+                            value={filtroTipos}
+                            onChange={(ids) => {
+                              setFiltroTipos(ids);
+                              setPaginaActual(1);
+                            }}
+                            resumirSelecciones
+                            mostrarAccionSeleccionarTodos
+                            placeholder="Seleccione"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+            </div>
           </div>
         </div>
 
+
         <CustomTabla
           columns={columnas}
-          data={registros}
+          data={registrosFiltrados}
           getId={(registro) => registro.idInforme}
           isLoading={isLoading}
           isError={isError}

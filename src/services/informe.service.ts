@@ -1421,6 +1421,8 @@ export const informeService = {
         Busqueda: params.busqueda,
         IdPedido: params.idPedido,
         IdEstado: params.idEstado,
+        IdPlantilla: params.idPlantilla,
+        IdTipoTramite: params.idTipoTramite,
         NumPag: params.numPag,
       },
     });
