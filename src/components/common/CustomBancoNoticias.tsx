@@ -546,7 +546,7 @@ function CustomModalDetalleNoticia({
                           rel="noreferrer"
                           download={archivo.nombreArchivo}
                         >
-                          Descargar
+                          Abrir
                         </a>
                       </div>
                     ) : null}

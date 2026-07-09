@@ -61,6 +61,8 @@ function normalizarArchivo(item: unknown): CompaniaNoticiaArchivo {
     nombreArchivo: obtenerTexto(
       registro.nombreArchivo,
       registro.NombreArchivo,
+      registro.nombreDocumento,
+      registro.NombreDocumento,
       registro.archivoUrl,
       registro.ArchivoUrl,
     ) || "Archivo adjunto",
