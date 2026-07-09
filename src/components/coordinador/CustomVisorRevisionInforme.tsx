@@ -101,45 +101,33 @@ export function CustomVisorRevisionInforme({
       className={`relative flex min-h-0 flex-col overflow-hidden bg-slate-100 ${ocuparAltoDisponible ? "h-full" : "h-[calc(100vh-4rem)]"}`}
     >
       <header className="z-30 shrink-0 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
-        <div
-          className={`grid items-center gap-3 px-5 py-2.5 ${mostrarRegresar || !mostrarInformeTraducido ? "grid-cols-[auto_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}
-        >
-          {mostrarRegresar ||
-          (!mostrarInformeTraducido && mostrarEncabezadoRevision) ? (
-            <div className="flex min-w-0 items-center gap-3">
-              {mostrarRegresar ? (
-                <CustomButton variant="secondary" size="sm" onClick={onVolver}>
-                  <ArrowLeft size={14} />
-                  Regresar
-                </CustomButton>
-              ) : null}
-              {!mostrarInformeTraducido && mostrarEncabezadoRevision ? (
-                <>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-                    <ShieldCheck size={20} />
-                  </div>
-                  <div>
-                    <h1 className="text-xl font-bold text-brand-black">
-                      {"Revisi\u00f3n y Aprobaci\u00f3n"}
-                    </h1>
-                    <p className="text-sm text-slate-500">
-                      {`Revision de ${tituloInforme.toLowerCase()}.`}
-                    </p>
-                  </div>
-                </>
-              ) : null}
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-2.5">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="min-w-0 text-left">
+              <p className="truncate text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                Plantilla
+              </p>
+              <p className="truncate text-xs font-bold uppercase tracking-[0.14em] text-slate-600">
+                {textoPlantilla}
+              </p>
             </div>
-          ) : null}
 
-          <div
-            className={`min-w-0 ${mostrarRegresar || !mostrarInformeTraducido ? "justify-self-center text-center" : "justify-self-start text-left"}`}
-          >
-            <p className="truncate text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
-              Plantilla
-            </p>
-            <p className="truncate text-xs font-bold uppercase tracking-[0.14em] text-slate-600">
-              {textoPlantilla}
-            </p>
+            {!mostrarInformeTraducido && mostrarEncabezadoRevision ? (
+              <>
+                <div className="h-9 w-px shrink-0 bg-slate-200" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                  <ShieldCheck size={20} />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="truncate text-xl font-bold text-brand-black">
+                    {"Revisi\u00f3n y Aprobaci\u00f3n"}
+                  </h1>
+                  <p className="truncate text-sm text-slate-500">
+                    {`Revision de ${tituloInforme.toLowerCase()}.`}
+                  </p>
+                </div>
+              </>
+            ) : null}
           </div>
 
           {renderControlesRevision(
@@ -170,7 +158,7 @@ export function CustomVisorRevisionInforme({
         )}
       </main>
 
-      {mostrarPie ? (
+      {mostrarPie && mostrarRegresar ? (
         <footer className="z-30 flex shrink-0 items-center justify-end gap-3 border-t border-slate-200 bg-white/95 px-5 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur">
           <CustomButton variant="secondary" size="sm" onClick={onVolver}>
             <ArrowLeft size={14} />

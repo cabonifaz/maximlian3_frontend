@@ -1,4 +1,4 @@
-import { type CSSProperties, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import {
@@ -7,13 +7,12 @@ import {
   CircleX,
   ClipboardList,
   FileSearch,
-  Filter,
   Languages,
   Search,
   TriangleAlert,
 } from "lucide-react";
-import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { informeService } from "@maximilian/services/informe.service";
@@ -22,8 +21,6 @@ import type { InformeListEntry } from "@maximilian/shared/types/informe.type";
 import type { TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { obtenerColorEstadoAnalista } from "@maximilian/shared/utils/investigacion.util";
-
-type ClaveFiltroRevision = "tipo" | "estado" | "plantilla";
 
 function normalizarOpcionesFiltro(
   opciones?: EntradaTablaMaestra[],
@@ -123,10 +120,6 @@ export default function GestionRevisionAprobacion() {
   const [filtroPlantillas, setFiltroPlantillas] = useState<number[]>([]);
   const [filtroEstados, setFiltroEstados] = useState<number[]>([]);
   const [filtroTipos, setFiltroTipos] = useState<number[]>([]);
-  const [filtroEncabezadoAbierto, setFiltroEncabezadoAbierto] =
-    useState<ClaveFiltroRevision | null>(null);
-  const [estiloFiltroEncabezado, setEstiloFiltroEncabezado] =
-    useState<CSSProperties>({});
   const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
   const idPlantillaFiltro = filtroPlantillas.join(",") || undefined;
   const idEstadoFiltro = filtroEstados.join(",") || undefined;
@@ -244,97 +237,45 @@ export default function GestionRevisionAprobacion() {
     );
   };
 
-  const crearEncabezadoFiltro = (
-    clave: ClaveFiltroRevision,
-    titulo: string,
-    opciones: EntradaTablaMaestra[] | undefined,
-    valores: number[],
-    onChange: (ids: number[]) => void,
-  ) => {
-    const estaAbierto = filtroEncabezadoAbierto === clave;
-    const tieneFiltro = valores.length > 0;
-    const actualizarSeleccion = (ids: number[]) => {
-      onChange(ids);
-      setPaginaActual(1);
-    };
-
-    return (
-      <div className="relative normal-case">
-        <div className="flex items-center justify-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-            {titulo}
-          </span>
-          <button
-            type="button"
-            aria-label={`Filtrar por ${titulo}`}
-            title={`Filtrar por ${titulo}`}
-            className={`relative flex h-8 w-8 items-center justify-center rounded-lg border transition ${
-              estaAbierto || tieneFiltro
-                ? "border-brand-wine/30 bg-brand-wine/10 text-brand-wine"
-                : "border-gray-200 bg-white text-gray-400 hover:border-brand-wine/30 hover:text-brand-wine"
-            }`}
-            onClick={(event) => {
-              const rect = event.currentTarget.getBoundingClientRect();
-              setEstiloFiltroEncabezado({
-                top: rect.bottom + 8,
-                left: Math.min(rect.left, window.innerWidth - 280),
-              });
-              setFiltroEncabezadoAbierto((actual) =>
-                actual === clave ? null : clave,
-              );
-            }}
-          >
-            <Filter size={15} />
-            {tieneFiltro ? (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-wine px-1 text-[10px] font-bold text-white">
-                {valores.length}
-              </span>
-            ) : null}
-          </button>
-        </div>
-
-        {estaAbierto ? (
-          <>
-            <div
-              className="fixed inset-0 z-[90]"
-              onClick={() => setFiltroEncabezadoAbierto(null)}
-            />
-            <div
-              className="fixed z-[91] w-64 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-2xl shadow-slate-950/15"
-              style={estiloFiltroEncabezado}
-              onClick={(event) => event.stopPropagation()}
-            >
-              <MultiCustomSelectorBuscable
-                label={titulo}
-                triggerIcon={Filter}
-                options={opciones}
-                value={valores}
-                onChange={actualizarSeleccion}
-                resumirSelecciones
-                placeholder="Seleccione"
-              />
-            </div>
-          </>
-        ) : null}
-      </div>
-    );
-  };
-
   const columnas = [
     { label: "ID Pedido", width: "8%" },
     { label: "Investigado", width: "21%" },
     { label: "Vigencia", width: "11%" },
     {
-      label: crearEncabezadoFiltro("tipo", "Tipo", opcionesTipoFiltro, filtroTipos, setFiltroTipos),
+      label: (
+        <CustomEncabezadoFiltroTabla
+          titulo="Tipo"
+          opciones={opcionesTipoFiltro}
+          valores={filtroTipos}
+          onChange={setFiltroTipos}
+          onFiltroCambiado={() => setPaginaActual(1)}
+        />
+      ),
       width: "10%",
     },
     {
-      label: crearEncabezadoFiltro("estado", "Estado", opcionesEstadoFiltro, filtroEstados, setFiltroEstados),
+      label: (
+        <CustomEncabezadoFiltroTabla
+          titulo="Estado"
+          opciones={opcionesEstadoFiltro}
+          valores={filtroEstados}
+          onChange={setFiltroEstados}
+          onFiltroCambiado={() => setPaginaActual(1)}
+        />
+      ),
       className: "text-center",
       width: "13%",
     },
     {
-      label: crearEncabezadoFiltro("plantilla", "Plantilla", opcionesPlantillaFiltro, filtroPlantillas, setFiltroPlantillas),
+      label: (
+        <CustomEncabezadoFiltroTabla
+          titulo="Plantilla"
+          opciones={opcionesPlantillaFiltro}
+          valores={filtroPlantillas}
+          onChange={setFiltroPlantillas}
+          onFiltroCambiado={() => setPaginaActual(1)}
+        />
+      ),
       className: "text-center",
       width: "15%",
     },

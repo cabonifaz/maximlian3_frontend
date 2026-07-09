@@ -6,7 +6,6 @@ import {
   Clock3,
   Edit,
   Eye,
-  Filter,
   FileSearch,
   Languages,
   MoreHorizontal,
@@ -19,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router";
-import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
+import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
@@ -58,6 +57,16 @@ const TARJETAS_ESTADO_PEDIDO = [
   { clave: "cancelado", titulo: "Cancelado", Icono: CircleX, colorIcono: "text-rose-500" },
 ] as const;
 
+const FASE_ASIGNACION = {
+  ASIGNADO_ANALISTA: 1,
+  ASIGNADO_TRADUCCION: 2,
+  ANALISIS_COMPLETO: 3,
+  REASIGNADO_ANALISTA: 4,
+  REASIGNADO_TRADUCCION: 5,
+  TRADUCCION_COMPLETA: 6,
+  ASIGNACION_ANULADA: 7,
+} as const;
+
 function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: string) {
   return (
     <span
@@ -73,24 +82,97 @@ function esPedidoCancelado(pedido: PedidoListEntry) {
   return pedido.estado === 5;
 }
 
+function obtenerEstadosAsignacionPedido(pedido: PedidoListEntry) {
+  return new Set(pedido.asignaciones.map((asignacion) => asignacion.idEstadoAsignacion));
+}
+
+function obtenerEstadoPipelinePedido(pedido: PedidoListEntry) {
+  if (esPedidoCancelado(pedido)) return "sin-asignacion";
+
+  const estadosAsignacion = obtenerEstadosAsignacionPedido(pedido);
+  const tieneEstado = (...estados: number[]) =>
+    estados.some((estado) => estadosAsignacion.has(estado));
+
+  if (
+    estadosAsignacion.size === 0 ||
+    [...estadosAsignacion].every((estado) => estado === FASE_ASIGNACION.ASIGNACION_ANULADA)
+  ) {
+    return "sin-asignacion";
+  }
+
+  const tieneAsignacionAnalista = tieneEstado(
+    FASE_ASIGNACION.ASIGNADO_ANALISTA,
+    FASE_ASIGNACION.REASIGNADO_ANALISTA,
+  );
+  const tieneAsignacionTraduccion = tieneEstado(
+    FASE_ASIGNACION.ASIGNADO_TRADUCCION,
+    FASE_ASIGNACION.REASIGNADO_TRADUCCION,
+  );
+
+  if (tieneEstado(FASE_ASIGNACION.TRADUCCION_COMPLETA)) return "completo";
+  if (tieneAsignacionAnalista && tieneAsignacionTraduccion) return "ambos-asignados";
+  if (tieneAsignacionTraduccion) {
+    return "traduccion-activa";
+  }
+  if (tieneEstado(FASE_ASIGNACION.ANALISIS_COMPLETO)) return "analista-completo";
+  if (tieneAsignacionAnalista) return "analista-activo";
+
+  return "sin-asignacion";
+}
+
+function obtenerDescripcionFasePedido(
+  pedido: PedidoListEntry,
+  estados: number[],
+  textoFallback: string,
+) {
+  const descripciones = pedido.asignaciones
+    .filter((asignacion) => estados.includes(asignacion.idEstadoAsignacion))
+    .map((asignacion) => asignacion.descripcion.trim())
+    .filter((descripcion) => descripcion && descripcion !== "-");
+
+  return descripciones.length > 0 ? descripciones.join(" / ") : textoFallback;
+}
+
 function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
   const requiereTraduccion = pedido.requiereTraduccion === 1;
-  const esFaseTraduccion = requiereTraduccion && pedido.idFase === 2;
+  const estadoPipeline = obtenerEstadoPipelinePedido(pedido);
   const estiloFaseActiva = {
     backgroundColor: pedido.colorFondo || "#f1f5f9",
     color: pedido.colorLetra || "#475569",
   };
-
-  const claseAnalista = esFaseTraduccion
-    ? "border-green-200 bg-green-50 text-green-600"
-    : "border-transparent";
+  const claseFaseVacia = "border-slate-200 bg-white text-slate-300";
+  const claseFasePendiente = "border-slate-300 bg-slate-100 text-slate-500";
+  const claseFaseCompletada = "border-green-200 bg-green-50 text-green-600";
+  const analistaCompletado = [
+    "analista-completo",
+    "traduccion-activa",
+    "completo",
+  ].includes(estadoPipeline);
+  const traduccionCompletada = estadoPipeline === "completo";
+  const analistaActivo = estadoPipeline === "analista-activo" || estadoPipeline === "ambos-asignados";
+  const traduccionActiva = estadoPipeline === "traduccion-activa";
+  const claseAnalista = analistaCompletado
+    ? claseFaseCompletada
+    : analistaActivo
+      ? "border-transparent"
+      : claseFaseVacia;
+  const descripcionAnalista = obtenerDescripcionFasePedido(
+    pedido,
+    [
+      FASE_ASIGNACION.ASIGNADO_ANALISTA,
+      FASE_ASIGNACION.ANALISIS_COMPLETO,
+      FASE_ASIGNACION.REASIGNADO_ANALISTA,
+    ],
+    analistaCompletado ? "Analisis completo" : "Sin asignacion",
+  );
 
   if (!requiereTraduccion) {
     return (
       <div className="mx-auto flex w-16 items-center justify-center" title="No requiere traduccion">
         <span
           className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseAnalista}`}
-          style={esFaseTraduccion ? undefined : estiloFaseActiva}
+          style={analistaActivo ? estiloFaseActiva : undefined}
+          title={descripcionAnalista}
         >
           <FileSearch size={14} />
         </span>
@@ -98,24 +180,38 @@ function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
     );
   }
 
-  const claseTraduccion = esFaseTraduccion
-    ? "border-transparent"
-    : "border-slate-200 bg-slate-50 text-slate-300";
+  const claseTraduccion = traduccionCompletada
+    ? claseFaseCompletada
+    : traduccionActiva
+      ? "border-transparent"
+      : estadoPipeline === "ambos-asignados"
+        ? claseFasePendiente
+      : claseFaseVacia;
+  const claseLinea = traduccionCompletada || traduccionActiva ? "bg-green-200" : "bg-slate-200";
+  const descripcionTraduccion = obtenerDescripcionFasePedido(
+    pedido,
+    [
+      FASE_ASIGNACION.ASIGNADO_TRADUCCION,
+      FASE_ASIGNACION.REASIGNADO_TRADUCCION,
+      FASE_ASIGNACION.TRADUCCION_COMPLETA,
+    ],
+    traduccionCompletada ? "Traduccion completa" : "Sin asignacion",
+  );
 
   return (
     <div className="relative mx-auto flex w-16 items-center justify-between" title="Analista / Traduccion">
-      <span
-        className={`absolute left-4 right-4 top-1/2 h-1 -translate-y-1/2 rounded-full ${esFaseTraduccion ? "bg-green-200" : "bg-slate-200"}`}
-      />
+      <span className={`absolute left-4 right-4 top-1/2 h-1 -translate-y-1/2 rounded-full ${claseLinea}`} />
       <span
         className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseAnalista}`}
-        style={esFaseTraduccion ? undefined : estiloFaseActiva}
+        style={analistaActivo ? estiloFaseActiva : undefined}
+        title={descripcionAnalista}
       >
         <FileSearch size={14} />
       </span>
       <span
         className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseTraduccion}`}
-        style={esFaseTraduccion ? estiloFaseActiva : undefined}
+        style={traduccionActiva ? estiloFaseActiva : undefined}
+        title={descripcionTraduccion}
       >
         <Languages size={14} />
       </span>
@@ -204,6 +300,22 @@ export default function PedidoManagement() {
     const estadosSeleccionados = new Set(estadosFiltroOrdenados);
     return pedidos.filter((pedido) => estadosSeleccionados.has(pedido.estado));
   }, [estadosFiltroOrdenados, pedidosData?.lstPedido]);
+
+  const columnas = PEDIDO_COLUMNS.map((columna, indice) => {
+    if (indice !== 4) return columna;
+
+    return {
+      ...columna,
+      label: (
+        <CustomEncabezadoFiltroTabla
+          titulo="Estado"
+          opciones={ESTADO_OPTIONS}
+          valores={filtroEstados}
+          onChange={handleEstadosChange}
+        />
+      ),
+    };
+  });
 
   const tieneAsignaciones = (pedido: PedidoListEntry) => pedido.asignaciones.length > 0;
 
@@ -390,17 +502,6 @@ export default function PedidoManagement() {
             />
           </div>
 
-          <MultiCustomSelectorBuscable
-            label="Estado"
-            hideLabel
-            triggerIcon={Filter}
-            options={ESTADO_OPTIONS}
-            value={filtroEstados}
-            onChange={handleEstadosChange}
-            resumirSelecciones
-            placeholder="Todos los estados"
-          />
-
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
@@ -412,7 +513,7 @@ export default function PedidoManagement() {
       </div>
 
       <CustomTabla
-        columns={PEDIDO_COLUMNS}
+        columns={columnas}
         data={pedidosFiltrados}
         getId={(p) => p.idPedido}
         renderRow={renderRow}

@@ -5,6 +5,7 @@ import { useLocation } from "react-router";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { ModalFlujoAsignacion } from "@maximilian/components/coordinador/ModalFlujoAsignacion";
+import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
@@ -357,6 +358,24 @@ export default function GestionAsignaciones() {
     staleTime: Infinity,
   });
 
+  const columnas = ASSIGNMENT_COLUMNS.map((columna, indice) => {
+    if (indice !== 4) return columna;
+
+    return {
+      ...columna,
+      label: (
+        <CustomEncabezadoFiltroTabla
+          titulo="Estado"
+          opciones={opcionesEstadoAsignacion}
+          valores={idEstadoFiltro ? [idEstadoFiltro] : []}
+          onChange={(ids) => setIdEstadoFiltro(ids[ids.length - 1])}
+          onFiltroCambiado={() => setCurrentPage(1)}
+          multiple={false}
+        />
+      ),
+    };
+  });
+
   const anularAsignacionMutation = useMutation({
     mutationFn: ({ idAsignacion }: { idAsignacion: number }) =>
       servicioAsignacion.delete({ idAsignacion }),
@@ -510,28 +529,8 @@ export default function GestionAsignaciones() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="w-full max-w-xs">
-        <CustomSelectorBuscable
-          idMaster={TablaMaestraId.ESTADO_ASIGNACION}
-          value={idEstadoFiltro}
-          onChange={(idEstado) => {
-            setIdEstadoFiltro(idEstado);
-            setCurrentPage(1);
-          }}
-          onClear={() => {
-            setIdEstadoFiltro(undefined);
-            setCurrentPage(1);
-          }}
-          optional
-          etiquetaOpcionVacia="Todos los estados"
-          placeholder="Filtrar por estado"
-        />
-        </div>
-      </div>
-
       <CustomTabla
-        columns={ASSIGNMENT_COLUMNS}
+        columns={columnas}
         data={data?.lstPedido}
         getId={(asignacion) => asignacion.idPedido}
         renderRow={renderRow}

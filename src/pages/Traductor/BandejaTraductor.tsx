@@ -6,7 +6,6 @@ import {
   CircleX,
   Clock3,
   Search,
-  SlidersHorizontal,
   ClipboardList,
 } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -342,14 +341,6 @@ export default function BandejaTraductor() {
               />
             </label>
 
-            <CustomButton
-              variant="secondary"
-              size="md"
-              className="h-12 min-w-28 text-sm font-semibold"
-            >
-              <SlidersHorizontal size={16} />
-              Filtros
-            </CustomButton>
           </div>
         </div>
 

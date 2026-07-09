@@ -127,7 +127,7 @@ function normalizarFilaPedido(fila: unknown): PedidoListEntry {
     idFase: obtenerNumeroOpcional(registro.idFase, registro.IdFase),
     requiereTraduccion: obtenerIndicadorBinario(registro.requiereTraduccion, registro.RequiereTraduccion),
     vigencia: obtenerTexto(registro.vigencia, registro.Vigencia) || String(obtenerNumero(registro.vigencia, registro.Vigencia)),
-    asignaciones: normalizarAsignaciones(registro.asignaciones),
+    asignaciones: normalizarAsignaciones(registro.asignaciones ?? registro.Asignaciones),
   };
 }
 
