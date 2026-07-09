@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/CustomModalRechazoInforme";
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
 import { informeService } from "@maximilian/services/informe.service";
@@ -234,7 +236,7 @@ export default function RevisionInformeCoordinador() {
   if (tieneInformeOriginal) {
     return (
       <>
-        <div className="flex h-[calc(100vh-4rem)] min-h-0 flex-col overflow-hidden bg-slate-100">
+        <div className="relative flex h-[calc(100vh-4rem)] min-h-0 flex-col overflow-hidden bg-slate-100">
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3">
             <div className="grid shrink-0 grid-cols-2 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm xl:hidden">
               <button
@@ -277,7 +279,7 @@ export default function RevisionInformeCoordinador() {
                   mostrarAccionesRevision={false}
                   mostrarPie={false}
                   mostrarCerrar={false}
-                  mostrarRegresar
+                  mostrarRegresar={false}
                   mostrarEncabezadoRevision={false}
                   ocuparAltoDisponible
                   onCerrar={() => navigate("/coordinador/revision")}
@@ -321,7 +323,19 @@ export default function RevisionInformeCoordinador() {
                 />
               </div>
             </div>
+
           </div>
+
+          <footer className="absolute inset-x-0 bottom-0 z-30 flex items-center justify-end gap-3 border-t border-slate-200 bg-white/95 px-5 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur">
+            <CustomButton
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate("/coordinador/revision")}
+            >
+              <ArrowLeft size={14} />
+              Regresar
+            </CustomButton>
+          </footer>
         </div>
 
         <CustomModalRechazoInforme
@@ -354,7 +368,7 @@ export default function RevisionInformeCoordinador() {
         idiomaInforme={idIdiomaPedido && idIdiomaPedido !== 1 ? idiomaInformeTraducido : "Espa\u00f1ol"}
         tipoPlantilla={nombrePlantillaInforme}
         mostrarInformeTraducido={Boolean(idIdiomaPedido && idIdiomaPedido !== 1)}
-        mostrarPie={false}
+        mostrarPie
         ocuparAltoDisponible
         onCerrar={() => navigate("/coordinador/revision")}
         onDescargar={(formato) => {

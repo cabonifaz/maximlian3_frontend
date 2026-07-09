@@ -9,12 +9,12 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ModalUsuario } from "@maximilian/components/administrador/ModalUsuario";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
+import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { type DatosFormularioUsuario } from "@maximilian/schemas";
 import { servicioUsuario } from "@maximilian/services/usuario.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
-import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import type {
   CreateUserRequest,
   DeleteUserRequest,
@@ -33,17 +33,6 @@ interface UpdateUserMutationParams {
   userData: DatosFormularioUsuario;
   resetForm: () => void;
 }
-
-const USER_COLUMNS = [
-  { label: "Nombre", width: "14%" },
-  { label: "Apellido Paterno", width: "13%" },
-  { label: "Apellido Materno", width: "13%" },
-  { label: "Nombre de Usuario", width: "15%" },
-  { label: "Rol(es)", width: "15%" },
-  { label: "Correo", width: "20%" },
-  { label: "Estado", width: "7%" },
-  { label: "", width: "3%" },
-];
 
 const ID_MAESTRO_ESTADO_USUARIO = 100;
 
@@ -261,6 +250,29 @@ export default function GestionUsuarios() {
     }
   };
 
+  const columnas = [
+    { label: "Nombre", width: "14%" },
+    { label: "Apellido Paterno", width: "13%" },
+    { label: "Apellido Materno", width: "13%" },
+    { label: "Nombre de Usuario", width: "15%" },
+    { label: "Rol(es)", width: "15%" },
+    { label: "Correo", width: "17%" },
+    {
+      label: (
+        <CustomEncabezadoFiltroTabla
+          titulo="Estado"
+          opciones={estadosUsuarioData}
+          valores={idEstadoFiltro ? [idEstadoFiltro] : []}
+          onChange={(ids) => setIdEstadoFiltro(ids[ids.length - 1])}
+          onFiltroCambiado={() => setCurrentPage(1)}
+          multiple={false}
+        />
+      ),
+      width: "10%",
+    },
+    { label: "", width: "3%" },
+  ];
+
   const renderRow = (user: UserListEntry, index: number) => (
     <>
       <td className="px-6 py-4 text-brand-black font-medium">{user.nombres}</td>
@@ -363,23 +375,6 @@ export default function GestionUsuarios() {
               className="pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-lg text-sm w-96 focus:ring-2 focus:ring-brand-wine/20 focus:border-brand-wine outline-none transition-all"
             />
           </div>
-          <div className="w-48">
-            <CustomSelectorBuscable
-              options={estadosUsuarioData}
-              value={idEstadoFiltro}
-              onChange={(idEstado) => {
-                setIdEstadoFiltro(idEstado);
-                setCurrentPage(1);
-              }}
-              onClear={() => {
-                setIdEstadoFiltro(undefined);
-                setCurrentPage(1);
-              }}
-              optional
-              etiquetaOpcionVacia="Todos"
-              placeholder="Estado"
-            />
-          </div>
           <button
             onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
@@ -434,7 +429,7 @@ export default function GestionUsuarios() {
       </CustomModalConfirmacionEliminacion>
 
       <CustomTabla
-        columns={USER_COLUMNS}
+        columns={columnas}
         data={usersData?.lstUsuarios}
         getId={(u) => u.idUsuario}
         renderRow={renderRow}

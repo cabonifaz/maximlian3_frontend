@@ -6,7 +6,6 @@ import {
   CircleX,
   Clock3,
   Search,
-  SlidersHorizontal,
   ClipboardList,
 } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -277,8 +276,8 @@ export default function BandejaAnalista() {
   };
 
   const columnas = [
-    { label: "ID Pedido", width: "9%" },
-    { label: "Investigado", width: "32%" },
+    { label: "ID Pedido", width: "10%" },
+    { label: "Investigado", width: "31%" },
     { label: "País", width: "14%" },
     { label: "Fecha", width: "11%" },
     { label: "Tipo", className: "text-center", width: "8%" },
@@ -333,14 +332,6 @@ export default function BandejaAnalista() {
               />
             </label>
 
-            <CustomButton
-              variant="secondary"
-              size="md"
-              className="h-12 min-w-28 text-sm font-semibold"
-            >
-              <SlidersHorizontal size={16} />
-              Filtros
-            </CustomButton>
           </div>
         </div>
 

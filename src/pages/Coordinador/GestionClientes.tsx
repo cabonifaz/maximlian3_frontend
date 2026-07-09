@@ -1,17 +1,16 @@
-import { useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import {
   Search,
-  Filter,
   Plus,
   MoreHorizontal,
   UserMinus,
-  X,
   Edit,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ModalAgregarCliente } from "@maximilian/components/coordinador/ModalAgregarCliente";
 import { ModalDetalleCliente } from "@maximilian/components/coordinador/ModalDetalleCliente";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
+import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioCliente } from "@maximilian/services/cliente.service";
@@ -33,9 +32,9 @@ interface ClientMutationParams {
 
 const CLIENT_COLUMNS = [
   { label: "Nombre", width: "24%" },
-  { label: "País", width: "12%" },
+  { label: "Pais", width: "12%" },
   { label: "Tipo de Persona", width: "14%" },
-  { label: "Teléfono", width: "13%" },
+  { label: "Telefono", width: "13%" },
   { label: "Correo", width: "22%" },
   { label: "Estado", width: "9%" },
   { label: "Acciones", className: "text-right", width: "6%" },
@@ -51,13 +50,6 @@ export default function GestionClientes() {
   const [clientToDelete, setClientToDelete] = useState<ClientListEntry | null>(null);
   const [filterPais, setFilterPais] = useState<number | undefined>(undefined);
   const [filterEstado, setFilterEstado] = useState<number | undefined>(undefined);
-  const [isPaisOpen, setIsPaisOpen] = useState(false);
-  const [isEstadoOpen, setIsEstadoOpen] = useState(false);
-  const [paisSearch, setPaisSearch] = useState("");
-  const [paisDropdownStyle, setPaisDropdownStyle] = useState<React.CSSProperties>({});
-  const [estadoDropdownStyle, setEstadoDropdownStyle] = useState<React.CSSProperties>({});
-  const paisBtnRef = useRef<HTMLButtonElement>(null);
-  const estadoBtnRef = useRef<HTMLButtonElement>(null);
 
   const busquedaConRetardo = useRetardo(terminoBusqueda);
 
@@ -82,11 +74,13 @@ export default function GestionClientes() {
   const { data: paises } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.PAIS],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
+    staleTime: Infinity,
   });
 
   const { data: estadosCliente } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.ESTADO_CLIENTE],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_CLIENTE),
+    staleTime: Infinity,
   });
 
 
@@ -176,52 +170,47 @@ export default function GestionClientes() {
     setCurrentPage(1);
   };
 
-  const handlePaisButtonClick = () => {
-    if (!isPaisOpen && paisBtnRef.current) {
-      const rect = paisBtnRef.current.getBoundingClientRect();
-      setPaisDropdownStyle({ top: rect.bottom + 8, left: rect.left, width: Math.max(rect.width, 220) });
-    }
-    setIsPaisOpen((v) => !v);
-    setIsEstadoOpen(false);
-  };
-
-  const handleEstadoButtonClick = () => {
-    if (!isEstadoOpen && estadoBtnRef.current) {
-      const rect = estadoBtnRef.current.getBoundingClientRect();
-      setEstadoDropdownStyle({ top: rect.bottom + 8, left: rect.left, width: Math.max(rect.width, 180) });
-    }
-    setIsEstadoOpen((v) => !v);
-    setIsPaisOpen(false);
-  };
-
-  const handleSelectPais = (idPais: number | undefined) => {
-    setFilterPais(idPais);
-    setCurrentPage(1);
-    setIsPaisOpen(false);
-    setPaisSearch("");
-  };
-
-  const handleSelectEstado = (idEstado: number | undefined) => {
-    setFilterEstado(idEstado);
-    setCurrentPage(1);
-    setIsEstadoOpen(false);
-  };
-
-  const filteredPaisOptions = useMemo(() => {
-    if (!paises) return [];
-    return paises
-      .filter((p) => p.string1?.toLowerCase().includes(paisSearch.toLowerCase()))
-      .sort((a, b) => (a.string1 || "").localeCompare(b.string1 || ""));
-  }, [paises, paisSearch]);
-
-  const selectedPaisLabel = paises?.find((p) => p.num1 === filterPais)?.string1;
-  const selectedEstadoLabel = estadosCliente?.find((e) => e.num1 === filterEstado)?.string1;
-
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= (clientsData?.totalPaginas || 1)) {
       setCurrentPage(page);
     }
   };
+
+  const columnas = CLIENT_COLUMNS.map((columna, indice) => {
+    if (indice === 1) {
+      return {
+        ...columna,
+        label: (
+          <CustomEncabezadoFiltroTabla
+            titulo="Pais"
+            opciones={paises}
+            valores={filterPais ? [filterPais] : []}
+            onChange={(ids) => setFilterPais(ids[ids.length - 1])}
+            onFiltroCambiado={() => setCurrentPage(1)}
+            multiple={false}
+          />
+        ),
+      };
+    }
+
+    if (indice === 5) {
+      return {
+        ...columna,
+        label: (
+          <CustomEncabezadoFiltroTabla
+            titulo="Estado"
+            opciones={estadosCliente}
+            valores={filterEstado ? [filterEstado] : []}
+            onChange={(ids) => setFilterEstado(ids[ids.length - 1])}
+            onFiltroCambiado={() => setCurrentPage(1)}
+            multiple={false}
+          />
+        ),
+      };
+    }
+
+    return columna;
+  });
 
   const renderRow = (client: ClientListEntry, index: number) => (
     <>
@@ -332,112 +321,6 @@ export default function GestionClientes() {
             />
           </div>
 
-          {/* País filter */}
-          <div className="relative">
-            <button
-              ref={paisBtnRef}
-              onClick={handlePaisButtonClick}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-colors cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${filterPais ? "bg-brand-wine/10 border-brand-wine/30 text-brand-wine" : "bg-brand-white border-gray-200 text-gray-700 hover:bg-gray-50"}`}
-            >
-              <Filter className="w-4 h-4" />
-              <span>{selectedPaisLabel ?? "País"}</span>
-              {filterPais && (
-                <X
-                  className="w-3 h-3 ml-1"
-                  onClick={(e) => { e.stopPropagation(); handleSelectPais(undefined); }}
-                />
-              )}
-            </button>
-            {isPaisOpen && (
-              <>
-                <div className="fixed inset-0 z-100" onClick={() => setIsPaisOpen(false)} />
-                <div
-                  className="fixed bg-brand-white border border-gray-100 rounded-xl shadow-2xl z-101 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-                  style={paisDropdownStyle}
-                >
-                  <div className="p-2 border-b border-gray-50">
-                    <input
-                      type="text"
-                      className="w-full px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-xs outline-none focus:ring-2 focus:ring-brand-wine/10"
-                      placeholder="Buscar..."
-                      autoFocus
-                      value={paisSearch}
-                      onChange={(e) => setPaisSearch(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                  <div className="max-h-48 overflow-y-auto">
-                    <div
-                      className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${!filterPais ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-500 italic"}`}
-                      onClick={() => handleSelectPais(undefined)}
-                    >
-                      Todos
-                    </div>
-                    {filteredPaisOptions.length > 0 ? (
-                      filteredPaisOptions.map((opt) => (
-                        <div
-                          key={opt.num1}
-                          className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${filterPais === opt.num1 ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-600"}`}
-                          onClick={() => handleSelectPais(opt.num1!)}
-                        >
-                          {opt.string1}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="px-4 py-3 text-xs text-gray-400 italic text-center">
-                        No se encontraron resultados
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Estado filter */}
-          <div className="relative">
-            <button
-              ref={estadoBtnRef}
-              onClick={handleEstadoButtonClick}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-colors cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${filterEstado ? "bg-brand-wine/10 border-brand-wine/30 text-brand-wine" : "bg-brand-white border-gray-200 text-gray-700 hover:bg-gray-50"}`}
-            >
-              <div className={`w-2 h-2 rounded-full ${filterEstado ? "bg-brand-wine" : "bg-brand-wine"}`} />
-              <span>{selectedEstadoLabel ?? "Estado"}</span>
-              {filterEstado && (
-                <X
-                  className="w-3 h-3 ml-1"
-                  onClick={(e) => { e.stopPropagation(); handleSelectEstado(undefined); }}
-                />
-              )}
-            </button>
-            {isEstadoOpen && (
-              <>
-                <div className="fixed inset-0 z-100" onClick={() => setIsEstadoOpen(false)} />
-                <div
-                  className="fixed bg-brand-white border border-gray-100 rounded-xl shadow-2xl z-101 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-                  style={estadoDropdownStyle}
-                >
-                  <div className="max-h-48 overflow-y-auto">
-                    <div
-                      className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${!filterEstado ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-500 italic"}`}
-                      onClick={() => handleSelectEstado(undefined)}
-                    >
-                      Todos
-                    </div>
-                    {estadosCliente?.map((opt) => (
-                      <div
-                        key={opt.num1}
-                        className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${filterEstado === opt.num1 ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-600"}`}
-                        onClick={() => handleSelectEstado(opt.num1!)}
-                      >
-                        {opt.string1}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
 
           <button
             onClick={() => setIsModalOpen(true)}
@@ -450,7 +333,7 @@ export default function GestionClientes() {
       </div>
 
       <CustomTabla
-        columns={CLIENT_COLUMNS}
+        columns={columnas}
         data={clientsData?.lstClientes}
         getId={(c) => c.idCliente}
         renderRow={renderRow}

@@ -15,8 +15,8 @@ export function GuardiaAutenticacion({ children }: PropsGuardiaAutenticacion) {
   useEffect(() => {
     const verificarAutenticacion = async () => {
       try {
-        const usuario = await servicioAutenticacion.getCurrentUser();
-        if (!usuario) {
+        const sesion = await servicioAutenticacion.getSession();
+        if (!sesion.tokens?.accessToken) {
           navigate("/iniciar-sesion", { replace: true });
           return;
         }

@@ -6,7 +6,6 @@ import {
   Clock3,
   Edit,
   Eye,
-  Filter,
   FileSearch,
   Languages,
   MoreHorizontal,
@@ -19,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router";
-import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
+import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
@@ -30,6 +29,7 @@ import { CustomModalDetallePedido } from "@maximilian/components/coordinador/Cus
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { type PedidoListEntry } from "@maximilian/shared/types/pedido.type";
+import { obtenerColorEstadoAnalista } from "@maximilian/shared/utils/investigacion.util";
 
 const PEDIDO_COLUMNS = [
   { label: "Cliente", width: "22%" },
@@ -58,6 +58,16 @@ const TARJETAS_ESTADO_PEDIDO = [
   { clave: "cancelado", titulo: "Cancelado", Icono: CircleX, colorIcono: "text-rose-500" },
 ] as const;
 
+const FASE_ASIGNACION = {
+  ASIGNADO_ANALISTA: 1,
+  ASIGNADO_TRADUCCION: 2,
+  ANALISIS_COMPLETO: 3,
+  REASIGNADO_ANALISTA: 4,
+  REASIGNADO_TRADUCCION: 5,
+  TRADUCCION_COMPLETA: 6,
+  ASIGNACION_ANULADA: 7,
+} as const;
+
 function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: string) {
   return (
     <span
@@ -73,24 +83,152 @@ function esPedidoCancelado(pedido: PedidoListEntry) {
   return pedido.estado === 5;
 }
 
+function obtenerEstadosAsignacionPedido(pedido: PedidoListEntry) {
+  return new Set(pedido.asignaciones.map((asignacion) => asignacion.idEstadoAsignacion));
+}
+
+function obtenerEstadoPipelinePedido(pedido: PedidoListEntry) {
+  if (esPedidoCancelado(pedido)) return "sin-asignacion";
+
+  const estadosAsignacion = obtenerEstadosAsignacionPedido(pedido);
+  const tieneEstado = (...estados: number[]) =>
+    estados.some((estado) => estadosAsignacion.has(estado));
+
+  if (
+    estadosAsignacion.size === 0 ||
+    [...estadosAsignacion].every((estado) => estado === FASE_ASIGNACION.ASIGNACION_ANULADA)
+  ) {
+    return "sin-asignacion";
+  }
+
+  const tieneAsignacionAnalista = tieneEstado(
+    FASE_ASIGNACION.ASIGNADO_ANALISTA,
+    FASE_ASIGNACION.REASIGNADO_ANALISTA,
+  );
+  const tieneAsignacionTraduccion = tieneEstado(
+    FASE_ASIGNACION.ASIGNADO_TRADUCCION,
+    FASE_ASIGNACION.REASIGNADO_TRADUCCION,
+  );
+
+  if (tieneEstado(FASE_ASIGNACION.TRADUCCION_COMPLETA)) return "completo";
+  if (tieneAsignacionAnalista && tieneAsignacionTraduccion) return "ambos-asignados";
+  if (tieneAsignacionTraduccion) {
+    return "traduccion-activa";
+  }
+  if (tieneEstado(FASE_ASIGNACION.ANALISIS_COMPLETO)) return "analista-completo";
+  if (tieneAsignacionAnalista) return "analista-activo";
+
+  return "sin-asignacion";
+}
+
+function obtenerAsignacionFasePedido(pedido: PedidoListEntry, estados: number[]) {
+  return pedido.asignaciones.find((asignacion) =>
+    estados.includes(asignacion.idEstadoAsignacion),
+  );
+}
+
+function obtenerEstadoInformeAsignacion(idEstado?: number | null, descripcion?: string | null) {
+  if (idEstado === 1) return "asignado";
+  if (idEstado === 2) return "rechazado";
+  if (idEstado === 3) return "en-proceso";
+  if (idEstado === 4) return "aprobado";
+  if (idEstado === 5) return "pendiente-aprobacion";
+
+  const texto = descripcion?.trim().toLowerCase() ?? "";
+
+  if (!texto) return null;
+  if (texto.includes("rechaz")) return "rechazado";
+  if (texto.includes("pend")) return "pendiente-aprobacion";
+  if (texto.includes("aprob")) return "aprobado";
+  if (texto.includes("proceso") || texto.includes("borrador")) return "en-proceso";
+
+  return "asignado";
+}
+
+function obtenerClaseFasePorAsignacion(
+  pedido: PedidoListEntry,
+  estados: number[],
+  claseFaseVacia: string,
+  claseFasePendiente: string,
+) {
+  const asignacion = obtenerAsignacionFasePedido(pedido, estados);
+  const estadoInforme = obtenerEstadoInformeAsignacion(
+    asignacion?.idEstadoInforme,
+    asignacion?.descripcionEstadoInforme,
+  );
+
+  if (!asignacion) return claseFaseVacia;
+  if (!estadoInforme) return claseFasePendiente;
+
+  return `${obtenerColorEstadoAnalista(estadoInforme)} border-transparent`;
+}
+
+function obtenerTituloFasePedido(
+  pedido: PedidoListEntry,
+  estados: number[],
+  textoFallback: string,
+) {
+  const asignacion = obtenerAsignacionFasePedido(pedido, estados);
+
+  if (!asignacion) return textoFallback;
+
+  const descripcionAsignacion = asignacion.descripcion || textoFallback;
+  const descripcionEstadoInforme = asignacion.descripcionEstadoInforme?.trim();
+
+  return descripcionEstadoInforme
+    ? `${descripcionAsignacion} - ${descripcionEstadoInforme}`
+    : `${descripcionAsignacion} - Sin iniciar`;
+}
+
 function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
   const requiereTraduccion = pedido.requiereTraduccion === 1;
-  const esFaseTraduccion = requiereTraduccion && pedido.idFase === 2;
-  const estiloFaseActiva = {
-    backgroundColor: pedido.colorFondo || "#f1f5f9",
-    color: pedido.colorLetra || "#475569",
-  };
-
-  const claseAnalista = esFaseTraduccion
-    ? "border-green-200 bg-green-50 text-green-600"
-    : "border-transparent";
+  const estadoPipeline = obtenerEstadoPipelinePedido(pedido);
+  const claseFaseVacia = "border-slate-200 bg-white text-slate-300";
+  const claseFasePendiente = "border-slate-300 bg-slate-100 text-slate-500";
+  const claseFaseCompletada = "border-green-200 bg-green-50 text-green-600";
+  const estadosAnalista = [
+    FASE_ASIGNACION.ASIGNADO_ANALISTA,
+    FASE_ASIGNACION.ANALISIS_COMPLETO,
+    FASE_ASIGNACION.REASIGNADO_ANALISTA,
+  ];
+  const estadosTraduccion = [
+    FASE_ASIGNACION.ASIGNADO_TRADUCCION,
+    FASE_ASIGNACION.REASIGNADO_TRADUCCION,
+    FASE_ASIGNACION.TRADUCCION_COMPLETA,
+  ];
+  const analistaCompletado = [
+    "analista-completo",
+    "traduccion-activa",
+    "completo",
+  ].includes(estadoPipeline);
+  const traduccionCompletada = estadoPipeline === "completo";
+  const analistaActivo = estadoPipeline === "analista-activo" || estadoPipeline === "ambos-asignados";
+  const traduccionActiva = estadoPipeline === "traduccion-activa";
+  const claseAnalistaCalculada = obtenerClaseFasePorAsignacion(
+    pedido,
+    estadosAnalista,
+    claseFaseVacia,
+    claseFasePendiente,
+  );
+  const claseAnalista = claseAnalistaCalculada !== claseFaseVacia
+    ? claseAnalistaCalculada
+    : analistaCompletado
+    ? claseFaseCompletada
+    : analistaActivo
+      ? claseFasePendiente
+      : claseFaseVacia;
+  const descripcionAnalista = obtenerTituloFasePedido(
+    pedido,
+    estadosAnalista,
+    "Sin asignacion",
+  );
 
   if (!requiereTraduccion) {
     return (
       <div className="mx-auto flex w-16 items-center justify-center" title="No requiere traduccion">
         <span
           className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseAnalista}`}
-          style={esFaseTraduccion ? undefined : estiloFaseActiva}
+          title={descripcionAnalista}
         >
           <FileSearch size={14} />
         </span>
@@ -98,24 +236,40 @@ function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
     );
   }
 
-  const claseTraduccion = esFaseTraduccion
-    ? "border-transparent"
-    : "border-slate-200 bg-slate-50 text-slate-300";
+  const claseTraduccionCalculada = obtenerClaseFasePorAsignacion(
+    pedido,
+    estadosTraduccion,
+    claseFaseVacia,
+    claseFasePendiente,
+  );
+  const claseTraduccion = claseTraduccionCalculada !== claseFaseVacia
+    ? claseTraduccionCalculada
+    : traduccionCompletada
+    ? claseFaseCompletada
+    : traduccionActiva
+      ? claseFasePendiente
+      : estadoPipeline === "ambos-asignados"
+        ? claseFasePendiente
+      : claseFaseVacia;
+  const claseLinea = traduccionCompletada || traduccionActiva ? "bg-green-200" : "bg-slate-200";
+  const descripcionTraduccion = obtenerTituloFasePedido(
+    pedido,
+    estadosTraduccion,
+    "Sin asignacion",
+  );
 
   return (
     <div className="relative mx-auto flex w-16 items-center justify-between" title="Analista / Traduccion">
-      <span
-        className={`absolute left-4 right-4 top-1/2 h-1 -translate-y-1/2 rounded-full ${esFaseTraduccion ? "bg-green-200" : "bg-slate-200"}`}
-      />
+      <span className={`absolute left-4 right-4 top-1/2 h-1 -translate-y-1/2 rounded-full ${claseLinea}`} />
       <span
         className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseAnalista}`}
-        style={esFaseTraduccion ? undefined : estiloFaseActiva}
+        title={descripcionAnalista}
       >
         <FileSearch size={14} />
       </span>
       <span
         className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseTraduccion}`}
-        style={esFaseTraduccion ? estiloFaseActiva : undefined}
+        title={descripcionTraduccion}
       >
         <Languages size={14} />
       </span>
@@ -204,6 +358,22 @@ export default function PedidoManagement() {
     const estadosSeleccionados = new Set(estadosFiltroOrdenados);
     return pedidos.filter((pedido) => estadosSeleccionados.has(pedido.estado));
   }, [estadosFiltroOrdenados, pedidosData?.lstPedido]);
+
+  const columnas = PEDIDO_COLUMNS.map((columna, indice) => {
+    if (indice !== 4) return columna;
+
+    return {
+      ...columna,
+      label: (
+        <CustomEncabezadoFiltroTabla
+          titulo="Estado"
+          opciones={ESTADO_OPTIONS}
+          valores={filtroEstados}
+          onChange={handleEstadosChange}
+        />
+      ),
+    };
+  });
 
   const tieneAsignaciones = (pedido: PedidoListEntry) => pedido.asignaciones.length > 0;
 
@@ -390,17 +560,6 @@ export default function PedidoManagement() {
             />
           </div>
 
-          <MultiCustomSelectorBuscable
-            label="Estado"
-            hideLabel
-            triggerIcon={Filter}
-            options={ESTADO_OPTIONS}
-            value={filtroEstados}
-            onChange={handleEstadosChange}
-            resumirSelecciones
-            placeholder="Todos los estados"
-          />
-
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
@@ -412,7 +571,7 @@ export default function PedidoManagement() {
       </div>
 
       <CustomTabla
-        columns={PEDIDO_COLUMNS}
+        columns={columnas}
         data={pedidosFiltrados}
         getId={(p) => p.idPedido}
         renderRow={renderRow}

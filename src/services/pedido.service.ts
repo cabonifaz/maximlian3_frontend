@@ -90,10 +90,19 @@ function normalizarAsignaciones(valor: unknown): PedidoAsignacionEntry[] {
       ),
       descripcion: obtenerTexto(
         registro.descripcion,
+        registro.descripcionAsignacion,
         registro.descripcionEstado,
         registro.estadoDescripcion,
         registro.Descripcion,
+        registro.DescripcionAsignacion,
       ) || "-",
+      idEstadoInforme: obtenerNumeroOpcional(registro.idEstadoInforme, registro.IdEstadoInforme) ?? null,
+      descripcionEstadoInforme: obtenerTexto(
+        registro.descripcionEstadoInforme,
+        registro.DescripcionEstadoInforme,
+        registro.estadoInforme,
+        registro.EstadoInforme,
+      ) || null,
     };
   });
 }
@@ -127,7 +136,7 @@ function normalizarFilaPedido(fila: unknown): PedidoListEntry {
     idFase: obtenerNumeroOpcional(registro.idFase, registro.IdFase),
     requiereTraduccion: obtenerIndicadorBinario(registro.requiereTraduccion, registro.RequiereTraduccion),
     vigencia: obtenerTexto(registro.vigencia, registro.Vigencia) || String(obtenerNumero(registro.vigencia, registro.Vigencia)),
-    asignaciones: normalizarAsignaciones(registro.asignaciones),
+    asignaciones: normalizarAsignaciones(registro.asignaciones ?? registro.Asignaciones),
   };
 }
 
