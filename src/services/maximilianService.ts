@@ -4,6 +4,11 @@ import { toast } from "sonner";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import { cerrarSesionExpirada } from "./sesion.service";
+import type { AxiosError, InternalAxiosRequestConfig } from "axios";
+
+type ConfiguracionAutenticada = InternalAxiosRequestConfig & {
+  reintentoAutenticacion?: boolean;
+};
 
 const maximilianService = axios.create({
   baseURL:
@@ -84,30 +89,39 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
 
 export { esRespuestaOkCompatibilidad };
 
+async function aplicarEncabezadosAutenticacion(
+  config: InternalAxiosRequestConfig,
+  forzarRefresco = false,
+) {
+  const { tokens } = await fetchAuthSession({ forceRefresh: forzarRefresco });
+  const tokenAcceso = tokens?.accessToken?.toString();
+  const idRolSeleccionado = sessionStorage.getItem("selected_role_id");
+  const sesionUsuario = sessionStorage.getItem("user_session");
+  const sesion = sesionUsuario ? JSON.parse(sesionUsuario) : null;
+
+  if (tokenAcceso) {
+    config.headers.Authorization = `Bearer ${tokenAcceso}`;
+  }
+
+  if (idRolSeleccionado) {
+    config.headers.idRol = idRolSeleccionado;
+  }
+
+  if (sesion?.idUsuario) {
+    config.headers.idUsuario = sesion.idUsuario;
+  }
+
+  if (sesion?.idEmpresa) {
+    config.headers.idEmpresa = sesion.idEmpresa;
+  }
+
+  return config;
+}
+
 maximilianService.interceptors.request.use(
   async (config) => {
     try {
-      const { tokens } = await fetchAuthSession();
-      const tokenAcceso = tokens?.accessToken?.toString();
-      const idRolSeleccionado = sessionStorage.getItem("selected_role_id");
-      const sesionUsuario = sessionStorage.getItem("user_session");
-      const session = sesionUsuario ? JSON.parse(sesionUsuario) : null;
-
-      if (tokenAcceso) {
-        config.headers.Authorization = `Bearer ${tokenAcceso}`;
-      }
-
-      if (idRolSeleccionado) {
-        config.headers.idRol = idRolSeleccionado;
-      }
-
-      if (session?.idUsuario) {
-        config.headers.idUsuario = session.idUsuario;
-      }
-
-      if (session?.idEmpresa) {
-        config.headers.idEmpresa = session.idEmpresa;
-      }
+      await aplicarEncabezadosAutenticacion(config);
     } catch (error) {
       console.error("Error fetching Cognito token:", error);
       void cerrarSesionExpirada();
@@ -148,16 +162,44 @@ maximilianService.interceptors.response.use(
 
     return response;
   },
-  (error) => {
-    if (error.response?.status === 401 || error.response?.status === 403) {
+  async (error: AxiosError) => {
+    const configOriginal = error.config as ConfiguracionAutenticada | undefined;
+
+    if (
+      error.response?.status === 401
+      && configOriginal
+      && !configOriginal.reintentoAutenticacion
+    ) {
+      configOriginal.reintentoAutenticacion = true;
+
+      try {
+        await aplicarEncabezadosAutenticacion(configOriginal, true);
+        return maximilianService(configOriginal);
+      } catch (errorRefresco) {
+        console.error("Error refreshing Cognito token:", errorRefresco);
+        void cerrarSesionExpirada();
+        return Promise.reject(errorRefresco);
+      }
+    }
+
+    if (error.response?.status === 401) {
       void cerrarSesionExpirada();
+      return Promise.reject(error);
+    }
+
+    if (error.response?.status === 403) {
+      const data = error.response.data as Partial<ApiResponse<unknown>> | undefined;
+      const mensaje =
+        data?.mensaje
+        || "No tienes permisos para realizar esta operacion.";
+      toast.error(mensaje);
       return Promise.reject(error);
     }
 
     // Handle network or HTTP errors
     const errorMessage =
       obtenerMensajeAmigableUsuario(error.config?.url) ||
-      error.response?.data?.mensaje ||
+      (error.response?.data as Partial<ApiResponse<unknown>> | undefined)?.mensaje ||
       "Error de conexión con el servidor";
     toast.error(errorMessage);
     return Promise.reject(error);

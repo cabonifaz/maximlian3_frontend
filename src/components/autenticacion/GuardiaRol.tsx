@@ -31,8 +31,8 @@ export function GuardiaRol({ children, rolRequerido }: PropsGuardiaRol) {
   useEffect(() => {
     const verificarAcceso = async () => {
       try {
-        const usuario = await servicioAutenticacion.getCurrentUser();
-        if (!usuario) {
+        const sesion = await servicioAutenticacion.getSession();
+        if (!sesion.tokens?.accessToken) {
           navigate("/iniciar-sesion", { replace: true });
           return;
         }

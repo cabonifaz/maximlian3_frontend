@@ -26,11 +26,13 @@ export function GuardiaInvitado({ children }: GuardiaInvitadoProps) {
 
     const checkAuth = async () => {
       try {
-        const user = await servicioAutenticacion.getCurrentUser();
-        if (user) {
+        const sesion = await servicioAutenticacion.getSession();
+        if (sesion.tokens?.accessToken) {
           navigate(obtenerRutaRolSeleccionado(), { replace: true });
           return;
         }
+
+        setIsChecking(false);
       } catch {
         // Not authenticated, allow access to guest pages
         setIsChecking(false);
