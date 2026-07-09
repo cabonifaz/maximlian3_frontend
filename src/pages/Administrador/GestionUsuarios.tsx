@@ -256,7 +256,7 @@ export default function GestionUsuarios() {
     { label: "Apellido Materno", width: "13%" },
     { label: "Nombre de Usuario", width: "15%" },
     { label: "Rol(es)", width: "15%" },
-    { label: "Correo", width: "20%" },
+    { label: "Correo", width: "17%" },
     {
       label: (
         <CustomEncabezadoFiltroTabla
@@ -268,7 +268,7 @@ export default function GestionUsuarios() {
           multiple={false}
         />
       ),
-      width: "7%",
+      width: "10%",
     },
     { label: "", width: "3%" },
   ];
