@@ -29,6 +29,7 @@ import { CustomModalDetallePedido } from "@maximilian/components/coordinador/Cus
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { type PedidoListEntry } from "@maximilian/shared/types/pedido.type";
+import { obtenerColorEstadoAnalista } from "@maximilian/shared/utils/investigacion.util";
 
 const PEDIDO_COLUMNS = [
   { label: "Cliente", width: "22%" },
@@ -120,29 +121,81 @@ function obtenerEstadoPipelinePedido(pedido: PedidoListEntry) {
   return "sin-asignacion";
 }
 
-function obtenerDescripcionFasePedido(
+function obtenerAsignacionFasePedido(pedido: PedidoListEntry, estados: number[]) {
+  return pedido.asignaciones.find((asignacion) =>
+    estados.includes(asignacion.idEstadoAsignacion),
+  );
+}
+
+function obtenerEstadoInformeAsignacion(idEstado?: number | null, descripcion?: string | null) {
+  if (idEstado === 1) return "asignado";
+  if (idEstado === 2) return "rechazado";
+  if (idEstado === 3) return "en-proceso";
+  if (idEstado === 4) return "aprobado";
+  if (idEstado === 5) return "pendiente-aprobacion";
+
+  const texto = descripcion?.trim().toLowerCase() ?? "";
+
+  if (!texto) return null;
+  if (texto.includes("rechaz")) return "rechazado";
+  if (texto.includes("pend")) return "pendiente-aprobacion";
+  if (texto.includes("aprob")) return "aprobado";
+  if (texto.includes("proceso") || texto.includes("borrador")) return "en-proceso";
+
+  return "asignado";
+}
+
+function obtenerClaseFasePorAsignacion(
+  pedido: PedidoListEntry,
+  estados: number[],
+  claseFaseVacia: string,
+  claseFasePendiente: string,
+) {
+  const asignacion = obtenerAsignacionFasePedido(pedido, estados);
+  const estadoInforme = obtenerEstadoInformeAsignacion(
+    asignacion?.idEstadoInforme,
+    asignacion?.descripcionEstadoInforme,
+  );
+
+  if (!asignacion) return claseFaseVacia;
+  if (!estadoInforme) return claseFasePendiente;
+
+  return `${obtenerColorEstadoAnalista(estadoInforme)} border-transparent`;
+}
+
+function obtenerTituloFasePedido(
   pedido: PedidoListEntry,
   estados: number[],
   textoFallback: string,
 ) {
-  const descripciones = pedido.asignaciones
-    .filter((asignacion) => estados.includes(asignacion.idEstadoAsignacion))
-    .map((asignacion) => asignacion.descripcion.trim())
-    .filter((descripcion) => descripcion && descripcion !== "-");
+  const asignacion = obtenerAsignacionFasePedido(pedido, estados);
 
-  return descripciones.length > 0 ? descripciones.join(" / ") : textoFallback;
+  if (!asignacion) return textoFallback;
+
+  const descripcionAsignacion = asignacion.descripcion || textoFallback;
+  const descripcionEstadoInforme = asignacion.descripcionEstadoInforme?.trim();
+
+  return descripcionEstadoInforme
+    ? `${descripcionAsignacion} - ${descripcionEstadoInforme}`
+    : `${descripcionAsignacion} - Sin iniciar`;
 }
 
 function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
   const requiereTraduccion = pedido.requiereTraduccion === 1;
   const estadoPipeline = obtenerEstadoPipelinePedido(pedido);
-  const estiloFaseActiva = {
-    backgroundColor: pedido.colorFondo || "#f1f5f9",
-    color: pedido.colorLetra || "#475569",
-  };
   const claseFaseVacia = "border-slate-200 bg-white text-slate-300";
   const claseFasePendiente = "border-slate-300 bg-slate-100 text-slate-500";
   const claseFaseCompletada = "border-green-200 bg-green-50 text-green-600";
+  const estadosAnalista = [
+    FASE_ASIGNACION.ASIGNADO_ANALISTA,
+    FASE_ASIGNACION.ANALISIS_COMPLETO,
+    FASE_ASIGNACION.REASIGNADO_ANALISTA,
+  ];
+  const estadosTraduccion = [
+    FASE_ASIGNACION.ASIGNADO_TRADUCCION,
+    FASE_ASIGNACION.REASIGNADO_TRADUCCION,
+    FASE_ASIGNACION.TRADUCCION_COMPLETA,
+  ];
   const analistaCompletado = [
     "analista-completo",
     "traduccion-activa",
@@ -151,19 +204,23 @@ function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
   const traduccionCompletada = estadoPipeline === "completo";
   const analistaActivo = estadoPipeline === "analista-activo" || estadoPipeline === "ambos-asignados";
   const traduccionActiva = estadoPipeline === "traduccion-activa";
-  const claseAnalista = analistaCompletado
+  const claseAnalistaCalculada = obtenerClaseFasePorAsignacion(
+    pedido,
+    estadosAnalista,
+    claseFaseVacia,
+    claseFasePendiente,
+  );
+  const claseAnalista = claseAnalistaCalculada !== claseFaseVacia
+    ? claseAnalistaCalculada
+    : analistaCompletado
     ? claseFaseCompletada
     : analistaActivo
-      ? "border-transparent"
+      ? claseFasePendiente
       : claseFaseVacia;
-  const descripcionAnalista = obtenerDescripcionFasePedido(
+  const descripcionAnalista = obtenerTituloFasePedido(
     pedido,
-    [
-      FASE_ASIGNACION.ASIGNADO_ANALISTA,
-      FASE_ASIGNACION.ANALISIS_COMPLETO,
-      FASE_ASIGNACION.REASIGNADO_ANALISTA,
-    ],
-    analistaCompletado ? "Analisis completo" : "Sin asignacion",
+    estadosAnalista,
+    "Sin asignacion",
   );
 
   if (!requiereTraduccion) {
@@ -171,7 +228,6 @@ function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
       <div className="mx-auto flex w-16 items-center justify-center" title="No requiere traduccion">
         <span
           className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseAnalista}`}
-          style={analistaActivo ? estiloFaseActiva : undefined}
           title={descripcionAnalista}
         >
           <FileSearch size={14} />
@@ -180,22 +236,26 @@ function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
     );
   }
 
-  const claseTraduccion = traduccionCompletada
+  const claseTraduccionCalculada = obtenerClaseFasePorAsignacion(
+    pedido,
+    estadosTraduccion,
+    claseFaseVacia,
+    claseFasePendiente,
+  );
+  const claseTraduccion = claseTraduccionCalculada !== claseFaseVacia
+    ? claseTraduccionCalculada
+    : traduccionCompletada
     ? claseFaseCompletada
     : traduccionActiva
-      ? "border-transparent"
+      ? claseFasePendiente
       : estadoPipeline === "ambos-asignados"
         ? claseFasePendiente
       : claseFaseVacia;
   const claseLinea = traduccionCompletada || traduccionActiva ? "bg-green-200" : "bg-slate-200";
-  const descripcionTraduccion = obtenerDescripcionFasePedido(
+  const descripcionTraduccion = obtenerTituloFasePedido(
     pedido,
-    [
-      FASE_ASIGNACION.ASIGNADO_TRADUCCION,
-      FASE_ASIGNACION.REASIGNADO_TRADUCCION,
-      FASE_ASIGNACION.TRADUCCION_COMPLETA,
-    ],
-    traduccionCompletada ? "Traduccion completa" : "Sin asignacion",
+    estadosTraduccion,
+    "Sin asignacion",
   );
 
   return (
@@ -203,14 +263,12 @@ function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
       <span className={`absolute left-4 right-4 top-1/2 h-1 -translate-y-1/2 rounded-full ${claseLinea}`} />
       <span
         className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseAnalista}`}
-        style={analistaActivo ? estiloFaseActiva : undefined}
         title={descripcionAnalista}
       >
         <FileSearch size={14} />
       </span>
       <span
         className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseTraduccion}`}
-        style={traduccionActiva ? estiloFaseActiva : undefined}
         title={descripcionTraduccion}
       >
         <Languages size={14} />

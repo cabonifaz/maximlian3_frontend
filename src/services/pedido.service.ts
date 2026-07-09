@@ -90,10 +90,19 @@ function normalizarAsignaciones(valor: unknown): PedidoAsignacionEntry[] {
       ),
       descripcion: obtenerTexto(
         registro.descripcion,
+        registro.descripcionAsignacion,
         registro.descripcionEstado,
         registro.estadoDescripcion,
         registro.Descripcion,
+        registro.DescripcionAsignacion,
       ) || "-",
+      idEstadoInforme: obtenerNumeroOpcional(registro.idEstadoInforme, registro.IdEstadoInforme) ?? null,
+      descripcionEstadoInforme: obtenerTexto(
+        registro.descripcionEstadoInforme,
+        registro.DescripcionEstadoInforme,
+        registro.estadoInforme,
+        registro.EstadoInforme,
+      ) || null,
     };
   });
 }

@@ -1,6 +1,8 @@
 export interface PedidoAsignacionEntry {
   idEstadoAsignacion: number;
   descripcion: string;
+  idEstadoInforme?: number | null;
+  descripcionEstadoInforme?: string | null;
 }
 
 export interface PedidoListEntry {
