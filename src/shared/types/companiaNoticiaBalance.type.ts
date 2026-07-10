@@ -4,6 +4,8 @@ export interface CompaniaNoticiaBalanceListParams {
   idCompania?: number;
   busqueda?: string;
   numPag?: number;
+  tipoEstadoFinanciero?: string;
+  estado?: string;
 }
 
 export interface CompaniaNoticiaBalanceObtenerParams {

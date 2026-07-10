@@ -19,6 +19,7 @@ import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSele
 import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomEntradaUrl } from "@maximilian/components/common/CustomEntradaUrl";
+import { useRetardo } from "@maximilian/hooks/useRetardo";
 
 interface ModalAgregarClienteProps {
   isOpen: boolean;
@@ -82,6 +83,7 @@ export function ModalAgregarCliente({
   const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null);
   const [contactsPag, setContactsPag] = useState(1);
   const [contactSearch, setContactSearch] = useState("");
+  const busquedaContactoConRetardo = useRetardo(contactSearch);
 
   const {
     register: infoRegister,
@@ -701,7 +703,7 @@ export function ModalAgregarCliente({
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {(() => {
-                      const term = contactSearch.toLowerCase();
+                      const term = busquedaContactoConRetardo.toLowerCase();
                       const filtered = addedContacts
                         .map((c, originalIndex) => ({ ...c, originalIndex }))
                         .filter(c =>

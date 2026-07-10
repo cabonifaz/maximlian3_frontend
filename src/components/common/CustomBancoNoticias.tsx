@@ -4,7 +4,8 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import {
   Building2,
   CalendarDays,
-  Clock3,
+  ChevronLeft,
+  ChevronRight,
   FileText,
   Loader2,
   Plus,
@@ -76,6 +77,11 @@ export function CustomBancoNoticias({
     [],
   );
   const [claveInputArchivo, setClaveInputArchivo] = useState(0);
+  const [paginaNoticias, setPaginaNoticias] = useState(1);
+
+  useEffect(() => {
+    setPaginaNoticias(1);
+  }, [busqueda]);
 
   const {
     register,
@@ -102,8 +108,8 @@ export function CustomBancoNoticias({
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["companiaNoticia", { busqueda, numPag: 1 }],
-    queryFn: () => servicioCompaniaNoticia.list({ busqueda, numPag: 1 }),
+    queryKey: ["companiaNoticia", { busqueda, numPag: paginaNoticias }],
+    queryFn: () => servicioCompaniaNoticia.list({ busqueda, numPag: paginaNoticias }),
   });
 
   const crearNoticiaMutation = useMutation({
@@ -129,13 +135,9 @@ export function CustomBancoNoticias({
 
   const noticias = respuestaNoticias?.lstCompaniaNoticia ?? [];
   const totalRegistros = respuestaNoticias?.totalRegistros ?? noticias.length;
+  const totalPaginas = Math.max(respuestaNoticias?.totalPaginas ?? 1, 1);
   const idCompaniaSeleccionada = watch("idCompania");
   const fechaNoticiaSeleccionada = watch("fechaNoticia");
-
-  const etiquetaPaginacion = useMemo(
-    () => `Mostrando ${noticias.length} de ${totalRegistros} noticias`,
-    [noticias.length, totalRegistros],
-  );
 
   const cerrarModalNoticia = () => {
     setEstaAbiertoModalNoticia(false);
@@ -252,10 +254,6 @@ export function CustomBancoNoticias({
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-5 text-xs font-bold text-slate-400">
-                      <span className="inline-flex items-center gap-1.5">
-                        <Clock3 size={14} className="text-slate-300" />
-                        {formatearTiempoRelativo(noticia.fechaNoticia)}
-                      </span>
                       {noticia.categoria ? (
                         <span className="inline-flex items-center gap-1.5">
                           <User size={14} className="text-slate-300" />
@@ -282,9 +280,15 @@ export function CustomBancoNoticias({
         )}
       </section>
 
-      <div className="flex items-center justify-between pt-4 text-xs text-slate-400">
-        <p>{etiquetaPaginacion}</p>
-      </div>
+      <CustomPaginacionBanco
+        paginaActual={paginaNoticias}
+        totalPaginas={totalPaginas}
+        totalRegistros={totalRegistros}
+        totalPaginaActual={noticias.length}
+        etiqueta="noticias"
+        deshabilitado={isLoading || isError}
+        onCambiarPagina={setPaginaNoticias}
+      />
 
       <CustomModalDetalleNoticia
         noticia={noticiaDetalle}
@@ -425,6 +429,29 @@ function CustomModalDetalleNoticia({
   compania: CompaniaListaItem | null;
   onCerrar: () => void;
 }) {
+  const [idArchivoAbriendo, setIdArchivoAbriendo] = useState<number | null>(
+    null,
+  );
+
+  const abrirArchivo = async (archivo: CompaniaNoticiaArchivo) => {
+    if (!archivo.idCompaniaNoticiaArchivo) {
+      toast.error("No se pudo identificar el archivo.");
+      return;
+    }
+
+    setIdArchivoAbriendo(archivo.idCompaniaNoticiaArchivo);
+    try {
+      const respuesta = await servicioCompaniaNoticia.obtenerArchivo({
+        idCompaniaNoticiaArchivo: archivo.idCompaniaNoticiaArchivo,
+      });
+      window.open(respuesta.downloadUrl, "_blank", "noopener,noreferrer");
+    } catch {
+      toast.error("No se pudo abrir el archivo.");
+    } finally {
+      setIdArchivoAbriendo(null);
+    }
+  };
+
   if (!noticia) return null;
 
   return (
@@ -537,19 +564,20 @@ function CustomModalDetalleNoticia({
                         ) : null}
                       </div>
                     </div>
-                    {archivo.downloadUrl || archivo.archivoUrl ? (
-                      <div className="mt-3">
-                        <a
-                          className="inline-flex h-8 items-center justify-center rounded-md bg-slate-950 px-3 text-[10px] font-bold uppercase tracking-wide text-white transition hover:bg-slate-800"
-                          href={archivo.downloadUrl || archivo.archivoUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          download={archivo.nombreArchivo}
-                        >
-                          Abrir
-                        </a>
-                      </div>
-                    ) : null}
+                    <div className="mt-3">
+                      <CustomButton
+                        type="button"
+                        size="sm"
+                        className="h-8 rounded-md px-3 text-[10px] font-bold uppercase tracking-wide"
+                        loading={
+                          idArchivoAbriendo === archivo.idCompaniaNoticiaArchivo
+                        }
+                        loadingText="Descargando..."
+                        onClick={() => void abrirArchivo(archivo)}
+                      >
+                        Descargar
+                      </CustomButton>
+                    </div>
                   </div>
                 ))
               )}
@@ -900,6 +928,103 @@ function EstadoCargandoNoticias() {
   );
 }
 
+function obtenerPaginasPaginacion(
+  paginaActual: number,
+  totalPaginas: number,
+): (number | "...")[] {
+  if (totalPaginas <= 7) {
+    return Array.from({ length: totalPaginas }, (_, indice) => indice + 1);
+  }
+
+  const paginas: (number | "...")[] = [1];
+  if (paginaActual > 3) paginas.push("...");
+
+  for (
+    let pagina = Math.max(2, paginaActual - 1);
+    pagina <= Math.min(totalPaginas - 1, paginaActual + 1);
+    pagina++
+  ) {
+    paginas.push(pagina);
+  }
+
+  if (paginaActual < totalPaginas - 2) paginas.push("...");
+  paginas.push(totalPaginas);
+
+  return paginas;
+}
+
+function CustomPaginacionBanco({
+  paginaActual,
+  totalPaginas,
+  totalRegistros,
+  totalPaginaActual,
+  etiqueta,
+  deshabilitado = false,
+  onCambiarPagina,
+}: {
+  paginaActual: number;
+  totalPaginas: number;
+  totalRegistros: number;
+  totalPaginaActual: number;
+  etiqueta: string;
+  deshabilitado?: boolean;
+  onCambiarPagina: (pagina: number) => void;
+}) {
+  const paginas = obtenerPaginasPaginacion(paginaActual, totalPaginas);
+
+  return (
+    <div className="flex flex-col gap-3 pt-4 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+      <p>
+        Mostrando {totalPaginaActual} de {totalRegistros} {etiqueta}
+      </p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onCambiarPagina(paginaActual - 1)}
+          disabled={deshabilitado || paginaActual <= 1}
+          className="rounded-lg p-2 text-slate-300 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-30"
+          aria-label="Pagina anterior"
+        >
+          <ChevronLeft size={14} />
+        </button>
+        {paginas.map((pagina, indice) =>
+          pagina === "..." ? (
+            <span
+              key={`ellipsis-${indice}`}
+              className="flex h-8 w-8 items-center justify-center text-xs text-slate-400"
+            >
+              ...
+            </span>
+          ) : (
+            <button
+              key={pagina}
+              type="button"
+              onClick={() => onCambiarPagina(pagina)}
+              disabled={deshabilitado}
+              className={`h-8 w-8 rounded-lg text-xs font-bold transition ${
+                pagina === paginaActual
+                  ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-100"
+                  : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              } disabled:cursor-not-allowed disabled:opacity-50`}
+            >
+              {pagina}
+            </button>
+          ),
+        )}
+        <button
+          type="button"
+          onClick={() => onCambiarPagina(paginaActual + 1)}
+          disabled={deshabilitado || paginaActual >= totalPaginas}
+          className="rounded-lg p-2 text-slate-300 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-30"
+          aria-label="Pagina siguiente"
+        >
+          <ChevronRight size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function CustomModalBase({
   children,
   ancho,
@@ -1000,31 +1125,6 @@ function formatearFecha(fecha: string) {
     month: "short",
     year: "numeric",
   }).format(fechaParseada);
-}
-
-function formatearTiempoRelativo(fecha: string) {
-  if (!fecha) return "-";
-
-  const fechaParseada = new Date(fecha);
-  if (Number.isNaN(fechaParseada.getTime())) return "-";
-
-  const hoy = new Date();
-  const inicioHoy = new Date(
-    hoy.getFullYear(),
-    hoy.getMonth(),
-    hoy.getDate(),
-  ).getTime();
-  const inicioFecha = new Date(
-    fechaParseada.getFullYear(),
-    fechaParseada.getMonth(),
-    fechaParseada.getDate(),
-  ).getTime();
-  const dias = Math.floor((inicioHoy - inicioFecha) / 86_400_000);
-
-  if (dias <= 0) return "Hoy";
-  if (dias === 1) return "Ayer";
-
-  return `Hace ${dias} dias`;
 }
 
 function formatearTamano(tamano: number) {

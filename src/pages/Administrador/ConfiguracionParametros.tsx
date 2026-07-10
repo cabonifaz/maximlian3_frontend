@@ -13,6 +13,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import {
   TablaMaestraId,
@@ -50,51 +51,83 @@ const PARAMETROS_DISPONIBLES: ParametroDisponible[] = [
   { idMaestro: TablaMaestraId.IDIOMA, etiqueta: "Idioma" },
   { idMaestro: TablaMaestraId.TIPO_TRAMITE, etiqueta: "Tipo de tramite" },
   { idMaestro: TablaMaestraId.ROLES, etiqueta: "Roles" },
-  { idMaestro: TablaMaestraId.TIPO_REG_TRIBUTARIO, etiqueta: "Tipo reg. tributario" },
+  {
+    idMaestro: TablaMaestraId.TIPO_REG_TRIBUTARIO,
+    etiqueta: "Tipo reg. tributario",
+  },
   { idMaestro: TablaMaestraId.TIPO_CONTACTO, etiqueta: "Tipo contacto" },
   { idMaestro: TablaMaestraId.AREA_TRABAJO, etiqueta: "Area trabajo" },
   { idMaestro: TablaMaestraId.ESTADO_CLIENTE, etiqueta: "Estado del cliente" },
   { idMaestro: TablaMaestraId.PRODUCTO, etiqueta: "Producto" },
   { idMaestro: TablaMaestraId.EMPRESA_ATENCION, etiqueta: "Empresa atencion" },
-  { idMaestro: TablaMaestraId.PLANTILLA_INFORME, etiqueta: "Plantilla informe" },
+  {
+    idMaestro: TablaMaestraId.PLANTILLA_INFORME,
+    etiqueta: "Plantilla informe",
+  },
   { idMaestro: TablaMaestraId.TIPO_DOCUMENTO, etiqueta: "Tipo documento" },
-  { idMaestro: TablaMaestraId.TIPO_PLAZO_CREDITO, etiqueta: "Tipo plazo credito" },
+  {
+    idMaestro: TablaMaestraId.TIPO_PLAZO_CREDITO,
+    etiqueta: "Tipo plazo credito",
+  },
   { idMaestro: TablaMaestraId.TIPO_EMPRESA, etiqueta: "Tipo empresa" },
   { idMaestro: TablaMaestraId.CIUDAD, etiqueta: "Ciudad" },
   { idMaestro: TablaMaestraId.MES, etiqueta: "Mes" },
   { idMaestro: TablaMaestraId.SECTOR_ECONOMICO, etiqueta: "Sector economico" },
-  { idMaestro: TablaMaestraId.ACTIVIDAD_ECONOMICA, etiqueta: "Actividad economica" },
+  {
+    idMaestro: TablaMaestraId.ACTIVIDAD_ECONOMICA,
+    etiqueta: "Actividad economica",
+  },
   { idMaestro: TablaMaestraId.TIPO_LOCAL, etiqueta: "Tipo de local" },
   { idMaestro: TablaMaestraId.TIPO_BALANCE, etiqueta: "Tipo de balance" },
-  { idMaestro: TablaMaestraId.ESTADO_FINANCIERO, etiqueta: "Estado financiero" },
+  {
+    idMaestro: TablaMaestraId.ESTADO_FINANCIERO,
+    etiqueta: "Estado financiero",
+  },
   { idMaestro: TablaMaestraId.TIPO_PROVEEDOR, etiqueta: "Tipo de proveedor" },
   { idMaestro: TablaMaestraId.ETAPA_ASIGNACION, etiqueta: "Fase asignacion" },
   { idMaestro: TablaMaestraId.CLASE_CIIU, etiqueta: "Clase CIIU" },
-  { idMaestro: TablaMaestraId.LIMITE_CREDITO_PROVEEDOR, etiqueta: "Limite credito proveedor" },
-  { idMaestro: TablaMaestraId.TIEMPO_CREDITO_VENTAS, etiqueta: "Tiempo credito ventas" },
+  {
+    idMaestro: TablaMaestraId.LIMITE_CREDITO_PROVEEDOR,
+    etiqueta: "Limite credito proveedor",
+  },
+  {
+    idMaestro: TablaMaestraId.TIEMPO_CREDITO_VENTAS,
+    etiqueta: "Tiempo credito ventas",
+  },
   { idMaestro: TablaMaestraId.CARGO_DIRECTORIO, etiqueta: "Cargo directorio" },
-  { idMaestro: TablaMaestraId.NIVEL_CONFIABILIDAD, etiqueta: "Nivel confiabilidad" },
+  {
+    idMaestro: TablaMaestraId.NIVEL_CONFIABILIDAD,
+    etiqueta: "Nivel confiabilidad",
+  },
   { idMaestro: TablaMaestraId.TIPO_EVIDENCIA, etiqueta: "Tipo evidencia" },
   { idMaestro: TablaMaestraId.FASE_EVIDENCIA, etiqueta: "Fase evidencia" },
-  { idMaestro: TablaMaestraId.OBLIGACION_BOLSA, etiqueta: "Obligacion en bolsa" },
-  { idMaestro: TablaMaestraId.FORMATO_FECHA_INFORME, etiqueta: "Formato fecha informe" },
+  {
+    idMaestro: TablaMaestraId.OBLIGACION_BOLSA,
+    etiqueta: "Obligacion en bolsa",
+  },
+  {
+    idMaestro: TablaMaestraId.FORMATO_FECHA_INFORME,
+    etiqueta: "Formato fecha informe",
+  },
 ];
 
-const opcionesParametros: EntradaTablaMaestra[] = PARAMETROS_DISPONIBLES.map((parametro) => ({
-  idEmpresa: 0,
-  idTablaMaestra: null,
-  idMaestro: 0,
-  descripcion: parametro.etiqueta,
-  num1: parametro.idMaestro,
-  num2: null,
-  num3: null,
-  string1: parametro.etiqueta,
-  string2: null,
-  string3: null,
-  date1: null,
-  date2: null,
-  date3: null,
-}));
+const opcionesParametros: EntradaTablaMaestra[] = PARAMETROS_DISPONIBLES.map(
+  (parametro) => ({
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: parametro.etiqueta,
+    num1: parametro.idMaestro,
+    num2: null,
+    num3: null,
+    string1: parametro.etiqueta,
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  }),
+);
 
 const REGISTROS_POR_PAGINA = 4;
 const ID_ESTADO_ACTIVO = 1;
@@ -125,7 +158,8 @@ function obtenerEstadoActivo(parametro: EntradaTablaMaestra) {
 }
 
 function obtenerClaveRegistroParametro(parametro: EntradaTablaMaestra) {
-  if (parametro.idTablaMaestra != null) return `tabla-${parametro.idTablaMaestra}`;
+  if (parametro.idTablaMaestra != null)
+    return `tabla-${parametro.idTablaMaestra}`;
 
   return [
     "maestro",
@@ -137,7 +171,9 @@ function obtenerClaveRegistroParametro(parametro: EntradaTablaMaestra) {
   ].join("-");
 }
 
-function crearValoresFormulario(parametro?: EntradaTablaMaestra): FormularioParametro {
+function crearValoresFormulario(
+  parametro?: EntradaTablaMaestra,
+): FormularioParametro {
   return {
     codigo: parametro ? obtenerCodigoParametro(parametro) : "",
     descripcion: parametro ? obtenerDescripcionParametro(parametro) : "",
@@ -154,7 +190,10 @@ function crearPayloadBase(
 ): TablaMaestraCrearRequest {
   return {
     idMaestro,
-    descripcion: obtenerDescripcionTablaMaestra(idMaestro, parametro?.descripcion),
+    descripcion: obtenerDescripcionTablaMaestra(
+      idMaestro,
+      parametro?.descripcion,
+    ),
     num1: parametro?.num1 ?? obtenerSiguienteNumTablaMaestra(opcionesActuales),
     num2: parametro?.num2 ?? null,
     num3: valores.activo ? ID_ESTADO_ACTIVO : ID_ESTADO_INACTIVO,
@@ -177,7 +216,9 @@ function EstadoParametro({ activo }: { activo: boolean }) {
   return (
     <span
       className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold uppercase ${
-        activo ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-400"
+        activo
+          ? "bg-emerald-50 text-emerald-600"
+          : "bg-slate-100 text-slate-400"
       }`}
     >
       {activo ? "Activo" : "Inactivo"}
@@ -197,7 +238,9 @@ function CamposEdicionParametro({
       <td className="px-5 py-3">
         <input
           value={valores.codigo}
-          onChange={(event) => onCambiar({ ...valores, codigo: event.target.value })}
+          onChange={(event) =>
+            onCambiar({ ...valores, codigo: event.target.value })
+          }
           placeholder="Ej. BRL"
           className="h-9 w-full rounded-md border border-blue-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
         />
@@ -205,7 +248,9 @@ function CamposEdicionParametro({
       <td className="px-5 py-3">
         <input
           value={valores.descripcion}
-          onChange={(event) => onCambiar({ ...valores, descripcion: event.target.value })}
+          onChange={(event) =>
+            onCambiar({ ...valores, descripcion: event.target.value })
+          }
           placeholder="Ej. Real Brasileno"
           className="h-9 w-full rounded-md border border-blue-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
         />
@@ -213,7 +258,9 @@ function CamposEdicionParametro({
       <td className="px-5 py-3">
         <input
           value={valores.simbolo}
-          onChange={(event) => onCambiar({ ...valores, simbolo: event.target.value })}
+          onChange={(event) =>
+            onCambiar({ ...valores, simbolo: event.target.value })
+          }
           placeholder="R$"
           className="h-9 w-20 rounded-md border border-blue-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
         />
@@ -221,7 +268,9 @@ function CamposEdicionParametro({
       <td className="px-5 py-3">
         <select
           value={valores.activo ? "activo" : "inactivo"}
-          onChange={(event) => onCambiar({ ...valores, activo: event.target.value === "activo" })}
+          onChange={(event) =>
+            onCambiar({ ...valores, activo: event.target.value === "activo" })
+          }
           className="h-9 rounded-full border border-blue-200 bg-white px-3 text-[10px] font-bold uppercase text-slate-600 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
         >
           <option value="activo">Activo</option>
@@ -234,22 +283,34 @@ function CamposEdicionParametro({
 
 export default function ConfiguracionParametros() {
   const clienteConsultas = useQueryClient();
-  const [idMaestroSeleccionado, setIdMaestroSeleccionado] = useState<number>(TablaMaestraId.MONEDA);
+  const [idMaestroSeleccionado, setIdMaestroSeleccionado] = useState<number>(
+    TablaMaestraId.MONEDA,
+  );
   const [filtro, setFiltro] = useState("");
+  const filtroConRetardo = useRetardo(filtro);
   const [paginaActual, setPaginaActual] = useState(1);
-  const [filaFormulario, setFilaFormulario] = useState<FilaFormularioParametro | null>(null);
+  const [filaFormulario, setFilaFormulario] =
+    useState<FilaFormularioParametro | null>(null);
   const [mensajeValidacion, setMensajeValidacion] = useState("");
 
-  const { data: parametros, isLoading, isError, refetch } = useQuery({
+  const {
+    data: parametros,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["masterTable", idMaestroSeleccionado],
     queryFn: () => servicioTablaMaestra.list(idMaestroSeleccionado),
     staleTime: Infinity,
   });
 
   const mutacionCrear = useMutation({
-    mutationFn: (payload: TablaMaestraCrearRequest) => servicioTablaMaestra.crear(payload),
+    mutationFn: (payload: TablaMaestraCrearRequest) =>
+      servicioTablaMaestra.crear(payload),
     onSuccess: () => {
-      clienteConsultas.invalidateQueries({ queryKey: ["masterTable", idMaestroSeleccionado] });
+      clienteConsultas.invalidateQueries({
+        queryKey: ["masterTable", idMaestroSeleccionado],
+      });
       setFilaFormulario(null);
       setMensajeValidacion("");
       setPaginaActual(1);
@@ -257,16 +318,19 @@ export default function ConfiguracionParametros() {
   });
 
   const mutacionEditar = useMutation({
-    mutationFn: (payload: TablaMaestraEditarRequest) => servicioTablaMaestra.editar(payload),
+    mutationFn: (payload: TablaMaestraEditarRequest) =>
+      servicioTablaMaestra.editar(payload),
     onSuccess: () => {
-      clienteConsultas.invalidateQueries({ queryKey: ["masterTable", idMaestroSeleccionado] });
+      clienteConsultas.invalidateQueries({
+        queryKey: ["masterTable", idMaestroSeleccionado],
+      });
       setFilaFormulario(null);
       setMensajeValidacion("");
     },
   });
 
   const parametrosFiltrados = useMemo(() => {
-    const termino = normalizarTexto(filtro);
+    const termino = normalizarTexto(filtroConRetardo);
     const lista = parametros ?? [];
     if (!termino) return lista;
 
@@ -278,9 +342,12 @@ export default function ConfiguracionParametros() {
         obtenerEstadoActivo(parametro) ? "activo" : "inactivo",
       ].some((valor) => normalizarTexto(valor).includes(termino)),
     );
-  }, [filtro, parametros]);
+  }, [filtroConRetardo, parametros]);
 
-  const totalPaginas = Math.max(1, Math.ceil(parametrosFiltrados.length / REGISTROS_POR_PAGINA));
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(parametrosFiltrados.length / REGISTROS_POR_PAGINA),
+  );
   const registrosPagina = parametrosFiltrados.slice(
     (paginaActual - 1) * REGISTROS_POR_PAGINA,
     paginaActual * REGISTROS_POR_PAGINA,
@@ -332,7 +399,9 @@ export default function ConfiguracionParametros() {
     }
 
     const parametroActual = parametros?.find(
-      (parametro) => obtenerClaveRegistroParametro(parametro) === filaFormulario.claveRegistro,
+      (parametro) =>
+        obtenerClaveRegistroParametro(parametro) ===
+        filaFormulario.claveRegistro,
     );
 
     const payload = crearPayloadBase(
@@ -358,14 +427,19 @@ export default function ConfiguracionParametros() {
     setPaginaActual(pagina);
   };
 
-  const paginas = Array.from({ length: totalPaginas }, (_, indice) => indice + 1);
+  const paginas = Array.from(
+    { length: totalPaginas },
+    (_, indice) => indice + 1,
+  );
   const mostrarFilaCreacion = filaFormulario?.modo === "crear";
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-brand-black">Mantenimiento de parametros</h1>
+          <h1 className="text-2xl font-bold text-brand-black">
+            Mantenimiento de parametros
+          </h1>
           <p className="mt-1 text-sm text-slate-500">
             Configura y gestiona los valores maestros del sistema.
           </p>
@@ -424,11 +498,21 @@ export default function ConfiguracionParametros() {
           <table className="w-full min-w-[760px] border-collapse text-left">
             <thead>
               <tr className="border-b border-slate-100">
-                <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">Codigo</th>
-                <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">Descripcion</th>
-                <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">Simbolo</th>
-                <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">Estado</th>
-                <th className="px-5 py-4 text-right text-[11px] font-bold uppercase text-slate-300">Acciones</th>
+                <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
+                  Codigo
+                </th>
+                <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
+                  Descripcion
+                </th>
+                <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
+                  Simbolo
+                </th>
+                <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
+                  Estado
+                </th>
+                <th className="px-5 py-4 text-right text-[11px] font-bold uppercase text-slate-300">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -436,7 +520,9 @@ export default function ConfiguracionParametros() {
                 <tr className="bg-slate-50/70">
                   <CamposEdicionParametro
                     valores={filaFormulario.valores}
-                    onCambiar={(valores) => setFilaFormulario({ ...filaFormulario, valores })}
+                    onCambiar={(valores) =>
+                      setFilaFormulario({ ...filaFormulario, valores })
+                    }
                   />
                   <td className="px-5 py-3">
                     <div className="flex justify-end gap-2">
@@ -449,7 +535,11 @@ export default function ConfiguracionParametros() {
                         className="h-8 w-8 rounded-md text-emerald-500 hover:bg-emerald-50"
                         title="Guardar"
                       >
-                        {estaGuardando ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                        {estaGuardando ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <Check size={16} />
+                        )}
                       </CustomButton>
                       <CustomButton
                         type="button"
@@ -472,7 +562,9 @@ export default function ConfiguracionParametros() {
                   <td colSpan={5} className="px-5 py-16 text-center">
                     <div className="flex flex-col items-center gap-3 text-slate-400">
                       <Loader2 className="h-8 w-8 animate-spin" />
-                      <span className="text-sm font-medium">Cargando parametros...</span>
+                      <span className="text-sm font-medium">
+                        Cargando parametros...
+                      </span>
                     </div>
                   </td>
                 </tr>
@@ -480,8 +572,15 @@ export default function ConfiguracionParametros() {
                 <tr>
                   <td colSpan={5} className="px-5 py-16 text-center">
                     <div className="flex flex-col items-center gap-4">
-                      <span className="text-sm font-bold text-slate-700">Error al cargar parametros</span>
-                      <CustomButton type="button" variant="wine" size="sm" onClick={() => refetch()}>
+                      <span className="text-sm font-bold text-slate-700">
+                        Error al cargar parametros
+                      </span>
+                      <CustomButton
+                        type="button"
+                        variant="wine"
+                        size="sm"
+                        onClick={() => refetch()}
+                      >
                         Reintentar
                       </CustomButton>
                     </div>
@@ -489,13 +588,17 @@ export default function ConfiguracionParametros() {
                 </tr>
               ) : registrosPagina.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-16 text-center text-sm text-slate-400">
+                  <td
+                    colSpan={5}
+                    className="px-5 py-16 text-center text-sm text-slate-400"
+                  >
                     No se encontraron parametros registrados.
                   </td>
                 </tr>
               ) : (
                 registrosPagina.map((parametro) => {
-                  const claveRegistro = obtenerClaveRegistroParametro(parametro);
+                  const claveRegistro =
+                    obtenerClaveRegistroParametro(parametro);
                   const estaEditando =
                     filaFormulario?.modo === "editar" &&
                     filaFormulario.claveRegistro === claveRegistro;
@@ -503,12 +606,16 @@ export default function ConfiguracionParametros() {
                   return (
                     <tr
                       key={claveRegistro}
-                      className={estaEditando ? "bg-blue-50/40" : "hover:bg-slate-50/60"}
+                      className={
+                        estaEditando ? "bg-blue-50/40" : "hover:bg-slate-50/60"
+                      }
                     >
                       {estaEditando && filaFormulario ? (
                         <CamposEdicionParametro
                           valores={filaFormulario.valores}
-                          onCambiar={(valores) => setFilaFormulario({ ...filaFormulario, valores })}
+                          onCambiar={(valores) =>
+                            setFilaFormulario({ ...filaFormulario, valores })
+                          }
                         />
                       ) : (
                         <>
@@ -522,7 +629,9 @@ export default function ConfiguracionParametros() {
                             {obtenerSimboloParametro(parametro) || "-"}
                           </td>
                           <td className="px-5 py-5">
-                            <EstadoParametro activo={obtenerEstadoActivo(parametro)} />
+                            <EstadoParametro
+                              activo={obtenerEstadoActivo(parametro)}
+                            />
                           </td>
                         </>
                       )}
@@ -582,7 +691,8 @@ export default function ConfiguracionParametros() {
 
         <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4">
           <p className="text-xs font-medium text-slate-400">
-            Mostrando {registrosPagina.length} de {parametrosFiltrados.length} registros
+            Mostrando {registrosPagina.length} de {parametrosFiltrados.length}{" "}
+            registros
           </p>
           <div className="flex items-center gap-1">
             <button

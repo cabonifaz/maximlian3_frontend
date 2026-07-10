@@ -24,7 +24,7 @@ export function obtenerColorEstadoAnalista(estado: EstadoInvestigacionAnalista) 
     case "asignado":
       return "bg-slate-100 text-slate-500";
     case "en-proceso":
-      return "bg-orange-50 text-orange-500";
+      return "bg-blue-50 text-blue-600";
     case "pendiente-aprobacion":
       return "bg-amber-50 text-amber-600";
     case "aprobado":

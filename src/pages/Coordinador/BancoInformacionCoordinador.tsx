@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Filter, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { CustomBancoNoticias } from "@maximilian/components/common/CustomBancoNoticias";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { useRetardo } from "@maximilian/hooks/useRetardo";
 
 export default function BancoInformacionCoordinador() {
   const [busqueda, setBusqueda] = useState("");
   const [claveAgregar, setClaveAgregar] = useState(0);
+  const busquedaConRetardo = useRetardo(busqueda);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -27,13 +29,9 @@ export default function BancoInformacionCoordinador() {
             placeholder="Buscar noticias, reportes o articulos..."
           />
         </label>
-        <CustomButton variant="secondary" size="sm" className="h-12 rounded-xl bg-white text-slate-600">
-          <Filter size={14} />
-          Filtros
-        </CustomButton>
       </div>
 
-      <CustomBancoNoticias busqueda={busqueda} mostrarBotonAgregar={false} senalApertura={claveAgregar} />
+      <CustomBancoNoticias busqueda={busquedaConRetardo} mostrarBotonAgregar={false} senalApertura={claveAgregar} />
     </div>
   );
 }

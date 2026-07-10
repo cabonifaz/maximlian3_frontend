@@ -2,6 +2,8 @@ import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianServ
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   CompaniaNoticiaArchivo,
+  CompaniaNoticiaArchivoObtenerParams,
+  CompaniaNoticiaArchivoObtenerResponse,
   CompaniaNoticiaCrearRequest,
   CompaniaNoticiaEditarRequest,
   CompaniaNoticiaEliminarRequest,
@@ -139,6 +141,23 @@ function normalizarGuardado(resultado: unknown): CompaniaNoticiaGuardarResponse 
   };
 }
 
+function normalizarArchivoObtenido(resultado: unknown): CompaniaNoticiaArchivoObtenerResponse {
+  const registro = obtenerRegistro(Array.isArray(resultado) ? resultado[0] : resultado);
+  const downloadUrl = obtenerTexto(
+    typeof resultado === "string" ? resultado : undefined,
+    registro.downloadUrl,
+    registro.DownloadUrl,
+    registro.archivoUrl,
+    registro.ArchivoUrl,
+    registro.url,
+    registro.Url,
+  );
+
+  if (!downloadUrl) throw new Error("La respuesta del archivo es invalida");
+
+  return { downloadUrl };
+}
+
 export const servicioCompaniaNoticia = {
   list: async (params: CompaniaNoticiaListParams): Promise<CompaniaNoticiaListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Compania/noticia/listar", {
@@ -175,6 +194,25 @@ export const servicioCompaniaNoticia = {
     if (Object.keys(registro).length > 0) return normalizarNoticia(registro);
 
     return null;
+  },
+
+  obtenerArchivo: async (
+    params: CompaniaNoticiaArchivoObtenerParams,
+  ): Promise<CompaniaNoticiaArchivoObtenerResponse> => {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(
+      "/api/Compania/noticia/archivo/obtener",
+      {
+        params: {
+          IdCompaniaNoticiaArchivo: params.idCompaniaNoticiaArchivo,
+        },
+      },
+    );
+
+    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/noticia/archivo/obtener")) {
+      throw new Error(data.mensaje || "No se pudo obtener el archivo");
+    }
+
+    return normalizarArchivoObtenido(data.result);
   },
 
   crear: async (payload: CompaniaNoticiaCrearRequest): Promise<CompaniaNoticiaGuardarResponse> => {

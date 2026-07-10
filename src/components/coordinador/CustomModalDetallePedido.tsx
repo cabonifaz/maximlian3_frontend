@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AlertCircle, Download, RotateCcw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -6,6 +6,7 @@ import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
 import { TablaTarifarioCorta } from "@maximilian/components/coordinador/TablaTarifarioCorta";
+import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
@@ -96,18 +97,13 @@ function TextAreaSoloLectura({ etiqueta, valor }: { etiqueta: string; valor: str
 function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
   const [descargandoId, setDescargandoId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [busquedaConRetardo, setDebouncedSearch] = useState("");
+  const busquedaConRetardo = useRetardo(searchQuery);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["pedidoArchivos", "detalle", pedidoId, busquedaConRetardo],
     queryFn: () => pedidoService.listArchivos({ idPedido: pedidoId!, busqueda: busquedaConRetardo || undefined, numPag: 1 }),
     enabled: !!pedidoId,
   });
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
 
   const handleDescargar = async (archivo: PedidoArchivoEntry) => {
     setDescargandoId(archivo.idPedidoArchivo);

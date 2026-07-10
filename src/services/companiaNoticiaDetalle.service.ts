@@ -167,6 +167,8 @@ export const servicioCompaniaNoticiaDetalle = {
         IdCompania: params.idCompania,
         Busqueda: params.busqueda,
         NumPag: params.numPag,
+        Paises: params.paises,
+        Actividades: params.actividades,
       },
     });
 
@@ -183,6 +185,8 @@ export const servicioCompaniaNoticiaDetalle = {
         IdCompania: params.idCompania,
         Busqueda: params.busqueda,
         NumPag: params.numPag,
+        Paises: params.paises,
+        Actividades: params.actividades,
       },
       responseType: "blob",
     });

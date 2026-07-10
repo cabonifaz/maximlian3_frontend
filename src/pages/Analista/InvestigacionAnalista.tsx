@@ -68,6 +68,7 @@ import { pedidoService } from "@maximilian/services/pedido.service";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import { usePrecargaTablaMaestra } from "@maximilian/hooks/usePrecargaTablaMaestra";
+import { useRetardo } from "@maximilian/hooks/useRetardo";
 import {
   crearDatosInvestigacionVacios,
   seccionesInvestigacionAnalista,
@@ -1480,6 +1481,26 @@ function PantallaInvestigacionAnalista({
   const [indiceEjecutivoSeleccionado, setIndiceEjecutivoSeleccionado] = useState<number | null>(null);
   const [indiceEjecutivoAEliminar, setIndiceEjecutivoAEliminar] = useState<number | null>(null);
   const [busquedaEjecutivo, setBusquedaEjecutivo] = useState("");
+  const busquedaBalancesConRetardo = useRetardo(busquedaBalances);
+  const filtroProveedorNombreConRetardo = useRetardo(filtroProveedorNombre);
+  const filtroProveedorContactoConRetardo = useRetardo(filtroProveedorContacto);
+  const filtroProveedorTelefonoConRetardo = useRetardo(filtroProveedorTelefono);
+  const filtroBancoNombreConRetardo = useRetardo(filtroBancoNombre);
+  const filtroBancoCuentaConRetardo = useRetardo(filtroBancoCuenta);
+  const filtroBancoTelefonoConRetardo = useRetardo(filtroBancoTelefono);
+  const busquedaEjecutivoConRetardo = useRetardo(busquedaEjecutivo);
+  useEffect(() => setPaginaBalances(1), [busquedaBalancesConRetardo]);
+  useEffect(() => setPaginaProveedores(1), [
+    filtroProveedorContactoConRetardo,
+    filtroProveedorNombreConRetardo,
+    filtroProveedorTelefonoConRetardo,
+  ]);
+  useEffect(() => setPaginaBancos(1), [
+    filtroBancoCuentaConRetardo,
+    filtroBancoNombreConRetardo,
+    filtroBancoTelefonoConRetardo,
+  ]);
+  useEffect(() => setPaginaEjecutivos(1), [busquedaEjecutivoConRetardo]);
   const [debeVolverABandejaTrasGuardarBorrador, setDebeVolverABandejaTrasGuardarBorrador] = useState(false);
   const [personaDirectorioSeleccionada, setPersonaDirectorioSeleccionada] = useState<RegistroPersonaDirectorioAnalista | null>(null);
   const [registrosPersonaDirectorio, setRegistrosPersonaDirectorio] = useState<RegistroPersonaDirectorioAnalista[]>([
@@ -3748,7 +3769,7 @@ function PantallaInvestigacionAnalista({
   };
 
   const balancesFiltrados = datosInvestigacion.balances.filter((balance) => {
-    const termino = busquedaBalances.trim().toLowerCase();
+    const termino = busquedaBalancesConRetardo.trim().toLowerCase();
     if (!termino) return true;
 
     return [
@@ -3760,18 +3781,18 @@ function PantallaInvestigacionAnalista({
   });
 
   const proveedoresFiltrados = datosInvestigacion.proveedores.filter((proveedor) => {
-    const coincideNombre = !filtroProveedorNombre.trim() || proveedor.nombreEmpresa.toLowerCase().includes(filtroProveedorNombre.trim().toLowerCase());
+    const coincideNombre = !filtroProveedorNombreConRetardo.trim() || proveedor.nombreEmpresa.toLowerCase().includes(filtroProveedorNombreConRetardo.trim().toLowerCase());
     const coincideTipo = filtroProveedorTipo === "Todos" || proveedor.tipoProveedor === filtroProveedorTipo;
-    const coincideContacto = !filtroProveedorContacto.trim() || proveedor.contacto.toLowerCase().includes(filtroProveedorContacto.trim().toLowerCase());
-    const coincideTelefono = !filtroProveedorTelefono.trim() || proveedor.telefono.toLowerCase().includes(filtroProveedorTelefono.trim().toLowerCase());
+    const coincideContacto = !filtroProveedorContactoConRetardo.trim() || proveedor.contacto.toLowerCase().includes(filtroProveedorContactoConRetardo.trim().toLowerCase());
+    const coincideTelefono = !filtroProveedorTelefonoConRetardo.trim() || proveedor.telefono.toLowerCase().includes(filtroProveedorTelefonoConRetardo.trim().toLowerCase());
 
     return coincideNombre && coincideTipo && coincideContacto && coincideTelefono;
   });
 
   const bancosFiltrados = datosInvestigacion.bancos.filter((banco) => {
-    const coincideNombre = !filtroBancoNombre.trim() || banco.banco.toLowerCase().includes(filtroBancoNombre.trim().toLowerCase());
-    const coincideCuenta = !filtroBancoCuenta.trim() || banco.numeroCuenta.toLowerCase().includes(filtroBancoCuenta.trim().toLowerCase());
-    const coincideTelefono = !filtroBancoTelefono.trim() || banco.telefono.toLowerCase().includes(filtroBancoTelefono.trim().toLowerCase());
+    const coincideNombre = !filtroBancoNombreConRetardo.trim() || banco.banco.toLowerCase().includes(filtroBancoNombreConRetardo.trim().toLowerCase());
+    const coincideCuenta = !filtroBancoCuentaConRetardo.trim() || banco.numeroCuenta.toLowerCase().includes(filtroBancoCuentaConRetardo.trim().toLowerCase());
+    const coincideTelefono = !filtroBancoTelefonoConRetardo.trim() || banco.telefono.toLowerCase().includes(filtroBancoTelefonoConRetardo.trim().toLowerCase());
     const sectorBanco = banco.sector || opcionesSectorEconomico?.find((opcion) => opcion.num1 === banco.idSector)?.string1 || "";
     const sectoresSeleccionados = (opcionesSectorEconomico ?? [])
       .filter((opcion) => opcion.num1 != null && idsFiltroBancoSector.includes(opcion.num1))
@@ -3953,7 +3974,7 @@ function PantallaInvestigacionAnalista({
   };
 
   const ejecutivosFiltrados = datosInvestigacion.directorioEjecutivo.filter((ejecutivo) => {
-    const termino = busquedaEjecutivo.trim().toLowerCase();
+    const termino = busquedaEjecutivoConRetardo.trim().toLowerCase();
     if (!termino) return true;
 
     return [
