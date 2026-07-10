@@ -24,6 +24,7 @@ import {
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { TablaTarifarioCorta } from "@maximilian/components/coordinador/TablaTarifarioCorta";
+import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { pedidoSchema, type PedidoFormData } from "@maximilian/schemas";
 import type {
@@ -546,7 +547,7 @@ function AnexosTab({
   const [archivoToDelete, setArchivoToDelete] = useState<PedidoArchivoEntry | null>(null);
   const [viewingArchivoId, setViewingArchivoId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [busquedaConRetardo, setDebouncedSearch] = useState("");
+  const busquedaConRetardo = useRetardo(searchQuery);
   const [numPag, setNumPag] = useState(1);
   const [filterFormato, setFilterFormato] = useState("");
   const [filterTipo, setFilterTipo] = useState<number | undefined>(undefined);
@@ -554,12 +555,8 @@ function AnexosTab({
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setNumPag(1);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+    setNumPag(1);
+  }, [busquedaConRetardo]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["pedidoArchivos", pedidoId, busquedaConRetardo, numPag],

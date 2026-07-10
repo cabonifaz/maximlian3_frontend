@@ -1,22 +1,30 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
   Download,
-  Filter,
   Loader2,
   Search,
 } from "lucide-react";
 import { CustomBancoNoticias } from "@maximilian/components/common/CustomBancoNoticias";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomModalDetalleCuentasAnalista } from "@maximilian/components/investigacion/CustomModalDetalleCuentasInforme";
+import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioCompaniaNoticiaBalance } from "@maximilian/services/companiaNoticiaBalance.service";
 import { servicioCompaniaNoticiaDetalle } from "@maximilian/services/companiaNoticiaDetalle.service";
+import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import type { CompaniaNoticiaBalanceListaItem } from "@maximilian/shared/types/companiaNoticiaBalance.type";
 import type { CompaniaNoticiaDetalleListaItem } from "@maximilian/shared/types/companiaNoticiaDetalle.type";
+import {
+  TablaMaestraId,
+  type EntradaTablaMaestra,
+} from "@maximilian/shared/types/tabla-maestra.type";
 
 type PestanaBancoInformacion = "noticias" | "credito" | "empresas";
 
@@ -26,16 +34,60 @@ const etiquetasPestanas: Record<PestanaBancoInformacion, string> = {
   empresas: "Empresas",
 };
 
+const ID_MAESTRO_ESTADO_CREDITO = 66;
+const ID_MAESTRO_ACTIVIDAD_ECONOMICA_EMPRESA = 48;
+
+function serializarIdsFiltro(ids: number[]) {
+  return ids.length > 0 ? ids.join(",") : undefined;
+}
+
 export default function BancoInformacionAnalista() {
   const [pestanaActiva, setPestanaActiva] =
     useState<PestanaBancoInformacion>("noticias");
   const [busqueda, setBusqueda] = useState("");
+  const [paginaCredito, setPaginaCredito] = useState(1);
   const [paginaEmpresas, setPaginaEmpresas] = useState(1);
+  const [idsEstadoFinancieroFiltro, setIdsEstadoFinancieroFiltro] = useState<
+    number[]
+  >([]);
+  const [idEstadoCreditoFiltro, setIdEstadoCreditoFiltro] = useState<
+    number | undefined
+  >(undefined);
+  const [idsPaisEmpresaFiltro, setIdsPaisEmpresaFiltro] = useState<number[]>(
+    [],
+  );
+  const [
+    idsActividadEconomicaEmpresaFiltro,
+    setIdsActividadEconomicaEmpresaFiltro,
+  ] = useState<number[]>([]);
   const [reporteDetalle, setReporteDetalle] =
     useState<CompaniaNoticiaBalanceListaItem | null>(null);
   const [idReporteCargandoDetalle, setIdReporteCargandoDetalle] = useState<
     number | null
   >(null);
+  const busquedaConRetardo = useRetardo(busqueda);
+
+  useEffect(() => {
+    setPaginaCredito(1);
+    setPaginaEmpresas(1);
+  }, [busquedaConRetardo]);
+
+  const { data: opcionesEstadoFinanciero } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.ESTADO_FINANCIERO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_FINANCIERO),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesEstadoCredito } = useQuery({
+    queryKey: ["masterTable", ID_MAESTRO_ESTADO_CREDITO],
+    queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_ESTADO_CREDITO),
+    staleTime: Infinity,
+  });
+  const tipoEstadoFinancieroFiltro = serializarIdsFiltro(
+    idsEstadoFinancieroFiltro,
+  );
+  const estadoCreditoFiltro =
+    idEstadoCreditoFiltro != null ? String(idEstadoCreditoFiltro) : undefined;
 
   const {
     data: respuestaCredito,
@@ -43,8 +95,22 @@ export default function BancoInformacionAnalista() {
     isError: hayErrorCredito,
     refetch: recargarCredito,
   } = useQuery({
-    queryKey: ["companiaNoticiaBalance", { busqueda, numPag: 1 }],
-    queryFn: () => servicioCompaniaNoticiaBalance.list({ busqueda, numPag: 1 }),
+    queryKey: [
+      "companiaNoticiaBalance",
+      {
+        busqueda: busquedaConRetardo,
+        estado: estadoCreditoFiltro,
+        tipoEstadoFinanciero: tipoEstadoFinancieroFiltro,
+        numPag: paginaCredito,
+      },
+    ],
+    queryFn: () =>
+      servicioCompaniaNoticiaBalance.list({
+        busqueda: busquedaConRetardo,
+        estado: estadoCreditoFiltro,
+        tipoEstadoFinanciero: tipoEstadoFinancieroFiltro,
+        numPag: paginaCredito,
+      }),
     enabled: pestanaActiva === "credito",
   });
 
@@ -55,20 +121,43 @@ export default function BancoInformacionAnalista() {
     isError: hayErrorEmpresas,
     refetch: recargarEmpresas,
   } = useQuery({
-    queryKey: ["companiaNoticiaDetalle", { busqueda, numPag: paginaEmpresas }],
+    queryKey: [
+      "companiaNoticiaDetalle",
+      {
+        busqueda: busquedaConRetardo,
+        actividades: serializarIdsFiltro(idsActividadEconomicaEmpresaFiltro),
+        paises: serializarIdsFiltro(idsPaisEmpresaFiltro),
+        numPag: paginaEmpresas,
+      },
+    ],
     queryFn: () =>
       servicioCompaniaNoticiaDetalle.list({
-        busqueda,
+        busqueda: busquedaConRetardo,
+        actividades: serializarIdsFiltro(idsActividadEconomicaEmpresaFiltro),
+        paises: serializarIdsFiltro(idsPaisEmpresaFiltro),
         numPag: paginaEmpresas,
       }),
     enabled: pestanaActiva === "empresas",
   });
   const empresas = respuestaEmpresas?.lstCompaniaNoticiaDetalle ?? [];
+  const { data: opcionesPaisEmpresa } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.PAIS],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
+    staleTime: Infinity,
+  });
+  const { data: opcionesActividadEconomicaEmpresa } = useQuery({
+    queryKey: ["masterTable", ID_MAESTRO_ACTIVIDAD_ECONOMICA_EMPRESA],
+    queryFn: () =>
+      servicioTablaMaestra.list(ID_MAESTRO_ACTIVIDAD_ECONOMICA_EMPRESA),
+    staleTime: Infinity,
+  });
 
   const exportarEmpresasMutation = useMutation({
     mutationFn: () =>
       servicioCompaniaNoticiaDetalle.exportar({
-        busqueda,
+        busqueda: busquedaConRetardo,
+        actividades: serializarIdsFiltro(idsActividadEconomicaEmpresaFiltro),
+        paises: serializarIdsFiltro(idsPaisEmpresaFiltro),
         numPag: paginaEmpresas,
       }),
     onSuccess: (respuesta) => {
@@ -132,19 +221,13 @@ export default function BancoInformacionAnalista() {
             className="h-12 w-full rounded-xl border border-slate-100 bg-white pl-11 pr-4 text-sm text-slate-600 outline-none transition focus:border-slate-300 focus:ring-4 focus:ring-slate-100"
             placeholder={
               pestanaActiva === "empresas"
-                ? "Buscar por Razon Social o RUC..."
+                ? "Buscar por Razon Social o Número de Documento..."
+                : pestanaActiva === "credito"
+                  ? "Buscar por Investigado o pais..."
                 : "Buscar noticias, reportes o articulos..."
             }
           />
         </label>
-        <CustomButton
-          variant="secondary"
-          size="sm"
-          className="h-12 rounded-xl bg-white text-slate-600"
-        >
-          <Filter size={14} />
-          {pestanaActiva === "empresas" ? "Filtros Avanzados" : "Filtros"}
-        </CustomButton>
       </div>
 
       <div className="border-b border-slate-100">
@@ -169,13 +252,25 @@ export default function BancoInformacionAnalista() {
       </div>
 
       {pestanaActiva === "noticias" ? (
-        <CustomBancoNoticias busqueda={busqueda} />
+        <CustomBancoNoticias busqueda={busquedaConRetardo} />
       ) : null}
       {pestanaActiva === "credito" ? (
         <SeccionCredito
           reportes={reportesCredito}
           estaCargando={estaCargandoCredito}
           hayError={hayErrorCredito}
+          opcionesEstadoFinanciero={opcionesEstadoFinanciero}
+          opcionesEstado={opcionesEstadoCredito}
+          idsEstadoFinancieroFiltro={idsEstadoFinancieroFiltro}
+          idEstadoFiltro={idEstadoCreditoFiltro}
+          onEstadoFinancieroFiltroChange={(ids) => {
+            setIdsEstadoFinancieroFiltro(ids);
+            setPaginaCredito(1);
+          }}
+          onEstadoFiltroChange={(ids) => {
+            setIdEstadoCreditoFiltro(ids[ids.length - 1]);
+            setPaginaCredito(1);
+          }}
           idReporteCargandoDetalle={idReporteCargandoDetalle}
           onReintentar={() => void recargarCredito()}
           onVerDetalle={(reporte) => void verDetalleCredito(reporte)}
@@ -186,6 +281,18 @@ export default function BancoInformacionAnalista() {
           empresas={empresas}
           estaCargando={estaCargandoEmpresas}
           hayError={hayErrorEmpresas}
+          opcionesPais={opcionesPaisEmpresa}
+          opcionesActividadEconomica={opcionesActividadEconomicaEmpresa}
+          idsPaisFiltro={idsPaisEmpresaFiltro}
+          idsActividadEconomicaFiltro={idsActividadEconomicaEmpresaFiltro}
+          onPaisFiltroChange={(ids) => {
+            setIdsPaisEmpresaFiltro(ids);
+            setPaginaEmpresas(1);
+          }}
+          onActividadEconomicaFiltroChange={(ids) => {
+            setIdsActividadEconomicaEmpresaFiltro(ids);
+            setPaginaEmpresas(1);
+          }}
           paginaActual={paginaEmpresas}
           totalPaginas={respuestaEmpresas?.totalPaginas ?? 1}
           totalRegistros={respuestaEmpresas?.totalRegistros ?? 0}
@@ -198,11 +305,15 @@ export default function BancoInformacionAnalista() {
 
       {pestanaActiva === "credito" ? (
         <CustomPaginacion
-          texto={obtenerTextoPaginacion(
-            pestanaActiva,
-            reportesCredito.length,
-            respuestaCredito?.totalRegistros,
-          )}
+          paginaActual={paginaCredito}
+          totalPaginas={Math.max(respuestaCredito?.totalPaginas ?? 1, 1)}
+          totalRegistros={
+            respuestaCredito?.totalRegistros ?? reportesCredito.length
+          }
+          totalPaginaActual={reportesCredito.length}
+          etiqueta="reportes"
+          deshabilitado={estaCargandoCredito || hayErrorCredito}
+          onCambiarPagina={setPaginaCredito}
         />
       ) : null}
 
@@ -218,6 +329,12 @@ function SeccionCredito({
   reportes,
   estaCargando,
   hayError,
+  opcionesEstadoFinanciero,
+  opcionesEstado,
+  idsEstadoFinancieroFiltro,
+  idEstadoFiltro,
+  onEstadoFinancieroFiltroChange,
+  onEstadoFiltroChange,
   idReporteCargandoDetalle,
   onReintentar,
   onVerDetalle,
@@ -225,6 +342,12 @@ function SeccionCredito({
   reportes: CompaniaNoticiaBalanceListaItem[];
   estaCargando: boolean;
   hayError: boolean;
+  opcionesEstadoFinanciero?: EntradaTablaMaestra[];
+  opcionesEstado?: EntradaTablaMaestra[];
+  idsEstadoFinancieroFiltro: number[];
+  idEstadoFiltro?: number;
+  onEstadoFinancieroFiltroChange: (ids: number[]) => void;
+  onEstadoFiltroChange: (ids: number[]) => void;
   idReporteCargandoDetalle: number | null;
   onReintentar: () => void;
   onVerDetalle: (reporte: CompaniaNoticiaBalanceListaItem) => void;
@@ -234,6 +357,34 @@ function SeccionCredito({
       <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-300">
         Reportes de credito actualizados
       </p>
+      <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+        <div className="grid gap-4 sm:grid-cols-2 lg:max-w-3xl">
+          <div className="min-w-0">
+            <MultiCustomSelectorBuscable
+              label="Tipo de Estado Financiero"
+              options={opcionesEstadoFinanciero}
+              value={idsEstadoFinancieroFiltro}
+              onChange={onEstadoFinancieroFiltroChange}
+              optional
+              placeholder="Todos"
+              resumirSelecciones
+            />
+          </div>
+          <div className="min-w-0">
+            <CustomSelectorBuscable
+              label="Estado"
+              options={opcionesEstado}
+              value={idEstadoFiltro}
+              onChange={(id) => onEstadoFiltroChange([id])}
+              onClear={() => onEstadoFiltroChange([])}
+              optional
+              mostrarTextoOpcionalEnLabel={false}
+              etiquetaOpcionVacia="Todos"
+              placeholder="Todos"
+            />
+          </div>
+        </div>
+      </div>
       {estaCargando ? (
         <EstadoCargandoBancoInformacion />
       ) : hayError ? (
@@ -257,7 +408,9 @@ function SeccionCredito({
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-3">
-                    <IndicadorPais pais={reporte.pais} />
+                    <span className="text-sm font-semibold text-slate-600">
+                      {reporte.pais}
+                    </span>
                     <h2 className="text-base font-bold text-slate-950">
                       {reporte.compania}
                     </h2>
@@ -306,6 +459,12 @@ function SeccionEmpresas({
   empresas,
   estaCargando,
   hayError,
+  opcionesPais,
+  opcionesActividadEconomica,
+  idsPaisFiltro,
+  idsActividadEconomicaFiltro,
+  onPaisFiltroChange,
+  onActividadEconomicaFiltroChange,
   paginaActual,
   totalPaginas,
   totalRegistros,
@@ -317,6 +476,12 @@ function SeccionEmpresas({
   empresas: CompaniaNoticiaDetalleListaItem[];
   estaCargando: boolean;
   hayError: boolean;
+  opcionesPais?: EntradaTablaMaestra[];
+  opcionesActividadEconomica?: EntradaTablaMaestra[];
+  idsPaisFiltro: number[];
+  idsActividadEconomicaFiltro: number[];
+  onPaisFiltroChange: (ids: number[]) => void;
+  onActividadEconomicaFiltroChange: (ids: number[]) => void;
   paginaActual: number;
   totalPaginas: number;
   totalRegistros: number;
@@ -344,13 +509,33 @@ function SeccionEmpresas({
 
       <CustomTabla
         columns={[
-          { label: "Razon Social", width: "22%" },
+          { label: "Razon Social", width: "20%" },
           { label: "Documento", width: "12%" },
-          { label: "Pais", width: "10%" },
-          { label: "Direccion", width: "22%" },
+          {
+            label: (
+              <CustomEncabezadoFiltroTabla
+                titulo="Pais"
+                opciones={opcionesPais}
+                valores={idsPaisFiltro}
+                onChange={onPaisFiltroChange}
+              />
+            ),
+            width: "10%",
+          },
+          { label: "Direccion", width: "20%" },
           { label: "Telefono", width: "12%" },
-          { label: "Actividad Comercial", width: "16%" },
-          { label: "N° de Empleados", className: "text-right", width: "6%" },
+          {
+            label: (
+              <CustomEncabezadoFiltroTabla
+                titulo="Actividad Economica"
+                opciones={opcionesActividadEconomica}
+                valores={idsActividadEconomicaFiltro}
+                onChange={onActividadEconomicaFiltroChange}
+              />
+            ),
+            width: "16%",
+          },
+          { label: "N° de Empleados", className: "text-right", width: "10%" },
         ]}
         data={empresas}
         getId={(empresa) => empresa.idCompania}
@@ -367,16 +552,24 @@ function SeccionEmpresas({
         renderRow={(empresa) => (
           <>
             <td className="px-6 py-4 text-sm font-bold text-slate-800">
-              {empresa.razonSocial}
+              <span className="block truncate" title={empresa.razonSocial}>
+                {empresa.razonSocial}
+              </span>
             </td>
             <td className="px-6 py-4 text-sm font-semibold text-slate-500">
-              {empresa.numeroDocumento}
+              <span className="block truncate" title={empresa.numeroDocumento}>
+                {empresa.numeroDocumento}
+              </span>
             </td>
             <td className="px-6 py-4">
-              <IndicadorPais pais={empresa.pais} />
+              <span className="text-sm font-semibold text-slate-600">
+                {empresa.pais}
+              </span>
             </td>
             <td className="max-w-[220px] px-6 py-4 text-sm text-slate-500">
-              {empresa.direccion}
+              <span className="block truncate" title={empresa.direccion}>
+                {empresa.direccion}
+              </span>
             </td>
             <td className="px-6 py-4 text-sm text-slate-500">
               <span className="block truncate" title={empresa.telefono}>
@@ -384,10 +577,20 @@ function SeccionEmpresas({
               </span>
             </td>
             <td className="max-w-[300px] px-6 py-4 text-sm text-slate-500">
-              {empresa.actividadComercial}
+              <span
+                className="block truncate"
+                title={empresa.actividadComercial}
+              >
+                {empresa.actividadComercial}
+              </span>
             </td>
             <td className="px-6 py-4 text-right text-sm font-semibold text-slate-700">
-              {empresa.trabajadores}
+              <span
+                className="block max-w-24 truncate"
+                title={String(empresa.trabajadores)}
+              >
+                {empresa.trabajadores}
+              </span>
             </td>
           </>
         )}
@@ -471,51 +674,88 @@ function CustomModalDetalleCredito({
   );
 }
 
-function IndicadorPais({
-  pais,
-  compacto = false,
-}: {
-  pais: string;
-  compacto?: boolean;
-}) {
-  const iniciales = pais.slice(0, 3).toUpperCase();
+function obtenerPaginasPaginacion(
+  paginaActual: number,
+  totalPaginas: number,
+): (number | "...")[] {
+  if (totalPaginas <= 7) {
+    return Array.from({ length: totalPaginas }, (_, indice) => indice + 1);
+  }
 
-  return (
-    <span
-      className={`inline-flex items-center gap-2 ${compacto ? "align-middle" : ""}`}
-    >
-      <span className="inline-flex h-3.5 w-5 items-center justify-center rounded-[3px] bg-slate-900 text-[7px] font-bold text-white">
-        {iniciales}
-      </span>
-      {!compacto ? (
-        <span className="text-sm font-semibold text-slate-600">{pais}</span>
-      ) : null}
-    </span>
-  );
+  const paginas: (number | "...")[] = [1];
+  if (paginaActual > 3) paginas.push("...");
+
+  for (
+    let pagina = Math.max(2, paginaActual - 1);
+    pagina <= Math.min(totalPaginas - 1, paginaActual + 1);
+    pagina++
+  ) {
+    paginas.push(pagina);
+  }
+
+  if (paginaActual < totalPaginas - 2) paginas.push("...");
+  paginas.push(totalPaginas);
+
+  return paginas;
 }
 
-function CustomPaginacion({ texto }: { texto: string }) {
+function CustomPaginacion({
+  paginaActual,
+  totalPaginas,
+  totalRegistros,
+  totalPaginaActual,
+  etiqueta,
+  deshabilitado = false,
+  onCambiarPagina,
+}: {
+  paginaActual: number;
+  totalPaginas: number;
+  totalRegistros: number;
+  totalPaginaActual: number;
+  etiqueta: string;
+  deshabilitado?: boolean;
+  onCambiarPagina: (pagina: number) => void;
+}) {
+  const paginas = obtenerPaginasPaginacion(paginaActual, totalPaginas);
+
   return (
     <div className="flex items-center justify-between pt-4 text-xs text-slate-400">
-      <p>{texto}</p>
+      <p>
+        Mostrando {totalPaginaActual} de {totalRegistros} {etiqueta}
+      </p>
       <div className="flex items-center gap-2">
         <button
           type="button"
+          onClick={() => onCambiarPagina(paginaActual - 1)}
+          disabled={deshabilitado || paginaActual <= 1}
           className="rounded-lg p-2 text-slate-300 hover:bg-slate-100"
         >
           <ChevronLeft size={14} />
         </button>
-        {[1, 2, 3].map((pagina) => (
-          <button
-            key={pagina}
-            type="button"
-            className={`h-8 w-8 rounded-lg text-xs font-bold ${pagina === 1 ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-100" : "text-slate-400 hover:bg-slate-100"}`}
-          >
-            {pagina}
-          </button>
-        ))}
+        {paginas.map((pagina, indice) =>
+          pagina === "..." ? (
+            <span
+              key={`ellipsis-${indice}`}
+              className="flex h-8 w-8 items-center justify-center text-xs text-slate-400"
+            >
+              ...
+            </span>
+          ) : (
+            <button
+              key={pagina}
+              type="button"
+              onClick={() => onCambiarPagina(pagina)}
+              disabled={deshabilitado}
+              className={`h-8 w-8 rounded-lg text-xs font-bold ${pagina === paginaActual ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-100" : "text-slate-400 hover:bg-slate-100"}`}
+            >
+              {pagina}
+            </button>
+          ),
+        )}
         <button
           type="button"
+          onClick={() => onCambiarPagina(paginaActual + 1)}
+          disabled={deshabilitado || paginaActual >= totalPaginas}
           className="rounded-lg p-2 text-slate-300 hover:bg-slate-100"
         >
           <ChevronRight size={14} />
@@ -551,15 +791,4 @@ function obtenerEtiquetaBalance(tipoEstadoFinanciero: string) {
   if (tipo.toLowerCase().startsWith("balance")) return tipo;
 
   return `Balance ${tipo}`;
-}
-
-function obtenerTextoPaginacion(
-  pestana: PestanaBancoInformacion,
-  totalReportes: number,
-  totalRegistrosReportes: number | undefined,
-) {
-  if (pestana === "credito")
-    return `Mostrando ${totalReportes} de ${totalRegistrosReportes ?? totalReportes} reportes`;
-
-  return "";
 }

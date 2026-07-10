@@ -30,6 +30,14 @@ export interface CompaniaNoticiaObtenerParams {
   idCompania?: number;
 }
 
+export interface CompaniaNoticiaArchivoObtenerParams {
+  idCompaniaNoticiaArchivo: number;
+}
+
+export interface CompaniaNoticiaArchivoObtenerResponse {
+  downloadUrl: string;
+}
+
 export interface CompaniaNoticiaListResponse {
   lstCompaniaNoticia: CompaniaNoticiaListaItem[];
   totalRegistros: number;

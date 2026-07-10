@@ -2,6 +2,8 @@ export interface CompaniaNoticiaDetalleListParams {
   idCompania?: number;
   busqueda?: string;
   numPag?: number;
+  paises?: string;
+  actividades?: string;
 }
 
 export interface CompaniaNoticiaDetalleListaItem {

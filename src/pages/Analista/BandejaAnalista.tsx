@@ -121,7 +121,7 @@ function obtenerEstiloEstado(
     { color: string; backgroundColor: string }
   > = {
     asignado: { color: "#475569", backgroundColor: "#f1f5f9" },
-    "en-proceso": { color: "#ea580c", backgroundColor: "#fff7ed" },
+    "en-proceso": { color: "#2563eb", backgroundColor: "#eff6ff" },
     "pendiente-aprobacion": { color: "#d97706", backgroundColor: "#fffbeb" },
     aprobado: { color: "#16a34a", backgroundColor: "#f0fdf4" },
     rechazado: { color: "#dc2626", backgroundColor: "#fef2f2" },
