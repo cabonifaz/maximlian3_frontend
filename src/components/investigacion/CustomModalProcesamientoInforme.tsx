@@ -76,7 +76,7 @@ export function CustomModalExtraccionInformacionAnalista({
   seccionesDisponibles = [],
   onCerrar,
   onExtraer,
-  etiquetaContexto = "Demo de extracción",
+  etiquetaContexto = "",
   textoBotonAccion = "Extraer información",
   textoBotonAccionCargando = "Extrayendo...",
   textoBotonAccionDirecta = "Aplicar directamente",

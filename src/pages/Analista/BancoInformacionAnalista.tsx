@@ -30,7 +30,7 @@ type PestanaBancoInformacion = "noticias" | "credito" | "empresas";
 
 const etiquetasPestanas: Record<PestanaBancoInformacion, string> = {
   noticias: "Noticias",
-  credito: "Inf. Crediticio",
+  credito: "Inf. Crediticia",
   empresas: "Empresas",
 };
 
@@ -224,7 +224,7 @@ export default function BancoInformacionAnalista() {
                 ? "Buscar por Razon Social o Número de Documento..."
                 : pestanaActiva === "credito"
                   ? "Buscar por Investigado o pais..."
-                : "Buscar noticias, reportes o articulos..."
+                  : "Buscar noticias, reportes o articulos..."
             }
           />
         </label>

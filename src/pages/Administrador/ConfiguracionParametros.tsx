@@ -33,9 +33,13 @@ interface ParametroDisponible {
 
 interface FormularioParametro {
   codigo: string;
+  referencia: string;
   descripcion: string;
-  simbolo: string;
-  activo: boolean;
+  detalle: string;
+  traduccionIngles1: string;
+  traduccionIngles2: string;
+  traduccionPortugues1: string;
+  traduccionPortugues2: string;
 }
 
 interface FilaFormularioParametro {
@@ -43,6 +47,26 @@ interface FilaFormularioParametro {
   claveRegistro?: string;
   idTablaMaestra?: number;
   valores: FormularioParametro;
+}
+
+interface ConfiguracionCamposParametro {
+  etiquetaCodigo?: string;
+  codigoRequerido?: boolean;
+  etiquetaReferencia?: string;
+  referenciaRequerida?: boolean;
+  idMaestroReferencia?: number;
+  mostrarReferenciaConCodigo?: boolean;
+  etiquetaDetalle?: string;
+  etiquetaDescripcion?: string;
+  codigoDespuesDescripcion?: boolean;
+}
+
+interface ColumnasVisiblesParametro {
+  codigo: boolean;
+  referencia: boolean;
+  detalle: boolean;
+  ingles: boolean;
+  portugues: boolean;
 }
 
 const PARAMETROS_DISPONIBLES: ParametroDisponible[] = [
@@ -74,8 +98,8 @@ const PARAMETROS_DISPONIBLES: ParametroDisponible[] = [
   { idMaestro: TablaMaestraId.MES, etiqueta: "Mes" },
   { idMaestro: TablaMaestraId.SECTOR_ECONOMICO, etiqueta: "Sector economico" },
   {
-    idMaestro: TablaMaestraId.ACTIVIDAD_ECONOMICA,
-    etiqueta: "Actividad economica",
+    idMaestro: TablaMaestraId.CATEGORIA_CIIU,
+    etiqueta: "Categoria CIIU",
   },
   { idMaestro: TablaMaestraId.TIPO_LOCAL, etiqueta: "Tipo de local" },
   { idMaestro: TablaMaestraId.TIPO_BALANCE, etiqueta: "Tipo de balance" },
@@ -84,6 +108,12 @@ const PARAMETROS_DISPONIBLES: ParametroDisponible[] = [
     etiqueta: "Estado financiero",
   },
   { idMaestro: TablaMaestraId.TIPO_PROVEEDOR, etiqueta: "Tipo de proveedor" },
+  {
+    idMaestro: TablaMaestraId.TIPO_DOCUMENTO_IDENTIDAD,
+    etiqueta: "Tipo documento identidad",
+  },
+  { idMaestro: TablaMaestraId.ESTADO_CIVIL, etiqueta: "Estado civil" },
+  { idMaestro: TablaMaestraId.PROFESION, etiqueta: "Profesion" },
   { idMaestro: TablaMaestraId.ETAPA_ASIGNACION, etiqueta: "Fase asignacion" },
   { idMaestro: TablaMaestraId.CLASE_CIIU, etiqueta: "Clase CIIU" },
   {
@@ -92,22 +122,29 @@ const PARAMETROS_DISPONIBLES: ParametroDisponible[] = [
   },
   {
     idMaestro: TablaMaestraId.TIEMPO_CREDITO_VENTAS,
-    etiqueta: "Tiempo credito ventas",
+    etiqueta: "Tiempo credito",
   },
-  { idMaestro: TablaMaestraId.CARGO_DIRECTORIO, etiqueta: "Cargo directorio" },
+  { idMaestro: TablaMaestraId.CARGO_EJECUTIVO, etiqueta: "Cargo ejecutivo" },
   {
     idMaestro: TablaMaestraId.NIVEL_CONFIABILIDAD,
     etiqueta: "Nivel confiabilidad",
   },
-  { idMaestro: TablaMaestraId.TIPO_EVIDENCIA, etiqueta: "Tipo evidencia" },
-  { idMaestro: TablaMaestraId.FASE_EVIDENCIA, etiqueta: "Fase evidencia" },
   {
-    idMaestro: TablaMaestraId.OBLIGACION_BOLSA,
-    etiqueta: "Obligacion en bolsa",
+    idMaestro: TablaMaestraId.TIPO_EVIDENCIA,
+    etiqueta: "Tipo archivo informe",
+  },
+  { idMaestro: TablaMaestraId.FASE_EVIDENCIA, etiqueta: "Fase informe" },
+  {
+    idMaestro: TablaMaestraId.BOOLEAN,
+    etiqueta: "Boolean",
   },
   {
     idMaestro: TablaMaestraId.FORMATO_FECHA_INFORME,
     etiqueta: "Formato fecha informe",
+  },
+  {
+    idMaestro: TablaMaestraId.ESTADO_INF_CREDITICIO,
+    etiqueta: "Estado inf crediticio",
   },
 ];
 
@@ -129,9 +166,58 @@ const opcionesParametros: EntradaTablaMaestra[] = PARAMETROS_DISPONIBLES.map(
   }),
 );
 
-const REGISTROS_POR_PAGINA = 4;
-const ID_ESTADO_ACTIVO = 1;
-const ID_ESTADO_INACTIVO = 2;
+const REGISTROS_POR_PAGINA = 10;
+const CONFIGURACION_CAMPOS_POR_MAESTRO: Partial<
+  Record<TablaMaestraId, ConfiguracionCamposParametro>
+> = {
+  [TablaMaestraId.ROLES]: {
+    etiquetaCodigo: "Descripcion",
+    codigoRequerido: true,
+    etiquetaDescripcion: "Rol",
+    codigoDespuesDescripcion: true,
+  },
+  [TablaMaestraId.MONEDA]: {
+    etiquetaCodigo: "Codigo",
+    etiquetaDetalle: "Simbolo",
+  },
+  [TablaMaestraId.SECTOR_ECONOMICO]: {
+    etiquetaCodigo: "Codigo",
+    codigoRequerido: true,
+  },
+  [TablaMaestraId.CIUDAD]: {
+    etiquetaReferencia: "Pais",
+    referenciaRequerida: true,
+    idMaestroReferencia: TablaMaestraId.PAIS,
+  },
+  [TablaMaestraId.CATEGORIA_CIIU]: {
+    etiquetaCodigo: "Codigo",
+    codigoRequerido: true,
+    etiquetaReferencia: "Sector padre",
+    referenciaRequerida: true,
+    idMaestroReferencia: TablaMaestraId.SECTOR_ECONOMICO,
+    mostrarReferenciaConCodigo: true,
+  },
+  [TablaMaestraId.CLASE_CIIU]: {
+    etiquetaCodigo: "Codigo",
+    codigoRequerido: true,
+    etiquetaReferencia: "Categoria padre",
+    referenciaRequerida: true,
+    idMaestroReferencia: TablaMaestraId.CATEGORIA_CIIU,
+    mostrarReferenciaConCodigo: true,
+  },
+  [TablaMaestraId.FORMATO_FECHA_INFORME]: {
+    etiquetaCodigo: "Formato",
+    codigoRequerido: true,
+  },
+  [TablaMaestraId.ESTADO_ASIGNACION]: {
+    etiquetaCodigo: "Color fondo",
+    etiquetaDetalle: "Color texto",
+  },
+  [TablaMaestraId.ESTADO_INFORME]: {
+    etiquetaCodigo: "Color fondo",
+    etiquetaDetalle: "Color texto",
+  },
+};
 
 function normalizarTexto(valor: string) {
   return valor
@@ -141,20 +227,107 @@ function normalizarTexto(valor: string) {
     .toLowerCase();
 }
 
+function obtenerNumeroParametro(parametro: EntradaTablaMaestra) {
+  return String(parametro.num1 ?? "");
+}
+
 function obtenerCodigoParametro(parametro: EntradaTablaMaestra) {
-  return parametro.string2?.trim() || String(parametro.num1 ?? "");
+  return parametro.string2?.trim() || "";
+}
+
+function obtenerReferenciaParametro(parametro: EntradaTablaMaestra) {
+  return parametro.num2 != null ? String(parametro.num2) : "";
+}
+
+function obtenerEtiquetaReferenciaParametro(
+  parametro: EntradaTablaMaestra,
+  opcionesReferencia: EntradaTablaMaestra[] | undefined,
+  configuracion: ConfiguracionCamposParametro,
+) {
+  const referencia = parametro.num2;
+  if (referencia == null) return "";
+
+  const opcionReferencia = opcionesReferencia?.find(
+    (opcion) => opcion.num1 === referencia,
+  );
+
+  if (!opcionReferencia) return String(referencia);
+
+  if (configuracion.mostrarReferenciaConCodigo) {
+    return obtenerEtiquetaCodigoDescripcionParametro(opcionReferencia);
+  }
+
+  return opcionReferencia.string1?.trim() || String(referencia);
 }
 
 function obtenerDescripcionParametro(parametro: EntradaTablaMaestra) {
   return parametro.string1?.trim() || parametro.descripcion?.trim() || "";
 }
 
+function obtenerEtiquetaCodigoDescripcionParametro(parametro: EntradaTablaMaestra) {
+  const codigo = obtenerCodigoParametro(parametro);
+  const descripcion = obtenerDescripcionParametro(parametro);
+
+  return [codigo, descripcion].filter(Boolean).join(" - ");
+}
+
 function obtenerSimboloParametro(parametro: EntradaTablaMaestra) {
   return parametro.string3?.trim() || "";
 }
 
-function obtenerEstadoActivo(parametro: EntradaTablaMaestra) {
-  return parametro.num3 !== ID_ESTADO_INACTIVO;
+function obtenerConfiguracionCampos(
+  idMaestro: number,
+): ConfiguracionCamposParametro {
+  return CONFIGURACION_CAMPOS_POR_MAESTRO[idMaestro as TablaMaestraId] ?? {};
+}
+
+function obtenerTraduccionInglesParametro(parametro: EntradaTablaMaestra) {
+  return parametro.string4?.trim() || "";
+}
+
+function obtenerDetalleInglesParametro(parametro: EntradaTablaMaestra) {
+  return parametro.string5?.trim() || "";
+}
+
+function obtenerTraduccionPortuguesParametro(parametro: EntradaTablaMaestra) {
+  return parametro.string6?.trim() || "";
+}
+
+function obtenerDetallePortuguesParametro(parametro: EntradaTablaMaestra) {
+  return parametro.string7?.trim() || "";
+}
+
+function tieneValorTexto(valor?: string | null) {
+  return Boolean(valor?.trim());
+}
+
+function obtenerColumnasVisibles(
+  parametros: EntradaTablaMaestra[] | undefined,
+  configuracion: ConfiguracionCamposParametro,
+): ColumnasVisiblesParametro {
+  const lista = parametros ?? [];
+
+  return {
+    codigo:
+      Boolean(configuracion.etiquetaCodigo) ||
+      lista.some((parametro) => tieneValorTexto(parametro.string2)),
+    referencia:
+      Boolean(configuracion.etiquetaReferencia) ||
+      lista.some((parametro) => parametro.num2 != null),
+    detalle:
+      Boolean(configuracion.etiquetaDetalle) ||
+      lista.some((parametro) => tieneValorTexto(parametro.string3)),
+    ingles: lista.some(
+      (parametro) =>
+        tieneValorTexto(parametro.string4) ||
+        tieneValorTexto(parametro.string5),
+    ),
+    portugues: lista.some(
+      (parametro) =>
+        tieneValorTexto(parametro.string6) ||
+        tieneValorTexto(parametro.string7),
+    ),
+  };
 }
 
 function obtenerClaveRegistroParametro(parametro: EntradaTablaMaestra) {
@@ -166,8 +339,8 @@ function obtenerClaveRegistroParametro(parametro: EntradaTablaMaestra) {
     parametro.idMaestro,
     "num",
     parametro.num1 ?? "",
-    "codigo",
-    obtenerCodigoParametro(parametro),
+    "numero",
+    obtenerNumeroParametro(parametro),
   ].join("-");
 }
 
@@ -176,9 +349,19 @@ function crearValoresFormulario(
 ): FormularioParametro {
   return {
     codigo: parametro ? obtenerCodigoParametro(parametro) : "",
+    referencia: parametro ? obtenerReferenciaParametro(parametro) : "",
     descripcion: parametro ? obtenerDescripcionParametro(parametro) : "",
-    simbolo: parametro ? obtenerSimboloParametro(parametro) : "",
-    activo: parametro ? obtenerEstadoActivo(parametro) : true,
+    detalle: parametro ? obtenerSimboloParametro(parametro) : "",
+    traduccionIngles1: parametro
+      ? obtenerTraduccionInglesParametro(parametro)
+      : "",
+    traduccionIngles2: parametro ? obtenerDetalleInglesParametro(parametro) : "",
+    traduccionPortugues1: parametro
+      ? obtenerTraduccionPortuguesParametro(parametro)
+      : "",
+    traduccionPortugues2: parametro
+      ? obtenerDetallePortuguesParametro(parametro)
+      : "",
   };
 }
 
@@ -188,6 +371,17 @@ function crearPayloadBase(
   opcionesActuales: EntradaTablaMaestra[],
   parametro?: EntradaTablaMaestra,
 ): TablaMaestraCrearRequest {
+  const configuracion = obtenerConfiguracionCampos(idMaestro);
+  const codigo = configuracion.etiquetaCodigo
+    ? valores.codigo.trim() || null
+    : parametro?.string2 ?? null;
+  const referencia = configuracion.etiquetaReferencia
+    ? Number.parseInt(valores.referencia, 10)
+    : parametro?.num2 ?? null;
+  const detalle = configuracion.etiquetaDetalle
+    ? valores.detalle.trim() || null
+    : parametro?.string3 ?? null;
+
   return {
     idMaestro,
     descripcion: obtenerDescripcionTablaMaestra(
@@ -195,88 +389,196 @@ function crearPayloadBase(
       parametro?.descripcion,
     ),
     num1: parametro?.num1 ?? obtenerSiguienteNumTablaMaestra(opcionesActuales),
-    num2: parametro?.num2 ?? null,
-    num3: valores.activo ? ID_ESTADO_ACTIVO : ID_ESTADO_INACTIVO,
+    num2: Number.isNaN(referencia) ? null : referencia,
+    num3: parametro?.num3 ?? null,
     inputText: valores.descripcion.trim(),
-    inputText2: valores.codigo.trim(),
+    inputText2: codigo,
     string1: valores.descripcion.trim(),
-    string2: valores.codigo.trim(),
-    string3: valores.simbolo.trim() || null,
-    string4: parametro?.string4 ?? null,
-    string5: parametro?.string5 ?? null,
-    string6: parametro?.string6 ?? null,
-    string7: parametro?.string7 ?? null,
+    string2: codigo,
+    string3: detalle,
+    string4: valores.traduccionIngles1.trim() || null,
+    string5: valores.traduccionIngles2.trim() || null,
+    string6: valores.traduccionPortugues1.trim() || null,
+    string7: valores.traduccionPortugues2.trim() || null,
     date1: parametro?.date1 ?? null,
     date2: parametro?.date2 ?? null,
     date3: parametro?.date3 ?? null,
   };
 }
 
-function EstadoParametro({ activo }: { activo: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold uppercase ${
-        activo
-          ? "bg-emerald-50 text-emerald-600"
-          : "bg-slate-100 text-slate-400"
-      }`}
-    >
-      {activo ? "Activo" : "Inactivo"}
-    </span>
-  );
-}
-
 function CamposEdicionParametro({
   valores,
   onCambiar,
+  numero,
+  configuracion,
+  columnasVisibles,
+  opcionesReferencia,
 }: {
   valores: FormularioParametro;
   onCambiar: (valores: FormularioParametro) => void;
+  numero?: number | null;
+  configuracion: ConfiguracionCamposParametro;
+  columnasVisibles: ColumnasVisiblesParametro;
+  opcionesReferencia?: EntradaTablaMaestra[];
 }) {
   return (
     <>
       <td className="px-5 py-3">
-        <input
-          value={valores.codigo}
-          onChange={(event) =>
-            onCambiar({ ...valores, codigo: event.target.value })
-          }
-          placeholder="Ej. BRL"
-          className="h-9 w-full rounded-md border border-blue-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-        />
+        <span className="inline-flex h-9 min-w-16 items-center rounded-md bg-slate-100 px-3 text-xs font-bold text-slate-500">
+          {numero ?? "Automatico"}
+        </span>
       </td>
+      {columnasVisibles.codigo && !configuracion.codigoDespuesDescripcion ? (
+        <td className="px-5 py-3">
+          {configuracion.etiquetaCodigo ? (
+            <input
+              value={valores.codigo}
+              onChange={(event) =>
+                onCambiar({ ...valores, codigo: event.target.value })
+              }
+              placeholder={configuracion.etiquetaCodigo}
+              className="h-9 w-full rounded-md border border-blue-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            />
+          ) : (
+            <span className="text-xs text-slate-300">
+              {valores.codigo || "-"}
+            </span>
+          )}
+        </td>
+      ) : null}
+      {columnasVisibles.referencia ? (
+        <td className="px-5 py-3">
+          {configuracion.idMaestroReferencia ? (
+            <CustomSelectorBuscable
+              options={opcionesReferencia ?? []}
+              value={
+                valores.referencia ? Number.parseInt(valores.referencia, 10) : undefined
+              }
+              onChange={(valor) =>
+                onCambiar({ ...valores, referencia: String(valor) })
+              }
+              placeholder={`Seleccione ${configuracion.etiquetaReferencia?.toLowerCase()}`}
+              obtenerEtiquetaOpcion={(opcion) =>
+                configuracion.mostrarReferenciaConCodigo
+                  ? obtenerEtiquetaCodigoDescripcionParametro(opcion)
+                  : opcion.string1 ?? ""
+              }
+            />
+          ) : configuracion.etiquetaReferencia ? (
+            <input
+              value={valores.referencia}
+              onChange={(event) =>
+                onCambiar({
+                  ...valores,
+                  referencia: event.target.value.replace(/\D/g, ""),
+                })
+              }
+              placeholder={configuracion.etiquetaReferencia}
+              className="h-9 w-28 rounded-md border border-blue-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            />
+          ) : (
+            <span className="text-xs text-slate-300">
+              {valores.referencia || "-"}
+            </span>
+          )}
+        </td>
+      ) : null}
       <td className="px-5 py-3">
         <input
           value={valores.descripcion}
           onChange={(event) =>
             onCambiar({ ...valores, descripcion: event.target.value })
           }
-          placeholder="Ej. Real Brasileno"
+          placeholder={configuracion.etiquetaDescripcion ?? "Descripcion"}
           className="h-9 w-full rounded-md border border-blue-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
         />
       </td>
-      <td className="px-5 py-3">
-        <input
-          value={valores.simbolo}
-          onChange={(event) =>
-            onCambiar({ ...valores, simbolo: event.target.value })
-          }
-          placeholder="R$"
-          className="h-9 w-20 rounded-md border border-blue-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-        />
-      </td>
-      <td className="px-5 py-3">
-        <select
-          value={valores.activo ? "activo" : "inactivo"}
-          onChange={(event) =>
-            onCambiar({ ...valores, activo: event.target.value === "activo" })
-          }
-          className="h-9 rounded-full border border-blue-200 bg-white px-3 text-[10px] font-bold uppercase text-slate-600 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-        >
-          <option value="activo">Activo</option>
-          <option value="inactivo">Inactivo</option>
-        </select>
-      </td>
+      {columnasVisibles.codigo && configuracion.codigoDespuesDescripcion ? (
+        <td className="px-5 py-3">
+          <input
+            value={valores.codigo}
+            onChange={(event) =>
+              onCambiar({ ...valores, codigo: event.target.value })
+            }
+            placeholder={configuracion.etiquetaCodigo}
+            className="h-9 w-full rounded-md border border-blue-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+          />
+        </td>
+      ) : null}
+      {columnasVisibles.detalle ? (
+        <td className="px-5 py-3">
+          {configuracion.etiquetaDetalle ? (
+            <input
+              value={valores.detalle}
+              onChange={(event) =>
+                onCambiar({ ...valores, detalle: event.target.value })
+              }
+              placeholder={configuracion.etiquetaDetalle}
+              className="h-9 w-full rounded-md border border-blue-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            />
+          ) : (
+            <span className="text-xs text-slate-300">
+              {valores.detalle || "-"}
+            </span>
+          )}
+        </td>
+      ) : null}
+      {columnasVisibles.ingles ? (
+        <td className="px-5 py-3">
+          <div className="space-y-2">
+            <input
+              value={valores.traduccionIngles1}
+              onChange={(event) =>
+                onCambiar({
+                  ...valores,
+                  traduccionIngles1: event.target.value,
+                })
+              }
+              placeholder="Traduccion"
+              className="h-9 w-full rounded-md border border-blue-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            />
+            <input
+              value={valores.traduccionIngles2}
+              onChange={(event) =>
+                onCambiar({
+                  ...valores,
+                  traduccionIngles2: event.target.value,
+                })
+              }
+              placeholder="Detalle"
+              className="h-9 w-full rounded-md border border-blue-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            />
+          </div>
+        </td>
+      ) : null}
+      {columnasVisibles.portugues ? (
+        <td className="px-5 py-3">
+          <div className="space-y-2">
+            <input
+              value={valores.traduccionPortugues1}
+              onChange={(event) =>
+                onCambiar({
+                  ...valores,
+                  traduccionPortugues1: event.target.value,
+                })
+              }
+              placeholder="Traducao"
+              className="h-9 w-full rounded-md border border-blue-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            />
+            <input
+              value={valores.traduccionPortugues2}
+              onChange={(event) =>
+                onCambiar({
+                  ...valores,
+                  traduccionPortugues2: event.target.value,
+                })
+              }
+              placeholder="Detalhe"
+              className="h-9 w-full rounded-md border border-blue-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            />
+          </div>
+        </td>
+      ) : null}
     </>
   );
 }
@@ -301,6 +603,18 @@ export default function ConfiguracionParametros() {
   } = useQuery({
     queryKey: ["masterTable", idMaestroSeleccionado],
     queryFn: () => servicioTablaMaestra.list(idMaestroSeleccionado),
+    staleTime: Infinity,
+  });
+
+  const configuracionCampos = obtenerConfiguracionCampos(
+    idMaestroSeleccionado,
+  );
+
+  const { data: opcionesReferencia } = useQuery({
+    queryKey: ["masterTable", configuracionCampos.idMaestroReferencia],
+    queryFn: () =>
+      servicioTablaMaestra.list(configuracionCampos.idMaestroReferencia!),
+    enabled: Boolean(configuracionCampos.idMaestroReferencia),
     staleTime: Infinity,
   });
 
@@ -336,10 +650,15 @@ export default function ConfiguracionParametros() {
 
     return lista.filter((parametro) =>
       [
+        obtenerNumeroParametro(parametro),
         obtenerCodigoParametro(parametro),
+        obtenerReferenciaParametro(parametro),
         obtenerDescripcionParametro(parametro),
         obtenerSimboloParametro(parametro),
-        obtenerEstadoActivo(parametro) ? "activo" : "inactivo",
+        obtenerTraduccionInglesParametro(parametro),
+        obtenerDetalleInglesParametro(parametro),
+        obtenerTraduccionPortuguesParametro(parametro),
+        obtenerDetallePortuguesParametro(parametro),
       ].some((valor) => normalizarTexto(valor).includes(termino)),
     );
   }, [filtroConRetardo, parametros]);
@@ -354,6 +673,13 @@ export default function ConfiguracionParametros() {
   );
 
   const estaGuardando = mutacionCrear.isPending || mutacionEditar.isPending;
+  const columnasVisibles = obtenerColumnasVisibles(
+    parametros,
+    configuracionCampos,
+  );
+  const totalColumnas =
+    3 + Object.values(columnasVisibles).filter(Boolean).length;
+  const anchoMinimoTabla = Math.max(760, totalColumnas * 150);
 
   const cambiarParametroSeleccionado = (idMaestro: number) => {
     setIdMaestroSeleccionado(idMaestro);
@@ -390,11 +716,26 @@ export default function ConfiguracionParametros() {
   const guardarFormulario = () => {
     if (!filaFormulario) return;
 
-    const codigo = filaFormulario.valores.codigo.trim();
     const descripcion = filaFormulario.valores.descripcion.trim();
+    const codigo = filaFormulario.valores.codigo.trim();
+    const referencia = filaFormulario.valores.referencia.trim();
 
-    if (!codigo || !descripcion) {
-      setMensajeValidacion("Ingrese codigo y descripcion para continuar.");
+    if (!descripcion) {
+      setMensajeValidacion("Ingrese descripcion para continuar.");
+      return;
+    }
+
+    if (configuracionCampos.codigoRequerido && !codigo) {
+      setMensajeValidacion(
+        `Ingrese ${configuracionCampos.etiquetaCodigo?.toLowerCase()} para continuar.`,
+      );
+      return;
+    }
+
+    if (configuracionCampos.referenciaRequerida && !referencia) {
+      setMensajeValidacion(
+        `Ingrese ${configuracionCampos.etiquetaReferencia?.toLowerCase()} para continuar.`,
+      );
       return;
     }
 
@@ -427,10 +768,32 @@ export default function ConfiguracionParametros() {
     setPaginaActual(pagina);
   };
 
-  const paginas = Array.from(
-    { length: totalPaginas },
-    (_, indice) => indice + 1,
-  );
+  const paginas = useMemo(() => {
+    const paginasVisibles = new Set([
+      1,
+      totalPaginas,
+      paginaActual - 1,
+      paginaActual,
+      paginaActual + 1,
+    ]);
+    const paginasOrdenadas = Array.from(paginasVisibles)
+      .filter((pagina) => pagina >= 1 && pagina <= totalPaginas)
+      .sort((paginaA, paginaB) => paginaA - paginaB);
+
+    return paginasOrdenadas.reduce<Array<number | "puntos">>(
+      (acumulado, pagina, indice) => {
+        const paginaAnterior = paginasOrdenadas[indice - 1];
+
+        if (paginaAnterior && pagina - paginaAnterior > 1) {
+          acumulado.push("puntos");
+        }
+
+        acumulado.push(pagina);
+        return acumulado;
+      },
+      [],
+    );
+  }, [paginaActual, totalPaginas]);
   const mostrarFilaCreacion = filaFormulario?.modo === "crear";
 
   return (
@@ -495,21 +858,50 @@ export default function ConfiguracionParametros() {
         )}
 
         <div className="overflow-x-auto px-6">
-          <table className="w-full min-w-[760px] border-collapse text-left">
+          <table
+            className="w-full border-collapse text-left"
+            style={{ minWidth: `${anchoMinimoTabla}px` }}
+          >
             <thead>
               <tr className="border-b border-slate-100">
                 <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
-                  Codigo
+                  Numeracion
                 </th>
+                {columnasVisibles.codigo &&
+                !configuracionCampos.codigoDespuesDescripcion ? (
+                  <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
+                    {configuracionCampos.etiquetaCodigo ?? "Codigo"}
+                  </th>
+                ) : null}
+                {columnasVisibles.referencia ? (
+                  <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
+                    {configuracionCampos.etiquetaReferencia ?? "Referencia"}
+                  </th>
+                ) : null}
                 <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
-                  Descripcion
+                  {configuracionCampos.etiquetaDescripcion ?? "Descripcion"}
                 </th>
-                <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
-                  Simbolo
-                </th>
-                <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
-                  Estado
-                </th>
+                {columnasVisibles.codigo &&
+                configuracionCampos.codigoDespuesDescripcion ? (
+                  <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
+                    {configuracionCampos.etiquetaCodigo ?? "Codigo"}
+                  </th>
+                ) : null}
+                {columnasVisibles.detalle ? (
+                  <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
+                    {configuracionCampos.etiquetaDetalle ?? "Detalle"}
+                  </th>
+                ) : null}
+                {columnasVisibles.ingles ? (
+                  <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
+                    Ingles
+                  </th>
+                ) : null}
+                {columnasVisibles.portugues ? (
+                  <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
+                    Portugues
+                  </th>
+                ) : null}
                 <th className="px-5 py-4 text-right text-[11px] font-bold uppercase text-slate-300">
                   Acciones
                 </th>
@@ -520,6 +912,10 @@ export default function ConfiguracionParametros() {
                 <tr className="bg-slate-50/70">
                   <CamposEdicionParametro
                     valores={filaFormulario.valores}
+                    numero={obtenerSiguienteNumTablaMaestra(parametros ?? [])}
+                    configuracion={configuracionCampos}
+                    columnasVisibles={columnasVisibles}
+                    opcionesReferencia={opcionesReferencia}
                     onCambiar={(valores) =>
                       setFilaFormulario({ ...filaFormulario, valores })
                     }
@@ -559,7 +955,7 @@ export default function ConfiguracionParametros() {
 
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-16 text-center">
+                  <td colSpan={totalColumnas} className="px-5 py-16 text-center">
                     <div className="flex flex-col items-center gap-3 text-slate-400">
                       <Loader2 className="h-8 w-8 animate-spin" />
                       <span className="text-sm font-medium">
@@ -570,7 +966,7 @@ export default function ConfiguracionParametros() {
                 </tr>
               ) : isError ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-16 text-center">
+                  <td colSpan={totalColumnas} className="px-5 py-16 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <span className="text-sm font-bold text-slate-700">
                         Error al cargar parametros
@@ -589,7 +985,7 @@ export default function ConfiguracionParametros() {
               ) : registrosPagina.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={totalColumnas}
                     className="px-5 py-16 text-center text-sm text-slate-400"
                   >
                     No se encontraron parametros registrados.
@@ -613,6 +1009,10 @@ export default function ConfiguracionParametros() {
                       {estaEditando && filaFormulario ? (
                         <CamposEdicionParametro
                           valores={filaFormulario.valores}
+                          numero={parametro.num1}
+                          configuracion={configuracionCampos}
+                          columnasVisibles={columnasVisibles}
+                          opcionesReferencia={opcionesReferencia}
                           onCambiar={(valores) =>
                             setFilaFormulario({ ...filaFormulario, valores })
                           }
@@ -620,19 +1020,57 @@ export default function ConfiguracionParametros() {
                       ) : (
                         <>
                           <td className="px-5 py-5 text-xs font-bold text-slate-600">
-                            {obtenerCodigoParametro(parametro)}
+                            {obtenerNumeroParametro(parametro)}
                           </td>
+                          {columnasVisibles.codigo &&
+                          !configuracionCampos.codigoDespuesDescripcion ? (
+                            <td className="px-5 py-5 text-xs font-semibold text-slate-600">
+                              {obtenerCodigoParametro(parametro) || "-"}
+                            </td>
+                          ) : null}
+                          {columnasVisibles.referencia ? (
+                            <td className="px-5 py-5 text-xs font-semibold text-slate-600">
+                              {obtenerEtiquetaReferenciaParametro(
+                                parametro,
+                                opcionesReferencia,
+                                configuracionCampos,
+                              ) || "-"}
+                            </td>
+                          ) : null}
                           <td className="px-5 py-5 text-xs text-slate-600">
                             {obtenerDescripcionParametro(parametro)}
                           </td>
-                          <td className="px-5 py-5 text-xs font-semibold text-slate-600">
-                            {obtenerSimboloParametro(parametro) || "-"}
-                          </td>
-                          <td className="px-5 py-5">
-                            <EstadoParametro
-                              activo={obtenerEstadoActivo(parametro)}
-                            />
-                          </td>
+                          {columnasVisibles.codigo &&
+                          configuracionCampos.codigoDespuesDescripcion ? (
+                            <td className="px-5 py-5 text-xs font-semibold text-slate-600">
+                              {obtenerCodigoParametro(parametro) || "-"}
+                            </td>
+                          ) : null}
+                          {columnasVisibles.detalle ? (
+                            <td className="px-5 py-5 text-xs font-semibold text-slate-600">
+                              {obtenerSimboloParametro(parametro) || "-"}
+                            </td>
+                          ) : null}
+                          {columnasVisibles.ingles ? (
+                            <td className="px-5 py-5 text-xs text-slate-600">
+                              {[
+                                obtenerTraduccionInglesParametro(parametro),
+                                obtenerDetalleInglesParametro(parametro),
+                              ]
+                                .filter(Boolean)
+                                .join(" / ") || "-"}
+                            </td>
+                          ) : null}
+                          {columnasVisibles.portugues ? (
+                            <td className="px-5 py-5 text-xs text-slate-600">
+                              {[
+                                obtenerTraduccionPortuguesParametro(parametro),
+                                obtenerDetallePortuguesParametro(parametro),
+                              ]
+                                .filter(Boolean)
+                                .join(" / ") || "-"}
+                            </td>
+                          ) : null}
                         </>
                       )}
                       <td className="px-5 py-5">
@@ -704,20 +1142,29 @@ export default function ConfiguracionParametros() {
             >
               <ChevronLeft size={16} />
             </button>
-            {paginas.map((pagina) => (
-              <button
-                key={pagina}
-                type="button"
-                onClick={() => cambiarPagina(pagina)}
-                className={`flex h-8 w-8 items-center justify-center rounded-md text-xs font-bold transition-colors ${
-                  pagina === paginaActual
-                    ? "bg-brand-black text-white"
-                    : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                }`}
-              >
-                {pagina}
-              </button>
-            ))}
+            {paginas.map((pagina, indice) =>
+              pagina === "puntos" ? (
+                <span
+                  key={`puntos-${indice}`}
+                  className="flex h-8 w-8 items-center justify-center text-xs font-bold text-slate-300"
+                >
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={pagina}
+                  type="button"
+                  onClick={() => cambiarPagina(pagina)}
+                  className={`flex h-8 w-8 items-center justify-center rounded-md text-xs font-bold transition-colors ${
+                    pagina === paginaActual
+                      ? "bg-brand-black text-white"
+                      : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  }`}
+                >
+                  {pagina}
+                </button>
+              ),
+            )}
             <button
               type="button"
               onClick={() => cambiarPagina(paginaActual + 1)}
