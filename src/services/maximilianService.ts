@@ -3,7 +3,12 @@ import { fetchAuthSession } from "aws-amplify/auth";
 import { toast } from "sonner";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
-import { cerrarSesionExpirada } from "./session.service";
+import { cerrarSesionExpirada } from "./sesion.service";
+import type { AxiosError, InternalAxiosRequestConfig } from "axios";
+
+type ConfiguracionAutenticada = InternalAxiosRequestConfig & {
+  reintentoAutenticacion?: boolean;
+};
 
 const maximilianService = axios.create({
   baseURL:
@@ -26,30 +31,97 @@ function obtenerMensajeAmigableUsuario(url?: string) {
   return null;
 }
 
+function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
+  if (data.idTipoMensaje === MessageType.SUCCESS) return true;
+  if (!url) return false;
+
+  const esEndpointAsignacion =
+    url.includes("/api/Asignacion/bandeja")
+    || url.includes("/api/Asignacion/listar");
+  const esEndpointInformeGuardar =
+    url.includes("/api/Informe/crear")
+    || url.includes("/api/Informe/editar");
+  const esEndpointInformeObtener = url.includes("/api/Informe/obtener");
+  const esEndpointInformeExtraccion =
+    url.includes("/api/Informe/obtenerUrlPrefirmada")
+    || url.includes("/api/Informe/autocompletar")
+    || url.includes("/api/Informe/extraerDocumento")
+    || url.includes("/api/Informe/traducir");
+  const esEndpointDirectorioEjecutivo = url.includes("/api/DirectorioEjecutivo/");
+  const esEndpointCompaniaNoticia = url.includes("/api/Compania/noticia/");
+  const esEndpointCompaniaNoticiaBalance = url.includes("/api/Compania/companianoticiabalance/");
+  const esEndpointCompaniaNoticiaDetalle = url.includes("/api/Compania/companianoticiadetalle/");
+
+  if (esEndpointAsignacion && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION && data.mensaje === "OK") {
+    return true;
+  }
+
+  if (esEndpointInformeGuardar && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "Informe registrado correctamente." || data.mensaje === "Informe actualizado correctamente.";
+  }
+
+  if (esEndpointInformeObtener && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "OK" && Boolean(data.result);
+  }
+
+  if (esEndpointInformeExtraccion && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return Boolean(data.result);
+  }
+
+  if (esEndpointDirectorioEjecutivo && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "OK" || Boolean(data.result);
+  }
+
+  if (esEndpointCompaniaNoticia && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "OK" || Boolean(data.result);
+  }
+
+  if (esEndpointCompaniaNoticiaBalance && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "OK" || Boolean(data.result);
+  }
+
+  if (esEndpointCompaniaNoticiaDetalle && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "OK" || Boolean(data.result);
+  }
+
+  return false;
+}
+
+export { esRespuestaOkCompatibilidad };
+
+async function aplicarEncabezadosAutenticacion(
+  config: InternalAxiosRequestConfig,
+  forzarRefresco = false,
+) {
+  const { tokens } = await fetchAuthSession({ forceRefresh: forzarRefresco });
+  const tokenAcceso = tokens?.accessToken?.toString();
+  const idRolSeleccionado = sessionStorage.getItem("selected_role_id");
+  const sesionUsuario = sessionStorage.getItem("user_session");
+  const sesion = sesionUsuario ? JSON.parse(sesionUsuario) : null;
+
+  if (tokenAcceso) {
+    config.headers.Authorization = `Bearer ${tokenAcceso}`;
+  }
+
+  if (idRolSeleccionado) {
+    config.headers.idRol = idRolSeleccionado;
+  }
+
+  if (sesion?.idUsuario) {
+    config.headers.idUsuario = sesion.idUsuario;
+  }
+
+  if (sesion?.idEmpresa) {
+    config.headers.idEmpresa = sesion.idEmpresa;
+  }
+
+  return config;
+}
+
 maximilianService.interceptors.request.use(
   async (config) => {
     try {
-      const { tokens } = await fetchAuthSession();
-      const accessToken = tokens?.accessToken?.toString();
-      const selectedRoleId = sessionStorage.getItem("selected_role_id");
-      const userSession = sessionStorage.getItem("user_session");
-      const session = userSession ? JSON.parse(userSession) : null;
-
-      if (accessToken) {
-        config.headers.Authorization = `Bearer ${accessToken}`;
-      }
-
-      if (selectedRoleId) {
-        config.headers.idRol = selectedRoleId;
-      }
-
-      if (session?.idUsuario) {
-        config.headers.idUsuario = session.idUsuario;
-      }
-
-      if (session?.idEmpresa) {
-        config.headers.idEmpresa = session.idEmpresa;
-      }
+      await aplicarEncabezadosAutenticacion(config);
     } catch (error) {
       console.error("Error fetching Cognito token:", error);
       void cerrarSesionExpirada();
@@ -69,7 +141,7 @@ maximilianService.interceptors.response.use(
 
     // If it's a standard API response with idTipoMensaje
     if (data && data.idTipoMensaje !== undefined) {
-      if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      if (!esRespuestaOkCompatibilidad(data, response.config.url)) {
         const fallbackMessage =
           data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION
             ? "La operación no pudo completarse debido a una regla de negocio."
@@ -77,23 +149,57 @@ maximilianService.interceptors.response.use(
 
         const mensajeAmigable = obtenerMensajeAmigableUsuario(response.config.url);
         toast.error(mensajeAmigable || data.mensaje || fallbackMessage);
-      } else if (response.config.method !== "get") {
+      } else if (
+        response.config.method !== "get"
+        && !response.config.url?.includes("/api/Informe/obtenerUrlPrefirmada")
+        && !response.config.url?.includes("/api/Informe/autocompletar")
+        && !response.config.url?.includes("/api/Informe/extraerDocumento")
+        && !response.config.url?.includes("/api/Informe/traducir")
+      ) {
         toast.success(data.mensaje);
       }
     }
 
     return response;
   },
-  (error) => {
-    if (error.response?.status === 401 || error.response?.status === 403) {
+  async (error: AxiosError) => {
+    const configOriginal = error.config as ConfiguracionAutenticada | undefined;
+
+    if (
+      error.response?.status === 401
+      && configOriginal
+      && !configOriginal.reintentoAutenticacion
+    ) {
+      configOriginal.reintentoAutenticacion = true;
+
+      try {
+        await aplicarEncabezadosAutenticacion(configOriginal, true);
+        return maximilianService(configOriginal);
+      } catch (errorRefresco) {
+        console.error("Error refreshing Cognito token:", errorRefresco);
+        void cerrarSesionExpirada();
+        return Promise.reject(errorRefresco);
+      }
+    }
+
+    if (error.response?.status === 401) {
       void cerrarSesionExpirada();
+      return Promise.reject(error);
+    }
+
+    if (error.response?.status === 403) {
+      const data = error.response.data as Partial<ApiResponse<unknown>> | undefined;
+      const mensaje =
+        data?.mensaje
+        || "No tienes permisos para realizar esta operacion.";
+      toast.error(mensaje);
       return Promise.reject(error);
     }
 
     // Handle network or HTTP errors
     const errorMessage =
       obtenerMensajeAmigableUsuario(error.config?.url) ||
-      error.response?.data?.mensaje ||
+      (error.response?.data as Partial<ApiResponse<unknown>> | undefined)?.mensaje ||
       "Error de conexión con el servidor";
     toast.error(errorMessage);
     return Promise.reject(error);

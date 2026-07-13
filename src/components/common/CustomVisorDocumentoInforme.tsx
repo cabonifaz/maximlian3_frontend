@@ -1,0 +1,990 @@
+import { useEffect, useRef, useState, useCallback, useMemo, type PointerEvent as ReactPointerEvent } from "react";
+import { Hand, MousePointer2, Minus, Plus, RotateCcw } from "lucide-react";
+import pagedJsUrl from "../../../node_modules/pagedjs/dist/paged.polyfill.js?url";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
+import type {
+  DocumentoInformeGenerado,
+  FooterCell,
+  PlantillaDocumentoConfig,
+  PlantillaSeccion,
+} from "@maximilian/shared/types/informe.type";
+import type { DatosInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
+
+interface PropsCustomVisorDocumentoInforme {
+  documento: DocumentoInformeGenerado;
+  datosInvestigacion?: DatosInvestigacionAnalista;
+  ocuparAltoDisponible?: boolean;
+  tituloBarra?: string;
+  subtituloBarra?: string;
+  onEstadoRenderizacionChange?: (estaRenderizando: boolean) => void;
+  encabezado?: {
+    pais: string;
+    fecha: string;
+    tipoSolicitud: string;
+    analista: string;
+    traductor: string;
+  };
+}
+
+const ZOOM_MINIMO_INFORME = 0.35;
+const ZOOM_MAXIMO_INFORME = 1.6;
+const PASO_ZOOM_INFORME = 0.1;
+const ANCHO_PAGINA_FALLBACK_PX = 794;
+const TIPO_MENSAJE_PAGEDJS_LISTO = "maximilian:pagedjs-listo";
+type ModoInteraccionInforme = "arrastrar" | "seleccionar";
+
+function escaparHtml(texto: string): string {
+  return texto
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function escaparAtributo(texto: string): string {
+  return escaparHtml(texto).replace(/'/g, "&#39;");
+}
+
+function escaparScriptJson(valor: string): string {
+  return JSON.stringify(valor).replace(/</g, "\\u003c");
+}
+
+function convertirLongitudCssAPx(valor?: string): number {
+  if (!valor) return ANCHO_PAGINA_FALLBACK_PX;
+
+  const coincidencia = valor.trim().match(/^([\d.]+)\s*(in|cm|mm|px|pt)?$/i);
+  if (!coincidencia) return ANCHO_PAGINA_FALLBACK_PX;
+
+  const numero = Number(coincidencia[1]);
+  if (!Number.isFinite(numero) || numero <= 0) return ANCHO_PAGINA_FALLBACK_PX;
+
+  const unidad = coincidencia[2]?.toLowerCase() ?? "px";
+  if (unidad === "in") return numero * 96;
+  if (unidad === "cm") return (numero / 2.54) * 96;
+  if (unidad === "mm") return (numero / 25.4) * 96;
+  if (unidad === "pt") return (numero / 72) * 96;
+  return numero;
+}
+
+function renderizarSeccion(seccion: PlantillaSeccion): string {
+  const sec = seccion as Record<string, unknown>;
+  const secStyle = sec.style
+    ? ` style="${sec.style}"`
+    : "";
+  let html = "";
+
+  switch (seccion.type) {
+    case "heading": {
+      const tag = seccion.level === 1 ? "h1" : "h2";
+      html = `<${tag}${secStyle}>${escaparHtml(seccion.text)}</${tag}>`;
+      break;
+    }
+
+    case "subtitle":
+      html = `<div${secStyle}>${escaparHtml(seccion.text)}</div>`;
+      break;
+
+    case "text":
+      html = `<div${secStyle}>${escaparHtml(seccion.field)}</div>`;
+      break;
+
+    case "inline": {
+      const runs = (seccion.runs ?? []).map((r) =>
+        r.style
+          ? `<span style="${r.style}">${escaparHtml(r.text)}</span>`
+          : escaparHtml(r.text)
+      ).join("");
+      html = `<div${secStyle}>${runs}</div>`;
+      break;
+    }
+
+    case "keyValue": {
+      const kv = seccion as Record<string, unknown>;
+      const kvStyle = kv.style ? ` style="${kv.style}"` : "";
+      html = `<table${kvStyle}><tbody>${seccion.rows
+        .map(
+          (row) =>
+            `<tr>${row.map((cell) => {
+              const attrs = [
+                cell.colspan && cell.colspan > 1 ? `colspan="${cell.colspan}"` : "",
+                cell.style ? `style="${cell.style}"` : "",
+              ].filter(Boolean).join(" ");
+              return `<td${attrs ? ` ${attrs}` : ""}>${escaparHtml(cell.text)}</td>`;
+            }).join("")}</tr>`,
+        )
+        .join("")}</tbody></table>`;
+      break;
+    }
+
+    case "borderedBox": {
+      const box = seccion as Record<string, unknown>;
+      const boxStyle = box.style ? ` style="${box.style}"` : "";
+      const lblStyle = box.labelStyle ? ` style="${box.labelStyle}"` : "";
+      const valStyle = box.valueStyle ? ` style="${box.valueStyle}"` : "";
+      const titleStyle = box.titleStyle ? ` style="${box.titleStyle}"` : "";
+      const rows = (box.rows ?? []) as Record<string, unknown>[];
+      let filas = `<tr><td colspan="2"${titleStyle}>${escaparHtml(seccion.title)}</td></tr>`;
+      const cellStyle = box.cellStyle ? ` style="${box.cellStyle}"` : "";
+      if (seccion.content) {
+        filas += `<tr><td colspan="2"${cellStyle}>${escaparHtml(seccion.content)}</td></tr>`;
+      }
+      filas += rows
+        .map((f) => {
+          const rowLbl = f.style ? ` style="${f.style}"` : lblStyle;
+          return `<tr><td${rowLbl}>${escaparHtml(String(f.label ?? ""))}</td><td${valStyle}>${escaparHtml(String(f.value ?? ""))}</td></tr>`;
+        })
+        .join("");
+      html = `<table${boxStyle}><tbody>${filas}</tbody></table>`;
+      break;
+    }
+
+    // El "referenceBox" es similar al "borderedBox" pero con un diseño específico para referencias, con un título destacado y una lista de ítems debajo.
+    case "referenceBox": {
+      const ref = seccion as Record<string, unknown>;
+      const refStyle = ref.style ? ` style="${ref.style}"` : "";
+      const refTitleStyle = ref.titleStyle ? ` style="${ref.titleStyle}"` : "";
+      const refCellStyle = ref.cellStyle ? ` style="${ref.cellStyle}"` : "";
+      html = `<table${refStyle}><tbody>
+        <tr><td${refTitleStyle}>${escaparHtml(seccion.title)}</td></tr>
+        ${seccion.items.map((item, i) => `<tr><td${i === seccion.items.length - 1 ? (ref.lastCellStyle ? ` style="${ref.lastCellStyle}"` : refCellStyle) : refCellStyle}>${escaparHtml(item)}</td></tr>`).join("")}
+      </tbody></table>`;
+      break;
+    }
+
+    case "dataTable": {
+      const dtStyleAttr = seccion.style ? ` style="${seccion.style}"` : "";
+      const dtCellStyle = seccion.cellStyle
+        ? ` style="${seccion.cellStyle}"`
+        : "";
+      const dtHeaderStyle = seccion.headerStyle
+        ? `;${seccion.headerStyle}`
+        : "";
+      const colgroup = seccion.columnWidths
+        ? `<colgroup>${seccion.columnWidths.map((w) => `<col style="width:${w}">`).join("")}</colgroup>`
+        : "";
+      html = `<table${dtStyleAttr}>${colgroup}<thead><tr>${seccion.columns
+        .map(
+          (c) =>
+            `<th style="${(seccion.cellStyle ?? "") + dtHeaderStyle}">${escaparHtml(c.header)}</th>`,
+        )
+        .join("")}</tr></thead><tbody>${(seccion.rows ?? [])
+        .map((fila) => {
+          const celdas = Array.isArray(fila)
+            ? fila
+            : Object.values(fila as Record<string, unknown>).map(String);
+          return `<tr>${celdas.map((celda) => `<td${dtCellStyle}>${escaparHtml(String(celda ?? ""))}</td>`).join("")}</tr>`;
+        })
+        .join("")}</tbody></table>`;
+      break;
+    }
+
+    case "repeat":
+      html = seccion.sections.map(renderizarSeccion).join("");
+      break;
+
+    case "repeatDetail": {
+      const rd = seccion as Record<string, unknown>;
+      const rdTitleStyle = rd.titleStyle ? ` style="${rd.titleStyle}"` : "";
+      const rdContentStyle = rd.contentStyle
+        ? ` style="${rd.contentStyle}"`
+        : "";
+      html = (seccion.items ?? [])
+        .map(
+          (item) =>
+            `<div${rdTitleStyle}>${escaparHtml(item.title)}</div><div${rdContentStyle}>${escaparHtml(item.content)}</div>`,
+        )
+        .join("");
+      break;
+    }
+
+    case "spacer":
+      html = `<div style="height:${seccion.height ?? "0.3in"}"></div>`;
+      break;
+  }
+
+  return seccion.pageBreak
+    ? `<div class="sr-salto-pagina" aria-hidden="true">&nbsp;</div>${html}`
+    : html;
+}
+
+function construirCss(config: PlantillaDocumentoConfig): string {
+  const ancho = config.pageSize?.width ?? "8.27in";
+  const alto = config.pageSize?.height ?? "11.69in";
+  const mt = config.margins?.top ?? "0.5in";
+  const mb = config.margins?.bottom ?? "0.85in";
+  const ml = config.margins?.left ?? "0.5in";
+  const mr = config.margins?.right ?? "0.5in";
+  const fuente = config.font?.family ?? "Calibri, Arial, sans-serif";
+  const tamano = config.font?.size ?? "10pt";
+  const interlineado = config.font?.lineSpacing ?? 1.15;
+  const pieTexto = escaparHtml(config.footer?.text ?? "");
+  const pieTamano = config.footer?.fontSize ?? "7pt";
+  const piePeso = config.footer?.fontWeight ?? "normal";
+  const pieEstilo = config.footer?.fontStyle ?? "normal";
+  const headerAlign = config.header?.align ?? "center";
+  const footerAlign = config.footer?.align ?? "left";
+  const headerGapAfter = config.header?.gapAfter ?? "0";
+  const headerMarginTop = config.header?.marginTop ?? "0";
+  const footerGapBefore = config.footer?.gapBefore ?? "0";
+  const footerMarginBottom = config.footer?.marginBottom ?? "0";
+
+  const ciL = config.contentIndent?.left ?? "0";
+  const ciR = config.contentIndent?.right ?? "0";
+  const fiL = config.footerIndent?.left ?? "0";
+  const fiR = config.footerIndent?.right ?? "0";
+  const bordePagina = config.pageBorder;
+
+  return `
+    @page {
+      size: ${ancho} ${alto};
+      margin: ${mt} ${mr} ${mb} ${ml};
+
+      @top-center {
+        content: element(encabezado-logo);
+        vertical-align: ${config.header?.marginTop ? "top" : "bottom"};
+      }
+      @bottom-center {
+        content: element(pie-pagina);
+        vertical-align: ${config.footer?.marginBottom ? "bottom" : "top"};
+      }
+    }
+    ${config.firstPageFooter ? `@page :first { @bottom-center { content: element(pie-pagina-p1); vertical-align: ${config.footer?.marginBottom ? "bottom" : "top"}; } }` : ""}
+
+    .sr-encabezado-logo {
+      position: running(encabezado-logo);
+      text-align: ${headerAlign};
+      width: 100%;
+      padding-top: ${headerMarginTop};
+      padding-bottom: ${headerGapAfter};
+      box-sizing: border-box;
+    }
+
+    .sr-encabezado-logo img {
+      display: block;
+      ${headerAlign === "right" ? "margin-left: auto; margin-right: 0;" : ""}
+      ${headerAlign === "left" ? "margin-left: 0; margin-right: auto;" : ""}
+      ${headerAlign !== "left" && headerAlign !== "right" ? "margin-left: auto; margin-right: auto;" : ""}
+    }
+
+    .sr-pie-pagina {
+      position: running(pie-pagina);
+      font-size: ${pieTamano};
+      font-weight: ${piePeso};
+      font-style: ${pieEstilo};
+      line-height: 1.0;
+      font-family: ${fuente};
+      ${config.footer?.layout === "table" ? "" : `text-align: ${footerAlign};`}
+      ${config.footer?.containerStyle ? config.footer.containerStyle + ";" : ""}
+      ${config.footer?.footerExtend ? `margin-left:-${config.footer.footerExtend};margin-right:-${config.footer.footerExtend};` : ""}
+      white-space: pre-line;
+      padding-left: ${fiL};
+      padding-right: ${fiR};
+      padding-top: ${footerGapBefore};
+      padding-bottom: ${footerMarginBottom};
+      box-sizing: border-box;
+    }
+
+    ${config.firstPageFooter ? `
+    .sr-pie-pagina-p1 {
+      position: running(pie-pagina-p1);
+      font-size: ${pieTamano};
+      line-height: 1.0;
+      font-family: ${fuente};
+      ${config.firstPageFooter.containerStyle ? config.firstPageFooter.containerStyle + ";" : ""}
+      ${config.firstPageFooter.footerExtend ? `margin-left:-${config.firstPageFooter.footerExtend};margin-right:-${config.firstPageFooter.footerExtend};` : ""}
+      padding-top: ${config.firstPageFooter.gapBefore ?? "0"};
+      box-sizing: border-box;
+    }` : ""}
+
+    ${config.footer?.layout === "table" ? `
+    .sr-pie-tabla {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .sr-pie-pagnum {
+      width: ${config.footer?.pageColWidth ?? "auto"};
+      ${config.footer?.pageBgColor ? `background-color: ${config.footer.pageBgColor};` : ""}
+      ${config.footer?.pageColor ? `color: ${config.footer.pageColor};` : ""}
+      text-align: center;
+      vertical-align: middle;
+      font-size: ${pieTamano};
+      padding: 2pt 4pt;
+    }
+    .sr-pie-pagnum::after {
+      content: "${escaparHtml(config.footer?.pageLabel ?? "Page")} " counter(page)${config.footer?.pageTotal ? ` " ${escaparHtml(config.footer?.pageTotalLabel ?? "of")} " counter(pages)` : ""};
+    }` : `
+    ${config.footer?.showPageNumber !== false ? `
+    .sr-pie-pagina::after {
+      content: "${escaparHtml(config.footer?.pageLabel ?? "Page")} " counter(page);
+      ${config.footer?.pageStyle ? config.footer.pageStyle + ";" : ""}
+      ${config.footer?.pageFontSize ? `font-size: ${config.footer.pageFontSize};` : ""}
+      ${config.footer?.pageColor ? `color: ${config.footer.pageColor};` : ""}
+      ${config.footer?.pageGapBefore ? `margin-top: ${config.footer.pageGapBefore};` : ""}
+    }` : ""}
+    .sr-pie-texto {
+      ${pieTexto ? "" : "display: none;"}
+    }`}
+
+    body {
+      font-family: ${fuente};
+      font-size: ${tamano};
+      line-height: ${interlineado};
+      color: #000;
+      margin: 0;
+      padding: 0;
+      background: #f1f5f9;
+    }
+
+    .sr-contenido {
+      padding-left: ${ciL};
+      padding-right: ${ciR};
+    }
+
+    .pagedjs_pages {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .pagedjs_page {
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+      margin-bottom: 20px;
+      background: #fff;
+      position: relative;
+    }
+
+    .pagedjs_page_content {
+      position: relative;
+      z-index: 1;
+    }
+
+    ${bordePagina ? `
+    .pagedjs_page::before {
+      content: "";
+      position: absolute;
+      top: ${bordePagina.top ?? "0"};
+      bottom: ${bordePagina.bottom ?? "0"};
+      left: ${bordePagina.left ?? "0"};
+      right: ${bordePagina.right ?? "0"};
+      border: ${bordePagina.width ?? "1pt"} solid ${bordePagina.color ?? "#000"};
+      pointer-events: none;
+      z-index: 1;
+    }
+    ` : ""}
+
+    ${config.watermark?.image ? `
+    .pagedjs_page::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("${config.watermark.image.replace(/"/g, '\\"')}") no-repeat;
+      ${config.watermark.width && config.watermark.height ? `background-size: ${config.watermark.width} ${config.watermark.height};` : ""}
+      ${config.watermark.position ? `background-position: ${config.watermark.position};` : ""}
+      ${config.watermark.opacity !== undefined ? `opacity: ${config.watermark.opacity};` : ""}
+      pointer-events: none;
+      z-index: 0;
+    }
+    ` : ""}
+
+    ${config.firstPageWatermark?.image ? `
+    .pagedjs_first_page::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("${config.firstPageWatermark.image.replace(/"/g, '\\"')}") no-repeat;
+      ${config.firstPageWatermark.width && config.firstPageWatermark.height ? `background-size: ${config.firstPageWatermark.width} ${config.firstPageWatermark.height};` : ""}
+      ${config.firstPageWatermark.position ? `background-position: ${config.firstPageWatermark.position};` : ""}
+      ${config.firstPageWatermark.opacity !== undefined ? `opacity: ${config.firstPageWatermark.opacity};` : ""}
+      pointer-events: none;
+      z-index: 0;
+    }
+    ` : ""}
+
+    td, th {
+      padding: 0 0.03in;
+      vertical-align: top;
+    }
+
+    tr {
+      break-inside: avoid;
+    }
+
+    .sr-salto-pagina {
+      display: block;
+      break-before: page;
+      page-break-before: always;
+      height: 1px;
+      line-height: 1px;
+      font-size: 1px;
+      color: transparent;
+      overflow: hidden;
+    }
+
+  `;
+}
+
+function construirHtmlContenido(
+  config: PlantillaDocumentoConfig,
+  secciones: PlantillaSeccion[],
+): string {
+  const logoUrl = config.header?.logo;
+  const logoW = config.header?.logoWidth ?? "1.3in";
+  const logoH = config.header?.logoHeight ?? "0.55in";
+  const pieTexto = config.footer?.text ?? "";
+
+  const encabezado = logoUrl
+    ? `<div class="sr-encabezado-logo"><img src="${logoUrl}" style="width:${logoW};height:${logoH};object-fit:contain;" /></div>`
+    : `<div class="sr-encabezado-logo"></div>`;
+
+  const renderFooterCell = (cell: FooterCell): string => {
+    const attrs = [
+      cell.class ? `class="${cell.class}"` : "",
+      cell.style ? `style="${cell.style}"` : "",
+      cell.colspan ? `colspan="${cell.colspan}"` : "",
+    ].filter(Boolean).join(" ");
+    let content = "";
+    if (cell.rows) {
+      content = `<table style="width:100%;border-collapse:collapse;table-layout:fixed"><tbody>${cell.rows.map(r => `<tr>${r.cells.map(renderFooterCell).join("")}</tr>`).join("")}</tbody></table>`;
+    } else if (cell.image) {
+      content = `<img src="${cell.image}" style="width:${cell.imageWidth ?? "auto"};height:${cell.imageHeight ?? "auto"};object-fit:contain;" />`;
+    } else {
+      content = escaparHtml(cell.text ?? "");
+    }
+    return `<td${attrs ? ` ${attrs}` : ""}>${content}</td>`;
+  };
+  const pie = config.footer?.layout === "table"
+    ? `<div class="sr-pie-pagina"><table class="sr-pie-tabla"><tbody>${(config.footer.rows ?? []).map(row => `<tr>${row.cells.map(renderFooterCell).join("")}</tr>`).join("")}</tbody></table></div>`
+    : `<div class="sr-pie-pagina"><span class="sr-pie-texto">${escaparHtml(pieTexto)}</span></div>`;
+
+  const pieP1 = config.firstPageFooter?.layout === "table" && config.firstPageFooter.rows
+    ? `<div class="sr-pie-pagina-p1"><table class="sr-pie-tabla"><tbody>${config.firstPageFooter.rows.map(row => `<tr>${row.cells.map(renderFooterCell).join("")}</tr>`).join("")}</tbody></table></div>`
+    : config.firstPageFooter
+    ? `<div class="sr-pie-pagina-p1"></div>`
+    : "";
+
+  const cuerpo = secciones.map(renderizarSeccion).join("\n");
+
+  return `${encabezado}${pie}${pieP1}<div class="sr-contenido">${cuerpo}</div>`;
+}
+
+export function CustomVisorDocumentoInforme({
+  documento,
+  ocuparAltoDisponible = false,
+  tituloBarra,
+  subtituloBarra,
+  onEstadoRenderizacionChange,
+}: PropsCustomVisorDocumentoInforme) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const contenedorScrollRef = useRef<HTMLDivElement>(null);
+  const posicionArrastreRef = useRef({
+    x: 0,
+    y: 0,
+    scrollLeft: 0,
+    scrollTop: 0,
+  });
+  const [estaPaginando, setEstaPaginando] = useState(false);
+  const [alturaIframe, setAlturaIframe] = useState(600);
+  const [error, setError] = useState<string | null>(null);
+  const [srcdoc, setSrcdoc] = useState<string>("");
+  const [tokenRenderDocumento, setTokenRenderDocumento] = useState("");
+  const [zoomInforme, setZoomInforme] = useState(1);
+  const [anchoDisponibleInforme, setAnchoDisponibleInforme] = useState(0);
+  const [zoomModificadoPorUsuario, setZoomModificadoPorUsuario] = useState(false);
+  const [estaArrastrandoInforme, setEstaArrastrandoInforme] = useState(false);
+  const [modoInteraccionInforme, setModoInteraccionInforme] = useState<ModoInteraccionInforme>("arrastrar");
+
+  const finalizarRenderizadoDocumento = useCallback(() => {
+    setEstaPaginando(false);
+    onEstadoRenderizacionChange?.(false);
+  }, [onEstadoRenderizacionChange]);
+
+  const ajustarAltura = useCallback(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    try {
+      const doc = iframe.contentDocument;
+      if (doc) {
+        const paginas = doc.querySelectorAll(".pagedjs_page");
+        const contenedorPaginas = doc.querySelector(".pagedjs_pages") as HTMLElement | null;
+        const altura = Math.max(
+          doc.documentElement.scrollHeight,
+          doc.body?.scrollHeight ?? 0,
+          contenedorPaginas?.scrollHeight ?? 0,
+        );
+        const paginasConContenido = Array.from(paginas).some((pagina) =>
+          (pagina.textContent ?? "").trim().length > 0 || Boolean(pagina.querySelector("img, table")),
+        );
+        if (altura > 100 && paginas.length > 0 && paginasConContenido) {
+          setAlturaIframe(altura + (paginas.length > 0 ? 60 : 40));
+          finalizarRenderizadoDocumento();
+          return;
+        }
+      }
+    } catch {
+      /* cross-origin fallback */
+    }
+    setError("No se pudo calcular la altura final del informe.");
+  }, [finalizarRenderizadoDocumento]);
+
+  const documentoKey = useMemo(
+    () =>
+      documento.sections && documento.document
+        ? JSON.stringify(documento)
+        : null,
+    [documento],
+  );
+
+  const anchoPaginaPx = useMemo(
+    () => convertirLongitudCssAPx(documento.document?.pageSize?.width),
+    [documento.document?.pageSize?.width],
+  );
+
+  const zoomAjustadoInforme = useMemo(() => {
+    if (anchoDisponibleInforme <= 0) return 1;
+    const espacioUtil = Math.max(280, anchoDisponibleInforme - 32);
+    const zoomAjustado = Math.min(1, espacioUtil / anchoPaginaPx);
+    return Math.max(ZOOM_MINIMO_INFORME, Number(zoomAjustado.toFixed(2)));
+  }, [anchoDisponibleInforme, anchoPaginaPx]);
+
+  useEffect(() => {
+    const contenedor = contenedorScrollRef.current;
+    if (!contenedor) return;
+
+    const actualizarAncho = () => {
+      setAnchoDisponibleInforme(contenedor.clientWidth);
+    };
+
+    actualizarAncho();
+    const observador = new ResizeObserver(actualizarAncho);
+    observador.observe(contenedor);
+
+    return () => observador.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!zoomModificadoPorUsuario) {
+      const idTemporizador = window.setTimeout(() => {
+        setZoomInforme(zoomAjustadoInforme);
+      }, 0);
+
+      return () => window.clearTimeout(idTemporizador);
+    }
+  }, [zoomAjustadoInforme, zoomModificadoPorUsuario]);
+
+  useEffect(() => {
+    if (!documentoKey || !documento.sections || !documento.document) return;
+    let estaActivo = true;
+
+    const tokenRender = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    const css = construirCss(documento.document);
+    const contenido = construirHtmlContenido(
+      documento.document,
+      documento.sections,
+    );
+
+    const htmlCompleto = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>${css}</style>
+</head>
+<body>
+<script>
+window.__maximilianPagedCompleto = false;
+window.PagedConfig = {
+  after: function () {
+    window.__maximilianPagedCompleto = true;
+  }
+};
+</script>
+${contenido}
+<script src="${escaparAtributo(pagedJsUrl)}"></script>
+<script>
+(function () {
+  var token = ${escaparScriptJson(tokenRender)};
+  var intentos = 0;
+  var alturaAnterior = 0;
+  var paginasAnteriores = 0;
+  var lecturasEstables = 0;
+
+  function obtenerAltura() {
+    var paginas = document.querySelector(".pagedjs_pages");
+    return Math.max(
+      document.documentElement ? document.documentElement.scrollHeight : 0,
+      document.body ? document.body.scrollHeight : 0,
+      paginas ? paginas.scrollHeight : 0
+    );
+  }
+
+  function tieneContenidoRenderizado() {
+    var paginas = Array.prototype.slice.call(document.querySelectorAll(".pagedjs_page"));
+    if (!paginas.length) return false;
+    return paginas.every(function (pagina) {
+      return (pagina.textContent || "").trim().length > 0 || Boolean(pagina.querySelector("img, table"));
+    });
+  }
+
+  function imagenesListas() {
+    var imagenes = Array.prototype.slice.call(document.images || []);
+    return imagenes.every(function (imagen) {
+      return imagen.complete && (imagen.naturalWidth > 0 || imagen.getAttribute("src") === "");
+    });
+  }
+
+  function fuentesListas() {
+    return !document.fonts || document.fonts.status === "loaded";
+  }
+
+  function revisar() {
+    intentos += 1;
+    var altura = obtenerAltura();
+    var paginas = document.querySelectorAll(".pagedjs_page").length;
+    var contenidoListo = tieneContenidoRenderizado();
+    var recursosListos = imagenesListas() && fuentesListas();
+    var pagedCompleto = Boolean(window.__maximilianPagedCompleto);
+
+    if (Math.abs(altura - alturaAnterior) <= 2 && paginas === paginasAnteriores) {
+      lecturasEstables += 1;
+    } else {
+      lecturasEstables = 0;
+      alturaAnterior = altura;
+      paginasAnteriores = paginas;
+    }
+
+    if (
+      contenidoListo &&
+      recursosListos &&
+      altura > 100 &&
+      paginas > 0 &&
+      (pagedCompleto || intentos >= 80) &&
+      lecturasEstables >= 8
+    ) {
+      window.parent.postMessage({
+        tipo: ${escaparScriptJson(TIPO_MENSAJE_PAGEDJS_LISTO)},
+        token: token,
+        altura: altura
+      }, "*");
+      return;
+    }
+
+    if (intentos >= 120) {
+      window.parent.postMessage({
+        tipo: ${escaparScriptJson(TIPO_MENSAJE_PAGEDJS_LISTO)},
+        token: token,
+        altura: altura,
+        forzado: true
+      }, "*");
+      return;
+    }
+
+    window.setTimeout(revisar, 150);
+  }
+
+  window.setTimeout(revisar, 150);
+})();
+</script>
+</body>
+</html>`;
+
+    window.setTimeout(() => {
+      if (!estaActivo) return;
+      setEstaPaginando(true);
+      onEstadoRenderizacionChange?.(true);
+      setError(null);
+      setZoomModificadoPorUsuario(false);
+      setAlturaIframe(600);
+      setTokenRenderDocumento(tokenRender);
+      setSrcdoc(htmlCompleto);
+    }, 0);
+
+    return () => {
+      estaActivo = false;
+    };
+  }, [documentoKey, documento.document, documento.sections, onEstadoRenderizacionChange]);
+
+  const manejarCargaIframe = useCallback(() => {
+    setTimeout(ajustarAltura, 2500);
+  }, [ajustarAltura]);
+
+  useEffect(() => {
+    const manejarMensaje = (event: MessageEvent) => {
+      const data = event.data as {
+        tipo?: string;
+        token?: string;
+        altura?: number;
+      } | null;
+
+      if (!data || data.tipo !== TIPO_MENSAJE_PAGEDJS_LISTO || data.token !== tokenRenderDocumento) return;
+
+      if (typeof data.altura === "number" && data.altura > 100) {
+        setAlturaIframe(data.altura + 60);
+      }
+      finalizarRenderizadoDocumento();
+    };
+
+    window.addEventListener("message", manejarMensaje);
+
+    return () => {
+      window.removeEventListener("message", manejarMensaje);
+    };
+  }, [finalizarRenderizadoDocumento, tokenRenderDocumento]);
+
+  const acercarInforme = useCallback(() => {
+    setZoomModificadoPorUsuario(true);
+    setZoomInforme((zoomActual) => Math.min(ZOOM_MAXIMO_INFORME, Number((zoomActual + PASO_ZOOM_INFORME).toFixed(2))));
+  }, []);
+
+  const alejarInforme = useCallback(() => {
+    setZoomModificadoPorUsuario(true);
+    setZoomInforme((zoomActual) => Math.max(ZOOM_MINIMO_INFORME, Number((zoomActual - PASO_ZOOM_INFORME).toFixed(2))));
+  }, []);
+
+  const restablecerZoomInforme = useCallback(() => {
+    setZoomModificadoPorUsuario(false);
+    setZoomInforme(zoomAjustadoInforme);
+  }, [zoomAjustadoInforme]);
+
+  const iniciarArrastreInforme = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (modoInteraccionInforme !== "arrastrar") return;
+
+    const contenedor = contenedorScrollRef.current;
+    if (!contenedor || event.pointerType !== "mouse" || event.button !== 0) return;
+
+    const objetivo = event.target as HTMLElement;
+    if (objetivo.closest("button, a, input, textarea, select")) return;
+
+    posicionArrastreRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      scrollLeft: contenedor.scrollLeft,
+      scrollTop: contenedor.scrollTop,
+    };
+    setEstaArrastrandoInforme(true);
+    contenedor.setPointerCapture(event.pointerId);
+  }, [modoInteraccionInforme]);
+
+  const moverArrastreInforme = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (modoInteraccionInforme !== "arrastrar") return;
+
+    const contenedor = contenedorScrollRef.current;
+    if (!contenedor || !estaArrastrandoInforme) return;
+
+    event.preventDefault();
+    const posicionInicial = posicionArrastreRef.current;
+    contenedor.scrollLeft = posicionInicial.scrollLeft - (event.clientX - posicionInicial.x);
+    contenedor.scrollTop = posicionInicial.scrollTop - (event.clientY - posicionInicial.y);
+  }, [estaArrastrandoInforme, modoInteraccionInforme]);
+
+  const terminarArrastreInforme = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const contenedor = contenedorScrollRef.current;
+    if (!contenedor || !estaArrastrandoInforme) return;
+
+    setEstaArrastrandoInforme(false);
+    if (contenedor.hasPointerCapture(event.pointerId)) {
+      contenedor.releasePointerCapture(event.pointerId);
+    }
+  }, [estaArrastrandoInforme]);
+
+  const porcentajeZoom = Math.round(zoomInforme * 100);
+  const puedeAlejar = zoomInforme > ZOOM_MINIMO_INFORME;
+  const puedeAcercar = zoomInforme < ZOOM_MAXIMO_INFORME;
+  const estaModoArrastrarInforme = modoInteraccionInforme === "arrastrar";
+  const classNameContenedorVisor = `flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm ${
+    ocuparAltoDisponible ? "h-full min-h-0" : "h-[min(72vh,760px)]"
+  }`;
+  const classNameContenedorScroll = `min-h-0 flex-1 overflow-auto px-2 py-4 sm:px-4 ${
+    estaModoArrastrarInforme
+      ? estaArrastrandoInforme
+        ? "cursor-grabbing select-none"
+        : "cursor-grab select-none"
+      : "cursor-text"
+  }`;
+
+  const controlesZoom = (
+    <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur sm:px-4">
+      <div className="min-w-0">
+        {tituloBarra ? (
+          <>
+            <p className="truncate text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">
+              {tituloBarra}
+            </p>
+            {subtituloBarra ? (
+              <p className="mt-0.5 truncate text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                ({subtituloBarra})
+              </p>
+            ) : null}
+          </>
+        ) : null}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <CustomButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={`h-9 w-9 rounded-none ${
+              estaModoArrastrarInforme
+                ? "bg-slate-900 text-white hover:bg-slate-800"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+            onClick={() => setModoInteraccionInforme("arrastrar")}
+            aria-label="Mover informe arrastrando"
+            title="Mover"
+          >
+            <Hand size={16} />
+          </CustomButton>
+          <CustomButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={`h-9 w-9 rounded-none border-l border-slate-200 ${
+              !estaModoArrastrarInforme
+                ? "bg-slate-900 text-white hover:bg-slate-800"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+            onClick={() => setModoInteraccionInforme("seleccionar")}
+            aria-label="Seleccionar texto del informe"
+            title="Seleccionar texto"
+          >
+            <MousePointer2 size={16} />
+          </CustomButton>
+        </div>
+        <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <CustomButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-none text-slate-600 hover:bg-slate-100"
+            onClick={alejarInforme}
+            disabled={!puedeAlejar}
+            aria-label="Alejar vista del informe"
+            title="Alejar"
+          >
+            <Minus size={16} />
+          </CustomButton>
+          <span className="min-w-16 border-x border-slate-200 px-3 text-center text-xs font-bold tabular-nums text-slate-600">
+            {porcentajeZoom}%
+          </span>
+          <CustomButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-none text-slate-600 hover:bg-slate-100"
+            onClick={acercarInforme}
+            disabled={!puedeAcercar}
+            aria-label="Acercar vista del informe"
+            title="Acercar"
+          >
+            <Plus size={16} />
+          </CustomButton>
+        </div>
+        <CustomButton
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="h-9 px-3 text-xs"
+          onClick={restablecerZoomInforme}
+          disabled={!zoomModificadoPorUsuario && zoomInforme === zoomAjustadoInforme}
+          title="Ajustar al ancho"
+        >
+          <RotateCcw size={14} />
+          Ajustar
+        </CustomButton>
+      </div>
+    </div>
+  );
+
+  if (documento.sections && documento.document) {
+    return (
+      <div className={classNameContenedorVisor}>
+        {controlesZoom}
+        {estaPaginando && (
+          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-500 shadow-sm">
+            Generando vista previa...
+          </div>
+        )}
+        {error && (
+          <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+        <div
+          ref={contenedorScrollRef}
+          className={classNameContenedorScroll}
+          onPointerDown={iniciarArrastreInforme}
+          onPointerMove={moverArrastreInforme}
+          onPointerUp={terminarArrastreInforme}
+          onPointerCancel={terminarArrastreInforme}
+        >
+          <div
+            className="mx-auto"
+            style={{
+              width: `${anchoPaginaPx * zoomInforme}px`,
+              height: `${alturaIframe * zoomInforme}px`,
+            }}
+          >
+            <iframe
+              key={tokenRenderDocumento}
+              ref={iframeRef}
+              title="Vista previa del documento"
+              srcDoc={srcdoc}
+              scrolling="no"
+              onLoad={manejarCargaIframe}
+              style={{
+                width: `${anchoPaginaPx}px`,
+                height: `${alturaIframe}px`,
+                border: "none",
+                display: "block",
+                visibility: estaPaginando ? "hidden" : "visible",
+                transform: `scale(${zoomInforme})`,
+                transformOrigin: "top left",
+                pointerEvents: estaModoArrastrarInforme ? "none" : "auto",
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const html = documento.html?.trim();
+  if (!html) {
+    return (
+      <div className="rounded border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+        La plantilla no contiene contenido para renderizar.
+      </div>
+    );
+  }
+
+  return (
+    <div className={classNameContenedorVisor}>
+      {controlesZoom}
+      <div
+        ref={contenedorScrollRef}
+        className={classNameContenedorScroll}
+        onPointerDown={iniciarArrastreInforme}
+        onPointerMove={moverArrastreInforme}
+        onPointerUp={terminarArrastreInforme}
+        onPointerCancel={terminarArrastreInforme}
+      >
+        <div
+          className={`mx-auto min-w-190 origin-top ${estaModoArrastrarInforme ? "select-none" : "select-text"}`}
+          style={{
+            transform: `scale(${zoomInforme})`,
+            width: `${anchoPaginaPx * zoomInforme}px`,
+          }}
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      </div>
+    </div>
+  );
+}

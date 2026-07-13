@@ -1,6 +1,8 @@
 export interface PedidoAsignacionEntry {
   idEstadoAsignacion: number;
   descripcion: string;
+  idEstadoInforme?: number | null;
+  descripcionEstadoInforme?: string | null;
 }
 
 export interface PedidoListEntry {
@@ -21,12 +23,19 @@ export interface PedidoListEntry {
   descripcionEstado: string;
   colorLetra: string;
   colorFondo: string;
+  idFase?: number;
+  requiereTraduccion?: 0 | 1;
   vigencia: string | number;
   asignaciones: PedidoAsignacionEntry[];
 }
 
 export interface PedidoListResponse {
   lstPedido: PedidoListEntry[];
+  pendiente: number;
+  enRevision: number;
+  aprobado: number;
+  observado: number;
+  cancelado: number;
   totalRegistros: number;
   totalPaginas: number;
 }
@@ -57,7 +66,7 @@ export interface CreatePedidoRequest {
   numeroDocumento: string;
   nombreCliente: string;
   idTipoPersona: number;
-  idCompania: number;
+  IdEmpresaAtencion: number;
   numeroDocumentoInvestigado: string;
   investigarRazonSocialNombres: string;
   idTarifario: number;
@@ -121,7 +130,7 @@ export interface UpdatePedidoRequest {
   numeroDocumento: string;
   nombreCliente: string;
   idTipoPersona: number;
-  idCompania: number;
+  IdEmpresaAtencion: number;
   numeroDocumentoInvestigado: string;
   investigarRazonSocialNombres: string;
   idTarifario: number;

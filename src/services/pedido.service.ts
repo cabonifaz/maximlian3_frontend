@@ -29,6 +29,27 @@ function obtenerNumero(...valores: unknown[]): number {
   return 0;
 }
 
+function obtenerNumeroOpcional(...valores: unknown[]): number | undefined {
+  for (const valor of valores) {
+    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
+    if (typeof valor === "string" && valor.trim() !== "") {
+      const numero = Number(valor);
+      if (Number.isFinite(numero)) return numero;
+    }
+  }
+
+  return undefined;
+}
+
+function obtenerIndicadorBinario(...valores: unknown[]): 0 | 1 {
+  for (const valor of valores) {
+    if (valor === 1 || valor === "1" || valor === true) return 1;
+    if (valor === 0 || valor === "0" || valor === false) return 0;
+  }
+
+  return 0;
+}
+
 function obtenerTexto(...valores: unknown[]): string {
   for (const valor of valores) {
     if (typeof valor === "string") {
@@ -69,10 +90,19 @@ function normalizarAsignaciones(valor: unknown): PedidoAsignacionEntry[] {
       ),
       descripcion: obtenerTexto(
         registro.descripcion,
+        registro.descripcionAsignacion,
         registro.descripcionEstado,
         registro.estadoDescripcion,
         registro.Descripcion,
+        registro.DescripcionAsignacion,
       ) || "-",
+      idEstadoInforme: obtenerNumeroOpcional(registro.idEstadoInforme, registro.IdEstadoInforme) ?? null,
+      descripcionEstadoInforme: obtenerTexto(
+        registro.descripcionEstadoInforme,
+        registro.DescripcionEstadoInforme,
+        registro.estadoInforme,
+        registro.EstadoInforme,
+      ) || null,
     };
   });
 }
@@ -103,27 +133,35 @@ function normalizarFilaPedido(fila: unknown): PedidoListEntry {
     descripcionEstado: obtenerTexto(registro.descripcionEstado, registro.estadoDescripcion, registro.estado, registro.Estado) || "-",
     colorLetra: obtenerTexto(registro.colorLetra, registro.estadoColorLetra, registro.ColorLetra) || "#475569",
     colorFondo: obtenerTexto(registro.colorFondo, registro.estadoColorFondo, registro.ColorFondo) || "#f1f5f9",
+    idFase: obtenerNumeroOpcional(registro.idFase, registro.IdFase),
+    requiereTraduccion: obtenerIndicadorBinario(registro.requiereTraduccion, registro.RequiereTraduccion),
     vigencia: obtenerTexto(registro.vigencia, registro.Vigencia) || String(obtenerNumero(registro.vigencia, registro.Vigencia)),
-    asignaciones: normalizarAsignaciones(registro.asignaciones),
+    asignaciones: normalizarAsignaciones(registro.asignaciones ?? registro.Asignaciones),
   };
 }
 
 function normalizarRespuestaPedido(resultado: PedidoListResponse | Record<string, unknown>): PedidoListResponse {
   const registro = typeof resultado === "object" && resultado !== null ? resultado : {};
-  const listaOriginal = Array.isArray((registro as Record<string, unknown>).lstPedido)
-    ? ((registro as Record<string, unknown>).lstPedido as unknown[])
+  const respuesta = registro as Record<string, unknown>;
+  const listaOriginal = Array.isArray(respuesta.lstPedido)
+    ? (respuesta.lstPedido as unknown[])
     : [];
 
   return {
     lstPedido: listaOriginal.map(normalizarFilaPedido),
+    pendiente: obtenerNumero(respuesta.pendiente, respuesta.Pendiente),
+    enRevision: obtenerNumero(respuesta.enRevision, respuesta.EnRevision),
+    aprobado: obtenerNumero(respuesta.aprobado, respuesta.Aprobado),
+    observado: obtenerNumero(respuesta.observado, respuesta.Observado),
+    cancelado: obtenerNumero(respuesta.cancelado, respuesta.Cancelado),
     totalRegistros: obtenerNumero(
-      (registro as Record<string, unknown>).totalRegistros,
-      (registro as Record<string, unknown>).TotalRegistros,
+      respuesta.totalRegistros,
+      respuesta.TotalRegistros,
       listaOriginal.length,
     ),
     totalPaginas: obtenerNumero(
-      (registro as Record<string, unknown>).totalPaginas,
-      (registro as Record<string, unknown>).TotalPaginas,
+      respuesta.totalPaginas,
+      respuesta.TotalPaginas,
       1,
     ),
   };
