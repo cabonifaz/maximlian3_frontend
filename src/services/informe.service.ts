@@ -1,3 +1,4 @@
+import { ENDPOINTS_INFORME } from "@maximilian/shared/constants/endpoints/informe.endpoint";
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
 import { servicioBanco } from "./banco.service";
 import { servicioCompania } from "./compania.service";
@@ -1430,7 +1431,7 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
 
 export const informeService = {
   list: async (params: InformeListParams): Promise<InformeListResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Informe/listar", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_INFORME.listar, {
       params: {
         Busqueda: params.busqueda,
         IdPedido: params.idPedido,
@@ -1441,7 +1442,7 @@ export const informeService = {
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/listar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.listar)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -1449,9 +1450,9 @@ export const informeService = {
   },
 
   create: async (payload: InformeCrearRequest): Promise<InformeCrearResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/crear", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME.crear, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/crear")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.crear)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -1460,19 +1461,19 @@ export const informeService = {
 
   actualizarEstado: async (payload: InformeActualizarEstadoRequest): Promise<void> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
-      "/api/Informe/actualizarEstado",
+      ENDPOINTS_INFORME.actualizarEstado,
       payload,
     );
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/actualizarEstado")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.actualizarEstado)) {
       throw new ErrorRespuestaApi(data);
     }
   },
 
   editar: async (payload: InformeCrearRequest): Promise<InformeCrearResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/editar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME.editar, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/editar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.editar)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -1480,14 +1481,14 @@ export const informeService = {
   },
 
   obtener: async ({ idPedido, idInforme }: InformeObtenerParams): Promise<InformeObtenerResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Informe/obtener", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_INFORME.obtener, {
       params: {
         IdPedido: idPedido,
         IdInforme: idInforme && idInforme > 0 ? idInforme : undefined,
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/obtener")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.obtener)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -1497,14 +1498,14 @@ export const informeService = {
   previsualizarDocumento: async (idInforme: number, idPedido: number): Promise<DocumentoInformeGenerado> => {
     const { data } = await maximilianService.get<
       ApiResponse<DocumentoInformeGenerado | RespuestaDocumentoInformeGenerado>
-    >("/api/Informe/previsualizarDocumento", {
+    >(ENDPOINTS_INFORME.previsualizarDocumento, {
       params: {
         IdInforme: idInforme,
         IdPedido: idPedido,
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/previsualizarDocumento")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.previsualizarDocumento)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -1516,7 +1517,7 @@ export const informeService = {
     idPedido: number,
     formato?: FormatoDescargaInforme,
   ): Promise<DocumentoInformeObtenido> => {
-    const ruta = "/api/Informe/obtenerDocumento";
+    const ruta = ENDPOINTS_INFORME.obtenerDocumento;
     const { data } = await maximilianService.get<ApiResponse<DocumentoInformeObtenido>>(ruta, {
       params: {
         IdInforme: idInforme,
@@ -1536,9 +1537,9 @@ export const informeService = {
   obtenerUrlPrefirmada: async (
     payload: InformeObtenerUrlPrefirmadaRequest,
   ): Promise<InformeObtenerUrlPrefirmadaResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/obtenerUrlPrefirmada", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME.obtenerUrlPrefirmada, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/obtenerUrlPrefirmada")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.obtenerUrlPrefirmada)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -1566,11 +1567,11 @@ export const informeService = {
 
 
   autocompletar: async (payload: InformeAutocompletarRequest): Promise<InformeExtraccionResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/autocompletar", payload, {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME.autocompletar, payload, {
       timeout: TIMEOUT_EXTRACCION_MS,
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/autocompletar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.autocompletar)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -1578,7 +1579,7 @@ export const informeService = {
   },
 
   traducir: async (payload: InformeTraducirRequest): Promise<InformeExtraccionResponse> => {
-    const ruta = "/api/Informe/traducir";
+    const ruta = ENDPOINTS_INFORME.traducir;
     const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, payload, {
       timeout: TIMEOUT_EXTRACCION_MS,
     });
@@ -1596,14 +1597,14 @@ export const informeService = {
     formulario.append("secciones", payload.secciones);
     formulario.append("prompt", payload.prompt);
 
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/extraerDocumento", formulario, {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME.extraerDocumento, formulario, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
       timeout: TIMEOUT_EXTRACCION_MS,
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/extraerDocumento")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.extraerDocumento)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -1637,8 +1638,8 @@ export const informeService = {
         ingresosOrdinarios: n(r["ingresos-ordinarios-totalizado"], egp.ventasNetas),
         gananciaNeta: n(r["ganancia-neta-totalizado"], egp.utilidadGanancia),
       };
-      const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/calcularBalanceTotalizado", cuerpo);
-      if (!esRespuestaOkCompatibilidad(data, "/api/Informe/calcularBalanceTotalizado")) {
+      const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME.calcularBalanceTotalizado, cuerpo);
+      if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.calcularBalanceTotalizado)) {
         throw new ErrorRespuestaApi(data);
       }
       const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
@@ -1708,7 +1709,7 @@ export const informeService = {
           n(obtenerValorCampoEstadoFinanciero(r, campo, payload.tipoEstadoFinanciero)),
         ]),
       );
-      const ruta = "/api/Informe/calcularBalanceDesagregado";
+      const ruta = ENDPOINTS_INFORME.calcularBalanceDesagregado;
       const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
       if (!esRespuestaOkCompatibilidad(data, ruta)) {
         throw new ErrorRespuestaApi(data);
@@ -1747,7 +1748,7 @@ export const informeService = {
           n(obtenerValorCampoEstadoFinanciero(r, campo, payload.tipoEstadoFinanciero)),
         ]),
       );
-      const ruta = "/api/Informe/calcularBalanceBanco";
+      const ruta = ENDPOINTS_INFORME.calcularBalanceBanco;
       const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
       if (!esRespuestaOkCompatibilidad(data, ruta)) {
         throw new ErrorRespuestaApi(data);
@@ -1785,7 +1786,7 @@ export const informeService = {
           n(obtenerValorCampoEstadoFinanciero(r, campo, payload.tipoEstadoFinanciero)),
         ]),
       );
-      const ruta = "/api/Informe/calcularBalanceSeguro";
+      const ruta = ENDPOINTS_INFORME.calcularBalanceSeguro;
       const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
       if (!esRespuestaOkCompatibilidad(data, ruta)) {
         throw new ErrorRespuestaApi(data);
@@ -1829,7 +1830,7 @@ export const informeService = {
         ebitda: valor("ebitda"),
         ganancia: valor("gananciaNeta"),
       };
-      const ruta = "/api/Informe/calcularBalanceTurquia";
+      const ruta = ENDPOINTS_INFORME.calcularBalanceTurquia;
       const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
       if (!esRespuestaOkCompatibilidad(data, ruta)) {
         throw new ErrorRespuestaApi(data);

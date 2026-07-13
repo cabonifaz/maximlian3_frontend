@@ -1,3 +1,4 @@
+import { ENDPOINTS_BANCO } from "@maximilian/shared/constants/endpoints/banco.endpoint";
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
@@ -117,14 +118,14 @@ async function obtenerBanco(params: BancoObtenerParams): Promise<BancoListaItem 
   if (solicitudExistente) return solicitudExistente;
 
   const solicitud = maximilianService
-    .get<ApiResponse<unknown>>("/api/Banco/obtener", {
+    .get<ApiResponse<unknown>>(ENDPOINTS_BANCO.obtener, {
       params: {
         IdBanco: params.idBanco,
         Nombre: params.nombre,
       },
     })
     .then(({ data }) => {
-      if (!esRespuestaOkCompatibilidad(data, "/api/Banco/obtener")) {
+      if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_BANCO.obtener)) {
         throw new ErrorRespuestaApi(data);
       }
 
@@ -142,14 +143,14 @@ async function obtenerBanco(params: BancoObtenerParams): Promise<BancoListaItem 
 
 export const servicioBanco = {
   list: async (params: BancoListParams): Promise<BancoListResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Banco/listar", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_BANCO.listar, {
       params: {
         Busqueda: params.busqueda,
         NumPag: params.numPag,
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Banco/listar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_BANCO.listar)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -161,9 +162,9 @@ export const servicioBanco = {
   },
 
   crear: async (payload: BancoCrearRequest): Promise<BancoGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Banco/crear", [payload]);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_BANCO.crear, [payload]);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Banco/crear")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_BANCO.crear)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -172,9 +173,9 @@ export const servicioBanco = {
   },
 
   editar: async (payload: BancoEditarRequest): Promise<BancoGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Banco/editar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_BANCO.editar, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Banco/editar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_BANCO.editar)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -183,9 +184,9 @@ export const servicioBanco = {
   },
 
   eliminar: async (payload: BancoEliminarRequest): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Banco/eliminar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_BANCO.eliminar, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Banco/eliminar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_BANCO.eliminar)) {
       throw new ErrorRespuestaApi(data);
     }
 

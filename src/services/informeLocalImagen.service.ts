@@ -1,3 +1,4 @@
+import { ENDPOINTS_INFORME_LOCAL_IMAGEN } from "@maximilian/shared/constants/endpoints/informe-local-imagen.endpoint";
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 
@@ -21,9 +22,9 @@ function obtenerTexto(...valores: unknown[]): string {
 
 export const servicioInformeLocalImagen = {
   obtenerUrls: async (ids: number[]): Promise<{ idInformeLocalImagen: number; url: string }[]> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/informeLocalImagen/obtenerUrls", { ids });
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME_LOCAL_IMAGEN.obtenerUrls, { ids });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/informeLocalImagen/obtenerUrls")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME_LOCAL_IMAGEN.obtenerUrls)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -38,9 +39,9 @@ export const servicioInformeLocalImagen = {
   },
 
   actualizarEstadoCarga: async (ids: number[]): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/informeLocalImagen/actualizarEstadoCarga", { ids });
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME_LOCAL_IMAGEN.actualizarEstadoCarga, { ids });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/informeLocalImagen/actualizarEstadoCarga")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME_LOCAL_IMAGEN.actualizarEstadoCarga)) {
       throw new ErrorRespuestaApi(data);
     }
   },

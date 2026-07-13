@@ -1,3 +1,4 @@
+import { ENDPOINTS_COMPANIA_NOTICIA } from "@maximilian/shared/constants/endpoints/compania-noticia.endpoint";
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
@@ -160,7 +161,7 @@ function normalizarArchivoObtenido(resultado: unknown): CompaniaNoticiaArchivoOb
 
 export const servicioCompaniaNoticia = {
   list: async (params: CompaniaNoticiaListParams): Promise<CompaniaNoticiaListResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Compania/noticia/listar", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA.listar, {
       params: {
         IdCompania: params.idCompania,
         Busqueda: params.busqueda,
@@ -168,7 +169,7 @@ export const servicioCompaniaNoticia = {
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/noticia/listar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA_NOTICIA.listar)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -176,14 +177,14 @@ export const servicioCompaniaNoticia = {
   },
 
   obtener: async (params: CompaniaNoticiaObtenerParams): Promise<CompaniaNoticiaListaItem | null> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Compania/noticia/obtener", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA.obtener, {
       params: {
         IdCompaniaNoticia: params.idCompaniaNoticia,
         IdCompania: params.idCompania,
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/noticia/obtener")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA_NOTICIA.obtener)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -200,7 +201,7 @@ export const servicioCompaniaNoticia = {
     params: CompaniaNoticiaArchivoObtenerParams,
   ): Promise<CompaniaNoticiaArchivoObtenerResponse> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>(
-      "/api/Compania/noticia/archivo/obtener",
+      ENDPOINTS_COMPANIA_NOTICIA.obtenerArchivo,
       {
         params: {
           IdCompaniaNoticiaArchivo: params.idCompaniaNoticiaArchivo,
@@ -208,7 +209,7 @@ export const servicioCompaniaNoticia = {
       },
     );
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/noticia/archivo/obtener")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA_NOTICIA.obtenerArchivo)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -216,9 +217,9 @@ export const servicioCompaniaNoticia = {
   },
 
   crear: async (payload: CompaniaNoticiaCrearRequest): Promise<CompaniaNoticiaGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/noticia/crear", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA.crear, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/noticia/crear")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA_NOTICIA.crear)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -226,9 +227,9 @@ export const servicioCompaniaNoticia = {
   },
 
   editar: async (payload: CompaniaNoticiaEditarRequest): Promise<CompaniaNoticiaGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/noticia/editar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA.editar, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/noticia/editar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA_NOTICIA.editar)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -236,9 +237,9 @@ export const servicioCompaniaNoticia = {
   },
 
   eliminar: async (payload: CompaniaNoticiaEliminarRequest): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/noticia/eliminar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA.eliminar, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/noticia/eliminar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA_NOTICIA.eliminar)) {
       throw new ErrorRespuestaApi(data);
     }
   },

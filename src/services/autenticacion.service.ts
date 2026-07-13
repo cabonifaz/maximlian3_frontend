@@ -1,3 +1,4 @@
+import { ENDPOINTS_AUTENTICACION } from "@maximilian/shared/constants/endpoints/autenticacion.endpoint";
 import {
   signIn,
   confirmSignIn,
@@ -33,7 +34,7 @@ export const servicioAutenticacion = {
   getUserRoles: async () => {
     try {
       const { data } = await maximilianService.get<ApiResponse<LoginValidatorResponse>>(
-        "/api/Login/validator"
+        ENDPOINTS_AUTENTICACION.validar
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {

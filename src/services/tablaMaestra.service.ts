@@ -1,3 +1,4 @@
+import { ENDPOINTS_TABLA_MAESTRA } from "@maximilian/shared/constants/endpoints/tabla-maestra.endpoint";
 import maximilianService from "./maximilianService";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
@@ -123,7 +124,7 @@ async function obtenerOpcionesPorIdsMaestro(idsMaestro: number[]): Promise<Opcio
   let solicitudEnCurso = solicitudesEnCursoPorClave.get(claveSolicitud);
   if (!solicitudEnCurso) {
     solicitudEnCurso = maximilianService
-      .get<ApiResponse<unknown>>("/api/TablaMaestra/listar", {
+      .get<ApiResponse<unknown>>(ENDPOINTS_TABLA_MAESTRA.listar, {
         params: { idsMaestro: claveSolicitud },
       })
       .then(({ data }) => {
@@ -203,7 +204,7 @@ export const servicioTablaMaestra = {
     }
   },
   crear: async (payload: TablaMaestraCrearRequest): Promise<TablaMaestraGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/TablaMaestra/crear", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_TABLA_MAESTRA.crear, payload);
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
       throw new ErrorRespuestaApi(data);
@@ -213,7 +214,7 @@ export const servicioTablaMaestra = {
     return normalizarRespuestaGuardado(data.result);
   },
   editar: async (payload: TablaMaestraEditarRequest): Promise<TablaMaestraGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/TablaMaestra/editar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_TABLA_MAESTRA.editar, payload);
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
       throw new ErrorRespuestaApi(data);

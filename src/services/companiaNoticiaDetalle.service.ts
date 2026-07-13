@@ -1,3 +1,4 @@
+import { ENDPOINTS_COMPANIA_NOTICIA_DETALLE } from "@maximilian/shared/constants/endpoints/compania-noticia-detalle.endpoint";
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
@@ -162,7 +163,7 @@ function obtenerUrlExportacion(resultado: unknown) {
 
 export const servicioCompaniaNoticiaDetalle = {
   list: async (params: CompaniaNoticiaDetalleListParams): Promise<CompaniaNoticiaDetalleListResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Compania/companianoticiadetalle/listar", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA_DETALLE.listar, {
       params: {
         IdCompania: params.idCompania,
         Busqueda: params.busqueda,
@@ -172,7 +173,7 @@ export const servicioCompaniaNoticiaDetalle = {
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/companianoticiadetalle/listar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA_NOTICIA_DETALLE.listar)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -180,7 +181,7 @@ export const servicioCompaniaNoticiaDetalle = {
   },
 
   exportar: async (params: CompaniaNoticiaDetalleListParams): Promise<CompaniaNoticiaDetalleExportResponse> => {
-    const respuesta = await maximilianService.get<Blob>("/api/Compania/companianoticiadetalle/exportar", {
+    const respuesta = await maximilianService.get<Blob>(ENDPOINTS_COMPANIA_NOTICIA_DETALLE.exportar, {
       params: {
         IdCompania: params.idCompania,
         Busqueda: params.busqueda,
@@ -202,7 +203,7 @@ export const servicioCompaniaNoticiaDetalle = {
 
       if (obtenerRegistro(data).idTipoMensaje !== undefined) {
         const respuestaApi = data as ApiResponse<unknown>;
-        if (!esRespuestaOkCompatibilidad(respuestaApi, "/api/Compania/companianoticiadetalle/exportar")) {
+        if (!esRespuestaOkCompatibilidad(respuestaApi, ENDPOINTS_COMPANIA_NOTICIA_DETALLE.exportar)) {
           throw new ErrorRespuestaApi(respuestaApi);
         }
 

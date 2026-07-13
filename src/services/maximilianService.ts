@@ -5,6 +5,12 @@ import { MessageType } from "@maximilian/shared/types/api.type";
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import { cerrarSesionExpirada } from "./sesion.service";
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { ENDPOINTS_ASIGNACION } from "@maximilian/shared/constants/endpoints/asignacion.endpoint";
+import { ENDPOINTS_COMPANIA_NOTICIA } from "@maximilian/shared/constants/endpoints/compania-noticia.endpoint";
+import { ENDPOINTS_COMPANIA_NOTICIA_BALANCE } from "@maximilian/shared/constants/endpoints/compania-noticia-balance.endpoint";
+import { ENDPOINTS_COMPANIA_NOTICIA_DETALLE } from "@maximilian/shared/constants/endpoints/compania-noticia-detalle.endpoint";
+import { ENDPOINTS_DIRECTORIO_EJECUTIVO } from "@maximilian/shared/constants/endpoints/directorio-ejecutivo.endpoint";
+import { ENDPOINTS_INFORME } from "@maximilian/shared/constants/endpoints/informe.endpoint";
 
 type ConfiguracionAutenticada = InternalAxiosRequestConfig & {
   reintentoAutenticacion?: boolean;
@@ -25,21 +31,21 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
   if (!url) return false;
 
   const esEndpointAsignacion =
-    url.includes("/api/Asignacion/bandeja")
-    || url.includes("/api/Asignacion/listar");
+    url.includes(ENDPOINTS_ASIGNACION.bandeja)
+    || url.includes(ENDPOINTS_ASIGNACION.listar);
   const esEndpointInformeGuardar =
-    url.includes("/api/Informe/crear")
-    || url.includes("/api/Informe/editar");
-  const esEndpointInformeObtener = url.includes("/api/Informe/obtener");
+    url.includes(ENDPOINTS_INFORME.crear)
+    || url.includes(ENDPOINTS_INFORME.editar);
+  const esEndpointInformeObtener = url.includes(ENDPOINTS_INFORME.obtener);
   const esEndpointInformeExtraccion =
-    url.includes("/api/Informe/obtenerUrlPrefirmada")
-    || url.includes("/api/Informe/autocompletar")
-    || url.includes("/api/Informe/extraerDocumento")
-    || url.includes("/api/Informe/traducir");
-  const esEndpointDirectorioEjecutivo = url.includes("/api/DirectorioEjecutivo/");
-  const esEndpointCompaniaNoticia = url.includes("/api/Compania/noticia/");
-  const esEndpointCompaniaNoticiaBalance = url.includes("/api/Compania/companianoticiabalance/");
-  const esEndpointCompaniaNoticiaDetalle = url.includes("/api/Compania/companianoticiadetalle/");
+    url.includes(ENDPOINTS_INFORME.obtenerUrlPrefirmada)
+    || url.includes(ENDPOINTS_INFORME.autocompletar)
+    || url.includes(ENDPOINTS_INFORME.extraerDocumento)
+    || url.includes(ENDPOINTS_INFORME.traducir);
+  const esEndpointDirectorioEjecutivo = url.includes(ENDPOINTS_DIRECTORIO_EJECUTIVO.base);
+  const esEndpointCompaniaNoticia = url.includes(ENDPOINTS_COMPANIA_NOTICIA.base);
+  const esEndpointCompaniaNoticiaBalance = url.includes(ENDPOINTS_COMPANIA_NOTICIA_BALANCE.base);
+  const esEndpointCompaniaNoticiaDetalle = url.includes(ENDPOINTS_COMPANIA_NOTICIA_DETALLE.base);
 
   if (esEndpointAsignacion && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION && data.mensaje === "OK") {
     return true;
@@ -136,10 +142,10 @@ maximilianService.interceptors.response.use(
         }
       } else if (
         response.config.method !== "get"
-        && !response.config.url?.includes("/api/Informe/obtenerUrlPrefirmada")
-        && !response.config.url?.includes("/api/Informe/autocompletar")
-        && !response.config.url?.includes("/api/Informe/extraerDocumento")
-        && !response.config.url?.includes("/api/Informe/traducir")
+        && !response.config.url?.includes(ENDPOINTS_INFORME.obtenerUrlPrefirmada)
+        && !response.config.url?.includes(ENDPOINTS_INFORME.autocompletar)
+        && !response.config.url?.includes(ENDPOINTS_INFORME.extraerDocumento)
+        && !response.config.url?.includes(ENDPOINTS_INFORME.traducir)
       ) {
         if (data.mensaje) {
           toast.success(data.mensaje);

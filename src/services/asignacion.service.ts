@@ -1,3 +1,4 @@
+import { ENDPOINTS_ASIGNACION } from "@maximilian/shared/constants/endpoints/asignacion.endpoint";
 import maximilianService from "./maximilianService";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
@@ -374,7 +375,7 @@ function construirPayloadEdicion(
 
 export const servicioAsignacion = {
   list: async (params: AssignmentListParams): Promise<AssignmentListResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Asignacion/listar", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.listar, {
       params: {
         busqueda: params.busqueda,
         idEstado: params.idEstado,
@@ -386,7 +387,7 @@ export const servicioAsignacion = {
   },
 
   bandeja: async (params: AssignmentListParams): Promise<AssignmentListResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Asignacion/bandeja", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.bandeja, {
       params: {
         Busqueda: params.busqueda,
         NumPag: params.numPag,
@@ -397,7 +398,7 @@ export const servicioAsignacion = {
   },
 
   getById: async (idAsignacion: number): Promise<AssignmentOrderEntry | null> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Asignacion/obtener", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.obtener, {
       params: { idAsignacion },
     });
 
@@ -407,17 +408,17 @@ export const servicioAsignacion = {
   },
 
   create: async (payload: CreateAssignmentRequest): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Asignacion/crear", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.crear, payload);
     extraerResultado(data);
   },
 
   update: async (payload: UpdateAssignmentRequest): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Asignacion/editar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.editar, payload);
     extraerResultado(data);
   },
 
   delete: async (payload: DeleteAssignmentRequest): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Asignacion/eliminar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.eliminar, payload);
     extraerResultado(data);
   },
 
@@ -428,7 +429,7 @@ export const servicioAsignacion = {
       ),
     );
 
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Usuario/listaCortaAsignacion", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.usuariosCortos, {
       params: {
         idRolFiltro: IDS_ROL_POR_TIPO[role],
         filtro,

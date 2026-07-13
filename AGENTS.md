@@ -51,6 +51,8 @@ The response interceptor handles global toast notifications for errors/success.
 
 Service modules (`user.service.ts`, `client.service.ts`, etc.) use this instance. API responses follow the envelope: `{ idTipoMensaje, mensaje, result }`.
 
+API endpoint paths must be defined in a module-specific constants file under `src/shared/constants/endpoints/` and consumed from services and interceptors. Never write `/api/...` literals directly in service methods. Name each exported object `ENDPOINTS_<MODULO>` and group all routes used by that frontend module in its corresponding `*.endpoint.ts` file.
+
 #### API Response Convention
 Every endpoint returns `{ idTipoMensaje, mensaje, result }`:
 - `idTipoMensaje: 1` (`BUSINESS_RULE_VIOLATION`) — business rule error

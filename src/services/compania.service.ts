@@ -1,3 +1,4 @@
+import { ENDPOINTS_COMPANIA } from "@maximilian/shared/constants/endpoints/compania.endpoint";
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
@@ -149,7 +150,7 @@ async function obtenerCompania(params: CompaniaObtenerParams): Promise<CompaniaL
   if (solicitudExistente) return solicitudExistente;
 
   const solicitud = maximilianService
-    .get<ApiResponse<unknown>>("/api/Compania/obtener", {
+    .get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA.obtener, {
       params: {
         IdCompania: params.idCompania,
         NumDocumento: params.numDocumento,
@@ -157,7 +158,7 @@ async function obtenerCompania(params: CompaniaObtenerParams): Promise<CompaniaL
       },
     })
     .then(({ data }) => {
-      if (!esRespuestaOkCompatibilidad(data, "/api/Compania/obtener")) {
+      if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA.obtener)) {
         throw new ErrorRespuestaApi(data);
       }
 
@@ -175,14 +176,14 @@ async function obtenerCompania(params: CompaniaObtenerParams): Promise<CompaniaL
 
 export const servicioCompania = {
   list: async (params: CompaniaListParams): Promise<CompaniaListResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Compania/listar", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA.listar, {
       params: {
         Busqueda: params.busqueda,
         ...(typeof params.numPag === "number" ? { NumPag: params.numPag } : {}),
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/listar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA.listar)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -194,9 +195,9 @@ export const servicioCompania = {
   },
 
   crear: async (payload: CompaniaCrearRequest): Promise<CompaniaGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/crear", [payload]);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_COMPANIA.crear, [payload]);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/crear")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA.crear)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -205,9 +206,9 @@ export const servicioCompania = {
   },
 
   crearDirectorioEjecutivo: async (payload: DirectorioEjecutivoCrearRequest): Promise<CompaniaGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/DirectorioEjecutivo/crear", [payload]);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_COMPANIA.crearDirectorioEjecutivo, [payload]);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/crear")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA.crearDirectorioEjecutivo)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -215,9 +216,9 @@ export const servicioCompania = {
   },
 
   editar: async (payload: CompaniaEditarRequest): Promise<CompaniaGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/editar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_COMPANIA.editar, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/editar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA.editar)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -226,9 +227,9 @@ export const servicioCompania = {
   },
 
   eliminar: async (payload: CompaniaEliminarRequest): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/eliminar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_COMPANIA.eliminar, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/eliminar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA.eliminar)) {
       throw new ErrorRespuestaApi(data);
     }
 

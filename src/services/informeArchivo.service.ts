@@ -1,3 +1,4 @@
+import { ENDPOINTS_INFORME_ARCHIVO } from "@maximilian/shared/constants/endpoints/informe-archivo.endpoint";
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
@@ -116,11 +117,11 @@ export const servicioInformeArchivo = {
     payload: InformeGenerarUrlsArchivoRequest,
   ): Promise<InformeGenerarUrlsArchivoResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
-      "/api/informeArchivo/generarUrls",
+      ENDPOINTS_INFORME_ARCHIVO.generarUrls,
       payload,
     );
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/informeArchivo/generarUrls")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME_ARCHIVO.generarUrls)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -136,11 +137,11 @@ export const servicioInformeArchivo = {
     payload: InformeInsertarArchivoLoteRequest,
   ): Promise<InformeInsertarArchivoLoteResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
-      "/api/informeArchivo/insertarLote",
+      ENDPOINTS_INFORME_ARCHIVO.insertarLote,
       payload,
     );
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/informeArchivo/insertarLote")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME_ARCHIVO.insertarLote)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -151,11 +152,11 @@ export const servicioInformeArchivo = {
     payload: InformeObtenerArchivoRequest,
   ): Promise<InformeObtenerArchivoResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
-      "/api/informeArchivo/obtener",
+      ENDPOINTS_INFORME_ARCHIVO.obtener,
       payload,
     );
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/informeArchivo/obtener")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME_ARCHIVO.obtener)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -180,11 +181,11 @@ export const servicioInformeArchivo = {
     payload: InformeActualizarArchivoRequest,
   ): Promise<void> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
-      "/api/informeArchivo/actualizar",
+      ENDPOINTS_INFORME_ARCHIVO.actualizar,
       payload,
     );
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/informeArchivo/actualizar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME_ARCHIVO.actualizar)) {
       throw new ErrorRespuestaApi(data);
     }
   },
@@ -193,11 +194,11 @@ export const servicioInformeArchivo = {
     payload: InformeEliminarArchivoRequest,
   ): Promise<void> => {
     const { data } = await maximilianService.delete<ApiResponse<unknown>>(
-      "/api/informeArchivo/eliminar",
+      ENDPOINTS_INFORME_ARCHIVO.eliminar,
       { data: payload },
     );
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/informeArchivo/eliminar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME_ARCHIVO.eliminar)) {
       throw new ErrorRespuestaApi(data);
     }
   },

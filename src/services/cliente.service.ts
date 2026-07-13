@@ -1,3 +1,4 @@
+import { ENDPOINTS_CLIENTE } from "@maximilian/shared/constants/endpoints/cliente.endpoint";
 import maximilianService from "./maximilianService";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
@@ -35,7 +36,7 @@ export const servicioCliente = {
   list: async (params: ClientListRequest): Promise<ClientListResponse> => {
     try {
       const { data } = await maximilianService.get<ApiResponse<ClientListResponse>>(
-        "/api/Cliente/listar",
+        ENDPOINTS_CLIENTE.listar,
         { params }
       );
 
@@ -57,7 +58,7 @@ export const servicioCliente = {
   create: async (clientData: CreateClientRequest) => {
     try {
       const { data } = await maximilianService.post<ApiResponse<CreateClientResponse>>(
-        "/api/Cliente/crear",
+        ENDPOINTS_CLIENTE.crear,
         clientData
       );
 
@@ -78,7 +79,7 @@ export const servicioCliente = {
    */
   getById: async (idCliente: number): Promise<ClientDetail> => {
     const { data } = await maximilianService.get<ApiResponse<ClientDetail[]>>(
-      "/api/Cliente/obtener",
+      ENDPOINTS_CLIENTE.obtener,
       { params: { idCliente } }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
@@ -90,7 +91,7 @@ export const servicioCliente = {
   eliminate: async (data: DeleteClientRequest) => {
     try {
       const { data: responseData } = await maximilianService.post<ApiResponse<{ idCliente: number }[]>>(
-        "/api/Cliente/eliminar",
+        ENDPOINTS_CLIENTE.eliminar,
         data
       );
 
@@ -111,7 +112,7 @@ export const servicioCliente = {
     numPag: number;
   }): Promise<TarifarioListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<TarifarioListResponse>>(
-      "/api/Tarifario/listar",
+      ENDPOINTS_CLIENTE.listarTarifario,
       { params }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
@@ -126,7 +127,7 @@ export const servicioCliente = {
     numPag?: number;
   }): Promise<ContactoListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<ContactoListResponse>>(
-      "/api/ClienteContacto/listar",
+      ENDPOINTS_CLIENTE.listarContactos,
       { params: { IdCliente: params.idCliente, Busqueda: params.busqueda, NumPag: params.numPag } }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
@@ -141,7 +142,7 @@ export const servicioCliente = {
    */
   update: async (clientData: UpdateClientRequest) => {
     const { data } = await maximilianService.post<ApiResponse<CreateClientResponse[]>>(
-      "/api/Cliente/editar",
+      ENDPOINTS_CLIENTE.editar,
       clientData
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
@@ -152,7 +153,7 @@ export const servicioCliente = {
 
   createTarifario: async (data: CreateTarifarioRequest): Promise<{ idTarifario: number }> => {
     const { data: res } = await maximilianService.post<ApiResponse<{ idTarifario: number }[]>>(
-      "/api/Tarifario/crear", data
+      ENDPOINTS_CLIENTE.crearTarifario, data
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
@@ -160,7 +161,7 @@ export const servicioCliente = {
 
   updateTarifario: async (data: UpdateTarifarioRequest): Promise<{ idTarifario: number }> => {
     const { data: res } = await maximilianService.post<ApiResponse<{ idTarifario: number }[]>>(
-      "/api/Tarifario/editar", data
+      ENDPOINTS_CLIENTE.editarTarifario, data
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
@@ -168,7 +169,7 @@ export const servicioCliente = {
 
   deleteTarifario: async (data: DeleteTarifarioRequest): Promise<{ idTarifario: number }> => {
     const { data: res } = await maximilianService.post<ApiResponse<{ idTarifario: number }[]>>(
-      "/api/Tarifario/eliminar", data
+      ENDPOINTS_CLIENTE.eliminarTarifario, data
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
@@ -176,7 +177,7 @@ export const servicioCliente = {
 
   createContacto: async (data: CreateContactoRequest): Promise<{ idClienteContacto: number }> => {
     const { data: res } = await maximilianService.post<ApiResponse<{ idClienteContacto: number }[]>>(
-      "/api/ClienteContacto/crear", data
+      ENDPOINTS_CLIENTE.crearContacto, data
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
@@ -184,7 +185,7 @@ export const servicioCliente = {
 
   updateContacto: async (data: UpdateContactoRequest): Promise<{ idClienteContacto: number }> => {
     const { data: res } = await maximilianService.post<ApiResponse<{ idClienteContacto: number }[]>>(
-      "/api/ClienteContacto/editar", data
+      ENDPOINTS_CLIENTE.editarContacto, data
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
@@ -192,7 +193,7 @@ export const servicioCliente = {
 
   deleteContacto: async (data: DeleteContactoRequest): Promise<{ idClienteContacto: number }> => {
     const { data: res } = await maximilianService.post<ApiResponse<{ idClienteContacto: number }[]>>(
-      "/api/ClienteContacto/eliminar", data
+      ENDPOINTS_CLIENTE.eliminarContacto, data
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
@@ -200,7 +201,7 @@ export const servicioCliente = {
 
   getTarifarioById: async (data: GetTarifarioRequest): Promise<TarifarioDetail> => {
     const { data: res } = await maximilianService.get<ApiResponse<TarifarioDetail[]>>(
-      "/api/Tarifario/obtener", { params: data }
+      ENDPOINTS_CLIENTE.obtenerTarifario, { params: data }
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
@@ -208,7 +209,7 @@ export const servicioCliente = {
 
   getContactoById: async (data: GetContactoRequest): Promise<ContactoDetail> => {
     const { data: res } = await maximilianService.get<ApiResponse<ContactoDetail[]>>(
-      "/api/ClienteContacto/obtener", { params: data }
+      ENDPOINTS_CLIENTE.obtenerContacto, { params: data }
     );
     if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
@@ -221,7 +222,7 @@ export const servicioCliente = {
     IdPais?: number;
   }): Promise<TarifarioCortaEntry[]> => {
     const { data } = await maximilianService.get<ApiResponse<TarifarioCortaResponse>>(
-      "/api/Tarifario/listaCorta",
+      ENDPOINTS_CLIENTE.listaCortaTarifario,
       { params: { idCliente: params.idCliente, IdTipoProducto: params.IdTipoProducto, IdTipoTramite: params.IdTipoTramite, IdPais: params.IdPais } }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
@@ -230,7 +231,7 @@ export const servicioCliente = {
 
   listaCorta: async (): Promise<ClienteCorta[]> => {
     const { data } = await maximilianService.get<ApiResponse<ClienteListaCortaResponse>>(
-      "/api/Cliente/listaCorta"
+      ENDPOINTS_CLIENTE.listaCorta
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return data.result.lstCliente;

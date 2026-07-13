@@ -1,3 +1,4 @@
+import { ENDPOINTS_DIRECTORIO_EJECUTIVO } from "@maximilian/shared/constants/endpoints/directorio-ejecutivo.endpoint";
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
@@ -158,7 +159,7 @@ async function obtenerDirectorio(
   if (solicitudExistente) return solicitudExistente;
 
   const solicitud = maximilianService
-    .get<ApiResponse<unknown>>("/api/DirectorioEjecutivo/obtener", {
+    .get<ApiResponse<unknown>>(ENDPOINTS_DIRECTORIO_EJECUTIVO.obtener, {
       params: {
         IdDirectorioEjecutivo: params.idDirectorioEjecutivo,
         NombreCompleto: params.nombreCompleto,
@@ -166,7 +167,7 @@ async function obtenerDirectorio(
       },
     })
     .then(({ data }) => {
-      if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/obtener")) {
+      if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_DIRECTORIO_EJECUTIVO.obtener)) {
         throw new ErrorRespuestaApi(data);
       }
 
@@ -184,14 +185,14 @@ async function obtenerDirectorio(
 
 export const servicioDirectorioEjecutivo = {
   listar: async (params: DirectorioEjecutivoListarParams): Promise<DirectorioEjecutivoListarResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/DirectorioEjecutivo/listar", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_DIRECTORIO_EJECUTIVO.listar, {
       params: {
         Busqueda: params.busqueda,
         NumPag: params.numPag,
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/listar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_DIRECTORIO_EJECUTIVO.listar)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -203,9 +204,9 @@ export const servicioDirectorioEjecutivo = {
   },
 
   crear: async (payload: DirectorioEjecutivoGuardarRequest): Promise<DirectorioEjecutivoGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/DirectorioEjecutivo/crear", [payload]);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_DIRECTORIO_EJECUTIVO.crear, [payload]);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/crear")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_DIRECTORIO_EJECUTIVO.crear)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -214,9 +215,9 @@ export const servicioDirectorioEjecutivo = {
   },
 
   editar: async (payload: DirectorioEjecutivoEditarRequest): Promise<DirectorioEjecutivoGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/DirectorioEjecutivo/editar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_DIRECTORIO_EJECUTIVO.editar, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/editar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_DIRECTORIO_EJECUTIVO.editar)) {
       throw new ErrorRespuestaApi(data);
     }
 
@@ -225,9 +226,9 @@ export const servicioDirectorioEjecutivo = {
   },
 
   eliminar: async (payload: DirectorioEjecutivoEliminarRequest): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/DirectorioEjecutivo/eliminar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_DIRECTORIO_EJECUTIVO.eliminar, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/eliminar")) {
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_DIRECTORIO_EJECUTIVO.eliminar)) {
       throw new ErrorRespuestaApi(data);
     }
 
