@@ -1,5 +1,5 @@
 import maximilianService from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   CreateClientRequest,
@@ -40,7 +40,7 @@ export const servicioCliente = {
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al listar los clientes");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;
@@ -62,7 +62,7 @@ export const servicioCliente = {
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al crear el cliente");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;
@@ -82,7 +82,7 @@ export const servicioCliente = {
       { params: { idCliente } }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
-      throw new Error(data.mensaje || "Error al obtener el cliente");
+      throw new ErrorRespuestaApi(data);
     }
     return data.result[0];
   },
@@ -95,7 +95,7 @@ export const servicioCliente = {
       );
 
       if (responseData.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(responseData.mensaje || "Error al desactivar el cliente");
+        throw new ErrorRespuestaApi(responseData);
       }
 
       return responseData.result;
@@ -115,7 +115,7 @@ export const servicioCliente = {
       { params }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
-      throw new Error(data.mensaje || "Error al listar el tarifario");
+      throw new ErrorRespuestaApi(data);
     }
     return data.result;
   },
@@ -130,7 +130,7 @@ export const servicioCliente = {
       { params: { IdCliente: params.idCliente, Busqueda: params.busqueda, NumPag: params.numPag } }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
-      throw new Error(data.mensaje || "Error al listar los contactos");
+      throw new ErrorRespuestaApi(data);
     }
     return data.result;
   },
@@ -145,7 +145,7 @@ export const servicioCliente = {
       clientData
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
-      throw new Error(data.mensaje || "Error al actualizar el cliente");
+      throw new ErrorRespuestaApi(data);
     }
     return data.result[0];
   },
@@ -154,7 +154,7 @@ export const servicioCliente = {
     const { data: res } = await maximilianService.post<ApiResponse<{ idTarifario: number }[]>>(
       "/api/Tarifario/crear", data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al crear tarifa");
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
@@ -162,7 +162,7 @@ export const servicioCliente = {
     const { data: res } = await maximilianService.post<ApiResponse<{ idTarifario: number }[]>>(
       "/api/Tarifario/editar", data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al editar tarifa");
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
@@ -170,7 +170,7 @@ export const servicioCliente = {
     const { data: res } = await maximilianService.post<ApiResponse<{ idTarifario: number }[]>>(
       "/api/Tarifario/eliminar", data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al eliminar tarifa");
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
@@ -178,7 +178,7 @@ export const servicioCliente = {
     const { data: res } = await maximilianService.post<ApiResponse<{ idClienteContacto: number }[]>>(
       "/api/ClienteContacto/crear", data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al crear contacto");
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
@@ -186,7 +186,7 @@ export const servicioCliente = {
     const { data: res } = await maximilianService.post<ApiResponse<{ idClienteContacto: number }[]>>(
       "/api/ClienteContacto/editar", data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al editar contacto");
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
@@ -194,7 +194,7 @@ export const servicioCliente = {
     const { data: res } = await maximilianService.post<ApiResponse<{ idClienteContacto: number }[]>>(
       "/api/ClienteContacto/eliminar", data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al eliminar contacto");
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
@@ -202,7 +202,7 @@ export const servicioCliente = {
     const { data: res } = await maximilianService.get<ApiResponse<TarifarioDetail[]>>(
       "/api/Tarifario/obtener", { params: data }
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
@@ -210,7 +210,7 @@ export const servicioCliente = {
     const { data: res } = await maximilianService.get<ApiResponse<ContactoDetail[]>>(
       "/api/ClienteContacto/obtener", { params: data }
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
@@ -224,7 +224,7 @@ export const servicioCliente = {
       "/api/Tarifario/listaCorta",
       { params: { idCliente: params.idCliente, IdTipoProducto: params.IdTipoProducto, IdTipoTramite: params.IdTipoTramite, IdPais: params.IdPais } }
     );
-    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return data.result.lstTarifario;
   },
 
@@ -232,7 +232,7 @@ export const servicioCliente = {
     const { data } = await maximilianService.get<ApiResponse<ClienteListaCortaResponse>>(
       "/api/Cliente/listaCorta"
     );
-    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return data.result.lstCliente;
   },
 };

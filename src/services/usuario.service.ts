@@ -1,5 +1,5 @@
 import maximilianService from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   CreateUserRequest,
@@ -112,7 +112,7 @@ export const servicioUsuario = {
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al listar usuarios");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;
@@ -137,7 +137,7 @@ export const servicioUsuario = {
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al obtener detalles del usuario");
+        throw new ErrorRespuestaApi(data);
       }
 
       // Handle both object and array response patterns
@@ -161,7 +161,7 @@ export const servicioUsuario = {
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al crear el usuario");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;
@@ -183,7 +183,7 @@ export const servicioUsuario = {
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al actualizar el usuario");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;
@@ -205,7 +205,7 @@ export const servicioUsuario = {
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al eliminar el usuario");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;

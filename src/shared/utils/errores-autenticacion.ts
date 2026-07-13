@@ -23,9 +23,6 @@ export const traducirErrorAutenticacion = (error: unknown): string => {
     case "LimitExceededException":
       return "Has excedido el límite de intentos. Por favor, espera unos minutos e intenta de nuevo.";
     case "InvalidParameterException":
-      if (error.message.includes("password")) {
-        return "La contraseña no es lo suficientemente fuerte.";
-      }
       return "Parámetros inválidos. Por favor, revisa la información ingresada.";
     case "UsernameExistsException":
       return "Este nombre de usuario ya se encuentra registrado.";
@@ -38,7 +35,7 @@ export const traducirErrorAutenticacion = (error: unknown): string => {
     case "AuthUserPoolException":
       return "El servicio de autenticación no está disponible.";
     default:
-      console.warn("Unhandled auth error code:", errorCode, error.message);
-      return "Error de autenticación: " + (error.message || "Credenciales inválidas.");
+      console.warn("Unhandled auth error code:", errorCode, error);
+      return "Ocurrió un error de autenticación. Por favor, intenta de nuevo.";
   }
 };

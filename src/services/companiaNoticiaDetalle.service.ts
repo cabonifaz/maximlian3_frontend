@@ -1,5 +1,5 @@
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   CompaniaNoticiaDetalleExportResponse,
   CompaniaNoticiaDetalleListaItem,
@@ -173,7 +173,7 @@ export const servicioCompaniaNoticiaDetalle = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/companianoticiadetalle/listar")) {
-      throw new Error(data.mensaje || "Error al listar las empresas");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarLista(data.result);
@@ -203,7 +203,7 @@ export const servicioCompaniaNoticiaDetalle = {
       if (obtenerRegistro(data).idTipoMensaje !== undefined) {
         const respuestaApi = data as ApiResponse<unknown>;
         if (!esRespuestaOkCompatibilidad(respuestaApi, "/api/Compania/companianoticiadetalle/exportar")) {
-          throw new Error(respuestaApi.mensaje || "Error al exportar las empresas");
+          throw new ErrorRespuestaApi(respuestaApi);
         }
 
         const downloadUrl = obtenerUrlExportacion(respuestaApi.result);

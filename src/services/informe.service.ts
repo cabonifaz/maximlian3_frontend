@@ -3,7 +3,7 @@ import { servicioBanco } from "./banco.service";
 import { servicioCompania } from "./compania.service";
 import { servicioDirectorioEjecutivo } from "./directorioEjecutivo.service";
 import { servicioTablaMaestra, type OpcionesTablaMaestraPorId } from "./tablaMaestra.service";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   ImagenPendienteSubida,
@@ -1442,7 +1442,7 @@ export const informeService = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Informe/listar")) {
-      throw new Error(data.mensaje || "Error al listar los informes");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarRespuestaLista(data.result);
@@ -1452,7 +1452,7 @@ export const informeService = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/crear", payload);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Informe/crear")) {
-      throw new Error(data.mensaje || "Error al crear el informe");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarRespuestaCrear(data.result);
@@ -1465,7 +1465,7 @@ export const informeService = {
     );
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Informe/actualizarEstado")) {
-      throw new Error(data.mensaje || "Error al actualizar el estado del informe");
+      throw new ErrorRespuestaApi(data);
     }
   },
 
@@ -1473,7 +1473,7 @@ export const informeService = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/editar", payload);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Informe/editar")) {
-      throw new Error(data.mensaje || "Error al editar el informe");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarRespuestaCrear(data.result);
@@ -1488,7 +1488,7 @@ export const informeService = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Informe/obtener")) {
-      throw new Error(data.mensaje || "Error al obtener el informe");
+      throw new ErrorRespuestaApi(data);
     }
 
     return enriquecerRespuestaObtener(normalizarRespuestaObtener(data.result));
@@ -1505,7 +1505,7 @@ export const informeService = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Informe/previsualizarDocumento")) {
-      throw new Error(data.mensaje || "No se pudo obtener la previsualización del documento");
+      throw new ErrorRespuestaApi(data);
     }
 
     return "documento" in data.result ? data.result.documento : data.result;
@@ -1526,7 +1526,7 @@ export const informeService = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, ruta)) {
-      throw new Error(data.mensaje || "No se pudo obtener el documento PDF del informe");
+      throw new ErrorRespuestaApi(data);
     }
 
     return data.result;
@@ -1539,7 +1539,7 @@ export const informeService = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/obtenerUrlPrefirmada", payload);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Informe/obtenerUrlPrefirmada")) {
-      throw new Error(data.mensaje || "No se pudo obtener la URL prefirmada");
+      throw new ErrorRespuestaApi(data);
     }
 
     const respuesta = normalizarRespuestaUrlPrefirmada(data.result);
@@ -1571,7 +1571,7 @@ export const informeService = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Informe/autocompletar")) {
-      throw new Error(data.mensaje || "No se pudo autocompletar el documento");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarRespuestaExtraccion(data.result);
@@ -1584,7 +1584,7 @@ export const informeService = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, ruta)) {
-      throw new Error(data.mensaje || "No se pudo traducir el informe");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarRespuestaExtraccion(data.result);
@@ -1604,7 +1604,7 @@ export const informeService = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Informe/extraerDocumento")) {
-      throw new Error(data.mensaje || "No se pudo extraer la informacion del documento");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarRespuestaExtraccion(data.result);
@@ -1639,7 +1639,7 @@ export const informeService = {
       };
       const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/calcularBalanceTotalizado", cuerpo);
       if (!esRespuestaOkCompatibilidad(data, "/api/Informe/calcularBalanceTotalizado")) {
-        throw new Error(data.mensaje || "Error al calcular el balance");
+        throw new ErrorRespuestaApi(data);
       }
       const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
       return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);
@@ -1711,7 +1711,7 @@ export const informeService = {
       const ruta = "/api/Informe/calcularBalanceDesagregado";
       const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
       if (!esRespuestaOkCompatibilidad(data, ruta)) {
-        throw new Error(data.mensaje || "Error al calcular el balance");
+        throw new ErrorRespuestaApi(data);
       }
       const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
       return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);
@@ -1750,7 +1750,7 @@ export const informeService = {
       const ruta = "/api/Informe/calcularBalanceBanco";
       const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
       if (!esRespuestaOkCompatibilidad(data, ruta)) {
-        throw new Error(data.mensaje || "Error al calcular el balance");
+        throw new ErrorRespuestaApi(data);
       }
       const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
       return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);
@@ -1788,7 +1788,7 @@ export const informeService = {
       const ruta = "/api/Informe/calcularBalanceSeguro";
       const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
       if (!esRespuestaOkCompatibilidad(data, ruta)) {
-        throw new Error(data.mensaje || "Error al calcular el balance");
+        throw new ErrorRespuestaApi(data);
       }
       const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
       return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);
@@ -1832,7 +1832,7 @@ export const informeService = {
       const ruta = "/api/Informe/calcularBalanceTurquia";
       const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
       if (!esRespuestaOkCompatibilidad(data, ruta)) {
-        throw new Error(data.mensaje || "Error al calcular el balance");
+        throw new ErrorRespuestaApi(data);
       }
       const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
       return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);

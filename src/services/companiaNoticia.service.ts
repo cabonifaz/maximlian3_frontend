@@ -1,5 +1,5 @@
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   CompaniaNoticiaArchivo,
   CompaniaNoticiaArchivoObtenerParams,
@@ -169,7 +169,7 @@ export const servicioCompaniaNoticia = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/noticia/listar")) {
-      throw new Error(data.mensaje || "Error al listar las noticias");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarLista(data.result);
@@ -184,7 +184,7 @@ export const servicioCompaniaNoticia = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/noticia/obtener")) {
-      throw new Error(data.mensaje || "Error al obtener la noticia");
+      throw new ErrorRespuestaApi(data);
     }
 
     const lista = normalizarLista(data.result).lstCompaniaNoticia;
@@ -209,7 +209,7 @@ export const servicioCompaniaNoticia = {
     );
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/noticia/archivo/obtener")) {
-      throw new Error(data.mensaje || "No se pudo obtener el archivo");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarArchivoObtenido(data.result);
@@ -219,7 +219,7 @@ export const servicioCompaniaNoticia = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/noticia/crear", payload);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/noticia/crear")) {
-      throw new Error(data.mensaje || "Error al crear la noticia");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarGuardado(data.result);
@@ -229,7 +229,7 @@ export const servicioCompaniaNoticia = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/noticia/editar", payload);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/noticia/editar")) {
-      throw new Error(data.mensaje || "Error al editar la noticia");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarGuardado(data.result);
@@ -239,7 +239,7 @@ export const servicioCompaniaNoticia = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/noticia/eliminar", payload);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/noticia/eliminar")) {
-      throw new Error(data.mensaje || "Error al eliminar la noticia");
+      throw new ErrorRespuestaApi(data);
     }
   },
 };

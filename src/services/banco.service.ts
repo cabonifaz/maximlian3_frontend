@@ -1,5 +1,5 @@
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   BancoCrearRequest,
   BancoEditarRequest,
@@ -125,7 +125,7 @@ async function obtenerBanco(params: BancoObtenerParams): Promise<BancoListaItem 
     })
     .then(({ data }) => {
       if (!esRespuestaOkCompatibilidad(data, "/api/Banco/obtener")) {
-        throw new Error(data.mensaje || "Error al obtener el banco");
+        throw new ErrorRespuestaApi(data);
       }
 
       const banco = normalizarLista(data.result).lstBanco[0] ?? null;
@@ -150,7 +150,7 @@ export const servicioBanco = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Banco/listar")) {
-      throw new Error(data.mensaje || "Error al listar los bancos");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarLista(data.result);
@@ -164,7 +164,7 @@ export const servicioBanco = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Banco/crear", [payload]);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Banco/crear")) {
-      throw new Error(data.mensaje || "Error al crear el banco");
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheBancoObtener.clear();
@@ -175,7 +175,7 @@ export const servicioBanco = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Banco/editar", payload);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Banco/editar")) {
-      throw new Error(data.mensaje || "Error al editar el banco");
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheBancoObtener.clear();
@@ -186,7 +186,7 @@ export const servicioBanco = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Banco/eliminar", payload);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Banco/eliminar")) {
-      throw new Error(data.mensaje || "Error al eliminar el banco");
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheBancoObtener.clear();

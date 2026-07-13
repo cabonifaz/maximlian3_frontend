@@ -1,5 +1,5 @@
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   CompaniaCrearRequest,
   DirectorioEjecutivoCrearRequest,
@@ -158,7 +158,7 @@ async function obtenerCompania(params: CompaniaObtenerParams): Promise<CompaniaL
     })
     .then(({ data }) => {
       if (!esRespuestaOkCompatibilidad(data, "/api/Compania/obtener")) {
-        throw new Error(data.mensaje || "Error al obtener la compania");
+        throw new ErrorRespuestaApi(data);
       }
 
       const compania = normalizarLista(data.result).lstCompania[0] ?? null;
@@ -183,7 +183,7 @@ export const servicioCompania = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/listar")) {
-      throw new Error(data.mensaje || "Error al listar las companias");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarLista(data.result);
@@ -197,7 +197,7 @@ export const servicioCompania = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/crear", [payload]);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/crear")) {
-      throw new Error(data.mensaje || "Error al crear la compania");
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheCompaniaObtener.clear();
@@ -208,7 +208,7 @@ export const servicioCompania = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/DirectorioEjecutivo/crear", [payload]);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/crear")) {
-      throw new Error(data.mensaje || "Error al crear el registro de terceros");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarGuardado(data.result);
@@ -218,7 +218,7 @@ export const servicioCompania = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/editar", payload);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/editar")) {
-      throw new Error(data.mensaje || "Error al editar la compania");
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheCompaniaObtener.clear();
@@ -229,7 +229,7 @@ export const servicioCompania = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Compania/eliminar", payload);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/eliminar")) {
-      throw new Error(data.mensaje || "Error al eliminar la compania");
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheCompaniaObtener.clear();

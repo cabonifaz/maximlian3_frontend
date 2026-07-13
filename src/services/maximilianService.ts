@@ -20,17 +20,6 @@ const maximilianService = axios.create({
   },
 });
 
-function obtenerMensajeAmigableUsuario(url?: string) {
-  if (!url) return null;
-  if (url.includes("/api/Usuario/obtener")) {
-    return "No se pudo cargar la información del usuario. Intenta nuevamente.";
-  }
-  if (url.includes("/api/Usuario/editar")) {
-    return "No se pudieron guardar los cambios del usuario. Revisa los datos e intenta nuevamente.";
-  }
-  return null;
-}
-
 function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
   if (data.idTipoMensaje === MessageType.SUCCESS) return true;
   if (!url) return false;
@@ -142,13 +131,9 @@ maximilianService.interceptors.response.use(
     // If it's a standard API response with idTipoMensaje
     if (data && data.idTipoMensaje !== undefined) {
       if (!esRespuestaOkCompatibilidad(data, response.config.url)) {
-        const fallbackMessage =
-          data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION
-            ? "La operación no pudo completarse debido a una regla de negocio."
-            : "Ha ocurrido un error inesperado en el sistema.";
-
-        const mensajeAmigable = obtenerMensajeAmigableUsuario(response.config.url);
-        toast.error(mensajeAmigable || data.mensaje || fallbackMessage);
+        if (data.mensaje) {
+          toast.error(data.mensaje);
+        }
       } else if (
         response.config.method !== "get"
         && !response.config.url?.includes("/api/Informe/obtenerUrlPrefirmada")
@@ -156,7 +141,9 @@ maximilianService.interceptors.response.use(
         && !response.config.url?.includes("/api/Informe/extraerDocumento")
         && !response.config.url?.includes("/api/Informe/traducir")
       ) {
-        toast.success(data.mensaje);
+        if (data.mensaje) {
+          toast.success(data.mensaje);
+        }
       }
     }
 
@@ -189,19 +176,16 @@ maximilianService.interceptors.response.use(
 
     if (error.response?.status === 403) {
       const data = error.response.data as Partial<ApiResponse<unknown>> | undefined;
-      const mensaje =
-        data?.mensaje
-        || "No tienes permisos para realizar esta operacion.";
-      toast.error(mensaje);
+      if (data?.mensaje) {
+        toast.error(data.mensaje);
+      }
       return Promise.reject(error);
     }
 
-    // Handle network or HTTP errors
-    const errorMessage =
-      obtenerMensajeAmigableUsuario(error.config?.url) ||
-      (error.response?.data as Partial<ApiResponse<unknown>> | undefined)?.mensaje ||
-      "Error de conexión con el servidor";
-    toast.error(errorMessage);
+    const mensaje = (error.response?.data as Partial<ApiResponse<unknown>> | undefined)?.mensaje;
+    if (mensaje) {
+      toast.error(mensaje);
+    }
     return Promise.reject(error);
   },
 );

@@ -1,5 +1,5 @@
 import maximilianService from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   PedidoListParams,
@@ -175,7 +175,7 @@ export const pedidoService = {
         { params }
       );
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al listar los pedidos");
+        throw new ErrorRespuestaApi(data);
       }
 
       return normalizarRespuestaPedido(data.result);
@@ -192,7 +192,7 @@ export const pedidoService = {
         { params }
       );
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al listar los pedidos para asignacion");
+        throw new ErrorRespuestaApi(data);
       }
 
       return normalizarRespuestaPedido(data.result);
@@ -204,12 +204,12 @@ export const pedidoService = {
 
   cancelar: async (data: PedidoAccionRequest): Promise<void> => {
     const { data: res } = await maximilianService.post<ApiResponse<null>>("/api/Pedido/cancelar", data);
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
   },
 
   eliminar: async (data: PedidoAccionRequest): Promise<void> => {
     const { data: res } = await maximilianService.post<ApiResponse<null>>("/api/Pedido/eliminar", data);
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
   },
 
   create: async (data: CreatePedidoRequest): Promise<CreatePedidoResponse> => {
@@ -217,7 +217,7 @@ export const pedidoService = {
       "/api/Pedido/crear",
       data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
@@ -226,7 +226,7 @@ export const pedidoService = {
       "/api/Pedido/obtener",
       { params: { idPedido } }
     );
-    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return data.result[0];
   },
 
@@ -235,7 +235,7 @@ export const pedidoService = {
       "/api/Pedido/editar",
       data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
   },
 
   listArchivos: async (params: { idPedido: number; busqueda?: string; numPag?: number }): Promise<PedidoArchivoListResponse> => {
@@ -243,7 +243,7 @@ export const pedidoService = {
       "/api/PedidoArchivo/listar",
       { params: { IdPedido: params.idPedido, Busqueda: params.busqueda, NumPag: params.numPag } }
     );
-    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return data.result;
   },
 
@@ -252,7 +252,7 @@ export const pedidoService = {
       "/api/PedidoArchivo/crear",
       data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result;
   },
 
@@ -261,7 +261,7 @@ export const pedidoService = {
       "/api/PedidoArchivo/eliminar",
       data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
   },
 
   getArchivo: async (params: { idPedidoArchivo: number; idPedido: number }): Promise<GetPedidoArchivoResponse> => {
@@ -269,7 +269,7 @@ export const pedidoService = {
       "/api/PedidoArchivo/obtener",
       { params: { IdPedidoArchivo: params.idPedidoArchivo, IdPedido: params.idPedido } }
     );
-    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return data.result[0];
   },
 };

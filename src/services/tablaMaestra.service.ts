@@ -1,5 +1,5 @@
 import maximilianService from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   EntradaTablaMaestra,
@@ -128,7 +128,7 @@ async function obtenerOpcionesPorIdsMaestro(idsMaestro: number[]): Promise<Opcio
       })
       .then(({ data }) => {
         if (data.idTipoMensaje !== MessageType.SUCCESS) {
-          throw new Error(data.mensaje || "Error al listar parametros de TablaMaestra");
+          throw new ErrorRespuestaApi(data);
         }
 
         const opcionesPorId = normalizarOpcionesPorIdMaestro(data.result, idsPendientes);
@@ -206,7 +206,7 @@ export const servicioTablaMaestra = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/TablaMaestra/crear", payload);
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
-      throw new Error(data.mensaje || "Error al crear el parametro de TablaMaestra");
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheOpcionesTablaMaestra.delete(payload.idMaestro);
@@ -216,7 +216,7 @@ export const servicioTablaMaestra = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/TablaMaestra/editar", payload);
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
-      throw new Error(data.mensaje || "Error al editar el parametro de TablaMaestra");
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheOpcionesTablaMaestra.delete(payload.idMaestro);

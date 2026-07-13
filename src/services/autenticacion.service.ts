@@ -9,7 +9,7 @@ import {
 } from "aws-amplify/auth";
 import type { DatosFormularioInicioSesion } from "@maximilian/schemas";
 import maximilianService from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type { LoginValidatorResponse } from "@maximilian/shared/types/autenticacion.type";
 import { limpiarDatosSesionLocal } from "./sesion.service";
@@ -37,7 +37,7 @@ export const servicioAutenticacion = {
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al obtener roles");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result[0];

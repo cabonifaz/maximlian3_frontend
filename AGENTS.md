@@ -62,6 +62,10 @@ The Axios interceptor in `maximilianService.ts` handles all toast notifications 
 - `toast.error(mensaje)` for any non-success response (idTipoMensaje ≠ 2)
 - `toast.success(mensaje)` for successful non-GET requests (mutations)
 
+Only show the message returned by the backend. If the backend does not return a response or `mensaje` is empty, do not display a toast and do not invent a fallback message. In service methods, throw `ErrorRespuestaApi` with the complete API response (for example, `throw new ErrorRespuestaApi(data)`), never a plain `Error` built from `mensaje`. Consumers must use `esErrorRespuestaApi(error)` and `error.idTipoMensaje`/`error.respuesta` when they need structured error details; never parse or compare `error.message` to identify an API error.
+
+Never identify an error by parsing its text (`error.message.includes(...)`, equality checks, regex, etc.). Prefer structured signals such as error classes, `name`/codes supplied by the provider, HTTP status, API response fields, or platform events. For Vite dynamic import failures, use the `vite:preloadError` event and its `payload` instead of matching the browser-specific message.
+
 **Never call `toast.success` manually in `onSuccess` handlers** — the interceptor covers it.
 
 For non-API async operations (e.g. uploading files directly to S3 via presigned URLs), calling `toast.loading` / `toast.dismiss` / `toast.error` directly from a component is acceptable. Use `toast.loading(msg)` to get a toast ID, then `toast.dismiss(id)` on success or `toast.error(msg, { id })` on failure to replace it. Never expose raw AWS/third-party error messages — always show a user-friendly string.

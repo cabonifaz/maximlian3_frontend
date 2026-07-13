@@ -1,5 +1,5 @@
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 
 function obtenerNumero(...valores: unknown[]): number {
   for (const v of valores) {
@@ -24,7 +24,7 @@ export const servicioInformeLocalImagen = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/informeLocalImagen/obtenerUrls", { ids });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/informeLocalImagen/obtenerUrls")) {
-      throw new Error(data.mensaje || "No se pudo obtener las URLs de las imágenes");
+      throw new ErrorRespuestaApi(data);
     }
 
     const lista = Array.isArray(data.result) ? data.result : [];
@@ -41,7 +41,7 @@ export const servicioInformeLocalImagen = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/informeLocalImagen/actualizarEstadoCarga", { ids });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/informeLocalImagen/actualizarEstadoCarga")) {
-      throw new Error(data.mensaje || "No se pudo actualizar el estado de carga de imágenes");
+      throw new ErrorRespuestaApi(data);
     }
   },
 };

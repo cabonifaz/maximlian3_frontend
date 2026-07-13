@@ -1,5 +1,5 @@
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   CompaniaNoticiaBalanceListaItem,
   CompaniaNoticiaBalanceListParams,
@@ -275,7 +275,7 @@ export const servicioCompaniaNoticiaBalance = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/companianoticiabalance/listar")) {
-      throw new Error(data.mensaje || "Error al listar la informacion crediticia");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarLista(data.result);
@@ -290,7 +290,7 @@ export const servicioCompaniaNoticiaBalance = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/Compania/companianoticiabalance/obtener")) {
-      throw new Error(data.mensaje || "Error al obtener la informacion crediticia");
+      throw new ErrorRespuestaApi(data);
     }
 
     const lista = normalizarLista(data.result).lstCompaniaNoticiaBalance;

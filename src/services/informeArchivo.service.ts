@@ -1,5 +1,5 @@
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   InformeActualizarArchivoRequest,
   InformeEliminarArchivoRequest,
@@ -121,7 +121,7 @@ export const servicioInformeArchivo = {
     );
 
     if (!esRespuestaOkCompatibilidad(data, "/api/informeArchivo/generarUrls")) {
-      throw new Error(data.mensaje || "No se pudieron generar las URLs de los archivos");
+      throw new ErrorRespuestaApi(data);
     }
 
     const respuesta = normalizarRespuestaUrlsArchivo(data.result);
@@ -141,7 +141,7 @@ export const servicioInformeArchivo = {
     );
 
     if (!esRespuestaOkCompatibilidad(data, "/api/informeArchivo/insertarLote")) {
-      throw new Error(data.mensaje || "No se pudieron registrar los archivos");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarRespuestaCrear(data.result);
@@ -156,7 +156,7 @@ export const servicioInformeArchivo = {
     );
 
     if (!esRespuestaOkCompatibilidad(data, "/api/informeArchivo/obtener")) {
-      throw new Error(data.mensaje || "No se pudo obtener el archivo");
+      throw new ErrorRespuestaApi(data);
     }
 
     const registro = obtenerRegistro(
@@ -185,7 +185,7 @@ export const servicioInformeArchivo = {
     );
 
     if (!esRespuestaOkCompatibilidad(data, "/api/informeArchivo/actualizar")) {
-      throw new Error(data.mensaje || "No se pudo actualizar el archivo");
+      throw new ErrorRespuestaApi(data);
     }
   },
 
@@ -198,7 +198,7 @@ export const servicioInformeArchivo = {
     );
 
     if (!esRespuestaOkCompatibilidad(data, "/api/informeArchivo/eliminar")) {
-      throw new Error(data.mensaje || "No se pudo eliminar el archivo");
+      throw new ErrorRespuestaApi(data);
     }
   },
 };

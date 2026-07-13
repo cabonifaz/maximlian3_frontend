@@ -1,5 +1,5 @@
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   DirectorioEjecutivoEditarRequest,
   DirectorioEjecutivoEliminarRequest,
@@ -167,7 +167,7 @@ async function obtenerDirectorio(
     })
     .then(({ data }) => {
       if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/obtener")) {
-        throw new Error(data.mensaje || "Error al obtener el directorio ejecutivo");
+        throw new ErrorRespuestaApi(data);
       }
 
       const registro = normalizarListadoDirectorio(data.result).registros[0] ?? null;
@@ -192,7 +192,7 @@ export const servicioDirectorioEjecutivo = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/listar")) {
-      throw new Error(data.mensaje || "Error al listar el directorio ejecutivo");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarListadoDirectorio(data.result);
@@ -206,7 +206,7 @@ export const servicioDirectorioEjecutivo = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/DirectorioEjecutivo/crear", [payload]);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/crear")) {
-      throw new Error(data.mensaje || "Error al crear el registro de terceros");
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheDirectorioObtener.clear();
@@ -217,7 +217,7 @@ export const servicioDirectorioEjecutivo = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/DirectorioEjecutivo/editar", payload);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/editar")) {
-      throw new Error(data.mensaje || "Error al editar el registro de terceros");
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheDirectorioObtener.clear();
@@ -228,7 +228,7 @@ export const servicioDirectorioEjecutivo = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/DirectorioEjecutivo/eliminar", payload);
 
     if (!esRespuestaOkCompatibilidad(data, "/api/DirectorioEjecutivo/eliminar")) {
-      throw new Error(data.mensaje || "Error al eliminar el registro de terceros");
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheDirectorioObtener.clear();

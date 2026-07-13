@@ -1,5 +1,5 @@
 import maximilianService from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   AssignmentCandidate,
@@ -117,7 +117,7 @@ function normalizarRol(valor: unknown, esTraductor?: boolean): AssignmentRole {
 
 function extraerResultado<T>(respuesta: ApiResponse<T>): T {
   if (!esRespuestaOkCompatibilidad(respuesta)) {
-    throw new Error(respuesta.mensaje || "No se pudo completar la operación de asignaciones");
+    throw new ErrorRespuestaApi(respuesta);
   }
   return respuesta.result;
 }

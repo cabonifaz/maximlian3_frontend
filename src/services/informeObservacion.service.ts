@@ -1,5 +1,5 @@
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   InformeEditarObservacionRequest,
   InformeEliminarObservacionRequest,
@@ -93,7 +93,7 @@ export const servicioInformeObservacion = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, ruta)) {
-      throw new Error(data.mensaje || "No se pudieron obtener las observaciones del informe");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarObservacionesInforme(data.result);
@@ -106,7 +106,7 @@ export const servicioInformeObservacion = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, payload);
 
     if (!esRespuestaOkCompatibilidad(data, ruta)) {
-      throw new Error(data.mensaje || "No se pudieron registrar las observaciones");
+      throw new ErrorRespuestaApi(data);
     }
   },
 
@@ -115,7 +115,7 @@ export const servicioInformeObservacion = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, payload);
 
     if (!esRespuestaOkCompatibilidad(data, ruta)) {
-      throw new Error(data.mensaje || "No se pudo editar la observación");
+      throw new ErrorRespuestaApi(data);
     }
   },
 
@@ -124,7 +124,7 @@ export const servicioInformeObservacion = {
     const { data } = await maximilianService.delete<ApiResponse<unknown>>(ruta, { data: payload });
 
     if (!esRespuestaOkCompatibilidad(data, ruta)) {
-      throw new Error(data.mensaje || "No se pudo eliminar la observación");
+      throw new ErrorRespuestaApi(data);
     }
   },
 };
