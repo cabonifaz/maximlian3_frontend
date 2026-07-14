@@ -1,11 +1,7 @@
+import { elementosMenuTraductor } from "@maximilian/shared/constants/components/traductor/disenoTraductor.constants";
 import { Outlet } from "react-router";
-import { Folder } from "lucide-react";
 import { BarraLateral } from "@maximilian/components/common/BarraLateral";
 import { Encabezado } from "@maximilian/components/common/Encabezado";
-
-const elementosMenuTraductor = [
-  { name: "Mi Bandeja", icon: Folder, path: "/traductor/bandeja" },
-];
 
 export default function DisenoTraductor() {
   return (

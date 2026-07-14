@@ -1,3 +1,4 @@
+import { valoresPorDefecto } from "@maximilian/shared/constants/components/administrador/modalUsuario.constants";
 import { useEffect, useState } from "react";
 import {
   X,
@@ -25,17 +26,6 @@ interface ModalUsuarioProps {
 }
 
 type Tab = "info" | "roles";
-
-const valoresPorDefecto: DatosFormularioUsuario = {
-  nombres: "",
-  apellidoPaterno: "",
-  apellidoMaterno: "",
-  usuarioCreacion: "",
-  correo: "",
-  roles: [],
-  idiomas: [],
-  activo: true,
-};
 
 export function ModalUsuario({
   isOpen,

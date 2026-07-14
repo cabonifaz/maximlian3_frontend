@@ -1,12 +1,7 @@
+import { elementosMenuAnalista } from "@maximilian/shared/constants/components/analista/disenoAnalista.constants";
 import { Outlet } from "react-router";
-import { Folder, LibraryBig } from "lucide-react";
 import { BarraLateral } from "@maximilian/components/common/BarraLateral";
 import { Encabezado } from "@maximilian/components/common/Encabezado";
-
-const elementosMenuAnalista = [
-  { name: "Mi Bandeja", icon: Folder, path: "/analista/bandeja" },
-  { name: "Banco de Información", icon: LibraryBig, path: "/analista/banco-informacion" },
-];
 
 export default function DisenoAnalista() {
   return (

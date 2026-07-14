@@ -1,0 +1,33 @@
+export const opcionesCriterio: EntradaTablaMaestra[] = [
+  {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: "",
+    num1: 1,
+    num2: null,
+    num3: null,
+    string1: "Nombre / Razón Social",
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  },
+  {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: "",
+    num1: 2,
+    num2: null,
+    num3: null,
+    string1: "Documento",
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  },
+];
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";

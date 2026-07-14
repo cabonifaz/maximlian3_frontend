@@ -1,5 +1,7 @@
+import { ESTADO_ASIGNACION_ANALISTA, ESTADO_ASIGNACION_TRADUCTOR, ESTADO_REASIGNACION_ANALISTA, ESTADO_REASIGNACION_TRADUCTOR, IDS_ROL_POR_TIPO } from "@maximilian/shared/constants/services/asignacion.service.constants";
+import { ENDPOINTS_ASIGNACION } from "@maximilian/shared/constants/endpoints/asignacion.endpoint";
 import maximilianService from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   AssignmentCandidate,
@@ -16,15 +18,6 @@ import type {
 } from "@maximilian/shared/types/asignacion.type";
 
 type RegistroGenerico = Record<string, unknown>;
-
-const ESTADO_ASIGNACION_ANALISTA = 1;
-const ESTADO_ASIGNACION_TRADUCTOR = 2;
-const ESTADO_REASIGNACION_ANALISTA = 4;
-const ESTADO_REASIGNACION_TRADUCTOR = 5;
-const IDS_ROL_POR_TIPO: Record<AssignmentRole, number> = {
-  translator: 4,
-  analyst: 3,
-};
 
 function esRespuestaOkCompatibilidad(respuesta: ApiResponse<unknown>) {
   return respuesta.idTipoMensaje === MessageType.SUCCESS
@@ -117,7 +110,7 @@ function normalizarRol(valor: unknown, esTraductor?: boolean): AssignmentRole {
 
 function extraerResultado<T>(respuesta: ApiResponse<T>): T {
   if (!esRespuestaOkCompatibilidad(respuesta)) {
-    throw new Error(respuesta.mensaje || "No se pudo completar la operación de asignaciones");
+    throw new ErrorRespuestaApi(respuesta);
   }
   return respuesta.result;
 }
@@ -374,7 +367,7 @@ function construirPayloadEdicion(
 
 export const servicioAsignacion = {
   list: async (params: AssignmentListParams): Promise<AssignmentListResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Asignacion/listar", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.listar, {
       params: {
         busqueda: params.busqueda,
         idEstado: params.idEstado,
@@ -386,7 +379,7 @@ export const servicioAsignacion = {
   },
 
   bandeja: async (params: AssignmentListParams): Promise<AssignmentListResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Asignacion/bandeja", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.bandeja, {
       params: {
         Busqueda: params.busqueda,
         NumPag: params.numPag,
@@ -397,7 +390,7 @@ export const servicioAsignacion = {
   },
 
   getById: async (idAsignacion: number): Promise<AssignmentOrderEntry | null> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Asignacion/obtener", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.obtener, {
       params: { idAsignacion },
     });
 
@@ -407,17 +400,17 @@ export const servicioAsignacion = {
   },
 
   create: async (payload: CreateAssignmentRequest): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Asignacion/crear", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.crear, payload);
     extraerResultado(data);
   },
 
   update: async (payload: UpdateAssignmentRequest): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Asignacion/editar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.editar, payload);
     extraerResultado(data);
   },
 
   delete: async (payload: DeleteAssignmentRequest): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Asignacion/eliminar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.eliminar, payload);
     extraerResultado(data);
   },
 
@@ -428,7 +421,7 @@ export const servicioAsignacion = {
       ),
     );
 
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Usuario/listaCortaAsignacion", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.usuariosCortos, {
       params: {
         idRolFiltro: IDS_ROL_POR_TIPO[role],
         filtro,

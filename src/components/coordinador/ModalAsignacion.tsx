@@ -1,3 +1,4 @@
+import { roleLabels } from "@maximilian/shared/constants/components/coordinador/modalAsignacion.constants";
 import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import type { AssignmentRole, AssignmentRoleSelection } from "@maximilian/shared/types/asignacion.type";
@@ -11,11 +12,6 @@ interface ModalAsignacionProps {
   onSave: () => void;
   isSubmitting?: boolean;
 }
-
-const roleLabels: Record<AssignmentRole, string> = {
-  analyst: "Analista",
-  translator: "Traductor(a)",
-};
 
 export function ModalAsignacion({
   isOpen,

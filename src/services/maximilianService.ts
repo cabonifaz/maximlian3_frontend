@@ -5,6 +5,12 @@ import { MessageType } from "@maximilian/shared/types/api.type";
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import { cerrarSesionExpirada } from "./sesion.service";
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { ENDPOINTS_ASIGNACION } from "@maximilian/shared/constants/endpoints/asignacion.endpoint";
+import { ENDPOINTS_COMPANIA_NOTICIA } from "@maximilian/shared/constants/endpoints/compania-noticia.endpoint";
+import { ENDPOINTS_COMPANIA_NOTICIA_BALANCE } from "@maximilian/shared/constants/endpoints/compania-noticia-balance.endpoint";
+import { ENDPOINTS_COMPANIA_NOTICIA_DETALLE } from "@maximilian/shared/constants/endpoints/compania-noticia-detalle.endpoint";
+import { ENDPOINTS_DIRECTORIO_EJECUTIVO } from "@maximilian/shared/constants/endpoints/directorio-ejecutivo.endpoint";
+import { ENDPOINTS_INFORME } from "@maximilian/shared/constants/endpoints/informe.endpoint";
 
 type ConfiguracionAutenticada = InternalAxiosRequestConfig & {
   reintentoAutenticacion?: boolean;
@@ -20,37 +26,26 @@ const maximilianService = axios.create({
   },
 });
 
-function obtenerMensajeAmigableUsuario(url?: string) {
-  if (!url) return null;
-  if (url.includes("/api/Usuario/obtener")) {
-    return "No se pudo cargar la información del usuario. Intenta nuevamente.";
-  }
-  if (url.includes("/api/Usuario/editar")) {
-    return "No se pudieron guardar los cambios del usuario. Revisa los datos e intenta nuevamente.";
-  }
-  return null;
-}
-
 function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
   if (data.idTipoMensaje === MessageType.SUCCESS) return true;
   if (!url) return false;
 
   const esEndpointAsignacion =
-    url.includes("/api/Asignacion/bandeja")
-    || url.includes("/api/Asignacion/listar");
+    url.includes(ENDPOINTS_ASIGNACION.bandeja)
+    || url.includes(ENDPOINTS_ASIGNACION.listar);
   const esEndpointInformeGuardar =
-    url.includes("/api/Informe/crear")
-    || url.includes("/api/Informe/editar");
-  const esEndpointInformeObtener = url.includes("/api/Informe/obtener");
+    url.includes(ENDPOINTS_INFORME.crear)
+    || url.includes(ENDPOINTS_INFORME.editar);
+  const esEndpointInformeObtener = url.includes(ENDPOINTS_INFORME.obtener);
   const esEndpointInformeExtraccion =
-    url.includes("/api/Informe/obtenerUrlPrefirmada")
-    || url.includes("/api/Informe/autocompletar")
-    || url.includes("/api/Informe/extraerDocumento")
-    || url.includes("/api/Informe/traducir");
-  const esEndpointDirectorioEjecutivo = url.includes("/api/DirectorioEjecutivo/");
-  const esEndpointCompaniaNoticia = url.includes("/api/Compania/noticia/");
-  const esEndpointCompaniaNoticiaBalance = url.includes("/api/Compania/companianoticiabalance/");
-  const esEndpointCompaniaNoticiaDetalle = url.includes("/api/Compania/companianoticiadetalle/");
+    url.includes(ENDPOINTS_INFORME.obtenerUrlPrefirmada)
+    || url.includes(ENDPOINTS_INFORME.autocompletar)
+    || url.includes(ENDPOINTS_INFORME.extraerDocumento)
+    || url.includes(ENDPOINTS_INFORME.traducir);
+  const esEndpointDirectorioEjecutivo = url.includes(ENDPOINTS_DIRECTORIO_EJECUTIVO.base);
+  const esEndpointCompaniaNoticia = url.includes(ENDPOINTS_COMPANIA_NOTICIA.base);
+  const esEndpointCompaniaNoticiaBalance = url.includes(ENDPOINTS_COMPANIA_NOTICIA_BALANCE.base);
+  const esEndpointCompaniaNoticiaDetalle = url.includes(ENDPOINTS_COMPANIA_NOTICIA_DETALLE.base);
 
   if (esEndpointAsignacion && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION && data.mensaje === "OK") {
     return true;
@@ -142,21 +137,19 @@ maximilianService.interceptors.response.use(
     // If it's a standard API response with idTipoMensaje
     if (data && data.idTipoMensaje !== undefined) {
       if (!esRespuestaOkCompatibilidad(data, response.config.url)) {
-        const fallbackMessage =
-          data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION
-            ? "La operación no pudo completarse debido a una regla de negocio."
-            : "Ha ocurrido un error inesperado en el sistema.";
-
-        const mensajeAmigable = obtenerMensajeAmigableUsuario(response.config.url);
-        toast.error(mensajeAmigable || data.mensaje || fallbackMessage);
+        if (data.mensaje) {
+          toast.error(data.mensaje);
+        }
       } else if (
         response.config.method !== "get"
-        && !response.config.url?.includes("/api/Informe/obtenerUrlPrefirmada")
-        && !response.config.url?.includes("/api/Informe/autocompletar")
-        && !response.config.url?.includes("/api/Informe/extraerDocumento")
-        && !response.config.url?.includes("/api/Informe/traducir")
+        && !response.config.url?.includes(ENDPOINTS_INFORME.obtenerUrlPrefirmada)
+        && !response.config.url?.includes(ENDPOINTS_INFORME.autocompletar)
+        && !response.config.url?.includes(ENDPOINTS_INFORME.extraerDocumento)
+        && !response.config.url?.includes(ENDPOINTS_INFORME.traducir)
       ) {
-        toast.success(data.mensaje);
+        if (data.mensaje) {
+          toast.success(data.mensaje);
+        }
       }
     }
 
@@ -189,19 +182,16 @@ maximilianService.interceptors.response.use(
 
     if (error.response?.status === 403) {
       const data = error.response.data as Partial<ApiResponse<unknown>> | undefined;
-      const mensaje =
-        data?.mensaje
-        || "No tienes permisos para realizar esta operacion.";
-      toast.error(mensaje);
+      if (data?.mensaje) {
+        toast.error(data.mensaje);
+      }
       return Promise.reject(error);
     }
 
-    // Handle network or HTTP errors
-    const errorMessage =
-      obtenerMensajeAmigableUsuario(error.config?.url) ||
-      (error.response?.data as Partial<ApiResponse<unknown>> | undefined)?.mensaje ||
-      "Error de conexión con el servidor";
-    toast.error(errorMessage);
+    const mensaje = (error.response?.data as Partial<ApiResponse<unknown>> | undefined)?.mensaje;
+    if (mensaje) {
+      toast.error(mensaje);
+    }
     return Promise.reject(error);
   },
 );

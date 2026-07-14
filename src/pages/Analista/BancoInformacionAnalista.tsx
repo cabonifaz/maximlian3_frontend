@@ -1,3 +1,6 @@
+import { etiquetasPestanas } from "@maximilian/shared/constants/pages/Analista/bancoInformacionAnalista.constants";
+import type { PestanaBancoInformacion } from "@maximilian/shared/constants/pages/Analista/bancoInformacionAnalista.constants";
+import { ID_MAESTRO_ESTADO_CREDITO, ID_MAESTRO_ACTIVIDAD_ECONOMICA_EMPRESA } from "@maximilian/shared/constants/pages/Analista/bancoInformacionAnalista.constants";
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -25,17 +28,6 @@ import {
   TablaMaestraId,
   type EntradaTablaMaestra,
 } from "@maximilian/shared/types/tabla-maestra.type";
-
-type PestanaBancoInformacion = "noticias" | "credito" | "empresas";
-
-const etiquetasPestanas: Record<PestanaBancoInformacion, string> = {
-  noticias: "Noticias",
-  credito: "Inf. Crediticia",
-  empresas: "Empresas",
-};
-
-const ID_MAESTRO_ESTADO_CREDITO = 66;
-const ID_MAESTRO_ACTIVIDAD_ECONOMICA_EMPRESA = 48;
 
 function serializarIdsFiltro(ids: number[]) {
   return ids.length > 0 ? ids.join(",") : undefined;

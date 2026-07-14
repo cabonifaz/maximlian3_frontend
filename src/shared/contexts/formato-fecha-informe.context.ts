@@ -1,8 +1,7 @@
+import { FORMATO_FECHA_INFORME_BASE } from "@maximilian/shared/constants/contexts/formato-fecha-informe.context.constants";
 import { createContext, createElement, useContext, type ReactNode } from "react";
 import type { Locale } from "date-fns";
 import { enUS, es, ptBR } from "date-fns/locale";
-
-const FORMATO_FECHA_INFORME_BASE = "dd/MM/yyyy";
 
 interface ValorContextoFormatoFechaInforme {
   formato: string;

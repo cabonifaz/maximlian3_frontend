@@ -1,5 +1,6 @@
+import { ENDPOINTS_USUARIO } from "@maximilian/shared/constants/endpoints/usuario.endpoint";
 import maximilianService from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   CreateUserRequest,
@@ -108,11 +109,11 @@ export const servicioUsuario = {
       }
 
       const { data } = await maximilianService.get<ApiResponse<UserListResponse>>(
-        `/api/Usuario/listar?${parametros.toString()}`
+        `${ENDPOINTS_USUARIO.listar}?${parametros.toString()}`
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al listar usuarios");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;
@@ -130,14 +131,14 @@ export const servicioUsuario = {
     try {
       // In many of our project endpoints, 'result' is an array even for single objects
       const { data } = await maximilianService.get<ApiResponse<UserDetails | UserDetails[]>>(
-        "/api/Usuario/obtener",
+        ENDPOINTS_USUARIO.obtener,
         {
           params: { IdUsuario: idUsuario },
         }
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al obtener detalles del usuario");
+        throw new ErrorRespuestaApi(data);
       }
 
       // Handle both object and array response patterns
@@ -156,12 +157,12 @@ export const servicioUsuario = {
   create: async (userData: CreateUserRequest) => {
     try {
       const { data } = await maximilianService.post<ApiResponse<CreateUserResponse>>(
-        "/api/Usuario/crear",
+        ENDPOINTS_USUARIO.crear,
         userData
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al crear el usuario");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;
@@ -178,12 +179,12 @@ export const servicioUsuario = {
   update: async (updateData: UpdateUserRequest) => {
     try {
       const { data } = await maximilianService.post<ApiResponse<unknown>>(
-        "/api/Usuario/editar",
+        ENDPOINTS_USUARIO.editar,
         updateData
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al actualizar el usuario");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;
@@ -200,12 +201,12 @@ export const servicioUsuario = {
   delete: async (deleteData: DeleteUserRequest) => {
     try {
       const { data } = await maximilianService.post<ApiResponse<unknown>>(
-        "/api/Usuario/eliminar",
+        ENDPOINTS_USUARIO.eliminar,
         deleteData
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al eliminar el usuario");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;

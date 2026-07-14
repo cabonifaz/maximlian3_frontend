@@ -1,5 +1,6 @@
+import { ENDPOINTS_COMPANIA_NOTICIA_BALANCE } from "@maximilian/shared/constants/endpoints/compania-noticia-balance.endpoint";
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   CompaniaNoticiaBalanceListaItem,
   CompaniaNoticiaBalanceListParams,
@@ -264,7 +265,7 @@ function formatearPorcentaje(valor: unknown) {
 
 export const servicioCompaniaNoticiaBalance = {
   list: async (params: CompaniaNoticiaBalanceListParams): Promise<CompaniaNoticiaBalanceListResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Compania/companianoticiabalance/listar", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA_BALANCE.listar, {
       params: {
         IdCompania: params.idCompania,
         Busqueda: params.busqueda,
@@ -274,23 +275,23 @@ export const servicioCompaniaNoticiaBalance = {
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/companianoticiabalance/listar")) {
-      throw new Error(data.mensaje || "Error al listar la informacion crediticia");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA_NOTICIA_BALANCE.listar)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarLista(data.result);
   },
 
   obtener: async (params: CompaniaNoticiaBalanceObtenerParams): Promise<CompaniaNoticiaBalanceListaItem | null> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Compania/companianoticiabalance/obtener", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA_BALANCE.obtener, {
       params: {
         IdInformeBalance: params.idInformeBalance,
         IdCompania: params.idCompania,
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Compania/companianoticiabalance/obtener")) {
-      throw new Error(data.mensaje || "Error al obtener la informacion crediticia");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA_NOTICIA_BALANCE.obtener)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     const lista = normalizarLista(data.result).lstCompaniaNoticiaBalance;

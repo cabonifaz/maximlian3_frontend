@@ -1,3 +1,4 @@
+import { ASSIGNMENT_COLUMNS, ID_ROL_TRADUCTOR, ID_ROL_ANALISTA } from "@maximilian/shared/constants/pages/Coordinador/gestionAsignaciones.constants";
 import { useState } from "react";
 import { Search, MoreHorizontal, Edit, X, Plus } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,19 +14,6 @@ import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service"
 import type { AssignmentOrderEntry } from "@maximilian/shared/types/asignacion.type";
 import type { PedidoListEntry } from "@maximilian/shared/types/pedido.type";
 import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-
-const ASSIGNMENT_COLUMNS = [
-  { label: "Cliente", width: "21%" },
-  { label: "Investigado", width: "20%" },
-  { label: "Analista", width: "15%" },
-  { label: "Traductor", width: "15%" },
-  { label: "Estado", className: "text-center", width: "14%" },
-  { label: "Vencimiento", width: "9%" },
-  { label: "Acciones", className: "text-right", width: "6%" },
-];
-
-const ID_ROL_TRADUCTOR = 4;
-const ID_ROL_ANALISTA = 3;
 
 function tieneAsignado(nombre?: string) {
   return !!nombre && nombre !== "-" && nombre !== "Sin Asignacion";

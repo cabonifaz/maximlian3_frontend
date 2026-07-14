@@ -1,10 +1,13 @@
+import { MENSAJE_SESION_EXPIRADA, CLAVE_MENSAJE_SESION } from "@maximilian/shared/constants/services/sesion.service.constants";
 import { signOut } from "aws-amplify/auth";
 import { clienteConsultas } from "@maximilian/lib/clienteConsultas";
 
-const MENSAJE_SESION_EXPIRADA = "La sesion ha expirado";
-const CLAVE_MENSAJE_SESION = "auth_message";
-
 let redireccionEnCurso = false;
+let ultimoErrorCargaDinamica: unknown;
+
+window.addEventListener("vite:preloadError", (evento) => {
+  ultimoErrorCargaDinamica = (evento as Event & { payload?: unknown }).payload;
+});
 
 export function guardarMensajeSesionExpirada() {
   sessionStorage.setItem(CLAVE_MENSAJE_SESION, MENSAJE_SESION_EXPIRADA);
@@ -40,6 +43,5 @@ export async function cerrarSesionExpirada() {
 }
 
 export function esErrorCargaDinamica(error: unknown) {
-  const mensaje = error instanceof Error ? error.message : String(error ?? "");
-  return mensaje.includes("Failed to fetch dynamically imported module");
+  return ultimoErrorCargaDinamica !== undefined && Object.is(error, ultimoErrorCargaDinamica);
 }

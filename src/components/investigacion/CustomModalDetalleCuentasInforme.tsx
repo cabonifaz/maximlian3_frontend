@@ -1,3 +1,4 @@
+import { camposCalculadosEstadoFinanciero, camposRatioPorcentaje } from "@maximilian/shared/constants/components/investigacion/customModalDetalleCuentasInforme.constants";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -91,66 +92,6 @@ function esValorCeroOBlanco(valor: string) {
   if (!texto || texto === "-" || texto === "-.") return true;
   return Math.abs(obtenerNumero(texto)) < 0.000001;
 }
-
-const camposCalculadosEstadoFinanciero = new Set([
-  "total-activo-corriente",
-  "total-activo-no-corriente",
-  "total-activo",
-  "total-pasivo-corriente",
-  "total-pasivo-no-corriente",
-  "total-pasivos",
-  "total-patrimonio",
-  "total-pasivo-patrimonio",
-  "ganancia-bruta",
-  "ganancia-operativa",
-  "ganancia-antes-impuestos",
-  "ganancia-neta",
-  "liquidity-ratio",
-  "working-capital-ratio",
-  "current-indebtedness-ratio",
-  "profitability-ratio",
-  "liquidity-ratio-totalizado",
-  "working-capital-ratio-totalizado",
-  "current-indebtedness-ratio-totalizado",
-  "profitability-ratio-totalizado",
-  "total-activos-bancos",
-  "total-pasivo-bancos",
-  "total-patrimonio-bancos",
-  "total-pasivo-patrimonio-bancos",
-  "total-activos-seguros",
-  "total-pasivo-seguros",
-  "total-patrimonio-seguros",
-  "total-pasivo-patrimonio-seguros",
-  "current-total",
-  "net-fixed",
-  "total-assets-turquia",
-  "current-liabilities",
-  "total-non-current-liabilities",
-  "total-liabilities",
-  "total-equity",
-  "total-liabilities-equity",
-  "gross-profit",
-  "financial-pl",
-  "extra-other-pl",
-  "profit-loss-before-taxes",
-  "profit-loss-after-taxes",
-  "ebit",
-  "ebitda",
-  "profit",
-  "liquidity-index",
-  "working-capital",
-  "indebtedness-ratio",
-  "profitability-ratio-turquia",
-]);
-
-const camposRatioPorcentaje = new Set([
-  "current-indebtedness-ratio",
-  "profitability-ratio",
-  "current-indebtedness-ratio-totalizado",
-  "profitability-ratio-totalizado",
-  "indebtedness-ratio",
-  "profitability-ratio-turquia",
-]);
 
 function CampoDetalle({
   etiqueta,

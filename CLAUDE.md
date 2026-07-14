@@ -51,6 +51,8 @@ The response interceptor handles global toast notifications for errors/success.
 
 Service modules (`user.service.ts`, `client.service.ts`, etc.) use this instance. API responses follow the envelope: `{ idTipoMensaje, mensaje, result }`.
 
+API endpoint paths must be defined in a module-specific constants file under `src/shared/constants/endpoints/` and consumed from services and interceptors. Never write `/api/...` literals directly in service methods. Name each exported object `ENDPOINTS_<MODULO>` and group all routes used by that frontend module in its corresponding `*.endpoint.ts` file.
+
 #### API Response Convention
 Every endpoint returns `{ idTipoMensaje, mensaje, result }`:
 - `idTipoMensaje: 1` (`BUSINESS_RULE_VIOLATION`) — business rule error
@@ -61,6 +63,10 @@ The `mensaje` field always contains the user-facing message for the operation re
 The Axios interceptor in `maximilianService.ts` handles all toast notifications globally:
 - `toast.error(mensaje)` for any non-success response (idTipoMensaje ≠ 2)
 - `toast.success(mensaje)` for successful non-GET requests (mutations)
+
+Only show the message returned by the backend. If the backend does not return a response or `mensaje` is empty, do not display a toast and do not invent a fallback message. In service methods, throw `ErrorRespuestaApi` with the complete API response (for example, `throw new ErrorRespuestaApi(data)`), never a plain `Error` built from `mensaje`. Consumers must use `esErrorRespuestaApi(error)` and `error.idTipoMensaje`/`error.respuesta` when they need structured error details; never parse or compare `error.message` to identify an API error.
+
+Never identify an error by parsing its text (`error.message.includes(...)`, equality checks, regex, etc.). Prefer structured signals such as error classes, `name`/codes supplied by the provider, HTTP status, API response fields, or platform events. For Vite dynamic import failures, use the `vite:preloadError` event and its `payload` instead of matching the browser-specific message.
 
 **Never call `toast.success` manually in `onSuccess` handlers** — the interceptor covers it.
 
@@ -161,6 +167,12 @@ src/components/
 ```
 
 Always place a new component in the most specific module it belongs to. Only move a component to `common/` if it is actually reused across two or more modules. Never dump new components into the root of `src/components/` — every component belongs to a module.
+
+### File-level Constants
+
+Static constants declared at file level must live in a dedicated module-specific `*.constants.ts` file under `src/shared/constants/`, organized by source layer and feature (for example, `src/shared/constants/pages/Coordinador/` or `src/shared/constants/components/investigacion/`). This includes IDs, configuration objects, table columns, selector options, labels, pagination values, timeouts, storage keys, and other immutable module configuration. Components, pages, services, hooks, contexts, and utilities must import these constants instead of declaring them in the implementation file. Keep local variables, derived values, component state, and constants scoped inside a function when they only support that function. Do not create a single global constants dump; preserve the modular folder structure inside `src/shared/constants/`.
+
+Temporary exceptions: do not extract or modify file-level constants in `CustomVisorDocumentoInforme.tsx` or `CustomVistaPreviaInforme.tsx` unless a task explicitly requests those files.
 
 ### Component Size
 

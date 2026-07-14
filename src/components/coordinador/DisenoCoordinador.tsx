@@ -1,23 +1,7 @@
+import { coordinatorMenuItems } from "@maximilian/shared/constants/components/coordinador/disenoCoordinador.constants";
 import { Outlet, useMatch } from "react-router";
 import { BarraLateral } from "@maximilian/components/common/BarraLateral";
 import { Encabezado } from "@maximilian/components/common/Encabezado";
-import { 
-  Database, 
-  Users, 
-  Package, 
-  UserPlus, 
-  CheckSquare, 
-  FileText 
-} from "lucide-react";
-
-const coordinatorMenuItems = [
-  { name: "Banco de Información", icon: Database, path: "/coordinador/banco-informacion" },
-  { name: "Clientes", icon: Users, path: "/coordinador/clientes" },
-  { name: "Pedidos", icon: Package, path: "/coordinador/pedidos" },
-  { name: "Asignaciones", icon: UserPlus, path: "/coordinador/asignaciones" },
-  { name: "Revisión y Aprobación", icon: CheckSquare, path: "/coordinador/revision" },
-  { name: "Facturación", icon: FileText, path: "/coordinador/facturacion" },
-];
 
 export default function DisenoCoordinador() {
   const esDetalleRevision = Boolean(useMatch("/coordinador/revision/:idPedido"));

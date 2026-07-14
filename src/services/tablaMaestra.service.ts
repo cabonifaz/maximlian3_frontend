@@ -1,5 +1,6 @@
+import { ENDPOINTS_TABLA_MAESTRA } from "@maximilian/shared/constants/endpoints/tabla-maestra.endpoint";
 import maximilianService from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   EntradaTablaMaestra,
@@ -123,12 +124,12 @@ async function obtenerOpcionesPorIdsMaestro(idsMaestro: number[]): Promise<Opcio
   let solicitudEnCurso = solicitudesEnCursoPorClave.get(claveSolicitud);
   if (!solicitudEnCurso) {
     solicitudEnCurso = maximilianService
-      .get<ApiResponse<unknown>>("/api/TablaMaestra/listar", {
+      .get<ApiResponse<unknown>>(ENDPOINTS_TABLA_MAESTRA.listar, {
         params: { idsMaestro: claveSolicitud },
       })
       .then(({ data }) => {
         if (data.idTipoMensaje !== MessageType.SUCCESS) {
-          throw new Error(data.mensaje || "Error al listar parametros de TablaMaestra");
+          throw new ErrorRespuestaApi(data);
         }
 
         const opcionesPorId = normalizarOpcionesPorIdMaestro(data.result, idsPendientes);
@@ -203,20 +204,20 @@ export const servicioTablaMaestra = {
     }
   },
   crear: async (payload: TablaMaestraCrearRequest): Promise<TablaMaestraGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/TablaMaestra/crear", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_TABLA_MAESTRA.crear, payload);
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
-      throw new Error(data.mensaje || "Error al crear el parametro de TablaMaestra");
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheOpcionesTablaMaestra.delete(payload.idMaestro);
     return normalizarRespuestaGuardado(data.result);
   },
   editar: async (payload: TablaMaestraEditarRequest): Promise<TablaMaestraGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/TablaMaestra/editar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_TABLA_MAESTRA.editar, payload);
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
-      throw new Error(data.mensaje || "Error al editar el parametro de TablaMaestra");
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheOpcionesTablaMaestra.delete(payload.idMaestro);

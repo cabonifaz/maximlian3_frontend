@@ -1,3 +1,4 @@
+import { ID_MAESTRO_ESTADO_CIVIL, ID_MAESTRO_PROFESION, ID_MAESTRO_TIPO_DOCUMENTO } from "@maximilian/shared/constants/components/investigacion/customModalRegistroPersonaDirectorio.constants";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { BadgeCheck, FileText, MapPin, UserRound, X } from "lucide-react";
@@ -21,10 +22,6 @@ interface PropsCustomModalRegistroPersonaDirectorioAnalista {
   onCerrar: () => void;
   onGuardar: (registro: RegistroPersonaDirectorioAnalista) => void;
 }
-
-const ID_MAESTRO_ESTADO_CIVIL = 55;
-const ID_MAESTRO_PROFESION = 56;
-const ID_MAESTRO_TIPO_DOCUMENTO = 54;
 
 function obtenerTextoFormulario(formData: FormData, nombre: string) {
   return String(formData.get(nombre) ?? "").trim();

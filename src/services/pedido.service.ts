@@ -1,5 +1,6 @@
+import { ENDPOINTS_PEDIDO } from "@maximilian/shared/constants/endpoints/pedido.endpoint";
 import maximilianService from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   PedidoListParams,
@@ -171,11 +172,11 @@ export const pedidoService = {
   list: async (params: PedidoListParams): Promise<PedidoListResponse> => {
     try {
       const { data } = await maximilianService.get<ApiResponse<PedidoListResponse>>(
-        "/api/Pedido/listar",
+        ENDPOINTS_PEDIDO.listar,
         { params }
       );
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al listar los pedidos");
+        throw new ErrorRespuestaApi(data);
       }
 
       return normalizarRespuestaPedido(data.result);
@@ -188,11 +189,11 @@ export const pedidoService = {
   listAsignacion: async (params: PedidoListParams): Promise<PedidoListResponse> => {
     try {
       const { data } = await maximilianService.get<ApiResponse<PedidoListResponse>>(
-        "/api/Pedido/listarAsignacion",
+        ENDPOINTS_PEDIDO.listarAsignacion,
         { params }
       );
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al listar los pedidos para asignacion");
+        throw new ErrorRespuestaApi(data);
       }
 
       return normalizarRespuestaPedido(data.result);
@@ -203,73 +204,73 @@ export const pedidoService = {
   },
 
   cancelar: async (data: PedidoAccionRequest): Promise<void> => {
-    const { data: res } = await maximilianService.post<ApiResponse<null>>("/api/Pedido/cancelar", data);
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    const { data: res } = await maximilianService.post<ApiResponse<null>>(ENDPOINTS_PEDIDO.cancelar, data);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
   },
 
   eliminar: async (data: PedidoAccionRequest): Promise<void> => {
-    const { data: res } = await maximilianService.post<ApiResponse<null>>("/api/Pedido/eliminar", data);
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    const { data: res } = await maximilianService.post<ApiResponse<null>>(ENDPOINTS_PEDIDO.eliminar, data);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
   },
 
   create: async (data: CreatePedidoRequest): Promise<CreatePedidoResponse> => {
     const { data: res } = await maximilianService.post<ApiResponse<CreatePedidoResponse[]>>(
-      "/api/Pedido/crear",
+      ENDPOINTS_PEDIDO.crear,
       data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
   getById: async (idPedido: number): Promise<GetPedidoResponse> => {
     const { data } = await maximilianService.get<ApiResponse<GetPedidoResponse[]>>(
-      "/api/Pedido/obtener",
+      ENDPOINTS_PEDIDO.obtener,
       { params: { idPedido } }
     );
-    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return data.result[0];
   },
 
   update: async (data: UpdatePedidoRequest): Promise<void> => {
     const { data: res } = await maximilianService.post<ApiResponse<null>>(
-      "/api/Pedido/editar",
+      ENDPOINTS_PEDIDO.editar,
       data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
   },
 
   listArchivos: async (params: { idPedido: number; busqueda?: string; numPag?: number }): Promise<PedidoArchivoListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<PedidoArchivoListResponse>>(
-      "/api/PedidoArchivo/listar",
+      ENDPOINTS_PEDIDO.listarArchivos,
       { params: { IdPedido: params.idPedido, Busqueda: params.busqueda, NumPag: params.numPag } }
     );
-    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return data.result;
   },
 
   addArchivos: async (data: AddPedidoArchivosRequest): Promise<CreatePedidoResponse["archivos"]> => {
     const { data: res } = await maximilianService.post<ApiResponse<CreatePedidoResponse["archivos"]>>(
-      "/api/PedidoArchivo/crear",
+      ENDPOINTS_PEDIDO.crearArchivo,
       data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result;
   },
 
   deleteArchivo: async (data: DeletePedidoArchivoRequest): Promise<void> => {
     const { data: res } = await maximilianService.post<ApiResponse<null>>(
-      "/api/PedidoArchivo/eliminar",
+      ENDPOINTS_PEDIDO.eliminarArchivo,
       data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
   },
 
   getArchivo: async (params: { idPedidoArchivo: number; idPedido: number }): Promise<GetPedidoArchivoResponse> => {
     const { data } = await maximilianService.get<ApiResponse<GetPedidoArchivoResponse[]>>(
-      "/api/PedidoArchivo/obtener",
+      ENDPOINTS_PEDIDO.obtenerArchivo,
       { params: { IdPedidoArchivo: params.idPedidoArchivo, IdPedido: params.idPedido } }
     );
-    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return data.result[0];
   },
 };

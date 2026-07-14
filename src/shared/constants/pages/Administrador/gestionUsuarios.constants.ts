@@ -1,0 +1,1 @@
+export const ID_MAESTRO_ESTADO_USUARIO = 100;

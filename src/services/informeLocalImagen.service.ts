@@ -1,5 +1,6 @@
+import { ENDPOINTS_INFORME_LOCAL_IMAGEN } from "@maximilian/shared/constants/endpoints/informe-local-imagen.endpoint";
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 
 function obtenerNumero(...valores: unknown[]): number {
   for (const v of valores) {
@@ -21,10 +22,10 @@ function obtenerTexto(...valores: unknown[]): string {
 
 export const servicioInformeLocalImagen = {
   obtenerUrls: async (ids: number[]): Promise<{ idInformeLocalImagen: number; url: string }[]> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/informeLocalImagen/obtenerUrls", { ids });
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME_LOCAL_IMAGEN.obtenerUrls, { ids });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/informeLocalImagen/obtenerUrls")) {
-      throw new Error(data.mensaje || "No se pudo obtener las URLs de las imágenes");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME_LOCAL_IMAGEN.obtenerUrls)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     const lista = Array.isArray(data.result) ? data.result : [];
@@ -38,10 +39,10 @@ export const servicioInformeLocalImagen = {
   },
 
   actualizarEstadoCarga: async (ids: number[]): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/informeLocalImagen/actualizarEstadoCarga", { ids });
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME_LOCAL_IMAGEN.actualizarEstadoCarga, { ids });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/informeLocalImagen/actualizarEstadoCarga")) {
-      throw new Error(data.mensaje || "No se pudo actualizar el estado de carga de imágenes");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME_LOCAL_IMAGEN.actualizarEstadoCarga)) {
+      throw new ErrorRespuestaApi(data);
     }
   },
 };

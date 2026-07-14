@@ -1,3 +1,4 @@
+import { ID_MAESTRO_ESTADO_USUARIO } from "@maximilian/shared/constants/pages/Administrador/gestionUsuarios.constants";
 import { useState } from "react";
 import {
   Search,
@@ -33,8 +34,6 @@ interface UpdateUserMutationParams {
   userData: DatosFormularioUsuario;
   resetForm: () => void;
 }
-
-const ID_MAESTRO_ESTADO_USUARIO = 100;
 
 const normalizarTexto = (valor: string) =>
   valor
