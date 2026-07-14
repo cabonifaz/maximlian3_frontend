@@ -13,6 +13,12 @@ export function obtenerNumeroOpcionalDesdeMonto(valor?: string) {
   return Number.isFinite(numero) ? numero : null;
 }
 
+export function obtenerTextoNumerico(valor: unknown) {
+  if (typeof valor === "number") return Number.isFinite(valor) ? String(valor) : "";
+  if (typeof valor === "string") return valor.trim();
+  return "";
+}
+
 export function formatearMontoDosDecimales(valor: string | number) {
   return formatearMontoDecimales(valor, 2);
 }

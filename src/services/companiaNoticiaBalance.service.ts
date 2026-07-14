@@ -12,7 +12,7 @@ import {
   esCampoEnteroEstadoFinanciero,
   obtenerClaveEstadoFinanciero,
 } from "@maximilian/shared/utils/estados-financieros.util";
-import { formatearMontoDecimales } from "@maximilian/shared/utils/formato-monto.util";
+import { obtenerTextoNumerico } from "@maximilian/shared/utils/formato-monto.util";
 
 function obtenerNumero(...valores: unknown[]): number | undefined {
   for (const valor of valores) {
@@ -191,26 +191,26 @@ function normalizarDetalleCuentas(cuentaBalance: Record<string, unknown>, tipoEs
 
   return {
     balanceGeneral: {
-      totalCorrientes: formatearMonto(valorCuenta("totalCorriente", "totalActivoCorriente"), 2),
-      totalNoCorrientes: formatearMonto(valorCuenta("totalNoCorriente", "totalActivoNoCorriente"), 2),
-      otrosActivos: formatearMonto(valorCuenta("otrosActivos"), 2),
-      totalActivos: formatearMonto(valorCuenta("totalActivos", "totalActivo"), 2),
-      totalPasivosCorrientes: formatearMonto(valorCuenta("totalPasivosCorrientes", "totalPasivoCorriente"), 2),
-      totalPasivosNoCorrientes: formatearMonto(valorCuenta("totalPasivosNoCorrientes", "totalPasivoNoCorriente"), 2),
-      otrosPasivos: formatearMonto(valorCuenta("otrosPasivos"), 2),
-      totalPasivos: formatearMonto(valorCuenta("totalPasivos", "totalPasivo"), 2),
-      patrimonio: formatearMonto(valorCuenta("patrimonio", "totalPatrimonio"), 2),
-      totalPasivoPatrimonio: formatearMonto(valorCuenta("totalPasivoPatrimonio", "totalPasivosPatrimonio"), 2),
+      totalCorrientes: obtenerTextoNumerico(valorCuenta("totalCorriente", "totalActivoCorriente")),
+      totalNoCorrientes: obtenerTextoNumerico(valorCuenta("totalNoCorriente", "totalActivoNoCorriente")),
+      otrosActivos: obtenerTextoNumerico(valorCuenta("otrosActivos")),
+      totalActivos: obtenerTextoNumerico(valorCuenta("totalActivos", "totalActivo")),
+      totalPasivosCorrientes: obtenerTextoNumerico(valorCuenta("totalPasivosCorrientes", "totalPasivoCorriente")),
+      totalPasivosNoCorrientes: obtenerTextoNumerico(valorCuenta("totalPasivosNoCorrientes", "totalPasivoNoCorriente")),
+      otrosPasivos: obtenerTextoNumerico(valorCuenta("otrosPasivos")),
+      totalPasivos: obtenerTextoNumerico(valorCuenta("totalPasivos", "totalPasivo")),
+      patrimonio: obtenerTextoNumerico(valorCuenta("patrimonio", "totalPatrimonio")),
+      totalPasivoPatrimonio: obtenerTextoNumerico(valorCuenta("totalPasivoPatrimonio", "totalPasivosPatrimonio")),
     },
     estadoGananciasPerdidas: {
-      ventasNetas: formatearMonto(valorCuenta("ventasNetas", "ingresosOrdinarios", "ingresosIntereses", "primasGanadasNetas"), 2),
-      utilidadGanancia: formatearMonto(valorCuenta("utilidadPerdida", "gananciaNeta", "utilidadEjercicio", "utilidadNeta"), 2),
+      ventasNetas: obtenerTextoNumerico(valorCuenta("ventasNetas", "ingresosOrdinarios", "ingresosIntereses", "primasGanadasNetas")),
+      utilidadGanancia: obtenerTextoNumerico(valorCuenta("utilidadPerdida", "gananciaNeta", "utilidadEjercicio", "utilidadNeta")),
     },
     ratios: {
-      liquidez: formatearNumero(valorCuenta("indiceLiquidez"), 2),
-      capitalTrabajo: formatearMonto(valorCuenta("capitalTrabajo"), 2),
-      endeudamiento: formatearPorcentaje(valorCuenta("ratioEndeudamiento")),
-      rentabilidad: formatearPorcentaje(valorCuenta("ratioRentabilidad")),
+      liquidez: obtenerTextoNumerico(valorCuenta("indiceLiquidez")),
+      capitalTrabajo: obtenerTextoNumerico(valorCuenta("capitalTrabajo")),
+      endeudamiento: obtenerTextoNumerico(valorCuenta("ratioEndeudamiento")),
+      rentabilidad: obtenerTextoNumerico(valorCuenta("ratioRentabilidad")),
     },
     tipoBalanceTurquia: claveEstadoFinanciero === "turquia"
       ? obtenerTexto(cuentaBalance.tipoBalanceTurquia, cuentaBalance.TipoBalanceTurquia).toUpperCase() === "C" ? "C" as const : "I" as const
@@ -226,10 +226,9 @@ function normalizarDetalleCuentas(cuentaBalance: Record<string, unknown>, tipoEs
           return [clave, valor];
         }
         if (/(indebtedness|profitability)/.test(clave)) {
-          return [clave, formatearPorcentaje(valor)];
+          return [clave, obtenerTextoNumerico(valor)];
         }
-        const esRatioNumero = claveEstadoFinanciero !== "turquia" && /liquidity/.test(clave);
-        return [clave, esRatioNumero ? formatearNumero(valor, 2) : formatearMonto(valor, 2)];
+        return [clave, obtenerTextoNumerico(valor)];
       }),
     ),
   };
@@ -246,21 +245,6 @@ function obtenerValorRegistro(registro: Record<string, unknown>, ...claves: stri
 
 function capitalizarClave(clave: string) {
   return clave.charAt(0).toUpperCase() + clave.slice(1);
-}
-
-function formatearMonto(valor: unknown, decimales: number) {
-  if (valor == null || valor === "") return "";
-  return formatearMontoDecimales(String(valor), decimales);
-}
-
-function formatearNumero(valor: unknown, decimales: number) {
-  if (valor == null || valor === "") return "";
-  return formatearMontoDecimales(String(valor), decimales);
-}
-
-function formatearPorcentaje(valor: unknown) {
-  if (valor == null || valor === "") return "";
-  return formatearMontoDecimales(String(valor), 2);
 }
 
 export const servicioCompaniaNoticiaBalance = {

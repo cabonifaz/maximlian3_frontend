@@ -35,8 +35,8 @@ import type {
   EstadoInvestigacionAnalista,
 } from "@maximilian/shared/types/investigacion.type";
 import {
-  formatearMontoDecimales,
   obtenerNumeroDesdeMonto,
+  obtenerTextoNumerico,
 } from "@maximilian/shared/utils/formato-monto.util";
 import {
   adaptarCuentaBalanceDesdeApi,
@@ -242,30 +242,6 @@ function formatearFechaEntrada(valor: string): string {
   }
 
   return texto;
-}
-
-function formatearNumero(valor: unknown, decimales = 2): string {
-  const numero = obtenerNumeroOpcional(valor);
-  if (numero == null) return "";
-  return numero.toFixed(decimales);
-}
-
-function formatearPorcentaje(valor: unknown, decimales = 2): string {
-  const numero = obtenerNumeroOpcional(valor);
-  if (numero == null) return "";
-  return numero.toFixed(decimales);
-}
-
-function formatearMonto(valor: unknown, decimales = 2): string {
-  const numero = obtenerNumeroOpcional(valor);
-  if (numero == null) return "";
-  return formatearMontoDecimales(numero, decimales);
-}
-
-function formatearEntero(valor: unknown): string {
-  const numero = obtenerNumeroOpcional(valor);
-  if (numero == null) return "";
-  return String(Math.trunc(numero));
 }
 
 function obtenerValorRegistro(registro: Record<string, unknown>, ...claves: string[]) {
@@ -698,14 +674,14 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     monedaTipoCambio: idTipoCambio && idTipoCambio > 0
       ? String(idTipoCambio)
       : obtenerTexto(registro.monedaTipoCambio, registro.MonedaTipoCambio),
-    capitalInicial: formatearMonto(registro.capitalInicial, 2),
-    capitalDesembolsado: formatearMonto(registro.capitalPagado, 2),
+    capitalInicial: obtenerTextoNumerico(registro.capitalInicial),
+    capitalDesembolsado: obtenerTextoNumerico(registro.capitalPagado),
     ultimaAmpliacion: formatearFechaEntrada(obtenerTexto(registro.fechaUltimoIncremento, registro.FechaUltimoIncremento)),
-    patrimonioNeto: formatearMonto(registro.patrimonioNeto, 2),
+    patrimonioNeto: obtenerTextoNumerico(registro.patrimonioNeto),
     tipoAcciones: obtenerTexto(registro.tipoAcciones, registro.TipoAcciones),
-    valorAcciones: formatearMonto(registro.valorAcciones, 2),
+    valorAcciones: obtenerTextoNumerico(registro.valorAcciones),
     obligacionBolsa: obtenerBooleano(registro.cotizaBolsa, registro.CotizaBolsa) ? "Si" : "No",
-    tipoCambio: formatearMonto(registro.tipoCambio, 6),
+    tipoCambio: obtenerTextoNumerico(registro.tipoCambio),
     antecedentes: obtenerTexto(registro.antecedentes, registro.Antecedentes),
     aspectosLegales: obtenerTexto(registro.aspectosLegales, registro.AspectosLegales),
     comentariosEmpresasRelacionadas: obtenerTexto(
@@ -741,9 +717,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     claseCiiu: String(obtenerNumeroOpcional(registro.idIsicClase, registro.IdIsicClase) ?? "")
       || obtenerTexto(registro.isicClase, registro.IsicClase, registro.claseCiiu, registro.ClaseCiiu),
     actividadPrincipal: obtenerTexto(registro.actividadPrincipal, registro.ActividadPrincipal),
-    ventasContadoPorcentaje: formatearNumero(registro.ventasContado, 2),
+    ventasContadoPorcentaje: obtenerTextoNumerico(registro.ventasContado),
     ventasContadoDetalle: obtenerTexto(registro.ventasContadoText, registro.VentasContadoText),
-    ventasCreditoPorcentaje: formatearNumero(registro.ventasCredito, 2),
+    ventasCreditoPorcentaje: obtenerTextoNumerico(registro.ventasCredito),
     ventasCreditoDetalle: obtenerTexto(registro.ventasCreditoText, registro.VentasCreditoText),
     ventasCreditoTiempo: String(
       obtenerNumeroOpcional(registro.idVentasCreditoTiempo, registro.IdVentasCreditoTiempo) ?? "",
@@ -753,12 +729,11 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       registro.ventasCreditoSeleccion,
       registro.VentasCreditoSeleccion,
     ),
-    territorioVentasPorcentaje: formatearNumero(
+    territorioVentasPorcentaje: obtenerTextoNumerico(
       registro.ventasNacionales
         ?? registro.VentasNacionales
         ?? registro.territorioVentas
         ?? registro.TerritorioVentas,
-      2,
     ),
     territorioVentasDetalle: obtenerTexto(
       registro.ventasNacionalesText,
@@ -766,23 +741,22 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       registro.territorioText,
       registro.TerritorioText,
     ),
-    ventasExtranjeroPorcentaje: formatearNumero(registro.ventasInternacionales, 2),
+    ventasExtranjeroPorcentaje: obtenerTextoNumerico(registro.ventasInternacionales),
     ventasExtranjeroDetalle: obtenerTexto(registro.ventasInternacionalesText, registro.VentasInternacionalesText),
-    comprasNacionalesPorcentaje: formatearNumero(registro.comprasNacionales ?? registro.ComprasNacionales, 2),
+    comprasNacionalesPorcentaje: obtenerTextoNumerico(registro.comprasNacionales ?? registro.ComprasNacionales),
     comprasNacionalesDetalle: obtenerTexto(registro.comprasNacionalesText, registro.ComprasNacionalesText),
-    comprasContadoNacionalesPorcentaje: formatearNumero(registro.comprasContadoNacionales ?? registro.ComprasContadoNacionales, 2),
+    comprasContadoNacionalesPorcentaje: obtenerTextoNumerico(registro.comprasContadoNacionales ?? registro.ComprasContadoNacionales),
     comprasContadoNacionalesDetalle: obtenerTexto(registro.comprasContadoNacionalesText, registro.ComprasContadoNacionalesText),
-    comprasCreditoNacionalesPorcentaje: formatearNumero(registro.comprasCreditoNacionales ?? registro.ComprasCreditoNacionales, 2),
+    comprasCreditoNacionalesPorcentaje: obtenerTextoNumerico(registro.comprasCreditoNacionales ?? registro.ComprasCreditoNacionales),
     comprasCreditoNacionalesDetalle: obtenerTexto(registro.comprasCreditoNacionalesText, registro.ComprasCreditoNacionalesText),
     comprasCreditoNacionalesTiempo: String(
       obtenerNumeroOpcional(registro.idComprasCreditoNacionalesTiempo, registro.IdComprasCreditoNacionalesTiempo) ?? "",
     ),
-    comprasExtranjeroPorcentaje: formatearNumero(
+    comprasExtranjeroPorcentaje: obtenerTextoNumerico(
       registro.comprasInternacionales
         ?? registro.ComprasInternacionales
         ?? registro.comprasExtranjero
         ?? registro.ComprasExtranjero,
-      2,
     ),
     comprasExtranjeroDetalle: obtenerTexto(
       registro.comprasInternacionalesText,
@@ -790,14 +764,14 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       registro.comprasExtranjeroText,
       registro.ComprasExtranjeroText,
     ),
-    comprasContadoInternacionalesPorcentaje: formatearNumero(registro.comprasContadoInternacionales ?? registro.ComprasContadoInternacionales, 2),
+    comprasContadoInternacionalesPorcentaje: obtenerTextoNumerico(registro.comprasContadoInternacionales ?? registro.ComprasContadoInternacionales),
     comprasContadoInternacionalesDetalle: obtenerTexto(registro.comprasContadoInternacionalesText, registro.ComprasContadoInternacionalesText),
-    comprasCreditoInternacionalesPorcentaje: formatearNumero(registro.comprasCreditoInternacionales ?? registro.ComprasCreditoInternacionales, 2),
+    comprasCreditoInternacionalesPorcentaje: obtenerTextoNumerico(registro.comprasCreditoInternacionales ?? registro.ComprasCreditoInternacionales),
     comprasCreditoInternacionalesDetalle: obtenerTexto(registro.comprasCreditoInternacionalesText, registro.ComprasCreditoInternacionalesText),
     comprasCreditoInternacionalesTiempo: String(
       obtenerNumeroOpcional(registro.idComprasCreditoInternacionalesTiempo, registro.IdComprasCreditoInternacionalesTiempo) ?? "",
     ),
-    numeroEmpleados: formatearEntero(registro.numeroEmpleados),
+    numeroEmpleados: obtenerTextoNumerico(registro.numeroEmpleados),
     numeroEmpleadosDetalle: obtenerTexto(registro.numeroEmpleadosText, registro.NumeroEmpleadosText),
     comentariosOperaciones: obtenerTexto(registro.comentariosOperaciones, registro.ComentariosOperaciones),
   };
@@ -814,13 +788,13 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       idMesInicio: obtenerNumeroOpcional(item.mesInicio, item.MesInicio),
       idMesFin: obtenerNumeroOpcional(item.mesFin, item.MesFin),
       idMoneda: obtenerNumeroOpcional(item.idMoneda, item.IdMoneda),
-      anio: formatearEntero(item.anio ?? item.Anio),
+      anio: obtenerTextoNumerico(item.anio ?? item.Anio),
       mes: obtenerTexto(item.mesInicioDescripcion, item.MesInicioDescripcion, item.mes, item.Mes),
       moneda: obtenerTexto(item.moneda, item.Moneda),
       paises: obtenerTexto(item.paises, item.Paises),
       productos: obtenerTexto(item.productos, item.Productos),
-      monto: formatearMonto(item.monto, 2),
-      operaciones: formatearEntero(item.numOperaciones ?? item.NumOperaciones),
+      monto: obtenerTextoNumerico(item.monto),
+      operaciones: obtenerTextoNumerico(item.numOperaciones ?? item.NumOperaciones),
     }));
 
   datos.exportaciones = operaciones
@@ -830,13 +804,13 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       idMesInicio: obtenerNumeroOpcional(item.mesInicio, item.MesInicio),
       idMesFin: obtenerNumeroOpcional(item.mesFin, item.MesFin),
       idMoneda: obtenerNumeroOpcional(item.idMoneda, item.IdMoneda),
-      anio: formatearEntero(item.anio ?? item.Anio),
+      anio: obtenerTextoNumerico(item.anio ?? item.Anio),
       mes: obtenerTexto(item.mesInicioDescripcion, item.MesInicioDescripcion, item.mes, item.Mes),
       moneda: obtenerTexto(item.moneda, item.Moneda),
       paises: obtenerTexto(item.paises, item.Paises),
       productos: obtenerTexto(item.productos, item.Productos),
-      monto: formatearMonto(item.monto, 2),
-      operaciones: formatearEntero(item.numOperaciones ?? item.NumOperaciones),
+      monto: obtenerTextoNumerico(item.monto),
+      operaciones: obtenerTextoNumerico(item.numOperaciones ?? item.NumOperaciones),
     }));
 
   datos.locales = obtenerLista(registro.locales, registro.Locales).map((item) => {
@@ -913,7 +887,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       tipo: obtenerTexto(balance.tipo, balance.Tipo),
       idTipoEstadoFinanciero,
       tipoEstadoFinanciero,
-      tipoCambio: formatearMonto(balance.tipoCambio, 2),
+      tipoCambio: obtenerTextoNumerico(balance.tipoCambio),
       idMoneda,
       operacionCambio: obtenerTexto(balance.moneda, balance.Moneda),
       idTipoBalance,
@@ -925,26 +899,26 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       detalleCuentas: Object.keys(cuentaBalance).length > 0
         ? {
             balanceGeneral: {
-              totalCorrientes: formatearMonto(valorCuenta("totalCorriente", "totalActivoCorriente"), 2),
-              totalNoCorrientes: formatearMonto(valorCuenta("totalNoCorriente", "totalActivoNoCorriente"), 2),
-              otrosActivos: formatearMonto(valorCuenta("otrosActivos"), 2),
-              totalActivos: formatearMonto(valorCuenta("totalActivos", "totalActivo"), 2),
-              totalPasivosCorrientes: formatearMonto(valorCuenta("totalPasivosCorrientes", "totalPasivoCorriente"), 2),
-              totalPasivosNoCorrientes: formatearMonto(valorCuenta("totalPasivosNoCorrientes", "totalPasivoNoCorriente"), 2),
-              otrosPasivos: formatearMonto(valorCuenta("otrosPasivos"), 2),
-              totalPasivos: formatearMonto(valorCuenta("totalPasivos", "totalPasivo"), 2),
-              patrimonio: formatearMonto(valorCuenta("patrimonio", "totalPatrimonio"), 2),
-              totalPasivoPatrimonio: formatearMonto(valorCuenta("totalPasivoPatrimonio", "totalPasivosPatrimonio"), 2),
+              totalCorrientes: obtenerTextoNumerico(valorCuenta("totalCorriente", "totalActivoCorriente")),
+              totalNoCorrientes: obtenerTextoNumerico(valorCuenta("totalNoCorriente", "totalActivoNoCorriente")),
+              otrosActivos: obtenerTextoNumerico(valorCuenta("otrosActivos")),
+              totalActivos: obtenerTextoNumerico(valorCuenta("totalActivos", "totalActivo")),
+              totalPasivosCorrientes: obtenerTextoNumerico(valorCuenta("totalPasivosCorrientes", "totalPasivoCorriente")),
+              totalPasivosNoCorrientes: obtenerTextoNumerico(valorCuenta("totalPasivosNoCorrientes", "totalPasivoNoCorriente")),
+              otrosPasivos: obtenerTextoNumerico(valorCuenta("otrosPasivos")),
+              totalPasivos: obtenerTextoNumerico(valorCuenta("totalPasivos", "totalPasivo")),
+              patrimonio: obtenerTextoNumerico(valorCuenta("patrimonio", "totalPatrimonio")),
+              totalPasivoPatrimonio: obtenerTextoNumerico(valorCuenta("totalPasivoPatrimonio", "totalPasivosPatrimonio")),
             },
             estadoGananciasPerdidas: {
-              ventasNetas: formatearMonto(valorCuenta("ventasNetas", "ingresosOrdinarios", "ingresosIntereses", "primasGanadasNetas"), 2),
-              utilidadGanancia: formatearMonto(valorCuenta("utilidadPerdida", "gananciaNeta", "utilidadEjercicio", "utilidadNeta"), 2),
+              ventasNetas: obtenerTextoNumerico(valorCuenta("ventasNetas", "ingresosOrdinarios", "ingresosIntereses", "primasGanadasNetas")),
+              utilidadGanancia: obtenerTextoNumerico(valorCuenta("utilidadPerdida", "gananciaNeta", "utilidadEjercicio", "utilidadNeta")),
             },
             ratios: {
-              liquidez: formatearNumero(valorCuenta("indiceLiquidez"), 2),
-              capitalTrabajo: formatearMonto(valorCuenta("capitalTrabajo"), 2),
-              endeudamiento: formatearPorcentaje(valorCuenta("ratioEndeudamiento")),
-              rentabilidad: formatearPorcentaje(valorCuenta("ratioRentabilidad")),
+              liquidez: obtenerTextoNumerico(valorCuenta("indiceLiquidez")),
+              capitalTrabajo: obtenerTextoNumerico(valorCuenta("capitalTrabajo")),
+              endeudamiento: obtenerTextoNumerico(valorCuenta("ratioEndeudamiento")),
+              rentabilidad: obtenerTextoNumerico(valorCuenta("ratioRentabilidad")),
             },
             tipoBalanceTurquia: claveEstadoFinanciero === "turquia"
               ? (
@@ -968,10 +942,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
                   return [clave, valor];
                 }
                 if (/(indebtedness|profitability)/.test(clave)) {
-                  return [clave, formatearPorcentaje(valor)];
+                  return [clave, obtenerTextoNumerico(valor)];
                 }
-                const esRatioNumero = claveEstadoFinanciero !== "turquia" && /liquidity/.test(clave);
-                return [clave, esRatioNumero ? formatearNumero(valor, 2) : formatearMonto(valor, 2)];
+                return [clave, obtenerTextoNumerico(valor)];
               }),
             ),
           }
@@ -1026,12 +999,12 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       )) || undefined,
       idMoneda: obtenerNumeroOpcional(proveedor.idMoneda, proveedor.IdMoneda),
       operacionCambioMoneda: obtenerTexto(proveedor.moneda, proveedor.Moneda),
-      tipoCambio: formatearMonto(proveedor.tipoCambio, 6) || undefined,
+      tipoCambio: obtenerTextoNumerico(proveedor.tipoCambio) || undefined,
       idLimiteCredito,
       idPlazoCredito,
       limiteCredito: obtenerTexto(proveedor.plazoCredito, proveedor.PlazoCredito)
         || (idPlazoCredito ? String(idPlazoCredito) : ""),
-      promedioMensual: formatearMonto(proveedor.promedioMensual, 2) || undefined,
+      promedioMensual: obtenerTextoNumerico(proveedor.promedioMensual) || undefined,
     };
   });
 
@@ -1088,10 +1061,10 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       idCargo: obtenerNumeroOpcional(ejecutivo.idCargo, ejecutivo.IdCargo),
       ejecutivo: nombreCompleto,
       cargo: obtenerTexto(ejecutivo.cargos, ejecutivo.Cargos, ejecutivo.cargo, ejecutivo.Cargo, ejecutivo.idCargo, ejecutivo.IdCargo),
-      porcentaje: formatearNumero(ejecutivo.participacion, 8),
+      porcentaje: obtenerTextoNumerico(ejecutivo.participacion),
       lista: obtenerBooleano(ejecutivo.apareceImpresoLista, ejecutivo.ApareceImpresoLista),
       detalleEjecutivo: obtenerBooleano(ejecutivo.imprimeDatosEjecutivos, ejecutivo.ImprimeDatosEjecutivos),
-      orden: formatearEntero(ejecutivo.orden),
+      orden: obtenerTextoNumerico(ejecutivo.orden),
       vinculadoDesde: formatearFechaEntrada(obtenerTexto(ejecutivo.vinculadoDesde, ejecutivo.VinculadoDesde, ejecutivo.formularioVinculado, ejecutivo.FormularioVinculado)),
       companiaAnterior: obtenerTexto(ejecutivo.companiaAnterior, ejecutivo.CompaniaAnterior),
       esParteDirectorio: obtenerBooleano(ejecutivo.esParticipanteDirectiva, ejecutivo.EsParticipanteDirectiva),

@@ -82,6 +82,16 @@ TanStack React Query v5 manages server state. Query keys follow the pattern `[en
 
 React Hook Form + Zod schemas (in `src/schemas/`) handle all forms. Schemas are colocated with their feature context. Modal forms must call `reset()` (from `useForm`) both on close and after a successful submit so state does not persist across modal open/close cycles. Use `mode: "onTouched"` for field-level validation feedback.
 
+Every UI that collects and submits user-entered values is a form and must use a Zod schema, including investigation screens and all investigation modals. Investigation form schemas belong in `src/schemas/investigacion.schema.ts`; components must consume the inferred types instead of manually interpreting `FormData`. Schemas may validate the UI state and basic field shape, but must not duplicate backend business rules.
+
+### Backend-owned contracts and value formatting
+
+The backend and its stored procedures own business validation and API data contracts. The frontend must not infer alternate response shapes, recreate business rules, or silently correct values that violate the contract. Keep service adapters limited to transport concerns and typed mapping required by the declared backend contract.
+
+Preserve numeric and percentage values returned by the backend. Do not apply `toFixed`, truncate values, append `%`, or otherwise change precision in services, payload builders, or form submission handlers. Formatting is allowed only when it is strictly visual; reusable formatting must live under `src/shared/utils/`, never as duplicated helpers inside services or components.
+
+Files must follow their source-layer responsibility: reusable components in the appropriate `src/components/<module>/` directory, hooks in `src/hooks/`, schemas in `src/schemas/`, pure helpers in `src/shared/utils/`, types in `src/shared/types/`, and immutable configuration in `src/shared/constants/`. Do not create a same-named component directory merely to colocate hooks or utilities with one component.
+
 **Cross-field validation in custom resolvers**: When wrapping `zodResolver` in a custom `Resolver` to add cross-field checks (e.g. date comparison, conditional required fields), always make the resolver `async` and `await` the `zodResolver` call before mutating `result.errors`. `zodResolver` returns a `Promise` — reading or writing `result.errors` on the un-awaited Promise silently does nothing. Also prefer the resolver approach over Zod's `superRefine` for cross-field checks: `superRefine` may not run when other required fields in the schema fail validation simultaneously.
 
 ```ts

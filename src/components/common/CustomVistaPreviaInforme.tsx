@@ -7,7 +7,7 @@ import { seccionesInvestigacionAnalista } from "@maximilian/shared/utils/investi
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
 import { informeService } from "@maximilian/services/informe.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import { CustomVisorDocumentoInforme } from "@maximilian/components/common/CustomVisorDocumentoInforme/CustomVisorDocumentoInforme";
+import { CustomVisorDocumentoInforme } from "@maximilian/components/common/CustomVisorDocumentoInforme";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 
 interface FilaVistaPreviaInforme {

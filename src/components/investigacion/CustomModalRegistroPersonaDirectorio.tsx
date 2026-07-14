@@ -8,6 +8,10 @@ import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSele
 import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { servicioDirectorioEjecutivo } from "@maximilian/services/directorioEjecutivo.service";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import {
+  registroPersonaDirectorioInvestigacionSchema,
+  type DatosFormularioRegistroPersonaDirectorioInvestigacion,
+} from "@maximilian/schemas/investigacion.schema";
 import type { DirectorioEjecutivoGuardarRequest } from "@maximilian/shared/types/directorio-ejecutivo.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
@@ -21,24 +25,6 @@ interface PropsCustomModalRegistroPersonaDirectorioAnalista {
   idIdioma?: number;
   onCerrar: () => void;
   onGuardar: (registro: RegistroPersonaDirectorioAnalista) => void;
-}
-
-function obtenerTextoFormulario(formData: FormData, nombre: string) {
-  return String(formData.get(nombre) ?? "").trim();
-}
-
-function obtenerIdFormulario(formData: FormData, nombre: string) {
-  const valor = Number(formData.get(nombre));
-  return Number.isFinite(valor) ? valor : 0;
-}
-
-function normalizarFechaApi(fecha: string) {
-  if (!fecha) return null;
-  if (/^\d{4}-\d{2}-\d{2}/.test(fecha)) return `${fecha.slice(0, 10)}T00:00:00.000Z`;
-
-  const [dia, mes, ano] = fecha.split("/");
-  if (!dia || !mes || !ano) return null;
-  return `${ano}-${mes}-${dia}T00:00:00.000Z`;
 }
 
 function traducirOpcionesTablaMaestra(
@@ -72,6 +58,14 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
   onGuardar,
 }: PropsCustomModalRegistroPersonaDirectorioAnalista) {
   const [fechaNacimiento, setFechaNacimiento] = useState(registroInicial?.fechaNacimiento ?? "");
+
+  useEffect(() => {
+    if (!estaAbierto) return;
+    const idTemporizador = window.setTimeout(() => {
+      setFechaNacimiento(registroInicial?.fechaNacimiento ?? "");
+    }, 0);
+    return () => window.clearTimeout(idTemporizador);
+  }, [estaAbierto, registroInicial?.fechaNacimiento]);
   const { data: opcionesTipoPersonaBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA),
@@ -130,32 +124,11 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
   );
 
   const crearRegistroMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
+    mutationFn: async (datosFormulario: DatosFormularioRegistroPersonaDirectorioInvestigacion) => {
       const registro: RegistroPersonaDirectorioAnalista = {
         id: registroInicial?.id ?? 0,
         idDirectorioEjecutivo: registroInicial?.idDirectorioEjecutivo,
-        idTipoPersona: obtenerIdFormulario(formData, "idTipoPersona"),
-        tipoPersona: obtenerTextoFormulario(formData, "tipoPersona"),
-        nombres: obtenerTextoFormulario(formData, "nombres"),
-        idPais: obtenerIdFormulario(formData, "idPais"),
-        pais: obtenerTextoFormulario(formData, "pais"),
-        direccionPrincipal: obtenerTextoFormulario(formData, "direccionPrincipal"),
-        ciudadProvinciaEstado: obtenerTextoFormulario(formData, "ciudadProvinciaEstado"),
-        codigoPostal: obtenerTextoFormulario(formData, "codigoPostal"),
-        idNacionalidad: obtenerIdFormulario(formData, "idNacionalidad"),
-        nacionalidad: obtenerTextoFormulario(formData, "nacionalidad"),
-        idTipoDocumento: obtenerIdFormulario(formData, "idTipoDocumento"),
-        tipoDocumentoIdentidad: obtenerTextoFormulario(formData, "tipoDocumentoIdentidad"),
-        numeroDocumentoIdentidad: obtenerTextoFormulario(formData, "numeroDocumentoIdentidad"),
-        taxIdType: obtenerIdFormulario(formData, "taxIdType"),
-        tipoIdFiscal: obtenerTextoFormulario(formData, "tipoIdFiscal"),
-        numeroIdFiscal: obtenerTextoFormulario(formData, "numeroIdFiscal"),
-        fechaNacimiento: obtenerTextoFormulario(formData, "fechaNacimiento"),
-        idEstadoCivil: obtenerIdFormulario(formData, "idEstadoCivil"),
-        estadoCivil: obtenerTextoFormulario(formData, "estadoCivil"),
-        idProfesion: obtenerIdFormulario(formData, "idProfesion"),
-        profesion: obtenerTextoFormulario(formData, "profesion"),
-        referenciaAdicional: obtenerTextoFormulario(formData, "referenciaAdicional"),
+        ...datosFormulario,
       };
 
       const payload: DirectorioEjecutivoGuardarRequest = {
@@ -170,7 +143,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
         taxIdType: registro.taxIdType ?? 0,
         taxNum: registro.numeroIdFiscal,
         idNacionalidad: registro.idNacionalidad ?? 0,
-        fechaNacimiento: normalizarFechaApi(registro.fechaNacimiento),
+        fechaNacimiento: registro.fechaNacimiento || null,
         idEstadoCivil: registro.idEstadoCivil ?? 0,
         idProfesion: registro.idProfesion ?? 0,
         referencias: registro.referenciaAdicional,
@@ -229,7 +202,10 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
           className="flex min-h-0 flex-1 flex-col"
           onSubmit={(event) => {
             event.preventDefault();
-            crearRegistroMutation.mutate(new FormData(event.currentTarget));
+            const resultado = registroPersonaDirectorioInvestigacionSchema.safeParse(
+              Object.fromEntries(new FormData(event.currentTarget).entries()),
+            );
+            if (resultado.success) crearRegistroMutation.mutate(resultado.data);
           }}
         >
           <div className="space-y-5 overflow-y-auto bg-slate-50/35 px-6 py-6 md:px-8">

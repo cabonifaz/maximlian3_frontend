@@ -6,6 +6,7 @@ import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
 import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { registroEjecutivoInvestigacionSchema } from "@maximilian/schemas/investigacion.schema";
 import type {
   RegistroDirectorioEjecutivoAnalista,
   RegistroPersonaDirectorioAnalista,
@@ -69,26 +70,27 @@ export function CustomModalRegistroEjecutivoAnalista({
   const manejarEnvio = (formData: FormData) => {
     if (requiereEjecutivoRegistrado && !tieneEjecutivoRegistrado) return;
 
-    const ejecutivo = String(formData.get("ejecutivo") ?? "").trim();
-    const idCargo = obtenerIdCargo(opcionesCargo, cargoActual) || registroInicial?.idCargo || 0;
+    const resultado = registroEjecutivoInvestigacionSchema.safeParse(
+      Object.fromEntries(formData.entries()),
+    );
+    if (!resultado.success) return;
 
-    const porcentaje = formatearPorcentajeParticipacion(porcentajeParticipacion);
-    const imprimirListado = formData.get("imprimirListado") === "si";
-    const imprimirDetalle = formData.get("imprimirDetalle") === "si";
-    const esParteDirectorio = formData.get("esParteDirectorio") === "si";
+    const datosFormulario = resultado.data;
+    const ejecutivo = datosFormulario.ejecutivo;
+    const idCargo = obtenerIdCargo(opcionesCargo, cargoActual) || registroInicial?.idCargo || 0;
 
     onGuardar({
       idDirectorioEjecutivo,
       ejecutivo: ejecutivo.length > 13 ? `${ejecutivo.slice(0, 13)}...` : ejecutivo,
       idCargo,
       cargo: cargoActual,
-      porcentaje,
-      lista: imprimirListado,
-      detalleEjecutivo: imprimirDetalle,
+      porcentaje: datosFormulario.porcentaje,
+      lista: datosFormulario.imprimirListado === "si",
+      detalleEjecutivo: datosFormulario.imprimirDetalle === "si",
       orden: registroInicial?.orden ?? "1",
-      vinculadoDesde: String(formData.get("vinculadoDesde") ?? "").trim(),
-      companiaAnterior: String(formData.get("companiaAnterior") ?? "").trim(),
-      esParteDirectorio,
+      vinculadoDesde: datosFormulario.vinculadoDesde,
+      companiaAnterior: datosFormulario.companiaAnterior,
+      esParteDirectorio: datosFormulario.esParteDirectorio === "si",
       pais: paisDefecto,
       tipoPersona: tipoPersonaDefecto,
       descripcionBusqueda: ejecutivo,
@@ -169,8 +171,7 @@ export function CustomModalRegistroEjecutivoAnalista({
                 etiqueta="% Participación"
                 marcador="0.00000000"
                 valor={porcentajeParticipacion}
-                onChange={(valor) => setPorcentajeParticipacion(sanitizarPorcentajeParticipacion(valor))}
-                onBlur={() => setPorcentajeParticipacion(limpiarPorcentaje(formatearPorcentajeParticipacion(porcentajeParticipacion)))}
+                onChange={setPorcentajeParticipacion}
               />
             </div>
 
@@ -262,36 +263,6 @@ function CampoInput({
 
 function limpiarPorcentaje(valor?: string) {
   return (valor ?? "").replace("%", "").trim();
-}
-
-function sanitizarPorcentajeParticipacion(valor: string) {
-  const valorNormalizado = limpiarPorcentaje(valor).replace(",", ".").replace(/[^0-9.]/g, "");
-  const partes = valorNormalizado.split(".");
-  const entero = partes[0] ?? "";
-  const decimal = partes[1] ?? "";
-  const valorCompuesto = partes.length > 1 ? `${entero}.${decimal.slice(0, 8)}` : entero;
-
-  if (!valorCompuesto) return "";
-
-  if (entero && Number.parseInt(entero, 10) > 100) {
-    return "100";
-  }
-
-  if (valorCompuesto === "100" || valorCompuesto.startsWith("100.")) {
-    return "100";
-  }
-
-  return valorCompuesto;
-}
-
-function formatearPorcentajeParticipacion(valor: string) {
-  const valorLimpio = limpiarPorcentaje(valor).replace(",", ".");
-  if (!valorLimpio) return "0.00000000%";
-
-  const numero = Number.parseFloat(valorLimpio);
-  if (Number.isNaN(numero)) return "0.00000000%";
-
-  return `${numero.toFixed(8)}%`;
 }
 
 function GrupoRadio({

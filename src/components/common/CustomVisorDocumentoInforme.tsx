@@ -1,11 +1,11 @@
 import { useEffect, useMemo } from "react";
 import { Hand, MousePointer2, Minus, Plus, RotateCcw } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
-import { convertirLongitudCssAPx } from "./convertirLongitudCssAPx";
-import { usePanZoomInforme } from "./usePanZoomInforme";
-import { useRenderizadoDocumentoPaginado } from "./useRenderizadoDocumentoPaginado";
+import { usePanZoomInforme } from "@maximilian/hooks/usePanZoomInforme";
+import { useRenderizadoDocumentoPaginado } from "@maximilian/hooks/useRenderizadoDocumentoPaginado";
 import type { DocumentoInformeGenerado } from "@maximilian/shared/types/informe.type";
 import type { DatosInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
+import { convertirLongitudCssAPx } from "@maximilian/shared/utils/visor-documento-informe/convertirLongitudCssAPx";
 
 interface PropsCustomVisorDocumentoInforme {
   documento: DocumentoInformeGenerado;

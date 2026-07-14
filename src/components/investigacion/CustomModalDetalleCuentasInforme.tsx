@@ -79,10 +79,6 @@ function obtenerNumero(valor: string) {
   return obtenerNumeroDesdeMonto(valor);
 }
 
-function formatearNumero(valor: number) {
-  return formatearMontoDosDecimales(valor);
-}
-
 function sanitizarNumero(valor: string, permitirNegativo = false) {
   return sanitizarMontoDosDecimales(valor, permitirNegativo);
 }
@@ -121,7 +117,7 @@ function CampoDetalle({
   azul?: boolean;
 }) {
   const valorMostrado = mostrarComoPorcentaje
-    ? `${formatearNumero(obtenerNumero(valor))}%`
+    ? `${formatearMontoDosDecimales(obtenerNumero(valor))}%`
     : valor;
 
   return (
@@ -579,7 +575,7 @@ export function CustomModalDetalleCuentasAnalista({
         "total-pasivo-patrimonio": "totalPasivoPatrimonio",
       };
       const campoBalanceGeneral = equivalenciasBalanceTotalizado[campoObjetivo];
-      const valorFormateado = formatearNumero(obtenerNumero(valorCalculado));
+      const valorFormateado = formatearMontoDosDecimales(obtenerNumero(valorCalculado));
       const camposGananciaTurquia: Record<string, string> =
         esEstadoFinancieroTurquia &&
         ["profit-loss-after-taxes", "profit"].includes(campoObjetivo)
@@ -631,7 +627,7 @@ export function CustomModalDetalleCuentasAnalista({
           .filter(([campo]) => idsRatios.has(campo))
           .map(([campo, valor]) => [
             campo,
-            formatearNumero(obtenerNumero(valor)),
+            formatearMontoDosDecimales(obtenerNumero(valor)),
           ]),
       );
 

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import pagedJsUrl from "@pagedjs-polyfill";
 import type { DocumentoInformeGenerado } from "@maximilian/shared/types/informe.type";
-import { construirCss } from "./construirCss";
-import { construirHtmlContenido } from "./construirHtmlContenido";
-import { escaparAtributo, escaparScriptJson } from "./escaparHtml";
+import { construirCss } from "@maximilian/shared/utils/visor-documento-informe/construirCss";
+import { construirHtmlContenido } from "@maximilian/shared/utils/visor-documento-informe/construirHtmlContenido";
+import { escaparAtributo, escaparScriptJson } from "@maximilian/shared/utils/visor-documento-informe/escaparHtml";
 
 const TIPO_MENSAJE_PAGEDJS_LISTO = "maximilian:pagedjs-listo";
 
