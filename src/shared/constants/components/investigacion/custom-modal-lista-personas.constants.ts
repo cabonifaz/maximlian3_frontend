@@ -1,3 +1,5 @@
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+
 export const opcionesCriterio: EntradaTablaMaestra[] = [
   {
     idEmpresa: 0,
@@ -30,4 +32,3 @@ export const opcionesCriterio: EntradaTablaMaestra[] = [
     date3: null,
   },
 ];
-import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";

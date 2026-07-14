@@ -1,3 +1,5 @@
+import type { AssignmentRole, AssignmentRoleSelection } from "@maximilian/shared/types/asignacion.type";
+
 export const PEDIDO_COLUMNS = [
   { label: "Cliente", width: "24%" },
   { label: "Investigado", width: "24%" },
@@ -18,4 +20,3 @@ export const ETIQUETAS_ROL: Record<AssignmentRole, string> = {
   analyst: "Analista",
   translator: "Traductor(a)",
 };
-import type { AssignmentRole, AssignmentRoleSelection } from "@maximilian/shared/types/asignacion.type";

@@ -1,3 +1,6 @@
+import { CheckCircle2, CircleAlert, CircleX, Clock3, SearchCheck } from "lucide-react";
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+
 export const PEDIDO_COLUMNS = [
   { label: "Cliente", width: "22%" },
   { label: "Investigado", width: "21%" },
@@ -34,5 +37,3 @@ export const FASE_ASIGNACION = {
   TRADUCCION_COMPLETA: 6,
   ASIGNACION_ANULADA: 7,
 } as const;
-import { CheckCircle2, CircleAlert, CircleX, Clock3, SearchCheck } from "lucide-react";
-import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";

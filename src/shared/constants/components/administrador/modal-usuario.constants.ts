@@ -1,3 +1,5 @@
+import type { DatosFormularioUsuario } from "@maximilian/schemas";
+
 export const valoresPorDefecto: DatosFormularioUsuario = {
   nombres: "",
   apellidoPaterno: "",
@@ -8,4 +10,3 @@ export const valoresPorDefecto: DatosFormularioUsuario = {
   idiomas: [],
   activo: true,
 };
-import type { DatosFormularioUsuario } from "@maximilian/schemas";

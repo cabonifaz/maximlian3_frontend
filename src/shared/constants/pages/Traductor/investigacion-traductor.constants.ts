@@ -1,3 +1,5 @@
+import type { IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
+
 export const FILAS_POR_PAGINA_INVESTIGACION = 5;
 
 export const ID_ESTADO_PEDIDO_BORRADOR = 3;
@@ -317,7 +319,6 @@ export const RUTAS_SELECTORES_CON_REFERENCIA_ORIGINAL = new Set([
   "operacionPrincipal.categoriaCiiu",
   "operacionPrincipal.claseCiiu",
 ]);
-import type { IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 
 export type CampoPorcentajeOperacion =
   | "ventasContadoPorcentaje"

@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export const esquemaNoticia = z.object({
   idCompania: z.coerce
     .number()
@@ -16,4 +18,3 @@ export const valoresIniciales: z.input<typeof esquemaNoticia> = {
   fechaNoticia: new Date().toISOString().slice(0, 10),
   categoria: "",
 };
-import { z } from "zod";

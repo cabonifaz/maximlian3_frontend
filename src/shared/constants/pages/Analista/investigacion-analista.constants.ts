@@ -1,3 +1,5 @@
+import type { IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
+
 export const FILAS_POR_PAGINA_INVESTIGACION = 5;
 
 export const ID_ESTADO_PEDIDO_BORRADOR = 3;
@@ -185,7 +187,6 @@ export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
   lista: "¿Figura en el listado de ejecutivos?",
   detalleEjecutivo: "¿Se tiene los detalles del Ejecutivo?",
 };
-import type { IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 
 export type CampoPorcentajeOperacion =
   | "ventasContadoPorcentaje"

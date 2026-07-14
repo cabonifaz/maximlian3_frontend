@@ -1,3 +1,5 @@
+import type { ButtonHTMLAttributes } from "react";
+
 export const variantClasses: Record<NonNullable<PropsCustomButton["variant"]>, string> = {
   primary:
     "bg-brand-black text-brand-white rounded-xl font-semibold hover:bg-brand-black/90",
@@ -25,7 +27,6 @@ export const interactionClasses: Record<NonNullable<PropsCustomButton["size"]>, 
 
 export const disabledClasses =
   "opacity-40 cursor-not-allowed hover:scale-100 active:scale-100";
-import type { ButtonHTMLAttributes } from "react";
 
 export interface PropsCustomButton extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger" | "wine" | "ghost";

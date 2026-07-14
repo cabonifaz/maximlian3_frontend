@@ -1,3 +1,6 @@
+import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+import type { ConfiguracionCamposParametro } from "@maximilian/pages/Administrador/ConfiguracionParametros";
+
 export const PARAMETROS_DISPONIBLES: ParametroDisponible[] = [
   { idMaestro: TablaMaestraId.MONEDA, etiqueta: "Tipo de moneda" },
   { idMaestro: TablaMaestraId.PAIS, etiqueta: "Pais" },
@@ -130,8 +133,6 @@ export const CONFIGURACION_CAMPOS_POR_MAESTRO: Partial<
     etiquetaDetalle: "Color texto",
   },
 };
-import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-import type { ConfiguracionCamposParametro } from "@maximilian/pages/Administrador/ConfiguracionParametros";
 
 interface ParametroDisponible {
   idMaestro: number;
