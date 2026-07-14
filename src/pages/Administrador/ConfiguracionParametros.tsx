@@ -1,4 +1,4 @@
-import { opcionesParametros, REGISTROS_POR_PAGINA, CONFIGURACION_CAMPOS_POR_MAESTRO } from "@maximilian/shared/constants/pages/Administrador/configuracionParametros.constants";
+import { opcionesParametros, REGISTROS_POR_PAGINA, CONFIGURACION_CAMPOS_POR_MAESTRO } from "@maximilian/shared/constants/pages/Administrador/configuracion-parametros.constants";
 import { useMemo, useState } from "react";
 import {
   AlertCircle,
@@ -15,7 +15,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import {
   TablaMaestraId,
   obtenerDescripcionTablaMaestra,

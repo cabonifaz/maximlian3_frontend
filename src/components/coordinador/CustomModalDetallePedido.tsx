@@ -2,13 +2,15 @@ import { useMemo, useState } from "react";
 import { AlertCircle, Download, RotateCcw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomChipTipoArchivo } from "@maximilian/components/common/CustomChipTipoArchivo";
+import { formatearTamanoArchivo, obtenerExtensionArchivo } from "@maximilian/shared/utils/archivo.util";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
 import { TablaTarifarioCorta } from "@maximilian/components/coordinador/TablaTarifarioCorta";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioCliente } from "@maximilian/services/cliente.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type { TarifarioCortaEntry } from "@maximilian/shared/types/cliente.type";
@@ -37,32 +39,6 @@ function formatearFecha(valor: string | null | undefined) {
 function formatearMonto(valor: number | null | undefined, simboloMoneda?: string | null) {
   if (valor == null) return "-";
   return `${simboloMoneda ?? ""}${valor}`;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function getExtension(filename: string): string {
-  return filename.split(".").pop()?.toUpperCase() ?? "—";
-}
-
-function FileTypeBadge({ ext }: { ext: string }) {
-  const colorMap: Record<string, string> = {
-    PDF: "bg-red-100 text-red-600",
-    XLSX: "bg-green-100 text-green-600",
-    XLS: "bg-green-100 text-green-600",
-    DOCX: "bg-blue-100 text-blue-600",
-    DOC: "bg-blue-100 text-blue-600",
-    PNG: "bg-purple-100 text-purple-600",
-    JPG: "bg-purple-100 text-purple-600",
-    JPEG: "bg-purple-100 text-purple-600",
-  };
-  const cls = colorMap[ext] ?? "bg-gray-100 text-gray-600";
-
-  return <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-bold ${cls}`}>{ext}</span>;
 }
 
 function CampoSoloLectura({ etiqueta, valor }: { etiqueta: string; valor: string }) {
@@ -173,7 +149,7 @@ function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
         </thead>
         <tbody className="divide-y divide-gray-50">
           {archivos.map((archivo) => {
-            const extension = getExtension(archivo.nombreDocumento);
+            const extension = obtenerExtensionArchivo(archivo.nombreDocumento);
 
             return (
               <tr key={archivo.idPedidoArchivo} className="hover:bg-gray-50/70">
@@ -181,9 +157,9 @@ function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
                   <span title={archivo.nombreDocumento} className="block max-w-48 truncate">{archivo.nombreDocumento}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <FileTypeBadge ext={extension} />
+                  <CustomChipTipoArchivo extension={extension} />
                 </td>
-                <td className="px-4 py-3 text-slate-600">{formatBytes(archivo.tamanoArchivo)}</td>
+                <td className="px-4 py-3 text-slate-600">{formatearTamanoArchivo(archivo.tamanoArchivo)}</td>
                 <td className="px-4 py-3 text-slate-600">{archivo.fechaCarga || "-"}</td>
                 <td className="px-4 py-3 text-right">
                   <button

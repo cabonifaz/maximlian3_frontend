@@ -31,6 +31,11 @@ function obtenerEnteroDesdeTexto(valor?: string) {
   return Number.isFinite(numero) ? numero : 0;
 }
 
+function obtenerEnteroOpcionalDesdeTexto(valor?: string) {
+  const numero = obtenerEnteroDesdeTexto(valor);
+  return numero > 0 ? numero : undefined;
+}
+
 function convertirFechaIso(valor?: string) {
   if (!valor?.trim()) return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return `${valor}T00:00:00.000Z`;
@@ -434,29 +439,29 @@ export function construirPayloadInforme({
     idRegistro: aspectosLegales.registro,
     idPlazo: aspectosLegales.condiciones,
     idOperacionesCambioDivisas: obtenerEnteroDesdeTexto(aspectosLegales.operacionesCambioDivisas),
-    capitalInicial: obtenerNumeroDesdeTexto(aspectosLegales.capitalInicial),
-    capitalPagado: obtenerNumeroDesdeTexto(aspectosLegales.capitalDesembolsado),
+    capitalInicial: obtenerNumeroOpcionalDesdeTexto(aspectosLegales.capitalInicial) ?? undefined,
+    capitalPagado: obtenerNumeroOpcionalDesdeTexto(aspectosLegales.capitalDesembolsado) ?? undefined,
     fechaUltimoIncremento: convertirFechaIso(aspectosLegales.ultimaAmpliacion),
     idTipoIncremento: 0,
-    patrimonioNeto: obtenerNumeroDesdeTexto(aspectosLegales.patrimonioNeto),
+    patrimonioNeto: obtenerNumeroOpcionalDesdeTexto(aspectosLegales.patrimonioNeto) ?? undefined,
     tipoAcciones: aspectosLegales.tipoAcciones,
-    valorAcciones: obtenerNumeroDesdeTexto(aspectosLegales.valorAcciones),
+    valorAcciones: obtenerNumeroOpcionalDesdeTexto(aspectosLegales.valorAcciones) ?? undefined,
     cotizaBolsa: esTextoAfirmativo(aspectosLegales.obligacionBolsa),
     idTipoCambio: obtenerIdPorTextoONumero(opcionesMoneda, aspectosLegales.monedaTipoCambio),
-    tipoCambio: obtenerNumeroDesdeTexto(aspectosLegales.tipoCambio),
+    tipoCambio: obtenerNumeroOpcionalDesdeTexto(aspectosLegales.tipoCambio) ?? undefined,
     antecedentes: aspectosLegales.antecedentes,
     aspectosLegales: aspectosLegales.aspectosLegales,
     comentariosAspectoLegal: aspectosLegales.comentariosEmpresasRelacionadas,
     idSector: 0,
     idActividad: 0,
-    idIsicCategoria: obtenerEnteroDesdeTexto(operacionPrincipal.categoriaCiiu),
-    idIsicClase: obtenerEnteroDesdeTexto(operacionPrincipal.claseCiiu),
+    idIsicCategoria: obtenerEnteroDesdeTexto(operacionPrincipal.categoriaCiiu) || undefined,
+    idIsicClase: obtenerEnteroDesdeTexto(operacionPrincipal.claseCiiu) || undefined,
     actividadPrincipal: operacionPrincipal.actividadPrincipal,
     ventasContado: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasContadoPorcentaje),
     ventasContadoText: operacionPrincipal.ventasContadoDetalle,
     ventasCredito: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasCreditoPorcentaje),
     ventasCreditoText: operacionPrincipal.ventasCreditoDetalle,
-    idVentasCreditoTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.ventasCreditoTiempo),
+    idVentasCreditoTiempo: obtenerEnteroOpcionalDesdeTexto(operacionPrincipal.ventasCreditoTiempo),
     ventasNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.territorioVentasPorcentaje),
     ventasNacionalesText: operacionPrincipal.territorioVentasDetalle,
     ventasInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasExtranjeroPorcentaje),
@@ -467,15 +472,15 @@ export function construirPayloadInforme({
     comprasContadoNacionalesText: operacionPrincipal.comprasContadoNacionalesDetalle,
     comprasCreditoNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasCreditoNacionalesPorcentaje),
     comprasCreditoNacionalesText: operacionPrincipal.comprasCreditoNacionalesDetalle,
-    idComprasCreditoNacionalesTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.comprasCreditoNacionalesTiempo),
+    idComprasCreditoNacionalesTiempo: obtenerEnteroOpcionalDesdeTexto(operacionPrincipal.comprasCreditoNacionalesTiempo),
     comprasInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasExtranjeroPorcentaje),
     comprasInternacionalesText: operacionPrincipal.comprasExtranjeroDetalle,
     comprasContadoInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasContadoInternacionalesPorcentaje),
     comprasContadoInternacionalesText: operacionPrincipal.comprasContadoInternacionalesDetalle,
     comprasCreditoInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasCreditoInternacionalesPorcentaje),
     comprasCreditoInternacionalesText: operacionPrincipal.comprasCreditoInternacionalesDetalle,
-    idComprasCreditoInternacionalesTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.comprasCreditoInternacionalesTiempo),
-    numeroEmpleados: obtenerEnteroDesdeTexto(operacionPrincipal.numeroEmpleados),
+    idComprasCreditoInternacionalesTiempo: obtenerEnteroOpcionalDesdeTexto(operacionPrincipal.comprasCreditoInternacionalesTiempo),
+    numeroEmpleados: obtenerEnteroOpcionalDesdeTexto(operacionPrincipal.numeroEmpleados),
     numeroEmpleadosText: operacionPrincipal.numeroEmpleadosDetalle,
     comentariosOperaciones: operacionPrincipal.comentariosOperaciones,
     contenidoInformacionFinanciera: informacionFinanciera.contenido,

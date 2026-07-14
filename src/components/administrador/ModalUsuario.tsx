@@ -1,4 +1,4 @@
-import { valoresPorDefecto } from "@maximilian/shared/constants/components/administrador/modalUsuario.constants";
+import { valoresPorDefecto } from "@maximilian/shared/constants/components/administrador/modal-usuario.constants";
 import { useEffect, useState } from "react";
 import {
   X,
@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { esquemaUsuario, type DatosFormularioUsuario } from "@maximilian/schemas";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface ModalUsuarioProps {

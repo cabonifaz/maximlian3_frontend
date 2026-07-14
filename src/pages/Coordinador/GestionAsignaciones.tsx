@@ -1,16 +1,19 @@
-import { ASSIGNMENT_COLUMNS, ID_ROL_TRADUCTOR, ID_ROL_ANALISTA } from "@maximilian/shared/constants/pages/Coordinador/gestionAsignaciones.constants";
+import { ASSIGNMENT_COLUMNS, ID_ROL_TRADUCTOR, ID_ROL_ANALISTA } from "@maximilian/shared/constants/pages/Coordinador/gestion-asignaciones.constants";
 import { useState } from "react";
 import { Search, MoreHorizontal, Edit, X, Plus } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
+import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
+import { CustomChipVigencia } from "@maximilian/components/common/CustomChipVigencia";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { ModalFlujoAsignacion } from "@maximilian/components/coordinador/ModalFlujoAsignacion";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
-import { useRetardo } from "@maximilian/hooks/useRetardo";
+import { useMenuFlotanteTabla } from "@maximilian/hooks/useMenuFlotanteTabla";
+import { useListadoPaginado } from "@maximilian/hooks/useListadoPaginado";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type { AssignmentOrderEntry } from "@maximilian/shared/types/asignacion.type";
 import type { PedidoListEntry } from "@maximilian/shared/types/pedido.type";
 import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
@@ -188,9 +191,12 @@ function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: str
   }
 
   return (
-    <span
-      className="mx-auto inline-flex min-h-14 w-40 flex-col items-center justify-center rounded-2xl px-3 py-2 text-center text-xs font-bold leading-tight"
-      style={{ backgroundColor: colorFondo, color: colorLetra }}
+    <CustomChipEstado
+      colorTexto={colorLetra}
+      colorFondo={colorFondo}
+      forma="tarjetaAmplia"
+      tamano="amplio"
+      className="mx-auto min-h-14 w-40 flex-col justify-center text-center leading-tight"
       title={texto}
     >
       {lineas.map((linea) => (
@@ -198,26 +204,7 @@ function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: str
           {linea}
         </span>
       ))}
-    </span>
-  );
-}
-
-function getVigenciaBadge(asignacion: AssignmentOrderEntry) {
-  const esVencido = asignacion.porVencerTexto.toLowerCase().includes("venc");
-  const dias = asignacion.porVencerTexto.match(/\d+/)?.[0];
-
-  return (
-    <span
-      className="inline-flex min-w-24 flex-col rounded-xl px-3 py-2 text-center text-xs font-semibold"
-      style={{ color: asignacion.porVencerColor, backgroundColor: asignacion.porVencerFondo }}
-    >
-      <span>{esVencido ? "Vencido" : asignacion.porVencerTexto}</span>
-      {esVencido && dias ? (
-        <span className="text-[11px] font-medium opacity-80">
-          {dias} {dias === "1" ? "dia" : "dias"}
-        </span>
-      ) : null}
-    </span>
+    </CustomChipEstado>
   );
 }
 
@@ -303,11 +290,16 @@ export default function GestionAsignaciones() {
   const location = useLocation();
   const estadoNavegacion = location.state as EstadoNavegacionAsignaciones | null;
   const queryClient = useQueryClient();
-  const [terminoBusqueda, setSearchTerm] = useState(() => estadoNavegacion?.busquedaInicial || "");
-  const [paginaActual, setCurrentPage] = useState(1);
+  const {
+    terminoBusqueda,
+    paginaActual,
+    busquedaConRetardo,
+    cambiarBusqueda,
+    cambiarPagina,
+    reiniciarPagina,
+  } = useListadoPaginado(estadoNavegacion?.busquedaInicial || "");
   const [idEstadoFiltro, setIdEstadoFiltro] = useState<number | undefined>(undefined);
-  const [idMenuActivo, setActiveMenuId] = useState<number | null>(null);
-  const [menuDropdownStyle, setMenuDropdownStyle] = useState<React.CSSProperties>({});
+  const { idMenuActivo, estiloMenu, alternarMenu, cerrarMenu } = useMenuFlotanteTabla();
   const [asignacionAAnular, setAsignacionAAnular] = useState<AssignmentOrderEntry | null>(null);
   const [idAsignacionAEliminar, setIdAsignacionAEliminar] = useState<number | undefined>(undefined);
   const [modalAsignacion, setModalAsignacion] = useState<{
@@ -327,8 +319,6 @@ export default function GestionAsignaciones() {
     }[];
     modo?: "crear" | "editar";
   } | null>(null);
-
-  const busquedaConRetardo = useRetardo(terminoBusqueda);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["assignment-orders", paginaActual, busquedaConRetardo, idEstadoFiltro],
@@ -357,7 +347,7 @@ export default function GestionAsignaciones() {
           opciones={opcionesEstadoAsignacion}
           valores={idEstadoFiltro ? [idEstadoFiltro] : []}
           onChange={(ids) => setIdEstadoFiltro(ids[ids.length - 1])}
-          onFiltroCambiado={() => setCurrentPage(1)}
+          onFiltroCambiado={reiniciarPagina}
           multiple={false}
         />
       ),
@@ -375,9 +365,7 @@ export default function GestionAsignaciones() {
   });
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= (data?.totalPaginas || 1)) {
-      setCurrentPage(page);
-    }
+    cambiarPagina(page, data?.totalPaginas || 1);
   };
 
   const renderRow = (asignacion: AssignmentOrderEntry) => {
@@ -404,21 +392,16 @@ export default function GestionAsignaciones() {
             coloresEstado.colorFondo,
           )}
         </td>
-        <td className="px-6 py-4">{getVigenciaBadge(asignacion)}</td>
+        <td className="px-6 py-4">
+          <CustomChipVigencia
+            texto={asignacion.porVencerTexto}
+            colorTexto={asignacion.porVencerColor}
+            colorFondo={asignacion.porVencerFondo}
+          />
+        </td>
         <td className="px-6 py-4 text-right">
         <button
-          onClick={(e) => {
-            if (idMenuActivo === asignacion.idPedido) {
-              setActiveMenuId(null);
-            } else {
-              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              const menuHeight = 96;
-              const spaceBelow = window.innerHeight - rect.bottom;
-              const top = spaceBelow < menuHeight ? rect.top - menuHeight - 4 : rect.bottom + 4;
-              setMenuDropdownStyle({ top, right: window.innerWidth - rect.right });
-              setActiveMenuId(asignacion.idPedido);
-            }
-          }}
+          onClick={(evento) => alternarMenu(evento, asignacion.idPedido, 96)}
           className="rounded-lg p-2 text-gray-400 transition-all hover:bg-gray-100 hover:text-brand-black cursor-pointer hover:scale-110 active:scale-90"
         >
           <MoreHorizontal size={18} />
@@ -426,10 +409,10 @@ export default function GestionAsignaciones() {
 
         {idMenuActivo === asignacion.idPedido && (
           <>
-            <div className="fixed inset-0 z-10" onClick={() => setActiveMenuId(null)} />
+            <div className="fixed inset-0 z-10" onClick={cerrarMenu} />
             <div
               className="fixed z-20 w-52 rounded-xl border border-gray-200/50 bg-brand-white py-1 shadow-2xl animate-in fade-in zoom-in-95 duration-100"
-              style={menuDropdownStyle}
+              style={estiloMenu}
             >
               <button
                 onClick={() => {
@@ -447,7 +430,7 @@ export default function GestionAsignaciones() {
                       : convertirAsignacionAAsignacionesIniciales(asignacion),
                     modo: esNuevaAsignacion ? "crear" : "editar",
                   });
-                  setActiveMenuId(null);
+                  cerrarMenu();
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 cursor-pointer"
               >
@@ -459,7 +442,7 @@ export default function GestionAsignaciones() {
                   const opcionesEliminacion = construirOpcionesEliminacion(asignacion);
                   setAsignacionAAnular(asignacion);
                   setIdAsignacionAEliminar(opcionesEliminacion.length === 1 ? (opcionesEliminacion[0].num1 ?? undefined) : undefined);
-                  setActiveMenuId(null);
+                  cerrarMenu();
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50 cursor-pointer"
                 disabled={!asignacion.analistaIdAsignacion && !asignacion.traductorIdAsignacion}
@@ -487,10 +470,7 @@ export default function GestionAsignaciones() {
               type="text"
               placeholder="Buscar por nombre del cliente, investigado, analista o traductor"
               value={terminoBusqueda}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={(evento) => cambiarBusqueda(evento.target.value)}
               className="w-full rounded-xl border border-gray-200 bg-brand-white py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
             />
           </div>

@@ -4,9 +4,12 @@ import { Upload, Trash2, FileText, Filter, AlertCircle, RotateCcw, ChevronLeft, 
 import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomChipTipoArchivo } from "@maximilian/components/common/CustomChipTipoArchivo";
+import { CustomIndicadorErrorFormulario } from "@maximilian/components/common/CustomIndicadorErrorFormulario";
+import { formatearTamanoArchivo, obtenerExtensionArchivo } from "@maximilian/shared/utils/archivo.util";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
@@ -67,10 +70,6 @@ function crearPedidoResolver(
   };
 }
 
-function IndicadorErrorTab() {
-  return <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />;
-}
-
 interface UploadedFile {
   id: string;
   name: string;
@@ -107,35 +106,6 @@ interface InfoPedidoTabProps {
   errors: Partial<Record<keyof PedidoFormData, { message?: string }>>;
   selectedTarifario: TarifarioCortaEntry | undefined;
   permitirAutogenerarCodigo: boolean;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function getExtension(filename: string): string {
-  return filename.split(".").pop()?.toUpperCase() ?? "—";
-}
-
-function FileTypeBadge({ ext }: { ext: string }) {
-  const colorMap: Record<string, string> = {
-    PDF: "bg-red-100 text-red-600",
-    XLSX: "bg-green-100 text-green-600",
-    XLS: "bg-green-100 text-green-600",
-    DOCX: "bg-blue-100 text-blue-600",
-    DOC: "bg-blue-100 text-blue-600",
-    PNG: "bg-purple-100 text-purple-600",
-    JPG: "bg-purple-100 text-purple-600",
-    JPEG: "bg-purple-100 text-purple-600",
-  };
-  const cls = colorMap[ext] ?? "bg-gray-100 text-gray-600";
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${cls}`}>
-      {ext}
-    </span>
-  );
 }
 
 function FileIcon({ ext }: { ext: string }) {
@@ -598,7 +568,7 @@ function AnexosTab({
 
   const uniqueFormatos = useMemo(
     () => Array.from(new Set([
-      ...archivos.map((f) => getExtension(f.nombreDocumento)),
+      ...archivos.map((f) => obtenerExtensionArchivo(f.nombreDocumento)),
       ...newFiles.map((f) => f.type),
     ])).sort(),
     [archivos, newFiles]
@@ -628,7 +598,7 @@ function AnexosTab({
   );
 
   const filteredArchivos = useMemo(() => archivos.filter((f) => {
-    const ext = getExtension(f.nombreDocumento);
+    const ext = obtenerExtensionArchivo(f.nombreDocumento);
     const matchesFormato = !filterFormato || ext === filterFormato;
     const matchesTipo = filterTipo === undefined || f.idTipoArchivo === filterTipo;
     return matchesFormato && matchesTipo;
@@ -645,7 +615,7 @@ function AnexosTab({
     const next: UploadedFile[] = Array.from(incoming).map((f) => ({
       id: `${f.name}-${f.size}-${Date.now()}`,
       name: f.name,
-      type: getExtension(f.name),
+      type: obtenerExtensionArchivo(f.name),
       size: f.size,
       file: f,
     }));
@@ -779,8 +749,8 @@ function AnexosTab({
                             </span>
                           </div>
                         </td>
-                        <td className="py-2.5 px-3"><FileTypeBadge ext={f.type} /></td>
-                        <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{formatBytes(f.size)}</td>
+                        <td className="py-2.5 px-3"><CustomChipTipoArchivo extension={f.type} /></td>
+                        <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{formatearTamanoArchivo(f.size)}</td>
                         <td className="py-2.5 px-3">
                           <CustomSelectorBuscable
                             options={tipoOptions}
@@ -805,7 +775,7 @@ function AnexosTab({
                       </tr>
                     ))}
                     {filteredArchivos.map((f) => {
-                      const ext = getExtension(f.nombreDocumento);
+                      const ext = obtenerExtensionArchivo(f.nombreDocumento);
                       return (
                         <tr key={f.idPedidoArchivo} className="hover:bg-gray-50/50 transition-colors">
                           <td className="py-2.5 px-3">
@@ -821,8 +791,8 @@ function AnexosTab({
                               <span title={f.nombreDocumento} className="text-gray-700 font-medium truncate max-w-28">{f.nombreDocumento}</span>
                             </div>
                           </td>
-                          <td className="py-2.5 px-3"><FileTypeBadge ext={ext} /></td>
-                          <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{formatBytes(f.tamanoArchivo)}</td>
+                          <td className="py-2.5 px-3"><CustomChipTipoArchivo extension={ext} /></td>
+                          <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{formatearTamanoArchivo(f.tamanoArchivo)}</td>
                           <td className="py-2.5 px-3">
                             <CustomSelectorBuscable
                               options={tipoOptions}
@@ -1078,7 +1048,6 @@ export function ModalPedido({
       numeroDocumento: data.nroDocumentoCliente ?? "",
       nombreCliente: cliente?.nombreCliente ?? pedido?.nombreCliente ?? "",
       idTipoPersona: data.idTipoPersona,
-      idCompania: data.idEmpresaAtencion,
       numeroDocumentoInvestigado: data.nroDocumento ?? "",
       investigarRazonSocialNombres: data.investigado,
       idTarifario: data.idTarifario,
@@ -1097,9 +1066,8 @@ export function ModalPedido({
     };
 
     if (esModoEdicion) {
-      const { idCompania: _idCompania, ...datosEdicion } = datosComunes;
       guardarPedido({
-        ...datosEdicion,
+        ...datosComunes,
         idPedido: pedidoId!,
         IdEmpresaAtencion: data.idEmpresaAtencion,
         idEstado: pedido!.idEstado,
@@ -1107,9 +1075,8 @@ export function ModalPedido({
       return;
     }
 
-    const { idCompania: _idCompania, ...datosCreacion } = datosComunes;
     guardarPedido({
-      ...datosCreacion,
+      ...datosComunes,
       codigo: data.autogenerarCodigo ? null : (data.codigo ?? ""),
       IdEmpresaAtencion: data.idEmpresaAtencion,
       idEstado: 1,
@@ -1202,19 +1169,19 @@ export function ModalPedido({
     {
       id: "cliente-tarifa",
       label: "Cliente y Tarifa",
-      indicator: hayErroresClienteTarifa ? <IndicadorErrorTab /> : undefined,
+      indicator: hayErroresClienteTarifa ? <CustomIndicadorErrorFormulario /> : undefined,
       content: clienteTarifaContent,
     },
     {
       id: "info-pedido",
       label: "Información del Pedido",
-      indicator: hayErroresInfoPedido ? <IndicadorErrorTab /> : undefined,
+      indicator: hayErroresInfoPedido ? <CustomIndicadorErrorFormulario /> : undefined,
       content: infoPedidoContent,
     },
     {
       id: "anexos",
       label: "Anexos",
-      indicator: hayErroresAnexos ? <IndicadorErrorTab /> : undefined,
+      indicator: hayErroresAnexos ? <CustomIndicadorErrorFormulario /> : undefined,
       content: <AnexosTab esModoEdicion={esModoEdicion} pedidoId={pedidoId} newFiles={newFiles} onNewFilesChange={setNewFiles} missingTipoIds={missingTipoIds} onClearMissingTipo={(id) => setMissingTipoIds((prev) => { const next = new Set(prev); next.delete(id); return next; })} />,
     },
   ];

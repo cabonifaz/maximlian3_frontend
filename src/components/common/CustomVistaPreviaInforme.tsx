@@ -4,7 +4,7 @@ import { FileText } from "lucide-react";
 import type { DatosInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { DocumentoInformeGenerado } from "@maximilian/shared/types/informe.type";
 import { seccionesInvestigacionAnalista } from "@maximilian/shared/utils/investigacion.util";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { informeService } from "@maximilian/services/informe.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { CustomVisorDocumentoInforme } from "@maximilian/components/common/CustomVisorDocumentoInforme";

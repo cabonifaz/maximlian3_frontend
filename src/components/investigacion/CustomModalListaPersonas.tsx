@@ -1,4 +1,4 @@
-import { opcionesCriterio } from "@maximilian/shared/constants/components/investigacion/customModalListaPersonas.constants";
+import { opcionesCriterio } from "@maximilian/shared/constants/components/investigacion/custom-modal-lista-personas.constants";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";

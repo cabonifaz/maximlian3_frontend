@@ -12,11 +12,13 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
+import { CustomChipVigencia } from "@maximilian/components/common/CustomChipVigencia";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { informeService } from "@maximilian/services/informe.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type { InformeListEntry } from "@maximilian/shared/types/informe.type";
 import type { TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
@@ -42,35 +44,6 @@ function obtenerIconoTarjeta(id: string) {
   if (id === "vigente")
     return <BadgeCheck size={18} className="text-slate-600" />;
   return <TriangleAlert size={18} className="text-red-400" />;
-}
-
-function obtenerBadgeVigencia(registro: InformeListEntry) {
-  const texto = registro.vigencia || "-";
-  const textoNormalizado = texto.toLowerCase();
-  const esVencido = textoNormalizado.includes("venc");
-  const dias = texto.match(/\d+/)?.[0];
-  const esVencimientoInmediato =
-    !esVencido && dias != null && Number(dias) <= 1;
-  const color =
-    registro.vigenciaColor ||
-    (esVencido ? "#dc2626" : esVencimientoInmediato ? "#b45309" : "#166534");
-  const fondo =
-    registro.vigenciaFondo ||
-    (esVencido ? "#fef2f2" : esVencimientoInmediato ? "#fffbeb" : "#ecfdf5");
-
-  return (
-    <span
-      className="inline-flex min-w-24 flex-col rounded-xl px-3 py-2 text-center text-xs font-semibold"
-      style={{ color, backgroundColor: fondo }}
-    >
-      <span>{esVencido ? "Vencido" : texto}</span>
-      {esVencido && dias ? (
-        <span className="text-[11px] font-medium opacity-80">
-          {dias} {dias === "1" ? "dia" : "dias"}
-        </span>
-      ) : null}
-    </span>
-  );
 }
 
 function obtenerClasesFaseActiva(estado: InformeListEntry["estado"]) {
@@ -371,16 +344,25 @@ export default function GestionRevisionAprobacion() {
                   {registro.investigado}
                 </span>
               </td>
-              <td className="px-6 py-4">{obtenerBadgeVigencia(registro)}</td>
+              <td className="px-6 py-4">
+                <CustomChipVigencia
+                  texto={registro.vigencia}
+                  colorTexto={registro.vigenciaColor}
+                  colorFondo={registro.vigenciaFondo}
+                />
+              </td>
               <td className="px-6 py-4 text-sm text-slate-500">
                 {registro.tipo}
               </td>
               <td className="px-6 py-4 text-center">
-                <span
-                  className={`inline-flex rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wide ${obtenerColorEstadoAnalista(registro.estado)}`}
+                <CustomChipEstado
+                  forma="rectangular"
+                  tamano="amplio"
+                  claseColor={obtenerColorEstadoAnalista(registro.estado)}
+                  className="text-[11px] uppercase tracking-wide"
                 >
                   {registro.estadoInforme}
-                </span>
+                </CustomChipEstado>
               </td>
               <td className="px-6 py-4 text-center text-sm font-semibold leading-5 text-slate-500">
                 <span

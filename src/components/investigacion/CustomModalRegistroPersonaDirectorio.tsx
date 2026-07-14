@@ -1,4 +1,4 @@
-import { ID_MAESTRO_ESTADO_CIVIL, ID_MAESTRO_PROFESION, ID_MAESTRO_TIPO_DOCUMENTO } from "@maximilian/shared/constants/components/investigacion/customModalRegistroPersonaDirectorio.constants";
+import { ID_MAESTRO_ESTADO_CIVIL, ID_MAESTRO_PROFESION, ID_MAESTRO_TIPO_DOCUMENTO } from "@maximilian/shared/constants/components/investigacion/custom-modal-registro-persona-directorio.constants";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { BadgeCheck, FileText, MapPin, UserRound, X } from "lucide-react";
@@ -6,8 +6,8 @@ import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
-import { servicioDirectorioEjecutivo } from "@maximilian/services/directorioEjecutivo.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioDirectorioEjecutivo } from "@maximilian/services/directorio-ejecutivo.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import {
   registroPersonaDirectorioInvestigacionSchema,
   type DatosFormularioRegistroPersonaDirectorioInvestigacion,

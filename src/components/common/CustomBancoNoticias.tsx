@@ -1,4 +1,4 @@
-import { esquemaNoticia, valoresIniciales } from "@maximilian/shared/constants/components/common/customBancoNoticias.constants";
+import { esquemaNoticia, valoresIniciales } from "@maximilian/shared/constants/components/common/custom-banco-noticias.constants";
 import { useEffect, useMemo, useState, type UIEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,13 +21,13 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioCompania } from "@maximilian/services/compania.service";
-import { servicioCompaniaNoticia } from "@maximilian/services/companiaNoticia.service";
+import { servicioCompaniaNoticia } from "@maximilian/services/compania-noticia.service";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
 import type {
   CompaniaNoticiaArchivo,
   CompaniaNoticiaCrearRequest,
   CompaniaNoticiaListaItem,
-} from "@maximilian/shared/types/companiaNoticia.type";
+} from "@maximilian/shared/types/compania-noticia.type";
 import { CustomButton } from "./CustomButton";
 import { CustomLabel } from "./CustomLabel";
 import { CustomSelectorFecha } from "./CustomSelectorFecha";

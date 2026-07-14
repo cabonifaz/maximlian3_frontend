@@ -1,6 +1,6 @@
-import { etiquetasPestanas } from "@maximilian/shared/constants/pages/Analista/bancoInformacionAnalista.constants";
-import type { PestanaBancoInformacion } from "@maximilian/shared/constants/pages/Analista/bancoInformacionAnalista.constants";
-import { ID_MAESTRO_ESTADO_CREDITO, ID_MAESTRO_ACTIVIDAD_ECONOMICA_EMPRESA } from "@maximilian/shared/constants/pages/Analista/bancoInformacionAnalista.constants";
+import { etiquetasPestanas } from "@maximilian/shared/constants/pages/Analista/banco-informacion-analista.constants";
+import type { PestanaBancoInformacion } from "@maximilian/shared/constants/pages/Analista/banco-informacion-analista.constants";
+import { ID_MAESTRO_ESTADO_CREDITO, ID_MAESTRO_ACTIVIDAD_ECONOMICA_EMPRESA } from "@maximilian/shared/constants/pages/Analista/banco-informacion-analista.constants";
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -17,13 +17,13 @@ import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/Custo
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
-import { CustomModalDetalleCuentasAnalista } from "@maximilian/components/investigacion/CustomModalDetalleCuentasInforme";
+import { CustomModalDetalleCredito } from "@maximilian/components/analista/CustomModalDetalleCredito";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
-import { servicioCompaniaNoticiaBalance } from "@maximilian/services/companiaNoticiaBalance.service";
-import { servicioCompaniaNoticiaDetalle } from "@maximilian/services/companiaNoticiaDetalle.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
-import type { CompaniaNoticiaBalanceListaItem } from "@maximilian/shared/types/companiaNoticiaBalance.type";
-import type { CompaniaNoticiaDetalleListaItem } from "@maximilian/shared/types/companiaNoticiaDetalle.type";
+import { servicioCompaniaNoticiaBalance } from "@maximilian/services/compania-noticia-balance.service";
+import { servicioCompaniaNoticiaDetalle } from "@maximilian/services/compania-noticia-detalle.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
+import type { CompaniaNoticiaBalanceListaItem } from "@maximilian/shared/types/compania-noticia-balance.type";
+import type { CompaniaNoticiaDetalleListaItem } from "@maximilian/shared/types/compania-noticia-detalle.type";
 import {
   TablaMaestraId,
   type EntradaTablaMaestra,
@@ -612,57 +612,6 @@ function EstadoCargandoBancoInformacion() {
       <Loader2 className="h-10 w-10 animate-spin text-brand-wine" />
       <p className="text-sm font-medium text-gray-500">Cargando...</p>
     </div>
-  );
-}
-
-function crearDetalleCuentasVacio() {
-  return {
-    balanceGeneral: {
-      totalCorrientes: "",
-      totalNoCorrientes: "",
-      otrosActivos: "",
-      totalActivos: "",
-      totalPasivosCorrientes: "",
-      totalPasivosNoCorrientes: "",
-      otrosPasivos: "",
-      totalPasivos: "",
-      patrimonio: "",
-      totalPasivoPatrimonio: "",
-    },
-    estadoGananciasPerdidas: {
-      ventasNetas: "",
-      utilidadGanancia: "",
-    },
-    ratios: {
-      liquidez: "",
-      capitalTrabajo: "",
-      endeudamiento: "",
-      rentabilidad: "",
-    },
-    registrosHabilitados: true,
-    totalesHabilitados: true,
-    registrosEstadoFinanciero: {},
-  };
-}
-
-function CustomModalDetalleCredito({
-  reporte,
-  onCerrar,
-}: {
-  reporte: CompaniaNoticiaBalanceListaItem | null;
-  onCerrar: () => void;
-}) {
-  if (!reporte) return null;
-
-  return (
-    <CustomModalDetalleCuentasAnalista
-      estaAbierto={Boolean(reporte)}
-      onCerrar={onCerrar}
-      onGuardar={() => {}}
-      detalleInicial={reporte.detalleCuentas ?? crearDetalleCuentasVacio()}
-      tipoEstadoFinanciero={reporte.tipo}
-      soloLectura
-    />
   );
 }
 

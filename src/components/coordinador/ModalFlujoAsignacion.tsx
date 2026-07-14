@@ -1,8 +1,9 @@
-import { PEDIDO_COLUMNS, ASIGNACIONES_INICIALES, ID_ESTADO_ASIGNACION_SIN_ASIGNACION_PENDIENTE, ETIQUETAS_ROL } from "@maximilian/shared/constants/components/coordinador/modalFlujoAsignacion.constants";
+import { PEDIDO_COLUMNS, ASIGNACIONES_INICIALES, ID_ESTADO_ASIGNACION_SIN_ASIGNACION_PENDIENTE, ETIQUETAS_ROL } from "@maximilian/shared/constants/components/coordinador/modal-flujo-asignacion.constants";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Eye, Loader2, Search } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomIndicadorErrorFormulario } from "@maximilian/components/common/CustomIndicadorErrorFormulario";
 import { CustomModalDetallePedido } from "@maximilian/components/coordinador/CustomModalDetallePedido";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
@@ -27,10 +28,6 @@ interface ModalFlujoAsignacionProps {
   modo?: "crear" | "editar";
   tabInicial?: TabAsignacion;
   titulo?: string;
-}
-
-function IndicadorErrorTab() {
-  return <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />;
 }
 
 function getBadgeVigencia(vigencia: string | number) {
@@ -626,14 +623,14 @@ export function ModalFlujoAsignacion({
             label: "Pedidos",
             content: contenidoPedidos,
             indicator: hayErroresPedidos
-              ? <IndicadorErrorTab />
+              ? <CustomIndicadorErrorFormulario />
               : <span className="rounded-full bg-brand-wine/10 px-2 py-0.5 text-xs text-brand-wine">{cantidadSeleccionados}</span>,
           },
           {
             id: "asignacion",
             label: "Asignación",
             content: contenidoAsignacion,
-            indicator: hayErroresAsignacion ? <IndicadorErrorTab /> : undefined,
+            indicator: hayErroresAsignacion ? <CustomIndicadorErrorFormulario /> : undefined,
             disabled: cantidadSeleccionados === 0,
             tooltip: cantidadSeleccionados === 0 ? "Seleccione al menos 1 pedido" : undefined,
           },

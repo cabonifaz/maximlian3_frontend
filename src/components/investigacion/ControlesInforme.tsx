@@ -1,4 +1,4 @@
-import { clasesEtiquetaCampoInvestigacion, marcadoresPorEtiqueta } from "@maximilian/shared/constants/components/investigacion/controlesInforme.constants";
+import { clasesEtiquetaCampoInvestigacion, marcadoresPorEtiqueta } from "@maximilian/shared/constants/components/investigacion/controles-informe.constants";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Briefcase, Building2, Check, Eye, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
@@ -6,10 +6,14 @@ import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import {
+  normalizarMontoDecimales,
   normalizarMontoDosDecimales,
+  normalizarPorcentajeDecimales,
+  sanitizarMontoDecimales,
   sanitizarMontoDosDecimales,
+  sanitizarPorcentajeDecimales,
   seleccionarTextoCampoEditable,
 } from "@maximilian/shared/utils/formato-monto.util";
 import {
@@ -46,36 +50,6 @@ function obtenerMarcadorInvestigacion(etiqueta: string) {
   }
 
   return `Ingrese ${etiquetaNormalizada}`;
-}
-
-function normalizarPorcentajeDosDecimales(valor: string) {
-  const valorLimpio = valor.trim().replace("%", "").replace(",", ".");
-  if (!valorLimpio) return "";
-
-  const numero = Number.parseFloat(valorLimpio);
-  if (Number.isNaN(numero)) return valor;
-
-  return numero.toFixed(2);
-}
-
-function sanitizarPorcentajeDosDecimales(valor: string) {
-  const valorNormalizado = valor.replace(",", ".").replace(/[^0-9.]/g, "");
-  const partes = valorNormalizado.split(".");
-  const entero = partes[0] ?? "";
-  const decimal = partes[1] ?? "";
-  const valorCompuesto = partes.length > 1 ? `${entero}.${decimal.slice(0, 2)}` : entero;
-
-  if (!valorCompuesto) return "";
-
-  if (entero && Number.parseInt(entero, 10) > 100) {
-    return "100";
-  }
-
-  if (valorCompuesto === "100" || valorCompuesto.startsWith("100.")) {
-    return "100";
-  }
-
-  return valorCompuesto;
 }
 
 function sanitizarNumeroEntero(valor: string) {
@@ -409,6 +383,7 @@ interface PropsCampoInvestigacionAnalista {
   onChange?: (valor: string) => void;
   adicionalEtiqueta?: ReactNode;
   tipoEntrada?: "texto" | "email" | "url" | "fecha" | "decimal";
+  decimales?: number;
   error?: string;
   onBlur?: () => void;
   adornoFinal?: string;
@@ -471,6 +446,7 @@ export function CampoInvestigacionAnalista({
   onChange,
   adicionalEtiqueta,
   tipoEntrada = "texto",
+  decimales = 2,
   error,
   onBlur,
   adornoFinal,
@@ -510,7 +486,7 @@ export function CampoInvestigacionAnalista({
           readOnly={soloLectura}
           onChange={(event) => {
             if (esCampoPorcentaje) {
-              onChange?.(sanitizarPorcentajeDosDecimales(event.target.value));
+              onChange?.(sanitizarPorcentajeDecimales(event.target.value, 2));
               return;
             }
 
@@ -520,7 +496,11 @@ export function CampoInvestigacionAnalista({
             }
 
             if (esCampoDecimal) {
-              onChange?.(sanitizarMontoDosDecimales(event.target.value));
+              onChange?.(
+                decimales === 2
+                  ? sanitizarMontoDosDecimales(event.target.value)
+                  : sanitizarMontoDecimales(event.target.value, decimales),
+              );
               return;
             }
 
@@ -530,9 +510,13 @@ export function CampoInvestigacionAnalista({
             if (soloLectura || !onChange) return;
 
             if (esCampoPorcentaje) {
-              onChange(normalizarPorcentajeDosDecimales(event.target.value));
+              onChange(normalizarPorcentajeDecimales(event.target.value, 2));
             } else if (esCampoDecimal) {
-              onChange(normalizarMontoDosDecimales(event.target.value));
+              onChange(
+                decimales === 2
+                  ? normalizarMontoDosDecimales(event.target.value)
+                  : normalizarMontoDecimales(event.target.value, decimales),
+              );
             }
 
             onBlur?.();

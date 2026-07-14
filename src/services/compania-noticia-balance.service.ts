@@ -1,59 +1,24 @@
 import { ENDPOINTS_COMPANIA_NOTICIA_BALANCE } from "@maximilian/shared/constants/endpoints/compania-noticia-balance.endpoint";
-import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
+import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilian-service";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   CompaniaNoticiaBalanceListaItem,
   CompaniaNoticiaBalanceListParams,
   CompaniaNoticiaBalanceListResponse,
   CompaniaNoticiaBalanceObtenerParams,
-} from "@maximilian/shared/types/companiaNoticiaBalance.type";
+} from "@maximilian/shared/types/compania-noticia-balance.type";
 import {
   adaptarCuentaBalanceDesdeApi,
   esCampoEnteroEstadoFinanciero,
   obtenerClaveEstadoFinanciero,
 } from "@maximilian/shared/utils/estados-financieros.util";
 import { obtenerTextoNumerico } from "@maximilian/shared/utils/formato-monto.util";
-
-function obtenerNumero(...valores: unknown[]): number | undefined {
-  for (const valor of valores) {
-    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-    if (typeof valor === "string" && valor.trim() !== "") {
-      const numero = Number(valor);
-      if (Number.isFinite(numero)) return numero;
-    }
-  }
-
-  return undefined;
-}
-
-function obtenerTexto(...valores: unknown[]): string {
-  for (const valor of valores) {
-    if (typeof valor === "string") {
-      const texto = valor.trim();
-      if (texto) return texto;
-    }
-  }
-
-  return "";
-}
-
-function obtenerRegistro(...valores: unknown[]): Record<string, unknown> {
-  for (const valor of valores) {
-    if (typeof valor === "object" && valor !== null && !Array.isArray(valor)) {
-      return valor as Record<string, unknown>;
-    }
-  }
-
-  return {};
-}
-
-function obtenerLista(...valores: unknown[]): unknown[] {
-  for (const valor of valores) {
-    if (Array.isArray(valor)) return valor;
-  }
-
-  return [];
-}
+import {
+  obtenerLista,
+  obtenerNumeroOpcional as obtenerNumero,
+  obtenerRegistro,
+  obtenerTexto,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
 function normalizarBalance(item: unknown): CompaniaNoticiaBalanceListaItem {
   const registroBase = obtenerRegistro(item);

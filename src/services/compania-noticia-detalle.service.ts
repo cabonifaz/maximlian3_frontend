@@ -1,50 +1,18 @@
 import { ENDPOINTS_COMPANIA_NOTICIA_DETALLE } from "@maximilian/shared/constants/endpoints/compania-noticia-detalle.endpoint";
-import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
+import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilian-service";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   CompaniaNoticiaDetalleExportResponse,
   CompaniaNoticiaDetalleListaItem,
   CompaniaNoticiaDetalleListParams,
   CompaniaNoticiaDetalleListResponse,
-} from "@maximilian/shared/types/companiaNoticiaDetalle.type";
-
-function obtenerNumero(...valores: unknown[]): number | undefined {
-  for (const valor of valores) {
-    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-    if (typeof valor === "string" && valor.trim() !== "") {
-      const numero = Number(valor);
-      if (Number.isFinite(numero)) return numero;
-    }
-  }
-
-  return undefined;
-}
-
-function obtenerTexto(...valores: unknown[]): string {
-  for (const valor of valores) {
-    if (typeof valor === "string") {
-      const texto = valor.trim();
-      if (texto) return texto;
-    }
-    if (typeof valor === "number" && Number.isFinite(valor)) return String(valor);
-  }
-
-  return "";
-}
-
-function obtenerRegistro(valor: unknown): Record<string, unknown> {
-  return typeof valor === "object" && valor !== null && !Array.isArray(valor)
-    ? valor as Record<string, unknown>
-    : {};
-}
-
-function obtenerLista(...valores: unknown[]): unknown[] {
-  for (const valor of valores) {
-    if (Array.isArray(valor)) return valor;
-  }
-
-  return [];
-}
+} from "@maximilian/shared/types/compania-noticia-detalle.type";
+import {
+  obtenerLista,
+  obtenerNumeroOpcional as obtenerNumero,
+  obtenerRegistro,
+  obtenerTextoONumero as obtenerTexto,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
 function normalizarCompaniaDetalle(item: unknown): CompaniaNoticiaDetalleListaItem {
   const registro = obtenerRegistro(item);

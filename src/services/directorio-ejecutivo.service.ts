@@ -1,5 +1,5 @@
 import { ENDPOINTS_DIRECTORIO_EJECUTIVO } from "@maximilian/shared/constants/endpoints/directorio-ejecutivo.endpoint";
-import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
+import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilian-service";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   DirectorioEjecutivoEditarRequest,
@@ -11,43 +11,12 @@ import type {
   DirectorioEjecutivoObtenerParams,
 } from "@maximilian/shared/types/directorio-ejecutivo.type";
 import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/investigacion.type";
-
-function obtenerNumero(...valores: unknown[]): number | undefined {
-  for (const valor of valores) {
-    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-    if (typeof valor === "string" && valor.trim() !== "") {
-      const numero = Number(valor);
-      if (Number.isFinite(numero)) return numero;
-    }
-  }
-
-  return undefined;
-}
-
-function obtenerTexto(...valores: unknown[]): string {
-  for (const valor of valores) {
-    if (typeof valor === "string") {
-      const texto = valor.trim();
-      if (texto) return texto;
-    }
-  }
-
-  return "";
-}
-
-function obtenerRegistro(valor: unknown): Record<string, unknown> {
-  return typeof valor === "object" && valor !== null && !Array.isArray(valor)
-    ? valor as Record<string, unknown>
-    : {};
-}
-
-function obtenerLista(...valores: unknown[]): unknown[] {
-  for (const valor of valores) {
-    if (Array.isArray(valor)) return valor;
-  }
-
-  return [];
-}
+import {
+  obtenerLista,
+  obtenerNumeroOpcional as obtenerNumero,
+  obtenerRegistro,
+  obtenerTexto,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
 function normalizarFechaInput(...valores: unknown[]): string {
   const texto = obtenerTexto(...valores);

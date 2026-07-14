@@ -72,6 +72,36 @@ export function normalizarMontoDecimales(valor: string, decimales: number, permi
   return formatearMontoDecimales(numero, decimales);
 }
 
+export function sanitizarPorcentajeDecimales(valor: string, decimales: number) {
+  const valorNormalizado = valor.replace(",", ".").replace(/[^0-9.]/g, "");
+  const partes = valorNormalizado.split(".");
+  const entero = partes[0] ?? "";
+  const decimal = partes[1] ?? "";
+  const valorCompuesto = partes.length > 1 ? `${entero}.${decimal.slice(0, decimales)}` : entero;
+
+  if (!valorCompuesto) return "";
+
+  if (entero && Number.parseInt(entero, 10) > 100) {
+    return "100";
+  }
+
+  if (valorCompuesto === "100" || valorCompuesto.startsWith("100.")) {
+    return "100";
+  }
+
+  return valorCompuesto;
+}
+
+export function normalizarPorcentajeDecimales(valor: string, decimales: number) {
+  const valorLimpio = valor.trim().replace("%", "").replace(",", ".");
+  if (!valorLimpio) return "";
+
+  const numero = Number.parseFloat(valorLimpio);
+  if (Number.isNaN(numero)) return valor;
+
+  return numero.toFixed(decimales);
+}
+
 export function seleccionarTextoCampoEditable(event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
   const tipo = event.currentTarget instanceof HTMLInputElement ? event.currentTarget.type : "";
   if (["checkbox", "radio", "file", "date"].includes(tipo)) return;

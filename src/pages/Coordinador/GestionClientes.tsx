@@ -1,4 +1,4 @@
-import { CLIENT_COLUMNS } from "@maximilian/shared/constants/pages/Coordinador/gestionClientes.constants";
+import { CLIENT_COLUMNS } from "@maximilian/shared/constants/pages/Coordinador/gestion-clientes.constants";
 import { useState } from "react";
 import {
   Search,
@@ -13,9 +13,10 @@ import { ModalDetalleCliente } from "@maximilian/components/coordinador/ModalDet
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
-import { useRetardo } from "@maximilian/hooks/useRetardo";
+import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
+import { useListadoPaginado } from "@maximilian/hooks/useListadoPaginado";
 import { servicioCliente } from "@maximilian/services/cliente.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import {
   type DatosFormularioInformacionCliente,
   type DatosFormularioContacto,
@@ -32,8 +33,14 @@ interface ClientMutationParams {
 }
 
 export default function GestionClientes() {
-  const [terminoBusqueda, setSearchBar] = useState("");
-  const [paginaActual, setCurrentPage] = useState(1);
+  const {
+    terminoBusqueda,
+    paginaActual,
+    busquedaConRetardo,
+    cambiarBusqueda,
+    cambiarPagina,
+    reiniciarPagina,
+  } = useListadoPaginado();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
@@ -41,8 +48,6 @@ export default function GestionClientes() {
   const [clientToDelete, setClientToDelete] = useState<ClientListEntry | null>(null);
   const [filterPais, setFilterPais] = useState<number | undefined>(undefined);
   const [filterEstado, setFilterEstado] = useState<number | undefined>(undefined);
-
-  const busquedaConRetardo = useRetardo(terminoBusqueda);
 
   const queryClient = useQueryClient();
 
@@ -157,14 +162,11 @@ export default function GestionClientes() {
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchBar(e.target.value);
-    setCurrentPage(1);
+    cambiarBusqueda(e.target.value);
   };
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= (clientsData?.totalPaginas || 1)) {
-      setCurrentPage(page);
-    }
+    cambiarPagina(page, clientsData?.totalPaginas || 1);
   };
 
   const columnas = CLIENT_COLUMNS.map((columna, indice) => {
@@ -177,7 +179,7 @@ export default function GestionClientes() {
             opciones={paises}
             valores={filterPais ? [filterPais] : []}
             onChange={(ids) => setFilterPais(ids[ids.length - 1])}
-            onFiltroCambiado={() => setCurrentPage(1)}
+            onFiltroCambiado={reiniciarPagina}
             multiple={false}
           />
         ),
@@ -193,7 +195,7 @@ export default function GestionClientes() {
             opciones={estadosCliente}
             valores={filterEstado ? [filterEstado] : []}
             onChange={(ids) => setFilterEstado(ids[ids.length - 1])}
-            onFiltroCambiado={() => setCurrentPage(1)}
+            onFiltroCambiado={reiniciarPagina}
             multiple={false}
           />
         ),
@@ -229,14 +231,14 @@ export default function GestionClientes() {
         </span>
       </td>
       <td className="px-6 py-4">
-        {client.estado?.toLowerCase() === "activo" ? (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600">
+        {client.estado ? (
+          <CustomChipEstado
+            claseColor={client.estado.toLowerCase() === "activo"
+              ? "bg-green-50 text-green-600"
+              : "bg-gray-100 text-gray-500"}
+          >
             {client.estado}
-          </span>
-        ) : client.estado ? (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500">
-            {client.estado}
-          </span>
+          </CustomChipEstado>
         ) : (
           <span className="text-sm text-gray-400">-</span>
         )}

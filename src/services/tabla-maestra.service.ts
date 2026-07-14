@@ -1,5 +1,5 @@
 import { ENDPOINTS_TABLA_MAESTRA } from "@maximilian/shared/constants/endpoints/tabla-maestra.endpoint";
-import maximilianService from "./maximilianService";
+import maximilianService from "./maximilian-service";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
@@ -8,6 +8,10 @@ import type {
   TablaMaestraEditarRequest,
   TablaMaestraGuardarResponse,
 } from "@maximilian/shared/types/tabla-maestra.type";
+import {
+  obtenerNumeroOpcional as obtenerNumero,
+  obtenerRegistro,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
 export type OpcionesTablaMaestraPorId = Record<number, EntradaTablaMaestra[]>;
 type SolicitudTablaMaestra = {
@@ -19,24 +23,6 @@ const solicitudesPendientes = new Map<number, SolicitudTablaMaestra[]>();
 const cacheOpcionesTablaMaestra = new Map<number, EntradaTablaMaestra[]>();
 const solicitudesEnCursoPorClave = new Map<string, Promise<OpcionesTablaMaestraPorId>>();
 let temporizadorSolicitudes: ReturnType<typeof setTimeout> | null = null;
-
-function obtenerNumero(...valores: unknown[]): number | undefined {
-  for (const valor of valores) {
-    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-    if (typeof valor === "string" && valor.trim() !== "") {
-      const numero = Number(valor);
-      if (Number.isFinite(numero)) return numero;
-    }
-  }
-
-  return undefined;
-}
-
-function obtenerRegistro(valor: unknown): Record<string, unknown> {
-  return typeof valor === "object" && valor !== null && !Array.isArray(valor)
-    ? valor as Record<string, unknown>
-    : {};
-}
 
 function normalizarRespuestaGuardado(resultado: unknown): TablaMaestraGuardarResponse {
   if (Array.isArray(resultado)) return normalizarRespuestaGuardado(resultado[0]);

@@ -9,6 +9,7 @@ import {
   MailX,
 } from "lucide-react";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
+import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +20,7 @@ import {
 } from "@maximilian/schemas";
 import { ModalAgregarTarifa } from "./ModalAgregarTarifa";
 import { ModalAgregarContacto } from "./ModalAgregarContacto";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
@@ -388,15 +389,13 @@ export function ModalDetalleCliente({
         onClose={onClose}
         title="Modificar un Cliente"
         subtitle={client && (
-          client.idEstado === 1 ? (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600">
-              Activo
-            </span>
-          ) : (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500">
-              Inactivo
-            </span>
-          )
+          <CustomChipEstado
+            claseColor={client.idEstado === 1
+              ? "bg-green-50 text-green-600"
+              : "bg-gray-100 text-gray-500"}
+          >
+            {client.idEstado === 1 ? "Activo" : "Inactivo"}
+          </CustomChipEstado>
         )}
         activeTab={activeTab}
         onTabChange={(id) => setActiveTab(id as Tab)}

@@ -10,6 +10,7 @@ import type {
   InformeSeccionExtraccionDisponible,
 } from "@maximilian/shared/types/informe.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+import { formatearTamanoArchivo, obtenerExtensionArchivo } from "@maximilian/shared/utils/archivo.util";
 
 export type ModoProcesamientoInforme = "revision" | "directo";
 
@@ -39,16 +40,6 @@ interface PropsCustomModalExtraccionInformacionAnalista {
   ocultarEspecificaciones?: boolean;
   ocultarCancelar?: boolean;
   mostrarAccionDirecta?: boolean;
-}
-
-function formatearTamanoArchivo(tamano: number) {
-  if (tamano < 1024) return `${tamano} B`;
-  if (tamano < 1024 * 1024) return `${(tamano / 1024).toFixed(0)} KB`;
-  return `${(tamano / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function obtenerExtensionArchivo(nombreArchivo: string) {
-  return nombreArchivo.split(".").pop()?.toUpperCase() ?? "—";
 }
 
 function crearOpcionSelector(id: number, etiqueta: string): EntradaTablaMaestra {

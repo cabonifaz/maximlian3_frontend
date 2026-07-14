@@ -1,4 +1,4 @@
-import { roleLabels } from "@maximilian/shared/constants/components/coordinador/modalAsignacion.constants";
+import { roleLabels } from "@maximilian/shared/constants/components/coordinador/modal-asignacion.constants";
 import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import type { AssignmentRole, AssignmentRoleSelection } from "@maximilian/shared/types/asignacion.type";

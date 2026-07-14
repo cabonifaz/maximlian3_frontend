@@ -1,5 +1,5 @@
 import { ENDPOINTS_INFORME_ARCHIVO } from "@maximilian/shared/constants/endpoints/informe-archivo.endpoint";
-import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
+import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilian-service";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   InformeActualizarArchivoRequest,
@@ -12,38 +12,12 @@ import type {
   InformeObtenerArchivoResponse,
   InformeUrlArchivoGenerada,
 } from "@maximilian/shared/types/informe.type";
-
-function obtenerRegistro(...valores: unknown[]): Record<string, unknown> {
-  for (const v of valores) {
-    if (v && typeof v === "object" && !Array.isArray(v)) return v as Record<string, unknown>;
-  }
-  return {};
-}
-
-function obtenerNumero(...valores: unknown[]): number {
-  for (const v of valores) {
-    if (typeof v === "number" && !isNaN(v)) return v;
-    if (typeof v === "string") {
-      const n = Number(v);
-      if (!isNaN(n)) return n;
-    }
-  }
-  return 0;
-}
-
-function obtenerTexto(...valores: unknown[]): string {
-  for (const v of valores) {
-    if (typeof v === "string") return v;
-  }
-  return "";
-}
-
-function obtenerLista(...valores: unknown[]): unknown[] {
-  for (const v of valores) {
-    if (Array.isArray(v)) return v;
-  }
-  return [];
-}
+import {
+  obtenerLista,
+  obtenerNumero,
+  obtenerRegistro,
+  obtenerTextoSinRecortar as obtenerTexto,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
 function normalizarUrlsArchivoGeneradas(resultado: unknown): InformeUrlArchivoGenerada[] {
   const registro = obtenerRegistro(resultado);

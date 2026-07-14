@@ -1,4 +1,4 @@
-import { ID_MAESTRO_ESTADO_USUARIO } from "@maximilian/shared/constants/pages/Administrador/gestionUsuarios.constants";
+import { ID_MAESTRO_ESTADO_USUARIO } from "@maximilian/shared/constants/pages/Administrador/gestion-usuarios.constants";
 import { useState } from "react";
 import {
   Search,
@@ -12,10 +12,11 @@ import { ModalUsuario } from "@maximilian/components/administrador/ModalUsuario"
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
+import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { type DatosFormularioUsuario } from "@maximilian/schemas";
 import { servicioUsuario } from "@maximilian/services/usuario.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type {
   CreateUserRequest,
   DeleteUserRequest,
@@ -300,15 +301,15 @@ export default function GestionUsuarios() {
         </span>
       </td>
       <td className="px-6 py-4">
-        <span
-          className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
-            user.estado === "Activo"
-              ? "bg-green-50 text-green-700 border-green-100"
-              : "bg-red-50 text-red-700 border-red-100"
-          }`}
+        <CustomChipEstado
+          tamano="normal"
+          claseColor={user.estado === "Activo"
+            ? "bg-green-50 text-green-700 border-green-100"
+            : "bg-red-50 text-red-700 border-red-100"}
+          className="border font-semibold"
         >
           {user.estado}
-        </span>
+        </CustomChipEstado>
       </td>
       <td className="px-6 py-4 text-right relative">
         <button

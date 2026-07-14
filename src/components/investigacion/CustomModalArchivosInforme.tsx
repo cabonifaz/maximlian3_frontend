@@ -10,9 +10,10 @@ import type { ReferenciaBloqueCargaArchivosAnalista } from "@maximilian/componen
 import type { ArchivoInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { informeService } from "@maximilian/services/informe.service";
-import { servicioInformeArchivo } from "@maximilian/services/informeArchivo.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioInformeArchivo } from "@maximilian/services/informe-archivo.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
+import { formatearTamanoArchivo, obtenerExtensionArchivo } from "@maximilian/shared/utils/archivo.util";
 
 interface PropsCustomModalArchivosInvestigacionAnalista {
   estaAbierto: boolean;
@@ -24,16 +25,6 @@ interface PropsCustomModalArchivosInvestigacionAnalista {
   onCerrar: () => void;
   onInformeCreado?: (idInforme: number) => void;
   onArchivosChange: (archivos: ArchivoInvestigacionAnalista[]) => void;
-}
-
-function formatearTamanoArchivo(tamano: number) {
-  if (tamano < 1024) return `${tamano} B`;
-  if (tamano < 1024 * 1024) return `${(tamano / 1024).toFixed(0)} KB`;
-  return `${(tamano / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function obtenerExtensionArchivo(nombre: string) {
-  return nombre.split(".").pop()?.toUpperCase() ?? "—";
 }
 
 function esOpcionEvidencia(opcion?: {

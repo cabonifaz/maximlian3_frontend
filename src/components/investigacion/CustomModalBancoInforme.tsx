@@ -7,7 +7,7 @@ import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSele
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { servicioBanco } from "@maximilian/services/banco.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type { BancoCrearRequest, BancoEditarRequest, BancoListaItem } from "@maximilian/shared/types/banco.type";
 import type { RegistroBancoAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";

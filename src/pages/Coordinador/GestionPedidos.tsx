@@ -1,4 +1,4 @@
-import { PEDIDO_COLUMNS, ESTADO_OPTIONS, TARJETAS_ESTADO_PEDIDO, FASE_ASIGNACION } from "@maximilian/shared/constants/pages/Coordinador/gestionPedidos.constants";
+import { PEDIDO_COLUMNS, ESTADO_OPTIONS, TARJETAS_ESTADO_PEDIDO, FASE_ASIGNACION } from "@maximilian/shared/constants/pages/Coordinador/gestion-pedidos.constants";
 import { useMemo, useState } from "react";
 import {
   Edit,
@@ -15,27 +15,18 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
+import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { ModalPedido } from "@maximilian/components/coordinador/ModalPedido";
 import { ModalFlujoAsignacion } from "@maximilian/components/coordinador/ModalFlujoAsignacion";
 import { CustomModalDetallePedido } from "@maximilian/components/coordinador/CustomModalDetallePedido";
-import { useRetardo } from "@maximilian/hooks/useRetardo";
+import { useMenuFlotanteTabla } from "@maximilian/hooks/useMenuFlotanteTabla";
+import { useListadoPaginado } from "@maximilian/hooks/useListadoPaginado";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { type PedidoListEntry } from "@maximilian/shared/types/pedido.type";
 import { obtenerColorEstadoAnalista } from "@maximilian/shared/utils/investigacion.util";
-
-function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: string) {
-  return (
-    <span
-      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
-      style={{ backgroundColor: colorFondo, color: colorLetra }}
-    >
-      {descripcion}
-    </span>
-  );
-}
 
 function esPedidoCancelado(pedido: PedidoListEntry) {
   return pedido.estado === 5;
@@ -238,14 +229,19 @@ function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
 export default function PedidoManagement() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [terminoBusqueda, setSearchTerm] = useState("");
-  const [paginaActual, setCurrentPage] = useState(1);
+  const {
+    terminoBusqueda,
+    paginaActual,
+    busquedaConRetardo,
+    cambiarBusqueda,
+    cambiarPagina,
+    reiniciarPagina,
+  } = useListadoPaginado();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [idPedidoSeleccionado, setSelectedPedidoId] = useState<number | null>(null);
-  const [idMenuActivo, setActiveMenuId] = useState<number | null>(null);
-  const [menuDropdownStyle, setMenuDropdownStyle] = useState<React.CSSProperties>({});
+  const { idMenuActivo, estiloMenu, alternarMenu, cerrarMenu } = useMenuFlotanteTabla();
   const [pedidoACancelar, setPedidoACancelar] = useState<PedidoListEntry | null>(null);
   const [pedidoAEliminar, setPedidoAEliminar] = useState<PedidoListEntry | null>(null);
   const [modalAsignacion, setModalAsignacion] = useState<{ key: number; pedidosIniciales: PedidoListEntry[] } | null>(null);
@@ -269,7 +265,6 @@ export default function PedidoManagement() {
   const [filtroEstados, setFilterEstados] = useState<number[]>([]);
   const [versionFiltroEstados, setVersionFiltroEstados] = useState(0);
 
-  const busquedaConRetardo = useRetardo(terminoBusqueda);
   const estadosFiltroOrdenados = useMemo(
     () => [...filtroEstados].sort((a, b) => a - b),
     [filtroEstados],
@@ -293,20 +288,17 @@ export default function PedidoManagement() {
   });
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
+    cambiarBusqueda(e.target.value);
   };
 
   const handleEstadosChange = (ids: number[]) => {
     setFilterEstados(ids);
     setVersionFiltroEstados((version) => version + 1);
-    setCurrentPage(1);
+    reiniciarPagina();
   };
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= (pedidosData?.totalPaginas || 1)) {
-      setCurrentPage(page);
-    }
+    cambiarPagina(page, pedidosData?.totalPaginas || 1);
   };
 
   const pedidosFiltrados = useMemo(() => {
@@ -355,7 +347,9 @@ export default function PedidoManagement() {
       </td>
       <td className="px-6 py-4 text-center">
         <div className="flex justify-center">
-          {getEstadoBadge(pedido.descripcionEstado, pedido.colorLetra, pedido.colorFondo)}
+          <CustomChipEstado colorTexto={pedido.colorLetra} colorFondo={pedido.colorFondo}>
+            {pedido.descripcionEstado}
+          </CustomChipEstado>
         </div>
       </td>
       <td className="px-6 py-4 text-center">
@@ -378,18 +372,7 @@ export default function PedidoManagement() {
       </td>
       <td className="px-6 py-4 text-right">
         <button
-          onClick={(e) => {
-            if (idMenuActivo === pedido.idPedido) {
-              setActiveMenuId(null);
-            } else {
-              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              const menuHeight = 196;
-              const spaceBelow = window.innerHeight - rect.bottom;
-              const top = spaceBelow < menuHeight ? rect.top - menuHeight - 4 : rect.bottom + 4;
-              setMenuDropdownStyle({ top, right: window.innerWidth - rect.right });
-              setActiveMenuId(pedido.idPedido);
-            }
-          }}
+          onClick={(evento) => alternarMenu(evento, pedido.idPedido, 196)}
           className="p-2 text-gray-400 hover:text-brand-black hover:bg-gray-100 rounded-lg transition-all cursor-pointer hover:scale-110 active:scale-90"
         >
           <MoreHorizontal size={18} />
@@ -397,16 +380,16 @@ export default function PedidoManagement() {
 
         {idMenuActivo === pedido.idPedido && (
           <>
-            <div className="fixed inset-0 z-10" onClick={() => setActiveMenuId(null)} />
+            <div className="fixed inset-0 z-10" onClick={cerrarMenu} />
             <div
               className="fixed w-52 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100"
-              style={menuDropdownStyle}
+              style={estiloMenu}
             >
               <button
                 onClick={() => {
                   setSelectedPedidoId(pedido.idPedido);
                   setIsDetailModalOpen(true);
-                  setActiveMenuId(null);
+                  cerrarMenu();
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
               >
@@ -419,7 +402,7 @@ export default function PedidoManagement() {
                     onClick={() => {
                       setSelectedPedidoId(pedido.idPedido);
                       setIsEditModalOpen(true);
-                      setActiveMenuId(null);
+                      cerrarMenu();
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
                   >
@@ -440,7 +423,7 @@ export default function PedidoManagement() {
                           pedidosIniciales: [pedido],
                         });
                       }
-                      setActiveMenuId(null);
+                      cerrarMenu();
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
                   >
@@ -450,7 +433,7 @@ export default function PedidoManagement() {
                   <button
                     onClick={() => {
                       setPedidoACancelar(pedido);
-                      setActiveMenuId(null);
+                      cerrarMenu();
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
                   >
@@ -462,7 +445,7 @@ export default function PedidoManagement() {
               <button
                 onClick={() => {
                   setPedidoAEliminar(pedido);
-                  setActiveMenuId(null);
+                  cerrarMenu();
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
               >

@@ -9,7 +9,7 @@ import {
   fetchAuthSession,
 } from "aws-amplify/auth";
 import type { DatosFormularioInicioSesion } from "@maximilian/schemas";
-import maximilianService from "./maximilianService";
+import maximilianService from "./maximilian-service";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type { LoginValidatorResponse } from "@maximilian/shared/types/autenticacion.type";

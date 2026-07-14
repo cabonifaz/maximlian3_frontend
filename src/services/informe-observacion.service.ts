@@ -1,5 +1,5 @@
 import { ENDPOINTS_INFORME_OBSERVACION } from "@maximilian/shared/constants/endpoints/informe-observacion.endpoint";
-import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
+import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilian-service";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   InformeEditarObservacionRequest,
@@ -7,49 +7,17 @@ import type {
   InformeInsertarObservacionesLoteRequest,
   InformeObservacion,
 } from "@maximilian/shared/types/informe.type";
+import {
+  obtenerBooleanoEstricto as obtenerBooleano,
+  obtenerLista,
+  obtenerNumero,
+  obtenerRegistro,
+  obtenerTextoSinRecortar as obtenerTexto,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
 interface InformeObservacionListarParams {
   idPedido: number;
   idInforme?: number;
-}
-
-function obtenerRegistro(...valores: unknown[]): Record<string, unknown> {
-  for (const v of valores) {
-    if (v && typeof v === "object" && !Array.isArray(v)) return v as Record<string, unknown>;
-  }
-  return {};
-}
-
-function obtenerNumero(...valores: unknown[]): number {
-  for (const v of valores) {
-    if (typeof v === "number" && !isNaN(v)) return v;
-    if (typeof v === "string") {
-      const n = Number(v);
-      if (!isNaN(n)) return n;
-    }
-  }
-  return 0;
-}
-
-function obtenerTexto(...valores: unknown[]): string {
-  for (const v of valores) {
-    if (typeof v === "string") return v;
-  }
-  return "";
-}
-
-function obtenerBooleano(...valores: unknown[]): boolean {
-  for (const v of valores) {
-    if (typeof v === "boolean") return v;
-  }
-  return false;
-}
-
-function obtenerLista(...valores: unknown[]): unknown[] {
-  for (const v of valores) {
-    if (Array.isArray(v)) return v;
-  }
-  return [];
 }
 
 function normalizarObservacionesInforme(resultado: unknown): InformeObservacion[] {

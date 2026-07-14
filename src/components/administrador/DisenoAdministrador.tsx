@@ -1,4 +1,4 @@
-import { adminMenuItems } from "@maximilian/shared/constants/components/administrador/disenoAdministrador.constants";
+import { adminMenuItems } from "@maximilian/shared/constants/components/administrador/diseno-administrador.constants";
 import { Outlet } from "react-router";
 import { BarraLateral } from "@maximilian/components/common/BarraLateral";
 import { Encabezado } from "@maximilian/components/common/Encabezado";

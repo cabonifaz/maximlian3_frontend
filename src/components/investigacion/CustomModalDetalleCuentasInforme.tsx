@@ -1,4 +1,4 @@
-import { camposCalculadosEstadoFinanciero, camposRatioPorcentaje } from "@maximilian/shared/constants/components/investigacion/customModalDetalleCuentasInforme.constants";
+import { camposCalculadosEstadoFinanciero, camposRatioPorcentaje } from "@maximilian/shared/constants/components/investigacion/custom-modal-detalle-cuentas-informe.constants";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -14,7 +14,7 @@ import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPe
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
 import { informeService } from "@maximilian/services/informe.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type {
   DetalleBalanceGeneralAnalista,
   DetalleCuentasBalanceAnalista,

@@ -7,7 +7,7 @@ import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSele
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { esquemaContacto, type DatosFormularioContacto } from "@maximilian/schemas";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import {
   obtenerDescripcionTablaMaestra,
   obtenerSiguienteNumTablaMaestra,

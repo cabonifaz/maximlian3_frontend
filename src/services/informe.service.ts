@@ -1,10 +1,10 @@
 import { TIMEOUT_EXTRACCION_MS } from "@maximilian/shared/constants/services/informe.service.constants";
 import { ENDPOINTS_INFORME } from "@maximilian/shared/constants/endpoints/informe.endpoint";
-import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
+import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilian-service";
 import { servicioBanco } from "./banco.service";
 import { servicioCompania } from "./compania.service";
-import { servicioDirectorioEjecutivo } from "./directorioEjecutivo.service";
-import { servicioTablaMaestra, type OpcionesTablaMaestraPorId } from "./tablaMaestra.service";
+import { servicioDirectorioEjecutivo } from "./directorio-ejecutivo.service";
+import { servicioTablaMaestra, type OpcionesTablaMaestraPorId } from "./tabla-maestra.service";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
@@ -35,6 +35,8 @@ import type {
   EstadoInvestigacionAnalista,
 } from "@maximilian/shared/types/investigacion.type";
 import {
+  normalizarMontoDecimales,
+  normalizarMontoDosDecimales,
   obtenerNumeroDesdeMonto,
   obtenerTextoNumerico,
 } from "@maximilian/shared/utils/formato-monto.util";
@@ -44,6 +46,15 @@ import {
   obtenerClaveEstadoFinanciero,
   obtenerValorCampoEstadoFinanciero,
 } from "@maximilian/shared/utils/estados-financieros.util";
+import {
+  obtenerBooleanoFlexible as obtenerBooleano,
+  obtenerIndicadorBinario,
+  obtenerLista,
+  obtenerNumero,
+  obtenerNumeroOpcional,
+  obtenerRegistro,
+  obtenerTexto,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
 type RegistroCompaniaInvestigacion = DatosInvestigacionAnalista["companiasRelacionadas"][number];
 type RegistroBancoInvestigacion = DatosInvestigacionAnalista["bancos"][number];
@@ -51,64 +62,6 @@ type RegistroDirectorioInvestigacion = DatosInvestigacionAnalista["directorioEje
 type RegistroLocalInvestigacion = DatosInvestigacionAnalista["locales"][number];
 type RegistroBalanceInvestigacion = DatosInvestigacionAnalista["balances"][number];
 type RegistroProveedorInvestigacion = DatosInvestigacionAnalista["proveedores"][number];
-
-function obtenerNumero(...valores: unknown[]): number {
-  for (const valor of valores) {
-    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-    if (typeof valor === "string" && valor.trim() !== "") {
-      const numero = Number(valor);
-      if (Number.isFinite(numero)) return numero;
-    }
-  }
-
-  return 0;
-}
-
-function obtenerNumeroOpcional(...valores: unknown[]): number | undefined {
-  for (const valor of valores) {
-    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-    if (typeof valor === "string" && valor.trim() !== "") {
-      const numero = Number(valor);
-      if (Number.isFinite(numero)) return numero;
-    }
-  }
-
-  return undefined;
-}
-
-function obtenerIndicadorBinario(...valores: unknown[]): 0 | 1 {
-  for (const valor of valores) {
-    if (valor === 1 || valor === "1" || valor === true) return 1;
-    if (valor === 0 || valor === "0" || valor === false) return 0;
-  }
-
-  return 0;
-}
-
-function obtenerTexto(...valores: unknown[]): string {
-  for (const valor of valores) {
-    if (typeof valor === "string") {
-      const texto = valor.trim();
-      if (texto) return texto;
-    }
-  }
-
-  return "";
-}
-
-function obtenerBooleano(...valores: unknown[]): boolean {
-  for (const valor of valores) {
-    if (typeof valor === "boolean") return valor;
-    if (typeof valor === "number") return valor === 1;
-    if (typeof valor === "string") {
-      const texto = valor.trim().toLowerCase();
-      if (["1", "true", "si", "sí", "s"].includes(texto)) return true;
-      if (["0", "false", "no", "n"].includes(texto)) return false;
-    }
-  }
-
-  return false;
-}
 
 function obtenerTipoDocumentoArchivo(...valores: unknown[]): "" | "Informativo" | "Evidencia" {
   for (const valor of valores) {
@@ -209,24 +162,6 @@ function normalizarArchivosInvestigacion(
       faseVinculadaTexto,
     };
   });
-}
-
-function obtenerRegistro(...valores: unknown[]): Record<string, unknown> {
-  for (const valor of valores) {
-    if (typeof valor === "object" && valor !== null && !Array.isArray(valor)) {
-      return valor as Record<string, unknown>;
-    }
-  }
-
-  return {};
-}
-
-function obtenerLista(...valores: unknown[]): unknown[] {
-  for (const valor of valores) {
-    if (Array.isArray(valor)) return valor;
-  }
-
-  return [];
 }
 
 function formatearFechaEntrada(valor: string): string {
@@ -674,14 +609,14 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     monedaTipoCambio: idTipoCambio && idTipoCambio > 0
       ? String(idTipoCambio)
       : obtenerTexto(registro.monedaTipoCambio, registro.MonedaTipoCambio),
-    capitalInicial: obtenerTextoNumerico(registro.capitalInicial),
-    capitalDesembolsado: obtenerTextoNumerico(registro.capitalPagado),
+    capitalInicial: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.capitalInicial)),
+    capitalDesembolsado: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.capitalPagado)),
     ultimaAmpliacion: formatearFechaEntrada(obtenerTexto(registro.fechaUltimoIncremento, registro.FechaUltimoIncremento)),
-    patrimonioNeto: obtenerTextoNumerico(registro.patrimonioNeto),
+    patrimonioNeto: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.patrimonioNeto)),
     tipoAcciones: obtenerTexto(registro.tipoAcciones, registro.TipoAcciones),
-    valorAcciones: obtenerTextoNumerico(registro.valorAcciones),
+    valorAcciones: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.valorAcciones)),
     obligacionBolsa: obtenerBooleano(registro.cotizaBolsa, registro.CotizaBolsa) ? "Si" : "No",
-    tipoCambio: obtenerTextoNumerico(registro.tipoCambio),
+    tipoCambio: normalizarMontoDecimales(obtenerTextoNumerico(registro.tipoCambio), 6),
     antecedentes: obtenerTexto(registro.antecedentes, registro.Antecedentes),
     aspectosLegales: obtenerTexto(registro.aspectosLegales, registro.AspectosLegales),
     comentariosEmpresasRelacionadas: obtenerTexto(
@@ -709,21 +644,33 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     };
   });
 
+  const idIsicCategoria = obtenerNumeroOpcional(registro.idIsicCategoria, registro.IdIsicCategoria);
+  const idIsicClase = obtenerNumeroOpcional(registro.idIsicClase, registro.IdIsicClase);
+  const valorCategoriaCiiu = idIsicCategoria && idIsicCategoria > 0 ? String(idIsicCategoria) : "";
+  const valorClaseCiiu = idIsicClase && idIsicClase > 0 ? String(idIsicClase) : "";
+  const idVentasCreditoTiempo = obtenerNumeroOpcional(registro.idVentasCreditoTiempo, registro.IdVentasCreditoTiempo);
+  const idComprasCreditoNacionalesTiempo = obtenerNumeroOpcional(
+    registro.idComprasCreditoNacionalesTiempo,
+    registro.IdComprasCreditoNacionalesTiempo,
+  );
+  const idComprasCreditoInternacionalesTiempo = obtenerNumeroOpcional(
+    registro.idComprasCreditoInternacionalesTiempo,
+    registro.IdComprasCreditoInternacionalesTiempo,
+  );
+
   datos.operacionPrincipal = {
     sector: obtenerTexto(registro.sector, registro.Sector),
     actividad: obtenerTexto(registro.actividad, registro.Actividad),
-    categoriaCiiu: String(obtenerNumeroOpcional(registro.idIsicCategoria, registro.IdIsicCategoria) ?? "")
+    categoriaCiiu: valorCategoriaCiiu
       || obtenerTexto(registro.isicCategoria, registro.IsicCategoria, registro.categoriaCiiu, registro.CategoriaCiiu),
-    claseCiiu: String(obtenerNumeroOpcional(registro.idIsicClase, registro.IdIsicClase) ?? "")
+    claseCiiu: valorClaseCiiu
       || obtenerTexto(registro.isicClase, registro.IsicClase, registro.claseCiiu, registro.ClaseCiiu),
     actividadPrincipal: obtenerTexto(registro.actividadPrincipal, registro.ActividadPrincipal),
     ventasContadoPorcentaje: obtenerTextoNumerico(registro.ventasContado),
     ventasContadoDetalle: obtenerTexto(registro.ventasContadoText, registro.VentasContadoText),
     ventasCreditoPorcentaje: obtenerTextoNumerico(registro.ventasCredito),
     ventasCreditoDetalle: obtenerTexto(registro.ventasCreditoText, registro.VentasCreditoText),
-    ventasCreditoTiempo: String(
-      obtenerNumeroOpcional(registro.idVentasCreditoTiempo, registro.IdVentasCreditoTiempo) ?? "",
-    ) || obtenerTexto(
+    ventasCreditoTiempo: (idVentasCreditoTiempo && idVentasCreditoTiempo > 0 ? String(idVentasCreditoTiempo) : "") || obtenerTexto(
       registro.ventasCreditoTiempo,
       registro.VentasCreditoTiempo,
       registro.ventasCreditoSeleccion,
@@ -749,9 +696,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     comprasContadoNacionalesDetalle: obtenerTexto(registro.comprasContadoNacionalesText, registro.ComprasContadoNacionalesText),
     comprasCreditoNacionalesPorcentaje: obtenerTextoNumerico(registro.comprasCreditoNacionales ?? registro.ComprasCreditoNacionales),
     comprasCreditoNacionalesDetalle: obtenerTexto(registro.comprasCreditoNacionalesText, registro.ComprasCreditoNacionalesText),
-    comprasCreditoNacionalesTiempo: String(
-      obtenerNumeroOpcional(registro.idComprasCreditoNacionalesTiempo, registro.IdComprasCreditoNacionalesTiempo) ?? "",
-    ),
+    comprasCreditoNacionalesTiempo: idComprasCreditoNacionalesTiempo && idComprasCreditoNacionalesTiempo > 0
+      ? String(idComprasCreditoNacionalesTiempo)
+      : "",
     comprasExtranjeroPorcentaje: obtenerTextoNumerico(
       registro.comprasInternacionales
         ?? registro.ComprasInternacionales
@@ -768,9 +715,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     comprasContadoInternacionalesDetalle: obtenerTexto(registro.comprasContadoInternacionalesText, registro.ComprasContadoInternacionalesText),
     comprasCreditoInternacionalesPorcentaje: obtenerTextoNumerico(registro.comprasCreditoInternacionales ?? registro.ComprasCreditoInternacionales),
     comprasCreditoInternacionalesDetalle: obtenerTexto(registro.comprasCreditoInternacionalesText, registro.ComprasCreditoInternacionalesText),
-    comprasCreditoInternacionalesTiempo: String(
-      obtenerNumeroOpcional(registro.idComprasCreditoInternacionalesTiempo, registro.IdComprasCreditoInternacionalesTiempo) ?? "",
-    ),
+    comprasCreditoInternacionalesTiempo: idComprasCreditoInternacionalesTiempo && idComprasCreditoInternacionalesTiempo > 0
+      ? String(idComprasCreditoInternacionalesTiempo)
+      : "",
     numeroEmpleados: obtenerTextoNumerico(registro.numeroEmpleados),
     numeroEmpleadosDetalle: obtenerTexto(registro.numeroEmpleadosText, registro.NumeroEmpleadosText),
     comentariosOperaciones: obtenerTexto(registro.comentariosOperaciones, registro.ComentariosOperaciones),
@@ -1119,8 +1066,8 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     idCiudadRegistro: obtenerNumeroOpcional(registro.idCiudadRegistro, registro.IdCiudadRegistro),
     idSector: obtenerNumeroOpcional(registro.idSector, registro.IdSector),
     idActividad: obtenerNumeroOpcional(registro.idActividad, registro.IdActividad),
-    idIsicCategoria: obtenerNumeroOpcional(registro.idIsicCategoria, registro.IdIsicCategoria),
-    idIsicClase: obtenerNumeroOpcional(registro.idIsicClase, registro.IdIsicClase),
+    idIsicCategoria: idIsicCategoria && idIsicCategoria > 0 ? idIsicCategoria : undefined,
+    idIsicClase: idIsicClase && idIsicClase > 0 ? idIsicClase : undefined,
     datosInvestigacion: datos,
     archivosInvestigacion,
   };
@@ -1365,21 +1312,6 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
   }
   if (entradaMonedaTipoCambio) {
     aspectosLegales.monedaTipoCambio = entradaMonedaTipoCambio.string1 ?? aspectosLegales.monedaTipoCambio;
-  }
-
-  const isoDivisas = entradaMonedaDivisas?.string2 ?? null;
-  const isoTipoCambio = entradaMonedaTipoCambio?.string2 ?? null;
-
-  if (isoDivisas) {
-    const agregarIso = (valor: string) => valor ? `${valor} ${isoDivisas}` : valor;
-    if (aspectosLegales.capitalInicial) aspectosLegales.capitalInicial = agregarIso(aspectosLegales.capitalInicial);
-    if (aspectosLegales.capitalDesembolsado) aspectosLegales.capitalDesembolsado = agregarIso(aspectosLegales.capitalDesembolsado);
-    if (aspectosLegales.patrimonioNeto) aspectosLegales.patrimonioNeto = agregarIso(aspectosLegales.patrimonioNeto);
-    if (aspectosLegales.valorAcciones) aspectosLegales.valorAcciones = agregarIso(aspectosLegales.valorAcciones);
-  }
-
-  if (aspectosLegales.tipoCambio && isoTipoCambio && isoDivisas) {
-    aspectosLegales.tipoCambio = `1 ${isoTipoCambio} = ${aspectosLegales.tipoCambio} ${isoDivisas}`;
   }
 
   return {

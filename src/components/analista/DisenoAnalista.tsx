@@ -1,4 +1,4 @@
-import { elementosMenuAnalista } from "@maximilian/shared/constants/components/analista/disenoAnalista.constants";
+import { elementosMenuAnalista } from "@maximilian/shared/constants/components/analista/diseno-analista.constants";
 import { Outlet } from "react-router";
 import { BarraLateral } from "@maximilian/components/common/BarraLateral";
 import { Encabezado } from "@maximilian/components/common/Encabezado";

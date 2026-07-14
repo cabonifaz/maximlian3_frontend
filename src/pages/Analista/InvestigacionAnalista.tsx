@@ -1,11 +1,10 @@
-import { FILAS_POR_PAGINA_INVESTIGACION, ID_ESTADO_PEDIDO_BORRADOR, ID_ESTADO_PEDIDO_FINALIZADO, CAMPOS_MONETARIOS_EXTRACCION, CAMPOS_PORCENTAJE_EXTRACCION, CAMPOS_PORCENTAJE_COMPLEMENTARIO, ETIQUETAS_SECCIONES_EXTRACCION, CONFIGURACION_EXTRACCION_POR_SECCION, SECCIONES_LISTA_EXTRACCION, ETIQUETAS_CAMPOS_EXTRACCION } from "@maximilian/shared/constants/pages/Analista/investigacionAnalista.constants";
-import type { CampoPorcentajeOperacion } from "@maximilian/shared/constants/pages/Analista/investigacionAnalista.constants";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { FILAS_POR_PAGINA_INVESTIGACION, ID_ESTADO_PEDIDO_BORRADOR, ID_ESTADO_PEDIDO_FINALIZADO, CAMPOS_MONETARIOS_EXTRACCION, CAMPOS_PORCENTAJE_EXTRACCION, CAMPOS_PORCENTAJE_COMPLEMENTARIO, ETIQUETAS_SECCIONES_EXTRACCION, CONFIGURACION_EXTRACCION_POR_SECCION, SECCIONES_LISTA_EXTRACCION, ETIQUETAS_CAMPOS_EXTRACCION } from "@maximilian/shared/constants/pages/Analista/investigacion-analista.constants";
+import type { CampoPorcentajeOperacion } from "@maximilian/shared/constants/pages/Analista/investigacion-analista.constants";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import {
-  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Check,
@@ -42,6 +41,8 @@ import { CustomModalLocalAnalista } from "@maximilian/components/investigacion/C
 import { CustomModalOperacionAnalista } from "@maximilian/components/investigacion/CustomModalOperacionInforme";
 import { CustomModalProveedorAnalista } from "@maximilian/components/investigacion/CustomModalProveedorInforme";
 import { CustomModalRegistroEjecutivoAnalista } from "@maximilian/components/investigacion/CustomModalRegistroEjecutivo";
+import { CustomPaginacionInvestigacion } from "@maximilian/components/investigacion/CustomPaginacionInvestigacion";
+import { CustomIndicadorCambioExtraccion } from "@maximilian/components/investigacion/CustomIndicadorCambioExtraccion";
 import { CustomModalRegistroPersonaDirectorioAnalista } from "@maximilian/components/investigacion/CustomModalRegistroPersonaDirectorio";
 import {
   CustomModalRevisionCompaniasExtraccion,
@@ -61,14 +62,14 @@ import {
   SelectorMaestroConAltaInvestigacionAnalista,
 } from "@maximilian/components/investigacion/ControlesInforme";
 import { informeService } from "@maximilian/services/informe.service";
-import { servicioInformeObservacion } from "@maximilian/services/informeObservacion.service";
-import { servicioInformeLocalImagen } from "@maximilian/services/informeLocalImagen.service";
+import { servicioInformeObservacion } from "@maximilian/services/informe-observacion.service";
+import { servicioInformeLocalImagen } from "@maximilian/services/informe-local-imagen.service";
 import { servicioBanco } from "@maximilian/services/banco.service";
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { usePrecargaTablaMaestra } from "@maximilian/hooks/usePrecargaTablaMaestra";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import {
@@ -252,6 +253,11 @@ function obtenerEnteroDesdeTexto(valor?: string) {
   if (!valor) return 0;
   const numero = Number.parseInt(valor.replace(/\D/g, ""), 10);
   return Number.isFinite(numero) ? numero : 0;
+}
+
+function obtenerEnteroOpcionalDesdeTexto(valor?: string) {
+  const numero = obtenerEnteroDesdeTexto(valor);
+  return numero > 0 ? numero : undefined;
 }
 
 function convertirFechaIso(valor?: string) {
@@ -829,29 +835,29 @@ function construirPayloadCrearInforme({
     idRegistro: aspectosLegales.registro,
     idPlazo: aspectosLegales.condiciones,
     idOperacionesCambioDivisas: obtenerIdPorTextoONumero(opcionesMoneda, aspectosLegales.operacionesCambioDivisas),
-    capitalInicial: obtenerNumeroDesdeTexto(aspectosLegales.capitalInicial),
-    capitalPagado: obtenerNumeroDesdeTexto(aspectosLegales.capitalDesembolsado),
+    capitalInicial: obtenerNumeroOpcionalDesdeTexto(aspectosLegales.capitalInicial) ?? undefined,
+    capitalPagado: obtenerNumeroOpcionalDesdeTexto(aspectosLegales.capitalDesembolsado) ?? undefined,
     fechaUltimoIncremento: convertirFechaIso(aspectosLegales.ultimaAmpliacion),
     idTipoIncremento: 0,
-    patrimonioNeto: obtenerNumeroDesdeTexto(aspectosLegales.patrimonioNeto),
+    patrimonioNeto: obtenerNumeroOpcionalDesdeTexto(aspectosLegales.patrimonioNeto) ?? undefined,
     tipoAcciones: aspectosLegales.tipoAcciones,
-    valorAcciones: obtenerNumeroDesdeTexto(aspectosLegales.valorAcciones),
+    valorAcciones: obtenerNumeroOpcionalDesdeTexto(aspectosLegales.valorAcciones) ?? undefined,
     cotizaBolsa: esTextoAfirmativo(aspectosLegales.obligacionBolsa),
     idTipoCambio: obtenerIdPorTextoONumero(opcionesMoneda, aspectosLegales.monedaTipoCambio),
-    tipoCambio: obtenerNumeroDesdeTexto(aspectosLegales.tipoCambio),
+    tipoCambio: obtenerNumeroOpcionalDesdeTexto(aspectosLegales.tipoCambio) ?? undefined,
     antecedentes: aspectosLegales.antecedentes,
     aspectosLegales: aspectosLegales.aspectosLegales,
     comentariosAspectoLegal: aspectosLegales.comentariosEmpresasRelacionadas,
     idSector: obtenerIdPorTexto(opcionesSectorEconomico, operacionPrincipal.sector),
     actividad: operacionPrincipal.actividad,
-    idIsicCategoria: obtenerIdCiiuPorValor(opcionesActividadEconomica, operacionPrincipal.categoriaCiiu),
-    idIsicClase: obtenerIdCiiuPorValor(opcionesClaseCiiu, operacionPrincipal.claseCiiu),
+    idIsicCategoria: obtenerIdCiiuPorValor(opcionesActividadEconomica, operacionPrincipal.categoriaCiiu) || undefined,
+    idIsicClase: obtenerIdCiiuPorValor(opcionesClaseCiiu, operacionPrincipal.claseCiiu) || undefined,
     actividadPrincipal: operacionPrincipal.actividadPrincipal,
     ventasContado: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasContadoPorcentaje),
     ventasContadoText: operacionPrincipal.ventasContadoDetalle,
     ventasCredito: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasCreditoPorcentaje),
     ventasCreditoText: operacionPrincipal.ventasCreditoDetalle,
-    idVentasCreditoTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.ventasCreditoTiempo),
+    idVentasCreditoTiempo: obtenerEnteroOpcionalDesdeTexto(operacionPrincipal.ventasCreditoTiempo),
     ventasNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.territorioVentasPorcentaje),
     ventasNacionalesText: operacionPrincipal.territorioVentasDetalle,
     ventasInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.ventasExtranjeroPorcentaje),
@@ -862,15 +868,15 @@ function construirPayloadCrearInforme({
     comprasContadoNacionalesText: operacionPrincipal.comprasContadoNacionalesDetalle,
     comprasCreditoNacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasCreditoNacionalesPorcentaje),
     comprasCreditoNacionalesText: operacionPrincipal.comprasCreditoNacionalesDetalle,
-    idComprasCreditoNacionalesTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.comprasCreditoNacionalesTiempo),
+    idComprasCreditoNacionalesTiempo: obtenerEnteroOpcionalDesdeTexto(operacionPrincipal.comprasCreditoNacionalesTiempo),
     comprasInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasExtranjeroPorcentaje),
     comprasInternacionalesText: operacionPrincipal.comprasExtranjeroDetalle,
     comprasContadoInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasContadoInternacionalesPorcentaje),
     comprasContadoInternacionalesText: operacionPrincipal.comprasContadoInternacionalesDetalle,
     comprasCreditoInternacionales: obtenerNumeroOpcionalDesdeTexto(operacionPrincipal.comprasCreditoInternacionalesPorcentaje),
     comprasCreditoInternacionalesText: operacionPrincipal.comprasCreditoInternacionalesDetalle,
-    idComprasCreditoInternacionalesTiempo: obtenerEnteroDesdeTexto(operacionPrincipal.comprasCreditoInternacionalesTiempo),
-    numeroEmpleados: obtenerEnteroDesdeTexto(operacionPrincipal.numeroEmpleados),
+    idComprasCreditoInternacionalesTiempo: obtenerEnteroOpcionalDesdeTexto(operacionPrincipal.comprasCreditoInternacionalesTiempo),
+    numeroEmpleados: obtenerEnteroOpcionalDesdeTexto(operacionPrincipal.numeroEmpleados),
     numeroEmpleadosText: operacionPrincipal.numeroEmpleadosDetalle,
     comentariosOperaciones: operacionPrincipal.comentariosOperaciones,
     contenidoInformacionFinanciera: informacionFinanciera.contenido,
@@ -1026,95 +1032,6 @@ function prepararDatosParaNuevoInforme(
       idInformeLocal: undefined,
     })),
   };
-}
-
-function PaginacionInvestigacion({
-  paginaActual,
-  totalRegistros,
-  onPaginaChange,
-  etiquetaRegistros,
-  contenidoCentro,
-}: {
-  paginaActual: number;
-  totalRegistros: number;
-  onPaginaChange: (pagina: number) => void;
-  etiquetaRegistros: string;
-  contenidoCentro?: ReactNode;
-}) {
-  const totalPaginas = obtenerTotalPaginas(totalRegistros);
-  const paginaSegura = Math.min(paginaActual, totalPaginas);
-  const mostrando = totalRegistros === 0
-    ? 0
-    : Math.min(FILAS_POR_PAGINA_INVESTIGACION, totalRegistros - ((paginaSegura - 1) * FILAS_POR_PAGINA_INVESTIGACION));
-
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-white px-4 py-3">
-      <p className="text-xs font-medium text-slate-400">
-        Mostrando {mostrando} de {totalRegistros} {etiquetaRegistros}
-      </p>
-
-      {contenidoCentro ? (
-        <div className="text-xs font-semibold text-slate-500">{contenidoCentro}</div>
-      ) : <div />}
-
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => onPaginaChange(Math.max(1, paginaSegura - 1))}
-          disabled={paginaSegura === 1}
-          className="flex items-center gap-1 text-xs text-slate-500 transition-colors hover:text-brand-black disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          <ArrowLeft size={14} />
-          Anterior
-        </button>
-        <span className="text-xs font-medium text-slate-400">
-          {paginaSegura}/{totalPaginas}
-        </span>
-        <button
-          type="button"
-          onClick={() => onPaginaChange(Math.min(totalPaginas, paginaSegura + 1))}
-          disabled={paginaSegura === totalPaginas}
-          className="flex items-center gap-1 text-xs text-slate-500 transition-colors hover:text-brand-black disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          Siguiente
-          <ArrowRight size={14} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function IndicadorCambioExtraccion({
-  visible,
-  onClick,
-}: {
-  visible: boolean;
-  onClick: () => void;
-}) {
-  if (!visible) return null;
-
-  return (
-    <span className="group relative inline-flex">
-      <button
-        type="button"
-        onMouseDown={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          onClick();
-        }}
-        className="inline-flex items-center text-amber-500 transition-colors hover:text-amber-600"
-      >
-        <AlertTriangle size={16} />
-      </button>
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-52 -translate-x-1/2 rounded-lg bg-brand-black px-3 py-2 text-center text-xs font-medium text-white shadow-lg group-hover:block">
-        Hay un posible cambio por la extraccion del documento
-      </span>
-    </span>
-  );
 }
 
 function PantallaInvestigacionAnalista({
@@ -3042,7 +2959,7 @@ function PantallaInvestigacionAnalista({
   };
 
   const obtenerIndicadorCambioExtraccion = (id: string) => (
-    <IndicadorCambioExtraccion
+    <CustomIndicadorCambioExtraccion
       visible={Boolean(cambiosExtraccionPendientes[id])}
       onClick={() => setIdCambioExtraccionActivo(id)}
     />
@@ -4140,7 +4057,7 @@ function PantallaInvestigacionAnalista({
               </tbody>
             </table>
           </div>
-          <PaginacionInvestigacion
+          <CustomPaginacionInvestigacion
             paginaActual={paginaCompanias}
             totalRegistros={datosInvestigacion.companiasRelacionadas.length}
             onPaginaChange={setPaginaCompanias}
@@ -4442,7 +4359,7 @@ function PantallaInvestigacionAnalista({
               </tbody>
             </table>
           </div>
-          <PaginacionInvestigacion
+          <CustomPaginacionInvestigacion
             paginaActual={paginaOperaciones}
             totalRegistros={pestanaRamoOperacionesVisible === "locales" ? datosInvestigacion.locales.length : registrosImportacionExportacionTabla.length}
             onPaginaChange={setPaginaOperaciones}
@@ -5042,7 +4959,7 @@ function PantallaInvestigacionAnalista({
           </tbody>
         </table>
       </div>
-      <PaginacionInvestigacion
+      <CustomPaginacionInvestigacion
         paginaActual={paginaBalances}
         totalRegistros={balancesFiltrados.length}
         onPaginaChange={setPaginaBalances}
@@ -5188,7 +5105,7 @@ function PantallaInvestigacionAnalista({
               </tbody>
             </table>
           </div>
-          <PaginacionInvestigacion
+          <CustomPaginacionInvestigacion
             paginaActual={paginaProveedores}
             totalRegistros={proveedoresFiltrados.length}
             onPaginaChange={setPaginaProveedores}
@@ -5334,7 +5251,7 @@ function PantallaInvestigacionAnalista({
               </tbody>
             </table>
           </div>
-          <PaginacionInvestigacion
+          <CustomPaginacionInvestigacion
             paginaActual={paginaBancos}
             totalRegistros={bancosFiltrados.length}
             onPaginaChange={setPaginaBancos}
@@ -5463,7 +5380,7 @@ function PantallaInvestigacionAnalista({
           </tbody>
         </table>
       </div>
-      <PaginacionInvestigacion
+      <CustomPaginacionInvestigacion
         paginaActual={paginaEjecutivos}
         totalRegistros={ejecutivosFiltrados.length}
         onPaginaChange={setPaginaEjecutivos}

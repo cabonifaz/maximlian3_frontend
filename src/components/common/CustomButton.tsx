@@ -1,5 +1,5 @@
-import { variantClasses, sizeClasses, interactionClasses, disabledClasses } from "@maximilian/shared/constants/components/common/customButton.constants";
-import type { PropsCustomButton } from "@maximilian/shared/constants/components/common/customButton.constants";
+import { variantClasses, sizeClasses, interactionClasses, disabledClasses } from "@maximilian/shared/constants/components/common/custom-button.constants";
+import type { PropsCustomButton } from "@maximilian/shared/constants/components/common/custom-button.constants";
 import { Loader2 } from "lucide-react";
 
 export function CustomButton({

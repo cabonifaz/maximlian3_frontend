@@ -3,7 +3,7 @@ import { Search, Loader2, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSeleccionAutomaticaOpcionUnica } from "@maximilian/hooks/useSeleccionAutomaticaOpcionUnica";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { CustomLabel } from "./CustomLabel";
 
 export interface CustomSelectorBuscableProps {
