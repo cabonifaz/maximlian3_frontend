@@ -1,5 +1,6 @@
 import { FILAS_POR_PAGINA_INVESTIGACION, ID_ESTADO_PEDIDO_BORRADOR, ID_ESTADO_PEDIDO_FINALIZADO, CAMPOS_MONETARIOS_EXTRACCION, CAMPOS_PORCENTAJE_EXTRACCION, CAMPOS_PORCENTAJE_COMPLEMENTARIO, ETIQUETAS_SECCIONES_EXTRACCION, CONFIGURACION_EXTRACCION_POR_SECCION, SECCIONES_LISTA_EXTRACCION, ETIQUETAS_CAMPOS_EXTRACCION } from "@maximilian/shared/constants/pages/Analista/investigacion-analista.constants";
 import type { CampoPorcentajeOperacion } from "@maximilian/shared/constants/pages/Analista/investigacion-analista.constants";
+import { esquemaDatosInvestigacion } from "@maximilian/schemas/investigacion.schema";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -802,7 +803,8 @@ function construirPayloadCrearInforme({
   opcionesTipoLocal: { num1: number | null; string1: string | null }[] | undefined;
   opcionesTipoProveedor: { num1: number | null; string1: string | null }[] | undefined;
 }): InformeCrearRequest {
-  const { identificacion, aspectosLegales, operacionPrincipal, informacionFinanciera, referencias, datosGenerales } = datosInvestigacion;
+  const datosValidados = esquemaDatosInvestigacion.parse(datosInvestigacion) as DatosInvestigacionAnalista;
+  const { identificacion, aspectosLegales, operacionPrincipal, informacionFinanciera, referencias, datosGenerales } = datosValidados;
   const esEdicion = typeof idInforme === "number" && idInforme > 0;
 
   return depurarPayloadInforme({

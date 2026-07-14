@@ -6,36 +6,6 @@ interface PropsCustomModalDetalleCredito {
   onCerrar: () => void;
 }
 
-function crearDetalleCuentasVacio() {
-  return {
-    balanceGeneral: {
-      totalCorrientes: "",
-      totalNoCorrientes: "",
-      otrosActivos: "",
-      totalActivos: "",
-      totalPasivosCorrientes: "",
-      totalPasivosNoCorrientes: "",
-      otrosPasivos: "",
-      totalPasivos: "",
-      patrimonio: "",
-      totalPasivoPatrimonio: "",
-    },
-    estadoGananciasPerdidas: {
-      ventasNetas: "",
-      utilidadGanancia: "",
-    },
-    ratios: {
-      liquidez: "",
-      capitalTrabajo: "",
-      endeudamiento: "",
-      rentabilidad: "",
-    },
-    registrosHabilitados: true,
-    totalesHabilitados: true,
-    registrosEstadoFinanciero: {},
-  };
-}
-
 export function CustomModalDetalleCredito({
   reporte,
   onCerrar,
@@ -47,7 +17,7 @@ export function CustomModalDetalleCredito({
       estaAbierto={Boolean(reporte)}
       onCerrar={onCerrar}
       onGuardar={() => {}}
-      detalleInicial={reporte.detalleCuentas ?? crearDetalleCuentasVacio()}
+      detalleInicial={reporte.detalleCuentas}
       tipoEstadoFinanciero={reporte.tipo}
       soloLectura
     />

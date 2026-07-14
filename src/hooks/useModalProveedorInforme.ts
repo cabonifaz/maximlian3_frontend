@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { esquemaModalProveedorInvestigacion } from "@maximilian/schemas/investigacion.schema";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type { RegistroProveedorAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
@@ -87,7 +88,7 @@ export function useModalProveedorInforme({
       ?? registroInicial?.idLimiteCredito
       ?? registroInicial?.idPlazoCredito;
 
-    onGuardar({
+    const resultado = esquemaModalProveedorInvestigacion.safeParse({
       idInformeProveedor: registroInicial?.idInformeProveedor,
       idTipoProveedor: idTipoProveedor ?? undefined,
       nombreEmpresa: nombreEmpresa.trim(),
@@ -111,6 +112,9 @@ export function useModalProveedorInforme({
       limiteCredito: tieneReferenciaComercial ? limiteCredito : "",
       promedioMensual: tieneReferenciaComercial ? promedioMensual.trim() : "",
     });
+    if (!resultado.success) return;
+
+    onGuardar(resultado.data);
   };
 
   return {

@@ -6,6 +6,7 @@ import type {
   InformeBalanceTurquiaRequest,
   InformeCrearRequest,
 } from "@maximilian/shared/types/informe.type";
+import { esquemaDatosInvestigacion } from "@maximilian/schemas/investigacion.schema";
 import type { DatosInvestigacionAnalista, RegistroBalanceAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import {
@@ -407,7 +408,8 @@ export function construirPayloadInforme({
   opcionesMoneda?: EntradaTablaMaestra[] | undefined;
   opcionesSectorEconomico: EntradaTablaMaestra[] | undefined;
 }): InformeCrearRequest {
-  const { identificacion, aspectosLegales, operacionPrincipal, informacionFinanciera, referencias, datosGenerales } = datosInvestigacion;
+  const datosValidados = esquemaDatosInvestigacion.parse(datosInvestigacion) as DatosInvestigacionAnalista;
+  const { identificacion, aspectosLegales, operacionPrincipal, informacionFinanciera, referencias, datosGenerales } = datosValidados;
   const esEdicion = typeof idInforme === "number" && idInforme > 0;
 
   return depurarPayloadInforme({
