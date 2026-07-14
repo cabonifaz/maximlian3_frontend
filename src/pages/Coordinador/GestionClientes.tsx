@@ -1,4 +1,4 @@
-import { CLIENT_COLUMNS } from "@maximilian/shared/constants/pages/Coordinador/GestionClientes.constants";
+import { CLIENT_COLUMNS } from "@maximilian/shared/constants/pages/Coordinador/gestionClientes.constants";
 import { useState } from "react";
 import {
   Search,

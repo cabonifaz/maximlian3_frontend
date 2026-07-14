@@ -1,4 +1,4 @@
-import { camposCalculadosEstadoFinanciero, camposRatioPorcentaje } from "@maximilian/shared/constants/components/investigacion/CustomModalDetalleCuentasInforme.constants";
+import { camposCalculadosEstadoFinanciero, camposRatioPorcentaje } from "@maximilian/shared/constants/components/investigacion/customModalDetalleCuentasInforme.constants";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {

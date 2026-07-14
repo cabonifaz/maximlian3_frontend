@@ -1,4 +1,4 @@
-import { ID_ESTADO_INFORME_APROBADO } from "@maximilian/shared/constants/pages/Coordinador/RevisionInformeCoordinador.constants";
+import { ID_ESTADO_INFORME_APROBADO } from "@maximilian/shared/constants/pages/Coordinador/revisionInformeCoordinador.constants";
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";

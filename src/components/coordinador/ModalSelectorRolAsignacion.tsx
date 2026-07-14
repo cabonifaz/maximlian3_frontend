@@ -1,4 +1,4 @@
-import { roleConfig } from "@maximilian/shared/constants/components/coordinador/ModalSelectorRolAsignacion.constants";
+import { roleConfig } from "@maximilian/shared/constants/components/coordinador/modalSelectorRolAsignacion.constants";
 import { useState } from "react";
 import { Search, X, ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";

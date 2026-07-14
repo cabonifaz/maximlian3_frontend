@@ -1,4 +1,4 @@
-import { PEDIDO_COLUMNS, ESTADO_OPTIONS, TARJETAS_ESTADO_PEDIDO, FASE_ASIGNACION } from "@maximilian/shared/constants/pages/Coordinador/GestionPedidos.constants";
+import { PEDIDO_COLUMNS, ESTADO_OPTIONS, TARJETAS_ESTADO_PEDIDO, FASE_ASIGNACION } from "@maximilian/shared/constants/pages/Coordinador/gestionPedidos.constants";
 import { useMemo, useState } from "react";
 import {
   Edit,

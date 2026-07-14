@@ -1,4 +1,4 @@
-import { opcionesParametros, REGISTROS_POR_PAGINA, CONFIGURACION_CAMPOS_POR_MAESTRO } from "@maximilian/shared/constants/pages/Administrador/ConfiguracionParametros.constants";
+import { opcionesParametros, REGISTROS_POR_PAGINA, CONFIGURACION_CAMPOS_POR_MAESTRO } from "@maximilian/shared/constants/pages/Administrador/configuracionParametros.constants";
 import { useMemo, useState } from "react";
 import {
   AlertCircle,

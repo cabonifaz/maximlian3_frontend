@@ -1,4 +1,4 @@
-import { PEDIDO_COLUMNS, ASIGNACIONES_INICIALES, ID_ESTADO_ASIGNACION_SIN_ASIGNACION_PENDIENTE, ETIQUETAS_ROL } from "@maximilian/shared/constants/components/coordinador/ModalFlujoAsignacion.constants";
+import { PEDIDO_COLUMNS, ASIGNACIONES_INICIALES, ID_ESTADO_ASIGNACION_SIN_ASIGNACION_PENDIENTE, ETIQUETAS_ROL } from "@maximilian/shared/constants/components/coordinador/modalFlujoAsignacion.constants";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Eye, Loader2, Search } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

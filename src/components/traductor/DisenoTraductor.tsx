@@ -1,4 +1,4 @@
-import { elementosMenuTraductor } from "@maximilian/shared/constants/components/traductor/DisenoTraductor.constants";
+import { elementosMenuTraductor } from "@maximilian/shared/constants/components/traductor/disenoTraductor.constants";
 import { Outlet } from "react-router";
 import { BarraLateral } from "@maximilian/components/common/BarraLateral";
 import { Encabezado } from "@maximilian/components/common/Encabezado";

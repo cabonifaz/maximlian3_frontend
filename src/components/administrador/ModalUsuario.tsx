@@ -1,4 +1,4 @@
-import { valoresPorDefecto } from "@maximilian/shared/constants/components/administrador/ModalUsuario.constants";
+import { valoresPorDefecto } from "@maximilian/shared/constants/components/administrador/modalUsuario.constants";
 import { useEffect, useState } from "react";
 import {
   X,

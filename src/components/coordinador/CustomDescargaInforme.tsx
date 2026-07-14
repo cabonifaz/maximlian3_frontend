@@ -1,4 +1,4 @@
-import { FORMATOS } from "@maximilian/shared/constants/components/coordinador/CustomDescargaInforme.constants";
+import { FORMATOS } from "@maximilian/shared/constants/components/coordinador/customDescargaInforme.constants";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Download } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";

@@ -1,4 +1,4 @@
-import { ID_MAESTRO_ESTADO_USUARIO } from "@maximilian/shared/constants/pages/Administrador/GestionUsuarios.constants";
+import { ID_MAESTRO_ESTADO_USUARIO } from "@maximilian/shared/constants/pages/Administrador/gestionUsuarios.constants";
 import { useState } from "react";
 import {
   Search,

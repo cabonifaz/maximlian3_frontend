@@ -1,6 +1,6 @@
-import { etiquetasPestanas } from "@maximilian/shared/constants/pages/Analista/BancoInformacionAnalista.constants";
-import type { PestanaBancoInformacion } from "@maximilian/shared/constants/pages/Analista/BancoInformacionAnalista.constants";
-import { ID_MAESTRO_ESTADO_CREDITO, ID_MAESTRO_ACTIVIDAD_ECONOMICA_EMPRESA } from "@maximilian/shared/constants/pages/Analista/BancoInformacionAnalista.constants";
+import { etiquetasPestanas } from "@maximilian/shared/constants/pages/Analista/bancoInformacionAnalista.constants";
+import type { PestanaBancoInformacion } from "@maximilian/shared/constants/pages/Analista/bancoInformacionAnalista.constants";
+import { ID_MAESTRO_ESTADO_CREDITO, ID_MAESTRO_ACTIVIDAD_ECONOMICA_EMPRESA } from "@maximilian/shared/constants/pages/Analista/bancoInformacionAnalista.constants";
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {

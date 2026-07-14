@@ -1,4 +1,4 @@
-import { esquemaNoticia, valoresIniciales } from "@maximilian/shared/constants/components/common/CustomBancoNoticias.constants";
+import { esquemaNoticia, valoresIniciales } from "@maximilian/shared/constants/components/common/customBancoNoticias.constants";
 import { useEffect, useMemo, useState, type UIEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

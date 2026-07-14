@@ -1,4 +1,4 @@
-import { ASSIGNMENT_COLUMNS, ID_ROL_TRADUCTOR, ID_ROL_ANALISTA } from "@maximilian/shared/constants/pages/Coordinador/GestionAsignaciones.constants";
+import { ASSIGNMENT_COLUMNS, ID_ROL_TRADUCTOR, ID_ROL_ANALISTA } from "@maximilian/shared/constants/pages/Coordinador/gestionAsignaciones.constants";
 import { useState } from "react";
 import { Search, MoreHorizontal, Edit, X, Plus } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

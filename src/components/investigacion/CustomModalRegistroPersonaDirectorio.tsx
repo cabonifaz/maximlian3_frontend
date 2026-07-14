@@ -1,4 +1,4 @@
-import { ID_MAESTRO_ESTADO_CIVIL, ID_MAESTRO_PROFESION, ID_MAESTRO_TIPO_DOCUMENTO } from "@maximilian/shared/constants/components/investigacion/CustomModalRegistroPersonaDirectorio.constants";
+import { ID_MAESTRO_ESTADO_CIVIL, ID_MAESTRO_PROFESION, ID_MAESTRO_TIPO_DOCUMENTO } from "@maximilian/shared/constants/components/investigacion/customModalRegistroPersonaDirectorio.constants";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { BadgeCheck, FileText, MapPin, UserRound, X } from "lucide-react";

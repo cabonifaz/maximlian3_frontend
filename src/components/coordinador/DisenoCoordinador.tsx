@@ -1,4 +1,4 @@
-import { coordinatorMenuItems } from "@maximilian/shared/constants/components/coordinador/DisenoCoordinador.constants";
+import { coordinatorMenuItems } from "@maximilian/shared/constants/components/coordinador/disenoCoordinador.constants";
 import { Outlet, useMatch } from "react-router";
 import { BarraLateral } from "@maximilian/components/common/BarraLateral";
 import { Encabezado } from "@maximilian/components/common/Encabezado";

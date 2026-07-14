@@ -1,5 +1,5 @@
-import { FILAS_POR_PAGINA_INVESTIGACION, ID_ESTADO_PEDIDO_BORRADOR, ID_ESTADO_PEDIDO_FINALIZADO, CAMPOS_MONETARIOS_EXTRACCION, CAMPOS_PORCENTAJE_EXTRACCION, CAMPOS_PORCENTAJE_COMPLEMENTARIO, ETIQUETAS_SECCIONES_EXTRACCION, CONFIGURACION_EXTRACCION_POR_SECCION, SECCIONES_LISTA_EXTRACCION, ETIQUETAS_CAMPOS_EXTRACCION, CAMPOS_TRADUCIBLES_POR_SECCION, RUTAS_SELECTORES_CON_REFERENCIA_ORIGINAL } from "@maximilian/shared/constants/pages/Traductor/InvestigacionTraductor.constants";
-import type { CampoPorcentajeOperacion } from "@maximilian/shared/constants/pages/Traductor/InvestigacionTraductor.constants";
+import { FILAS_POR_PAGINA_INVESTIGACION, ID_ESTADO_PEDIDO_BORRADOR, ID_ESTADO_PEDIDO_FINALIZADO, CAMPOS_MONETARIOS_EXTRACCION, CAMPOS_PORCENTAJE_EXTRACCION, CAMPOS_PORCENTAJE_COMPLEMENTARIO, ETIQUETAS_SECCIONES_EXTRACCION, CONFIGURACION_EXTRACCION_POR_SECCION, SECCIONES_LISTA_EXTRACCION, ETIQUETAS_CAMPOS_EXTRACCION, CAMPOS_TRADUCIBLES_POR_SECCION, RUTAS_SELECTORES_CON_REFERENCIA_ORIGINAL } from "@maximilian/shared/constants/pages/Traductor/investigacionTraductor.constants";
+import type { CampoPorcentajeOperacion } from "@maximilian/shared/constants/pages/Traductor/investigacionTraductor.constants";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

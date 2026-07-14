@@ -1,4 +1,4 @@
-import { clasesEtiquetaCampoInvestigacion, marcadoresPorEtiqueta } from "@maximilian/shared/constants/components/investigacion/ControlesInforme.constants";
+import { clasesEtiquetaCampoInvestigacion, marcadoresPorEtiqueta } from "@maximilian/shared/constants/components/investigacion/controlesInforme.constants";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Briefcase, Building2, Check, Eye, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
