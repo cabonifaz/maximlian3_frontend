@@ -1,3 +1,4 @@
+import { opcionesCriterio } from "@maximilian/shared/constants/components/investigacion/CustomModalListaPersonas.constants";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
@@ -22,39 +23,6 @@ interface PropsCustomModalListaPersonasAnalista {
   onCerrar: () => void;
   onGuardar: (empresa: EmpresaRelacionadaAnalista) => void;
 }
-
-const opcionesCriterio: EntradaTablaMaestra[] = [
-  {
-    idEmpresa: 0,
-    idTablaMaestra: null,
-    idMaestro: 0,
-    descripcion: "",
-    num1: 1,
-    num2: null,
-    num3: null,
-    string1: "Nombre / Razón Social",
-    string2: null,
-    string3: null,
-    date1: null,
-    date2: null,
-    date3: null,
-  },
-  {
-    idEmpresa: 0,
-    idTablaMaestra: null,
-    idMaestro: 0,
-    descripcion: "",
-    num1: 2,
-    num2: null,
-    num3: null,
-    string1: "Documento",
-    string2: null,
-    string3: null,
-    date1: null,
-    date2: null,
-    date3: null,
-  },
-];
 
 export function CustomModalListaPersonasAnalista({
   estaAbierto,

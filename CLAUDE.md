@@ -168,6 +168,12 @@ src/components/
 
 Always place a new component in the most specific module it belongs to. Only move a component to `common/` if it is actually reused across two or more modules. Never dump new components into the root of `src/components/` — every component belongs to a module.
 
+### File-level Constants
+
+Static constants declared at file level must live in a dedicated module-specific `*.constants.ts` file under `src/shared/constants/`, organized by source layer and feature (for example, `src/shared/constants/pages/Coordinador/` or `src/shared/constants/components/investigacion/`). This includes IDs, configuration objects, table columns, selector options, labels, pagination values, timeouts, storage keys, and other immutable module configuration. Components, pages, services, hooks, contexts, and utilities must import these constants instead of declaring them in the implementation file. Keep local variables, derived values, component state, and constants scoped inside a function when they only support that function. Do not create a single global constants dump; preserve the modular folder structure inside `src/shared/constants/`.
+
+Temporary exceptions: do not extract or modify file-level constants in `CustomVisorDocumentoInforme.tsx` or `CustomVistaPreviaInforme.tsx` unless a task explicitly requests those files.
+
 ### Component Size
 
 Keep components focused and small. A component that grows beyond ~150 lines is a signal to split it. Extract:

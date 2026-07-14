@@ -1,3 +1,4 @@
+import { PEDIDO_COLUMNS, ASIGNACIONES_INICIALES, ID_ESTADO_ASIGNACION_SIN_ASIGNACION_PENDIENTE, ETIQUETAS_ROL } from "@maximilian/shared/constants/components/coordinador/ModalFlujoAsignacion.constants";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Eye, Loader2, Search } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -27,27 +28,6 @@ interface ModalFlujoAsignacionProps {
   tabInicial?: TabAsignacion;
   titulo?: string;
 }
-
-const PEDIDO_COLUMNS = [
-  { label: "Cliente", width: "24%" },
-  { label: "Investigado", width: "24%" },
-  { label: "Idioma del informe", width: "14%" },
-  { label: "Tipo de tramite", width: "16%" },
-  { label: "Vencimiento", width: "14%" },
-  { label: "Ver detalle", className: "text-center", width: "8%" },
-];
-
-const ASIGNACIONES_INICIALES: AssignmentRoleSelection[] = [
-  { role: "analyst", assignee: null },
-  { role: "translator", assignee: null },
-];
-
-const ID_ESTADO_ASIGNACION_SIN_ASIGNACION_PENDIENTE = 4;
-
-const ETIQUETAS_ROL: Record<AssignmentRole, string> = {
-  analyst: "Analista",
-  translator: "Traductor(a)",
-};
 
 function IndicadorErrorTab() {
   return <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />;

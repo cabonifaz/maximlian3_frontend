@@ -1,3 +1,4 @@
+import { TIMEOUT_EXTRACCION_MS } from "@maximilian/shared/constants/services/informe.service.constants";
 import { ENDPOINTS_INFORME } from "@maximilian/shared/constants/endpoints/informe.endpoint";
 import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
 import { servicioBanco } from "./banco.service";
@@ -50,8 +51,6 @@ type RegistroDirectorioInvestigacion = DatosInvestigacionAnalista["directorioEje
 type RegistroLocalInvestigacion = DatosInvestigacionAnalista["locales"][number];
 type RegistroBalanceInvestigacion = DatosInvestigacionAnalista["balances"][number];
 type RegistroProveedorInvestigacion = DatosInvestigacionAnalista["proveedores"][number];
-
-const TIMEOUT_EXTRACCION_MS = 10 * 60 * 1000;
 
 function obtenerNumero(...valores: unknown[]): number {
   for (const valor of valores) {

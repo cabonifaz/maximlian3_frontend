@@ -1,3 +1,4 @@
+import { roleConfig } from "@maximilian/shared/constants/components/coordinador/ModalSelectorRolAsignacion.constants";
 import { useState } from "react";
 import { Search, X, ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -13,15 +14,6 @@ interface ModalSelectorRolAsignacionProps {
   onClose: () => void;
   onSelect: (candidate: AssignmentCandidate) => void;
 }
-
-const roleConfig = {
-  analyst: {
-    title: "Asignar analista",
-  },
-  translator: {
-    title: "Asignar traductor(a)",
-  },
-} as const;
 
 function getBadgeClasses(count: number) {
   if (count <= 2) return "bg-green-50 text-green-600";

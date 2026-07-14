@@ -1,3 +1,4 @@
+import { ESTADO_ASIGNACION_ANALISTA, ESTADO_ASIGNACION_TRADUCTOR, ESTADO_REASIGNACION_ANALISTA, ESTADO_REASIGNACION_TRADUCTOR, IDS_ROL_POR_TIPO } from "@maximilian/shared/constants/services/asignacion.service.constants";
 import { ENDPOINTS_ASIGNACION } from "@maximilian/shared/constants/endpoints/asignacion.endpoint";
 import maximilianService from "./maximilianService";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
@@ -17,15 +18,6 @@ import type {
 } from "@maximilian/shared/types/asignacion.type";
 
 type RegistroGenerico = Record<string, unknown>;
-
-const ESTADO_ASIGNACION_ANALISTA = 1;
-const ESTADO_ASIGNACION_TRADUCTOR = 2;
-const ESTADO_REASIGNACION_ANALISTA = 4;
-const ESTADO_REASIGNACION_TRADUCTOR = 5;
-const IDS_ROL_POR_TIPO: Record<AssignmentRole, number> = {
-  translator: 4,
-  analyst: 3,
-};
 
 function esRespuestaOkCompatibilidad(respuesta: ApiResponse<unknown>) {
   return respuesta.idTipoMensaje === MessageType.SUCCESS

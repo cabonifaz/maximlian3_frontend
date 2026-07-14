@@ -1,3 +1,4 @@
+import { ID_ESTADO_INFORME_APROBADO } from "@maximilian/shared/constants/pages/Coordinador/RevisionInformeCoordinador.constants";
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -17,7 +18,6 @@ import type {
   InformeObservacion,
 } from "@maximilian/shared/types/informe.type";
 
-const ID_ESTADO_INFORME_APROBADO = 4;
 type TabInformeComparado = "original" | "traducido";
 
 export default function RevisionInformeCoordinador() {

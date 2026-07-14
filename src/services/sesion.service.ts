@@ -1,8 +1,6 @@
+import { MENSAJE_SESION_EXPIRADA, CLAVE_MENSAJE_SESION } from "@maximilian/shared/constants/services/sesion.service.constants";
 import { signOut } from "aws-amplify/auth";
 import { clienteConsultas } from "@maximilian/lib/clienteConsultas";
-
-const MENSAJE_SESION_EXPIRADA = "La sesion ha expirado";
-const CLAVE_MENSAJE_SESION = "auth_message";
 
 let redireccionEnCurso = false;
 let ultimoErrorCargaDinamica: unknown;

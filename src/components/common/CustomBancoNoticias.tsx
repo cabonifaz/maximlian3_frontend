@@ -1,3 +1,4 @@
+import { esquemaNoticia, valoresIniciales } from "@maximilian/shared/constants/components/common/CustomBancoNoticias.constants";
 import { useEffect, useMemo, useState, type UIEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,17 +32,6 @@ import { CustomButton } from "./CustomButton";
 import { CustomLabel } from "./CustomLabel";
 import { CustomSelectorFecha } from "./CustomSelectorFecha";
 
-const esquemaNoticia = z.object({
-  idCompania: z.coerce
-    .number()
-    .int("Ingrese un ID valido")
-    .min(1, "Seleccione una compania"),
-  titulo: z.string().trim().min(1, "Ingrese el titulo"),
-  descripcion: z.string().trim().min(1, "Ingrese la descripcion"),
-  fechaNoticia: z.string().trim().min(1, "Ingrese la fecha"),
-  categoria: z.string().trim().min(1, "Ingrese la categoria"),
-});
-
 type FormularioNoticiaEntrada = z.input<typeof esquemaNoticia>;
 type FormularioNoticia = z.output<typeof esquemaNoticia>;
 
@@ -50,14 +40,6 @@ interface PropsCustomBancoNoticias {
   mostrarBotonAgregar?: boolean;
   senalApertura?: number;
 }
-
-const valoresIniciales: FormularioNoticiaEntrada = {
-  idCompania: 0,
-  titulo: "",
-  descripcion: "",
-  fechaNoticia: new Date().toISOString().slice(0, 10),
-  categoria: "",
-};
 
 export function CustomBancoNoticias({
   busqueda,

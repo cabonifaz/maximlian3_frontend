@@ -1,3 +1,4 @@
+import { clasesEtiquetaCampoInvestigacion, marcadoresPorEtiqueta } from "@maximilian/shared/constants/components/investigacion/ControlesInforme.constants";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Briefcase, Building2, Check, Eye, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
@@ -20,83 +21,6 @@ import {
   type TablaMaestraGuardarResponse,
 } from "@maximilian/shared/types/tabla-maestra.type";
 import type { IdSeccionInvestigacionAnalista, ResumenInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
-
-const clasesEtiquetaCampoInvestigacion =
-  "text-sm font-bold text-gray-700";
-
-const marcadoresPorEtiqueta: Record<string, string> = {
-  "Nombre de la Empresa": "Ingrese el nombre legal de la empresa",
-  "Nombre Comercial": "Ingrese el nombre comercial",
-  "Operaciones de Cambio": "Describa las operaciones de cambio",
-  "Tipo de Identificación Fiscal": "Ingrese el tipo de identificación fiscal",
-  "Número de Identificación Fiscal": "Ingrese el número de identificación fiscal",
-  "Dirección Principal": "Ingrese la dirección principal",
-  "Ciudad/Estado/Provincia": "Ingrese la ciudad, estado o provincia",
-  "Número de Teléfono": "Ej. +51 2 1234567",
-  "Número de Fax": "Ej. +51 2 1234568",
-  "Correo Electrónico": "Ej. contacto@empresa.com",
-  "Página Web": "Ej. www.empresa.com",
-  "Estado Actual": "Describa el estado actual",
-  "Datos Adicionales": "Ingrese datos adicionales relevantes",
-  "Tipo de Empresa": "Ingrese el tipo de empresa",
-  "Fecha de Constitución": "Ej. 31/12/2020",
-  "Ciudad de Registro": "Ingrese la ciudad de registro",
-  Notaría: "Ingrese la notaría correspondiente",
-  Notario: "Ingrese el nombre del notario",
-  Registro: "Ingrese el número o detalle de registro",
-  Condiciones: "Describa las condiciones registrales o legales",
-  "Operaciones de Cambio Divisas": "Describa las operaciones de cambio de divisas",
-  "Capital Inicial": "Ej. 100000",
-  "Capital Desembolsado": "Ej. 75000",
-  "Última Ampliación": "Detalle la última ampliación de capital",
-  "Patrimonio Neto": "Ej. 250000",
-  "Tipo de Acciones": "Describa el tipo de acciones",
-  "Valor de las Acciones": "Ej. 10.00",
-  "Obligación en Bolsa": "Indique si cotiza o tiene obligación en bolsa",
-  "Tipo de Cambio": "Ej. 6.96",
-  Antecedentes: "Ingrese los antecedentes relevantes",
-  "Aspectos Legales": "Describa los aspectos legales relevantes",
-  "Comentarios sobre Empresas Relacionadas": "Ingrese comentarios sobre las empresas relacionadas",
-  Sector: "Ingrese el sector económico",
-  Actividad: "Ingrese la actividad económica",
-  "Categoría CIIU": "Ej. Categoría C",
-  "Clase CIIU": "Ej. 2811",
-  "Actividad Principal": "Describa la actividad principal",
-  "Ventas al Contado (%)": "Ej. 25%",
-  "Detalle Ventas al Contado": "Describa cómo se realizan las ventas al contado",
-  "Ventas a Crédito (%)": "Ej. 75%",
-  "Detalle Ventas a Crédito": "Describa cómo se realizan las ventas a crédito",
-  "(%) Ventas Nacionales": "Ej. 70%",
-  "Detalle Ventas Nacionales": "Detalle las ventas realizadas en el mercado nacional",
-  "(%) Ventas en el Extranjero": "Ej. 30%",
-  "Detalle Ventas Extranjero": "Detalle las ventas realizadas en el extranjero",
-  "(%) Compras Nacionales": "Ej. 65%",
-  "Detalle Compras Nacionales": "Detalle las compras realizadas en el mercado nacional",
-  "Compras al Contado Nacionales (%)": "Ej. 20%",
-  "Detalle Compras al Contado Nacionales": "Describa cómo se realizan las compras al contado nacionales",
-  "Compras a Crédito Nacionales (%)": "Ej. 80%",
-  "Detalle Compras a Crédito Nacionales": "Describa cómo se realizan las compras a crédito nacionales",
-  "(%) Compras en el Extranjero": "Ej. 35%",
-  "Detalle Compras Extranjero": "Detalle las compras realizadas en el extranjero",
-  "Compras al Contado Extranjero (%)": "Ej. 20%",
-  "Detalle Compras al Contado Extranjero": "Describa cómo se realizan las compras al contado en el extranjero",
-  "Compras a Crédito Extranjero (%)": "Ej. 80%",
-  "Detalle Compras a Crédito Extranjero": "Describa cómo se realizan las compras a crédito en el extranjero",
-  "N. de Empleados": "Ej. 120",
-  "Detalle Empleados": "Describa la distribución o tipo de empleados",
-  "Comentarios sobre las Operaciones": "Ingrese comentarios sobre las operaciones",
-  Contenido: "Describa el contenido de la información financiera",
-  "Comentarios Financieros": "Ingrese comentarios sobre la situación financiera",
-  "Activos": "Describa los activos relevantes",
-  Seguros: "Detalle las pólizas o coberturas de seguro",
-  "Comentarios de los Proveedores": "Ingrese comentarios obtenidos de los proveedores",
-  "Referencias de Bancos": "Ingrese las referencias bancarias consultadas",
-  Litigios: "Describa litigios o procesos legales vigentes",
-  "Riesgo Principal": "Describa el riesgo principal identificado",
-  Superintendencia: "Ingrese información de la superintendencia o ente regulador",
-  "Información General": "Ingrese la información general de la empresa",
-  "Opinión de Crédito": "Redacte la opinión de crédito",
-};
 
 function obtenerMarcadorInvestigacion(etiqueta: string) {
   const marcador = marcadoresPorEtiqueta[etiqueta];

@@ -1,3 +1,4 @@
+import { FORMATOS } from "@maximilian/shared/constants/components/coordinador/CustomDescargaInforme.constants";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Download } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -8,12 +9,6 @@ interface PropsCustomDescargaInforme {
   puedeDescargarXml?: boolean;
   onDescargar: (formato: FormatoDescargaInforme) => void;
 }
-
-const FORMATOS: Array<{ valor: FormatoDescargaInforme; etiqueta: string }> = [
-  { valor: ".pdf", etiqueta: "PDF" },
-  { valor: ".docx", etiqueta: "DOCX" },
-  { valor: ".xml", etiqueta: "XML" },
-];
 
 export function CustomDescargaInforme({
   deshabilitado = false,
