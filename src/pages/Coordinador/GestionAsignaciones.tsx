@@ -1,8 +1,5 @@
-import { ASSIGNMENT_COLUMNS, ID_ROL_TRADUCTOR, ID_ROL_ANALISTA } from "@maximilian/shared/constants/pages/Coordinador/gestion-asignaciones.constants";
-import { useState } from "react";
+import { ASSIGNMENT_COLUMNS } from "@maximilian/shared/constants/pages/Coordinador/gestion-asignaciones.constants";
 import { Search, MoreHorizontal, Edit, X, Plus } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "react-router";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { CustomChipVigencia } from "@maximilian/components/common/CustomChipVigencia";
@@ -11,16 +8,13 @@ import { ModalFlujoAsignacion } from "@maximilian/components/coordinador/ModalFl
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { useMenuFlotanteTabla } from "@maximilian/hooks/useMenuFlotanteTabla";
-import { useListadoPaginado } from "@maximilian/hooks/useListadoPaginado";
-import { servicioAsignacion } from "@maximilian/services/asignacion.service";
-import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
+import { useGestionAsignaciones } from "@maximilian/hooks/useGestionAsignaciones";
 import type { AssignmentOrderEntry } from "@maximilian/shared/types/asignacion.type";
-import type { PedidoListEntry } from "@maximilian/shared/types/pedido.type";
-import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-
-function tieneAsignado(nombre?: string) {
-  return !!nombre && nombre !== "-" && nombre !== "Sin Asignacion";
-}
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+import {
+  construirOpcionesEliminacionAsignacion,
+  esNuevaAsignacionDesdeListado,
+} from "@maximilian/shared/utils/gestion-asignaciones.util";
 
 function esColorHexadecimal(valor?: string | null) {
   return /^#(?:[0-9a-fA-F]{3}){1,2}$/.test(valor?.trim() ?? "");
@@ -75,48 +69,6 @@ function obtenerColorFondoEstadoRespaldo(idEstado?: number) {
   };
 
   return idEstado ? coloresPorEstado[idEstado] : undefined;
-}
-
-function construirOpcionesEliminacion(asignacion: AssignmentOrderEntry): EntradaTablaMaestra[] {
-  const opciones: EntradaTablaMaestra[] = [];
-
-  if (tieneAsignado(asignacion.analista) && asignacion.analistaIdAsignacion) {
-    opciones.push({
-      idEmpresa: 0,
-      idTablaMaestra: null,
-      idMaestro: 0,
-      descripcion: "",
-      num1: asignacion.analistaIdAsignacion,
-      num2: ID_ROL_ANALISTA,
-      num3: null,
-      string1: `Analista - ${asignacion.analista}`,
-      string2: null,
-      string3: null,
-      date1: null,
-      date2: null,
-      date3: null,
-    });
-  }
-
-  if (tieneAsignado(asignacion.traductor) && asignacion.traductorIdAsignacion) {
-    opciones.push({
-      idEmpresa: 0,
-      idTablaMaestra: null,
-      idMaestro: 0,
-      descripcion: "",
-      num1: asignacion.traductorIdAsignacion,
-      num2: ID_ROL_TRADUCTOR,
-      num3: null,
-      string1: `Traductor - ${asignacion.traductor}`,
-      string2: null,
-      string3: null,
-      date1: null,
-      date2: null,
-      date3: null,
-    });
-  }
-
-  return opciones;
 }
 
 function obtenerColoresEstadoAsignacion(
@@ -208,133 +160,33 @@ function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: str
   );
 }
 
-function convertirAsignacionAPedido(asignacion: AssignmentOrderEntry): PedidoListEntry {
-  return {
-    idPedido: asignacion.idPedido,
-    idAsignacion: asignacion.idAsignacion,
-    codigo: "",
-    idCliente: 0,
-    cliente: asignacion.cliente,
-    investigado: asignacion.investigado,
-    idIdioma: asignacion.idIdioma ?? 0,
-    idioma: asignacion.idiomaInforme || "-",
-    tipoTramite: asignacion.tipoTramite || "-",
-    analista: asignacion.analista,
-    traductor: asignacion.traductor,
-    logoImprimible: false,
-    estado: asignacion.idEstado ?? 0,
-    descripcionEstado: asignacion.estado || "-",
-    colorLetra: asignacion.estadoColorLetra || "#475569",
-    colorFondo: asignacion.estadoColorFondo || "#f1f5f9",
-    vigencia: asignacion.porVencerTexto || "-",
-    asignaciones: [],
-  };
-}
-
-function convertirAsignacionAAsignacionesIniciales(asignacion: AssignmentOrderEntry) {
-  return [
-    {
-      role: "analyst" as const,
-      assignee:
-        asignacion.analista && asignacion.analista !== "-" && asignacion.analista !== "Sin Asignacion"
-          ? {
-              idUsuario: 0,
-              nombre: asignacion.analista,
-              iniciales: asignacion.analista
-                .split(/\s+/)
-                .filter(Boolean)
-                .slice(0, 2)
-                .map((parte) => parte.charAt(0).toUpperCase())
-                .join("") || "?",
-              rol: "analyst" as const,
-              cantidadAsignaciones: 0,
-            }
-          : null,
-    },
-    {
-      role: "translator" as const,
-      assignee:
-        asignacion.traductor && asignacion.traductor !== "-" && asignacion.traductor !== "Sin Asignacion"
-          ? {
-              idUsuario: 0,
-              nombre: asignacion.traductor,
-              iniciales: asignacion.traductor
-                .split(/\s+/)
-                .filter(Boolean)
-                .slice(0, 2)
-                .map((parte) => parte.charAt(0).toUpperCase())
-                .join("") || "?",
-              rol: "translator" as const,
-              cantidadAsignaciones: 0,
-            }
-          : null,
-    },
-  ];
-}
-
-function esNuevaAsignacionDesdeListado(asignacion: AssignmentOrderEntry) {
-  const estadoNormalizado = (asignacion.estado || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-
-  return asignacion.idEstado === 4 && estadoNormalizado === "sin asignacion";
-}
-
-type EstadoNavegacionAsignaciones = {
-  busquedaInicial?: string;
-};
-
 export default function GestionAsignaciones() {
-  const location = useLocation();
-  const estadoNavegacion = location.state as EstadoNavegacionAsignaciones | null;
-  const queryClient = useQueryClient();
   const {
-    terminoBusqueda,
-    paginaActual,
-    busquedaConRetardo,
+    abrirModalAsignacion,
+    abrirModalNuevaAsignacion,
+    anularAsignacionMutation,
+    asignacionAAnular,
     cambiarBusqueda,
-    cambiarPagina,
-    reiniciarPagina,
-  } = useListadoPaginado(estadoNavegacion?.busquedaInicial || "");
-  const [idEstadoFiltro, setIdEstadoFiltro] = useState<number | undefined>(undefined);
+    cambiarFiltroEstado,
+    cambiarPaginaAsignacion,
+    cerrarEliminacionAsignacion,
+    cerrarModalAsignacion,
+    confirmarAnulacionAsignacion,
+    data,
+    idAsignacionAEliminar,
+    idEstadoFiltro,
+    isError,
+    isLoading,
+    modalAsignacion,
+    opcionesEstadoAsignacion,
+    paginaActual,
+    prepararEliminacionAsignacion,
+    refetch,
+    refrescarDespuesAsignacion,
+    setIdAsignacionAEliminar,
+    terminoBusqueda,
+  } = useGestionAsignaciones();
   const { idMenuActivo, estiloMenu, alternarMenu, cerrarMenu } = useMenuFlotanteTabla();
-  const [asignacionAAnular, setAsignacionAAnular] = useState<AssignmentOrderEntry | null>(null);
-  const [idAsignacionAEliminar, setIdAsignacionAEliminar] = useState<number | undefined>(undefined);
-  const [modalAsignacion, setModalAsignacion] = useState<{
-    key: number;
-    titulo: string;
-    tabInicial: "pedidos" | "asignacion";
-    pedidosIniciales: PedidoListEntry[];
-    asignacionesIniciales: {
-      role: "analyst" | "translator";
-      assignee: {
-        idUsuario: number;
-        nombre: string;
-        iniciales: string;
-        rol: "analyst" | "translator";
-        cantidadAsignaciones: number;
-      } | null;
-    }[];
-    modo?: "crear" | "editar";
-  } | null>(null);
-
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["assignment-orders", paginaActual, busquedaConRetardo, idEstadoFiltro],
-    queryFn: () =>
-      servicioAsignacion.list({
-        numPag: paginaActual,
-        busqueda: busquedaConRetardo || undefined,
-        idEstado: idEstadoFiltro,
-      }),
-  });
-
-  const { data: opcionesEstadoAsignacion } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.ESTADO_ASIGNACION],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_ASIGNACION),
-    staleTime: Infinity,
-  });
 
   const columnas = ASSIGNMENT_COLUMNS.map((columna, indice) => {
     if (indice !== 4) return columna;
@@ -346,27 +198,12 @@ export default function GestionAsignaciones() {
           titulo="Estado"
           opciones={opcionesEstadoAsignacion}
           valores={idEstadoFiltro ? [idEstadoFiltro] : []}
-          onChange={(ids) => setIdEstadoFiltro(ids[ids.length - 1])}
-          onFiltroCambiado={reiniciarPagina}
+          onChange={cambiarFiltroEstado}
           multiple={false}
         />
       ),
     };
   });
-
-  const anularAsignacionMutation = useMutation({
-    mutationFn: ({ idAsignacion }: { idAsignacion: number }) =>
-      servicioAsignacion.delete({ idAsignacion }),
-    onSuccess: () => {
-      setAsignacionAAnular(null);
-      setIdAsignacionAEliminar(undefined);
-      queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
-    },
-  });
-
-  const handlePageChange = (page: number) => {
-    cambiarPagina(page, data?.totalPaginas || 1);
-  };
 
   const renderRow = (asignacion: AssignmentOrderEntry) => {
     const coloresEstado = obtenerColoresEstadoAsignacion(asignacion, opcionesEstadoAsignacion);
@@ -416,20 +253,7 @@ export default function GestionAsignaciones() {
             >
               <button
                 onClick={() => {
-                  const esNuevaAsignacion = esNuevaAsignacionDesdeListado(asignacion);
-                  setModalAsignacion({
-                    key: Date.now(),
-                    titulo: esNuevaAsignacion ? "Nueva Asignación" : "Modificar Asignación",
-                    tabInicial: "asignacion",
-                    pedidosIniciales: [convertirAsignacionAPedido(asignacion)],
-                    asignacionesIniciales: esNuevaAsignacion
-                      ? [
-                          { role: "analyst", assignee: null },
-                          { role: "translator", assignee: null },
-                        ]
-                      : convertirAsignacionAAsignacionesIniciales(asignacion),
-                    modo: esNuevaAsignacion ? "crear" : "editar",
-                  });
+                  abrirModalAsignacion(asignacion);
                   cerrarMenu();
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 cursor-pointer"
@@ -439,9 +263,7 @@ export default function GestionAsignaciones() {
               </button>
               <button
                 onClick={() => {
-                  const opcionesEliminacion = construirOpcionesEliminacion(asignacion);
-                  setAsignacionAAnular(asignacion);
-                  setIdAsignacionAEliminar(opcionesEliminacion.length === 1 ? (opcionesEliminacion[0].num1 ?? undefined) : undefined);
+                  prepararEliminacionAsignacion(asignacion);
                   cerrarMenu();
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50 cursor-pointer"
@@ -476,19 +298,7 @@ export default function GestionAsignaciones() {
           </div>
 
           <button
-            onClick={() =>
-              setModalAsignacion({
-                key: Date.now(),
-                titulo: "Nueva Asignación",
-                tabInicial: "pedidos",
-                pedidosIniciales: [],
-                asignacionesIniciales: [
-                  { role: "analyst", assignee: null },
-                  { role: "translator", assignee: null },
-                ],
-                modo: "crear",
-              })
-            }
+            onClick={abrirModalNuevaAsignacion}
             className="flex items-center justify-center gap-2 rounded-lg bg-brand-wine px-4 py-2 text-sm font-medium text-brand-white shadow-sm shadow-brand-wine/20 transition-all hover:bg-brand-wine/90 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
           >
             <Plus size={16} />
@@ -510,7 +320,7 @@ export default function GestionAsignaciones() {
         paginaActual={paginaActual}
         totalPages={data?.totalPaginas ?? 1}
         totalRecords={data?.totalRegistros ?? 0}
-        onPageChange={handlePageChange}
+        onPageChange={cambiarPaginaAsignacion}
         entityLabel="asignaciones"
       />
 
@@ -518,11 +328,8 @@ export default function GestionAsignaciones() {
         <ModalFlujoAsignacion
           key={modalAsignacion.key}
           isOpen
-          onClose={() => setModalAsignacion(null)}
-          onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
-            queryClient.invalidateQueries({ queryKey: ["pedidos"] });
-          }}
+          onClose={cerrarModalAsignacion}
+          onSuccess={refrescarDespuesAsignacion}
           pedidosIniciales={modalAsignacion.pedidosIniciales}
           asignacionesIniciales={modalAsignacion.asignacionesIniciales}
           modo={modalAsignacion.modo}
@@ -533,15 +340,8 @@ export default function GestionAsignaciones() {
 
       <CustomModalConfirmacionEliminacion
         isOpen={asignacionAAnular !== null}
-        onClose={() => {
-          setAsignacionAAnular(null);
-          setIdAsignacionAEliminar(undefined);
-        }}
-        onConfirm={() =>
-          anularAsignacionMutation.mutate({
-            idAsignacion: idAsignacionAEliminar!,
-          })
-        }
+        onClose={cerrarEliminacionAsignacion}
+        onConfirm={confirmarAnulacionAsignacion}
         title="Eliminar asignación"
         isSubmitting={anularAsignacionMutation.isPending}
         confirmDisabled={idAsignacionAEliminar === undefined}
@@ -553,7 +353,7 @@ export default function GestionAsignaciones() {
         {asignacionAAnular ? (
           <CustomSelectorBuscable
             label="Asignacion a eliminar"
-            options={construirOpcionesEliminacion(asignacionAAnular)}
+            options={construirOpcionesEliminacionAsignacion(asignacionAAnular)}
             value={idAsignacionAEliminar}
             onChange={(idAsignacionSeleccionada) => {
               setIdAsignacionAEliminar(idAsignacionSeleccionada);
@@ -569,3 +369,4 @@ export default function GestionAsignaciones() {
     </div>
   );
 }
+

@@ -1,6 +1,3 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
 import {
   BadgeCheck,
   CheckCircle2,
@@ -16,23 +13,9 @@ import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado
 import { CustomChipVigencia } from "@maximilian/components/common/CustomChipVigencia";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
-import { useRetardo } from "@maximilian/hooks/useRetardo";
-import { informeService } from "@maximilian/services/informe.service";
-import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
+import { useGestionRevisionAprobacion } from "@maximilian/hooks/useGestionRevisionAprobacion";
 import type { InformeListEntry } from "@maximilian/shared/types/informe.type";
-import type { TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
-import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { obtenerColorEstadoAnalista } from "@maximilian/shared/utils/investigacion.util";
-
-function normalizarOpcionesFiltro(
-  opciones?: EntradaTablaMaestra[],
-  campoTexto: "string1" | "string2" = "string1",
-) {
-  return opciones?.map((opcion) => ({
-    ...opcion,
-    string1: opcion[campoTexto] || opcion.string1 || opcion.descripcion,
-  }));
-}
 
 function obtenerIconoTarjeta(id: string) {
   if (id === "pendiente")
@@ -87,128 +70,30 @@ function obtenerIndicadorFase(registro: InformeListEntry) {
 }
 
 export default function GestionRevisionAprobacion() {
-  const navigate = useNavigate();
-  const [terminoBusqueda, setTerminoBusqueda] = useState("");
-  const [paginaActual, setPaginaActual] = useState(1);
-  const [filtroPlantillas, setFiltroPlantillas] = useState<number[]>([]);
-  const [filtroEstados, setFiltroEstados] = useState<number[]>([]);
-  const [filtroTipos, setFiltroTipos] = useState<number[]>([]);
-  const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
-  const idPlantillaFiltro = filtroPlantillas.join(",") || undefined;
-  const idEstadoFiltro = filtroEstados.join(",") || undefined;
-  const idTipoTramiteFiltro = filtroTipos.join(",") || undefined;
   const {
-    data: respuestaInformes,
-    isLoading,
+    abrirRevision,
+    filtroEstados,
+    filtroPlantillas,
+    filtroTipos,
     isError,
+    isLoading,
+    obtenerNombrePlantilla,
+    opcionesEstadoFiltro,
+    opcionesPlantillaFiltro,
+    opcionesTipoFiltro,
+    paginaActual,
     refetch,
-  } = useQuery({
-    queryKey: [
-      "informes-bandeja-coordinador-revision",
-      "con-plantilla",
-      paginaActual,
-      terminoBusquedaConRetardo,
-      idPlantillaFiltro,
-      idEstadoFiltro,
-      idTipoTramiteFiltro,
-    ],
-    queryFn: () =>
-      informeService.list({
-        numPag: paginaActual,
-        busqueda: terminoBusquedaConRetardo.trim() || undefined,
-        idPlantilla: idPlantillaFiltro,
-        idEstado: idEstadoFiltro,
-        idTipoTramite: idTipoTramiteFiltro,
-      }),
-    enabled: terminoBusqueda === terminoBusquedaConRetardo,
-    retry: false,
-    refetchOnMount: "always",
-  });
-
-  const registros = useMemo<InformeListEntry[]>(
-    () => respuestaInformes?.lstInforme ?? [],
-    [respuestaInformes?.lstInforme],
-  );
-
-  const { data: opcionesPlantillaInforme } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.PLANTILLA_INFORME],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLANTILLA_INFORME),
-    staleTime: Infinity,
-  });
-
-  const { data: opcionesTipoTramite } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_TRAMITE],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_TRAMITE),
-    staleTime: Infinity,
-  });
-
-  const { data: opcionesEstadoInforme } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.ESTADO_INFORME],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_INFORME),
-    staleTime: Infinity,
-  });
-
-  const opcionesPlantillaFiltro = useMemo(
-    () => normalizarOpcionesFiltro(opcionesPlantillaInforme),
-    [opcionesPlantillaInforme],
-  );
-  const opcionesTipoFiltro = useMemo(
-    () => normalizarOpcionesFiltro(opcionesTipoTramite, "string2"),
-    [opcionesTipoTramite],
-  );
-  const opcionesEstadoFiltro = useMemo(
-    () => normalizarOpcionesFiltro(opcionesEstadoInforme),
-    [opcionesEstadoInforme],
-  );
-
-  const resumenTarjetas = useMemo<TarjetaResumenAnalista[]>(() => {
-    return [
-      {
-        id: "pendiente",
-        titulo: "Pendiente",
-        valor: respuestaInformes?.pendienteAprobacion ?? 0,
-        colorIcono: "text-orange-500",
-      },
-      {
-        id: "aprobado",
-        titulo: "Aprobado",
-        valor: respuestaInformes?.aprobado ?? 0,
-        colorIcono: "text-emerald-500",
-      },
-      {
-        id: "rechazado",
-        titulo: "Rechazado",
-        valor: respuestaInformes?.rechazado ?? 0,
-        colorIcono: "text-rose-500",
-      },
-      {
-        id: "vigente",
-        titulo: "Vigentes",
-        valor: respuestaInformes?.vigente ?? 0,
-        colorIcono: "text-slate-600",
-      },
-      {
-        id: "vencido",
-        titulo: "Vencidos",
-        valor: respuestaInformes?.vencido ?? 0,
-        colorIcono: "text-red-400",
-      },
-    ];
-  }, [respuestaInformes]);
-
-  const abrirRevision = (registro: InformeListEntry) => {
-    const parametros = new URLSearchParams();
-    parametros.set("idInforme", String(registro.idInforme));
-    if (registro.idIdioma != null) {
-      parametros.set("idIdioma", String(registro.idIdioma));
-    }
-    if (registro.idInformeOriginal != null && registro.idInformeOriginal > 0) {
-      parametros.set("idInformeOriginal", String(registro.idInformeOriginal));
-    }
-    navigate(
-      `/coordinador/revision/${registro.idPedido}?${parametros.toString()}`,
-    );
-  };
+    registros,
+    reiniciarPagina,
+    respuestaInformes,
+    resumenTarjetas,
+    setFiltroEstados,
+    setFiltroPlantillas,
+    setFiltroTipos,
+    setPaginaActual,
+    setTerminoBusqueda,
+    terminoBusqueda,
+  } = useGestionRevisionAprobacion();
 
   const columnas = [
     { label: "ID Pedido", width: "8%" },
@@ -221,7 +106,7 @@ export default function GestionRevisionAprobacion() {
           opciones={opcionesTipoFiltro}
           valores={filtroTipos}
           onChange={setFiltroTipos}
-          onFiltroCambiado={() => setPaginaActual(1)}
+          onFiltroCambiado={reiniciarPagina}
         />
       ),
       width: "10%",
@@ -233,7 +118,7 @@ export default function GestionRevisionAprobacion() {
           opciones={opcionesEstadoFiltro}
           valores={filtroEstados}
           onChange={setFiltroEstados}
-          onFiltroCambiado={() => setPaginaActual(1)}
+          onFiltroCambiado={reiniciarPagina}
         />
       ),
       className: "text-center",
@@ -246,7 +131,7 @@ export default function GestionRevisionAprobacion() {
           opciones={opcionesPlantillaFiltro}
           valores={filtroPlantillas}
           onChange={setFiltroPlantillas}
-          onFiltroCambiado={() => setPaginaActual(1)}
+          onFiltroCambiado={reiniciarPagina}
         />
       ),
       className: "text-center",
@@ -255,19 +140,6 @@ export default function GestionRevisionAprobacion() {
     { label: "Fase", className: "text-center", width: "8%" },
     { label: "Accion", className: "text-right", width: "12%" },
   ];
-
-  const obtenerNombrePlantilla = (idPlantilla?: number) => {
-    if (!idPlantilla) return "-";
-    const opcionPlantilla = opcionesPlantillaInforme?.find(
-      (opcion) => opcion.num1 === idPlantilla,
-    );
-
-    return (
-      opcionPlantilla?.string1 ||
-      opcionPlantilla?.descripcion ||
-      `Plantilla ${idPlantilla}`
-    );
-  };
 
   return (
     <div className="space-y-8">

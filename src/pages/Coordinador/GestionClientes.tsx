@@ -1,5 +1,4 @@
 import { CLIENT_COLUMNS } from "@maximilian/shared/constants/pages/Coordinador/gestion-clientes.constants";
-import { useState } from "react";
 import {
   Search,
   Plus,
@@ -7,167 +6,47 @@ import {
   UserMinus,
   Edit,
 } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ModalAgregarCliente } from "@maximilian/components/coordinador/ModalAgregarCliente";
 import { ModalDetalleCliente } from "@maximilian/components/coordinador/ModalDetalleCliente";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
-import { useListadoPaginado } from "@maximilian/hooks/useListadoPaginado";
-import { servicioCliente } from "@maximilian/services/cliente.service";
-import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
-import {
-  type DatosFormularioInformacionCliente,
-  type DatosFormularioContacto,
-  type DatosFormularioTarifa,
-} from "@maximilian/schemas";
-import { type CreateClientRequest, type ClientListEntry } from "@maximilian/shared/types/cliente.type";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-
-interface ClientMutationParams {
-  data: DatosFormularioInformacionCliente;
-  contacts: DatosFormularioContacto[];
-  rates: DatosFormularioTarifa[];
-  reset: () => void;
-}
+import { useGestionClientes } from "@maximilian/hooks/useGestionClientes";
+import type { ClientListEntry } from "@maximilian/shared/types/cliente.type";
 
 export default function GestionClientes() {
   const {
     terminoBusqueda,
     paginaActual,
-    busquedaConRetardo,
     cambiarBusqueda,
-    cambiarPagina,
-    reiniciarPagina,
-  } = useListadoPaginado();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
-  const [idMenuActivo, setActiveMenuId] = useState<number | null>(null);
-  const [clientToDelete, setClientToDelete] = useState<ClientListEntry | null>(null);
-  const [filterPais, setFilterPais] = useState<number | undefined>(undefined);
-  const [filterEstado, setFilterEstado] = useState<number | undefined>(undefined);
-
-  const queryClient = useQueryClient();
-
-  const {
-    data: clientsData,
-    isLoading: isLoadingClients,
-    isError: isErrorClients,
-    refetch: refetchClients,
-  } = useQuery({
-    queryKey: ["clients", paginaActual, busquedaConRetardo, filterPais, filterEstado],
-    queryFn: () =>
-      servicioCliente.list({
-        numPag: paginaActual,
-        busqueda: busquedaConRetardo || undefined,
-        idPais: filterPais,
-        idEstado: filterEstado,
-      }),
-  });
-
-  const { data: paises } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.PAIS],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
-    staleTime: Infinity,
-  });
-
-  const { data: estadosCliente } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.ESTADO_CLIENTE],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_CLIENTE),
-    staleTime: Infinity,
-  });
-
-
-  const createClientMutation = useMutation({
-    mutationFn: ({ data, contacts, rates }: ClientMutationParams) => {
-      const apiRequest: CreateClientRequest = {
-        idTipoPersona: data.tipoPersona as number,
-        nombre: data.nombre,
-        nombreCorto: data.nombre.substring(0, 20),
-        idPais: data.pais as number,
-        idRegistroTributario: data.tipoRegistroTributario as number,
-        numRegistroTributario: data.numRegistroTributario ?? "",
-        correo: data.correo,
-        idEstado: 1,
-        webSite: data.sitioWeb || "",
-        telefono: data.telefono ?? "",
-        fax: data.fax ?? "",
-        direccion: data.direccion ?? "",
-        recomendacion: data.recomendacion ?? "",
-        idEmpresaAtencion: data.atendidoPor as number,
-        idIdioma: data.idioma as number,
-        logoClienteUrl: "",
-        imprimeLogoSafety: data.imprimeLogoSafety,
-        lstIdFormatoDocumento: data.formatoInforme as number[],
-        idMoneda: data.moneda as number,
-        idIdiomaFacturacion: data.idiomaFacturacion as number,
-        aplicaPenalidad: data.aplicaPenalidad,
-        idPlantilla: data.plantillaInforme,
-        contactos: contacts.map((c) => ({
-          nombres: c.nombre,
-          idTipoPersonaContacto: c.tipoPersona as number,
-          idTipoContacto: c.tipoContacto as number,
-          tipoContacto: c.tipoContacto === 0 ? (c.tipoContactoNuevo ?? null) : null,
-          areaTrabajo: c.areaTrabajo as number,
-          telefono: c.telefono ?? "",
-          correo: c.correo,
-          codigo: c.codigoContacto || null,
-          enviarCorreo: c.enviarCorreo,
-        })),
-        tarifario: rates.map((r) => ({
-          idProducto: r.producto as number,
-          idTipoTramite: r.tramite as number,
-          idPais: r.pais as number,
-          idMoneda: r.moneda as number,
-          diasMax: r.diasMax,
-          diasMin: r.diasMin,
-          precio: r.precio,
-          penalidad: r.penalidad,
-        })),
-      };
-      return servicioCliente.create(apiRequest);
-    },
-    onSuccess: (_, { contacts, reset }) => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-      if (contacts.some((c) => c.tipoContacto === 0)) {
-        queryClient.invalidateQueries({ queryKey: ["masterTable", TablaMaestraId.TIPO_CONTACTO] });
-      }
-      setIsModalOpen(false);
-      reset();
-    },
-    onError: (error: Error) => {
-      console.error("Error al crear cliente:", error.message);
-    },
-  });
-
-  const deleteClientMutation = useMutation({
-    mutationFn: (idCliente: number) => servicioCliente.eliminate({ idCliente }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-    },
-    onError: (error: Error) => {
-      console.error("Error al desactivar cliente:", error.message);
-    },
-  });
-
-  const handleConfirmCreate = (
-    data: DatosFormularioInformacionCliente,
-    contacts: DatosFormularioContacto[],
-    rates: DatosFormularioTarifa[],
-    reset: () => void,
-  ) => {
-    createClientMutation.mutate({ data, contacts, rates, reset });
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    cambiarBusqueda(e.target.value);
-  };
-
-  const handlePageChange = (page: number) => {
-    cambiarPagina(page, clientsData?.totalPaginas || 1);
-  };
+    cambiarFiltroEstado,
+    cambiarFiltroPais,
+    cambiarPaginaCliente,
+    cerrarDetalleCliente,
+    clienteAEliminar,
+    clientesData,
+    crearCliente,
+    crearClienteMutation,
+    eliminarCliente,
+    eliminarClienteMutation,
+    estaAbiertoModalCrear,
+    estaAbiertoModalDetalle,
+    estaCargandoClientes,
+    estadosCliente,
+    filtroEstado,
+    filtroPais,
+    hayErrorClientes,
+    idClienteSeleccionado,
+    idMenuActivo,
+    paises,
+    recargarClientes,
+    seleccionarClienteAEliminar,
+    setClienteAEliminar,
+    setEstaAbiertoModalCrear,
+    setIdMenuActivo,
+    abrirDetalleCliente,
+  } = useGestionClientes();
 
   const columnas = CLIENT_COLUMNS.map((columna, indice) => {
     if (indice === 1) {
@@ -177,9 +56,8 @@ export default function GestionClientes() {
           <CustomEncabezadoFiltroTabla
             titulo="Pais"
             opciones={paises}
-            valores={filterPais ? [filterPais] : []}
-            onChange={(ids) => setFilterPais(ids[ids.length - 1])}
-            onFiltroCambiado={reiniciarPagina}
+            valores={filtroPais ? [filtroPais] : []}
+            onChange={cambiarFiltroPais}
             multiple={false}
           />
         ),
@@ -193,9 +71,8 @@ export default function GestionClientes() {
           <CustomEncabezadoFiltroTabla
             titulo="Estado"
             opciones={estadosCliente}
-            valores={filterEstado ? [filterEstado] : []}
-            onChange={(ids) => setFilterEstado(ids[ids.length - 1])}
-            onFiltroCambiado={reiniciarPagina}
+            valores={filtroEstado ? [filtroEstado] : []}
+            onChange={cambiarFiltroEstado}
             multiple={false}
           />
         ),
@@ -246,7 +123,7 @@ export default function GestionClientes() {
       <td className="px-6 py-4 text-right relative">
         <button
           onClick={() =>
-            setActiveMenuId(
+            setIdMenuActivo(
               idMenuActivo === client.idCliente ? null : client.idCliente,
             )
           }
@@ -259,20 +136,18 @@ export default function GestionClientes() {
           <>
             <div
               className="fixed inset-0 z-10"
-              onClick={() => setActiveMenuId(null)}
+              onClick={() => setIdMenuActivo(null)}
             />
             <div
               className={`absolute right-6 ${
-                index >= (clientsData?.lstClientes.length ?? 0) - 2
+                index >= (clientesData?.lstClientes.length ?? 0) - 2
                   ? "bottom-10"
                   : "top-10"
               } w-48 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}
             >
               <button
                 onClick={() => {
-                  setSelectedClientId(client.idCliente);
-                  setIsDetailModalOpen(true);
-                  setActiveMenuId(null);
+                  abrirDetalleCliente(client.idCliente);
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
               >
@@ -281,8 +156,7 @@ export default function GestionClientes() {
               </button>
               <button
                 onClick={() => {
-                  setClientToDelete(client);
-                  setActiveMenuId(null);
+                  seleccionarClienteAEliminar(client);
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
               >
@@ -310,13 +184,13 @@ export default function GestionClientes() {
               placeholder="Busca por nombre o nro. de registro tributario"
               className="w-full pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
               value={terminoBusqueda}
-              onChange={handleSearchChange}
+              onChange={(evento) => cambiarBusqueda(evento.target.value)}
             />
           </div>
 
 
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setEstaAbiertoModalCrear(true)}
             className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus size={16} />
@@ -327,49 +201,43 @@ export default function GestionClientes() {
 
       <CustomTabla
         columns={columnas}
-        data={clientsData?.lstClientes}
+        data={clientesData?.lstClientes}
         getId={(c) => c.idCliente}
         renderRow={renderRow}
-        isLoading={isLoadingClients}
-        isError={isErrorClients}
-        onRetry={() => refetchClients()}
+        isLoading={estaCargandoClientes}
+        isError={hayErrorClientes}
+        onRetry={() => recargarClientes()}
         emptyMessage="No se encontraron clientes."
         errorMessage="Error al cargar los clientes"
         paginaActual={paginaActual}
-        totalPages={clientsData?.totalPaginas ?? 1}
-        totalRecords={clientsData?.totalRegistros ?? 0}
-        onPageChange={handlePageChange}
+        totalPages={clientesData?.totalPaginas ?? 1}
+        totalRecords={clientesData?.totalRegistros ?? 0}
+        onPageChange={cambiarPaginaCliente}
         entityLabel="clientes"
       />
 
       <ModalAgregarCliente
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onConfirm={handleConfirmCreate}
-        isSubmitting={createClientMutation.isPending}
+        isOpen={estaAbiertoModalCrear}
+        onClose={() => setEstaAbiertoModalCrear(false)}
+        onConfirm={crearCliente}
+        isSubmitting={crearClienteMutation.isPending}
       />
 
       <ModalDetalleCliente
-        isOpen={isDetailModalOpen}
-        onClose={() => {
-          setIsDetailModalOpen(false);
-          setSelectedClientId(null);
-        }}
-        clientId={selectedClientId}
+        isOpen={estaAbiertoModalDetalle}
+        onClose={cerrarDetalleCliente}
+        clientId={idClienteSeleccionado}
       />
 
       <CustomModalConfirmacionEliminacion
-        isOpen={clientToDelete !== null}
-        onClose={() => setClientToDelete(null)}
-        onConfirm={() => {
-          deleteClientMutation.mutate(clientToDelete!.idCliente);
-          setClientToDelete(null);
-        }}
+        isOpen={clienteAEliminar !== null}
+        onClose={() => setClienteAEliminar(null)}
+        onConfirm={eliminarCliente}
         title="Desactivar cliente"
-        isSubmitting={deleteClientMutation.isPending}
+        isSubmitting={eliminarClienteMutation.isPending}
       >
-        <p><span className="font-bold">Nombre:</span> {clientToDelete?.nombre ?? "-"}</p>
-        <p><span className="font-bold">Correo:</span> {clientToDelete?.correo ?? "-"}</p>
+        <p><span className="font-bold">Nombre:</span> {clienteAEliminar?.nombre ?? "-"}</p>
+        <p><span className="font-bold">Correo:</span> {clienteAEliminar?.correo ?? "-"}</p>
       </CustomModalConfirmacionEliminacion>
     </div>
   );

@@ -1,17 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Landmark, Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
-import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
-import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
-import { servicioBanco } from "@maximilian/services/banco.service";
-import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
-import type { BancoCrearRequest, BancoEditarRequest, BancoListaItem } from "@maximilian/shared/types/banco.type";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { useModalBancoInforme } from "@maximilian/hooks/useModalBancoInforme";
+import { useModalBusquedaBancoInforme } from "@maximilian/hooks/useModalBusquedaBancoInforme";
+import { useModalCrearBancoInforme } from "@maximilian/hooks/useModalCrearBancoInforme";
+import type { BancoListaItem } from "@maximilian/shared/types/banco.type";
 import type { RegistroBancoAnalista } from "@maximilian/shared/types/investigacion.type";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 import {
   seleccionarTextoCampoEditable,
   seleccionarTextoEditableEnContenedor,
@@ -47,71 +43,25 @@ export function CustomModalCrearBancoAnalista({
   onCerrar,
   onBancoCreado,
 }: PropsCustomModalCrearBancoAnalista) {
-  const queryClient = useQueryClient();
-  const [idPais, setIdPais] = useState<number | undefined>(bancoInicial?.idPais);
-  const [nombre, setNombre] = useState("");
-  const [telefono, setTelefono] = useState("");
-
-  const { data: opcionesPaisBase } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.PAIS],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
-    enabled: estaAbierto,
-    staleTime: Infinity,
-  });
-  const opcionesPais = useMemo(() => traducirOpcionesTablaMaestra(opcionesPaisBase, idIdioma), [idIdioma, opcionesPaisBase]);
-
-  useEffect(() => {
-    if (!estaAbierto) {
-      setNombre("");
-      setTelefono("");
-      return;
-    }
-
-    setIdPais(bancoInicial?.idPais);
-    setNombre(bancoInicial?.nombre ?? "");
-    setTelefono(bancoInicial?.telefono ?? "");
-  }, [bancoInicial?.idPais, bancoInicial?.nombre, bancoInicial?.telefono, estaAbierto]);
-
-  const guardarBancoMutation = useMutation({
-    mutationFn: async () => {
-      const payloadBase = {
-        idPais: idPais ?? 0,
-        nombre: nombre.trim(),
-        telefono: telefono.trim(),
-      };
-
-      const respuesta = bancoInicial?.idBanco
-        ? await servicioBanco.editar({
-          idBanco: bancoInicial.idBanco,
-          ...payloadBase,
-        } satisfies BancoEditarRequest)
-        : await servicioBanco.crear(payloadBase satisfies BancoCrearRequest);
-      await queryClient.invalidateQueries({ queryKey: ["bancos-busqueda-modal"] });
-
-      if (respuesta.idBanco) {
-        const bancoCreado = await servicioBanco.obtener({ idBanco: respuesta.idBanco });
-        if (bancoCreado) return bancoCreado;
-      }
-
-      const pais = opcionesPais?.find((opcion) => opcion.num1 === payloadBase.idPais)?.string1 ?? "-";
-
-      return {
-        idBanco: respuesta.idBanco ?? bancoInicial?.idBanco ?? 0,
-        idPais: payloadBase.idPais,
-        nombre: payloadBase.nombre,
-        telefono: payloadBase.telefono,
-        pais,
-      } satisfies BancoListaItem;
-    },
-    onSuccess: (bancoCreado) => {
-      onBancoCreado(bancoCreado);
-      onCerrar();
-    },
+  const {
+    formularioInvalido,
+    guardarBancoMutation,
+    idPais,
+    nombre,
+    opcionesPais,
+    setIdPais,
+    setNombre,
+    setTelefono,
+    telefono,
+  } = useModalCrearBancoInforme({
+    bancoInicial,
+    estaAbierto,
+    idIdioma,
+    onBancoCreado,
+    onCerrar,
   });
 
   if (!estaAbierto) return null;
-
-  const formularioInvalido = !idPais || !nombre.trim() || !telefono.trim();
 
   return (
     <div className="fixed inset-0 z-[115] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
@@ -151,7 +101,7 @@ export function CustomModalCrearBancoAnalista({
                 onChange={setIdPais}
                 onClear={() => setIdPais(undefined)}
                 required
-                placeholder="Seleccione un país"
+                placeholder="Seleccione un pais"
               />
 
               <div className="space-y-2">
@@ -171,7 +121,7 @@ export function CustomModalCrearBancoAnalista({
                   value={telefono}
                   onChange={(event) => setTelefono(event.target.value)}
                   onFocus={seleccionarTextoCampoEditable}
-                  placeholder="Ingrese el teléfono"
+                  placeholder="Ingrese el telefono"
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
                 />
               </div>
@@ -204,78 +154,29 @@ function CustomModalBusquedaBancoAnalista({
   onCerrar,
   onSeleccionar,
 }: PropsCustomModalBusquedaBancoAnalista) {
-  const [busqueda, setBusqueda] = useState("");
-  const [paginaActual, setPaginaActual] = useState(1);
-  const [idBancoSeleccionado, setIdBancoSeleccionado] = useState<number | null>(null);
-  const [estaAbiertoModalCrearBanco, setEstaAbiertoModalCrearBanco] = useState(false);
-  const [bancoEnEdicion, setBancoEnEdicion] = useState<BancoListaItem | null>(null);
-  const [bancoAEliminar, setBancoAEliminar] = useState<BancoListaItem | null>(null);
-  const busquedaConRetardo = useRetardo(busqueda);
-  const queryClient = useQueryClient();
-
   const {
-    data: respuestaBancos,
-    isLoading,
+    bancoAEliminar,
+    bancoEnEdicion,
+    bancoSeleccionado,
+    bancos,
+    busqueda,
+    cerrarModalCrearBanco,
+    eliminarBancoMutation,
+    estaAbiertoModalCrearBanco,
+    idBancoSeleccionado,
     isError,
+    isLoading,
+    manejarBancoCreado,
+    paginaActual,
+    prepararEdicionBanco,
+    prepararNuevoBanco,
     refetch,
-  } = useQuery({
-    queryKey: ["bancos-busqueda-modal", busquedaConRetardo, paginaActual],
-    queryFn: () => servicioBanco.list({
-      busqueda: busquedaConRetardo.trim() || undefined,
-      numPag: paginaActual,
-    }),
-    enabled: estaAbierto,
-    retry: false,
-  });
-
-  const bancos = respuestaBancos?.lstBanco ?? [];
-
-  useEffect(() => {
-    if (!estaAbierto) {
-      setBusqueda("");
-      setPaginaActual(1);
-      setIdBancoSeleccionado(null);
-    }
-  }, [estaAbierto]);
-
-  useEffect(() => {
-    setPaginaActual(1);
-  }, [busquedaConRetardo]);
-
-  useEffect(() => {
-    if (!bancos.length) {
-      setIdBancoSeleccionado(null);
-      return;
-    }
-
-    setIdBancoSeleccionado((valorActual) => (
-      valorActual != null && bancos.some((banco) => banco.idBanco === valorActual)
-        ? valorActual
-        : bancos[0]?.idBanco ?? null
-    ));
-  }, [bancos]);
-
-  const bancoSeleccionado = useMemo(
-    () => bancos.find((banco) => banco.idBanco === idBancoSeleccionado) ?? null,
-    [bancos, idBancoSeleccionado],
-  );
-
-  const eliminarBancoMutation = useMutation({
-    mutationFn: async () => {
-      if (!bancoAEliminar?.idBanco) {
-        throw new Error("No se encontró el banco a eliminar.");
-      }
-
-      await servicioBanco.eliminar({ idBanco: bancoAEliminar.idBanco });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["bancos-busqueda-modal"] });
-      setBancoAEliminar(null);
-      if (bancoSeleccionado?.idBanco === bancoAEliminar?.idBanco) {
-        setIdBancoSeleccionado(null);
-      }
-    },
-  });
+    respuestaBancos,
+    setBancoAEliminar,
+    setBusqueda,
+    setIdBancoSeleccionado,
+    setPaginaActual,
+  } = useModalBusquedaBancoInforme({ estaAbierto });
 
   if (!estaAbierto) return null;
 
@@ -306,9 +207,9 @@ function CustomModalBusquedaBancoAnalista({
                 <div className="relative">
                   <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
                   <input
-                  value={busqueda}
-                  onChange={(event) => setBusqueda(event.target.value)}
-                  onFocus={seleccionarTextoCampoEditable}
+                    value={busqueda}
+                    onChange={(event) => setBusqueda(event.target.value)}
+                    onFocus={seleccionarTextoCampoEditable}
                     placeholder="Buscar por nombre del banco..."
                     className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
                   />
@@ -318,10 +219,7 @@ function CustomModalBusquedaBancoAnalista({
               <div className="flex items-end">
                 <button
                   type="button"
-                  onClick={() => {
-                    setBancoEnEdicion(null);
-                    setEstaAbiertoModalCrearBanco(true);
-                  }}
+                  onClick={prepararNuevoBanco}
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-wine px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-wine/90"
                 >
                   <Plus size={16} />
@@ -368,14 +266,14 @@ function CustomModalBusquedaBancoAnalista({
                       </td>
                     </tr>
                   ) : (
-                    bancos.map((banco) => {
-                      const estaSeleccionado = banco.idBanco === idBancoSeleccionado;
+                    bancos.map((bancoItem) => {
+                      const estaSeleccionado = bancoItem.idBanco === idBancoSeleccionado;
 
                       return (
                         <tr
-                          key={banco.idBanco}
+                          key={bancoItem.idBanco}
                           className={`cursor-pointer transition-colors ${estaSeleccionado ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
-                          onClick={() => setIdBancoSeleccionado(banco.idBanco)}
+                          onClick={() => setIdBancoSeleccionado(bancoItem.idBanco)}
                         >
                           <td className="relative px-5 py-4">
                             <span className={`pointer-events-none absolute inset-y-0 left-0 w-[3px] rounded-r-full transition-colors ${estaSeleccionado ? "bg-brand-wine" : ""}`} />
@@ -383,11 +281,11 @@ function CustomModalBusquedaBancoAnalista({
                               <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${estaSeleccionado ? "bg-brand-wine text-white" : "bg-slate-100 text-slate-400"}`}>
                                 <Landmark size={16} />
                               </div>
-                              <span className={`text-sm font-semibold ${estaSeleccionado ? "text-brand-wine" : "text-slate-700"}`}>{banco.nombre}</span>
+                              <span className={`text-sm font-semibold ${estaSeleccionado ? "text-brand-wine" : "text-slate-700"}`}>{bancoItem.nombre}</span>
                             </div>
                           </td>
-                          <td className="px-5 py-4 text-sm text-slate-500">{banco.pais}</td>
-                          <td className="px-5 py-4 text-sm text-slate-500">{banco.telefono}</td>
+                          <td className="px-5 py-4 text-sm text-slate-500">{bancoItem.pais}</td>
+                          <td className="px-5 py-4 text-sm text-slate-500">{bancoItem.telefono}</td>
                           <td className="px-5 py-4">
                             <div className="flex items-center justify-center gap-3 text-sm font-semibold">
                               <button
@@ -395,8 +293,7 @@ function CustomModalBusquedaBancoAnalista({
                                 className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700"
                                 onClick={(event) => {
                                   event.stopPropagation();
-                                  setBancoEnEdicion(banco);
-                                  setEstaAbiertoModalCrearBanco(true);
+                                  prepararEdicionBanco(bancoItem);
                                 }}
                                 aria-label="Editar banco"
                               >
@@ -407,7 +304,7 @@ function CustomModalBusquedaBancoAnalista({
                                 className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
                                 onClick={(event) => {
                                   event.stopPropagation();
-                                  setBancoAEliminar(banco);
+                                  setBancoAEliminar(bancoItem);
                                 }}
                                 aria-label="Eliminar banco"
                               >
@@ -467,17 +364,8 @@ function CustomModalBusquedaBancoAnalista({
         estaAbierto={estaAbiertoModalCrearBanco}
         bancoInicial={bancoEnEdicion}
         idIdioma={idIdioma}
-        onCerrar={() => {
-          setEstaAbiertoModalCrearBanco(false);
-          setBancoEnEdicion(null);
-        }}
-        onBancoCreado={(bancoCreado) => {
-          setEstaAbiertoModalCrearBanco(false);
-          setBancoEnEdicion(null);
-          setIdBancoSeleccionado(bancoCreado.idBanco);
-          setBusqueda("");
-          setPaginaActual(1);
-        }}
+        onCerrar={cerrarModalCrearBanco}
+        onBancoCreado={manejarBancoCreado}
       />
 
       <CustomModalConfirmacionAccion
@@ -485,7 +373,7 @@ function CustomModalBusquedaBancoAnalista({
         onClose={() => setBancoAEliminar(null)}
         onConfirm={() => eliminarBancoMutation.mutate()}
         title="Eliminar Banco"
-        descripcion="Se eliminará el banco seleccionado de la base de datos."
+        descripcion="Se eliminara el banco seleccionado de la base de datos."
         isSubmitting={eliminarBancoMutation.isPending}
         textoConfirmar="Eliminar"
         textoCargandoConfirmar="Eliminando..."
@@ -505,49 +393,32 @@ export function CustomModalBancoAnalista({
   onCerrar,
   onGuardar,
 }: PropsCustomModalBancoAnalista) {
-  const { data: opcionesSectorBase } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.SECTOR_ECONOMICO],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.SECTOR_ECONOMICO),
-    enabled: estaAbierto,
-    staleTime: Infinity,
+  const {
+    banco,
+    estaAbiertoModalBusqueda,
+    idSectorSeleccionado,
+    limpiarSector,
+    manejarCambioSector,
+    manejarGuardar,
+    numeroCuenta,
+    opcionesSector,
+    pais,
+    sectoristaJefeCuenta,
+    seleccionarBanco,
+    setBanco,
+    setEstaAbiertoModalBusqueda,
+    setNumeroCuenta,
+    setSectoristaJefeCuenta,
+    setTelefono,
+    telefono,
+  } = useModalBancoInforme({
+    estaAbierto,
+    idIdioma,
+    registroInicial,
+    onGuardar,
   });
-  const opcionesSector = useMemo(() => traducirOpcionesTablaMaestra(opcionesSectorBase, idIdioma), [idIdioma, opcionesSectorBase]);
-  const [idBanco, setIdBanco] = useState<number | undefined>(registroInicial?.idBanco);
-  const [idPais, setIdPais] = useState<number | undefined>(registroInicial?.idPais);
-  const [pais, setPais] = useState(registroInicial?.pais ?? "");
-  const [banco, setBanco] = useState(registroInicial?.banco ?? "");
-  const [idSectorSeleccionado, setIdSectorSeleccionado] = useState<number | undefined>(undefined);
-  const [sector, setSector] = useState(registroInicial?.sector ?? "");
-  const [telefono, setTelefono] = useState(registroInicial?.telefono ?? "");
-  const [numeroCuenta, setNumeroCuenta] = useState(registroInicial?.numeroCuenta ?? "");
-  const [sectoristaJefeCuenta, setSectoristaJefeCuenta] = useState(registroInicial?.sectoristaJefeCuenta ?? "");
-  const [estaAbiertoModalBusqueda, setEstaAbiertoModalBusqueda] = useState(false);
-
-  useEffect(() => {
-    if (!estaAbierto || !opcionesSector) return;
-
-    const opcionSector = registroInicial?.idSector
-      ? opcionesSector.find((opcion) => opcion.num1 === registroInicial.idSector)
-      : opcionesSector.find((opcion) => opcion.string1 === (registroInicial?.sector ?? ""));
-    setIdSectorSeleccionado(opcionSector?.num1 ?? undefined);
-  }, [estaAbierto, opcionesSector, registroInicial?.idSector, registroInicial?.sector]);
 
   if (!estaAbierto) return null;
-
-  const manejarGuardar = () => {
-    const sectorSeleccionado = opcionesSector?.find((opcion) => opcion.num1 === idSectorSeleccionado)?.string1 ?? sector;
-    onGuardar({
-      idInformeBanco: registroInicial?.idInformeBanco,
-      idBanco,
-      idPais,
-      pais: pais.trim() || undefined,
-      banco: banco.trim(),
-      sector: sectorSeleccionado.trim(),
-      telefono: telefono.trim(),
-      numeroCuenta: numeroCuenta.trim(),
-      sectoristaJefeCuenta: sectoristaJefeCuenta.trim(),
-    });
-  };
 
   return (
     <>
@@ -582,8 +453,14 @@ export function CustomModalBancoAnalista({
             </div>
 
             <div className="space-y-2">
-              <CustomLabel>Número de Cuenta</CustomLabel>
-              <input value={numeroCuenta} onChange={(event) => setNumeroCuenta(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="0000 0000 0000" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+              <CustomLabel>Numero de Cuenta</CustomLabel>
+              <input
+                value={numeroCuenta}
+                onChange={(event) => setNumeroCuenta(event.target.value)}
+                onFocus={seleccionarTextoCampoEditable}
+                placeholder="0000 0000 0000"
+                className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none"
+              />
             </div>
 
             <div className="space-y-2">
@@ -592,26 +469,32 @@ export function CustomModalBancoAnalista({
                 label={null}
                 options={opcionesSector}
                 value={idSectorSeleccionado}
-                onChange={(valor) => {
-                  setIdSectorSeleccionado(valor);
-                  setSector(opcionesSector?.find((opcion) => opcion.num1 === valor)?.string1 ?? "");
-                }}
-                onClear={() => {
-                  setIdSectorSeleccionado(undefined);
-                  setSector("");
-                }}
+                onChange={manejarCambioSector}
+                onClear={limpiarSector}
                 placeholder="Seleccione un sector"
               />
             </div>
 
             <div className="space-y-2">
               <CustomLabel>Sectorista / Jefe de Cuenta</CustomLabel>
-              <input value={sectoristaJefeCuenta} onChange={(event) => setSectoristaJefeCuenta(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Nombre del sectorista o jefe de cuenta" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+              <input
+                value={sectoristaJefeCuenta}
+                onChange={(event) => setSectoristaJefeCuenta(event.target.value)}
+                onFocus={seleccionarTextoCampoEditable}
+                placeholder="Nombre del sectorista o jefe de cuenta"
+                className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none"
+              />
             </div>
 
             <div className="space-y-2">
-              <CustomLabel>Numero(s) de Teléfono</CustomLabel>
-              <input value={telefono} onChange={(event) => setTelefono(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="+52 ..." className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+              <CustomLabel>Numero(s) de Telefono</CustomLabel>
+              <input
+                value={telefono}
+                onChange={(event) => setTelefono(event.target.value)}
+                onFocus={seleccionarTextoCampoEditable}
+                placeholder="+52 ..."
+                className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none"
+              />
             </div>
 
             {pais ? (
@@ -630,14 +513,7 @@ export function CustomModalBancoAnalista({
         estaAbierto={estaAbiertoModalBusqueda}
         idIdioma={idIdioma}
         onCerrar={() => setEstaAbiertoModalBusqueda(false)}
-        onSeleccionar={(resultado) => {
-          setIdBanco(resultado.idBanco);
-          setIdPais(resultado.idPais);
-          setPais(resultado.pais);
-          setBanco(resultado.nombre);
-          setTelefono(resultado.telefono);
-          setEstaAbiertoModalBusqueda(false);
-        }}
+        onSeleccionar={seleccionarBanco}
       />
     </>
   );
