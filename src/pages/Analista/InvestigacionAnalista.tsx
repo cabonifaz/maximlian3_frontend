@@ -2472,7 +2472,7 @@ function PantallaInvestigacionAnalista({
   const pestanaRamoOperacionesVisible =
     pestanaRamoOperaciones === "exportaciones" && !esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje)
       ? "operaciones"
-      : pestanaRamoOperaciones === "importaciones" && !esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.comprasContadoInternacionalesPorcentaje) && !esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.comprasCreditoInternacionalesPorcentaje)
+      : pestanaRamoOperaciones === "importaciones" && !esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje)
         ? "operaciones"
         : pestanaRamoOperaciones;
 
@@ -2717,9 +2717,7 @@ function PantallaInvestigacionAnalista({
   });
 
   const exportacionesHabilitadas = esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje);
-  const importacionesHabilitadas =
-    esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.comprasContadoInternacionalesPorcentaje) ||
-    esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.comprasCreditoInternacionalesPorcentaje);
+  const importacionesHabilitadas = esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje);
 
   const irASeccion = (direccion: "anterior" | "siguiente") => {
     const nuevoIndice = direccion === "anterior" ? indiceSeccionActiva - 1 : indiceSeccionActiva + 1;

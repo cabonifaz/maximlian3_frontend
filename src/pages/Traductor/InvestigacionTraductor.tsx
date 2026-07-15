@@ -3984,11 +3984,7 @@ function PantallaInvestigacionAnalista({
       : pestanaRamoOperaciones === "importaciones" &&
           !esPorcentajeMayorACero(
             datosInvestigacion.operacionPrincipal
-              .comprasContadoInternacionalesPorcentaje,
-          ) &&
-          !esPorcentajeMayorACero(
-            datosInvestigacion.operacionPrincipal
-              .comprasCreditoInternacionalesPorcentaje,
+              .comprasExtranjeroPorcentaje,
           )
         ? "operaciones"
         : pestanaRamoOperaciones;
@@ -4304,15 +4300,9 @@ function PantallaInvestigacionAnalista({
   const exportacionesHabilitadas = esPorcentajeMayorACero(
     datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje,
   );
-  const importacionesHabilitadas =
-    esPorcentajeMayorACero(
-      datosInvestigacion.operacionPrincipal
-        .comprasContadoInternacionalesPorcentaje,
-    ) ||
-    esPorcentajeMayorACero(
-      datosInvestigacion.operacionPrincipal
-        .comprasCreditoInternacionalesPorcentaje,
-    );
+  const importacionesHabilitadas = esPorcentajeMayorACero(
+    datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje,
+  );
 
   const irASeccion = (direccion: "anterior" | "siguiente") => {
     const nuevoIndice =
