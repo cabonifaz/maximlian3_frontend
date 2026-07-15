@@ -10,6 +10,7 @@ import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
+import { normalizarTextoBusqueda } from "@maximilian/shared/utils/texto.util";
 import type {
   AssignmentCandidate,
   AssignmentRole,
@@ -32,7 +33,7 @@ interface ModalFlujoAsignacionProps {
 
 function getBadgeVigencia(vigencia: string | number) {
   const texto = String(vigencia || "-").trim();
-  const textoNormalizado = normalizarBusqueda(texto);
+  const textoNormalizado = normalizarTextoBusqueda(texto);
   const dias = Number(texto.match(/\d+/)?.[0] ?? Number.NaN);
 
   let clases = "bg-green-50 text-green-700";
@@ -63,14 +64,6 @@ function getEtiquetaAsignaciones(cantidadAsignaciones: number) {
 
 function getEtiquetaIdiomas(cantidadIdiomas: number) {
   return `${cantidadIdiomas} ${cantidadIdiomas === 1 ? "idioma" : "idiomas"}`;
-}
-
-function normalizarBusqueda(valor: string) {
-  return valor
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLowerCase();
 }
 
 function normalizarPedidoInicial(pedido: PedidoListEntry): PedidoListEntry {
@@ -242,13 +235,13 @@ export function ModalFlujoAsignacion({
   });
 
   const candidatosFiltrados = useMemo(() => {
-    const terminoNormalizado = normalizarBusqueda(busquedaUsuarioDebounced);
+    const terminoNormalizado = normalizarTextoBusqueda(busquedaUsuarioDebounced);
     if (!terminoNormalizado) return candidatos ?? [];
 
     return (candidatos ?? []).filter((candidato) => {
-      const nombreCompleto = normalizarBusqueda(candidato.nombre);
-      const nombres = normalizarBusqueda(candidato.nombres ?? "");
-      const apellidos = normalizarBusqueda(candidato.apellidos ?? "");
+      const nombreCompleto = normalizarTextoBusqueda(candidato.nombre);
+      const nombres = normalizarTextoBusqueda(candidato.nombres ?? "");
+      const apellidos = normalizarTextoBusqueda(candidato.apellidos ?? "");
 
       return (
         nombreCompleto.includes(terminoNormalizado)
@@ -297,9 +290,9 @@ export function ModalFlujoAsignacion({
         if (!asignadoActual || asignadoActual.idUsuario > 0) return asignacion;
 
         const candidatosRol = asignacion.role === "analyst" ? (candidatosAnalista ?? []) : (candidatosTraductor ?? []);
-        const nombreBuscado = normalizarBusqueda(asignadoActual.nombre);
+        const nombreBuscado = normalizarTextoBusqueda(asignadoActual.nombre);
         const candidatoCoincidente = candidatosRol.find(
-          (candidato) => normalizarBusqueda(candidato.nombre) === nombreBuscado,
+          (candidato) => normalizarTextoBusqueda(candidato.nombre) === nombreBuscado,
         );
 
         return candidatoCoincidente

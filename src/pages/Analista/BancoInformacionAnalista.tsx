@@ -28,6 +28,7 @@ import {
   TablaMaestraId,
   type EntradaTablaMaestra,
 } from "@maximilian/shared/types/tabla-maestra.type";
+import { formatearFechaVisual } from "@maximilian/shared/utils/fecha.util";
 
 function serializarIdsFiltro(ids: number[]) {
   return ids.length > 0 ? ids.join(",") : undefined;
@@ -707,16 +708,11 @@ function CustomPaginacion({
 }
 
 function formatearFecha(fecha: string | undefined) {
-  if (!fecha) return "-";
-
-  const fechaParseada = new Date(fecha);
-  if (Number.isNaN(fechaParseada.getTime())) return fecha;
-
-  return new Intl.DateTimeFormat("es", {
+  return formatearFechaVisual(fecha, {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(fechaParseada);
+  });
 }
 
 function formatearRangoFecha(fechaInicio: string, fechaFin?: string) {

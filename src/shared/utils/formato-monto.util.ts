@@ -102,6 +102,34 @@ export function normalizarPorcentajeDecimales(valor: string, decimales: number) 
   return numero.toFixed(decimales);
 }
 
+export function obtenerPorcentajeNumerico(valor?: string) {
+  const numero = Number.parseFloat((valor ?? "").replace("%", "").replace(",", ".").trim());
+  return Number.isNaN(numero) ? 0 : numero;
+}
+
+export function obtenerPorcentajeNumericoOpcional(valor?: string) {
+  const texto = (valor ?? "").replace("%", "").replace(",", ".").trim();
+  if (!texto) return null;
+
+  const numero = Number.parseFloat(texto);
+  return Number.isNaN(numero) ? null : numero;
+}
+
+export function formatearPorcentajeDecimales(valor: number, decimales: number, quitarCerosFinales = false) {
+  const porcentaje = valor.toFixed(decimales);
+  return `${quitarCerosFinales ? porcentaje.replace(/\.?0+$/, "") : porcentaje}%`;
+}
+
+export function formatearTextoNumericoDecimales(valor: unknown, decimales: number) {
+  const texto = obtenerTextoNumerico(valor);
+  if (!texto) return "";
+
+  const numero = Number.parseFloat(texto.replace("%", "").replace(",", "."));
+  if (Number.isNaN(numero)) return texto;
+
+  return numero.toFixed(decimales);
+}
+
 export function seleccionarTextoCampoEditable(event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
   const tipo = event.currentTarget instanceof HTMLInputElement ? event.currentTarget.type : "";
   if (["checkbox", "radio", "file", "date"].includes(tipo)) return;

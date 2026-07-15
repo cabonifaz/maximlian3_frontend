@@ -26,6 +26,8 @@ import {
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { servicioCompaniaNoticia } from "@maximilian/services/compania-noticia.service";
 import { valoresIniciales } from "@maximilian/shared/constants/components/common/custom-banco-noticias.constants";
+import { formatearTamanoArchivo } from "@maximilian/shared/utils/archivo.util";
+import { formatearFechaVisual } from "@maximilian/shared/utils/fecha.util";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
 import type {
   CompaniaNoticiaArchivo,
@@ -1097,22 +1099,15 @@ async function subirArchivosNoticia(
 }
 
 function formatearFecha(fecha: string) {
-  if (!fecha) return "-";
-  const fechaParseada = new Date(fecha);
-  if (Number.isNaN(fechaParseada.getTime())) return fecha;
-
-  return new Intl.DateTimeFormat("es", {
+  return formatearFechaVisual(fecha, {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(fechaParseada);
+  });
 }
 
 function formatearTamano(tamano: number) {
-  if (tamano < 1024) return `${tamano} B`;
-  if (tamano < 1024 * 1024) return `${(tamano / 1024).toFixed(1)} KB`;
-
-  return `${(tamano / 1024 / 1024).toFixed(1)} MB`;
+  return formatearTamanoArchivo(tamano, { decimalesKb: 1 });
 }
 
 function obtenerEtiquetaCompania(compania: CompaniaListaItem) {

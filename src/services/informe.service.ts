@@ -39,7 +39,9 @@ import {
   normalizarMontoDosDecimales,
   obtenerNumeroDesdeMonto,
   obtenerTextoNumerico,
+  formatearTextoNumericoDecimales,
 } from "@maximilian/shared/utils/formato-monto.util";
+import { formatearFechaIsoADdMmYyyy } from "@maximilian/shared/utils/fecha.util";
 import {
   adaptarCuentaBalanceDesdeApi,
   esCampoEnteroEstadoFinanciero,
@@ -165,18 +167,7 @@ function normalizarArchivosInvestigacion(
 }
 
 function formatearFechaEntrada(valor: string): string {
-  const texto = valor.trim();
-  if (!texto) return "";
-
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) return texto;
-
-  const coincidenciaIso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (coincidenciaIso) {
-    const [, ano, mes, dia] = coincidenciaIso;
-    return `${dia}/${mes}/${ano}`;
-  }
-
-  return texto;
+  return formatearFechaIsoADdMmYyyy(valor, "");
 }
 
 function obtenerValorRegistro(registro: Record<string, unknown>, ...claves: string[]) {
@@ -666,9 +657,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     claseCiiu: valorClaseCiiu
       || obtenerTexto(registro.isicClase, registro.IsicClase, registro.claseCiiu, registro.ClaseCiiu),
     actividadPrincipal: obtenerTexto(registro.actividadPrincipal, registro.ActividadPrincipal),
-    ventasContadoPorcentaje: obtenerTextoNumerico(registro.ventasContado),
+    ventasContadoPorcentaje: formatearTextoNumericoDecimales(registro.ventasContado, 2),
     ventasContadoDetalle: obtenerTexto(registro.ventasContadoText, registro.VentasContadoText),
-    ventasCreditoPorcentaje: obtenerTextoNumerico(registro.ventasCredito),
+    ventasCreditoPorcentaje: formatearTextoNumericoDecimales(registro.ventasCredito, 2),
     ventasCreditoDetalle: obtenerTexto(registro.ventasCreditoText, registro.VentasCreditoText),
     ventasCreditoTiempo: (idVentasCreditoTiempo && idVentasCreditoTiempo > 0 ? String(idVentasCreditoTiempo) : "") || obtenerTexto(
       registro.ventasCreditoTiempo,
@@ -676,11 +667,12 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       registro.ventasCreditoSeleccion,
       registro.VentasCreditoSeleccion,
     ),
-    territorioVentasPorcentaje: obtenerTextoNumerico(
+    territorioVentasPorcentaje: formatearTextoNumericoDecimales(
       registro.ventasNacionales
         ?? registro.VentasNacionales
         ?? registro.territorioVentas
         ?? registro.TerritorioVentas,
+      2,
     ),
     territorioVentasDetalle: obtenerTexto(
       registro.ventasNacionalesText,
@@ -688,22 +680,23 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       registro.territorioText,
       registro.TerritorioText,
     ),
-    ventasExtranjeroPorcentaje: obtenerTextoNumerico(registro.ventasInternacionales),
+    ventasExtranjeroPorcentaje: formatearTextoNumericoDecimales(registro.ventasInternacionales, 2),
     ventasExtranjeroDetalle: obtenerTexto(registro.ventasInternacionalesText, registro.VentasInternacionalesText),
-    comprasNacionalesPorcentaje: obtenerTextoNumerico(registro.comprasNacionales ?? registro.ComprasNacionales),
+    comprasNacionalesPorcentaje: formatearTextoNumericoDecimales(registro.comprasNacionales ?? registro.ComprasNacionales, 2),
     comprasNacionalesDetalle: obtenerTexto(registro.comprasNacionalesText, registro.ComprasNacionalesText),
-    comprasContadoNacionalesPorcentaje: obtenerTextoNumerico(registro.comprasContadoNacionales ?? registro.ComprasContadoNacionales),
+    comprasContadoNacionalesPorcentaje: formatearTextoNumericoDecimales(registro.comprasContadoNacionales ?? registro.ComprasContadoNacionales, 2),
     comprasContadoNacionalesDetalle: obtenerTexto(registro.comprasContadoNacionalesText, registro.ComprasContadoNacionalesText),
-    comprasCreditoNacionalesPorcentaje: obtenerTextoNumerico(registro.comprasCreditoNacionales ?? registro.ComprasCreditoNacionales),
+    comprasCreditoNacionalesPorcentaje: formatearTextoNumericoDecimales(registro.comprasCreditoNacionales ?? registro.ComprasCreditoNacionales, 2),
     comprasCreditoNacionalesDetalle: obtenerTexto(registro.comprasCreditoNacionalesText, registro.ComprasCreditoNacionalesText),
     comprasCreditoNacionalesTiempo: idComprasCreditoNacionalesTiempo && idComprasCreditoNacionalesTiempo > 0
       ? String(idComprasCreditoNacionalesTiempo)
       : "",
-    comprasExtranjeroPorcentaje: obtenerTextoNumerico(
+    comprasExtranjeroPorcentaje: formatearTextoNumericoDecimales(
       registro.comprasInternacionales
         ?? registro.ComprasInternacionales
         ?? registro.comprasExtranjero
         ?? registro.ComprasExtranjero,
+      2,
     ),
     comprasExtranjeroDetalle: obtenerTexto(
       registro.comprasInternacionalesText,
@@ -711,9 +704,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       registro.comprasExtranjeroText,
       registro.ComprasExtranjeroText,
     ),
-    comprasContadoInternacionalesPorcentaje: obtenerTextoNumerico(registro.comprasContadoInternacionales ?? registro.ComprasContadoInternacionales),
+    comprasContadoInternacionalesPorcentaje: formatearTextoNumericoDecimales(registro.comprasContadoInternacionales ?? registro.ComprasContadoInternacionales, 2),
     comprasContadoInternacionalesDetalle: obtenerTexto(registro.comprasContadoInternacionalesText, registro.ComprasContadoInternacionalesText),
-    comprasCreditoInternacionalesPorcentaje: obtenerTextoNumerico(registro.comprasCreditoInternacionales ?? registro.ComprasCreditoInternacionales),
+    comprasCreditoInternacionalesPorcentaje: formatearTextoNumericoDecimales(registro.comprasCreditoInternacionales ?? registro.ComprasCreditoInternacionales, 2),
     comprasCreditoInternacionalesDetalle: obtenerTexto(registro.comprasCreditoInternacionalesText, registro.ComprasCreditoInternacionalesText),
     comprasCreditoInternacionalesTiempo: idComprasCreditoInternacionalesTiempo && idComprasCreditoInternacionalesTiempo > 0
       ? String(idComprasCreditoInternacionalesTiempo)
@@ -1008,7 +1001,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       idCargo: obtenerNumeroOpcional(ejecutivo.idCargo, ejecutivo.IdCargo),
       ejecutivo: nombreCompleto,
       cargo: obtenerTexto(ejecutivo.cargos, ejecutivo.Cargos, ejecutivo.cargo, ejecutivo.Cargo, ejecutivo.idCargo, ejecutivo.IdCargo),
-      porcentaje: obtenerTextoNumerico(ejecutivo.participacion),
+      porcentaje: formatearTextoNumericoDecimales(ejecutivo.participacion, 8),
       lista: obtenerBooleano(ejecutivo.apareceImpresoLista, ejecutivo.ApareceImpresoLista),
       detalleEjecutivo: obtenerBooleano(ejecutivo.imprimeDatosEjecutivos, ejecutivo.ImprimeDatosEjecutivos),
       orden: obtenerTextoNumerico(ejecutivo.orden),

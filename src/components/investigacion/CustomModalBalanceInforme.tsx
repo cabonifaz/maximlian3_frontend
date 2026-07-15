@@ -9,6 +9,7 @@ import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service
 import type { RegistroBalanceAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
+import { formatearFechaIsoADdMmYyyy } from "@maximilian/shared/utils/fecha.util";
 import {
   normalizarMontoDosDecimales,
   sanitizarMontoDosDecimales,
@@ -25,10 +26,7 @@ interface PropsCustomModalBalanceAnalista {
 }
 
 function formatearFecha(fecha: string) {
-  if (!fecha) return "";
-  const [ano, mes, dia] = fecha.split("-");
-  if (!ano || !mes || !dia) return fecha;
-  return `${dia}/${mes}/${ano}`;
+  return formatearFechaIsoADdMmYyyy(fecha, "");
 }
 
 function compararFechasDdMmYyyy(a: string, b: string): number {

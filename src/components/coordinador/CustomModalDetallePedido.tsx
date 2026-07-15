@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomChipTipoArchivo } from "@maximilian/components/common/CustomChipTipoArchivo";
 import { formatearTamanoArchivo, obtenerExtensionArchivo } from "@maximilian/shared/utils/archivo.util";
+import { formatearFechaVisual } from "@maximilian/shared/utils/fecha.util";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
@@ -23,17 +24,14 @@ interface CustomModalDetallePedidoProps {
   zIndex?: string;
 }
 
-function formatearFecha(valor: string | null | undefined) {
-  if (!valor) return "-";
-
-  const fecha = new Date(valor);
-  if (Number.isNaN(fecha.getTime())) return valor;
-
-  return new Intl.DateTimeFormat("es-BO", {
+const opcionesFechaNumerica: Intl.DateTimeFormatOptions = {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).format(fecha);
+};
+
+function formatearFecha(valor: string | null | undefined) {
+  return formatearFechaVisual(valor, opcionesFechaNumerica, "es-BO");
 }
 
 function formatearMonto(valor: number | null | undefined, simboloMoneda?: string | null) {

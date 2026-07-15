@@ -113,11 +113,14 @@ import {
 import {
   normalizarMontoDosDecimales,
   normalizarMontoDecimales,
+  obtenerPorcentajeNumerico,
   obtenerNumeroDesdeMonto,
   obtenerNumeroOpcionalDesdeMonto,
   sanitizarMontoDecimales,
   seleccionarTextoCampoEditable,
+  formatearPorcentajeDecimales,
 } from "@maximilian/shared/utils/formato-monto.util";
+import { enmascararNumeroCuenta } from "@maximilian/shared/utils/texto.util";
 import {
   obtenerClaveEstadoFinanciero,
   obtenerValorCampoEstadoFinanciero,
@@ -226,20 +229,8 @@ function paginarRegistros<T>(registros: T[], paginaActual: number) {
   return registros.slice(inicio, inicio + FILAS_POR_PAGINA_INVESTIGACION);
 }
 
-function obtenerPorcentajeNumerico(valor?: string) {
-  const numero = Number.parseFloat((valor ?? "").replace("%", "").replace(",", ".").trim());
-  return Number.isNaN(numero) ? 0 : numero;
-}
-
 function formatearPorcentajeOchoDecimales(valor: number) {
-  return `${valor.toFixed(8)}%`;
-}
-
-function enmascararNumeroCuenta(valor: string) {
-  const numeroCuenta = valor.trim();
-  if (!numeroCuenta) return "-";
-  if (numeroCuenta.length <= 4) return numeroCuenta;
-  return `${"*".repeat(numeroCuenta.length - 4)}${numeroCuenta.slice(-4)}`;
+  return formatearPorcentajeDecimales(valor, 8);
 }
 
 function obtenerNumeroDesdeTexto(valor?: string) {

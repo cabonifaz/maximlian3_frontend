@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import type { AssignmentOrderEntry } from "@maximilian/shared/types/asignacion.type";
+import { formatearFechaIsoADdMmYyyy } from "@maximilian/shared/utils/fecha.util";
 import type {
   AccionBandejaAnalista,
   RegistroBandejaAnalista,
@@ -24,19 +25,6 @@ function obtenerModoPorAccion(accion: AccionBandejaAnalista) {
 
 function obtenerCargaNavegacion() {
   return String(Date.now());
-}
-
-function formatearFechaAsignacion(valor?: string) {
-  const texto = valor?.trim() ?? "";
-  if (!texto || texto.startsWith("0001-01-01")) return "-";
-
-  const coincidenciaIso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (coincidenciaIso) {
-    const [, ano, mes, dia] = coincidenciaIso;
-    return `${dia}/${mes}/${ano.slice(-2)}`;
-  }
-
-  return texto;
 }
 
 function normalizarEstadoDesdeAsignacion(
@@ -111,7 +99,7 @@ export function useBandejaInvestigacion({ tipo }: ParametrosUseBandejaInvestigac
         codigo: registro.codigoPedido || String(registro.idPedido),
         investigado: registro.investigado,
         pais: registro.pais || "-",
-        fecha: formatearFechaAsignacion(registro.fechaAsignacion),
+        fecha: formatearFechaIsoADdMmYyyy(registro.fechaAsignacion, "-", true),
         tipo: registro.tipoTramite || "-",
         estado: normalizarEstadoDesdeAsignacion(registro),
         estadoTexto: registro.estado || "-",

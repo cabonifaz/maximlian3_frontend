@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
+import { normalizarTextoBusqueda } from "@maximilian/shared/utils/texto.util";
 import type { AssignmentCandidate, AssignmentRole } from "@maximilian/shared/types/asignacion.type";
 
 interface ModalSelectorRolAsignacionProps {
@@ -20,14 +21,6 @@ function getBadgeClasses(count: number) {
   if (count <= 4) return "bg-slate-100 text-slate-500";
   if (count <= 5) return "bg-amber-50 text-amber-500";
   return "bg-orange-50 text-orange-500";
-}
-
-function normalizarBusqueda(valor: string) {
-  return valor
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLowerCase();
 }
 
 export function ModalSelectorRolAsignacion({
@@ -51,13 +44,13 @@ export function ModalSelectorRolAsignacion({
   });
 
   const candidatosFiltrados = (candidates ?? []).filter((candidate) => {
-    const terminoNormalizado = normalizarBusqueda(busquedaConRetardo);
+    const terminoNormalizado = normalizarTextoBusqueda(busquedaConRetardo);
     if (!terminoNormalizado) return true;
 
     return (
-      normalizarBusqueda(candidate.nombre).includes(terminoNormalizado)
-      || normalizarBusqueda(candidate.nombres ?? "").includes(terminoNormalizado)
-      || normalizarBusqueda(candidate.apellidos ?? "").includes(terminoNormalizado)
+      normalizarTextoBusqueda(candidate.nombre).includes(terminoNormalizado)
+      || normalizarTextoBusqueda(candidate.nombres ?? "").includes(terminoNormalizado)
+      || normalizarTextoBusqueda(candidate.apellidos ?? "").includes(terminoNormalizado)
     );
   });
 
