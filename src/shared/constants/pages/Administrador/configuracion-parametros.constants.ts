@@ -1,5 +1,5 @@
 import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-import type { ConfiguracionCamposParametro } from "@maximilian/pages/Administrador/ConfiguracionParametros";
+import type { ConfiguracionCamposParametro } from "@maximilian/shared/types/configuracion-parametros.type";
 
 export const PARAMETROS_DISPONIBLES: ParametroDisponible[] = [
   { idMaestro: TablaMaestraId.MONEDA, etiqueta: "Tipo de moneda" },
