@@ -1,9 +1,10 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
   Download,
+  History,
   Loader2,
   Plus,
   Search,
@@ -11,6 +12,7 @@ import {
 import { CustomBancoNoticias } from "@maximilian/components/common/CustomBancoNoticias";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
+import { CustomModalHistorialInformesCompania } from "@maximilian/components/common/CustomModalHistorialInformesCompania";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
@@ -32,6 +34,8 @@ interface PropsCustomBancoInformacion {
 export function CustomBancoInformacion({
   puedeAgregarNoticias = false,
 }: PropsCustomBancoInformacion) {
+  const [empresaHistorial, setEmpresaHistorial] =
+    useState<CompaniaNoticiaDetalleListaItem | null>(null);
   const {
     busqueda,
     busquedaConRetardo,
@@ -177,6 +181,7 @@ export function CustomBancoInformacion({
           onReintentar={() => void recargarEmpresas()}
           exportando={exportarEmpresasMutation.isPending}
           onExportar={() => exportarEmpresasMutation.mutate()}
+          onVerHistorial={setEmpresaHistorial}
         />
       ) : null}
 
@@ -197,6 +202,11 @@ export function CustomBancoInformacion({
       <CustomModalDetalleCredito
         reporte={reporteDetalle}
         onCerrar={() => setReporteDetalle(null)}
+      />
+      <CustomModalHistorialInformesCompania
+        key={empresaHistorial?.idCompania ?? "historial-cerrado"}
+        empresa={empresaHistorial}
+        onCerrar={() => setEmpresaHistorial(null)}
       />
     </div>
   );
@@ -349,6 +359,7 @@ function SeccionEmpresas({
   onReintentar,
   exportando,
   onExportar,
+  onVerHistorial,
 }: {
   empresas: CompaniaNoticiaDetalleListaItem[];
   estaCargando: boolean;
@@ -366,6 +377,7 @@ function SeccionEmpresas({
   onReintentar: () => void;
   exportando: boolean;
   onExportar: () => void;
+  onVerHistorial: (empresa: CompaniaNoticiaDetalleListaItem) => void;
 }) {
   return (
     <section className="space-y-4">
@@ -412,6 +424,7 @@ function SeccionEmpresas({
             ),
             width: "18%",
           },
+          { label: "Historial", width: "10%" },
         ]}
         data={empresas}
         getId={(empresa) => empresa.idCompania}
@@ -459,6 +472,17 @@ function SeccionEmpresas({
               >
                 {empresa.actividadComercial}
               </span>
+            </td>
+            <td className="px-6 py-4">
+              <CustomButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => onVerHistorial(empresa)}
+              >
+                <History size={14} />
+                Ver
+              </CustomButton>
             </td>
           </>
         )}
