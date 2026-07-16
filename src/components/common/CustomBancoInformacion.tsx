@@ -80,7 +80,10 @@ export function CustomBancoInformacion({
           Banco de Informacion
         </h1>
         {puedeAgregarNoticias ? (
-          <CustomButton size="sm" onClick={() => setClaveAgregarNoticia((valor) => valor + 1)}>
+          <CustomButton
+            size="sm"
+            onClick={() => setClaveAgregarNoticia((valor) => valor + 1)}
+          >
             <Plus size={14} />
             Agregar Noticia
           </CustomButton>
@@ -99,7 +102,7 @@ export function CustomBancoInformacion({
             className="h-12 w-full rounded-xl border border-slate-100 bg-white pl-11 pr-4 text-sm text-slate-600 outline-none transition focus:border-slate-300 focus:ring-4 focus:ring-slate-100"
             placeholder={
               pestanaActiva === "empresas"
-                ? "Buscar por Razon Social o Número de Documento..."
+                ? "Buscar por razon social del pedido, informe, nombre comercial o documento..."
                 : pestanaActiva === "credito"
                   ? "Buscar por Investigado o pais..."
                   : "Buscar noticias, reportes o articulos..."
@@ -110,22 +113,24 @@ export function CustomBancoInformacion({
 
       <div className="border-b border-slate-100">
         <div className="flex gap-8">
-          {(Object.keys(etiquetasPestanasBancoInformacion) as PestanaBancoInformacion[]).map(
-            (pestana) => (
-              <button
-                key={pestana}
-                type="button"
-                onClick={() => setPestanaActiva(pestana)}
-                className={`border-b-2 px-1 pb-4 text-[11px] font-bold uppercase tracking-[0.16em] transition ${
-                  pestanaActiva === pestana
-                    ? "border-slate-950 text-slate-950"
-                    : "border-transparent text-slate-400 hover:text-slate-700"
-                }`}
-              >
-                {etiquetasPestanasBancoInformacion[pestana]}
-              </button>
-            ),
-          )}
+          {(
+            Object.keys(
+              etiquetasPestanasBancoInformacion,
+            ) as PestanaBancoInformacion[]
+          ).map((pestana) => (
+            <button
+              key={pestana}
+              type="button"
+              onClick={() => setPestanaActiva(pestana)}
+              className={`border-b-2 px-1 pb-4 text-[11px] font-bold uppercase tracking-[0.16em] transition ${
+                pestanaActiva === pestana
+                  ? "border-slate-950 text-slate-950"
+                  : "border-transparent text-slate-400 hover:text-slate-700"
+              }`}
+            >
+              {etiquetasPestanasBancoInformacion[pestana]}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -162,7 +167,9 @@ export function CustomBancoInformacion({
           idsPaisFiltro={idsPaisEmpresaFiltro}
           idsActividadEconomicaFiltro={idsActividadEconomicaEmpresaFiltro}
           onPaisFiltroChange={cambiarPaisEmpresaFiltro}
-          onActividadEconomicaFiltroChange={cambiarActividadEconomicaEmpresaFiltro}
+          onActividadEconomicaFiltroChange={
+            cambiarActividadEconomicaEmpresaFiltro
+          }
           paginaActual={paginaEmpresas}
           totalPaginas={respuestaEmpresas?.totalPaginas ?? 1}
           totalRegistros={respuestaEmpresas?.totalRegistros ?? 0}
@@ -393,7 +400,7 @@ function SeccionEmpresas({
             width: "10%",
           },
           { label: "Direccion", width: "20%" },
-          { label: "Telefono", width: "12%" },
+          { label: "Telefono", width: "10%" },
           {
             label: (
               <CustomEncabezadoFiltroTabla
@@ -403,9 +410,8 @@ function SeccionEmpresas({
                 onChange={onActividadEconomicaFiltroChange}
               />
             ),
-            width: "16%",
+            width: "18%",
           },
-          { label: "N° de Empleados", className: "text-right", width: "10%" },
         ]}
         data={empresas}
         getId={(empresa) => empresa.idCompania}
@@ -452,14 +458,6 @@ function SeccionEmpresas({
                 title={empresa.actividadComercial}
               >
                 {empresa.actividadComercial}
-              </span>
-            </td>
-            <td className="px-6 py-4 text-right text-sm font-semibold text-slate-700">
-              <span
-                className="block max-w-24 truncate"
-                title={String(empresa.trabajadores)}
-              >
-                {empresa.trabajadores}
               </span>
             </td>
           </>
