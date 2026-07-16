@@ -19,6 +19,7 @@ import type {
   RespuestaDocumentoInformeGenerado,
   InformeExtraerDocumentoRequest,
   InformeExtraccionResponse,
+  InformeHistorialCompania,
   InformeListEntry,
   InformeListParams,
   InformeListResponse,
@@ -26,6 +27,8 @@ import type {
   InformeObtenerUrlPrefirmadaRequest,
   InformeObtenerUrlPrefirmadaResponse,
   InformeObtenerResponse,
+  ParametrosHistorialInformesCompania,
+  RespuestaHistorialInformesCompania,
   InformeTraducirRequest,
 } from "@maximilian/shared/types/informe.type";
 import type {
@@ -327,6 +330,39 @@ function normalizarRespuestaLista(resultado: unknown): InformeListResponse {
     vigente: obtenerNumero(registro.vigente, registro.Vigente),
     vencido: obtenerNumero(registro.vencido, registro.Vencido),
     totalRegistros: obtenerNumero(registro.totalRegistros, registro.TotalRegistros, listaOriginal.length),
+    totalPaginas: obtenerNumero(registro.totalPaginas, registro.TotalPaginas, 1),
+  };
+}
+
+function normalizarInformeHistorialCompania(fila: unknown): InformeHistorialCompania {
+  const registro = obtenerRegistro(fila);
+
+  return {
+    idInforme: obtenerNumero(registro.idInforme, registro.IdInforme),
+    idPedido: obtenerNumero(registro.idPedido, registro.IdPedido),
+    idioma: obtenerTexto(registro.idioma, registro.Idioma) || "-",
+    nombre: obtenerTexto(registro.nombre, registro.Nombre) || "-",
+  };
+}
+
+function normalizarRespuestaHistorialCompania(
+  resultado: unknown,
+): RespuestaHistorialInformesCompania {
+  const registro = obtenerRegistro(resultado);
+  const listaOriginal = obtenerLista(
+    registro.lstInformes,
+    registro.LstInformes,
+    registro.lstInforme,
+    registro.LstInforme,
+  );
+
+  return {
+    lstInformes: listaOriginal.map(normalizarInformeHistorialCompania),
+    totalRegistros: obtenerNumero(
+      registro.totalRegistros,
+      registro.TotalRegistros,
+      listaOriginal.length,
+    ),
     totalPaginas: obtenerNumero(registro.totalPaginas, registro.TotalPaginas, 1),
   };
 }
@@ -1344,6 +1380,27 @@ export const informeService = {
     }
 
     return normalizarRespuestaLista(data.result);
+  },
+
+  listarHistorialPorCompania: async ({
+    idCompania,
+    numPag = 1,
+  }: ParametrosHistorialInformesCompania): Promise<RespuestaHistorialInformesCompania> => {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(
+      ENDPOINTS_INFORME.listarIdPorCompania,
+      {
+        params: {
+          IdCompania: idCompania,
+          NumPag: numPag,
+        },
+      },
+    );
+
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.listarIdPorCompania)) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return normalizarRespuestaHistorialCompania(data.result);
   },
 
   create: async (payload: InformeCrearRequest): Promise<InformeCrearResponse> => {

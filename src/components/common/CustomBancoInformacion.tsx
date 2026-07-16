@@ -1,9 +1,10 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
   Download,
+  History,
   Loader2,
   Plus,
   Search,
@@ -11,6 +12,7 @@ import {
 import { CustomBancoNoticias } from "@maximilian/components/common/CustomBancoNoticias";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
+import { CustomModalHistorialInformesCompania } from "@maximilian/components/common/CustomModalHistorialInformesCompania";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
@@ -32,6 +34,8 @@ interface PropsCustomBancoInformacion {
 export function CustomBancoInformacion({
   puedeAgregarNoticias = false,
 }: PropsCustomBancoInformacion) {
+  const [empresaHistorial, setEmpresaHistorial] =
+    useState<CompaniaNoticiaDetalleListaItem | null>(null);
   const {
     busqueda,
     busquedaConRetardo,
@@ -80,7 +84,10 @@ export function CustomBancoInformacion({
           Banco de Informacion
         </h1>
         {puedeAgregarNoticias ? (
-          <CustomButton size="sm" onClick={() => setClaveAgregarNoticia((valor) => valor + 1)}>
+          <CustomButton
+            size="sm"
+            onClick={() => setClaveAgregarNoticia((valor) => valor + 1)}
+          >
             <Plus size={14} />
             Agregar Noticia
           </CustomButton>
@@ -99,7 +106,7 @@ export function CustomBancoInformacion({
             className="h-12 w-full rounded-xl border border-slate-100 bg-white pl-11 pr-4 text-sm text-slate-600 outline-none transition focus:border-slate-300 focus:ring-4 focus:ring-slate-100"
             placeholder={
               pestanaActiva === "empresas"
-                ? "Buscar por Razon Social o Número de Documento..."
+                ? "Buscar por razon social del pedido, informe, nombre comercial o documento..."
                 : pestanaActiva === "credito"
                   ? "Buscar por Investigado o pais..."
                   : "Buscar noticias, reportes o articulos..."
@@ -110,22 +117,24 @@ export function CustomBancoInformacion({
 
       <div className="border-b border-slate-100">
         <div className="flex gap-8">
-          {(Object.keys(etiquetasPestanasBancoInformacion) as PestanaBancoInformacion[]).map(
-            (pestana) => (
-              <button
-                key={pestana}
-                type="button"
-                onClick={() => setPestanaActiva(pestana)}
-                className={`border-b-2 px-1 pb-4 text-[11px] font-bold uppercase tracking-[0.16em] transition ${
-                  pestanaActiva === pestana
-                    ? "border-slate-950 text-slate-950"
-                    : "border-transparent text-slate-400 hover:text-slate-700"
-                }`}
-              >
-                {etiquetasPestanasBancoInformacion[pestana]}
-              </button>
-            ),
-          )}
+          {(
+            Object.keys(
+              etiquetasPestanasBancoInformacion,
+            ) as PestanaBancoInformacion[]
+          ).map((pestana) => (
+            <button
+              key={pestana}
+              type="button"
+              onClick={() => setPestanaActiva(pestana)}
+              className={`border-b-2 px-1 pb-4 text-[11px] font-bold uppercase tracking-[0.16em] transition ${
+                pestanaActiva === pestana
+                  ? "border-slate-950 text-slate-950"
+                  : "border-transparent text-slate-400 hover:text-slate-700"
+              }`}
+            >
+              {etiquetasPestanasBancoInformacion[pestana]}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -162,7 +171,9 @@ export function CustomBancoInformacion({
           idsPaisFiltro={idsPaisEmpresaFiltro}
           idsActividadEconomicaFiltro={idsActividadEconomicaEmpresaFiltro}
           onPaisFiltroChange={cambiarPaisEmpresaFiltro}
-          onActividadEconomicaFiltroChange={cambiarActividadEconomicaEmpresaFiltro}
+          onActividadEconomicaFiltroChange={
+            cambiarActividadEconomicaEmpresaFiltro
+          }
           paginaActual={paginaEmpresas}
           totalPaginas={respuestaEmpresas?.totalPaginas ?? 1}
           totalRegistros={respuestaEmpresas?.totalRegistros ?? 0}
@@ -170,6 +181,7 @@ export function CustomBancoInformacion({
           onReintentar={() => void recargarEmpresas()}
           exportando={exportarEmpresasMutation.isPending}
           onExportar={() => exportarEmpresasMutation.mutate()}
+          onVerHistorial={setEmpresaHistorial}
         />
       ) : null}
 
@@ -190,6 +202,11 @@ export function CustomBancoInformacion({
       <CustomModalDetalleCredito
         reporte={reporteDetalle}
         onCerrar={() => setReporteDetalle(null)}
+      />
+      <CustomModalHistorialInformesCompania
+        key={empresaHistorial?.idCompania ?? "historial-cerrado"}
+        empresa={empresaHistorial}
+        onCerrar={() => setEmpresaHistorial(null)}
       />
     </div>
   );
@@ -342,6 +359,7 @@ function SeccionEmpresas({
   onReintentar,
   exportando,
   onExportar,
+  onVerHistorial,
 }: {
   empresas: CompaniaNoticiaDetalleListaItem[];
   estaCargando: boolean;
@@ -359,6 +377,7 @@ function SeccionEmpresas({
   onReintentar: () => void;
   exportando: boolean;
   onExportar: () => void;
+  onVerHistorial: (empresa: CompaniaNoticiaDetalleListaItem) => void;
 }) {
   return (
     <section className="space-y-4">
@@ -393,7 +412,7 @@ function SeccionEmpresas({
             width: "10%",
           },
           { label: "Direccion", width: "20%" },
-          { label: "Telefono", width: "12%" },
+          { label: "Telefono", width: "10%" },
           {
             label: (
               <CustomEncabezadoFiltroTabla
@@ -403,9 +422,9 @@ function SeccionEmpresas({
                 onChange={onActividadEconomicaFiltroChange}
               />
             ),
-            width: "16%",
+            width: "18%",
           },
-          { label: "N° de Empleados", className: "text-right", width: "10%" },
+          { label: "Historial", width: "10%" },
         ]}
         data={empresas}
         getId={(empresa) => empresa.idCompania}
@@ -454,13 +473,16 @@ function SeccionEmpresas({
                 {empresa.actividadComercial}
               </span>
             </td>
-            <td className="px-6 py-4 text-right text-sm font-semibold text-slate-700">
-              <span
-                className="block max-w-24 truncate"
-                title={String(empresa.trabajadores)}
+            <td className="px-6 py-4">
+              <CustomButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => onVerHistorial(empresa)}
               >
-                {empresa.trabajadores}
-              </span>
+                <History size={14} />
+                Ver
+              </CustomButton>
             </td>
           </>
         )}

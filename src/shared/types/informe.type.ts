@@ -50,6 +50,24 @@ export interface InformeListResponse {
   totalPaginas: number;
 }
 
+export interface ParametrosHistorialInformesCompania {
+  idCompania: number;
+  numPag?: number;
+}
+
+export interface InformeHistorialCompania {
+  idInforme: number;
+  idPedido: number;
+  idioma: string;
+  nombre: string;
+}
+
+export interface RespuestaHistorialInformesCompania {
+  lstInformes: InformeHistorialCompania[];
+  totalRegistros: number;
+  totalPaginas: number;
+}
+
 export interface InformeBalanceRequest {
   idInformeBalance?: number;
   fechaBalance: string | null;
