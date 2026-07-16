@@ -57,7 +57,8 @@ export interface ParametrosHistorialInformesCompania {
 
 export interface InformeHistorialCompania {
   idInforme: number;
-  idIdioma: number;
+  idPedido: number;
+  idioma: string;
   nombre: string;
 }
 

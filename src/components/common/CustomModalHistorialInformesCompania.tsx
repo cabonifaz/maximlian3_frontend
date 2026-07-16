@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { Eye, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomModalVistaPreviaInforme } from "@maximilian/components/common/CustomModalVistaPreviaInforme";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { informeService } from "@maximilian/services/informe.service";
 import type { CompaniaNoticiaDetalleListaItem } from "@maximilian/shared/types/compania-noticia-detalle.type";
+import type { InformeHistorialCompania } from "@maximilian/shared/types/informe.type";
+import { crearDatosInvestigacionVacios } from "@maximilian/shared/utils/investigacion.util";
 
 interface PropsCustomModalHistorialInformesCompania {
   empresa: CompaniaNoticiaDetalleListaItem | null;
@@ -16,8 +19,14 @@ export function CustomModalHistorialInformesCompania({
   onCerrar,
 }: PropsCustomModalHistorialInformesCompania) {
   const [paginaActual, setPaginaActual] = useState(1);
+  const [informeVistaPrevia, setInformeVistaPrevia] =
+    useState<InformeHistorialCompania | null>(null);
   const estaAbierto = Boolean(empresa);
   const idCompania = empresa?.idCompania ?? 0;
+  const datosInvestigacionVacios = useMemo(
+    () => crearDatosInvestigacionVacios(),
+    [],
+  );
 
   const {
     data: respuestaHistorial,
@@ -58,9 +67,11 @@ export function CustomModalHistorialInformesCompania({
         <div className="min-h-0 overflow-y-auto px-8 py-6">
           <CustomTabla
             columns={[
-              { label: "ID Informe", width: "18%" },
-              { label: "Nombre", width: "62%" },
-              { label: "Idioma", width: "20%" },
+              { label: "ID Informe", width: "16%" },
+              { label: "Pedido", width: "14%" },
+              { label: "Nombre", width: "38%" },
+              { label: "Idioma", width: "16%" },
+              { label: "Ver informe", width: "16%" },
             ]}
             data={informes}
             getId={(informe) => informe.idInforme}
@@ -80,18 +91,47 @@ export function CustomModalHistorialInformesCompania({
                   {informe.idInforme}
                 </td>
                 <td className="px-6 py-4 text-sm font-semibold text-slate-500">
+                  {informe.idPedido}
+                </td>
+                <td className="px-6 py-4 text-sm font-semibold text-slate-500">
                   <span className="block truncate" title={informe.nombre}>
                     {informe.nombre}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm font-semibold text-slate-500">
-                  {informe.idIdioma}
+                  {informe.idioma}
+                </td>
+                <td className="px-6 py-4">
+                  <CustomButton
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setInformeVistaPrevia(informe)}
+                  >
+                    <Eye size={14} />
+                    Ver
+                  </CustomButton>
                 </td>
               </>
             )}
           />
         </div>
       </div>
+      <CustomModalVistaPreviaInforme
+        estaAbierto={Boolean(informeVistaPrevia)}
+        datosInvestigacion={datosInvestigacionVacios}
+        encabezado={{
+          pais: empresa.pais || "-",
+          fecha: "-",
+          tipoSolicitud: informeVistaPrevia?.nombre ?? "-",
+          analista: "-",
+          traductor: "-",
+        }}
+        idInforme={informeVistaPrevia?.idInforme}
+        idPedido={informeVistaPrevia?.idPedido}
+        mostrarInformeTraducido
+        onCerrar={() => setInformeVistaPrevia(null)}
+      />
     </div>
   );
 }

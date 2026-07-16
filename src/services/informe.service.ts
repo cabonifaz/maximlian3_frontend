@@ -339,7 +339,8 @@ function normalizarInformeHistorialCompania(fila: unknown): InformeHistorialComp
 
   return {
     idInforme: obtenerNumero(registro.idInforme, registro.IdInforme),
-    idIdioma: obtenerNumero(registro.idIdioma, registro.IdIdioma),
+    idPedido: obtenerNumero(registro.idPedido, registro.IdPedido),
+    idioma: obtenerTexto(registro.idioma, registro.Idioma) || "-",
     nombre: obtenerTexto(registro.nombre, registro.Nombre) || "-",
   };
 }
