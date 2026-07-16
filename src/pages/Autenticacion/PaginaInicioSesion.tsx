@@ -1,4 +1,4 @@
-import { REMEMBER_ME_COOKIE } from "@maximilian/shared/constants/pages/Autenticacion/paginaInicioSesion.constants";
+import { REMEMBER_ME_COOKIE } from "@maximilian/shared/constants/pages/Autenticacion/pagina-inicio-sesion.constants";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";

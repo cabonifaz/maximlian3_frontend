@@ -1,24 +1,15 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { useModalOperacionInforme } from "@maximilian/hooks/useModalOperacionInforme";
 import type { RegistroImportacionExportacionAnalista } from "@maximilian/shared/types/investigacion.type";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 import {
   normalizarMontoDosDecimales,
   sanitizarMontoDosDecimales,
   seleccionarTextoEditableEnContenedor,
   seleccionarTextoCampoEditable,
 } from "@maximilian/shared/utils/formato-monto.util";
-
-function sanitizarEntero(valor: string) {
-  return valor.replace(/\D/g, "");
-}
 
 interface PropsCustomModalOperacionAnalista {
   estaAbierto: boolean;
@@ -39,50 +30,30 @@ export function CustomModalOperacionAnalista({
   onCerrar,
   onGuardar,
 }: PropsCustomModalOperacionAnalista) {
-  const [anio, setAnio] = useState(registroInicial?.anio ?? "2025");
-  const [idMes, setIdMes] = useState<number | undefined>(registroInicial?.idMesInicio);
-  const [idMoneda, setIdMoneda] = useState<number | undefined>(
-    registroInicial?.idMoneda,
-  );
-  const [monto, setMonto] = useState(registroInicial?.monto ?? "");
-  const [paises, setPaises] = useState(registroInicial?.paises ?? "");
-  const [productos, setProductos] = useState(registroInicial?.productos ?? "");
-  const [operaciones, setOperaciones] = useState(registroInicial?.operaciones ?? "");
-  const { data: opcionesMesesBase } = useQuery<EntradaTablaMaestra[]>({
-    queryKey: ["masterTable", TablaMaestraId.MES],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MES),
-    staleTime: Infinity,
-  });
-  const { data: opcionesMonedaBase } = useQuery<EntradaTablaMaestra[]>({
-    queryKey: ["masterTable", TablaMaestraId.MONEDA],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
-    staleTime: Infinity,
-  });
-
-  const opcionesMeses = useMemo(() => traducirOpcionesTablaMaestra(opcionesMesesBase, idIdioma), [idIdioma, opcionesMesesBase]);
-  const opcionesMoneda = useMemo(() => traducirOpcionesTablaMaestra(opcionesMonedaBase, idIdioma), [idIdioma, opcionesMonedaBase]);
-  const opcionesMesesOrdenadas = [...(opcionesMeses ?? [])].sort((a, b) => (a.num1 ?? 0) - (b.num1 ?? 0));
-  const idMesActual = idMes ?? opcionesMesesOrdenadas.find((opcion) => opcion.string1 === registroInicial?.mes)?.num1 ?? undefined;
-  const mesActual = opcionesMesesOrdenadas.find((opcion) => opcion.num1 === idMesActual)?.string1 ?? registroInicial?.mes ?? "";
-  const monedaActual =
-    opcionesMoneda?.find((opcion) => opcion.num1 === idMoneda)?.string1 ?? registroInicial?.moneda ?? "";
+  const {
+    anio,
+    setAnio,
+    idMesActual,
+    setIdMes,
+    idMoneda,
+    setIdMoneda,
+    monto,
+    setMonto,
+    paises,
+    setPaises,
+    productos,
+    setProductos,
+    operaciones,
+    setOperaciones,
+    opcionesMesesOrdenadas,
+    opcionesMoneda,
+    mesActual,
+    monedaActual,
+    manejarGuardar,
+    sanitizarEntero,
+  } = useModalOperacionInforme({ registroInicial, idIdioma, onGuardar });
 
   if (!estaAbierto) return null;
-
-  const manejarGuardar = () => {
-    onGuardar({
-      idMesInicio: idMesActual,
-      idMesFin: idMesActual,
-      idMoneda,
-      anio: anio.trim(),
-      mes: mesActual.trim(),
-      moneda: monedaActual.trim(),
-      paises: paises.trim(),
-      productos: productos.trim(),
-      monto: normalizarMontoDosDecimales(monto),
-      operaciones: sanitizarEntero(operaciones),
-    });
-  };
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>

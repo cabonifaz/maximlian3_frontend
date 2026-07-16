@@ -1,4 +1,3 @@
-import { esquemaNoticia, valoresIniciales } from "@maximilian/shared/constants/components/common/customBancoNoticias.constants";
 import { useEffect, useMemo, useState, type UIEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,22 +17,26 @@ import {
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
+import {
+  esquemaNoticiaBancoInformacion,
+  type DatosFormularioNoticiaBancoInformacion,
+  type DatosFormularioNoticiaBancoInformacionEntrada,
+} from "@maximilian/schemas/banco-informacion.schema";
 import { servicioCompania } from "@maximilian/services/compania.service";
-import { servicioCompaniaNoticia } from "@maximilian/services/companiaNoticia.service";
+import { servicioCompaniaNoticia } from "@maximilian/services/compania-noticia.service";
+import { valoresIniciales } from "@maximilian/shared/constants/components/common/custom-banco-noticias.constants";
+import { formatearTamanoArchivo } from "@maximilian/shared/utils/archivo.util";
+import { formatearFechaVisual } from "@maximilian/shared/utils/fecha.util";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
 import type {
   CompaniaNoticiaArchivo,
   CompaniaNoticiaCrearRequest,
   CompaniaNoticiaListaItem,
-} from "@maximilian/shared/types/companiaNoticia.type";
+} from "@maximilian/shared/types/compania-noticia.type";
 import { CustomButton } from "./CustomButton";
 import { CustomLabel } from "./CustomLabel";
 import { CustomSelectorFecha } from "./CustomSelectorFecha";
-
-type FormularioNoticiaEntrada = z.input<typeof esquemaNoticia>;
-type FormularioNoticia = z.output<typeof esquemaNoticia>;
 
 interface PropsCustomBancoNoticias {
   busqueda: string;
@@ -72,8 +75,12 @@ export function CustomBancoNoticias({
     setValue,
     watch,
     formState: { errors },
-  } = useForm<FormularioNoticiaEntrada, unknown, FormularioNoticia>({
-    resolver: zodResolver(esquemaNoticia),
+  } = useForm<
+    DatosFormularioNoticiaBancoInformacionEntrada,
+    unknown,
+    DatosFormularioNoticiaBancoInformacion
+  >({
+    resolver: zodResolver(esquemaNoticiaBancoInformacion),
     mode: "onTouched",
     defaultValues: valoresIniciales,
   });
@@ -128,7 +135,7 @@ export function CustomBancoNoticias({
     reset(valoresIniciales);
   };
 
-  const guardarNoticia = (datos: FormularioNoticia) => {
+  const guardarNoticia = (datos: DatosFormularioNoticiaBancoInformacion) => {
     crearNoticiaMutation.mutate({
       payload: {
         idCompania: datos.idCompania,
@@ -681,12 +688,6 @@ function CampoSelectorCompania({
   const companiaSeleccionada =
     companiaActual?.idCompania === valor ? companiaActual : companiaEncontrada;
 
-  useEffect(() => {
-    if (companiaEncontrada) {
-      setCompaniaActual(companiaEncontrada);
-    }
-  }, [companiaEncontrada]);
-
   const cargarSiguientePagina = (event: UIEvent<HTMLDivElement>) => {
     const elemento = event.currentTarget;
     const llegoAlFinal =
@@ -1098,22 +1099,15 @@ async function subirArchivosNoticia(
 }
 
 function formatearFecha(fecha: string) {
-  if (!fecha) return "-";
-  const fechaParseada = new Date(fecha);
-  if (Number.isNaN(fechaParseada.getTime())) return fecha;
-
-  return new Intl.DateTimeFormat("es", {
+  return formatearFechaVisual(fecha, {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(fechaParseada);
+  });
 }
 
 function formatearTamano(tamano: number) {
-  if (tamano < 1024) return `${tamano} B`;
-  if (tamano < 1024 * 1024) return `${(tamano / 1024).toFixed(1)} KB`;
-
-  return `${(tamano / 1024 / 1024).toFixed(1)} MB`;
+  return formatearTamanoArchivo(tamano, { decimalesKb: 1 });
 }
 
 function obtenerEtiquetaCompania(compania: CompaniaListaItem) {

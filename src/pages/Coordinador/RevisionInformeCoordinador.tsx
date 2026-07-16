@@ -1,4 +1,4 @@
-import { ID_ESTADO_INFORME_APROBADO } from "@maximilian/shared/constants/pages/Coordinador/revisionInformeCoordinador.constants";
+import { ID_ESTADO_INFORME_APROBADO } from "@maximilian/shared/constants/pages/Coordinador/revision-informe-coordinador.constants";
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -9,8 +9,8 @@ import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/Cu
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
 import { informeService } from "@maximilian/services/informe.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
-import { servicioInformeObservacion } from "@maximilian/services/informeObservacion.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioInformeObservacion } from "@maximilian/services/informe-observacion.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   FormatoDescargaInforme,

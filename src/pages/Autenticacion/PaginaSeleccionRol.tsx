@@ -1,59 +1,17 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
 import { ChevronRight, User, LogOut, AlertCircle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { servicioAutenticacion } from "@maximilian/services/autenticacion.service";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
-import type { Role } from "@maximilian/shared/types/autenticacion.type";
+import { useSeleccionRol } from "@maximilian/hooks/useSeleccionRol";
 
 export default function PaginaSeleccionRol() {
-  const navigate = useNavigate();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-
   const {
-    data: userData,
-    isLoading,
-    isError,
+    cerrarSesion,
+    datosUsuario,
     error,
-  } = useQuery({
-    queryKey: ["userRoles"],
-    queryFn: () => servicioAutenticacion.getUserRoles(),
-    retry: 1,
-  });
-
-  const handleRoleSelect = (role: Role) => {
-    const roleNormalized = role.rol.toUpperCase();
-    
-    // Save selection and available roles to sessionStorage
-    sessionStorage.setItem("selected_role", role.rol);
-    sessionStorage.setItem("selected_role_id", role.idRol.toString());
-    sessionStorage.setItem("user_session", JSON.stringify(userData));
-
-    if (roleNormalized === "ADMINISTRADOR") {
-      navigate("/administrador");
-    } else if (roleNormalized === "ANALISTA") {
-      navigate("/analista");
-    } else if (roleNormalized === "TRADUCTOR") {
-      navigate("/traductor");
-    } else if (roleNormalized === "COORDINADOR") {
-      navigate("/coordinador");
-    } else {
-      // Fallback for other roles
-      navigate("/administrador");
-    }
-  };
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await servicioAutenticacion.logout();
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      navigate("/iniciar-sesion");
-    } catch (error) {
-      console.error("Error al cerrar sesión", error);
-      setIsLoggingOut(false);
-    }
-  };
+    estaCerrandoSesion,
+    isError,
+    isLoading,
+    seleccionarRol,
+  } = useSeleccionRol();
 
   if (isLoading) {
     return <PantallaCarga message="Cargando roles disponibles..." />;
@@ -62,7 +20,6 @@ export default function PaginaSeleccionRol() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="bg-brand-white w-full max-w-md p-10 rounded-3xl shadow-xl border border-gray-100 flex flex-col items-center animate-in fade-in zoom-in-95 duration-300">
-        {/* Logo */}
         <div className="mb-8">
           <img
             src="/safety-logo.jpg"
@@ -92,11 +49,11 @@ export default function PaginaSeleccionRol() {
         )}
 
         <div className="w-full space-y-4">
-          {userData?.roles.map((role) => (
+          {datosUsuario?.roles.map((role) => (
             <button
               key={role.idRol}
-              onClick={() => handleRoleSelect(role)}
-              disabled={isLoggingOut}
+              onClick={() => seleccionarRol(role)}
+              disabled={estaCerrandoSesion}
               className="w-full p-5 bg-brand-white border border-gray-100 rounded-2xl flex items-center gap-4 hover:border-brand-black hover:border-2 hover:scale-[1.02] active:scale-[0.98] cursor-pointer group transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex-1">
@@ -116,7 +73,7 @@ export default function PaginaSeleccionRol() {
 
           {!isLoading &&
             !isError &&
-            (!userData || userData.roles.length === 0) && (
+            (!datosUsuario || datosUsuario.roles.length === 0) && (
               <p className="text-center text-gray-400 text-sm py-4">
                 No se encontraron roles asignados para su usuario.
               </p>
@@ -130,17 +87,17 @@ export default function PaginaSeleccionRol() {
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-bold text-brand-black truncate">
-                {userData?.nombres || "Usuario"}
+                {datosUsuario?.nombres || "Usuario"}
               </span>
               <span className="text-[10px] text-gray-400 truncate">
-                {userData?.email}
+                {datosUsuario?.email}
               </span>
             </div>
           </div>
 
           <button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
+            onClick={cerrarSesion}
+            disabled={estaCerrandoSesion}
             className="flex items-center gap-2 text-brand-wine font-bold text-sm hover:opacity-80 hover:scale-[1.05] active:scale-95 cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           >
             <LogOut size={18} />
@@ -149,7 +106,7 @@ export default function PaginaSeleccionRol() {
         </div>
       </div>
 
-      {isLoggingOut && <PantallaCarga message="Cerrando sesión..." />}
+      {estaCerrandoSesion && <PantallaCarga message="Cerrando sesion..." />}
     </div>
   );
 }

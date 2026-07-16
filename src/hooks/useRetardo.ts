@@ -1,4 +1,4 @@
-import { DEBOUNCE_MS } from "@maximilian/shared/constants/hooks/useRetardo.constants";
+import { DEBOUNCE_MS } from "@maximilian/shared/constants/hooks/use-retardo.constants";
 import { useState, useEffect } from "react";
 
 export function useRetardo<T>(value: T, delay = DEBOUNCE_MS): T {

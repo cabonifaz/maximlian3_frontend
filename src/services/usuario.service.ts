@@ -1,5 +1,5 @@
 import { ENDPOINTS_USUARIO } from "@maximilian/shared/constants/endpoints/usuario.endpoint";
-import maximilianService from "./maximilianService";
+import maximilianService from "./maximilian-service";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
@@ -11,33 +11,11 @@ import type {
   UserListRequest,
   UserListResponse,
 } from "@maximilian/shared/types/usuario.type";
-
-type RegistroGenerico = Record<string, unknown>;
-
-function esRegistro(valor: unknown): valor is RegistroGenerico {
-  return typeof valor === "object" && valor !== null;
-}
-
-function obtenerTexto(...valores: unknown[]): string {
-  for (const valor of valores) {
-    if (typeof valor === "string") {
-      const texto = valor.trim();
-      if (texto) return texto;
-    }
-  }
-
-  return "";
-}
-
-function obtenerNumero(valor: unknown): number | undefined {
-  if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-  if (typeof valor === "string" && valor.trim() !== "") {
-    const numero = Number(valor);
-    if (Number.isFinite(numero)) return numero;
-  }
-
-  return undefined;
-}
+import {
+  esRegistroRespuesta as esRegistro,
+  obtenerNumeroOpcional as obtenerNumero,
+  obtenerTexto,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
 function obtenerListaNumerica(valor: unknown, llaves: string[]): number[] {
   if (Array.isArray(valor)) {

@@ -1,5 +1,3 @@
-import { valoresPorDefecto } from "@maximilian/shared/constants/components/administrador/modalUsuario.constants";
-import { useEffect, useState } from "react";
 import {
   X,
   Check,
@@ -8,13 +6,9 @@ import {
   AlertCircle,
   RefreshCw,
 } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
-import { esquemaUsuario, type DatosFormularioUsuario } from "@maximilian/schemas";
+import type { DatosFormularioUsuario } from "@maximilian/schemas";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { useModalUsuario } from "@maximilian/hooks/useModalUsuario";
 
 interface ModalUsuarioProps {
   isOpen: boolean;
@@ -25,8 +19,6 @@ interface ModalUsuarioProps {
   isSubmitting?: boolean;
 }
 
-type Tab = "info" | "roles";
-
 export function ModalUsuario({
   isOpen,
   onClose,
@@ -35,118 +27,51 @@ export function ModalUsuario({
   datosIniciales = null,
   isSubmitting = false,
 }: ModalUsuarioProps) {
-  const [activeTab, setActiveTab] = useState<Tab>("info");
-  const esModoEdicion = modo === "editar";
-
+  const datosModal = useModalUsuario({
+    isOpen,
+    onClose,
+    onConfirm,
+    modo,
+    datosIniciales,
+  });
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-    reset,
-  } = useForm<DatosFormularioUsuario>({
-    resolver: zodResolver(esquemaUsuario),
-    defaultValues: valoresPorDefecto,
-  });
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setActiveTab("info");
-    reset(esModoEdicion && datosIniciales ? datosIniciales : valoresPorDefecto);
-  }, [datosIniciales, esModoEdicion, isOpen, reset]);
-
+  } = datosModal.formulario;
   const {
-    data: rolesData,
-    isLoading: isLoadingRoles,
-    isError: isErrorRoles,
-    refetch: refetchRoles,
-  } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.ROLES],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ROLES),
-    enabled: isOpen,
-    staleTime: Infinity,
-    retry: 1,
-  });
-
-  const {
-    data: idiomasData,
-    isLoading: isLoadingLanguages,
-    isError: isErrorLanguages,
-    refetch: refetchLanguages,
-  } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.IDIOMA],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.IDIOMA),
-    enabled: isOpen,
-    staleTime: Infinity,
-    retry: 1,
-  });
-
-  const nombres = watch("nombres");
-  const apellidoPaterno = watch("apellidoPaterno");
-  const selectedRoles = (watch("roles") || []) as (string | number)[];
-  const selectedLanguages = (watch("idiomas") || []) as (string | number)[];
-
-  useEffect(() => {
-    if (esModoEdicion) return;
-    if (!nombres && !apellidoPaterno) {
-      setValue("usuarioCreacion", "", { shouldValidate: true });
-      return;
-    }
-
-    const firstLetter = nombres?.charAt(0) ?? "";
-    const lastName = apellidoPaterno?.replace(/\s+/g, "") ?? "";
-    setValue("usuarioCreacion", `${firstLetter}${lastName}`.toLowerCase(), {
-      shouldValidate: true,
-    });
-  }, [esModoEdicion, nombres, apellidoPaterno, setValue]);
+    alternarSeleccion,
+    cerrar,
+    enviar,
+    errores,
+    esModoEdicion,
+    estaSeleccionadoTraductor,
+    idiomasData,
+    idiomasSeleccionados,
+    isErrorLanguages,
+    isErrorRoles,
+    isLoadingLanguages,
+    isLoadingRoles,
+    refetchLanguages,
+    refetchRoles,
+    rolesData,
+    rolesSeleccionados,
+    setTabActiva,
+    tabActiva,
+    tieneErroresInfo,
+    tieneErroresRoles,
+  } = datosModal;
 
   if (!isOpen) return null;
-
-  const handleClose = () => {
-    reset(valoresPorDefecto);
-    setActiveTab("info");
-    onClose();
-  };
-
-  const handleToggle = (
-    campo: "roles" | "idiomas",
-    valor: string | number,
-    valoresActuales: (string | number)[],
-  ) => {
-    const estaSeleccionado = valoresActuales.includes(valor);
-    const nuevosValores = estaSeleccionado
-      ? valoresActuales.filter((v) => v !== valor)
-      : [...valoresActuales, valor];
-
-    setValue(campo, nuevosValores, { shouldValidate: true });
-
-    if (campo === "roles" && estaSeleccionado) {
-      const rol = rolesData?.find((item) => item.num1 === valor);
-      if (rol?.string1?.toUpperCase() === "TRADUCTOR") {
-        setValue("idiomas", [], { shouldValidate: true });
-      }
-    }
-  };
-
-  const onSubmit = (data: DatosFormularioUsuario) => {
-    onConfirm(data, () => reset(valoresPorDefecto));
-  };
-
-  const isTranslatorSelected = selectedRoles.some((roleValue) => {
-    const roleObj = rolesData?.find((r) => r.num1 === roleValue);
-    return roleObj?.string1?.toUpperCase() === "TRADUCTOR";
-  });
 
   return (
     <div className="fixed inset-0 z-50 flex min-h-dvh w-screen items-center justify-center overflow-y-auto bg-brand-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className={`w-full overflow-hidden rounded-xl bg-brand-white shadow-2xl animate-in zoom-in-95 duration-200 transition-all ${isTranslatorSelected && activeTab === "roles" ? "max-w-4xl" : "max-w-2xl"}`}
+        className={`w-full overflow-hidden rounded-xl bg-brand-white shadow-2xl animate-in zoom-in-95 duration-200 transition-all ${estaSeleccionadoTraductor && tabActiva === "roles" ? "max-w-4xl" : "max-w-2xl"}`}
       >
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(enviar)}>
           <div className="flex items-center justify-between border-b border-gray-100 px-8 py-6">
             <h2 className="text-xl font-bold text-brand-black">
-              {activeTab === "info"
+              {tabActiva === "info"
                 ? esModoEdicion
                   ? "Editar Usuario"
                   : "Agrega un Usuario"
@@ -154,7 +79,7 @@ export function ModalUsuario({
             </h2>
             <button
               type="button"
-              onClick={handleClose}
+              onClick={cerrar}
               className="cursor-pointer text-gray-400 transition-colors hover:text-brand-black"
             >
               <X size={24} />
@@ -165,34 +90,29 @@ export function ModalUsuario({
             <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1">
               <button
                 type="button"
-                onClick={() => setActiveTab("info")}
+                onClick={() => setTabActiva("info")}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-all cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
-                  activeTab === "info"
+                  tabActiva === "info"
                     ? "border-b-2 border-brand-black bg-brand-white text-brand-black shadow-sm"
                     : "text-gray-500 hover:text-brand-black"
                 }`}
               >
                 <span>Información</span>
-                {(errors.nombres ||
-                  errors.apellidoPaterno ||
-                  errors.apellidoMaterno ||
-                  errors.usuarioCreacion ||
-                  errors.correo ||
-                  errors.activo) && (
+                {tieneErroresInfo && (
                   <div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
                 )}
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("roles")}
+                onClick={() => setTabActiva("roles")}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-all cursor-pointer hover:bg-gray-100/50 hover:scale-[1.01] active:scale-[0.99] ${
-                  activeTab === "roles"
+                  tabActiva === "roles"
                     ? "border-b-2 border-brand-black bg-brand-white text-brand-black shadow-sm"
                     : "text-gray-500 hover:text-brand-black"
                 }`}
               >
                 <span>Roles</span>
-                {(errors.roles || errors.idiomas) && (
+                {tieneErroresRoles && (
                   <div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
                 )}
               </button>
@@ -200,7 +120,7 @@ export function ModalUsuario({
           </div>
 
           <div className="min-h-80 p-8">
-            {activeTab === "info" ? (
+            {tabActiva === "info" ? (
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <CustomLabel required className="text-sm font-semibold text-brand-black">
@@ -210,10 +130,10 @@ export function ModalUsuario({
                     {...register("nombres")}
                     type="text"
                     placeholder="Nombre"
-                    className={`w-full rounded-lg border bg-brand-white px-4 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-2 focus:ring-brand-wine/20 ${errors.nombres ? "border-red-500" : "border-gray-200"}`}
+                    className={`w-full rounded-lg border bg-brand-white px-4 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-2 focus:ring-brand-wine/20 ${errores.nombres ? "border-red-500" : "border-gray-200"}`}
                   />
-                  {errors.nombres && (
-                    <p className="text-xs text-red-500">{errors.nombres.message}</p>
+                  {errores.nombres && (
+                    <p className="text-xs text-red-500">{errores.nombres.message}</p>
                   )}
                 </div>
 
@@ -225,10 +145,10 @@ export function ModalUsuario({
                     {...register("apellidoPaterno")}
                     type="text"
                     placeholder="Apellido Paterno"
-                    className={`w-full rounded-lg border bg-brand-white px-4 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-2 focus:ring-brand-wine/20 ${errors.apellidoPaterno ? "border-red-500" : "border-gray-200"}`}
+                    className={`w-full rounded-lg border bg-brand-white px-4 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-2 focus:ring-brand-wine/20 ${errores.apellidoPaterno ? "border-red-500" : "border-gray-200"}`}
                   />
-                  {errors.apellidoPaterno && (
-                    <p className="text-xs text-red-500">{errors.apellidoPaterno.message}</p>
+                  {errores.apellidoPaterno && (
+                    <p className="text-xs text-red-500">{errores.apellidoPaterno.message}</p>
                   )}
                 </div>
 
@@ -240,10 +160,10 @@ export function ModalUsuario({
                     {...register("apellidoMaterno")}
                     type="text"
                     placeholder="Apellido Materno"
-                    className={`w-full rounded-lg border bg-brand-white px-4 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-2 focus:ring-brand-wine/20 ${errors.apellidoMaterno ? "border-red-500" : "border-gray-200"}`}
+                    className={`w-full rounded-lg border bg-brand-white px-4 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-2 focus:ring-brand-wine/20 ${errores.apellidoMaterno ? "border-red-500" : "border-gray-200"}`}
                   />
-                  {errors.apellidoMaterno && (
-                    <p className="text-xs text-red-500">{errors.apellidoMaterno.message}</p>
+                  {errores.apellidoMaterno && (
+                    <p className="text-xs text-red-500">{errores.apellidoMaterno.message}</p>
                   )}
                 </div>
 
@@ -262,11 +182,11 @@ export function ModalUsuario({
                     className={
                       esModoEdicion
                         ? "w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-500 outline-none transition-all"
-                        : `w-full rounded-lg border bg-brand-white px-4 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-2 focus:ring-brand-wine/20 ${errors.usuarioCreacion ? "border-red-500" : "border-gray-200"}`
+                        : `w-full rounded-lg border bg-brand-white px-4 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-2 focus:ring-brand-wine/20 ${errores.usuarioCreacion ? "border-red-500" : "border-gray-200"}`
                     }
                   />
-                  {errors.usuarioCreacion && (
-                    <p className="text-xs text-red-500">{errors.usuarioCreacion.message}</p>
+                  {errores.usuarioCreacion && (
+                    <p className="text-xs text-red-500">{errores.usuarioCreacion.message}</p>
                   )}
                 </div>
 
@@ -285,11 +205,11 @@ export function ModalUsuario({
                     className={
                       esModoEdicion
                         ? "w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-500 outline-none transition-all"
-                        : `w-full rounded-lg border bg-brand-white px-4 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-2 focus:ring-brand-wine/20 ${errors.correo ? "border-red-500" : "border-gray-200"}`
+                        : `w-full rounded-lg border bg-brand-white px-4 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-2 focus:ring-brand-wine/20 ${errores.correo ? "border-red-500" : "border-gray-200"}`
                     }
                   />
-                  {errors.correo && (
-                    <p className="text-xs text-red-500">{errors.correo.message}</p>
+                  {errores.correo && (
+                    <p className="text-xs text-red-500">{errores.correo.message}</p>
                   )}
                 </div>
 
@@ -312,7 +232,7 @@ export function ModalUsuario({
               </div>
             ) : (
               <div
-                className={`grid transition-all duration-300 ${isTranslatorSelected ? "grid-cols-2 gap-12" : "grid-cols-1"}`}
+                className={`grid transition-all duration-300 ${estaSeleccionadoTraductor ? "grid-cols-2 gap-12" : "grid-cols-1"}`}
               >
                 <div className="space-y-4">
                   <CustomLabel required as="p" className="mb-4 text-sm font-semibold text-brand-black">
@@ -344,16 +264,16 @@ export function ModalUsuario({
                         <div
                           key={role.num1}
                           className="group flex cursor-pointer items-center gap-3"
-                          onClick={() => handleToggle("roles", role.num1!, selectedRoles)}
+                          onClick={() => alternarSeleccion("roles", role.num1!, rolesSeleccionados)}
                         >
                           <div
                             className={`flex h-5 w-5 items-center justify-center rounded border transition-all ${
-                              selectedRoles.includes(role.num1!)
+                              rolesSeleccionados.includes(role.num1!)
                                 ? "border-brand-black bg-brand-black"
                                 : "border-gray-300 group-hover:border-brand-black"
                             }`}
                           >
-                            {selectedRoles.includes(role.num1!) && (
+                            {rolesSeleccionados.includes(role.num1!) && (
                               <Check size={14} className="text-brand-white" />
                             )}
                           </div>
@@ -364,12 +284,12 @@ export function ModalUsuario({
                       ))}
                     </div>
                   )}
-                  {errors.roles && (
-                    <p className="mt-2 text-xs text-red-500">{errors.roles.message}</p>
+                  {errores.roles && (
+                    <p className="mt-2 text-xs text-red-500">{errores.roles.message}</p>
                   )}
                 </div>
 
-                {isTranslatorSelected && (
+                {estaSeleccionadoTraductor && (
                   <div className="space-y-4 border-l border-gray-100 pl-12 animate-in fade-in slide-in-from-left-4 duration-300">
                     <div className="mb-4 flex items-center gap-2">
                       <Globe size={18} className="text-brand-wine" />
@@ -404,17 +324,17 @@ export function ModalUsuario({
                             key={language.num1}
                             className="group flex cursor-pointer items-center gap-3"
                             onClick={() =>
-                              handleToggle("idiomas", language.num1!, selectedLanguages)
+                              alternarSeleccion("idiomas", language.num1!, idiomasSeleccionados)
                             }
                           >
                             <div
                               className={`flex h-5 w-5 items-center justify-center rounded border transition-all ${
-                                selectedLanguages.includes(language.num1!)
+                                idiomasSeleccionados.includes(language.num1!)
                                   ? "border-brand-wine bg-brand-wine"
                                   : "border-gray-300 group-hover:border-brand-wine"
                               }`}
                             >
-                              {selectedLanguages.includes(language.num1!) && (
+                              {idiomasSeleccionados.includes(language.num1!) && (
                                 <Check size={14} className="text-brand-white" />
                               )}
                             </div>
@@ -425,8 +345,8 @@ export function ModalUsuario({
                         ))}
                       </div>
                     )}
-                    {errors.idiomas && (
-                      <p className="mt-2 text-xs text-red-500">{errors.idiomas.message}</p>
+                    {errores.idiomas && (
+                      <p className="mt-2 text-xs text-red-500">{errores.idiomas.message}</p>
                     )}
                   </div>
                 )}

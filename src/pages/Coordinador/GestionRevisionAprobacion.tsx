@@ -1,6 +1,3 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
 import {
   BadgeCheck,
   CheckCircle2,
@@ -12,25 +9,13 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
+import { CustomChipVigencia } from "@maximilian/components/common/CustomChipVigencia";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
-import { useRetardo } from "@maximilian/hooks/useRetardo";
-import { informeService } from "@maximilian/services/informe.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { useGestionRevisionAprobacion } from "@maximilian/hooks/useGestionRevisionAprobacion";
 import type { InformeListEntry } from "@maximilian/shared/types/informe.type";
-import type { TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
-import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { obtenerColorEstadoAnalista } from "@maximilian/shared/utils/investigacion.util";
-
-function normalizarOpcionesFiltro(
-  opciones?: EntradaTablaMaestra[],
-  campoTexto: "string1" | "string2" = "string1",
-) {
-  return opciones?.map((opcion) => ({
-    ...opcion,
-    string1: opcion[campoTexto] || opcion.string1 || opcion.descripcion,
-  }));
-}
 
 function obtenerIconoTarjeta(id: string) {
   if (id === "pendiente")
@@ -42,35 +27,6 @@ function obtenerIconoTarjeta(id: string) {
   if (id === "vigente")
     return <BadgeCheck size={18} className="text-slate-600" />;
   return <TriangleAlert size={18} className="text-red-400" />;
-}
-
-function obtenerBadgeVigencia(registro: InformeListEntry) {
-  const texto = registro.vigencia || "-";
-  const textoNormalizado = texto.toLowerCase();
-  const esVencido = textoNormalizado.includes("venc");
-  const dias = texto.match(/\d+/)?.[0];
-  const esVencimientoInmediato =
-    !esVencido && dias != null && Number(dias) <= 1;
-  const color =
-    registro.vigenciaColor ||
-    (esVencido ? "#dc2626" : esVencimientoInmediato ? "#b45309" : "#166534");
-  const fondo =
-    registro.vigenciaFondo ||
-    (esVencido ? "#fef2f2" : esVencimientoInmediato ? "#fffbeb" : "#ecfdf5");
-
-  return (
-    <span
-      className="inline-flex min-w-24 flex-col rounded-xl px-3 py-2 text-center text-xs font-semibold"
-      style={{ color, backgroundColor: fondo }}
-    >
-      <span>{esVencido ? "Vencido" : texto}</span>
-      {esVencido && dias ? (
-        <span className="text-[11px] font-medium opacity-80">
-          {dias} {dias === "1" ? "dia" : "dias"}
-        </span>
-      ) : null}
-    </span>
-  );
 }
 
 function obtenerClasesFaseActiva(estado: InformeListEntry["estado"]) {
@@ -114,128 +70,30 @@ function obtenerIndicadorFase(registro: InformeListEntry) {
 }
 
 export default function GestionRevisionAprobacion() {
-  const navigate = useNavigate();
-  const [terminoBusqueda, setTerminoBusqueda] = useState("");
-  const [paginaActual, setPaginaActual] = useState(1);
-  const [filtroPlantillas, setFiltroPlantillas] = useState<number[]>([]);
-  const [filtroEstados, setFiltroEstados] = useState<number[]>([]);
-  const [filtroTipos, setFiltroTipos] = useState<number[]>([]);
-  const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
-  const idPlantillaFiltro = filtroPlantillas.join(",") || undefined;
-  const idEstadoFiltro = filtroEstados.join(",") || undefined;
-  const idTipoTramiteFiltro = filtroTipos.join(",") || undefined;
   const {
-    data: respuestaInformes,
-    isLoading,
+    abrirRevision,
+    filtroEstados,
+    filtroPlantillas,
+    filtroTipos,
     isError,
+    isLoading,
+    obtenerNombrePlantilla,
+    opcionesEstadoFiltro,
+    opcionesPlantillaFiltro,
+    opcionesTipoFiltro,
+    paginaActual,
     refetch,
-  } = useQuery({
-    queryKey: [
-      "informes-bandeja-coordinador-revision",
-      "con-plantilla",
-      paginaActual,
-      terminoBusquedaConRetardo,
-      idPlantillaFiltro,
-      idEstadoFiltro,
-      idTipoTramiteFiltro,
-    ],
-    queryFn: () =>
-      informeService.list({
-        numPag: paginaActual,
-        busqueda: terminoBusquedaConRetardo.trim() || undefined,
-        idPlantilla: idPlantillaFiltro,
-        idEstado: idEstadoFiltro,
-        idTipoTramite: idTipoTramiteFiltro,
-      }),
-    enabled: terminoBusqueda === terminoBusquedaConRetardo,
-    retry: false,
-    refetchOnMount: "always",
-  });
-
-  const registros = useMemo<InformeListEntry[]>(
-    () => respuestaInformes?.lstInforme ?? [],
-    [respuestaInformes?.lstInforme],
-  );
-
-  const { data: opcionesPlantillaInforme } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.PLANTILLA_INFORME],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLANTILLA_INFORME),
-    staleTime: Infinity,
-  });
-
-  const { data: opcionesTipoTramite } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_TRAMITE],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_TRAMITE),
-    staleTime: Infinity,
-  });
-
-  const { data: opcionesEstadoInforme } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.ESTADO_INFORME],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_INFORME),
-    staleTime: Infinity,
-  });
-
-  const opcionesPlantillaFiltro = useMemo(
-    () => normalizarOpcionesFiltro(opcionesPlantillaInforme),
-    [opcionesPlantillaInforme],
-  );
-  const opcionesTipoFiltro = useMemo(
-    () => normalizarOpcionesFiltro(opcionesTipoTramite, "string2"),
-    [opcionesTipoTramite],
-  );
-  const opcionesEstadoFiltro = useMemo(
-    () => normalizarOpcionesFiltro(opcionesEstadoInforme),
-    [opcionesEstadoInforme],
-  );
-
-  const resumenTarjetas = useMemo<TarjetaResumenAnalista[]>(() => {
-    return [
-      {
-        id: "pendiente",
-        titulo: "Pendiente",
-        valor: respuestaInformes?.pendienteAprobacion ?? 0,
-        colorIcono: "text-orange-500",
-      },
-      {
-        id: "aprobado",
-        titulo: "Aprobado",
-        valor: respuestaInformes?.aprobado ?? 0,
-        colorIcono: "text-emerald-500",
-      },
-      {
-        id: "rechazado",
-        titulo: "Rechazado",
-        valor: respuestaInformes?.rechazado ?? 0,
-        colorIcono: "text-rose-500",
-      },
-      {
-        id: "vigente",
-        titulo: "Vigentes",
-        valor: respuestaInformes?.vigente ?? 0,
-        colorIcono: "text-slate-600",
-      },
-      {
-        id: "vencido",
-        titulo: "Vencidos",
-        valor: respuestaInformes?.vencido ?? 0,
-        colorIcono: "text-red-400",
-      },
-    ];
-  }, [respuestaInformes]);
-
-  const abrirRevision = (registro: InformeListEntry) => {
-    const parametros = new URLSearchParams();
-    parametros.set("idInforme", String(registro.idInforme));
-    if (registro.idIdioma != null) {
-      parametros.set("idIdioma", String(registro.idIdioma));
-    }
-    if (registro.idInformeOriginal != null && registro.idInformeOriginal > 0) {
-      parametros.set("idInformeOriginal", String(registro.idInformeOriginal));
-    }
-    navigate(
-      `/coordinador/revision/${registro.idPedido}?${parametros.toString()}`,
-    );
-  };
+    registros,
+    reiniciarPagina,
+    respuestaInformes,
+    resumenTarjetas,
+    setFiltroEstados,
+    setFiltroPlantillas,
+    setFiltroTipos,
+    setPaginaActual,
+    setTerminoBusqueda,
+    terminoBusqueda,
+  } = useGestionRevisionAprobacion();
 
   const columnas = [
     { label: "ID Pedido", width: "8%" },
@@ -248,7 +106,7 @@ export default function GestionRevisionAprobacion() {
           opciones={opcionesTipoFiltro}
           valores={filtroTipos}
           onChange={setFiltroTipos}
-          onFiltroCambiado={() => setPaginaActual(1)}
+          onFiltroCambiado={reiniciarPagina}
         />
       ),
       width: "10%",
@@ -260,7 +118,7 @@ export default function GestionRevisionAprobacion() {
           opciones={opcionesEstadoFiltro}
           valores={filtroEstados}
           onChange={setFiltroEstados}
-          onFiltroCambiado={() => setPaginaActual(1)}
+          onFiltroCambiado={reiniciarPagina}
         />
       ),
       className: "text-center",
@@ -273,7 +131,7 @@ export default function GestionRevisionAprobacion() {
           opciones={opcionesPlantillaFiltro}
           valores={filtroPlantillas}
           onChange={setFiltroPlantillas}
-          onFiltroCambiado={() => setPaginaActual(1)}
+          onFiltroCambiado={reiniciarPagina}
         />
       ),
       className: "text-center",
@@ -282,19 +140,6 @@ export default function GestionRevisionAprobacion() {
     { label: "Fase", className: "text-center", width: "8%" },
     { label: "Accion", className: "text-right", width: "12%" },
   ];
-
-  const obtenerNombrePlantilla = (idPlantilla?: number) => {
-    if (!idPlantilla) return "-";
-    const opcionPlantilla = opcionesPlantillaInforme?.find(
-      (opcion) => opcion.num1 === idPlantilla,
-    );
-
-    return (
-      opcionPlantilla?.string1 ||
-      opcionPlantilla?.descripcion ||
-      `Plantilla ${idPlantilla}`
-    );
-  };
 
   return (
     <div className="space-y-8">
@@ -371,16 +216,25 @@ export default function GestionRevisionAprobacion() {
                   {registro.investigado}
                 </span>
               </td>
-              <td className="px-6 py-4">{obtenerBadgeVigencia(registro)}</td>
+              <td className="px-6 py-4">
+                <CustomChipVigencia
+                  texto={registro.vigencia}
+                  colorTexto={registro.vigenciaColor}
+                  colorFondo={registro.vigenciaFondo}
+                />
+              </td>
               <td className="px-6 py-4 text-sm text-slate-500">
                 {registro.tipo}
               </td>
               <td className="px-6 py-4 text-center">
-                <span
-                  className={`inline-flex rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wide ${obtenerColorEstadoAnalista(registro.estado)}`}
+                <CustomChipEstado
+                  forma="rectangular"
+                  tamano="amplio"
+                  claseColor={obtenerColorEstadoAnalista(registro.estado)}
+                  className="text-[11px] uppercase tracking-wide"
                 >
                   {registro.estadoInforme}
-                </span>
+                </CustomChipEstado>
               </td>
               <td className="px-6 py-4 text-center text-sm font-semibold leading-5 text-slate-500">
                 <span

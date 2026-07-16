@@ -1,5 +1,5 @@
 import { ENDPOINTS_PEDIDO } from "@maximilian/shared/constants/endpoints/pedido.endpoint";
-import maximilianService from "./maximilianService";
+import maximilianService from "./maximilian-service";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
@@ -17,70 +17,20 @@ import type {
   DeletePedidoArchivoRequest,
   GetPedidoArchivoResponse,
 } from "@maximilian/shared/types/pedido.type";
-
-function obtenerNumero(...valores: unknown[]): number {
-  for (const valor of valores) {
-    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-    if (typeof valor === "string" && valor.trim() !== "") {
-      const numero = Number(valor);
-      if (Number.isFinite(numero)) return numero;
-    }
-  }
-
-  return 0;
-}
-
-function obtenerNumeroOpcional(...valores: unknown[]): number | undefined {
-  for (const valor of valores) {
-    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-    if (typeof valor === "string" && valor.trim() !== "") {
-      const numero = Number(valor);
-      if (Number.isFinite(numero)) return numero;
-    }
-  }
-
-  return undefined;
-}
-
-function obtenerIndicadorBinario(...valores: unknown[]): 0 | 1 {
-  for (const valor of valores) {
-    if (valor === 1 || valor === "1" || valor === true) return 1;
-    if (valor === 0 || valor === "0" || valor === false) return 0;
-  }
-
-  return 0;
-}
-
-function obtenerTexto(...valores: unknown[]): string {
-  for (const valor of valores) {
-    if (typeof valor === "string") {
-      const texto = valor.trim();
-      if (texto) return texto;
-    }
-  }
-
-  return "";
-}
-
-function obtenerBooleano(...valores: unknown[]): boolean {
-  for (const valor of valores) {
-    if (typeof valor === "boolean") return valor;
-    if (typeof valor === "number") return valor === 1;
-    if (typeof valor === "string") {
-      const texto = valor.trim().toLowerCase();
-      if (texto === "true" || texto === "1") return true;
-      if (texto === "false" || texto === "0") return false;
-    }
-  }
-
-  return false;
-}
+import {
+  obtenerBooleanoBinario as obtenerBooleano,
+  obtenerIndicadorBinario,
+  obtenerNumero,
+  obtenerNumeroOpcional,
+  obtenerRegistro,
+  obtenerTexto,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
 function normalizarAsignaciones(valor: unknown): PedidoAsignacionEntry[] {
   if (!Array.isArray(valor)) return [];
 
   return valor.map((item) => {
-    const registro = typeof item === "object" && item !== null ? (item as Record<string, unknown>) : {};
+    const registro = obtenerRegistro(item);
 
     return {
       idEstadoAsignacion: obtenerNumero(
@@ -109,7 +59,7 @@ function normalizarAsignaciones(valor: unknown): PedidoAsignacionEntry[] {
 }
 
 function normalizarFilaPedido(fila: unknown): PedidoListEntry {
-  const registro = typeof fila === "object" && fila !== null ? (fila as Record<string, unknown>) : {};
+  const registro = obtenerRegistro(fila);
 
   return {
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido),

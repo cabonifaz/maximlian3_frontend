@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
 import { useFormatoFechaInforme } from "@maximilian/shared/contexts/formato-fecha-informe.context";
+import { convertirTextoAFecha, formatearFechaDdMmYyyy } from "@maximilian/shared/utils/fecha.util";
 
 interface PropsCustomCampoFechaInvestigacion {
   etiqueta: string;
@@ -36,7 +37,7 @@ export function CustomCampoFechaInvestigacion({
       </CustomLabel>
       <CustomSelectorFecha
         value={convertirTextoAFecha(valor)}
-        onChange={(fecha) => onChange(fecha ? formatearFecha(fecha) : "")}
+        onChange={(fecha) => onChange(fecha ? formatearFechaDdMmYyyy(fecha) : "")}
         disabled={soloLectura}
         error={error}
         placeholder="dd/mm/yyyy"
@@ -46,25 +47,4 @@ export function CustomCampoFechaInvestigacion({
       {nombre ? <input type="hidden" name={nombre} value={valor} /> : null}
     </div>
   );
-}
-
-function convertirTextoAFecha(valor: string): Date | undefined {
-  const texto = valor.trim();
-  if (!texto) return undefined;
-
-  const coincidenciaIso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  const partes = coincidenciaIso
-    ? [Number(coincidenciaIso[3]), Number(coincidenciaIso[2]), Number(coincidenciaIso[1])]
-    : texto.split("/").map(Number);
-  const [dia, mes, ano] = partes;
-  if (!dia || !mes || !ano) return undefined;
-
-  const fecha = new Date(ano, mes - 1, dia);
-  return Number.isNaN(fecha.getTime()) ? undefined : fecha;
-}
-
-function formatearFecha(fecha: Date): string {
-  const dia = String(fecha.getDate()).padStart(2, "0");
-  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-  return `${dia}/${mes}/${fecha.getFullYear()}`;
 }

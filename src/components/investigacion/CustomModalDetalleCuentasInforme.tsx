@@ -1,4 +1,4 @@
-import { camposCalculadosEstadoFinanciero, camposRatioPorcentaje } from "@maximilian/shared/constants/components/investigacion/customModalDetalleCuentasInforme.constants";
+import { camposCalculadosEstadoFinanciero, camposRatioPorcentaje } from "@maximilian/shared/constants/components/investigacion/custom-modal-detalle-cuentas-informe.constants";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -14,7 +14,7 @@ import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPe
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
 import { informeService } from "@maximilian/services/informe.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type {
   DetalleBalanceGeneralAnalista,
   DetalleCuentasBalanceAnalista,
@@ -79,10 +79,6 @@ function obtenerNumero(valor: string) {
   return obtenerNumeroDesdeMonto(valor);
 }
 
-function formatearNumero(valor: number) {
-  return formatearMontoDosDecimales(valor);
-}
-
 function sanitizarNumero(valor: string, permitirNegativo = false) {
   return sanitizarMontoDosDecimales(valor, permitirNegativo);
 }
@@ -121,7 +117,7 @@ function CampoDetalle({
   azul?: boolean;
 }) {
   const valorMostrado = mostrarComoPorcentaje
-    ? `${formatearNumero(obtenerNumero(valor))}%`
+    ? `${formatearMontoDosDecimales(obtenerNumero(valor))}%`
     : valor;
 
   return (
@@ -579,7 +575,7 @@ export function CustomModalDetalleCuentasAnalista({
         "total-pasivo-patrimonio": "totalPasivoPatrimonio",
       };
       const campoBalanceGeneral = equivalenciasBalanceTotalizado[campoObjetivo];
-      const valorFormateado = formatearNumero(obtenerNumero(valorCalculado));
+      const valorFormateado = formatearMontoDosDecimales(obtenerNumero(valorCalculado));
       const camposGananciaTurquia: Record<string, string> =
         esEstadoFinancieroTurquia &&
         ["profit-loss-after-taxes", "profit"].includes(campoObjetivo)
@@ -631,7 +627,7 @@ export function CustomModalDetalleCuentasAnalista({
           .filter(([campo]) => idsRatios.has(campo))
           .map(([campo, valor]) => [
             campo,
-            formatearNumero(obtenerNumero(valor)),
+            formatearMontoDosDecimales(obtenerNumero(valor)),
           ]),
       );
 

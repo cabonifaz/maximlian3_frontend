@@ -1,6 +1,6 @@
 import { ESTADO_ASIGNACION_ANALISTA, ESTADO_ASIGNACION_TRADUCTOR, ESTADO_REASIGNACION_ANALISTA, ESTADO_REASIGNACION_TRADUCTOR, IDS_ROL_POR_TIPO } from "@maximilian/shared/constants/services/asignacion.service.constants";
 import { ENDPOINTS_ASIGNACION } from "@maximilian/shared/constants/endpoints/asignacion.endpoint";
-import maximilianService from "./maximilianService";
+import maximilianService from "./maximilian-service";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
@@ -16,60 +16,19 @@ import type {
   SaveAssignmentsRequest,
   UpdateAssignmentRequest,
 } from "@maximilian/shared/types/asignacion.type";
-
-type RegistroGenerico = Record<string, unknown>;
+import {
+  esRegistroRespuesta as esRegistroGenerico,
+  obtenerBooleanoTextoOpcional as obtenerBooleano,
+  obtenerListaPorClaves as obtenerLista,
+  obtenerNumeroOpcional as obtenerNumero,
+  obtenerRegistroOpcional as obtenerRegistro,
+  obtenerTextoOpcional as obtenerTexto,
+  type RegistroRespuesta as RegistroGenerico,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
 function esRespuestaOkCompatibilidad(respuesta: ApiResponse<unknown>) {
   return respuesta.idTipoMensaje === MessageType.SUCCESS
     || (respuesta.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION && respuesta.mensaje === "OK");
-}
-
-function esRegistroGenerico(valor: unknown): valor is RegistroGenerico {
-  return typeof valor === "object" && valor !== null;
-}
-
-function obtenerNumero(...valores: unknown[]): number | undefined {
-  for (const valor of valores) {
-    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-    if (typeof valor === "string" && valor.trim() !== "") {
-      const numero = Number(valor);
-      if (Number.isFinite(numero)) return numero;
-    }
-  }
-  return undefined;
-}
-
-function obtenerTexto(...valores: unknown[]): string | undefined {
-  for (const valor of valores) {
-    if (typeof valor === "string" && valor.trim() !== "") return valor.trim();
-  }
-  return undefined;
-}
-
-function obtenerBooleano(...valores: unknown[]): boolean | undefined {
-  for (const valor of valores) {
-    if (typeof valor === "boolean") return valor;
-    if (typeof valor === "string") {
-      if (valor.toLowerCase() === "true") return true;
-      if (valor.toLowerCase() === "false") return false;
-    }
-  }
-  return undefined;
-}
-
-function obtenerLista(registro: RegistroGenerico, claves: string[]): unknown[] {
-  for (const clave of claves) {
-    const valor = registro[clave];
-    if (Array.isArray(valor)) return valor;
-  }
-  return [];
-}
-
-function obtenerRegistro(...valores: unknown[]): RegistroGenerico | undefined {
-  for (const valor of valores) {
-    if (esRegistroGenerico(valor)) return valor;
-  }
-  return undefined;
 }
 
 function obtenerIniciales(nombreCompleto: string): string {
