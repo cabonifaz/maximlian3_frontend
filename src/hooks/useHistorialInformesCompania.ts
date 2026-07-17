@@ -5,7 +5,6 @@ import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service
 import type { CompaniaNoticiaDetalleListaItem } from "@maximilian/shared/types/compania-noticia-detalle.type";
 import type { InformeHistorialCompania } from "@maximilian/shared/types/informe.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import { formatearFechaVisual } from "@maximilian/shared/utils/fecha.util";
 import { crearDatosInvestigacionVacios } from "@maximilian/shared/utils/investigacion.util";
 
 export function useHistorialInformesCompania(empresa: CompaniaNoticiaDetalleListaItem | null) {
@@ -85,17 +84,6 @@ export function useHistorialInformesCompania(empresa: CompaniaNoticiaDetalleList
     setPaginaActual(1);
   };
 
-  const formatearFechaHistorial = (fecha: string) =>
-    formatearFechaVisual(
-      fecha,
-      {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      },
-      "es",
-    );
-
   return {
     paginaActual,
     setPaginaActual,
@@ -117,7 +105,6 @@ export function useHistorialInformesCompania(empresa: CompaniaNoticiaDetalleList
     cambiarFechaFinFiltro,
     limpiarFechaInicioFiltro,
     limpiarFechaFinFiltro,
-    formatearFechaHistorial,
   };
 }
 
