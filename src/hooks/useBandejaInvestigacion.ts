@@ -4,7 +4,6 @@ import { useNavigate } from "react-router";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import type { AssignmentOrderEntry } from "@maximilian/shared/types/asignacion.type";
-import { formatearFechaIsoADdMmYyyy } from "@maximilian/shared/utils/fecha.util";
 import type {
   AccionBandejaAnalista,
   RegistroBandejaAnalista,
@@ -99,7 +98,7 @@ export function useBandejaInvestigacion({ tipo }: ParametrosUseBandejaInvestigac
         codigo: registro.codigoPedido || String(registro.idPedido),
         investigado: registro.investigado,
         pais: registro.pais || "-",
-        fecha: formatearFechaIsoADdMmYyyy(registro.fechaAsignacion, "-", true),
+        fecha: registro.fechaAsignacion || "-",
         tipo: registro.tipoTramite || "-",
         estado: normalizarEstadoDesdeAsignacion(registro),
         estadoTexto: registro.estado || "-",

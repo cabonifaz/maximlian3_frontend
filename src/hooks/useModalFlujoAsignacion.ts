@@ -119,7 +119,7 @@ export function useModalFlujoAsignacion({
         new Set(
           pedidosElegidos
             .map((pedido) => pedido.idIdioma)
-            .filter((idIdioma): idIdioma is number => typeof idIdioma === "number"),
+            .filter((idIdioma): idIdioma is number => typeof idIdioma === "number" && idIdioma > 0),
         ),
       ),
     [pedidosElegidos],

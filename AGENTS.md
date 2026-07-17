@@ -138,6 +138,8 @@ All TypeScript types live in `src/shared/types/`. Service request/response shape
 
 ## Git
 
+Do not create commits or push changes. Leave the worktree changes for the user to review, and suggest a Conventional Commit message when the work is ready.
+
 Never stage or commit anything under `.codex/`, or anything under `.playwright-mcp/`. These files are not in `.gitignore` but must be kept out of commits.
 
 Commit messages must follow Conventional Commits (`type: short description`) and be a single concise sentence with no line breaks. Do not add `Co-Authored-By` or any Claude contribution credits.
@@ -190,6 +192,8 @@ Keep components focused and small. A component that grows beyond ~150 lines is a
 Place sub-components in their module folder alongside the parent (e.g., `src/components/coordinator/`).
 
 ### Custom Hooks
+
+Any component logic beyond basic rendering state must be extracted to a custom hook. Date validation, filter orchestration, pagination state, API query coordination, modal workflows, payload construction, and derived UI state belong in hooks, not directly in `.tsx` components.
 
 Extract logic from components into custom hooks (`use*.ts` in `src/hooks/` or colocated in the feature folder) when:
 - A component contains more than one `useEffect`, or a `useEffect` with complex logic

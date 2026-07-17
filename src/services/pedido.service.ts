@@ -18,8 +18,9 @@ import type {
   GetPedidoArchivoResponse,
 } from "@maximilian/shared/types/pedido.type";
 import {
-  obtenerBooleanoBinario as obtenerBooleano,
+  obtenerBooleanoFlexible,
   obtenerIndicadorBinario,
+  obtenerLista,
   obtenerNumero,
   obtenerNumeroOpcional,
   obtenerRegistro,
@@ -60,12 +61,13 @@ function normalizarAsignaciones(valor: unknown): PedidoAsignacionEntry[] {
 
 function normalizarFilaPedido(fila: unknown): PedidoListEntry {
   const registro = obtenerRegistro(fila);
+  const idPedido = obtenerNumero(registro.idPedido, registro.IdPedido);
 
   return {
-    idPedido: obtenerNumero(registro.idPedido, registro.IdPedido),
+    idPedido,
     idAsignacion: obtenerNumero(registro.idAsignacion, registro.IdAsignacion),
     fechaMod: obtenerTexto(registro.fechaMod, registro.FechaMod, registro.fechaModificacion, registro.FechaModificacion),
-    codigo: obtenerTexto(registro.codigo, registro.Codigo),
+    codigo: obtenerTexto(registro.codigo, registro.Codigo) || String(idPedido),
     idCliente: obtenerNumero(registro.idCliente, registro.IdCliente),
     cliente: obtenerTexto(registro.cliente, registro.nombre, registro.nombreCliente, registro.Cliente) || "-",
     investigado: obtenerTexto(
@@ -74,12 +76,12 @@ function normalizarFilaPedido(fila: unknown): PedidoListEntry {
       registro.nombreInvestigado,
       registro.Investigado,
     ) || "-",
-    idIdioma: obtenerNumero(registro.idIdioma, registro.IdIdioma),
+    idIdioma: obtenerNumeroOpcional(registro.idIdioma, registro.IdIdioma),
     idioma: obtenerTexto(registro.idioma, registro.idiomaInforme, registro.Idioma) || "-",
     tipoTramite: obtenerTexto(registro.tipoTramite, registro.TipoTramite) || "-",
     analista: obtenerTexto(registro.analista, registro.nombreAnalista, registro.usuarioAnalista, registro.analistaAsignado),
     traductor: obtenerTexto(registro.traductor, registro.nombreTraductor, registro.usuarioTraductor, registro.traductorAsignado),
-    logoImprimible: obtenerBooleano(registro.logoImprimible, registro.imprimeLogoSafety, registro.LogoImprimible),
+    logoImprimible: obtenerBooleanoFlexible(registro.logoImprimible, registro.imprimeLogoSafety, registro.LogoImprimible),
     estado: obtenerNumero(registro.estado, registro.idEstado, registro.IdEstado),
     descripcionEstado: obtenerTexto(registro.descripcionEstado, registro.estadoDescripcion, registro.estado, registro.Estado) || "-",
     colorLetra: obtenerTexto(registro.colorLetra, registro.estadoColorLetra, registro.ColorLetra) || "#475569",
@@ -92,11 +94,8 @@ function normalizarFilaPedido(fila: unknown): PedidoListEntry {
 }
 
 function normalizarRespuestaPedido(resultado: PedidoListResponse | Record<string, unknown>): PedidoListResponse {
-  const registro = typeof resultado === "object" && resultado !== null ? resultado : {};
-  const respuesta = registro as Record<string, unknown>;
-  const listaOriginal = Array.isArray(respuesta.lstPedido)
-    ? (respuesta.lstPedido as unknown[])
-    : [];
+  const respuesta = obtenerRegistro(resultado);
+  const listaOriginal = obtenerLista(respuesta.lstPedido, respuesta.LstPedido);
 
   return {
     lstPedido: listaOriginal.map(normalizarFilaPedido),

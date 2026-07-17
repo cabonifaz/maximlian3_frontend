@@ -7,10 +7,7 @@ import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service
 import type { InformeListEntry } from "@maximilian/shared/types/informe.type";
 import type { TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import {
-  normalizarOpcionesFiltroRevision,
-  obtenerNombrePlantillaRevision,
-} from "@maximilian/shared/utils/gestion-revision-aprobacion.util";
+import { normalizarOpcionesFiltroRevision } from "@maximilian/shared/utils/gestion-revision-aprobacion.util";
 
 export function useGestionRevisionAprobacion() {
   const navigate = useNavigate();
@@ -92,7 +89,7 @@ export function useGestionRevisionAprobacion() {
     return [
       {
         id: "pendiente",
-        titulo: "Pendiente",
+        titulo: "Pendiente Aprobación",
         valor: respuestaInformes?.pendienteAprobacion ?? 0,
         colorIcono: "text-orange-500",
       },
@@ -141,9 +138,6 @@ export function useGestionRevisionAprobacion() {
     setPaginaActual(1);
   };
 
-  const obtenerNombrePlantilla = (idPlantilla?: number) =>
-    obtenerNombrePlantillaRevision(idPlantilla, opcionesPlantillaInforme);
-
   return {
     abrirRevision,
     filtroEstados,
@@ -151,7 +145,6 @@ export function useGestionRevisionAprobacion() {
     filtroTipos,
     isError,
     isLoading,
-    obtenerNombrePlantilla,
     opcionesEstadoFiltro,
     opcionesPlantillaFiltro,
     opcionesTipoFiltro,

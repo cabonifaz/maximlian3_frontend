@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleAlert, CircleX, Clock3, SearchCheck } from "lucide-react";
+import { CheckCircle2, CircleX, Clock3 } from "lucide-react";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
 export const PEDIDO_COLUMNS = [
@@ -22,9 +22,7 @@ export const ESTADO_OPTIONS = [
 
 export const TARJETAS_ESTADO_PEDIDO = [
   { clave: "pendiente", titulo: "Pendiente", Icono: Clock3, colorIcono: "text-orange-500" },
-  { clave: "enRevision", titulo: "En revisión", Icono: SearchCheck, colorIcono: "text-blue-500" },
   { clave: "aprobado", titulo: "Aprobado", Icono: CheckCircle2, colorIcono: "text-emerald-500" },
-  { clave: "observado", titulo: "Observado", Icono: CircleAlert, colorIcono: "text-amber-500" },
   { clave: "cancelado", titulo: "Cancelado", Icono: CircleX, colorIcono: "text-rose-500" },
 ] as const;
 

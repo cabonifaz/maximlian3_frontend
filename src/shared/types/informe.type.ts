@@ -24,6 +24,7 @@ export interface InformeListEntry {
   requiereTraduccion?: 0 | 1;
   idIdioma?: number;
   idPlantilla?: number;
+  plantilla?: string;
   codigo: string;
   investigado: string;
   pais: string;
@@ -53,6 +54,9 @@ export interface InformeListResponse {
 export interface ParametrosHistorialInformesCompania {
   idCompania: number;
   numPag?: number;
+  idIdioma?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
 }
 
 export interface InformeHistorialCompania {
@@ -60,6 +64,7 @@ export interface InformeHistorialCompania {
   idPedido: number;
   idioma: string;
   nombre: string;
+  fecha: string;
 }
 
 export interface RespuestaHistorialInformesCompania {

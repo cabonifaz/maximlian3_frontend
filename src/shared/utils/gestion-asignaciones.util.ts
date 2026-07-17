@@ -18,44 +18,65 @@ export function obtenerInicialesAsignacion(nombre: string) {
 
 export function construirOpcionesEliminacionAsignacion(asignacion: AssignmentOrderEntry): EntradaTablaMaestra[] {
   const opciones: EntradaTablaMaestra[] = [];
+  const idsAgregados = new Set<number>();
+  const agregarOpcion = (idAsignacion: number | undefined, idRol: number, etiqueta: string) => {
+    if (!idAsignacion || idsAgregados.has(idAsignacion)) return;
 
-  if (tieneAsignadoAsignacion(asignacion.analista) && asignacion.analistaIdAsignacion) {
+    idsAgregados.add(idAsignacion);
     opciones.push({
       idEmpresa: 0,
       idTablaMaestra: null,
       idMaestro: 0,
       descripcion: "",
-      num1: asignacion.analistaIdAsignacion,
-      num2: ID_ROL_ANALISTA,
+      num1: idAsignacion,
+      num2: idRol,
       num3: null,
-      string1: `Analista - ${asignacion.analista}`,
+      string1: etiqueta,
       string2: null,
       string3: null,
       date1: null,
       date2: null,
       date3: null,
     });
+  };
+
+  if (tieneAsignadoAsignacion(asignacion.analista) && asignacion.analistaIdAsignacion) {
+    agregarOpcion(
+      asignacion.analistaIdAsignacion,
+      ID_ROL_ANALISTA,
+      `Analista - ${asignacion.analista}`,
+    );
   }
 
   if (tieneAsignadoAsignacion(asignacion.traductor) && asignacion.traductorIdAsignacion) {
-    opciones.push({
-      idEmpresa: 0,
-      idTablaMaestra: null,
-      idMaestro: 0,
-      descripcion: "",
-      num1: asignacion.traductorIdAsignacion,
-      num2: ID_ROL_TRADUCTOR,
-      num3: null,
-      string1: `Traductor - ${asignacion.traductor}`,
-      string2: null,
-      string3: null,
-      date1: null,
-      date2: null,
-      date3: null,
-    });
+    agregarOpcion(
+      asignacion.traductorIdAsignacion,
+      ID_ROL_TRADUCTOR,
+      `Traductor - ${asignacion.traductor}`,
+    );
+  }
+
+  if (opciones.length === 0) {
+    const idAsignacion = asignacion.idAsignacion
+      ?? asignacion.analistaIdAsignacion
+      ?? asignacion.traductorIdAsignacion;
+
+    agregarOpcion(
+      idAsignacion,
+      0,
+      asignacion.estado ? `Asignacion - ${asignacion.estado}` : "Asignacion",
+    );
   }
 
   return opciones;
+}
+
+export function tieneIdAsignacionEliminable(asignacion: AssignmentOrderEntry) {
+  return Boolean(
+    asignacion.idAsignacion
+      ?? asignacion.analistaIdAsignacion
+      ?? asignacion.traductorIdAsignacion,
+  );
 }
 
 export function convertirAsignacionAPedido(asignacion: AssignmentOrderEntry): PedidoListEntry {
