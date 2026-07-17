@@ -3,6 +3,7 @@ import {
   Edit,
   Eye,
   FileSearch,
+  Info,
   Languages,
   MoreHorizontal,
   Plus,
@@ -22,7 +23,11 @@ import { CustomModalDetallePedido } from "@maximilian/components/coordinador/Cus
 import { useMenuFlotanteTabla } from "@maximilian/hooks/useMenuFlotanteTabla";
 import { useGestionPedidos } from "@maximilian/hooks/useGestionPedidos";
 import { type PedidoListEntry } from "@maximilian/shared/types/pedido.type";
-import { obtenerColorEstadoAnalista } from "@maximilian/shared/utils/investigacion.util";
+import {
+  obtenerColorEstadoAnalista,
+  obtenerTextoEstadoAnalista,
+} from "@maximilian/shared/utils/investigacion.util";
+import type { EstadoInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 
 function esPedidoCancelado(pedido: PedidoListEntry) {
   return pedido.estado === 5;
@@ -90,6 +95,45 @@ function obtenerEstadoInformeAsignacion(idEstado?: number | null, descripcion?: 
   return "asignado";
 }
 
+function obtenerTextoEstadoFase(
+  idEstado?: number | null,
+  descripcion?: string | null,
+) {
+  const estado = obtenerEstadoInformeAsignacion(idEstado, descripcion);
+
+  return estado ? obtenerTextoEstadoAnalista(estado) : "Sin iniciar";
+}
+
+function obtenerClaseFase(estado: EstadoInvestigacionAnalista | null) {
+  if (!estado) return "border-slate-200 bg-white text-slate-300";
+
+  return `${obtenerColorEstadoAnalista(estado)} border-transparent`;
+}
+
+function obtenerClaseIconoFase(claseFase: string) {
+  return [
+    "relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm",
+    "cursor-help transition-all duration-200 ease-out",
+    "hover:-translate-y-0.5 hover:scale-110 hover:shadow-md hover:ring-4 hover:ring-slate-100",
+    claseFase,
+  ].join(" ");
+}
+
+function EncabezadoFase() {
+  return (
+    <span className="inline-flex items-center justify-center gap-1">
+      Fase
+      <span title="Pase el mouse sobre cada icono para ver el estado">
+        <Info
+          size={13}
+          className="cursor-help text-slate-400"
+          aria-label="Pase el mouse sobre cada icono para ver el estado"
+        />
+      </span>
+    </span>
+  );
+}
+
 function obtenerClaseFasePorAsignacion(
   pedido: PedidoListEntry,
   estados: number[],
@@ -105,24 +149,20 @@ function obtenerClaseFasePorAsignacion(
   if (!asignacion) return claseFaseVacia;
   if (!estadoInforme) return claseFasePendiente;
 
-  return `${obtenerColorEstadoAnalista(estadoInforme)} border-transparent`;
+  return obtenerClaseFase(estadoInforme);
 }
 
 function obtenerTituloFasePedido(
   pedido: PedidoListEntry,
   estados: number[],
-  textoFallback: string,
+  rol: "Analista" | "Traductor",
 ) {
   const asignacion = obtenerAsignacionFasePedido(pedido, estados);
 
-  if (!asignacion) return textoFallback;
-
-  const descripcionAsignacion = asignacion.descripcion || textoFallback;
-  const descripcionEstadoInforme = asignacion.descripcionEstadoInforme?.trim();
-
-  return descripcionEstadoInforme
-    ? `${descripcionAsignacion} - ${descripcionEstadoInforme}`
-    : `${descripcionAsignacion} - Sin iniciar`;
+  return `${rol} - ${obtenerTextoEstadoFase(
+    asignacion?.idEstadoInforme,
+    asignacion?.descripcionEstadoInforme,
+  )}`;
 }
 
 function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
@@ -165,14 +205,14 @@ function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
   const descripcionAnalista = obtenerTituloFasePedido(
     pedido,
     estadosAnalista,
-    "Sin asignacion",
+    "Analista",
   );
 
   if (!requiereTraduccion) {
     return (
       <div className="mx-auto flex w-16 items-center justify-center" title="No requiere traduccion">
         <span
-          className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseAnalista}`}
+          className={obtenerClaseIconoFase(claseAnalista)}
           title={descripcionAnalista}
         >
           <FileSearch size={14} />
@@ -200,20 +240,20 @@ function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
   const descripcionTraduccion = obtenerTituloFasePedido(
     pedido,
     estadosTraduccion,
-    "Sin asignacion",
+    "Traductor",
   );
 
   return (
     <div className="relative mx-auto flex w-16 items-center justify-between" title="Analista / Traduccion">
       <span className={`absolute left-4 right-4 top-1/2 h-1 -translate-y-1/2 rounded-full ${claseLinea}`} />
       <span
-        className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseAnalista}`}
+        className={obtenerClaseIconoFase(claseAnalista)}
         title={descripcionAnalista}
       >
         <FileSearch size={14} />
       </span>
       <span
-        className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${claseTraduccion}`}
+        className={obtenerClaseIconoFase(claseTraduccion)}
         title={descripcionTraduccion}
       >
         <Languages size={14} />
@@ -260,6 +300,13 @@ export default function PedidoManagement() {
   const { idMenuActivo, estiloMenu, alternarMenu, cerrarMenu } = useMenuFlotanteTabla();
 
   const columnas = PEDIDO_COLUMNS.map((columna, indice) => {
+    if (indice === 5) {
+      return {
+        ...columna,
+        label: <EncabezadoFase />,
+      };
+    }
+
     if (indice !== 4) return columna;
 
     return {
@@ -396,7 +443,7 @@ export default function PedidoManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-3">
         {TARJETAS_ESTADO_PEDIDO.map((tarjeta) => {
           const Icono = tarjeta.Icono;
           const total = pedidosData?.[tarjeta.clave] ?? 0;

@@ -58,5 +58,10 @@ export function convertirPedidoAAsignacionesIniciales(pedido: PedidoListEntry): 
 }
 
 export function tieneAsignacionesEnPedido(pedido: PedidoListEntry) {
-  return tieneAsignado(pedido.analista) || tieneAsignado(pedido.traductor) || !!pedido.idAsignacion;
+  return (
+    tieneAsignado(pedido.analista)
+    || tieneAsignado(pedido.traductor)
+    || !!pedido.idAsignacion
+    || pedido.asignaciones.length > 0
+  );
 }

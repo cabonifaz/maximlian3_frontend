@@ -4,6 +4,7 @@ import {
   CircleX,
   ClipboardList,
   FileSearch,
+  Info,
   Languages,
   Search,
   TriangleAlert,
@@ -15,7 +16,11 @@ import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/Custo
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useGestionRevisionAprobacion } from "@maximilian/hooks/useGestionRevisionAprobacion";
 import type { InformeListEntry } from "@maximilian/shared/types/informe.type";
-import { obtenerColorEstadoAnalista } from "@maximilian/shared/utils/investigacion.util";
+import {
+  obtenerColorEstadoAnalista,
+  obtenerTextoEstadoAnalista,
+} from "@maximilian/shared/utils/investigacion.util";
+import type { EstadoInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 
 function obtenerIconoTarjeta(id: string) {
   if (id === "pendiente")
@@ -33,16 +38,33 @@ function obtenerClasesFaseActiva(estado: InformeListEntry["estado"]) {
   return `${obtenerColorEstadoAnalista(estado)} border-transparent`;
 }
 
+function obtenerClaseIconoFase(claseFase: string) {
+  return [
+    "relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm",
+    "cursor-help transition-all duration-200 ease-out",
+    "hover:-translate-y-0.5 hover:scale-110 hover:shadow-md hover:ring-4 hover:ring-slate-100",
+    claseFase,
+  ].join(" ");
+}
+
+function obtenerTituloFaseRevision(rol: "Analista" | "Traductor", estado: EstadoInvestigacionAnalista | null) {
+  return `${rol} - ${estado ? obtenerTextoEstadoAnalista(estado) : "Sin iniciar"}`;
+}
+
 function obtenerIndicadorFase(registro: InformeListEntry) {
   const requiereTraduccion = registro.requiereTraduccion === 1;
   const esFaseTraduccion = requiereTraduccion && registro.idFase === 2;
   const clasesAnalista = esFaseTraduccion
     ? "border-green-200 bg-green-50 text-green-600"
     : obtenerClasesFaseActiva(registro.estado);
+  const tituloAnalista = obtenerTituloFaseRevision(
+    "Analista",
+    esFaseTraduccion ? "aprobado" : registro.estado,
+  );
   if (!requiereTraduccion) {
     return (
       <div className="mx-auto flex w-16 items-center justify-center" title="No requiere traduccion">
-        <span className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${clasesAnalista}`}>
+        <span className={obtenerClaseIconoFase(clasesAnalista)} title={tituloAnalista}>
           <FileSearch size={14} />
         </span>
       </div>
@@ -52,6 +74,10 @@ function obtenerIndicadorFase(registro: InformeListEntry) {
   const clasesTraduccion = esFaseTraduccion
     ? obtenerClasesFaseActiva(registro.estado)
     : "border-slate-200 bg-slate-50 text-slate-300";
+  const tituloTraduccion = obtenerTituloFaseRevision(
+    "Traductor",
+    esFaseTraduccion ? registro.estado : null,
+  );
   const clasesLinea = esFaseTraduccion
     ? "bg-green-200"
     : "bg-slate-200";
@@ -59,10 +85,10 @@ function obtenerIndicadorFase(registro: InformeListEntry) {
   return (
     <div className="relative mx-auto flex w-16 items-center justify-between" title="Analista / Traduccion">
       <span className={`absolute left-4 right-4 top-1/2 h-1 -translate-y-1/2 rounded-full ${clasesLinea}`} />
-      <span className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${clasesAnalista}`}>
+      <span className={obtenerClaseIconoFase(clasesAnalista)} title={tituloAnalista}>
         <FileSearch size={14} />
       </span>
-      <span className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm ${clasesTraduccion}`}>
+      <span className={obtenerClaseIconoFase(clasesTraduccion)} title={tituloTraduccion}>
         <Languages size={14} />
       </span>
     </div>
@@ -77,7 +103,6 @@ export default function GestionRevisionAprobacion() {
     filtroTipos,
     isError,
     isLoading,
-    obtenerNombrePlantilla,
     opcionesEstadoFiltro,
     opcionesPlantillaFiltro,
     opcionesTipoFiltro,
@@ -137,7 +162,22 @@ export default function GestionRevisionAprobacion() {
       className: "text-center",
       width: "15%",
     },
-    { label: "Fase", className: "text-center", width: "8%" },
+    {
+      label: (
+        <span className="inline-flex items-center justify-center gap-1">
+          Fase
+          <span title="Pase el mouse sobre cada icono para ver el estado">
+            <Info
+              size={13}
+              className="cursor-help text-slate-400"
+              aria-label="Pase el mouse sobre cada icono para ver el estado"
+            />
+          </span>
+        </span>
+      ),
+      className: "text-center",
+      width: "8%",
+    },
     { label: "Accion", className: "text-right", width: "12%" },
   ];
 
@@ -239,9 +279,9 @@ export default function GestionRevisionAprobacion() {
               <td className="px-6 py-4 text-center text-sm font-semibold leading-5 text-slate-500">
                 <span
                   className="block whitespace-normal break-words"
-                  title={obtenerNombrePlantilla(registro.idPlantilla)}
+                  title={registro.plantilla || "-"}
                 >
-                  {obtenerNombrePlantilla(registro.idPlantilla)}
+                  {registro.plantilla || "-"}
                 </span>
               </td>
               <td className="px-6 py-4 text-center">

@@ -14,6 +14,7 @@ import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra
 import {
   construirOpcionesEliminacionAsignacion,
   esNuevaAsignacionDesdeListado,
+  tieneIdAsignacionEliminable,
 } from "@maximilian/shared/utils/gestion-asignaciones.util";
 
 function esColorHexadecimal(valor?: string | null) {
@@ -261,17 +262,18 @@ export default function GestionAsignaciones() {
                 <Edit size={14} />
                 <span>{esNuevaAsignacionDesdeListado(asignacion) ? "Asignar" : "Reasignar"}</span>
               </button>
-              <button
-                onClick={() => {
-                  prepararEliminacionAsignacion(asignacion);
-                  cerrarMenu();
-                }}
-                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50 cursor-pointer"
-                disabled={!asignacion.analistaIdAsignacion && !asignacion.traductorIdAsignacion}
-              >
-                <X size={14} />
-                <span>Eliminar</span>
-              </button>
+              {tieneIdAsignacionEliminable(asignacion) ? (
+                <button
+                  onClick={() => {
+                    prepararEliminacionAsignacion(asignacion);
+                    cerrarMenu();
+                  }}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50 cursor-pointer"
+                >
+                  <X size={14} />
+                  <span>Eliminar</span>
+                </button>
+              ) : null}
             </div>
           </>
         )}

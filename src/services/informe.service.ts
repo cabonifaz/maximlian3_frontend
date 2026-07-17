@@ -247,6 +247,14 @@ function normalizarFilaInforme(fila: unknown): InformeListEntry {
     ),
     idIdioma: obtenerNumeroOpcional(registro.idIdioma, registro.IdIdioma),
     idPlantilla: obtenerNumeroOpcional(registro.idPlantilla, registro.IdPlantilla),
+    plantilla: obtenerTexto(
+      registro.plantilla,
+      registro.Plantilla,
+      registro.nombrePlantilla,
+      registro.NombrePlantilla,
+      registro.plantillaInforme,
+      registro.PlantillaInforme,
+    ) || undefined,
     codigo: obtenerTexto(registro.codigo, registro.Codigo, registro.codigoPedido, registro.CodigoPedido) || "-",
     vigencia: obtenerTexto(registro.vigencia, registro.Vigencia, registro.porVencerTexto, registro.PorVencerTexto) || "-",
     vigenciaColor: obtenerTexto(
@@ -342,6 +350,14 @@ function normalizarInformeHistorialCompania(fila: unknown): InformeHistorialComp
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido),
     idioma: obtenerTexto(registro.idioma, registro.Idioma) || "-",
     nombre: obtenerTexto(registro.nombre, registro.Nombre) || "-",
+    fecha: obtenerTexto(
+      registro.fecha,
+      registro.Fecha,
+      registro.fechaInforme,
+      registro.FechaInforme,
+      registro.fechaCreacion,
+      registro.FechaCreacion,
+    ) || "-",
   };
 }
 
@@ -1385,6 +1401,9 @@ export const informeService = {
   listarHistorialPorCompania: async ({
     idCompania,
     numPag = 1,
+    idIdioma,
+    fechaInicio,
+    fechaFin,
   }: ParametrosHistorialInformesCompania): Promise<RespuestaHistorialInformesCompania> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>(
       ENDPOINTS_INFORME.listarIdPorCompania,
@@ -1392,6 +1411,9 @@ export const informeService = {
         params: {
           IdCompania: idCompania,
           NumPag: numPag,
+          IdIdioma: idIdioma,
+          FchInicio: fechaInicio,
+          FchFin: fechaFin,
         },
       },
     );

@@ -1,13 +1,11 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Eye, X } from "lucide-react";
+import { AlertCircle, Eye, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomModalVistaPreviaInforme } from "@maximilian/components/common/CustomModalVistaPreviaInforme";
+import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
-import { informeService } from "@maximilian/services/informe.service";
+import { useHistorialInformesCompania } from "@maximilian/hooks/useHistorialInformesCompania";
 import type { CompaniaNoticiaDetalleListaItem } from "@maximilian/shared/types/compania-noticia-detalle.type";
-import type { InformeHistorialCompania } from "@maximilian/shared/types/informe.type";
-import { crearDatosInvestigacionVacios } from "@maximilian/shared/utils/investigacion.util";
 
 interface PropsCustomModalHistorialInformesCompania {
   empresa: CompaniaNoticiaDetalleListaItem | null;
@@ -18,38 +16,35 @@ export function CustomModalHistorialInformesCompania({
   empresa,
   onCerrar,
 }: PropsCustomModalHistorialInformesCompania) {
-  const [paginaActual, setPaginaActual] = useState(1);
-  const [informeVistaPrevia, setInformeVistaPrevia] =
-    useState<InformeHistorialCompania | null>(null);
-  const estaAbierto = Boolean(empresa);
-  const idCompania = empresa?.idCompania ?? 0;
-  const datosInvestigacionVacios = useMemo(
-    () => crearDatosInvestigacionVacios(),
-    [],
-  );
-
   const {
-    data: respuestaHistorial,
-    isLoading: estaCargandoHistorial,
-    isError: hayErrorHistorial,
-    refetch: recargarHistorial,
-  } = useQuery({
-    queryKey: ["historialInformesCompania", idCompania, paginaActual],
-    queryFn: () =>
-      informeService.listarHistorialPorCompania({
-        idCompania,
-        numPag: paginaActual,
-      }),
-    enabled: estaAbierto && idCompania > 0,
-  });
+    paginaActual,
+    setPaginaActual,
+    informeVistaPrevia,
+    setInformeVistaPrevia,
+    idsIdiomaFiltro,
+    fechaInicioFiltro,
+    fechaFinFiltro,
+    fechasInvalidas,
+    datosInvestigacionVacios,
+    opcionesIdioma,
+    respuestaHistorial,
+    estaCargandoHistorial,
+    hayErrorHistorial,
+    recargarHistorial,
+    informes,
+    cambiarIdiomaFiltro,
+    cambiarFechaInicioFiltro,
+    cambiarFechaFinFiltro,
+    limpiarFechaInicioFiltro,
+    limpiarFechaFinFiltro,
+    formatearFechaHistorial,
+  } = useHistorialInformesCompania(empresa);
 
   if (!empresa) return null;
 
-  const informes = respuestaHistorial?.lstInformes ?? [];
-
   return (
     <div className="fixed left-0 top-0 z-[70] flex h-[100dvh] w-[100dvw] items-center justify-center overflow-hidden bg-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="flex max-h-[90dvh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-brand-white shadow-2xl animate-in zoom-in-95 duration-300">
+      <div className="flex max-h-[90dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-brand-white shadow-2xl animate-in zoom-in-95 duration-300">
         <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-8 py-6">
           <div className="min-w-0 space-y-1">
             <h2 className="text-xl font-bold text-brand-black">
@@ -65,13 +60,80 @@ export function CustomModalHistorialInformesCompania({
         </div>
 
         <div className="min-h-0 overflow-y-auto px-8 py-6">
+          <div className="mb-4 rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div className="flex items-end gap-1.5">
+                <div className="w-40">
+                  <CustomSelectorFecha
+                    label="Fecha inicio"
+                    value={fechaInicioFiltro}
+                    onChange={cambiarFechaInicioFiltro}
+                    placeholder="Desde"
+                  />
+                </div>
+                {fechaInicioFiltro ? (
+                  <CustomButton
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={limpiarFechaInicioFiltro}
+                    className="mb-0.5 h-8 w-8 p-0 text-slate-400 hover:text-slate-700"
+                    aria-label="Limpiar fecha inicio"
+                    title="Limpiar fecha inicio"
+                  >
+                    <X size={14} />
+                  </CustomButton>
+                ) : null}
+              </div>
+              <div className="flex items-end gap-1.5">
+                <div className="w-40">
+                  <CustomSelectorFecha
+                    label="Fecha fin"
+                    value={fechaFinFiltro}
+                    onChange={cambiarFechaFinFiltro}
+                    placeholder="Hasta"
+                  />
+                </div>
+                {fechaFinFiltro ? (
+                  <CustomButton
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={limpiarFechaFinFiltro}
+                    className="mb-0.5 h-8 w-8 p-0 text-slate-400 hover:text-slate-700"
+                    aria-label="Limpiar fecha fin"
+                    title="Limpiar fecha fin"
+                  >
+                    <X size={14} />
+                  </CustomButton>
+                ) : null}
+              </div>
+              {fechasInvalidas ? (
+                <div className="flex min-h-8 items-center gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 sm:ml-auto">
+                  <AlertCircle size={14} className="shrink-0" />
+                  <span>La fecha inicio no puede ser mayor que la fecha fin.</span>
+                </div>
+              ) : null}
+            </div>
+          </div>
           <CustomTabla
             columns={[
-              { label: "ID Informe", width: "16%" },
-              { label: "Pedido", width: "14%" },
-              { label: "Nombre", width: "38%" },
-              { label: "Idioma", width: "16%" },
-              { label: "Ver informe", width: "16%" },
+              { label: "ID Informe", width: "12%" },
+              { label: "Pedido", width: "10%" },
+              { label: "Nombre", width: "25%" },
+              { label: "Fecha", width: "17%" },
+              {
+                label: (
+                  <CustomEncabezadoFiltroTabla
+                    titulo="Idioma"
+                    opciones={opcionesIdioma}
+                    valores={idsIdiomaFiltro}
+                    onChange={cambiarIdiomaFiltro}
+                  />
+                ),
+                width: "18%",
+              },
+              { label: "Ver informe", className: "text-center", width: "18%" },
             ]}
             data={informes}
             getId={(informe) => informe.idInforme}
@@ -99,9 +161,14 @@ export function CustomModalHistorialInformesCompania({
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm font-semibold text-slate-500">
-                  {informe.idioma}
+                  {formatearFechaHistorial(informe.fecha)}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 text-sm font-semibold text-slate-500">
+                  <span className="block truncate" title={informe.idioma}>
+                    {informe.idioma}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-center">
                   <CustomButton
                     type="button"
                     variant="secondary"
