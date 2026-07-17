@@ -267,9 +267,16 @@ export function CustomBancoNoticias({
         idCompania: noticia.idCompania,
       }),
     ]);
+    const nombreCompania =
+      compania?.nombreCompleto
+      || obtenerNombreCompaniaNoticia(detalleNoticia)
+      || obtenerNombreCompaniaNoticia(noticia)
+      || "-";
 
     return {
-      noticia: detalleNoticia ? { ...noticia, ...detalleNoticia } : noticia,
+      noticia: detalleNoticia
+        ? { ...noticia, ...detalleNoticia, compania: nombreCompania }
+        : { ...noticia, compania: nombreCompania },
       compania,
     };
   };
@@ -1338,6 +1345,13 @@ function formatearTamano(tamano: number) {
 
 function obtenerEtiquetaCompania(compania: CompaniaListaItem) {
   return compania.nombreCompleto || `Compania ${compania.idCompania}`;
+}
+
+function obtenerNombreCompaniaNoticia(noticia: CompaniaNoticiaListaItem | null) {
+  if (!noticia?.compania) return "";
+  const etiquetaGenerica = `Compania ${noticia.idCompania}`;
+
+  return noticia.compania === etiquetaGenerica ? "" : noticia.compania;
 }
 
 function convertirTextoFechaADate(fecha: string) {

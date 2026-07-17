@@ -37,7 +37,6 @@ export function CustomModalHistorialInformesCompania({
     cambiarFechaFinFiltro,
     limpiarFechaInicioFiltro,
     limpiarFechaFinFiltro,
-    formatearFechaHistorial,
   } = useHistorialInformesCompania(empresa);
 
   if (!empresa) return null;
@@ -161,7 +160,7 @@ export function CustomModalHistorialInformesCompania({
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm font-semibold text-slate-500">
-                  {formatearFechaHistorial(informe.fecha)}
+                  {informe.fecha || "-"}
                 </td>
                 <td className="px-6 py-4 text-sm font-semibold text-slate-500">
                   <span className="block truncate" title={informe.idioma}>
