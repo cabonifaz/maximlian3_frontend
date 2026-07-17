@@ -428,6 +428,7 @@ export function CustomBancoNoticias({
                     ? idCompaniaSeleccionada
                     : Number(idCompaniaSeleccionada)
                 }
+                etiquetaInicial={noticiaEditando?.compania}
                 error={errors.idCompania?.message}
                 onSeleccionar={(compania) => {
                   setValue("idCompania", compania.idCompania, {
@@ -807,10 +808,12 @@ function CampoFormulario({
 
 function CampoSelectorCompania({
   valor,
+  etiquetaInicial,
   error,
   onSeleccionar,
 }: {
   valor: number;
+  etiquetaInicial?: string;
   error?: string;
   onSeleccionar: (compania: CompaniaListaItem) => void;
 }) {
@@ -859,6 +862,9 @@ function CampoSelectorCompania({
   );
   const companiaSeleccionada =
     companiaActual?.idCompania === valor ? companiaActual : companiaEncontrada;
+  const etiquetaCompaniaSeleccionada = companiaSeleccionada
+    ? obtenerEtiquetaCompania(companiaSeleccionada)
+    : etiquetaInicial;
 
   const cargarSiguientePagina = (event: UIEvent<HTMLDivElement>) => {
     const elemento = event.currentTarget;
@@ -876,7 +882,7 @@ function CampoSelectorCompania({
         required
         className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400"
       >
-        Compania
+        Compañia
       </CustomLabel>
       <div className="relative">
         <button
@@ -887,11 +893,9 @@ function CampoSelectorCompania({
           }`}
         >
           <span
-            className={`min-w-0 truncate ${companiaSeleccionada ? "text-slate-700" : "text-slate-400"}`}
+            className={`min-w-0 truncate ${etiquetaCompaniaSeleccionada ? "text-slate-700" : "text-slate-400"}`}
           >
-            {companiaSeleccionada
-              ? obtenerEtiquetaCompania(companiaSeleccionada)
-              : "Buscar y seleccionar compania..."}
+            {etiquetaCompaniaSeleccionada || "Buscar y seleccionar compañia..."}
           </span>
           <Search size={16} className="shrink-0 text-slate-400" />
         </button>
@@ -908,7 +912,7 @@ function CampoSelectorCompania({
                   value={busquedaCompania}
                   onChange={(event) => setBusquedaCompania(event.target.value)}
                   className="h-9 w-full rounded-lg border border-slate-100 bg-slate-50 pl-9 pr-3 text-xs text-slate-600 outline-none focus:border-slate-300"
-                  placeholder="Buscar compania..."
+                  placeholder="Buscar compañia..."
                   autoFocus
                 />
               </div>
@@ -921,7 +925,7 @@ function CampoSelectorCompania({
               ) : isError ? (
                 <div className="space-y-3 px-4 py-5 text-center">
                   <p className="text-xs font-semibold text-slate-400">
-                    No se pudieron cargar las companias.
+                    No se pudieron cargar las compañias.
                   </p>
                   <CustomButton
                     variant="secondary"
@@ -933,7 +937,7 @@ function CampoSelectorCompania({
                 </div>
               ) : companias.length === 0 ? (
                 <p className="px-4 py-5 text-center text-xs font-semibold text-slate-400">
-                  No se encontraron companias.
+                  No se encontraron compañias.
                 </p>
               ) : (
                 <>
