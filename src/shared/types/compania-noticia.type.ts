@@ -2,7 +2,10 @@ export interface CompaniaNoticiaArchivo {
   idCompaniaNoticiaArchivo: number;
   idTipoArchivo: number;
   nombreArchivo: string;
+  nombreDocumento?: string;
   formatoArchivo: string;
+  extension?: string;
+  tamanoBytes?: number;
   archivoUrl: string;
   downloadUrl: string;
   uploadUrl: string;
@@ -36,6 +39,10 @@ export interface CompaniaNoticiaArchivoObtenerParams {
 
 export interface CompaniaNoticiaArchivoObtenerResponse {
   downloadUrl: string;
+}
+
+export interface CompaniaNoticiaArchivoEliminarRequest {
+  idCompaniaNoticiaArchivo: number;
 }
 
 export interface CompaniaNoticiaListResponse {

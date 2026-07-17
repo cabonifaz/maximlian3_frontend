@@ -3,6 +3,7 @@ import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilian-ser
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   CompaniaNoticiaArchivo,
+  CompaniaNoticiaArchivoEliminarRequest,
   CompaniaNoticiaArchivoObtenerParams,
   CompaniaNoticiaArchivoObtenerResponse,
   CompaniaNoticiaCrearRequest,
@@ -38,7 +39,10 @@ function normalizarArchivo(item: unknown): CompaniaNoticiaArchivo {
       registro.archivoUrl,
       registro.ArchivoUrl,
     ) || "Archivo adjunto",
+    nombreDocumento: obtenerTexto(registro.nombreDocumento, registro.NombreDocumento),
     formatoArchivo: obtenerTexto(registro.formatoArchivo, registro.FormatoArchivo, registro.tipoArchivo, registro.TipoArchivo),
+    extension: obtenerTexto(registro.extension, registro.Extension),
+    tamanoBytes: obtenerNumero(registro.tamanoBytes, registro.TamanoBytes) ?? undefined,
     archivoUrl: obtenerTexto(registro.archivoUrl, registro.ArchivoUrl),
     downloadUrl: obtenerTexto(registro.downloadUrl, registro.DownloadUrl),
     uploadUrl: obtenerTexto(registro.uploadUrl, registro.UploadUrl),
@@ -209,6 +213,17 @@ export const servicioCompaniaNoticia = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA.eliminar, payload);
 
     if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA_NOTICIA.eliminar)) {
+      throw new ErrorRespuestaApi(data);
+    }
+  },
+
+  eliminarArchivo: async (payload: CompaniaNoticiaArchivoEliminarRequest): Promise<void> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      ENDPOINTS_COMPANIA_NOTICIA.eliminarArchivo,
+      payload,
+    );
+
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA_NOTICIA.eliminarArchivo)) {
       throw new ErrorRespuestaApi(data);
     }
   },
