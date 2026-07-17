@@ -1036,23 +1036,6 @@ function PantallaInvestigacionAnalista({
     enabled: Boolean(idPedido),
   });
 
-  const { data: tarifarioPedidoSeleccionado } = useQuery({
-    queryKey: [
-      "tarifario-obtener-resumen-traductor",
-      registroPedidoSeleccionado?.idTarifario,
-      registroPedidoSeleccionado?.idCliente,
-    ],
-    queryFn: () =>
-      servicioCliente.getTarifarioById({
-        idTarifario: registroPedidoSeleccionado!.idTarifario,
-        idCliente: registroPedidoSeleccionado!.idCliente,
-      }),
-    enabled: Boolean(
-      registroPedidoSeleccionado?.idTarifario &&
-      registroPedidoSeleccionado?.idCliente,
-    ),
-  });
-
   const idIdiomaTraduccion = registroPedidoSeleccionado?.idIdioma;
   const opcionesTipoPersona = useMemo(
     () =>
@@ -1172,7 +1155,7 @@ function PantallaInvestigacionAnalista({
     [idIdiomaTraduccion, opcionesCargoDirectorioBase],
   );
 
-  const { data: registroAsignacionPedido } = useQuery({
+  const { data: registroAsignacionPedido, isLoading: estaCargandoAsignacionPedido } = useQuery({
     queryKey: ["asignacion-resumen-traductor", idPedido],
     queryFn: async () => {
       if (!idPedido?.trim()) return null;
@@ -1189,6 +1172,32 @@ function PantallaInvestigacionAnalista({
       );
     },
     enabled: Boolean(idPedido),
+  });
+
+  const tieneTipoTramiteResumenPedido = Boolean(
+    datosPedidoNavegacion?.tipoTramite
+      || registroAsignacionPedido?.tipoTramite
+      || datosInvestigacion.resumen.prioridad,
+  );
+
+  const { data: tarifarioPedidoSeleccionado } = useQuery({
+    queryKey: [
+      "tarifario-obtener-resumen-traductor",
+      registroPedidoSeleccionado?.idTarifario,
+      registroPedidoSeleccionado?.idCliente,
+    ],
+    queryFn: () =>
+      servicioCliente.getTarifarioById({
+        idTarifario: registroPedidoSeleccionado!.idTarifario,
+        idCliente: registroPedidoSeleccionado!.idCliente,
+      }),
+    enabled: Boolean(
+      !estaCargandoAsignacionPedido
+      && !tieneTipoTramiteResumenPedido
+      && registroPedidoSeleccionado?.idTarifario
+      && registroPedidoSeleccionado?.idCliente,
+    ),
+    staleTime: Infinity,
   });
 
   const crearCiudadExtraccionMutation = useMutation({
@@ -5378,7 +5387,7 @@ function PantallaInvestigacionAnalista({
             paginaActual={paginaCompanias}
             totalRegistros={datosInvestigacion.companiasRelacionadas.length}
             onPaginaChange={setPaginaCompanias}
-            etiquetaRegistros="companias"
+            etiquetaRegistros="compañías"
           />
         </div>
       );

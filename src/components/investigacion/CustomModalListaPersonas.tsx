@@ -41,6 +41,7 @@ export function CustomModalListaPersonasAnalista({
     manejarGuardarCompania,
     manejarGuardarRegistro,
     paginaActual,
+    prepararEdicionRegistro,
     refetch,
     registroAEliminar,
     registroEdicion,
@@ -53,8 +54,6 @@ export function CustomModalListaPersonasAnalista({
     setIdTipoPersona,
     setPaginaActual,
     setRegistroAEliminar,
-    setRegistroEdicion,
-    setEstaAbiertoModalRegistro,
   } = useModalListaPersonasInforme({
     estaAbierto,
     onCerrar,
@@ -74,13 +73,13 @@ export function CustomModalListaPersonasAnalista({
               <div className="flex items-start gap-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
-                    Companias relacionadas
+                    Compañías relacionadas
                   </p>
                   <h2 className="mt-2 text-2xl font-bold text-slate-900">
                     Empresas y Personas Registradas
                   </h2>
                   <p className="mt-2 text-sm text-slate-500">
-                    Busque, seleccione o administre companias relacionadas
+                    Busque, seleccione o administre compañías relacionadas
                     directamente desde la base de datos.
                   </p>
                 </div>
@@ -182,7 +181,7 @@ export function CustomModalListaPersonasAnalista({
                       <td colSpan={6} className="px-5 py-10 text-center">
                         <div className="space-y-3">
                           <p className="text-sm text-red-500">
-                            No se pudo cargar la lista de companias.
+                            No se pudo cargar la lista de compañías.
                           </p>
                           <CustomButton
                             variant="secondary"
@@ -259,8 +258,7 @@ export function CustomModalListaPersonasAnalista({
                                 type="button"
                                 onClick={(event) => {
                                   event.stopPropagation();
-                                  setRegistroEdicion(registro);
-                                  setEstaAbiertoModalRegistro(true);
+                                  void prepararEdicionRegistro(registro);
                                 }}
                                 className="inline-flex text-[#2764ff] transition-colors hover:text-[#1d4ed8]"
                               >

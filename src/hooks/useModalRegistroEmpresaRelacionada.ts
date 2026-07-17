@@ -66,8 +66,9 @@ export function useModalRegistroEmpresaRelacionada({
   );
 
   const { data: opcionesTipoDocumentoBase } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_DOCUMENTO],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_DOCUMENTO),
+    queryKey: ["masterTable", TablaMaestraId.TIPO_DOCUMENTO_IDENTIDAD],
+    queryFn: () =>
+      servicioTablaMaestra.list(TablaMaestraId.TIPO_DOCUMENTO_IDENTIDAD),
     enabled: estaAbierto,
     staleTime: Infinity,
   });

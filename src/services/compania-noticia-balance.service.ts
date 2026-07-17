@@ -88,7 +88,7 @@ function normalizarBalance(item: unknown): CompaniaNoticiaBalanceListaItem {
       registro.Empresa,
       registro.razonSocial,
       registro.RazonSocial,
-    ) || (idCompania ? `Compania ${idCompania}` : "-"),
+    ) || (idCompania ? `Compañía ${idCompania}` : "-"),
     pais: obtenerTexto(registro.pais, registro.Pais, registro.nombrePais, registro.NombrePais) || "-",
     fecha,
     fechaFin,

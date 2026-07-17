@@ -932,7 +932,7 @@ function CampoSelectorCompania({
         required
         className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400"
       >
-        Compañia
+        Compañía
       </CustomLabel>
       <div className="relative">
         <button
@@ -945,7 +945,7 @@ function CampoSelectorCompania({
           <span
             className={`min-w-0 truncate ${etiquetaCompaniaSeleccionada ? "text-slate-700" : "text-slate-400"}`}
           >
-            {etiquetaCompaniaSeleccionada || "Buscar y seleccionar compañia..."}
+            {etiquetaCompaniaSeleccionada || "Buscar y seleccionar compañía..."}
           </span>
           <Search size={16} className="shrink-0 text-slate-400" />
         </button>
@@ -962,7 +962,7 @@ function CampoSelectorCompania({
                   value={busquedaCompania}
                   onChange={(event) => setBusquedaCompania(event.target.value)}
                   className="h-9 w-full rounded-lg border border-slate-100 bg-slate-50 pl-9 pr-3 text-xs text-slate-600 outline-none focus:border-slate-300"
-                  placeholder="Buscar compañia..."
+                  placeholder="Buscar compañía..."
                   autoFocus
                 />
               </div>
@@ -975,7 +975,7 @@ function CampoSelectorCompania({
               ) : isError ? (
                 <div className="space-y-3 px-4 py-5 text-center">
                   <p className="text-xs font-semibold text-slate-400">
-                    No se pudieron cargar las compañias.
+                    No se pudieron cargar las compañías.
                   </p>
                   <CustomButton
                     variant="secondary"
@@ -987,7 +987,7 @@ function CampoSelectorCompania({
                 </div>
               ) : companias.length === 0 ? (
                 <p className="px-4 py-5 text-center text-xs font-semibold text-slate-400">
-                  No se encontraron compañias.
+                  No se encontraron compañías.
                 </p>
               ) : (
                 <>
@@ -1405,12 +1405,12 @@ function formatearTamano(tamano: number) {
 }
 
 function obtenerEtiquetaCompania(compania: CompaniaListaItem) {
-  return compania.nombreCompleto || `Compania ${compania.idCompania}`;
+  return compania.nombreCompleto || `Compañía ${compania.idCompania}`;
 }
 
 function obtenerNombreCompaniaNoticia(noticia: CompaniaNoticiaListaItem | null) {
   if (!noticia?.compania) return "";
-  const etiquetaGenerica = `Compania ${noticia.idCompania}`;
+  const etiquetaGenerica = `Compañía ${noticia.idCompania}`;
 
   return noticia.compania === etiquetaGenerica ? "" : noticia.compania;
 }

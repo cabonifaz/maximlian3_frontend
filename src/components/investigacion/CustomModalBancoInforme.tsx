@@ -378,6 +378,7 @@ function CustomModalBusquedaBancoAnalista({
         textoConfirmar="Eliminar"
         textoCargandoConfirmar="Eliminando..."
         varianteConfirmar="danger"
+        zIndexClassName="z-[130]"
       >
         <p><span className="font-bold">Banco:</span> {bancoAEliminar?.nombre ?? "-"}</p>
         <p><span className="font-bold">Pais:</span> {bancoAEliminar?.pais ?? "-"}</p>
