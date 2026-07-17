@@ -5,6 +5,7 @@ import {
   ID_MAESTRO_ESTADO_CREDITO,
   type PestanaBancoInformacion,
 } from "@maximilian/shared/constants/components/common/custom-banco-informacion.constants";
+import { useFiltroRangoFechas } from "@maximilian/hooks/useFiltroRangoFechas";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioCompaniaNoticiaBalance } from "@maximilian/services/compania-noticia-balance.service";
 import { servicioCompaniaNoticiaDetalle } from "@maximilian/services/compania-noticia-detalle.service";
@@ -32,6 +33,9 @@ export function useBancoInformacion() {
   const [idReporteCargandoDetalle, setIdReporteCargandoDetalle] = useState<number | null>(null);
   const [claveAgregarNoticia, setClaveAgregarNoticia] = useState(0);
   const busquedaConRetardo = useRetardo(busqueda);
+  const filtroFechasCredito = useFiltroRangoFechas({
+    onCambio: () => setPaginaCredito(1),
+  });
 
   useEffect(() => {
     setPaginaCredito(1);
@@ -53,7 +57,6 @@ export function useBancoInformacion() {
   const tipoEstadoFinancieroFiltro = serializarIdsFiltro(idsEstadoFinancieroFiltro);
   const estadoCreditoFiltro =
     idEstadoCreditoFiltro != null ? String(idEstadoCreditoFiltro) : undefined;
-
   const {
     data: respuestaCredito,
     isLoading: estaCargandoCredito,
@@ -66,6 +69,8 @@ export function useBancoInformacion() {
         busqueda: busquedaConRetardo,
         estado: estadoCreditoFiltro,
         tipoEstadoFinanciero: tipoEstadoFinancieroFiltro,
+        fechaInicio: filtroFechasCredito.fechaInicioParametro,
+        fechaFin: filtroFechasCredito.fechaFinParametro,
         numPag: paginaCredito,
       },
     ],
@@ -74,9 +79,11 @@ export function useBancoInformacion() {
         busqueda: busquedaConRetardo,
         estado: estadoCreditoFiltro,
         tipoEstadoFinanciero: tipoEstadoFinancieroFiltro,
+        fechaInicio: filtroFechasCredito.fechaInicioParametro,
+        fechaFin: filtroFechasCredito.fechaFinParametro,
         numPag: paginaCredito,
       }),
-    enabled: pestanaActiva === "credito",
+    enabled: pestanaActiva === "credito" && !filtroFechasCredito.fechasInvalidas,
   });
 
   const reportesCredito = respuestaCredito?.lstCompaniaNoticiaBalance ?? [];
@@ -196,12 +203,17 @@ export function useBancoInformacion() {
     cambiarBusqueda,
     cambiarEstadoCreditoFiltro,
     cambiarEstadoFinancieroFiltro,
+    cambiarFechaFinCreditoFiltro: filtroFechasCredito.cambiarFechaFinFiltro,
+    cambiarFechaInicioCreditoFiltro: filtroFechasCredito.cambiarFechaInicioFiltro,
     cambiarPaisEmpresaFiltro,
     claveAgregarNoticia,
     empresas,
     estaCargandoCredito,
     estaCargandoEmpresas,
     exportarEmpresasMutation,
+    fechaFinCreditoFiltro: filtroFechasCredito.fechaFinFiltro,
+    fechaInicioCreditoFiltro: filtroFechasCredito.fechaInicioFiltro,
+    fechasCreditoInvalidas: filtroFechasCredito.fechasInvalidas,
     hayErrorCredito,
     hayErrorEmpresas,
     idEstadoCreditoFiltro,
@@ -209,6 +221,8 @@ export function useBancoInformacion() {
     idsActividadEconomicaEmpresaFiltro,
     idsEstadoFinancieroFiltro,
     idsPaisEmpresaFiltro,
+    limpiarFechaFinCreditoFiltro: filtroFechasCredito.limpiarFechaFinFiltro,
+    limpiarFechaInicioCreditoFiltro: filtroFechasCredito.limpiarFechaInicioFiltro,
     opcionesActividadEconomicaEmpresa,
     opcionesEstadoCredito,
     opcionesEstadoFinanciero,
