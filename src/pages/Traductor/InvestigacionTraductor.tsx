@@ -891,6 +891,7 @@ function PantallaInvestigacionAnalista({
     TablaMaestraId.TIPO_TRAMITE,
     TablaMaestraId.IDIOMA,
     TablaMaestraId.FORMATO_FECHA_INFORME,
+    TablaMaestraId.FORMATO_ARCHIVO,
     TablaMaestraId.CARGO_DIRECTORIO,
   ]);
 
@@ -1008,6 +1009,12 @@ function PantallaInvestigacionAnalista({
   const { data: opcionesFormatoFechaInforme } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.FORMATO_FECHA_INFORME],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.FORMATO_FECHA_INFORME),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesFormatoArchivo } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.FORMATO_ARCHIVO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.FORMATO_ARCHIVO),
     staleTime: Infinity,
   });
 
@@ -1317,6 +1324,7 @@ function PantallaInvestigacionAnalista({
         opcionesClaseCiiu,
         opcionesTipoLocal,
         opcionesTipoProveedor,
+        opcionesFormatoArchivo,
       });
 
       if (debeCrearInformeTraduccion) {

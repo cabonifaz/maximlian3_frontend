@@ -26,6 +26,8 @@ export interface CompaniaNoticiaListParams {
   idCompania?: number;
   busqueda?: string;
   numPag?: number;
+  fechaInicio?: string;
+  fechaFin?: string;
 }
 
 export interface CompaniaNoticiaObtenerParams {

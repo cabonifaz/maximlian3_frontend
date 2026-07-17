@@ -12,6 +12,7 @@ import {
 import { CustomBancoNoticias } from "@maximilian/components/common/CustomBancoNoticias";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
+import { CustomFiltroRangoFechas } from "@maximilian/components/common/CustomFiltroRangoFechas";
 import { CustomModalHistorialInformesCompania } from "@maximilian/components/common/CustomModalHistorialInformesCompania";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
@@ -25,7 +26,6 @@ import {
 import type { CompaniaNoticiaBalanceListaItem } from "@maximilian/shared/types/compania-noticia-balance.type";
 import type { CompaniaNoticiaDetalleListaItem } from "@maximilian/shared/types/compania-noticia-detalle.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-import { formatearFechaVisual } from "@maximilian/shared/utils/fecha.util";
 
 interface PropsCustomBancoInformacion {
   puedeAgregarNoticias?: boolean;
@@ -43,12 +43,17 @@ export function CustomBancoInformacion({
     cambiarBusqueda,
     cambiarEstadoCreditoFiltro,
     cambiarEstadoFinancieroFiltro,
+    cambiarFechaFinCreditoFiltro,
+    cambiarFechaInicioCreditoFiltro,
     cambiarPaisEmpresaFiltro,
     claveAgregarNoticia,
     empresas,
     estaCargandoCredito,
     estaCargandoEmpresas,
     exportarEmpresasMutation,
+    fechaFinCreditoFiltro,
+    fechaInicioCreditoFiltro,
+    fechasCreditoInvalidas,
     hayErrorCredito,
     hayErrorEmpresas,
     idEstadoCreditoFiltro,
@@ -56,6 +61,8 @@ export function CustomBancoInformacion({
     idsActividadEconomicaEmpresaFiltro,
     idsEstadoFinancieroFiltro,
     idsPaisEmpresaFiltro,
+    limpiarFechaFinCreditoFiltro,
+    limpiarFechaInicioCreditoFiltro,
     opcionesActividadEconomicaEmpresa,
     opcionesEstadoCredito,
     opcionesEstadoFinanciero,
@@ -94,27 +101,6 @@ export function CustomBancoInformacion({
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <label className="relative flex-1">
-          <Search
-            size={16}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"
-          />
-          <input
-            value={busqueda}
-            onChange={(event) => cambiarBusqueda(event.target.value)}
-            className="h-12 w-full rounded-xl border border-slate-100 bg-white pl-11 pr-4 text-sm text-slate-600 outline-none transition focus:border-slate-300 focus:ring-4 focus:ring-slate-100"
-            placeholder={
-              pestanaActiva === "empresas"
-                ? "Buscar por razon social del pedido, informe, nombre comercial o documento..."
-                : pestanaActiva === "credito"
-                  ? "Buscar por Investigado o pais..."
-                  : "Buscar noticias, reportes o articulos..."
-            }
-          />
-        </label>
-      </div>
-
       <div className="border-b border-slate-100">
         <div className="flex gap-8">
           {(
@@ -138,6 +124,27 @@ export function CustomBancoInformacion({
         </div>
       </div>
 
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <label className="relative flex-1">
+          <Search
+            size={16}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"
+          />
+          <input
+            value={busqueda}
+            onChange={(event) => cambiarBusqueda(event.target.value)}
+            className="h-12 w-full rounded-xl border border-slate-100 bg-white pl-11 pr-4 text-sm text-slate-600 outline-none transition focus:border-slate-300 focus:ring-4 focus:ring-slate-100"
+            placeholder={
+              pestanaActiva === "empresas"
+                ? "Buscar por razon social del pedido, informe, nombre comercial o documento..."
+                : pestanaActiva === "credito"
+                  ? "Buscar por Investigado o pais..."
+                  : "Buscar noticias, reportes o articulos..."
+            }
+          />
+        </label>
+      </div>
+
       {pestanaActiva === "noticias" ? (
         <CustomBancoNoticias
           busqueda={busquedaConRetardo}
@@ -154,8 +161,15 @@ export function CustomBancoInformacion({
           opcionesEstado={opcionesEstadoCredito}
           idsEstadoFinancieroFiltro={idsEstadoFinancieroFiltro}
           idEstadoFiltro={idEstadoCreditoFiltro}
+          fechaInicioFiltro={fechaInicioCreditoFiltro}
+          fechaFinFiltro={fechaFinCreditoFiltro}
+          fechasInvalidas={fechasCreditoInvalidas}
           onEstadoFinancieroFiltroChange={cambiarEstadoFinancieroFiltro}
           onEstadoFiltroChange={cambiarEstadoCreditoFiltro}
+          onFechaInicioFiltroChange={cambiarFechaInicioCreditoFiltro}
+          onFechaFinFiltroChange={cambiarFechaFinCreditoFiltro}
+          onLimpiarFechaInicio={limpiarFechaInicioCreditoFiltro}
+          onLimpiarFechaFin={limpiarFechaFinCreditoFiltro}
           idReporteCargandoDetalle={idReporteCargandoDetalle}
           onReintentar={() => void recargarCredito()}
           onVerDetalle={(reporte) => void verDetalleCredito(reporte)}
@@ -220,8 +234,15 @@ function SeccionCredito({
   opcionesEstado,
   idsEstadoFinancieroFiltro,
   idEstadoFiltro,
+  fechaInicioFiltro,
+  fechaFinFiltro,
+  fechasInvalidas,
   onEstadoFinancieroFiltroChange,
   onEstadoFiltroChange,
+  onFechaInicioFiltroChange,
+  onFechaFinFiltroChange,
+  onLimpiarFechaInicio,
+  onLimpiarFechaFin,
   idReporteCargandoDetalle,
   onReintentar,
   onVerDetalle,
@@ -233,8 +254,15 @@ function SeccionCredito({
   opcionesEstado?: EntradaTablaMaestra[];
   idsEstadoFinancieroFiltro: number[];
   idEstadoFiltro?: number;
+  fechaInicioFiltro?: Date;
+  fechaFinFiltro?: Date;
+  fechasInvalidas: boolean;
   onEstadoFinancieroFiltroChange: (ids: number[]) => void;
   onEstadoFiltroChange: (ids: number[]) => void;
+  onFechaInicioFiltroChange: (fecha: Date | undefined) => void;
+  onFechaFinFiltroChange: (fecha: Date | undefined) => void;
+  onLimpiarFechaInicio: () => void;
+  onLimpiarFechaFin: () => void;
   idReporteCargandoDetalle: number | null;
   onReintentar: () => void;
   onVerDetalle: (reporte: CompaniaNoticiaBalanceListaItem) => void;
@@ -245,30 +273,40 @@ function SeccionCredito({
         Reportes de credito actualizados
       </p>
       <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-        <div className="grid gap-4 sm:grid-cols-2 lg:max-w-3xl">
-          <div className="min-w-0">
-            <MultiCustomSelectorBuscable
-              label="Tipo de Estado Financiero"
-              options={opcionesEstadoFinanciero}
-              value={idsEstadoFinancieroFiltro}
-              onChange={onEstadoFinancieroFiltroChange}
-              optional
-              placeholder="Todos"
-              resumirSelecciones
-            />
-          </div>
-          <div className="min-w-0">
-            <CustomSelectorBuscable
-              label="Estado"
-              options={opcionesEstado}
-              value={idEstadoFiltro}
-              onChange={(id) => onEstadoFiltroChange([id])}
-              onClear={() => onEstadoFiltroChange([])}
-              optional
-              mostrarTextoOpcionalEnLabel={false}
-              etiquetaOpcionVacia="Todos"
-              placeholder="Todos"
-            />
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+          <CustomFiltroRangoFechas
+            fechaInicio={fechaInicioFiltro}
+            fechaFin={fechaFinFiltro}
+            fechasInvalidas={fechasInvalidas}
+            onFechaInicioChange={onFechaInicioFiltroChange}
+            onFechaFinChange={onFechaFinFiltroChange}
+            onLimpiarFechaInicio={onLimpiarFechaInicio}
+            onLimpiarFechaFin={onLimpiarFechaFin}
+          />
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,15rem)_minmax(0,12rem)]">
+            <div className="min-w-0">
+              <MultiCustomSelectorBuscable
+                label="Tipo de Estado Financiero"
+                options={opcionesEstadoFinanciero}
+                value={idsEstadoFinancieroFiltro}
+                onChange={onEstadoFinancieroFiltroChange}
+                placeholder="Todos"
+                resumirSelecciones
+              />
+            </div>
+            <div className="min-w-0">
+              <CustomSelectorBuscable
+                label="Estado"
+                options={opcionesEstado}
+                value={idEstadoFiltro}
+                onChange={(id) => onEstadoFiltroChange([id])}
+                onClear={() => onEstadoFiltroChange([])}
+                optional
+                mostrarTextoOpcionalEnLabel={false}
+                etiquetaOpcionVacia="Todos"
+                placeholder="Todos"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -606,25 +644,14 @@ function CustomPaginacion({
   );
 }
 
-function formatearFecha(fecha: string | undefined) {
-  return formatearFechaVisual(fecha, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
 function formatearRangoFecha(fechaInicio: string, fechaFin?: string) {
-  const inicio = formatearFecha(fechaInicio);
+  const inicio = fechaInicio || "-";
   if (!fechaFin) return inicio;
 
-  return `${inicio} - ${formatearFecha(fechaFin)}`;
+  return `${inicio} - ${fechaFin}`;
 }
 
 function obtenerEtiquetaBalance(tipoEstadoFinanciero: string) {
   const tipo = tipoEstadoFinanciero.trim();
-  if (!tipo) return "Balance";
-  if (tipo.toLowerCase().startsWith("balance")) return tipo;
-
-  return `Balance ${tipo}`;
+  return tipo || "-";
 }

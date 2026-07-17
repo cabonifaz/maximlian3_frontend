@@ -3,7 +3,9 @@ import { useNavigate } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useListadoPaginado } from "@maximilian/hooks/useListadoPaginado";
 import { pedidoService } from "@maximilian/services/pedido.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type { PedidoListEntry } from "@maximilian/shared/types/pedido.type";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface ModalAsignacionPedido {
   key: number;
@@ -36,6 +38,12 @@ export function useGestionPedidos() {
     [filtroEstados],
   );
   const estadosFiltroClave = estadosFiltroOrdenados.join(",");
+
+  const { data: opcionesEstadoPedido } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.ESTADO_PEDIDO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_PEDIDO),
+    staleTime: Infinity,
+  });
 
   const {
     data: pedidosData,
@@ -167,6 +175,7 @@ export function useGestionPedidos() {
     isError,
     isLoading,
     modalAsignacion,
+    opcionesEstadoPedido,
     paginaActual,
     pedidoACancelar,
     pedidoAEliminar,

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { useFiltroRangoFechas } from "@maximilian/hooks/useFiltroRangoFechas";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import {
   esquemaNoticiaBancoInformacion,
@@ -26,9 +27,9 @@ import {
 } from "@maximilian/schemas/banco-informacion.schema";
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { servicioCompaniaNoticia } from "@maximilian/services/compania-noticia.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { valoresIniciales } from "@maximilian/shared/constants/components/common/custom-banco-noticias.constants";
 import { formatearTamanoArchivo } from "@maximilian/shared/utils/archivo.util";
-import { formatearFechaVisual } from "@maximilian/shared/utils/fecha.util";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
 import type {
   CompaniaNoticiaArchivo,
@@ -36,7 +37,9 @@ import type {
   CompaniaNoticiaEditarRequest,
   CompaniaNoticiaListaItem,
 } from "@maximilian/shared/types/compania-noticia.type";
+import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { CustomButton } from "./CustomButton";
+import { CustomFiltroRangoFechas } from "./CustomFiltroRangoFechas";
 import { CustomLabel } from "./CustomLabel";
 import { CustomModalConfirmacionAccion } from "./CustomModalConfirmacionAccion";
 import { CustomSelectorFecha } from "./CustomSelectorFecha";
@@ -76,6 +79,15 @@ export function CustomBancoNoticias({
   );
   const [claveInputArchivo, setClaveInputArchivo] = useState(0);
   const [paginaNoticias, setPaginaNoticias] = useState(1);
+  const filtroFechasNoticias = useFiltroRangoFechas({
+    onCambio: () => setPaginaNoticias(1),
+  });
+
+  const { data: opcionesFormatoArchivo } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.FORMATO_ARCHIVO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.FORMATO_ARCHIVO),
+    staleTime: Infinity,
+  });
 
   useEffect(() => {
     setPaginaNoticias(1);
@@ -110,8 +122,23 @@ export function CustomBancoNoticias({
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["companiaNoticia", { busqueda, numPag: paginaNoticias }],
-    queryFn: () => servicioCompaniaNoticia.list({ busqueda, numPag: paginaNoticias }),
+    queryKey: [
+      "companiaNoticia",
+      {
+        busqueda,
+        fechaInicio: filtroFechasNoticias.fechaInicioParametro,
+        fechaFin: filtroFechasNoticias.fechaFinParametro,
+        numPag: paginaNoticias,
+      },
+    ],
+    queryFn: () =>
+      servicioCompaniaNoticia.list({
+        busqueda,
+        fechaInicio: filtroFechasNoticias.fechaInicioParametro,
+        fechaFin: filtroFechasNoticias.fechaFinParametro,
+        numPag: paginaNoticias,
+      }),
+    enabled: !filtroFechasNoticias.fechasInvalidas,
   });
 
   const guardarNoticiaMutation = useMutation({
@@ -233,6 +260,9 @@ export function CustomBancoNoticias({
   };
 
   const guardarNoticia = (datos: DatosFormularioNoticiaBancoInformacion) => {
+    const archivosNuevos = archivosSeleccionados.map((archivo) =>
+      convertirArchivo(archivo, opcionesFormatoArchivo),
+    );
     const payloadBase: CompaniaNoticiaCrearRequest = {
         idCompania: datos.idCompania,
         titulo: datos.titulo.trim(),
@@ -241,7 +271,7 @@ export function CustomBancoNoticias({
         categoria: datos.categoria.trim(),
         archivos: [
           ...archivosExistentes,
-          ...archivosSeleccionados.map(convertirArchivo),
+          ...archivosNuevos,
         ],
     };
 
@@ -322,6 +352,18 @@ export function CustomBancoNoticias({
           ) : null}
         </div>
 
+        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+          <CustomFiltroRangoFechas
+            fechaInicio={filtroFechasNoticias.fechaInicioFiltro}
+            fechaFin={filtroFechasNoticias.fechaFinFiltro}
+            fechasInvalidas={filtroFechasNoticias.fechasInvalidas}
+            onFechaInicioChange={filtroFechasNoticias.cambiarFechaInicioFiltro}
+            onFechaFinChange={filtroFechasNoticias.cambiarFechaFinFiltro}
+            onLimpiarFechaInicio={filtroFechasNoticias.limpiarFechaInicioFiltro}
+            onLimpiarFechaFin={filtroFechasNoticias.limpiarFechaFinFiltro}
+          />
+        </div>
+
         {isLoading ? (
           <EstadoCargandoNoticias />
         ) : isError ? (
@@ -357,7 +399,7 @@ export function CustomBancoNoticias({
                       </span>
                       <span className="inline-flex items-center gap-1.5 uppercase tracking-wide">
                         <CalendarDays size={14} className="text-slate-300" />
-                        {formatearFecha(noticia.fechaNoticia)}
+                        {noticia.fechaNoticia || "-"}
                       </span>
                     </div>
                     <div className="space-y-3">
@@ -648,7 +690,7 @@ function CustomModalDetalleNoticia({
                 ) : null}
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
                   <CalendarDays size={13} />
-                  {formatearFecha(noticia.fechaNoticia)}
+                  {noticia.fechaNoticia || "-"}
                 </span>
               </div>
               <h3 className="text-2xl font-bold leading-tight text-slate-950 md:text-3xl">
@@ -1272,7 +1314,10 @@ function BotonCerrar({ onCerrar }: { onCerrar: () => void }) {
   );
 }
 
-function convertirArchivo(archivo: File): CompaniaNoticiaArchivo {
+function convertirArchivo(
+  archivo: File,
+  opcionesFormatoArchivo?: EntradaTablaMaestra[],
+): CompaniaNoticiaArchivo {
   const tipoArchivo = archivo.type || "application/octet-stream";
   const extension = archivo.name.includes(".")
     ? archivo.name.split(".").pop() || ""
@@ -1280,7 +1325,7 @@ function convertirArchivo(archivo: File): CompaniaNoticiaArchivo {
 
   return {
     idCompaniaNoticiaArchivo: 0,
-    idTipoArchivo: 0,
+    idTipoArchivo: obtenerIdTipoArchivoPorMime(opcionesFormatoArchivo, tipoArchivo),
     nombreArchivo: archivo.name,
     nombreDocumento: archivo.name,
     formatoArchivo: tipoArchivo,
@@ -1292,6 +1337,24 @@ function convertirArchivo(archivo: File): CompaniaNoticiaArchivo {
   };
 }
 
+function normalizarMime(valor?: string | null) {
+  return valor?.trim().toUpperCase() ?? "";
+}
+
+function obtenerIdTipoArchivoPorMime(
+  opcionesFormatoArchivo: EntradaTablaMaestra[] | undefined,
+  mimeType: string,
+) {
+  const mimeNormalizado = normalizarMime(mimeType);
+  if (!mimeNormalizado) return 0;
+
+  return (
+    opcionesFormatoArchivo?.find(
+      (opcion) => normalizarMime(opcion.string3) === mimeNormalizado,
+    )?.num1 ?? 0
+  );
+}
+
 async function subirArchivosNoticia(
   archivosRespuesta: CompaniaNoticiaArchivo[],
   archivosLocales: File[],
@@ -1301,9 +1364,6 @@ async function subirArchivosNoticia(
   const archivosConUrl = archivosRespuesta.filter(
     (archivo) => archivo.uploadUrl,
   );
-  if (archivosConUrl.length !== archivosLocales.length) {
-    throw new Error("La respuesta de carga de archivos es invalida");
-  }
 
   await Promise.all(
     archivosLocales.map(async (archivoLocal, indice) => {
@@ -1329,14 +1389,6 @@ async function subirArchivosNoticia(
       }
     }),
   );
-}
-
-function formatearFecha(fecha: string) {
-  return formatearFechaVisual(fecha, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 function formatearTamano(tamano: number) {

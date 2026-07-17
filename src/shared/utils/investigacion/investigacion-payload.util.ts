@@ -11,6 +11,7 @@ import type {
   DatosInvestigacionAnalista,
   RegistroBalanceAnalista,
 } from "@maximilian/shared/types/investigacion.type";
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import {
   obtenerClaveEstadoFinanciero,
   obtenerValorCampoEstadoFinanciero,
@@ -53,6 +54,7 @@ interface ParametrosConstruirPayloadCrearInforme {
   opcionesClaseCiiu: OpcionTablaMaestraConCodigo[] | undefined;
   opcionesTipoLocal: OpcionTablaMaestraBasica[] | undefined;
   opcionesTipoProveedor: OpcionTablaMaestraBasica[] | undefined;
+  opcionesFormatoArchivo: EntradaTablaMaestra[] | undefined;
 }
 
 function construirListasDetalleBalance(balances: RegistroBalanceAnalista[]) {
@@ -353,6 +355,7 @@ export function construirPayloadCrearInforme({
   opcionesClaseCiiu,
   opcionesTipoLocal,
   opcionesTipoProveedor,
+  opcionesFormatoArchivo,
 }: ParametrosConstruirPayloadCrearInforme): InformeCrearRequest {
   const datosValidados = esquemaDatosInvestigacion.parse(datosInvestigacion) as DatosInvestigacionAnalista;
   const { identificacion, aspectosLegales, operacionPrincipal, informacionFinanciera, referencias, datosGenerales } = datosValidados;
@@ -545,11 +548,35 @@ export function construirPayloadCrearInforme({
       comentario: local.comentario,
       imagenes: (local.imagenes ?? []).map((imagen) => ({
         idInformeLocalImagen: imagen.idInformeLocalImagen ?? 0,
-        idTipoArchivo: imagen.idTipoArchivo ?? obtenerIdTipoArchivo(imagen.tipo ?? local.imagenTipo),
+        idTipoArchivo:
+          imagen.idTipoArchivo ??
+          obtenerIdTipoArchivoPorMime(
+            opcionesFormatoArchivo,
+            imagen.tipo ?? local.imagenTipo,
+          ),
         nombre: imagen.nombre,
       })),
     })),
   }) as InformeCrearRequest;
+}
+
+function normalizarMime(valor?: string | null) {
+  return valor?.trim().toUpperCase() ?? "";
+}
+
+function obtenerIdTipoArchivoPorMime(
+  opcionesFormatoArchivo: EntradaTablaMaestra[] | undefined,
+  mimeType?: string,
+) {
+  const mimeNormalizado = normalizarMime(mimeType);
+  if (!mimeNormalizado) return 0;
+
+  return (
+    opcionesFormatoArchivo?.find(
+      (opcion) => normalizarMime(opcion.string3) === mimeNormalizado,
+    )?.num1 ??
+    obtenerIdTipoArchivo(mimeType)
+  );
 }
 
 export function prepararDatosParaNuevoInforme(
