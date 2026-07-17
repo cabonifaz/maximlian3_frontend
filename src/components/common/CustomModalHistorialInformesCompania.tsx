@@ -44,7 +44,7 @@ export function CustomModalHistorialInformesCompania({
 
   return (
     <div className="fixed left-0 top-0 z-[70] flex h-[100dvh] w-[100dvw] items-center justify-center overflow-hidden bg-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="flex max-h-[90dvh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-brand-white shadow-2xl animate-in zoom-in-95 duration-300">
+      <div className="flex max-h-[90dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-brand-white shadow-2xl animate-in zoom-in-95 duration-300">
         <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-8 py-6">
           <div className="min-w-0 space-y-1">
             <h2 className="text-xl font-bold text-brand-black">
@@ -118,10 +118,10 @@ export function CustomModalHistorialInformesCompania({
           </div>
           <CustomTabla
             columns={[
-              { label: "ID Informe", width: "13%" },
-              { label: "Pedido", width: "11%" },
-              { label: "Nombre", width: "32%" },
-              { label: "Fecha", width: "14%" },
+              { label: "ID Informe", width: "12%" },
+              { label: "Pedido", width: "10%" },
+              { label: "Nombre", width: "25%" },
+              { label: "Fecha", width: "17%" },
               {
                 label: (
                   <CustomEncabezadoFiltroTabla
@@ -131,9 +131,9 @@ export function CustomModalHistorialInformesCompania({
                     onChange={cambiarIdiomaFiltro}
                   />
                 ),
-                width: "16%",
+                width: "18%",
               },
-              { label: "Ver informe", width: "14%" },
+              { label: "Ver informe", className: "text-center", width: "18%" },
             ]}
             data={informes}
             getId={(informe) => informe.idInforme}
@@ -168,7 +168,7 @@ export function CustomModalHistorialInformesCompania({
                     {informe.idioma}
                   </span>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 text-center">
                   <CustomButton
                     type="button"
                     variant="secondary"
