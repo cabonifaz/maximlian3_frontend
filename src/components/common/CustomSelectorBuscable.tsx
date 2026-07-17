@@ -3,7 +3,7 @@ import { Search, Loader2, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSeleccionAutomaticaOpcionUnica } from "@maximilian/hooks/useSeleccionAutomaticaOpcionUnica";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { CustomLabel } from "./CustomLabel";
 
 export interface CustomSelectorBuscableProps {
@@ -30,6 +30,8 @@ export interface CustomSelectorBuscableProps {
   etiquetaOpcionVacia?: string;
   ordenarOpciones?: boolean;
   obtenerEtiquetaOpcion?: (opcion: EntradaTablaMaestra) => string;
+  renderizarOpcion?: (opcion: EntradaTablaMaestra) => ReactNode;
+  renderizarValorSeleccionado?: (opcion: EntradaTablaMaestra) => ReactNode;
   renderizarVistaPreviaAltaNueva?: (terminoBusqueda: string) => ReactNode;
   puedeAgregarNuevo?: (terminoBusqueda: string) => boolean;
 }
@@ -57,6 +59,8 @@ export function CustomSelectorBuscable({
   etiquetaOpcionVacia = "Seleccione",
   ordenarOpciones = true,
   obtenerEtiquetaOpcion,
+  renderizarOpcion,
+  renderizarValorSeleccionado,
   renderizarVistaPreviaAltaNueva,
   puedeAgregarNuevo,
   onClear,
@@ -98,6 +102,7 @@ export function CustomSelectorBuscable({
   const displayText = selectedOption
     ? (obtenerEtiquetaOpcion?.(selectedOption) || selectedOption.string1)
     : (typeof displayValue === "string" ? displayValue.trim() : displayValue);
+  const valorSeleccionadoRenderizado = selectedOption ? renderizarValorSeleccionado?.(selectedOption) : undefined;
   const mostrarPlaceholder = !displayText;
 
   const actualizarPosicionDropdown = useCallback(() => {
@@ -158,10 +163,10 @@ export function CustomSelectorBuscable({
         onClick={handleToggle}
       >
         <span
-          className={`truncate min-w-0 ${mostrarPlaceholder ? "text-gray-400" : "text-brand-black"}`}
+          className={`min-w-0 ${valorSeleccionadoRenderizado ? "whitespace-normal break-words leading-snug" : "truncate"} ${mostrarPlaceholder ? "text-gray-400" : "text-brand-black"}`}
           title={displayText || placeholder}
         >
-          {mostrarPlaceholder ? placeholder : displayText}
+          {mostrarPlaceholder ? placeholder : (valorSeleccionadoRenderizado ?? displayText)}
         </span>
         <Search size={16} className="text-gray-400 shrink-0 ml-2" />
       </div>
@@ -221,7 +226,7 @@ export function CustomSelectorBuscable({
                           setSearchTerm("");
                         }}
                       >
-                        {obtenerEtiquetaOpcion?.(opt) || opt.string1}
+                        {renderizarOpcion?.(opt) ?? obtenerEtiquetaOpcion?.(opt) ?? opt.string1}
                       </div>
                     ))
                   ) : (

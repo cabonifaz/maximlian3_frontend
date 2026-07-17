@@ -16,6 +16,12 @@ export default defineConfig({
     alias: {
       "@maximilian": path.resolve(__dirname, "./src"),
       "@": path.resolve(__dirname, "./src"),
+      "@pagedjs-polyfill":
+        path.resolve(__dirname, "./node_modules/pagedjs/dist/paged.polyfill.js") + "?url",
     },
+  },
+
+  optimizeDeps: {
+    exclude: ["@pagedjs-polyfill"],
   },
 });

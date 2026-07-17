@@ -1,0 +1,1 @@
+export const ID_ESTADO_INFORME_APROBADO = 4;

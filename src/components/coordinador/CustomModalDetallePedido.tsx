@@ -1,17 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, Download, RotateCcw } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomChipTipoArchivo } from "@maximilian/components/common/CustomChipTipoArchivo";
+import { formatearTamanoArchivo, obtenerExtensionArchivo } from "@maximilian/shared/utils/archivo.util";
+import { formatearFechaVisual } from "@maximilian/shared/utils/fecha.util";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
 import { TablaTarifarioCorta } from "@maximilian/components/coordinador/TablaTarifarioCorta";
-import { servicioCliente } from "@maximilian/services/cliente.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
-import { pedidoService } from "@maximilian/services/pedido.service";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import type { TarifarioCortaEntry } from "@maximilian/shared/types/cliente.type";
-import type { PedidoArchivoEntry } from "@maximilian/shared/types/pedido.type";
+import { useAnexosDetallePedido } from "@maximilian/hooks/useAnexosDetallePedido";
+import { useDetallePedido } from "@maximilian/hooks/useDetallePedido";
 
 interface CustomModalDetallePedidoProps {
   isOpen: boolean;
@@ -20,48 +17,19 @@ interface CustomModalDetallePedidoProps {
   zIndex?: string;
 }
 
-function formatearFecha(valor: string | null | undefined) {
-  if (!valor) return "-";
-
-  const fecha = new Date(valor);
-  if (Number.isNaN(fecha.getTime())) return valor;
-
-  return new Intl.DateTimeFormat("es-BO", {
+const opcionesFechaNumerica: Intl.DateTimeFormatOptions = {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).format(fecha);
+};
+
+function formatearFecha(valor: string | null | undefined) {
+  return formatearFechaVisual(valor, opcionesFechaNumerica, "es-BO");
 }
 
 function formatearMonto(valor: number | null | undefined, simboloMoneda?: string | null) {
   if (valor == null) return "-";
   return `${simboloMoneda ?? ""}${valor}`;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function getExtension(filename: string): string {
-  return filename.split(".").pop()?.toUpperCase() ?? "—";
-}
-
-function FileTypeBadge({ ext }: { ext: string }) {
-  const colorMap: Record<string, string> = {
-    PDF: "bg-red-100 text-red-600",
-    XLSX: "bg-green-100 text-green-600",
-    XLS: "bg-green-100 text-green-600",
-    DOCX: "bg-blue-100 text-blue-600",
-    DOC: "bg-blue-100 text-blue-600",
-    PNG: "bg-purple-100 text-purple-600",
-    JPG: "bg-purple-100 text-purple-600",
-    JPEG: "bg-purple-100 text-purple-600",
-  };
-  const cls = colorMap[ext] ?? "bg-gray-100 text-gray-600";
-
-  return <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-bold ${cls}`}>{ext}</span>;
 }
 
 function CampoSoloLectura({ etiqueta, valor }: { etiqueta: string; valor: string }) {
@@ -94,35 +62,16 @@ function TextAreaSoloLectura({ etiqueta, valor }: { etiqueta: string; valor: str
 }
 
 function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
-  const [descargandoId, setDescargandoId] = useState<number | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [busquedaConRetardo, setDebouncedSearch] = useState("");
-
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["pedidoArchivos", "detalle", pedidoId, busquedaConRetardo],
-    queryFn: () => pedidoService.listArchivos({ idPedido: pedidoId!, busqueda: busquedaConRetardo || undefined, numPag: 1 }),
-    enabled: !!pedidoId,
-  });
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const handleDescargar = async (archivo: PedidoArchivoEntry) => {
-    setDescargandoId(archivo.idPedidoArchivo);
-    try {
-      const result = await pedidoService.getArchivo({
-        idPedidoArchivo: archivo.idPedidoArchivo,
-        idPedido: archivo.idPedido,
-      });
-      window.open(result.downloadUrl, "_blank");
-    } catch {
-      // handled by interceptor
-    } finally {
-      setDescargandoId(null);
-    }
-  };
+  const {
+    archivos,
+    busqueda,
+    descargar,
+    idDescargando,
+    isError,
+    isLoading,
+    refetch,
+    setBusqueda,
+  } = useAnexosDetallePedido(pedidoId);
 
   if (isLoading) {
     return (
@@ -145,8 +94,6 @@ function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
     );
   }
 
-  const archivos = data?.lstPedidoArchivo ?? [];
-
   if (archivos.length === 0) {
     return (
       <div className="flex min-h-48 items-center justify-center rounded-2xl border border-gray-100 text-sm text-gray-400">
@@ -160,8 +107,8 @@ function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
       <input
         type="text"
         placeholder="Buscar por nombre..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
+        value={busqueda}
+        onChange={(e) => setBusqueda(e.target.value)}
         className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
       />
       <div className="overflow-hidden rounded-2xl border border-gray-100">
@@ -177,7 +124,7 @@ function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
         </thead>
         <tbody className="divide-y divide-gray-50">
           {archivos.map((archivo) => {
-            const extension = getExtension(archivo.nombreDocumento);
+            const extension = obtenerExtensionArchivo(archivo.nombreDocumento);
 
             return (
               <tr key={archivo.idPedidoArchivo} className="hover:bg-gray-50/70">
@@ -185,15 +132,15 @@ function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
                   <span title={archivo.nombreDocumento} className="block max-w-48 truncate">{archivo.nombreDocumento}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <FileTypeBadge ext={extension} />
+                  <CustomChipTipoArchivo extension={extension} />
                 </td>
-                <td className="px-4 py-3 text-slate-600">{formatBytes(archivo.tamanoArchivo)}</td>
+                <td className="px-4 py-3 text-slate-600">{formatearTamanoArchivo(archivo.tamanoArchivo)}</td>
                 <td className="px-4 py-3 text-slate-600">{archivo.fechaCarga || "-"}</td>
                 <td className="px-4 py-3 text-right">
                   <button
                     type="button"
-                    onClick={() => handleDescargar(archivo)}
-                    disabled={descargandoId === archivo.idPedidoArchivo}
+                    onClick={() => descargar(archivo)}
+                    disabled={idDescargando === archivo.idPedidoArchivo}
                     className="inline-flex items-center rounded-lg p-2 text-slate-400 transition-all hover:bg-blue-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Download size={16} />
@@ -215,86 +162,25 @@ export function CustomModalDetallePedido({
   pedidoId,
   zIndex = "z-50",
 }: CustomModalDetallePedidoProps) {
-  const [activeTab, setActiveTab] = useState("cliente-tarifa");
-
-  const { data: pedido, isLoading, isError, refetch } = useQuery({
-    queryKey: ["pedido", "detalle", pedidoId],
-    queryFn: () => pedidoService.getById(pedidoId!),
-    enabled: !!pedidoId && isOpen,
-  });
-
-  const { data: clientes = [] } = useQuery({
-    queryKey: ["clientes", "listaCorta"],
-    queryFn: () => servicioCliente.listaCorta(),
-    enabled: isOpen,
-  });
-
-  const { data: allTarifas } = useQuery({
-    queryKey: ["tarifario", "listaCorta", "detalle", { idCliente: pedido?.idCliente }],
-    queryFn: () => servicioCliente.listTarifarioCorta({ idCliente: pedido!.idCliente }),
-    enabled: !!pedido?.idCliente && isOpen,
-  });
-
-  const { data: paises } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.PAIS],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
-    staleTime: Infinity,
-    enabled: isOpen,
-  });
-
-  const { data: idiomas } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.IDIOMA],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.IDIOMA),
-    staleTime: Infinity,
-    enabled: isOpen,
-  });
-
-  const { data: clasesInforme } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.CLASE_INFORME],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CLASE_INFORME),
-    staleTime: Infinity,
-    enabled: isOpen,
-  });
-
-  const { data: tiposTramite } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_TRAMITE],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_TRAMITE),
-    staleTime: Infinity,
-    enabled: isOpen,
-  });
-
-  const { data: plantillasInforme } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.PLANTILLA_INFORME],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLANTILLA_INFORME),
-    staleTime: Infinity,
-    enabled: isOpen,
-  });
-
-  const { data: tiposPersona } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA),
-    staleTime: Infinity,
-    enabled: isOpen,
-  });
-
-  const { data: empresasAtencion } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.EMPRESA_ATENCION],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.EMPRESA_ATENCION),
-    staleTime: Infinity,
-    enabled: isOpen,
-  });
-
-  const { data: tiposPlazoCredito } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_PLAZO_CREDITO],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PLAZO_CREDITO),
-    staleTime: Infinity,
-    enabled: isOpen,
-  });
-
-  const tarifarioSeleccionado = useMemo<TarifarioCortaEntry | undefined>(
-    () => allTarifas?.find((item) => item.idTarifario === pedido?.idTarifario),
-    [allTarifas, pedido?.idTarifario],
-  );
+  const {
+    cerrarDetalle,
+    clientes,
+    clasesInforme,
+    empresasAtencion,
+    estaCargandoTodo,
+    idiomas,
+    isError,
+    paises,
+    pedido,
+    plantillasInforme,
+    refetch,
+    setTabActiva,
+    tabActiva,
+    tarifarioSeleccionado,
+    tiposPersona,
+    tiposPlazoCredito,
+    tiposTramite,
+  } = useDetallePedido({ isOpen, pedidoId });
 
   const loadingContent = (
     <div className="flex flex-col items-center justify-center gap-3 py-16">
@@ -314,9 +200,7 @@ export function CustomModalDetallePedido({
     </div>
   );
 
-  const isLoadingAll = isLoading || (!!pedido && allTarifas === undefined);
-
-  const clienteTarifaContent = isLoadingAll
+  const clienteTarifaContent = estaCargandoTodo
     ? loadingContent
     : isError || !pedido
     ? errorContent
@@ -409,7 +293,7 @@ export function CustomModalDetallePedido({
       </div>
     );
 
-  const infoPedidoContent = isLoadingAll
+  const infoPedidoContent = estaCargandoTodo
     ? loadingContent
     : isError || !pedido
     ? errorContent
@@ -462,10 +346,7 @@ export function CustomModalDetallePedido({
   return (
     <CustomModalPestanas
       isOpen={isOpen}
-      onClose={() => {
-        setActiveTab("cliente-tarifa");
-        onClose();
-      }}
+      onClose={() => cerrarDetalle(onClose)}
       title="Detalle del Pedido"
       tabs={[
         {
@@ -491,8 +372,8 @@ export function CustomModalDetallePedido({
           </CustomButton>
         </div>
       }
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
+      activeTab={tabActiva}
+      onTabChange={setTabActiva}
       maxWidth="max-w-5xl"
       zIndex={zIndex}
     />

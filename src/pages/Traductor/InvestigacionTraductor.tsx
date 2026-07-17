@@ -1,3 +1,5 @@
+import { FILAS_POR_PAGINA_INVESTIGACION, ID_ESTADO_PEDIDO_BORRADOR, ID_ESTADO_PEDIDO_FINALIZADO, CAMPOS_MONETARIOS_EXTRACCION, CAMPOS_PORCENTAJE_EXTRACCION, CAMPOS_PORCENTAJE_COMPLEMENTARIO, ETIQUETAS_SECCIONES_EXTRACCION, CONFIGURACION_EXTRACCION_POR_SECCION, SECCIONES_LISTA_EXTRACCION, ETIQUETAS_CAMPOS_EXTRACCION, CAMPOS_TRADUCIBLES_POR_SECCION, RUTAS_SELECTORES_CON_REFERENCIA_ORIGINAL } from "@maximilian/shared/constants/pages/Traductor/investigacion-traductor.constants";
+import type { CampoPorcentajeOperacion } from "@maximilian/shared/constants/pages/Traductor/investigacion-traductor.constants";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,7 +10,6 @@ import {
   useSearchParams,
 } from "react-router";
 import {
-  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Check,
@@ -52,6 +53,8 @@ import { CustomModalLocalAnalista } from "@maximilian/components/investigacion/C
 import { CustomModalOperacionAnalista } from "@maximilian/components/investigacion/CustomModalOperacionInforme";
 import { CustomModalProveedorAnalista } from "@maximilian/components/investigacion/CustomModalProveedorInforme";
 import { CustomModalRegistroEjecutivoAnalista } from "@maximilian/components/investigacion/CustomModalRegistroEjecutivo";
+import { CustomPaginacionInvestigacion } from "@maximilian/components/investigacion/CustomPaginacionInvestigacion";
+import { CustomIndicadorCambioExtraccion } from "@maximilian/components/investigacion/CustomIndicadorCambioExtraccion";
 import { CustomModalRegistroPersonaDirectorioAnalista } from "@maximilian/components/investigacion/CustomModalRegistroPersonaDirectorio";
 import {
   CustomModalRevisionCompaniasExtraccion,
@@ -71,29 +74,43 @@ import {
   SelectorMaestroConAltaInvestigacionAnalista,
 } from "@maximilian/components/investigacion/ControlesInforme";
 import { informeService } from "@maximilian/services/informe.service";
-import { servicioInformeObservacion } from "@maximilian/services/informeObservacion.service";
-import { servicioInformeLocalImagen } from "@maximilian/services/informeLocalImagen.service";
+import { servicioInformeObservacion } from "@maximilian/services/informe-observacion.service";
+import { servicioInformeLocalImagen } from "@maximilian/services/informe-local-imagen.service";
 import { servicioBanco } from "@maximilian/services/banco.service";
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { servicioAsignacion } from "@maximilian/services/asignacion.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
+import { usePrecargaTablaMaestra } from "@maximilian/hooks/usePrecargaTablaMaestra";
+import { useRetardo } from "@maximilian/hooks/useRetardo";
 import {
-  obtenerDatosInvestigacionAnalista,
+  crearDatosInvestigacionVacios,
   seccionesInvestigacionAnalista,
-} from "@maximilian/shared/utils/datos-simulados-investigacion";
+} from "@maximilian/shared/utils/investigacion.util";
+import {
+  construirPayloadCrearInforme,
+  prepararDatosParaNuevoInforme,
+} from "@maximilian/shared/utils/investigacion/investigacion-payload.util";
+import {
+  actualizarValorEnRuta,
+  esRegistroPlano,
+  formatearPorcentajeOchoDecimales,
+  humanizarClaveExtraccion,
+  normalizarTextoExtraccion,
+  obtenerIdObligacionBolsa,
+  obtenerNumeroOpcionalDesdeTexto,
+  obtenerOpcionTablaMaestraPorId,
+  obtenerTextoObligacionBolsa,
+  obtenerTextoPorId,
+  obtenerTotalPaginasInvestigacion as obtenerTotalPaginas,
+  paginarRegistrosInvestigacion as paginarRegistros,
+} from "@maximilian/shared/utils/investigacion/investigacion-formato.util";
 import type {
   AlcanceExtraccionInforme,
-  InformeBalanceBancoRequest,
-  InformeBalanceDesagregadoRequest,
-  InformeBalanceSeguroRequest,
-  InformeBalanceTotalizadoRequest,
-  InformeBalanceTurquiaRequest,
   InformeConfiguracionExtraccion,
   InformeContenidoTraduccion,
   InformeContenidoTraduccionPlano,
-  InformeCrearRequest,
   InformeObservacion,
   InformeSeccionExtraccionDisponible,
 } from "@maximilian/shared/types/informe.type";
@@ -124,15 +141,11 @@ import {
 import {
   normalizarMontoDosDecimales,
   normalizarMontoDecimales,
-  obtenerNumeroDesdeMonto,
-  obtenerNumeroOpcionalDesdeMonto,
+  obtenerPorcentajeNumerico,
   sanitizarMontoDecimales,
   seleccionarTextoCampoEditable,
 } from "@maximilian/shared/utils/formato-monto.util";
-import {
-  obtenerClaveEstadoFinanciero,
-  obtenerValorCampoEstadoFinanciero,
-} from "@maximilian/shared/utils/estados-financieros.util";
+import { enmascararNumeroCuenta } from "@maximilian/shared/utils/texto.util";
 import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 import { ProveedorFormatoFechaInforme } from "@maximilian/shared/contexts/formato-fecha-informe.context";
 
@@ -147,6 +160,7 @@ interface PropsPantallaInvestigacionAnalista {
 interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInvestigacionAnalista {
   datosIniciales: DatosInvestigacionAnalista;
   datosOriginalesIniciales?: DatosInvestigacionAnalista;
+  esPendienteAprobacionInformacion?: boolean;
   archivosIniciales?: ArchivoInvestigacionAnalista[];
   idFormatoFechaInicial?: number;
   idTipoPersonaInicial?: number;
@@ -256,112 +270,20 @@ function combinarAyudasCampo({
   );
 }
 
-const FILAS_POR_PAGINA_INVESTIGACION = 5;
-const ID_ESTADO_PEDIDO_BORRADOR = 3;
-const ID_ESTADO_PEDIDO_FINALIZADO = 5;
-function obtenerTotalPaginas(totalRegistros: number) {
-  return Math.max(
-    1,
-    Math.ceil(totalRegistros / FILAS_POR_PAGINA_INVESTIGACION),
-  );
-}
+function esEstadoPendienteAprobacionInformacion({
+  estado,
+  estadoInforme,
+}: {
+  estado?: string;
+  estadoInforme?: string;
+}) {
+  const textoEstado = `${estado ?? ""} ${estadoInforme ?? ""}`
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
-function paginarRegistros<T>(registros: T[], paginaActual: number) {
-  const inicio = (paginaActual - 1) * FILAS_POR_PAGINA_INVESTIGACION;
-  return registros.slice(inicio, inicio + FILAS_POR_PAGINA_INVESTIGACION);
-}
-
-function obtenerPorcentajeNumerico(valor?: string) {
-  const numero = Number.parseFloat(
-    (valor ?? "").replace("%", "").replace(",", ".").trim(),
-  );
-  return Number.isNaN(numero) ? 0 : numero;
-}
-
-function formatearPorcentajeOchoDecimales(valor: number) {
-  return `${valor.toFixed(8)}%`;
-}
-
-function enmascararNumeroCuenta(valor: string) {
-  const numeroCuenta = valor.trim();
-  if (!numeroCuenta) return "-";
-  if (numeroCuenta.length <= 4) return numeroCuenta;
-  return `${"*".repeat(numeroCuenta.length - 4)}${numeroCuenta.slice(-4)}`;
-}
-
-function obtenerNumeroDesdeTexto(valor?: string) {
-  return obtenerNumeroDesdeMonto(valor);
-}
-
-function obtenerNumeroOpcionalDesdeTexto(valor?: string) {
-  return obtenerNumeroOpcionalDesdeMonto(valor);
-}
-
-function obtenerEnteroDesdeTexto(valor?: string) {
-  if (!valor) return 0;
-  const numero = Number.parseInt(valor.replace(/\D/g, ""), 10);
-  return Number.isFinite(numero) ? numero : 0;
-}
-
-function convertirFechaIso(valor?: string) {
-  if (!valor?.trim()) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return `${valor}T00:00:00.000Z`;
-
-  const partes = valor.split("/");
-  if (partes.length !== 3) return null;
-
-  const [dia, mes, ano] = partes;
-  if (!dia || !mes || !ano) return null;
-
-  return `${ano.padStart(4, "0")}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}T00:00:00.000Z`;
-}
-
-function obtenerIdPorTexto(
-  opciones:
-    | {
-        num1: number | null;
-        string1: string | null;
-        string2?: string | null;
-        string4?: string | null;
-        string5?: string | null;
-        string6?: string | null;
-        string7?: string | null;
-      }[]
-    | undefined,
-  valor: string,
-) {
-  const texto = valor.trim().toLowerCase();
-  return (
-    opciones?.find((opcion) =>
-      [
-        opcion.string1,
-        opcion.string2,
-        opcion.string4,
-        opcion.string5,
-        opcion.string6,
-        opcion.string7,
-      ].some((textoOpcion) => textoOpcion?.trim().toLowerCase() === texto),
-    )?.num1 ?? 0
-  );
-}
-
-function obtenerIdPorTextoONumero(
-  opciones:
-    | {
-        num1: number | null;
-        string1: string | null;
-        string2?: string | null;
-        string4?: string | null;
-        string5?: string | null;
-        string6?: string | null;
-        string7?: string | null;
-      }[]
-    | undefined,
-  valor: string,
-) {
-  const id = obtenerEnteroDesdeTexto(valor);
-  if (id > 0) return id;
-  return obtenerIdPorTexto(opciones, valor);
+  return textoEstado.includes("pendiente") && textoEstado.includes("aprob");
 }
 
 function obtenerIdCiiuPorValor(
@@ -424,421 +346,6 @@ function obtenerIdCiiuPorValor(
   return 0;
 }
 
-function obtenerTextoPorId(
-  opciones: { num1: number | null; string1: string | null }[] | undefined,
-  id?: number,
-) {
-  if (!id) return "";
-  return (
-    opciones
-      ?.find((opcion) => Number(opcion.num1) === Number(id))
-      ?.string1?.trim() ?? ""
-  );
-}
-
-function obtenerIdMoneda(valor: string) {
-  const monedaNormalizada = valor.trim().toLowerCase();
-  if (monedaNormalizada === "us dollar") return 1;
-  if (monedaNormalizada === "euro") return 2;
-  if (monedaNormalizada === "sol") return 3;
-  return 0;
-}
-
-function obtenerIdTipoBalance(valor?: string) {
-  const texto = valor?.trim().toLowerCase() ?? "";
-  if (texto === "balance general") return 1;
-  if (texto === "balance consolidado") return 2;
-  return 0;
-}
-
-function obtenerIdTipoArchivo(valor?: string) {
-  const texto = valor?.trim().toLowerCase() ?? "";
-  if (texto.startsWith("image/")) return 1;
-  if (texto === "application/pdf") return 2;
-  return 0;
-}
-
-function obtenerNumeroMes(valor: string) {
-  const meses: Record<string, number> = {
-    enero: 1,
-    febrero: 2,
-    marzo: 3,
-    abril: 4,
-    mayo: 5,
-    junio: 6,
-    julio: 7,
-    agosto: 8,
-    septiembre: 9,
-    setiembre: 9,
-    octubre: 10,
-    noviembre: 11,
-    diciembre: 12,
-  };
-
-  return meses[valor.trim().toLowerCase()] ?? 0;
-}
-
-function esTextoAfirmativo(valor?: string) {
-  const texto = valor?.trim().toLowerCase() ?? "";
-  return texto === "si" || texto === "sí" || texto === "true" || texto === "1";
-}
-
-function obtenerIdObligacionBolsa(valor?: string) {
-  const texto = valor?.trim().toLowerCase() ?? "";
-  if (texto === "si" || texto === "sí" || texto === "true" || texto === "1")
-    return 1;
-  if (texto === "no" || texto === "false" || texto === "0" || texto === "2")
-    return 0;
-  return undefined;
-}
-
-function obtenerTextoObligacionBolsa(
-  opciones: { num1: number | null; string1: string | null }[] | undefined,
-  valor?: string,
-) {
-  const id = obtenerIdObligacionBolsa(valor);
-  if (id != null)
-    return (
-      opciones?.find((opcion) => opcion.num1 === id)?.string1?.trim() ?? ""
-    );
-  return "";
-}
-
-const CAMPOS_MONETARIOS_EXTRACCION = new Set([
-  "aspectosLegales.capitalInicial",
-  "aspectosLegales.capitalDesembolsado",
-  "aspectosLegales.patrimonioNeto",
-  "aspectosLegales.valorAcciones",
-  "aspectosLegales.tipoCambio",
-]);
-
-type CampoPorcentajeOperacion =
-  | "ventasContadoPorcentaje"
-  | "ventasCreditoPorcentaje"
-  | "territorioVentasPorcentaje"
-  | "ventasExtranjeroPorcentaje"
-  | "comprasNacionalesPorcentaje"
-  | "comprasExtranjeroPorcentaje"
-  | "comprasContadoNacionalesPorcentaje"
-  | "comprasCreditoNacionalesPorcentaje"
-  | "comprasContadoInternacionalesPorcentaje"
-  | "comprasCreditoInternacionalesPorcentaje";
-
-const CAMPOS_PORCENTAJE_EXTRACCION = new Set<CampoPorcentajeOperacion>([
-  "ventasContadoPorcentaje",
-  "ventasCreditoPorcentaje",
-  "territorioVentasPorcentaje",
-  "ventasExtranjeroPorcentaje",
-  "comprasNacionalesPorcentaje",
-  "comprasExtranjeroPorcentaje",
-  "comprasContadoNacionalesPorcentaje",
-  "comprasCreditoNacionalesPorcentaje",
-  "comprasContadoInternacionalesPorcentaje",
-  "comprasCreditoInternacionalesPorcentaje",
-]);
-
-const CAMPOS_PORCENTAJE_COMPLEMENTARIO: Record<
-  CampoPorcentajeOperacion,
-  CampoPorcentajeOperacion
-> = {
-  ventasContadoPorcentaje: "ventasCreditoPorcentaje",
-  ventasCreditoPorcentaje: "ventasContadoPorcentaje",
-  territorioVentasPorcentaje: "ventasExtranjeroPorcentaje",
-  ventasExtranjeroPorcentaje: "territorioVentasPorcentaje",
-  comprasNacionalesPorcentaje: "comprasExtranjeroPorcentaje",
-  comprasExtranjeroPorcentaje: "comprasNacionalesPorcentaje",
-  comprasContadoNacionalesPorcentaje: "comprasCreditoNacionalesPorcentaje",
-  comprasCreditoNacionalesPorcentaje: "comprasContadoNacionalesPorcentaje",
-  comprasContadoInternacionalesPorcentaje:
-    "comprasCreditoInternacionalesPorcentaje",
-  comprasCreditoInternacionalesPorcentaje:
-    "comprasContadoInternacionalesPorcentaje",
-};
-
-const ETIQUETAS_SECCIONES_EXTRACCION: Record<string, string> = {
-  identificacion: "Identificación",
-  legales: "Aspectos Legales",
-  aspectosLegales: "Aspectos Legales",
-  companiasRelacionadas: "Compañías Relacionadas",
-  operacionPrincipal: "Ramo Operaciones",
-  ramoOperaciones: "Ramo Operaciones",
-  importaciones: "Importaciones",
-  exportaciones: "Exportaciones",
-  locales: "Locales",
-  informacionFinanciera: "Información Financiera",
-  balances: "Balances",
-  referencias: "Referencias",
-  proveedores: "Proveedores",
-  bancos: "Bancos",
-  datosGenerales: "Datos Generales",
-  directorioEjecutivo: "Directorio Ejecutivo",
-};
-
-const CONFIGURACION_EXTRACCION_POR_SECCION: Record<
-  IdSeccionInvestigacionAnalista,
-  Record<string, string[]>
-> = {
-  identificacion: {
-    identificacion: [
-      "tipoPersona",
-      "nombreEmpresa",
-      "nombreComercial",
-      "pais",
-      "operacionesCambio",
-      "tipoIdentificacionFiscal",
-      "numeroIdentificacionFiscal",
-      "direccionPrincipal",
-      "ciudadEstadoProvincia",
-      "numeroTelefono",
-      "numeroFax",
-      "correoElectronico",
-      "paginaWeb",
-      "estadoActual",
-      "datosAdicionales",
-    ],
-  },
-  "aspectos-legales": {
-    legales: [
-      "antecedentes",
-      "aspectosLegales",
-      "capitalDesembolsado",
-      "capitalInicial",
-      "ciudadRegistro",
-      "comentariosEmpresasRelacionadas",
-      "condiciones",
-      "fechaConstitucion",
-      "monedaTipoCambio",
-      "notaria",
-      "notario",
-      "obligacionBolsa",
-      "operacionesCambioDivisas",
-      "patrimonioNeto",
-      "registro",
-      "tipoAcciones",
-      "tipoCambio",
-      "tipoEmpresa",
-      "ultimaAmpliacion",
-      "valorAcciones",
-      "companiasRelacionadas",
-    ],
-  },
-  "ramo-operaciones": {
-    ramoOperaciones: [
-      "actividad",
-      "actividadPrincipal",
-      "categoriaCiiu",
-      "claseCiiu",
-      "comentariosOperaciones",
-      "comprasContadoInternacionalesDetalle",
-      "comprasContadoInternacionalesPorcentaje",
-      "comprasCreditoInternacionalesDetalle",
-      "comprasCreditoInternacionalesPorcentaje",
-      "comprasExtranjeroDetalles",
-      "comprasExtranjeroPorcentaje",
-      "comprasContadoNacionalesDetalle",
-      "comprasContadoNacionalesPorcentaje",
-      "comprasCreditoNacionalesDetalle",
-      "comprasCreditoNacionalesPorcentaje",
-      "comprasNacionalesDetalles",
-      "comprasNacionalesPorcentaje",
-      "direccion",
-      "exportaciones",
-      "importaciones",
-      "locales",
-      "numeroEmpleados",
-      "numeroEmpleadosDetalle",
-      "sector",
-      "ventasContadoDetalle",
-      "ventasContadoPorcentaje",
-      "ventasCreditoDetalle",
-      "ventasCreditoPorcentaje",
-      "ventasNacionalesDetalle",
-      "ventasNacionalesPorcentaje",
-      "ventasExtranjeroDetalle",
-      "ventasExtranjeroPorcentaje",
-    ],
-  },
-  "informacion-financiera": {
-    informacionFinanciera: [
-      "contenido",
-      "comentariosFinancieros",
-      "activosFijos",
-      "seguros",
-    ],
-  },
-  balances: {},
-  "bancos-proveedores": {
-    bancosProveedores: [
-      "comentariosProveedores",
-      "referenciasBancos",
-      "litigios",
-      "riesgoPrincipal",
-      "superintendencia",
-      "proveedores",
-      "bancos",
-    ],
-  },
-  "datos-generales": {
-    datosGenerales: ["informacionGeneral", "opinionCredito"],
-  },
-  "directorio-ejecutivo": {
-    directorioEjecutivo: [
-      "ejecutivo",
-      "cargoEjecutivo",
-      "vinculadoDesde",
-      "companiaAnterior",
-      "participacion",
-      "formaParteDirectorioEjecutivo",
-      "figuraListadoEjecutivos",
-      "existenDetallesEjecutivo",
-    ],
-  },
-};
-
-const SECCIONES_LISTA_EXTRACCION = new Set([
-  "companiasRelacionadas",
-  "importaciones",
-  "exportaciones",
-  "locales",
-  "proveedores",
-  "bancos",
-]);
-
-const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
-  porcentaje: "Porcentaje de participacion",
-  esParteDirectorio: "Forma parte del directorio Ejecutivo",
-  lista: "Figura en el listado de ejecutivos",
-  detalleEjecutivo: "Se tiene los detalles del Ejecutivo",
-  actividad: "Actividad",
-  datosAdicionales: "Datos Adicionales",
-  tipoAcciones: "Tipo de Acciones",
-  comentariosEmpresasRelacionadas: "Comentarios sobre Empresas Relacionadas",
-  ventasContadoDetalle: "Detalle Ventas al Contado",
-  ventasCreditoDetalle: "Detalle Ventas a Credito",
-  territorioVentasDetalle: "Detalle Ventas Nacionales",
-  ventasExtranjeroDetalle: "Detalle Ventas Extranjero",
-  comprasNacionalesDetalle: "Detalle Compras Nacionales",
-  comprasContadoNacionalesDetalle: "Detalle Compras al Contado",
-  comprasCreditoNacionalesDetalle: "Detalle Compras a Credito en Nacionales",
-  comprasExtranjeroDetalle: "Detalle Compras Extranjero",
-  comprasContadoInternacionalesDetalle:
-    "Detalle Compras al Contado Extranjeras",
-  comprasCreditoInternacionalesDetalle: "Detalle Compras a Credito Extranjeras",
-  numeroEmpleadosDetalle: "Detalle Empleados",
-  comentariosOperaciones: "Comentarios sobre las Operaciones",
-  importaciones: "Importaciones: Paises y Productos",
-  exportaciones: "Exportaciones: Paises y Productos",
-  comentariosFinancieros: "Comentarios Financieros",
-  activosFijos: "Activos",
-  comentariosProveedores: "Comentarios de los Proveedores",
-  referenciasBancos: "Referencias de Bancos",
-  informacionGeneral: "Informacion General",
-  opinionCredito: "Opinion de Credito",
-};
-
-function humanizarClaveExtraccion(valor: string) {
-  const texto = valor
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/_/g, " ")
-    .trim();
-
-  return texto ? texto.charAt(0).toUpperCase() + texto.slice(1) : valor;
-}
-
-const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
-  identificacion: ["datosAdicionales"],
-  aspectosLegales: [
-    "condiciones",
-    "tipoAcciones",
-    "antecedentes",
-    "aspectosLegales",
-    "comentariosEmpresasRelacionadas",
-  ],
-  operacionPrincipal: [
-    "actividad",
-    "actividadPrincipal",
-    "ventasContadoDetalle",
-    "ventasCreditoDetalle",
-    "territorioVentasDetalle",
-    "ventasExtranjeroDetalle",
-    "comprasNacionalesDetalle",
-    "comprasContadoNacionalesDetalle",
-    "comprasCreditoNacionalesDetalle",
-    "comprasExtranjeroDetalle",
-    "comprasContadoInternacionalesDetalle",
-    "comprasCreditoInternacionalesDetalle",
-    "numeroEmpleadosDetalle",
-    "comentariosOperaciones",
-    "importaciones",
-    "exportaciones",
-  ],
-  importaciones: ["paises", "productos"],
-  exportaciones: ["paises", "productos"],
-  informacionFinanciera: [
-    "contenido",
-    "comentariosFinancieros",
-    "activosFijos",
-    "seguros",
-  ],
-  referencias: [
-    "comentariosProveedores",
-    "referenciasBancos",
-    "litigios",
-    "riesgoPrincipal",
-    "superintendencia",
-  ],
-  legales: [
-    "antecedentes",
-    "aspectosLegales",
-    "comentariosEmpresasRelacionadas",
-    "condiciones",
-    "tipoAcciones",
-  ],
-  ramoOperaciones: [
-    "actividad",
-    "actividadPrincipal",
-    "comentariosOperaciones",
-    "comprasContadoInternacionalesDetalle",
-    "comprasCreditoInternacionalesDetalle",
-    "comprasExtranjeroDetalle",
-    "comprasContadoNacionalesDetalle",
-    "comprasCreditoNacionalesDetalle",
-    "comprasNacionalesDetalle",
-    "exportaciones",
-    "importaciones",
-    "numeroEmpleadosDetalle",
-    "ventasContadoDetalle",
-    "ventasCreditoDetalle",
-    "territorioVentasDetalle",
-    "ventasExtranjeroDetalle",
-  ],
-  bancosProveedores: [
-    "comentariosProveedores",
-    "referenciasBancos",
-    "litigios",
-    "riesgoPrincipal",
-    "superintendencia",
-  ],
-  datosGenerales: ["informacionGeneral", "opinionCredito"],
-};
-
-const RUTAS_SELECTORES_CON_REFERENCIA_ORIGINAL = new Set([
-  "identificacion.tipoPersona",
-  "identificacion.pais",
-  "identificacion.operacionesCambio",
-  "identificacion.tipoIdentificacionFiscal",
-  "identificacion.ciudadEstadoProvincia",
-  "identificacion.estadoActual",
-  "aspectosLegales.tipoEmpresa",
-  "aspectosLegales.ciudadRegistro",
-  "aspectosLegales.operacionesCambioDivisas",
-  "aspectosLegales.obligacionBolsa",
-  "aspectosLegales.monedaTipoCambio",
-  "operacionPrincipal.sector",
-  "operacionPrincipal.categoriaCiiu",
-  "operacionPrincipal.claseCiiu",
-]);
-
 function esRutaTraduccionIA(ruta: string) {
   const segmentos = ruta.split(".");
   if (segmentos.length < 2) return false;
@@ -864,6 +371,51 @@ function esRutaTraduccionIA(ruta: string) {
   const claveTraduccion = mapaSecciones[seccion] ?? seccion;
   return (CAMPOS_TRADUCIBLES_POR_SECCION[claveTraduccion] ?? []).includes(
     segundoSegmento ?? "",
+  );
+}
+
+function obtenerTraduccionTipoEmpresaTraductor(
+  opcion: EntradaTablaMaestra,
+  idIdioma?: number,
+) {
+  if (idIdioma === 2) return opcion.string4?.trim() ?? "";
+  if (idIdioma === 3) return opcion.string6?.trim() ?? "";
+  return "";
+}
+
+function obtenerEtiquetaTipoEmpresaTraductor(
+  opcion: EntradaTablaMaestra,
+  idIdioma?: number,
+) {
+  const textoTraducido =
+    obtenerTraduccionTipoEmpresaTraductor(opcion, idIdioma) ||
+    opcion.string1?.trim() ||
+    "";
+  const textoEspanol = opcion.string1?.trim() ?? "";
+
+  return [textoTraducido, textoEspanol]
+    .filter((texto, indice, textos) => texto && textos.indexOf(texto) === indice)
+    .join(" - ");
+}
+
+function renderizarTipoEmpresaTraductor(
+  opcion: EntradaTablaMaestra,
+  idIdioma?: number,
+) {
+  const textoTraducido =
+    obtenerTraduccionTipoEmpresaTraductor(opcion, idIdioma) ||
+    opcion.string1?.trim() ||
+    "";
+  const textoEspanol = opcion.string1?.trim() ?? "";
+
+  if (!textoEspanol || textoEspanol === textoTraducido) return textoTraducido;
+
+  return (
+    <span className="inline-flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5 whitespace-normal break-words leading-snug">
+      <span>{textoTraducido}</span>
+      <span className="shrink-0 text-slate-300">-</span>
+      <span className="text-slate-400">{textoEspanol}</span>
+    </span>
   );
 }
 
@@ -932,27 +484,6 @@ function construirSeccionesDisponiblesExtraccion(
     .filter((seccion) => seccion.campos.length > 0);
 }
 
-function esRegistroPlano(valor: unknown): valor is Record<string, unknown> {
-  return typeof valor === "object" && valor !== null && !Array.isArray(valor);
-}
-
-function obtenerOpcionTablaMaestraPorId(
-  opciones: { num1: number | null; string1: string | null }[] | undefined,
-  valor: unknown,
-) {
-  const numero =
-    typeof valor === "number"
-      ? valor
-      : typeof valor === "string" &&
-          valor.trim() !== "" &&
-          !Number.isNaN(Number(valor))
-        ? Number(valor)
-        : null;
-
-  if (numero == null) return undefined;
-  return opciones?.find((opcion) => opcion.num1 === numero);
-}
-
 function obtenerOpcionTablaMaestraPorTexto(
   opciones:
     | Array<{
@@ -987,946 +518,6 @@ function obtenerOpcionTablaMaestraPorTexto(
   );
 }
 
-function normalizarTextoExtraccion(valor: string) {
-  return valor.trim().toLowerCase();
-}
-
-function actualizarValorEnRuta<T>(
-  valorActual: T,
-  ruta: string[],
-  valorNuevo: unknown,
-): T {
-  if (ruta.length === 0) return valorNuevo as T;
-
-  const [claveActual, ...restoRuta] = ruta;
-  const registroActual = (
-    esRegistroPlano(valorActual) ? valorActual : {}
-  ) as Record<string, unknown>;
-
-  return {
-    ...registroActual,
-    [claveActual]:
-      restoRuta.length === 0
-        ? valorNuevo
-        : actualizarValorEnRuta(
-            registroActual[claveActual],
-            restoRuta,
-            valorNuevo,
-          ),
-  } as T;
-}
-
-function construirListasDetalleBalance(balances: RegistroBalanceAnalista[]) {
-  const lstBalancesDesagregado: InformeBalanceDesagregadoRequest[] = [];
-  const lstBalancesTotalizado: InformeBalanceTotalizadoRequest[] = [];
-  const lstBalancesBanco: InformeBalanceBancoRequest[] = [];
-  const lstBalancesSeguro: InformeBalanceSeguroRequest[] = [];
-  const lstBalancesTurquia: InformeBalanceTurquiaRequest[] = [];
-
-  balances.forEach((balance, index) => {
-    const id = index + 1;
-    const tipoEstadoFinanciero =
-      balance.tipoEstadoFinanciero ||
-      ({
-        1: "desagregado",
-        2: "totalizado",
-        3: "bancos",
-        4: "seguros",
-        5: "turquia",
-      }[balance.idTipoEstadoFinanciero ?? 0] ??
-        balance.tipo);
-    const tipo =
-      balance.idTipoEstadoFinanciero ??
-      (
-        {
-          desagregado: 1,
-          totalizado: 2,
-          bancos: 3,
-          seguros: 4,
-          turquia: 5,
-        } as Record<string, number>
-      )[obtenerClaveEstadoFinanciero(tipoEstadoFinanciero)];
-    const r = balance.detalleCuentas?.registrosEstadoFinanciero ?? {};
-    const d = (campo: string, ...alternativos: Array<string | undefined>) =>
-      obtenerNumeroOpcionalDesdeTexto(
-        obtenerValorCampoEstadoFinanciero(r, campo, tipoEstadoFinanciero) ||
-          alternativos.find((valor) => valor?.trim()),
-      ) ?? null;
-    const i = (campo: string): number | null => {
-      const v = obtenerValorCampoEstadoFinanciero(
-        r,
-        campo,
-        tipoEstadoFinanciero,
-      );
-      if (!v) return null;
-      const flotante = Number.parseFloat(v.replace(/,/g, ""));
-      if (!Number.isFinite(flotante)) return null;
-      return Math.trunc(flotante);
-    };
-
-    if (tipo === 1) {
-      lstBalancesDesagregado.push({
-        id,
-        efectivoEquivalente: d("efectivoEquivalente"),
-        otrosActivosFinancierosCorriente: d("otrosActivosFinancierosCorriente"),
-        cuentasCobrarCorriente: d("cuentasCobrarCorriente"),
-        inventariosCorriente: d("inventariosCorriente"),
-        activosBiologicosCorriente: d("activosBiologicosCorriente"),
-        activosImpuestosGanancias: d("activosImpuestosGanancias"),
-        otrosActivosNoFinancierosCorriente: d(
-          "otrosActivosNoFinancierosCorriente",
-        ),
-        totalActivoCorriente: d("totalActivoCorriente"),
-        otrosActivosFinancierosNoCorriente: d(
-          "otrosActivosFinancierosNoCorriente",
-        ),
-        inversionesSubsidiarias: d("inversionesSubsidiarias"),
-        cuentasCobrarNoCorriente: d("cuentasCobrarNoCorriente"),
-        inventariosNoCorriente: d("inventariosNoCorriente"),
-        activosBiologicosNoCorriente: d("activosBiologicosNoCorriente"),
-        propiedadesInversion: d("propiedadesInversion"),
-        propiedadesPlantaEquipo: d("propiedadesPlantaEquipo"),
-        intangibles: d("intangibles"),
-        activosImpuestosDiferidos: d("activosImpuestosDiferidos"),
-        activosImpuestosCorrientes: d("activosImpuestosCorrientes"),
-        plusvalia: d("plusvalia"),
-        otrosActivosNoFinancierosNoCorriente: d(
-          "otrosActivosNoFinancierosNoCorriente",
-        ),
-        totalActivoNoCorriente: d("totalActivoNoCorriente"),
-        totalActivo: d(
-          "totalActivo",
-          balance.detalleCuentas?.balanceGeneral.totalActivos,
-        ),
-        otrosPasivosFinancierosCorriente: d("otrosPasivosFinancierosCorriente"),
-        cuentasPagarCorriente: d("cuentasPagarCorriente"),
-        beneficiosEmpleadosCorriente: d("beneficiosEmpleadosCorriente"),
-        otrasProvisionesCorriente: d("otrasProvisionesCorriente"),
-        impuestosGananciasCorriente: d("impuestosGananciasCorriente"),
-        otrosPasivosNoFinancierosCorriente: d(
-          "otrosPasivosNoFinancierosCorriente",
-        ),
-        totalPasivoCorriente: d("totalPasivoCorriente"),
-        otrosPasivosFinancierosNoCorriente: d(
-          "otrosPasivosFinancierosNoCorriente",
-        ),
-        cuentasPagarNoCorriente: d("cuentasPagarNoCorriente"),
-        beneficiosEmpleadosNoCorriente: d("beneficiosEmpleadosNoCorriente"),
-        otrasProvisionesNoCorriente: d("otrasProvisionesNoCorriente"),
-        impuestosDiferidosNoCorriente: d("impuestosDiferidosNoCorriente"),
-        impuestosCorrientesNoCorriente: d("impuestosCorrientesNoCorriente"),
-        otrosPasivosNoFinancierosNoCorriente: d(
-          "otrosPasivosNoFinancierosNoCorriente",
-        ),
-        totalPasivoNoCorriente: d("totalPasivoNoCorriente"),
-        totalPasivos: d(
-          "totalPasivos",
-          balance.detalleCuentas?.balanceGeneral.totalPasivos,
-        ),
-        capitalEmitido: d("capitalEmitido"),
-        primasEmision: d("primasEmision"),
-        accionesInversion: d("accionesInversion"),
-        accionesCartera: d("accionesCartera"),
-        otrasReservasCapital: d("otrasReservasCapital"),
-        resultadosAcumulados: d("resultadosAcumulados"),
-        otrasReservasPatrimonio: d("otrasReservasPatrimonio"),
-        totalPatrimonio: d("totalPatrimonio"),
-        totalPasivoPatrimonio: d(
-          "totalPasivoPatrimonio",
-          balance.detalleCuentas?.balanceGeneral.totalPasivoPatrimonio,
-        ),
-        ingresosOrdinarios: d("ingresosOrdinarios"),
-        costoVentas: d("costoVentas"),
-        gananciaBruta: d("gananciaBruta"),
-        gastosVentas: d("gastosVentas"),
-        gastosAdministracion: d("gastosAdministracion"),
-        otrosIngresosOperativos: d("otrosIngresosOperativos"),
-        otrosGastosOperativos: d("otrosGastosOperativos"),
-        otrasGananciasPerdidas: d("otrasGananciasPerdidas"),
-        gananciaOperativa: d("gananciaOperativa"),
-        ingresosFinancieros: d("ingresosFinancieros"),
-        ingresosIntereses: d("ingresosIntereses"),
-        gastosFinancieros: d("gastosFinancieros"),
-        deterioroValor: d("deterioroValor"),
-        otrosIngresosSubsidiarias: d("otrosIngresosSubsidiarias"),
-        diferenciasCambio: d("diferenciasCambio"),
-        gananciaAntesImpuestos: d("gananciaAntesImpuestos"),
-        ingresoGastoImpuesto: d("ingresoGastoImpuesto"),
-        operacionesDescontinuadas: d("operacionesDescontinuadas"),
-        gananciaNeta: d("gananciaNeta"),
-        indiceLiquidez: d(
-          "indiceLiquidez",
-          balance.detalleCuentas?.ratios.liquidez,
-        ),
-        capitalTrabajo: d(
-          "capitalTrabajo",
-          balance.detalleCuentas?.ratios.capitalTrabajo,
-        ),
-        ratioEndeudamiento: d(
-          "ratioEndeudamiento",
-          balance.detalleCuentas?.ratios.endeudamiento,
-        ),
-        ratioRentabilidad: d(
-          "ratioRentabilidad",
-          balance.detalleCuentas?.ratios.rentabilidad,
-        ),
-      });
-    } else if (tipo === 2) {
-      lstBalancesTotalizado.push({
-        id,
-        totalActivoCorriente: d(
-          "totalActivoCorriente",
-          balance.detalleCuentas?.balanceGeneral.totalCorrientes,
-        ),
-        totalActivoNoCorriente: d(
-          "totalActivoNoCorriente",
-          balance.detalleCuentas?.balanceGeneral.totalNoCorrientes,
-        ),
-        totalActivo: d(
-          "totalActivo",
-          balance.detalleCuentas?.balanceGeneral.totalActivos,
-        ),
-        totalPasivoCorriente: d(
-          "totalPasivoCorriente",
-          balance.detalleCuentas?.balanceGeneral.totalPasivosCorrientes,
-        ),
-        totalPasivoNoCorriente: d(
-          "totalPasivoNoCorriente",
-          balance.detalleCuentas?.balanceGeneral.totalPasivosNoCorrientes,
-        ),
-        totalPasivos: d(
-          "totalPasivos",
-          balance.detalleCuentas?.balanceGeneral.totalPasivos,
-        ),
-        totalPatrimonio: d(
-          "totalPatrimonio",
-          balance.detalleCuentas?.balanceGeneral.patrimonio,
-        ),
-        totalPasivoPatrimonio: d(
-          "totalPasivoPatrimonio",
-          balance.detalleCuentas?.balanceGeneral.totalPasivoPatrimonio,
-        ),
-        ingresosOrdinarios: d(
-          "ingresosOrdinarios",
-          balance.detalleCuentas?.estadoGananciasPerdidas.ventasNetas,
-        ),
-        gananciaNeta: d(
-          "gananciaNeta",
-          balance.detalleCuentas?.estadoGananciasPerdidas.utilidadGanancia,
-        ),
-        indiceLiquidez: d(
-          "indiceLiquidez",
-          balance.detalleCuentas?.ratios.liquidez,
-        ),
-        capitalTrabajo: d(
-          "capitalTrabajo",
-          balance.detalleCuentas?.ratios.capitalTrabajo,
-        ),
-        ratioEndeudamiento: d(
-          "ratioEndeudamiento",
-          balance.detalleCuentas?.ratios.endeudamiento,
-        ),
-        ratioRentabilidad: d(
-          "ratioRentabilidad",
-          balance.detalleCuentas?.ratios.rentabilidad,
-        ),
-      });
-    } else if (tipo === 3) {
-      lstBalancesBanco.push({
-        id,
-        disponible: d("disponible"),
-        fondosInterbancarios: d("fondosInterbancarios"),
-        inversionesValorRazonable: d("inversionesValorRazonable"),
-        carteraCreditos: d("carteraCreditos"),
-        derivadosNegociacionActivo: d("derivadosNegociacionActivo"),
-        derivadosCoberturaActivo: d("derivadosCoberturaActivo"),
-        bienesRealizables: d("bienesRealizables"),
-        participacionesSubsidiarias: d("participacionesSubsidiarias"),
-        inmuebleMobiliarioEquipo: d("inmuebleMobiliarioEquipo"),
-        impuestoRentaDiferido: d("impuestoRentaDiferido"),
-        otrosActivos: d("otrosActivos"),
-        totalActivos: d("totalActivos"),
-        obligacionesPublico: d("obligacionesPublico"),
-        fondosInterbancariosPasivo: d("fondosInterbancariosPasivo"),
-        adeudosFinancieras: d("adeudosFinancieras"),
-        derivadosNegociacionPasivo: d("derivadosNegociacionPasivo"),
-        derivadosCoberturaPasivo: d("derivadosCoberturaPasivo"),
-        cuentasPagarProvisiones: d("cuentasPagarProvisiones"),
-        totalPasivo: d("totalPasivo"),
-        capitalSocial: d("capitalSocial"),
-        reservas: d("reservas"),
-        resultadosNoRealizados: d("resultadosNoRealizados"),
-        resultadoEjercicio: d("resultadoEjercicio"),
-        totalPatrimonio: d("totalPatrimonio"),
-        totalPasivoPatrimonio: d("totalPasivoPatrimonio"),
-        ingresosIntereses: d("ingresosIntereses"),
-        utilidadEjercicio: d("utilidadEjercicio"),
-      });
-    } else if (tipo === 4) {
-      lstBalancesSeguro.push({
-        id,
-        efectivoDisponible: d("efectivoDisponible"),
-        inversionesFinancieras: d("inversionesFinancieras"),
-        prestamosInteresesNetos: d("prestamosInteresesNetos"),
-        primasCobrar: d("primasCobrar"),
-        deudasReaseguradores: d("deudasReaseguradores"),
-        activosVenta: d("activosVenta"),
-        propiedadesInversion: d("propiedadesInversion"),
-        propiedadPlantaEquipo: d("propiedadPlantaEquipo"),
-        otrosActivos: d("otrosActivos"),
-        totalActivos: d("totalActivos"),
-        obligacionesAsegurados: d("obligacionesAsegurados"),
-        reservasSiniestros: d("reservasSiniestros"),
-        reservasTecnicas: d("reservasTecnicas"),
-        obligacionesReaseguradores: d("obligacionesReaseguradores"),
-        obligacionesFinancieras: d("obligacionesFinancieras"),
-        cuentasPagar: d("cuentasPagar"),
-        otrosPasivos: d("otrosPasivos"),
-        totalPasivo: d("totalPasivo"),
-        capitalSocial: d("capitalSocial"),
-        aportesCapitalNoCapitalizados: d("aportesCapitalNoCapitalizados"),
-        resultadosAcumulados: d("resultadosAcumulados"),
-        patrimonioRestringido: d("patrimonioRestringido"),
-        totalPatrimonio: d("totalPatrimonio"),
-        totalPasivoPatrimonio: d("totalPasivoPatrimonio"),
-        primasGanadasNetas: d("primasGanadasNetas"),
-        utilidadNeta: d("utilidadNeta"),
-      });
-    } else if (tipo === 5) {
-      const numeroTurquia = (campo: string) => d(campo) ?? 0;
-      lstBalancesTurquia.push({
-        id,
-        ano: i("ano"),
-        fechaBalance: convertirFechaIso(
-          obtenerValorCampoEstadoFinanciero(
-            r,
-            "fechaBalance",
-            tipoEstadoFinanciero,
-          ),
-        ),
-        idMoneda: balance.idMoneda ?? i("idMoneda"),
-        duracionPeriodo: i("duracionPeriodo"),
-        idNivelConfiabilidad:
-          {
-            ACTUAL: 1,
-            PRELIMINAR: 2,
-            ESTIMADO: 3,
-          }[
-            obtenerValorCampoEstadoFinanciero(
-              r,
-              "idNivelConfiabilidad",
-              tipoEstadoFinanciero,
-            ).toUpperCase()
-          ] ?? i("idNivelConfiabilidad"),
-        tipoCambio: numeroTurquia("tipoCambio"),
-        efectivo: numeroTurquia("efectivo"),
-        existencias: numeroTurquia("existencias"),
-        deudores: numeroTurquia("deudores"),
-        totalCorriente: numeroTurquia("totalCorriente"),
-        bienesTongibles: numeroTurquia("bienesTongibles"),
-        activosIntangibles: numeroTurquia("activosIntangibles"),
-        activoFijoNeto: numeroTurquia("activoFijoNeto"),
-        totalActivos: numeroTurquia("totalActivos"),
-        prestamos: numeroTurquia("prestamos"),
-        acreedores: numeroTurquia("acreedores"),
-        pasivosCorrientes: numeroTurquia("pasivosCorrientes"),
-        pasivosNoCorrientes: numeroTurquia("pasivosNoCorrientes"),
-        pasivosLargoPlazo: numeroTurquia("pasivosLargoPlazo"),
-        totalPasivosNoCorrientes: numeroTurquia("totalPasivosNoCorrientes"),
-        totalPasivos: numeroTurquia("totalPasivos"),
-        capital: numeroTurquia("capital"),
-        reservas: numeroTurquia("reservas"),
-        resultadosAcumulados: numeroTurquia("resultadosAcumulados"),
-        resultadoEjercicio: numeroTurquia("resultadoEjercicio"),
-        otrasCuentas: numeroTurquia("otrasCuentas"),
-        patrimonio: numeroTurquia("totalPatrimonio"),
-        totalPatrimonio: numeroTurquia("totalPatrimonio"),
-        totalPasivosPatrimonio: numeroTurquia("totalPasivosPatrimonio"),
-        ventasNetas: numeroTurquia("ventasNetas"),
-        costoVentas: numeroTurquia("costoVentas"),
-        costoMateriales: numeroTurquia("costoMateriales"),
-        gananciaBruta: numeroTurquia("gananciaBruta"),
-        otrosGastosOperativos: numeroTurquia("otrosGastosOperativos"),
-        costoEmpleados: numeroTurquia("costoEmpleados"),
-        depreciacion: numeroTurquia("depreciacion"),
-        ingresosFinancieros: numeroTurquia("ingresosFinancieros"),
-        gastosFinancieros: numeroTurquia("gastosFinancieros"),
-        interesesPagados: numeroTurquia("interesesPagados"),
-        plFinanciero: numeroTurquia("plFinanciero"),
-        ingresosExtraordinarios: numeroTurquia("ingresosExtraordinarios"),
-        gastosExtraordinarios: numeroTurquia("gastosExtraordinarios"),
-        plExtraordinario: numeroTurquia("plExtraordinario"),
-        gananciaAntesImpuestos: numeroTurquia("gananciaAntesImpuestos"),
-        impuestos: numeroTurquia("impuestos"),
-        gananciaNeta: numeroTurquia("gananciaNeta"),
-        ebit: numeroTurquia("ebit"),
-        ebitda: numeroTurquia("ebitda"),
-        ganancia: numeroTurquia("ganancia"),
-        indiceLiquidez: numeroTurquia("indiceLiquidez"),
-        capitalTrabajo: numeroTurquia("capitalTrabajo"),
-        ratioEndeudamiento: numeroTurquia("ratioEndeudamiento"),
-        ratioRentabilidad: numeroTurquia("ratioRentabilidad"),
-      });
-    }
-  });
-
-  return {
-    lstBalancesDesagregado,
-    lstBalancesTotalizado,
-    lstBalancesBanco,
-    lstBalancesSeguro,
-    lstBalancesTurquia,
-  };
-}
-
-function depurarPayloadInforme(valor: unknown): unknown {
-  if (Array.isArray(valor)) {
-    return valor
-      .map((item) => depurarPayloadInforme(item))
-      .filter((item) => item !== undefined);
-  }
-
-  if (valor && typeof valor === "object") {
-    const entradas = Object.entries(valor)
-      .map(
-        ([clave, contenido]) =>
-          [clave, depurarPayloadInforme(contenido)] as const,
-      )
-      .filter(([, contenido]) => contenido !== undefined);
-
-    if (entradas.length === 0) return undefined;
-    return Object.fromEntries(entradas);
-  }
-
-  if (typeof valor === "string") {
-    const texto = valor.trim();
-    return texto ? texto : undefined;
-  }
-
-  if (valor == null) return undefined;
-
-  return valor;
-}
-
-function construirPayloadCrearInforme({
-  idPedido,
-  idInforme,
-  idFormatoFecha,
-  idEstadoInforme,
-  datosInvestigacion,
-  opcionesTipoPersona,
-  opcionesPais,
-  opcionesEstadoCliente,
-  opcionesTipoRegTributario,
-  opcionesCiudad,
-  opcionesTipoEmpresa,
-  opcionesMoneda,
-  opcionesSectorEconomico,
-  opcionesActividadEconomica,
-  opcionesClaseCiiu,
-  opcionesTipoLocal,
-  opcionesTipoProveedor,
-}: {
-  idPedido: number;
-  idInforme?: number;
-  idFormatoFecha: number;
-  idEstadoInforme: number;
-  datosInvestigacion: DatosInvestigacionAnalista;
-  opcionesTipoPersona:
-    | { num1: number | null; string1: string | null }[]
-    | undefined;
-  opcionesPais: { num1: number | null; string1: string | null }[] | undefined;
-  opcionesEstadoCliente:
-    | { num1: number | null; string1: string | null }[]
-    | undefined;
-  opcionesTipoRegTributario:
-    | { num1: number | null; string1: string | null }[]
-    | undefined;
-  opcionesCiudad: { num1: number | null; string1: string | null }[] | undefined;
-  opcionesTipoEmpresa:
-    | { num1: number | null; string1: string | null }[]
-    | undefined;
-  opcionesMoneda: { num1: number | null; string1: string | null }[] | undefined;
-  opcionesSectorEconomico:
-    | { num1: number | null; string1: string | null }[]
-    | undefined;
-  opcionesActividadEconomica:
-    | { num1: number | null; string1: string | null; string2?: string | null }[]
-    | undefined;
-  opcionesClaseCiiu:
-    | { num1: number | null; string1: string | null; string2?: string | null }[]
-    | undefined;
-  opcionesTipoLocal:
-    | { num1: number | null; string1: string | null }[]
-    | undefined;
-  opcionesTipoProveedor:
-    | { num1: number | null; string1: string | null }[]
-    | undefined;
-}): InformeCrearRequest {
-  const {
-    identificacion,
-    aspectosLegales,
-    operacionPrincipal,
-    informacionFinanciera,
-    referencias,
-    datosGenerales,
-  } = datosInvestigacion;
-  const esEdicion = typeof idInforme === "number" && idInforme > 0;
-
-  return depurarPayloadInforme({
-    ...(esEdicion ? { idInforme } : {}),
-    idPedido,
-    idFormatoFecha,
-    idTipoPersona: obtenerIdPorTexto(
-      opcionesTipoPersona,
-      identificacion.tipoPersona,
-    ),
-    nombre: identificacion.nombreEmpresa,
-    nombreComercial: identificacion.nombreComercial,
-    idPais: obtenerIdPorTexto(opcionesPais, identificacion.pais),
-    operacionesTCMoneda: obtenerIdPorTextoONumero(
-      opcionesMoneda,
-      aspectosLegales.operacionesCambioDivisas,
-    ),
-    taxIdType: obtenerIdPorTexto(
-      opcionesTipoRegTributario,
-      identificacion.tipoIdentificacionFiscal,
-    ),
-    taxNum: identificacion.numeroIdentificacionFiscal,
-    direccion: identificacion.direccionPrincipal,
-    ubigeo: identificacion.ciudadEstadoProvincia,
-    codigoPostal: "",
-    telefono: identificacion.numeroTelefono,
-    fax: identificacion.numeroFax,
-    email: identificacion.correoElectronico,
-    paginaWeb: identificacion.paginaWeb,
-    idEstadoManual: obtenerIdPorTexto(
-      opcionesEstadoCliente,
-      identificacion.estadoActual,
-    ),
-    idEstadoInforme,
-    datosAdicionales: identificacion.datosAdicionales,
-    observacionesIdentificacion: "",
-    idTipoEmpresa: obtenerIdPorTexto(
-      opcionesTipoEmpresa,
-      aspectosLegales.tipoEmpresa,
-    ),
-    fechaConstitucion: convertirFechaIso(aspectosLegales.fechaConstitucion),
-    idCiudadRegistro: obtenerIdPorTexto(
-      opcionesCiudad,
-      aspectosLegales.ciudadRegistro,
-    ),
-    idNotaria: aspectosLegales.notaria,
-    idNotario: aspectosLegales.notario,
-    idRegistro: aspectosLegales.registro,
-    idPlazo: aspectosLegales.condiciones,
-    idOperacionesCambioDivisas: obtenerIdPorTextoONumero(
-      opcionesMoneda,
-      aspectosLegales.operacionesCambioDivisas,
-    ),
-    capitalInicial: obtenerNumeroDesdeTexto(aspectosLegales.capitalInicial),
-    capitalPagado: obtenerNumeroDesdeTexto(aspectosLegales.capitalDesembolsado),
-    fechaUltimoIncremento: convertirFechaIso(aspectosLegales.ultimaAmpliacion),
-    idTipoIncremento: 0,
-    patrimonioNeto: obtenerNumeroDesdeTexto(aspectosLegales.patrimonioNeto),
-    tipoAcciones: aspectosLegales.tipoAcciones,
-    valorAcciones: obtenerNumeroDesdeTexto(aspectosLegales.valorAcciones),
-    cotizaBolsa: esTextoAfirmativo(aspectosLegales.obligacionBolsa),
-    idTipoCambio: obtenerIdPorTextoONumero(
-      opcionesMoneda,
-      aspectosLegales.monedaTipoCambio,
-    ),
-    tipoCambio: obtenerNumeroDesdeTexto(aspectosLegales.tipoCambio),
-    antecedentes: aspectosLegales.antecedentes,
-    aspectosLegales: aspectosLegales.aspectosLegales,
-    comentariosAspectoLegal: aspectosLegales.comentariosEmpresasRelacionadas,
-    idSector: obtenerIdPorTexto(
-      opcionesSectorEconomico,
-      operacionPrincipal.sector,
-    ),
-    actividad: operacionPrincipal.actividad,
-    idIsicCategoria: obtenerIdCiiuPorValor(
-      opcionesActividadEconomica,
-      operacionPrincipal.categoriaCiiu,
-    ),
-    idIsicClase: obtenerIdCiiuPorValor(
-      opcionesClaseCiiu,
-      operacionPrincipal.claseCiiu,
-    ),
-    actividadPrincipal: operacionPrincipal.actividadPrincipal,
-    ventasContado: obtenerNumeroOpcionalDesdeTexto(
-      operacionPrincipal.ventasContadoPorcentaje,
-    ),
-    ventasContadoText: operacionPrincipal.ventasContadoDetalle,
-    ventasCredito: obtenerNumeroOpcionalDesdeTexto(
-      operacionPrincipal.ventasCreditoPorcentaje,
-    ),
-    ventasCreditoText: operacionPrincipal.ventasCreditoDetalle,
-    idVentasCreditoTiempo: obtenerEnteroDesdeTexto(
-      operacionPrincipal.ventasCreditoTiempo,
-    ),
-    ventasNacionales: obtenerNumeroOpcionalDesdeTexto(
-      operacionPrincipal.territorioVentasPorcentaje,
-    ),
-    ventasNacionalesText: operacionPrincipal.territorioVentasDetalle,
-    ventasInternacionales: obtenerNumeroOpcionalDesdeTexto(
-      operacionPrincipal.ventasExtranjeroPorcentaje,
-    ),
-    ventasInternacionalesText: operacionPrincipal.ventasExtranjeroDetalle,
-    comprasNacionales: obtenerNumeroOpcionalDesdeTexto(
-      operacionPrincipal.comprasNacionalesPorcentaje,
-    ),
-    comprasNacionalesText: operacionPrincipal.comprasNacionalesDetalle,
-    comprasContadoNacionales: obtenerNumeroOpcionalDesdeTexto(
-      operacionPrincipal.comprasContadoNacionalesPorcentaje,
-    ),
-    comprasContadoNacionalesText:
-      operacionPrincipal.comprasContadoNacionalesDetalle,
-    comprasCreditoNacionales: obtenerNumeroOpcionalDesdeTexto(
-      operacionPrincipal.comprasCreditoNacionalesPorcentaje,
-    ),
-    comprasCreditoNacionalesText:
-      operacionPrincipal.comprasCreditoNacionalesDetalle,
-    idComprasCreditoNacionalesTiempo: obtenerEnteroDesdeTexto(
-      operacionPrincipal.comprasCreditoNacionalesTiempo,
-    ),
-    comprasInternacionales: obtenerNumeroOpcionalDesdeTexto(
-      operacionPrincipal.comprasExtranjeroPorcentaje,
-    ),
-    comprasInternacionalesText: operacionPrincipal.comprasExtranjeroDetalle,
-    comprasContadoInternacionales: obtenerNumeroOpcionalDesdeTexto(
-      operacionPrincipal.comprasContadoInternacionalesPorcentaje,
-    ),
-    comprasContadoInternacionalesText:
-      operacionPrincipal.comprasContadoInternacionalesDetalle,
-    comprasCreditoInternacionales: obtenerNumeroOpcionalDesdeTexto(
-      operacionPrincipal.comprasCreditoInternacionalesPorcentaje,
-    ),
-    comprasCreditoInternacionalesText:
-      operacionPrincipal.comprasCreditoInternacionalesDetalle,
-    idComprasCreditoInternacionalesTiempo: obtenerEnteroDesdeTexto(
-      operacionPrincipal.comprasCreditoInternacionalesTiempo,
-    ),
-    numeroEmpleados: obtenerEnteroDesdeTexto(
-      operacionPrincipal.numeroEmpleados,
-    ),
-    numeroEmpleadosText: operacionPrincipal.numeroEmpleadosDetalle,
-    comentariosOperaciones: operacionPrincipal.comentariosOperaciones,
-    contenidoInformacionFinanciera: informacionFinanciera.contenido,
-    comentarioInformacionFinanciera:
-      informacionFinanciera.comentariosFinancieros,
-    activosFijos: informacionFinanciera.activosFijos,
-    seguros: informacionFinanciera.seguros,
-    comentarioProveedor: referencias.comentariosProveedores,
-    referenciaBanco: referencias.referenciasBancos,
-    litigios: referencias.litigios,
-    riesgoPrincipal: referencias.riesgoPrincipal,
-    superintendecia: referencias.superintendencia,
-    informacionGeneral: datosGenerales.informacionGeneral,
-    opinionCredito: datosGenerales.opinionCredito,
-    flgTieneInformacion: true,
-    lstBalances: datosInvestigacion.balances.map((balance) => ({
-      ...(esEdicion ? { idInformeBalance: balance.idInformeBalance ?? 0 } : {}),
-      fechaBalance: convertirFechaIso(balance.fechaInicio ?? balance.fecha),
-      fechaHasta: balance.esActual ? null : convertirFechaIso(balance.fechaFin),
-      flgActualidad: balance.esActual ?? false,
-      tipoCambio: obtenerNumeroDesdeTexto(balance.tipoCambio),
-      idMoneda:
-        balance.idMoneda ??
-        (obtenerIdPorTexto(opcionesMoneda, balance.operacionCambio ?? "") ||
-          obtenerIdMoneda(balance.operacionCambio ?? "")),
-      idTipoBalance:
-        (balance.idTipoBalance ??
-          obtenerIdPorTextoONumero(undefined, balance.tipoBalance ?? "")) ||
-        obtenerIdTipoBalance(balance.tipoBalance),
-      idTipoEstadoFinanciero:
-        balance.idTipoEstadoFinanciero ??
-        (
-          {
-            desagregado: 1,
-            totalizado: 2,
-            bancos: 3,
-            seguros: 4,
-            turquia: 5,
-          } as Record<string, number>
-        )[
-          obtenerClaveEstadoFinanciero(
-            balance.tipoEstadoFinanciero ?? balance.tipo,
-          )
-        ] ??
-        0,
-    })),
-    ...construirListasDetalleBalance(datosInvestigacion.balances),
-    lstBancos: datosInvestigacion.bancos.map((banco) => ({
-      ...(esEdicion ? { idInformeBanco: banco.idInformeBanco ?? 0 } : {}),
-      idBanco: banco.idBanco ?? 0,
-      numeroCuenta: banco.numeroCuenta,
-      idSector:
-        banco.idSector ??
-        obtenerIdPorTexto(opcionesSectorEconomico, banco.sector),
-      sectorista: banco.sectoristaJefeCuenta ?? "",
-      referenciaBanco: banco.telefono,
-    })),
-    lstCompaniasRelacionadas: datosInvestigacion.companiasRelacionadas.map(
-      (empresa) => ({
-        ...(esEdicion ? { idInformeCompaniaRelacionada: 0 } : {}),
-        idCompania: empresa.idCompania ?? 0,
-      }),
-    ),
-    lstExportacionesImportaciones: [
-      ...datosInvestigacion.importaciones.map((registro) => ({
-        ...(esEdicion ? { idInformeExportacionImportacion: 0 } : {}),
-        anio: obtenerEnteroDesdeTexto(registro.anio),
-        mesInicio: registro.idMesInicio ?? obtenerNumeroMes(registro.mes),
-        mesFin:
-          registro.idMesFin ??
-          registro.idMesInicio ??
-          obtenerNumeroMes(registro.mes),
-        idMoneda:
-          (registro.idMoneda ??
-            obtenerIdPorTexto(opcionesMoneda, registro.moneda)) ||
-          obtenerIdMoneda(registro.moneda),
-        paises: registro.paises,
-        monto: obtenerNumeroDesdeTexto(registro.monto),
-        productos: registro.productos,
-        idTipoOperacion: 1,
-        numOperaciones: obtenerEnteroDesdeTexto(registro.operaciones),
-      })),
-      ...datosInvestigacion.exportaciones.map((registro) => ({
-        ...(esEdicion ? { idInformeExportacionImportacion: 0 } : {}),
-        anio: obtenerEnteroDesdeTexto(registro.anio),
-        mesInicio: registro.idMesInicio ?? obtenerNumeroMes(registro.mes),
-        mesFin:
-          registro.idMesFin ??
-          registro.idMesInicio ??
-          obtenerNumeroMes(registro.mes),
-        idMoneda:
-          (registro.idMoneda ??
-            obtenerIdPorTexto(opcionesMoneda, registro.moneda)) ||
-          obtenerIdMoneda(registro.moneda),
-        paises: registro.paises,
-        monto: obtenerNumeroDesdeTexto(registro.monto),
-        productos: registro.productos,
-        idTipoOperacion: 2,
-        numOperaciones: obtenerEnteroDesdeTexto(registro.operaciones),
-      })),
-    ],
-    lstProveedores: datosInvestigacion.proveedores.map((proveedor) => ({
-      ...(esEdicion
-        ? { idInformeProveedor: proveedor.idInformeProveedor ?? 0 }
-        : {}),
-      idBancoProveedor: 0,
-      idTipoPersona:
-        proveedor.idTipoProveedor ??
-        obtenerIdPorTextoONumero(
-          opcionesTipoProveedor,
-          proveedor.tipoProveedor,
-        ),
-      nombre: proveedor.nombreEmpresa,
-      idPais:
-        proveedor.idPais ?? obtenerIdPorTexto(opcionesPais, proveedor.pais),
-      idTipoDocumento:
-        proveedor.idTipoDocumento ??
-        obtenerIdPorTextoONumero(
-          opcionesTipoRegTributario,
-          proveedor.taxIdType,
-        ),
-      numeroDocumento: proveedor.taxIdNumber,
-      idMoneda:
-        proveedor.idMoneda ??
-        (obtenerIdPorTexto(
-          opcionesMoneda,
-          proveedor.operacionCambioMoneda ?? "",
-        ) ||
-          obtenerIdMoneda(proveedor.operacionCambioMoneda ?? "")),
-      fechaInicio: convertirFechaIso(proveedor.comienzoNegociaciones),
-      idLimiteCredito:
-        proveedor.idLimiteCredito ?? proveedor.idPlazoCredito ?? 0,
-      promedioMensual: obtenerNumeroDesdeTexto(proveedor.promedioMensual),
-      tipoCambio: obtenerNumeroDesdeTexto(proveedor.tipoCambio),
-      plazoCredito: proveedor.limiteCredito ?? "",
-      productos: proveedor.tipoProveedor,
-      idCalificacion: 0,
-      comentarios: "",
-      esTieneReferenciaComercial:
-        proveedor.esTieneReferenciaComercial ??
-        proveedor.tieneReferenciaComercial,
-      nombreContacto: proveedor.contacto,
-      telefono: proveedor.telefono,
-      comienzoNegociaciones: proveedor.comienzoNegociaciones ?? "",
-      idPlazoCredito:
-        proveedor.idPlazoCredito ?? proveedor.idLimiteCredito ?? 0,
-    })),
-    lstDirectoriosEjecutivos: datosInvestigacion.directorioEjecutivo.map(
-      (ejecutivo) => ({
-        ...(esEdicion ? { idInformeDirectorioEjecutivo: 0 } : {}),
-        idDirectorioEjecutivo: ejecutivo.idDirectorioEjecutivo ?? ejecutivo.id,
-        idCargo: ejecutivo.idCargo ?? 0,
-        vinculadoDesde: convertirFechaIso(ejecutivo.vinculadoDesde),
-        companiaAnterior: ejecutivo.companiaAnterior,
-        participacion: obtenerNumeroDesdeTexto(ejecutivo.porcentaje),
-        orden: obtenerEnteroDesdeTexto(ejecutivo.orden),
-        esParticipanteDirectiva: ejecutivo.esParteDirectorio,
-        apareceImpresoLista: ejecutivo.lista,
-        imprimeDatosEjecutivos: ejecutivo.detalleEjecutivo,
-      }),
-    ),
-    lstLocales: datosInvestigacion.locales.map((local) => ({
-      idInformeLocal: local.idInformeLocal ?? 0,
-      idTipoLocal:
-        local.idTipoLocal ??
-        obtenerIdPorTexto(opcionesTipoLocal, local.tipoLocal),
-      comentario: local.comentario,
-      imagenes: (local.imagenes ?? []).map((imagen) => ({
-        idInformeLocalImagen: imagen.idInformeLocalImagen ?? 0,
-        idTipoArchivo:
-          imagen.idTipoArchivo ??
-          obtenerIdTipoArchivo(imagen.tipo ?? local.imagenTipo),
-        nombre: imagen.nombre,
-      })),
-    })),
-  }) as InformeCrearRequest;
-}
-
-function prepararDatosParaNuevoInforme(
-  datos: DatosInvestigacionAnalista,
-): DatosInvestigacionAnalista {
-  return {
-    ...datos,
-    balances: datos.balances.map((balance) => ({
-      ...balance,
-      idInformeBalance: undefined,
-    })),
-    bancos: datos.bancos.map((banco) => ({
-      ...banco,
-      idInformeBanco: undefined,
-    })),
-    companiasRelacionadas: datos.companiasRelacionadas.map((compania) => ({
-      ...compania,
-      idInformeCompaniaRelacionada: undefined,
-    })),
-    importaciones: datos.importaciones.map((registro) => ({
-      ...registro,
-      idInformeExportacionImportacion: undefined,
-    })),
-    exportaciones: datos.exportaciones.map((registro) => ({
-      ...registro,
-      idInformeExportacionImportacion: undefined,
-    })),
-    proveedores: datos.proveedores.map((proveedor) => ({
-      ...proveedor,
-      idInformeProveedor: undefined,
-    })),
-    directorioEjecutivo: datos.directorioEjecutivo.map((ejecutivo) => ({
-      ...ejecutivo,
-      idInformeDirectorioEjecutivo: undefined,
-    })),
-    locales: datos.locales.map((local) => ({
-      ...local,
-      idInformeLocal: undefined,
-    })),
-  };
-}
-
-function PaginacionInvestigacion({
-  paginaActual,
-  totalRegistros,
-  onPaginaChange,
-  etiquetaRegistros,
-  contenidoCentro,
-}: {
-  paginaActual: number;
-  totalRegistros: number;
-  onPaginaChange: (pagina: number) => void;
-  etiquetaRegistros: string;
-  contenidoCentro?: ReactNode;
-}) {
-  const totalPaginas = obtenerTotalPaginas(totalRegistros);
-  const paginaSegura = Math.min(paginaActual, totalPaginas);
-  const mostrando =
-    totalRegistros === 0
-      ? 0
-      : Math.min(
-          FILAS_POR_PAGINA_INVESTIGACION,
-          totalRegistros - (paginaSegura - 1) * FILAS_POR_PAGINA_INVESTIGACION,
-        );
-
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-white px-4 py-3">
-      <p className="text-xs font-medium text-slate-400">
-        Mostrando {mostrando} de {totalRegistros} {etiquetaRegistros}
-      </p>
-
-      {contenidoCentro ? (
-        <div className="text-xs font-semibold text-slate-500">
-          {contenidoCentro}
-        </div>
-      ) : (
-        <div />
-      )}
-
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => onPaginaChange(Math.max(1, paginaSegura - 1))}
-          disabled={paginaSegura === 1}
-          className="flex items-center gap-1 text-xs text-slate-500 transition-colors hover:text-brand-black disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          <ArrowLeft size={14} />
-          Anterior
-        </button>
-        <span className="text-xs font-medium text-slate-400">
-          {paginaSegura}/{totalPaginas}
-        </span>
-        <button
-          type="button"
-          onClick={() =>
-            onPaginaChange(Math.min(totalPaginas, paginaSegura + 1))
-          }
-          disabled={paginaSegura === totalPaginas}
-          className="flex items-center gap-1 text-xs text-slate-500 transition-colors hover:text-brand-black disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          Siguiente
-          <ArrowRight size={14} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function IndicadorCambioExtraccion({
-  visible,
-  onClick,
-}: {
-  visible: boolean;
-  onClick: () => void;
-}) {
-  if (!visible) return null;
-
-  return (
-    <span className="group relative inline-flex">
-      <button
-        type="button"
-        onMouseDown={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          onClick();
-        }}
-        className="inline-flex items-center text-amber-500 transition-colors hover:text-amber-600"
-      >
-        <AlertTriangle size={16} />
-      </button>
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-52 -translate-x-1/2 rounded-lg bg-brand-black px-3 py-2 text-center text-xs font-medium text-white shadow-lg group-hover:block">
-        Hay un posible cambio por la extraccion del documento
-      </span>
-    </span>
-  );
-}
-
 function PantallaInvestigacionAnalista({
   idPedido,
   idInforme,
@@ -1935,6 +526,7 @@ function PantallaInvestigacionAnalista({
   datosPedidoNavegacion,
   datosIniciales,
   datosOriginalesIniciales,
+  esPendienteAprobacionInformacion = false,
   archivosIniciales = [],
   idFormatoFechaInicial,
   idTipoPersonaInicial,
@@ -1948,7 +540,7 @@ function PantallaInvestigacionAnalista({
 }: PropsContenidoPantallaInvestigacionAnalista) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const esSoloLectura = modo === "detalle";
+  const esSoloLectura = modo === "detalle" || esPendienteAprobacionInformacion;
   const contenedorPantallaRef = useRef<HTMLDivElement>(null);
   const paisExtraccionRef = useRef<{
     idPais?: number;
@@ -2215,6 +807,30 @@ function PantallaInvestigacionAnalista({
     number | null
   >(null);
   const [busquedaEjecutivo, setBusquedaEjecutivo] = useState("");
+  const busquedaBalancesConRetardo = useRetardo(busquedaBalances);
+  const filtroProveedorNombreConRetardo = useRetardo(filtroProveedorNombre);
+  const filtroProveedorContactoConRetardo = useRetardo(
+    filtroProveedorContacto,
+  );
+  const filtroProveedorTelefonoConRetardo = useRetardo(
+    filtroProveedorTelefono,
+  );
+  const filtroBancoNombreConRetardo = useRetardo(filtroBancoNombre);
+  const filtroBancoCuentaConRetardo = useRetardo(filtroBancoCuenta);
+  const filtroBancoTelefonoConRetardo = useRetardo(filtroBancoTelefono);
+  const busquedaEjecutivoConRetardo = useRetardo(busquedaEjecutivo);
+  useEffect(() => setPaginaBalances(1), [busquedaBalancesConRetardo]);
+  useEffect(() => setPaginaProveedores(1), [
+    filtroProveedorContactoConRetardo,
+    filtroProveedorNombreConRetardo,
+    filtroProveedorTelefonoConRetardo,
+  ]);
+  useEffect(() => setPaginaBancos(1), [
+    filtroBancoCuentaConRetardo,
+    filtroBancoNombreConRetardo,
+    filtroBancoTelefonoConRetardo,
+  ]);
+  useEffect(() => setPaginaEjecutivos(1), [busquedaEjecutivoConRetardo]);
   const [
     debeVolverABandejaTrasGuardarBorrador,
     setDebeVolverABandejaTrasGuardarBorrador,
@@ -2260,6 +876,29 @@ function PantallaInvestigacionAnalista({
       profesion: "Ingeniero",
       referenciaAdicional: "",
     },
+  ]);
+
+  usePrecargaTablaMaestra([
+    TablaMaestraId.TIPO_PERSONA,
+    TablaMaestraId.PAIS,
+    TablaMaestraId.TIPO_REG_TRIBUTARIO,
+    TablaMaestraId.ESTADO_CLIENTE,
+    TablaMaestraId.CIUDAD,
+    TablaMaestraId.TIPO_EMPRESA,
+    TablaMaestraId.MONEDA,
+    TablaMaestraId.OBLIGACION_BOLSA,
+    TablaMaestraId.MES,
+    TablaMaestraId.SECTOR_ECONOMICO,
+    TablaMaestraId.ACTIVIDAD_ECONOMICA,
+    TablaMaestraId.CLASE_CIIU,
+    TablaMaestraId.TIPO_LOCAL,
+    TablaMaestraId.TIPO_PROVEEDOR,
+    TablaMaestraId.TIEMPO_CREDITO_VENTAS,
+    TablaMaestraId.PLANTILLA_INFORME,
+    TablaMaestraId.TIPO_TRAMITE,
+    TablaMaestraId.IDIOMA,
+    TablaMaestraId.FORMATO_FECHA_INFORME,
+    TablaMaestraId.CARGO_DIRECTORIO,
   ]);
 
   const { data: opcionesTipoPersonaBase } = useQuery({
@@ -2664,6 +1303,7 @@ function PantallaInvestigacionAnalista({
       archivosImagenesNuevosRef.current = mapaArchivos;
 
       const payload = construirPayloadCrearInforme({
+        modoPayload: "traductor",
         idPedido: idPedidoNumerico,
         idInforme: debeCrearInformeTraduccion ? 0 : idInformeActual,
         idFormatoFecha: idFormatoFechaInforme,
@@ -4895,7 +3535,7 @@ function PantallaInvestigacionAnalista({
   };
 
   const obtenerIndicadorCambioExtraccion = (id: string) => (
-    <IndicadorCambioExtraccion
+    <CustomIndicadorCambioExtraccion
       visible={Boolean(cambiosExtraccionPendientes[id])}
       onClick={() => setIdCambioExtraccionActivo(id)}
     />
@@ -5351,11 +3991,7 @@ function PantallaInvestigacionAnalista({
       : pestanaRamoOperaciones === "importaciones" &&
           !esPorcentajeMayorACero(
             datosInvestigacion.operacionPrincipal
-              .comprasContadoInternacionalesPorcentaje,
-          ) &&
-          !esPorcentajeMayorACero(
-            datosInvestigacion.operacionPrincipal
-              .comprasCreditoInternacionalesPorcentaje,
+              .comprasExtranjeroPorcentaje,
           )
         ? "operaciones"
         : pestanaRamoOperaciones;
@@ -5593,7 +4229,7 @@ function PantallaInvestigacionAnalista({
   };
 
   const balancesFiltrados = datosInvestigacion.balances.filter((balance) => {
-    const termino = busquedaBalances.trim().toLowerCase();
+    const termino = busquedaBalancesConRetardo.trim().toLowerCase();
     if (!termino) return true;
 
     return [balance.codigo, balance.periodo, balance.fecha, balance.tipo].some(
@@ -5604,23 +4240,23 @@ function PantallaInvestigacionAnalista({
   const proveedoresFiltrados = datosInvestigacion.proveedores.filter(
     (proveedor) => {
       const coincideNombre =
-        !filtroProveedorNombre.trim() ||
+        !filtroProveedorNombreConRetardo.trim() ||
         proveedor.nombreEmpresa
           .toLowerCase()
-          .includes(filtroProveedorNombre.trim().toLowerCase());
+          .includes(filtroProveedorNombreConRetardo.trim().toLowerCase());
       const coincideTipo =
         filtroProveedorTipo === "Todos" ||
         proveedor.tipoProveedor === filtroProveedorTipo;
       const coincideContacto =
-        !filtroProveedorContacto.trim() ||
+        !filtroProveedorContactoConRetardo.trim() ||
         proveedor.contacto
           .toLowerCase()
-          .includes(filtroProveedorContacto.trim().toLowerCase());
+          .includes(filtroProveedorContactoConRetardo.trim().toLowerCase());
       const coincideTelefono =
-        !filtroProveedorTelefono.trim() ||
+        !filtroProveedorTelefonoConRetardo.trim() ||
         proveedor.telefono
           .toLowerCase()
-          .includes(filtroProveedorTelefono.trim().toLowerCase());
+          .includes(filtroProveedorTelefonoConRetardo.trim().toLowerCase());
 
       return (
         coincideNombre && coincideTipo && coincideContacto && coincideTelefono
@@ -5630,20 +4266,20 @@ function PantallaInvestigacionAnalista({
 
   const bancosFiltrados = datosInvestigacion.bancos.filter((banco) => {
     const coincideNombre =
-      !filtroBancoNombre.trim() ||
+      !filtroBancoNombreConRetardo.trim() ||
       banco.banco
         .toLowerCase()
-        .includes(filtroBancoNombre.trim().toLowerCase());
+        .includes(filtroBancoNombreConRetardo.trim().toLowerCase());
     const coincideCuenta =
-      !filtroBancoCuenta.trim() ||
+      !filtroBancoCuentaConRetardo.trim() ||
       banco.numeroCuenta
         .toLowerCase()
-        .includes(filtroBancoCuenta.trim().toLowerCase());
+        .includes(filtroBancoCuentaConRetardo.trim().toLowerCase());
     const coincideTelefono =
-      !filtroBancoTelefono.trim() ||
+      !filtroBancoTelefonoConRetardo.trim() ||
       banco.telefono
         .toLowerCase()
-        .includes(filtroBancoTelefono.trim().toLowerCase());
+        .includes(filtroBancoTelefonoConRetardo.trim().toLowerCase());
     const sectorBanco =
       banco.sector ||
       opcionesSectorEconomico?.find((opcion) => opcion.num1 === banco.idSector)
@@ -5671,15 +4307,9 @@ function PantallaInvestigacionAnalista({
   const exportacionesHabilitadas = esPorcentajeMayorACero(
     datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje,
   );
-  const importacionesHabilitadas =
-    esPorcentajeMayorACero(
-      datosInvestigacion.operacionPrincipal
-        .comprasContadoInternacionalesPorcentaje,
-    ) ||
-    esPorcentajeMayorACero(
-      datosInvestigacion.operacionPrincipal
-        .comprasCreditoInternacionalesPorcentaje,
-    );
+  const importacionesHabilitadas = esPorcentajeMayorACero(
+    datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje,
+  );
 
   const irASeccion = (direccion: "anterior" | "siguiente") => {
     const nuevoIndice =
@@ -5878,7 +4508,7 @@ function PantallaInvestigacionAnalista({
 
   const ejecutivosFiltrados = datosInvestigacion.directorioEjecutivo.filter(
     (ejecutivo) => {
-      const termino = busquedaEjecutivo.trim().toLowerCase();
+      const termino = busquedaEjecutivoConRetardo.trim().toLowerCase();
       if (!termino) return true;
 
       return [
@@ -6676,7 +5306,7 @@ function PantallaInvestigacionAnalista({
               />
             </label>
             <div className="flex flex-wrap gap-2">
-              {companiasExtraccionPendientes.length > 0 ? (
+              {!esSoloLectura && companiasExtraccionPendientes.length > 0 ? (
                 <button
                   type="button"
                   onClick={() =>
@@ -6727,14 +5357,15 @@ function PantallaInvestigacionAnalista({
                         {empresa.pais}
                       </td>
                       <td className="px-4 py-4 text-right text-slate-400">
-                        <button
-                          type="button"
-                          disabled={esSoloLectura}
-                          onClick={() => setIndiceCompaniaAEliminar(indiceReal)}
-                          className="ml-auto inline-flex text-red-600 transition-colors hover:text-red-700 disabled:cursor-not-allowed disabled:text-slate-300"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {!esSoloLectura ? (
+                          <button
+                            type="button"
+                            onClick={() => setIndiceCompaniaAEliminar(indiceReal)}
+                            className="ml-auto inline-flex text-red-600 transition-colors hover:text-red-700"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        ) : <span className="text-sm text-slate-300">-</span>}
                       </td>
                     </tr>
                   );
@@ -6742,7 +5373,7 @@ function PantallaInvestigacionAnalista({
               </tbody>
             </table>
           </div>
-          <PaginacionInvestigacion
+          <CustomPaginacionInvestigacion
             paginaActual={paginaCompanias}
             totalRegistros={datosInvestigacion.companiasRelacionadas.length}
             onPaginaChange={setPaginaCompanias}
@@ -6776,9 +5407,23 @@ function PantallaInvestigacionAnalista({
           etiqueta="Tipo de Empresa"
           valor={datosInvestigacion.aspectosLegales.tipoEmpresa}
           soloLectura={esSoloLectura}
-          opcionesTablaMaestra={opcionesTipoEmpresa}
+          opcionesTablaMaestra={opcionesTipoEmpresaBase}
           idMaestro={TablaMaestraId.TIPO_EMPRESA}
           permiteAltaNueva
+          obtenerEtiquetaOpcion={(opcion) =>
+            obtenerEtiquetaTipoEmpresaTraductor(opcion, idIdiomaTraduccion)
+          }
+          obtenerValorOpcion={(opcion) =>
+            obtenerTraduccionTipoEmpresaTraductor(opcion, idIdiomaTraduccion) ||
+            opcion.string1 ||
+            ""
+          }
+          renderizarOpcion={(opcion) =>
+            renderizarTipoEmpresaTraductor(opcion, idIdiomaTraduccion)
+          }
+          renderizarValorSeleccionado={(opcion) =>
+            renderizarTipoEmpresaTraductor(opcion, idIdiomaTraduccion)
+          }
           construirPayloadAltaNueva={(termino, opcionesActuales) =>
             construirPayloadAltaNuevaTraducida({
               idMaestro: TablaMaestraId.TIPO_EMPRESA,
@@ -7296,7 +5941,7 @@ function PantallaInvestigacionAnalista({
               </tbody>
             </table>
           </div>
-          <PaginacionInvestigacion
+          <CustomPaginacionInvestigacion
             paginaActual={paginaOperaciones}
             totalRegistros={
               pestanaRamoOperacionesVisible === "locales"
@@ -8514,28 +7159,32 @@ function PantallaInvestigacionAnalista({
                           setEstaAbiertoModalDetalleBalance(true);
                         }}
                       >
-                        <Plus size={14} />
+                        {esSoloLectura ? <Eye size={14} /> : <Plus size={14} />}
                       </button>
                     </td>
                     <td className="px-4 py-4 text-right text-slate-400">
                       <div className="flex justify-end gap-3">
-                        <button
-                          type="button"
-                          className="cursor-pointer transition-colors hover:text-slate-600"
-                          onClick={() => {
-                            setIndiceBalanceSeleccionado(indiceReal);
-                            setEstaAbiertoModalBalance(true);
-                          }}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          className="cursor-pointer transition-colors hover:text-slate-600"
-                          onClick={() => setIndiceBalanceAEliminar(indiceReal)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {!esSoloLectura ? (
+                          <>
+                            <button
+                              type="button"
+                              className="cursor-pointer transition-colors hover:text-slate-600"
+                              onClick={() => {
+                                setIndiceBalanceSeleccionado(indiceReal);
+                                setEstaAbiertoModalBalance(true);
+                              }}
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              className="cursor-pointer transition-colors hover:text-slate-600"
+                              onClick={() => setIndiceBalanceAEliminar(indiceReal)}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        ) : <span className="text-sm text-slate-300">-</span>}
                       </div>
                     </td>
                   </tr>
@@ -8545,7 +7194,7 @@ function PantallaInvestigacionAnalista({
           </tbody>
         </table>
       </div>
-      <PaginacionInvestigacion
+      <CustomPaginacionInvestigacion
         paginaActual={paginaBalances}
         totalRegistros={balancesFiltrados.length}
         onPaginaChange={setPaginaBalances}
@@ -8799,25 +7448,29 @@ function PantallaInvestigacionAnalista({
                       </td>
                       <td className="px-4 py-4 text-right text-slate-400">
                         <div className="flex justify-end gap-3">
-                          <button
-                            type="button"
-                            className="cursor-pointer transition-colors hover:text-slate-600"
-                            onClick={() => {
-                              setIndiceProveedorSeleccionado(indiceReal);
-                              setEstaAbiertoModalProveedor(true);
-                            }}
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            className="cursor-pointer transition-colors hover:text-slate-600"
-                            onClick={() =>
-                              setIndiceProveedorAEliminar(indiceReal)
-                            }
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          {!esSoloLectura ? (
+                            <>
+                              <button
+                                type="button"
+                                className="cursor-pointer transition-colors hover:text-slate-600"
+                                onClick={() => {
+                                  setIndiceProveedorSeleccionado(indiceReal);
+                                  setEstaAbiertoModalProveedor(true);
+                                }}
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                className="cursor-pointer transition-colors hover:text-slate-600"
+                                onClick={() =>
+                                  setIndiceProveedorAEliminar(indiceReal)
+                                }
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          ) : <span className="text-sm text-slate-300">-</span>}
                         </div>
                       </td>
                     </tr>
@@ -8826,7 +7479,7 @@ function PantallaInvestigacionAnalista({
               </tbody>
             </table>
           </div>
-          <PaginacionInvestigacion
+          <CustomPaginacionInvestigacion
             paginaActual={paginaProveedores}
             totalRegistros={proveedoresFiltrados.length}
             onPaginaChange={setPaginaProveedores}
@@ -9029,23 +7682,27 @@ function PantallaInvestigacionAnalista({
                       </td>
                       <td className="px-4 py-4 text-right text-slate-400">
                         <div className="flex justify-end gap-3">
-                          <button
-                            type="button"
-                            className="cursor-pointer transition-colors hover:text-slate-600"
-                            onClick={() => {
-                              setIndiceBancoSeleccionado(indiceReal);
-                              setEstaAbiertoModalBanco(true);
-                            }}
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            className="cursor-pointer transition-colors hover:text-slate-600"
-                            onClick={() => setIndiceBancoAEliminar(indiceReal)}
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          {!esSoloLectura ? (
+                            <>
+                              <button
+                                type="button"
+                                className="cursor-pointer transition-colors hover:text-slate-600"
+                                onClick={() => {
+                                  setIndiceBancoSeleccionado(indiceReal);
+                                  setEstaAbiertoModalBanco(true);
+                                }}
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                className="cursor-pointer transition-colors hover:text-slate-600"
+                                onClick={() => setIndiceBancoAEliminar(indiceReal)}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          ) : <span className="text-sm text-slate-300">-</span>}
                         </div>
                       </td>
                     </tr>
@@ -9054,7 +7711,7 @@ function PantallaInvestigacionAnalista({
               </tbody>
             </table>
           </div>
-          <PaginacionInvestigacion
+          <CustomPaginacionInvestigacion
             paginaActual={paginaBancos}
             totalRegistros={bancosFiltrados.length}
             onPaginaChange={setPaginaBancos}
@@ -9108,7 +7765,7 @@ function PantallaInvestigacionAnalista({
           />
         </label>
         <div className="flex flex-wrap gap-3">
-          {ejecutivosExtraccionPendientes.length > 0 && (
+          {!esSoloLectura && ejecutivosExtraccionPendientes.length > 0 && (
             <CustomButton
               variant="secondary"
               size="sm"
@@ -9216,28 +7873,30 @@ function PantallaInvestigacionAnalista({
                     </td>
                     <td className="px-4 py-4 text-right text-slate-400">
                       <div className="flex justify-end gap-3">
-                        <button
-                          type="button"
-                          className="cursor-pointer transition-colors hover:text-slate-600"
-                          disabled={esSoloLectura}
-                          onClick={() => {
-                            setIndiceEjecutivoSeleccionado(indiceReal);
-                            setPersonaDirectorioSeleccionada(null);
-                            setEstaAbiertoModalEjecutivo(true);
-                          }}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          className="cursor-pointer transition-colors hover:text-slate-600"
-                          disabled={esSoloLectura}
-                          onClick={() =>
-                            setIndiceEjecutivoAEliminar(indiceReal)
-                          }
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {!esSoloLectura ? (
+                          <>
+                            <button
+                              type="button"
+                              className="cursor-pointer transition-colors hover:text-slate-600"
+                              onClick={() => {
+                                setIndiceEjecutivoSeleccionado(indiceReal);
+                                setPersonaDirectorioSeleccionada(null);
+                                setEstaAbiertoModalEjecutivo(true);
+                              }}
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              className="cursor-pointer transition-colors hover:text-slate-600"
+                              onClick={() =>
+                                setIndiceEjecutivoAEliminar(indiceReal)
+                              }
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        ) : <span className="text-sm text-slate-300">-</span>}
                       </div>
                     </td>
                   </tr>
@@ -9247,7 +7906,7 @@ function PantallaInvestigacionAnalista({
           </tbody>
         </table>
       </div>
-      <PaginacionInvestigacion
+      <CustomPaginacionInvestigacion
         paginaActual={paginaEjecutivos}
         totalRegistros={ejecutivosFiltrados.length}
         onPaginaChange={setPaginaEjecutivos}
@@ -9486,6 +8145,7 @@ function PantallaInvestigacionAnalista({
         idInforme={idInformeActual}
         archivos={archivosInvestigacion}
         idIdioma={idIdiomaTraduccion}
+        soloLectura={esSoloLectura}
         onCerrar={() => setEstaAbiertoModalArchivosInvestigacion(false)}
         onInformeCreado={(nuevoIdInforme) => {
           setIdInformeActual(nuevoIdInforme);
@@ -9592,6 +8252,7 @@ function PantallaInvestigacionAnalista({
                 ?.tipoEstadoFinanciero
             : undefined
         }
+        soloLectura={esSoloLectura}
         onCerrar={() => {
           setIndiceBalanceSeleccionado(null);
           setEstaAbiertoModalDetalleBalance(false);
@@ -9603,7 +8264,7 @@ function PantallaInvestigacionAnalista({
         isOpen={indiceBalanceAEliminar !== null}
         onClose={() => setIndiceBalanceAEliminar(null)}
         onConfirm={() => {
-          if (indiceBalanceAEliminar == null) return;
+          if (indiceBalanceAEliminar == null || esSoloLectura) return;
           setDatosInvestigacion((anterior) => ({
             ...anterior,
             balances: anterior.balances.filter(
@@ -9666,7 +8327,7 @@ function PantallaInvestigacionAnalista({
         isOpen={indiceProveedorAEliminar !== null}
         onClose={() => setIndiceProveedorAEliminar(null)}
         onConfirm={() => {
-          if (indiceProveedorAEliminar == null) return;
+          if (indiceProveedorAEliminar == null || esSoloLectura) return;
           setDatosInvestigacion((anterior) => ({
             ...anterior,
             proveedores: anterior.proveedores.filter(
@@ -9690,7 +8351,7 @@ function PantallaInvestigacionAnalista({
         isOpen={indiceBancoAEliminar !== null}
         onClose={() => setIndiceBancoAEliminar(null)}
         onConfirm={() => {
-          if (indiceBancoAEliminar == null) return;
+          if (indiceBancoAEliminar == null || esSoloLectura) return;
           setDatosInvestigacion((anterior) => ({
             ...anterior,
             bancos: anterior.bancos.filter(
@@ -9713,7 +8374,7 @@ function PantallaInvestigacionAnalista({
         isOpen={indiceCompaniaAEliminar !== null}
         onClose={() => setIndiceCompaniaAEliminar(null)}
         onConfirm={() => {
-          if (indiceCompaniaAEliminar == null) return;
+          if (indiceCompaniaAEliminar == null || esSoloLectura) return;
           setDatosInvestigacion((anterior) => ({
             ...anterior,
             companiasRelacionadas: anterior.companiasRelacionadas.filter(
@@ -10175,7 +8836,7 @@ function PantallaInvestigacionAnalista({
         isOpen={indiceEjecutivoAEliminar !== null}
         onClose={() => setIndiceEjecutivoAEliminar(null)}
         onConfirm={() => {
-          if (indiceEjecutivoAEliminar == null) return;
+          if (indiceEjecutivoAEliminar == null || esSoloLectura) return;
           setDatosInvestigacion((anterior) => ({
             ...anterior,
             directorioEjecutivo: anterior.directorioEjecutivo.filter(
@@ -10225,25 +8886,18 @@ export default function InvestigacionTraductor() {
   const usaDatosBackend =
     Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0;
   const datosBaseInvestigacion = useMemo(
-    () => obtenerDatosInvestigacionAnalista("iniciar"),
+    () => crearDatosInvestigacionVacios(),
     [],
-  );
-  const datosEjemploInvestigacion = useMemo(
-    () => obtenerDatosInvestigacionAnalista(modo),
-    [modo],
   );
 
   const { data: informeObtenido, isLoading: estaCargandoInforme } = useQuery({
-    queryKey: ["informe-obtener-traductor", idPedidoNumerico, idCarga],
+    queryKey: ["informe-obtener-traductor", idPedidoNumerico, idInformeNumerico, idCarga],
     queryFn: () =>
       informeService.obtener({
         idPedido: idPedidoNumerico,
         idInforme: idInformeNumerico,
       }),
     enabled: usaDatosBackend && tieneIdInforme,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: "always",
   });
 
   const {
@@ -10260,10 +8914,10 @@ export default function InvestigacionTraductor() {
         idPedido: idPedidoNumerico,
         idInforme: idInformeOriginalNumerico,
       }),
-    enabled: usaDatosBackend && tieneIdInformeOriginal,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: "always",
+    enabled:
+      usaDatosBackend &&
+      tieneIdInformeOriginal &&
+      idInformeOriginalNumerico !== idInformeNumerico,
   });
 
   const datosIniciales = (() => {
@@ -10271,8 +8925,7 @@ export default function InvestigacionTraductor() {
       return informeObtenido.datosInvestigacion;
     if (informeOriginalObtenido?.datosInvestigacion)
       return informeOriginalObtenido.datosInvestigacion;
-    if (usaDatosBackend) return datosBaseInvestigacion;
-    return datosEjemploInvestigacion;
+    return datosBaseInvestigacion;
   })();
 
   const claveDatos = usaDatosBackend
@@ -10297,6 +8950,10 @@ export default function InvestigacionTraductor() {
       datosPedidoNavegacion={datosPedidoNavegacion}
       datosIniciales={datosIniciales}
       datosOriginalesIniciales={informeOriginalObtenido?.datosInvestigacion}
+      esPendienteAprobacionInformacion={esEstadoPendienteAprobacionInformacion({
+        estado: informeObtenido?.estado,
+        estadoInforme: informeObtenido?.estadoInforme,
+      })}
       archivosIniciales={informeObtenido?.archivosInvestigacion}
       idFormatoFechaInicial={informeObtenido?.idFormatoFecha}
       idTipoPersonaInicial={informeObtenido?.idTipoPersona}

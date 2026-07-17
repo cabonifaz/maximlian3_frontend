@@ -1,5 +1,7 @@
-import maximilianService from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ESTADO_ASIGNACION_ANALISTA, ESTADO_ASIGNACION_TRADUCTOR, ESTADO_REASIGNACION_ANALISTA, ESTADO_REASIGNACION_TRADUCTOR, IDS_ROL_POR_TIPO } from "@maximilian/shared/constants/services/asignacion.service.constants";
+import { ENDPOINTS_ASIGNACION } from "@maximilian/shared/constants/endpoints/asignacion.endpoint";
+import maximilianService from "./maximilian-service";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   AssignmentCandidate,
@@ -14,69 +16,19 @@ import type {
   SaveAssignmentsRequest,
   UpdateAssignmentRequest,
 } from "@maximilian/shared/types/asignacion.type";
-
-type RegistroGenerico = Record<string, unknown>;
-
-const ESTADO_ASIGNACION_ANALISTA = 1;
-const ESTADO_ASIGNACION_TRADUCTOR = 2;
-const ESTADO_REASIGNACION_ANALISTA = 4;
-const ESTADO_REASIGNACION_TRADUCTOR = 5;
-const IDS_ROL_POR_TIPO: Record<AssignmentRole, number> = {
-  translator: 4,
-  analyst: 3,
-};
+import {
+  esRegistroRespuesta as esRegistroGenerico,
+  obtenerBooleanoTextoOpcional as obtenerBooleano,
+  obtenerListaPorClaves as obtenerLista,
+  obtenerNumeroOpcional as obtenerNumero,
+  obtenerRegistroOpcional as obtenerRegistro,
+  obtenerTextoOpcional as obtenerTexto,
+  type RegistroRespuesta as RegistroGenerico,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
 function esRespuestaOkCompatibilidad(respuesta: ApiResponse<unknown>) {
   return respuesta.idTipoMensaje === MessageType.SUCCESS
     || (respuesta.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION && respuesta.mensaje === "OK");
-}
-
-function esRegistroGenerico(valor: unknown): valor is RegistroGenerico {
-  return typeof valor === "object" && valor !== null;
-}
-
-function obtenerNumero(...valores: unknown[]): number | undefined {
-  for (const valor of valores) {
-    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-    if (typeof valor === "string" && valor.trim() !== "") {
-      const numero = Number(valor);
-      if (Number.isFinite(numero)) return numero;
-    }
-  }
-  return undefined;
-}
-
-function obtenerTexto(...valores: unknown[]): string | undefined {
-  for (const valor of valores) {
-    if (typeof valor === "string" && valor.trim() !== "") return valor.trim();
-  }
-  return undefined;
-}
-
-function obtenerBooleano(...valores: unknown[]): boolean | undefined {
-  for (const valor of valores) {
-    if (typeof valor === "boolean") return valor;
-    if (typeof valor === "string") {
-      if (valor.toLowerCase() === "true") return true;
-      if (valor.toLowerCase() === "false") return false;
-    }
-  }
-  return undefined;
-}
-
-function obtenerLista(registro: RegistroGenerico, claves: string[]): unknown[] {
-  for (const clave of claves) {
-    const valor = registro[clave];
-    if (Array.isArray(valor)) return valor;
-  }
-  return [];
-}
-
-function obtenerRegistro(...valores: unknown[]): RegistroGenerico | undefined {
-  for (const valor of valores) {
-    if (esRegistroGenerico(valor)) return valor;
-  }
-  return undefined;
 }
 
 function obtenerIniciales(nombreCompleto: string): string {
@@ -117,7 +69,7 @@ function normalizarRol(valor: unknown, esTraductor?: boolean): AssignmentRole {
 
 function extraerResultado<T>(respuesta: ApiResponse<T>): T {
   if (!esRespuestaOkCompatibilidad(respuesta)) {
-    throw new Error(respuesta.mensaje || "No se pudo completar la operación de asignaciones");
+    throw new ErrorRespuestaApi(respuesta);
   }
   return respuesta.result;
 }
@@ -374,7 +326,7 @@ function construirPayloadEdicion(
 
 export const servicioAsignacion = {
   list: async (params: AssignmentListParams): Promise<AssignmentListResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Asignacion/listar", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.listar, {
       params: {
         busqueda: params.busqueda,
         idEstado: params.idEstado,
@@ -386,7 +338,7 @@ export const servicioAsignacion = {
   },
 
   bandeja: async (params: AssignmentListParams): Promise<AssignmentListResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Asignacion/bandeja", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.bandeja, {
       params: {
         Busqueda: params.busqueda,
         NumPag: params.numPag,
@@ -397,7 +349,7 @@ export const servicioAsignacion = {
   },
 
   getById: async (idAsignacion: number): Promise<AssignmentOrderEntry | null> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Asignacion/obtener", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.obtener, {
       params: { idAsignacion },
     });
 
@@ -407,17 +359,17 @@ export const servicioAsignacion = {
   },
 
   create: async (payload: CreateAssignmentRequest): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Asignacion/crear", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.crear, payload);
     extraerResultado(data);
   },
 
   update: async (payload: UpdateAssignmentRequest): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Asignacion/editar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.editar, payload);
     extraerResultado(data);
   },
 
   delete: async (payload: DeleteAssignmentRequest): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Asignacion/eliminar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.eliminar, payload);
     extraerResultado(data);
   },
 
@@ -428,7 +380,7 @@ export const servicioAsignacion = {
       ),
     );
 
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Usuario/listaCortaAsignacion", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.usuariosCortos, {
       params: {
         idRolFiltro: IDS_ROL_POR_TIPO[role],
         filtro,

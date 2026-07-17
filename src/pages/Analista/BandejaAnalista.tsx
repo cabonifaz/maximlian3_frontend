@@ -1,18 +1,24 @@
-import { useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
-import { CheckCircle2, CircleX, Clock3, Search, SlidersHorizontal, ClipboardList } from "lucide-react";
+import {
+  CheckCircle2,
+  CircleX,
+  Clock3,
+  Search,
+  ClipboardList,
+} from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
-import { useRetardo } from "@maximilian/hooks/useRetardo";
-import { servicioAsignacion } from "@maximilian/services/asignacion.service";
-import type { AccionBandejaAnalista, RegistroBandejaAnalista, TarjetaResumenAnalista } from "@maximilian/shared/types/investigacion.type";
-import type { AssignmentOrderEntry } from "@maximilian/shared/types/asignacion.type";
+import { useBandejaInvestigacion } from "@maximilian/hooks/useBandejaInvestigacion";
+import type {
+  AccionBandejaAnalista,
+  RegistroBandejaAnalista,
+} from "@maximilian/shared/types/investigacion.type";
 
 function obtenerIconoTarjeta(id: string) {
-  if (id === "aprobado") return <CheckCircle2 size={18} className="text-green-500" />;
+  if (id === "aprobado")
+    return <CheckCircle2 size={18} className="text-green-500" />;
   if (id === "rechazado") return <CircleX size={18} className="text-red-500" />;
-  if (id === "en-proceso") return <Clock3 size={18} className="text-blue-500" />;
+  if (id === "en-proceso")
+    return <Clock3 size={18} className="text-blue-500" />;
   return <ClipboardList size={18} className="text-slate-500" />;
 }
 
@@ -22,61 +28,40 @@ function obtenerEtiquetaAccion(accion: AccionBandejaAnalista) {
   return "Ver Detalles";
 }
 
-function obtenerModoPorAccion(accion: AccionBandejaAnalista) {
-  if (accion === "iniciar") return "iniciar";
-  if (accion === "continuar") return "continuar";
-  return "detalle";
-}
-
-function obtenerCargaNavegacion() {
-  return String(Date.now());
-}
-
-function formatearFechaAsignacion(valor?: string) {
-  const texto = valor?.trim() ?? "";
-  if (!texto || texto.startsWith("0001-01-01")) return "-";
-
-  const coincidenciaIso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (coincidenciaIso) {
-    const [, ano, mes, dia] = coincidenciaIso;
-    return `${dia}/${mes}/${ano.slice(-2)}`;
-  }
-
-  return texto;
-}
-
-function normalizarEstadoDesdeAsignacion(registro: AssignmentOrderEntry): RegistroBandejaAnalista["estado"] {
-  const estado = (registro.estado ?? "").trim().toLowerCase();
-  if (estado.includes("pend")) return "pendiente-aprobacion";
-  if (estado.includes("rechaz")) return "rechazado";
-  if (estado.includes("aprob")) return "aprobado";
-  if (estado.includes("proceso") || estado.includes("curso") || (registro.idInforme ?? 0) > 0) return "en-proceso";
-  return "asignado";
-}
-
-function obtenerAccionDesdeAsignacion(registro: AssignmentOrderEntry): AccionBandejaAnalista {
-  if ((registro.idInforme ?? 0) > 0) return "continuar";
-
-  const estado = normalizarEstadoDesdeAsignacion(registro);
-  if (estado === "asignado") return "iniciar";
-  if (estado === "en-proceso" || estado === "rechazado") return "continuar";
-  return "detalle";
-}
-
 function esColorTransparente(color?: string) {
   const valor = color?.trim().toLowerCase();
-  return valor === "" || valor === "transparent" || valor === "#0000" || valor === "#00000000" || valor === "rgba(0,0,0,0)";
+  return (
+    valor === "" ||
+    valor === "transparent" ||
+    valor === "#0000" ||
+    valor === "#00000000" ||
+    valor === "rgba(0,0,0,0)"
+  );
 }
 
 function esColorBlanco(color?: string) {
   const valor = color?.trim().toLowerCase();
-  return valor === "#fff" || valor === "#ffff" || valor === "#ffffff" || valor === "#ffffffff" || valor === "white" || valor === "rgb(255,255,255)";
+  return (
+    valor === "#fff" ||
+    valor === "#ffff" ||
+    valor === "#ffffff" ||
+    valor === "#ffffffff" ||
+    valor === "white" ||
+    valor === "rgb(255,255,255)"
+  );
 }
 
-function obtenerEstiloEstado(estado: RegistroBandejaAnalista["estado"], colorLetra?: string, colorFondo?: string) {
-  const estilosPorEstado: Record<RegistroBandejaAnalista["estado"], { color: string; backgroundColor: string }> = {
+function obtenerEstiloEstado(
+  estado: RegistroBandejaAnalista["estado"],
+  colorLetra?: string,
+  colorFondo?: string,
+) {
+  const estilosPorEstado: Record<
+    RegistroBandejaAnalista["estado"],
+    { color: string; backgroundColor: string }
+  > = {
     asignado: { color: "#475569", backgroundColor: "#f1f5f9" },
-    "en-proceso": { color: "#ea580c", backgroundColor: "#fff7ed" },
+    "en-proceso": { color: "#2563eb", backgroundColor: "#eff6ff" },
     "pendiente-aprobacion": { color: "#d97706", backgroundColor: "#fffbeb" },
     aprobado: { color: "#16a34a", backgroundColor: "#f0fdf4" },
     rechazado: { color: "#dc2626", backgroundColor: "#fef2f2" },
@@ -92,102 +77,35 @@ function obtenerEstiloEstado(estado: RegistroBandejaAnalista["estado"], colorLet
 
   return {
     color,
-    backgroundColor: esColorTransparente(backgroundColor) ? estiloFallback.backgroundColor : backgroundColor,
+    backgroundColor: esColorTransparente(backgroundColor)
+      ? estiloFallback.backgroundColor
+      : backgroundColor,
   };
 }
 
 export default function BandejaAnalista() {
-  const navigate = useNavigate();
-  const clienteConsulta = useQueryClient();
-  const [terminoBusqueda, setTerminoBusqueda] = useState("");
-  const [paginaActual, setPaginaActual] = useState(1);
-  const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
-
   const {
-    data: respuestaAsignaciones,
+    terminoBusqueda,
+    setTerminoBusqueda,
+    paginaActual,
+    setPaginaActual,
+    respuestaAsignaciones,
     isLoading,
     isError,
     refetch,
-  } = useQuery({
-    queryKey: ["asignaciones-bandeja-analista", paginaActual, terminoBusquedaConRetardo],
-    queryFn: () =>
-      servicioAsignacion.bandeja({
-        numPag: paginaActual,
-        busqueda: terminoBusquedaConRetardo.trim() || undefined,
-      }),
-    enabled: terminoBusqueda === terminoBusquedaConRetardo,
-    retry: false,
-  });
-
-  const registrosFiltrados = useMemo<RegistroBandejaAnalista[]>(
-    () =>
-      (respuestaAsignaciones?.lstPedido ?? []).map((registro) => ({
-        idInforme: registro.idInforme ?? 0,
-        idInformeOriginal: registro.idInformeOriginal ?? null,
-        idPedido: registro.idPedido,
-        idPlantilla: registro.idPlantilla,
-        codigoPedido: registro.codigoPedido,
-        codigo: registro.codigoPedido || String(registro.idPedido),
-        investigado: registro.investigado,
-        pais: registro.pais || "-",
-        fecha: formatearFechaAsignacion(registro.fechaAsignacion),
-        tipo: registro.tipoTramite || "-",
-        estado: normalizarEstadoDesdeAsignacion(registro),
-        estadoTexto: registro.estado || "-",
-        estadoColorLetra: registro.estadoColorLetra,
-        estadoColorFondo: registro.estadoColorFondo,
-        accion: obtenerAccionDesdeAsignacion(registro),
-      })),
-    [respuestaAsignaciones?.lstPedido],
-  );
-
-  const tarjetasResumen = useMemo<TarjetaResumenAnalista[]>(() => {
-    const resumen = respuestaAsignaciones?.resumen;
-
-    return [
-      { id: "asignados", titulo: "Asignados", valor: resumen?.total ?? registrosFiltrados.filter((registro) => registro.estado === "asignado").length, colorIcono: "text-slate-500" },
-      { id: "en-proceso", titulo: "En Proceso", valor: resumen?.enProceso ?? registrosFiltrados.filter((registro) => registro.estado === "en-proceso").length, colorIcono: "text-blue-500" },
-      { id: "aprobado", titulo: "Aprobado", valor: resumen?.aprobadas ?? registrosFiltrados.filter((registro) => registro.estado === "aprobado").length, colorIcono: "text-green-500" },
-      { id: "rechazado", titulo: "Rechazado", valor: resumen?.rechazadas ?? registrosFiltrados.filter((registro) => registro.estado === "rechazado").length, colorIcono: "text-red-500" },
-    ];
-  }, [registrosFiltrados, respuestaAsignaciones?.resumen]);
-
-  const irADetalle = (registro: RegistroBandejaAnalista) => {
-    const modo = obtenerModoPorAccion(registro.accion);
-    const parametros = new URLSearchParams({ modo, carga: obtenerCargaNavegacion() });
-
-    clienteConsulta.removeQueries({ queryKey: ["informe-obtener-analista", registro.idPedido] });
-
-    if (registro.idInforme > 0) {
-      parametros.set("idInforme", String(registro.idInforme));
-    }
-    if (registro.estado === "rechazado") {
-      parametros.set("estado", "rechazado");
-    }
-
-    navigate(`/analista/investigacion/${registro.idPedido}?${parametros.toString()}`, {
-      state: {
-        datosPedidoInvestigacion: {
-          idPedido: registro.idPedido,
-          idInformeOriginal: registro.idInformeOriginal,
-          idPlantilla: registro.idPlantilla,
-          codigoPedido: registro.codigoPedido,
-          investigado: registro.investigado,
-          pais: registro.pais,
-          tipoTramite: registro.tipo,
-        },
-      },
-    });
-  };
+    registrosFiltrados,
+    tarjetasResumen,
+    irADetalle,
+  } = useBandejaInvestigacion({ tipo: "analista" });
 
   const columnas = [
-    { label: "ID Pedido" },
-    { label: "Investigado" },
-    { label: "País" },
-    { label: "Fecha" },
-    { label: "Tipo" },
-    { label: "Estado", className: "text-center" },
-    { label: "Acción", className: "text-right" },
+    { label: "ID Pedido", width: "10%" },
+    { label: "Investigado", width: "31%" },
+    { label: "País", width: "14%" },
+    { label: "Fecha", width: "11%" },
+    { label: "Tipo", className: "text-center", width: "8%" },
+    { label: "Estado", className: "text-center", width: "12%" },
+    { label: "Acción", className: "text-right", width: "14%" },
   ];
 
   return (
@@ -204,7 +122,9 @@ export default function BandejaAnalista() {
                 {tarjeta.titulo}
               </span>
             </div>
-            <p className="text-3xl font-bold text-brand-black">{tarjeta.valor}</p>
+            <p className="text-3xl font-bold text-brand-black">
+              {tarjeta.valor}
+            </p>
           </article>
         ))}
       </div>
@@ -212,9 +132,12 @@ export default function BandejaAnalista() {
       <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-brand-black">Investigaciones</h1>
+            <h1 className="text-2xl font-bold text-brand-black">
+              Investigaciones
+            </h1>
             <p className="mt-2 text-sm text-gray-500">
-              Gestión y control de las solicitudes de investigación técnica asignadas.
+              Gestión y control de las solicitudes de investigación técnica
+              asignadas.
             </p>
           </div>
 
@@ -227,19 +150,11 @@ export default function BandejaAnalista() {
               <input
                 value={terminoBusqueda}
                 onChange={(event) => setTerminoBusqueda(event.target.value)}
-                placeholder="Buscar por ID o Empresa..."
+                placeholder="Buscar por ID o Investigado..."
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white pl-11 pr-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
               />
             </label>
 
-            <CustomButton
-              variant="secondary"
-              size="md"
-              className="h-12 min-w-28 text-sm font-semibold"
-            >
-              <SlidersHorizontal size={16} />
-              Filtros
-            </CustomButton>
           </div>
         </div>
 
@@ -258,17 +173,31 @@ export default function BandejaAnalista() {
           emptyMessage="No se encontraron pedidos en la bandeja."
           renderRow={(registro) => (
             <>
-              <td className="px-6 py-4 text-sm font-medium text-slate-400">{registro.idPedido}</td>
-              <td className="max-w-48 px-6 py-4 text-sm font-semibold text-slate-700">
-                <span className="line-clamp-1">{registro.investigado}</span>
+              <td className="px-6 py-4 text-sm font-medium text-slate-400">
+                {registro.idPedido}
               </td>
-              <td className="px-6 py-4 text-sm text-slate-500">{registro.pais}</td>
-              <td className="px-6 py-4 text-sm text-slate-500">{registro.fecha}</td>
-              <td className="px-6 py-4 text-sm text-slate-500">{registro.tipo}</td>
+              <td className="max-w-48 px-6 py-4 text-sm font-semibold text-slate-700">
+                <span className="block truncate" title={registro.investigado}>
+                  {registro.investigado}
+                </span>
+              </td>
+              <td className="px-6 py-4 text-sm text-slate-500">
+                {registro.pais}
+              </td>
+              <td className="px-6 py-4 text-sm text-slate-500">
+                {registro.fecha}
+              </td>
+              <td className="px-3 py-4 text-center text-sm text-slate-500">
+                {registro.tipo}
+              </td>
               <td className="px-6 py-4 text-center">
                 <span
                   className="inline-flex rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wide"
-                  style={obtenerEstiloEstado(registro.estado, registro.estadoColorLetra, registro.estadoColorFondo)}
+                  style={obtenerEstiloEstado(
+                    registro.estado,
+                    registro.estadoColorLetra,
+                    registro.estadoColorFondo,
+                  )}
                 >
                   {registro.estadoTexto || "-"}
                 </span>

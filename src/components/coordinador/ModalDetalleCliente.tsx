@@ -9,6 +9,7 @@ import {
   MailX,
 } from "lucide-react";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
+import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +20,7 @@ import {
 } from "@maximilian/schemas";
 import { ModalAgregarTarifa } from "./ModalAgregarTarifa";
 import { ModalAgregarContacto } from "./ModalAgregarContacto";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
@@ -388,15 +389,13 @@ export function ModalDetalleCliente({
         onClose={onClose}
         title="Modificar un Cliente"
         subtitle={client && (
-          client.idEstado === 1 ? (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600">
-              Activo
-            </span>
-          ) : (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500">
-              Inactivo
-            </span>
-          )
+          <CustomChipEstado
+            claseColor={client.idEstado === 1
+              ? "bg-green-50 text-green-600"
+              : "bg-gray-100 text-gray-500"}
+          >
+            {client.idEstado === 1 ? "Activo" : "Inactivo"}
+          </CustomChipEstado>
         )}
         activeTab={activeTab}
         onTabChange={(id) => setActiveTab(id as Tab)}
@@ -825,8 +824,16 @@ export function ModalDetalleCliente({
                                 <input type="checkbox" checked={selectedContactIndex === i} onChange={() => setSelectedContactIndex(selectedContactIndex === i ? null : i)} className="accent-brand-wine cursor-pointer w-4 h-4" />
                               </td>
                               <td className="px-4 py-3 text-gray-600">{c.nombres}</td>
-                              <td className="px-4 py-3 text-gray-600">{c.correo}</td>
-                              <td className="px-4 py-3 text-gray-600">{c.telefono}</td>
+                              <td className="px-4 py-3 text-gray-600">
+                                <span className="block max-w-44 truncate" title={c.correo}>
+                                  {c.correo}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">
+                                <span className="block max-w-36 truncate" title={c.telefono}>
+                                  {c.telefono}
+                                </span>
+                              </td>
                               <td className="px-4 py-3 text-gray-600">{c.tipoContacto}</td>
                               <td className="px-4 py-3 text-gray-600">{c.areaTrabajo}</td>
                               <td className="px-4 py-3 text-center">

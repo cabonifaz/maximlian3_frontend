@@ -1,166 +1,338 @@
-import { useMemo, useState } from "react";
+import { PEDIDO_COLUMNS, ESTADO_OPTIONS, TARJETAS_ESTADO_PEDIDO, FASE_ASIGNACION } from "@maximilian/shared/constants/pages/Coordinador/gestion-pedidos.constants";
 import {
-  CheckCircle2,
-  CircleAlert,
-  CircleX,
-  Clock3,
   Edit,
   Eye,
-  Filter,
+  FileSearch,
+  Info,
+  Languages,
   MoreHorizontal,
   Plus,
   Search,
-  SearchCheck,
   Trash2,
   TriangleAlert,
   UserPlus,
   X,
 } from "lucide-react";
-import { useNavigate } from "react-router";
-import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
-import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
+import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { ModalPedido } from "@maximilian/components/coordinador/ModalPedido";
 import { ModalFlujoAsignacion } from "@maximilian/components/coordinador/ModalFlujoAsignacion";
 import { CustomModalDetallePedido } from "@maximilian/components/coordinador/CustomModalDetallePedido";
-import { useRetardo } from "@maximilian/hooks/useRetardo";
-import { pedidoService } from "@maximilian/services/pedido.service";
+import { useMenuFlotanteTabla } from "@maximilian/hooks/useMenuFlotanteTabla";
+import { useGestionPedidos } from "@maximilian/hooks/useGestionPedidos";
 import { type PedidoListEntry } from "@maximilian/shared/types/pedido.type";
-
-const PEDIDO_COLUMNS = [
-  { label: "Cliente" },
-  { label: "Investigado" },
-  { label: "Idioma del Informe", className: "text-center" },
-  { label: "Logo Imprimible", className: "text-center" },
-  { label: "Estado", className: "text-center" },
-  { label: "", className: "text-center w-14" },
-  { label: "Acciones", className: "text-right" },
-];
-
-const ESTADO_OPTIONS = [
-  { num1: 1, string1: "Pendiente" },
-  { num1: 2, string1: "En revisión" },
-  { num1: 3, string1: "Aprobado" },
-  { num1: 4, string1: "Observado" },
-  { num1: 5, string1: "Cancelado" },
-] as EntradaTablaMaestra[];
-
-const TARJETAS_ESTADO_PEDIDO = [
-  { clave: "pendiente", titulo: "Pendiente", Icono: Clock3, colorIcono: "text-orange-500" },
-  { clave: "enRevision", titulo: "En revisión", Icono: SearchCheck, colorIcono: "text-blue-500" },
-  { clave: "aprobado", titulo: "Aprobado", Icono: CheckCircle2, colorIcono: "text-emerald-500" },
-  { clave: "observado", titulo: "Observado", Icono: CircleAlert, colorIcono: "text-amber-500" },
-  { clave: "cancelado", titulo: "Cancelado", Icono: CircleX, colorIcono: "text-rose-500" },
-] as const;
-
-function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: string) {
-  return (
-    <span
-      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
-      style={{ backgroundColor: colorFondo, color: colorLetra }}
-    >
-      {descripcion}
-    </span>
-  );
-}
+import {
+  obtenerColorEstadoAnalista,
+  obtenerTextoEstadoAnalista,
+} from "@maximilian/shared/utils/investigacion.util";
+import type { EstadoInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 
 function esPedidoCancelado(pedido: PedidoListEntry) {
   return pedido.estado === 5;
 }
 
-export default function PedidoManagement() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [terminoBusqueda, setSearchTerm] = useState("");
-  const [paginaActual, setCurrentPage] = useState(1);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [idPedidoSeleccionado, setSelectedPedidoId] = useState<number | null>(null);
-  const [idMenuActivo, setActiveMenuId] = useState<number | null>(null);
-  const [menuDropdownStyle, setMenuDropdownStyle] = useState<React.CSSProperties>({});
-  const [pedidoACancelar, setPedidoACancelar] = useState<PedidoListEntry | null>(null);
-  const [pedidoAEliminar, setPedidoAEliminar] = useState<PedidoListEntry | null>(null);
-  const [modalAsignacion, setModalAsignacion] = useState<{ key: number; pedidosIniciales: PedidoListEntry[] } | null>(null);
+function obtenerEstadosAsignacionPedido(pedido: PedidoListEntry) {
+  return new Set(pedido.asignaciones.map((asignacion) => asignacion.idEstadoAsignacion));
+}
 
-  const cancelarPedidoMutation = useMutation({
-    mutationFn: (idPedido: number) => pedidoService.cancelar({ idPedido }),
-    onSuccess: () => {
-      setPedidoACancelar(null);
-      queryClient.removeQueries({ queryKey: ["pedidos"], type: "inactive" });
-      queryClient.invalidateQueries({ queryKey: ["pedidos"] });
-    },
-  });
+function obtenerEstadoPipelinePedido(pedido: PedidoListEntry) {
+  if (esPedidoCancelado(pedido)) return "sin-asignacion";
 
-  const eliminarPedidoMutation = useMutation({
-    mutationFn: (idPedido: number) => pedidoService.eliminar({ idPedido }),
-    onSuccess: () => {
-      setPedidoAEliminar(null);
-      queryClient.invalidateQueries({ queryKey: ["pedidos"] });
-    },
-  });
-  const [filtroEstados, setFilterEstados] = useState<number[]>([]);
-  const [versionFiltroEstados, setVersionFiltroEstados] = useState(0);
+  const estadosAsignacion = obtenerEstadosAsignacionPedido(pedido);
+  const tieneEstado = (...estados: number[]) =>
+    estados.some((estado) => estadosAsignacion.has(estado));
 
-  const busquedaConRetardo = useRetardo(terminoBusqueda);
-  const estadosFiltroOrdenados = useMemo(
-    () => [...filtroEstados].sort((a, b) => a - b),
-    [filtroEstados],
+  if (
+    estadosAsignacion.size === 0 ||
+    [...estadosAsignacion].every((estado) => estado === FASE_ASIGNACION.ASIGNACION_ANULADA)
+  ) {
+    return "sin-asignacion";
+  }
+
+  const tieneAsignacionAnalista = tieneEstado(
+    FASE_ASIGNACION.ASIGNADO_ANALISTA,
+    FASE_ASIGNACION.REASIGNADO_ANALISTA,
   );
-  const estadosFiltroClave = estadosFiltroOrdenados.join(",");
+  const tieneAsignacionTraduccion = tieneEstado(
+    FASE_ASIGNACION.ASIGNADO_TRADUCCION,
+    FASE_ASIGNACION.REASIGNADO_TRADUCCION,
+  );
 
+  if (tieneEstado(FASE_ASIGNACION.TRADUCCION_COMPLETA)) return "completo";
+  if (tieneAsignacionAnalista && tieneAsignacionTraduccion) return "ambos-asignados";
+  if (tieneAsignacionTraduccion) {
+    return "traduccion-activa";
+  }
+  if (tieneEstado(FASE_ASIGNACION.ANALISIS_COMPLETO)) return "analista-completo";
+  if (tieneAsignacionAnalista) return "analista-activo";
+
+  return "sin-asignacion";
+}
+
+function obtenerAsignacionFasePedido(pedido: PedidoListEntry, estados: number[]) {
+  return pedido.asignaciones.find((asignacion) =>
+    estados.includes(asignacion.idEstadoAsignacion),
+  );
+}
+
+function obtenerEstadoInformeAsignacion(idEstado?: number | null, descripcion?: string | null) {
+  if (idEstado === 1) return "asignado";
+  if (idEstado === 2) return "rechazado";
+  if (idEstado === 3) return "en-proceso";
+  if (idEstado === 4) return "aprobado";
+  if (idEstado === 5) return "pendiente-aprobacion";
+
+  const texto = descripcion?.trim().toLowerCase() ?? "";
+
+  if (!texto) return null;
+  if (texto.includes("rechaz")) return "rechazado";
+  if (texto.includes("pend")) return "pendiente-aprobacion";
+  if (texto.includes("aprob")) return "aprobado";
+  if (texto.includes("proceso") || texto.includes("borrador")) return "en-proceso";
+
+  return "asignado";
+}
+
+function obtenerTextoEstadoFase(
+  idEstado?: number | null,
+  descripcion?: string | null,
+) {
+  const estado = obtenerEstadoInformeAsignacion(idEstado, descripcion);
+
+  return estado ? obtenerTextoEstadoAnalista(estado) : "Sin iniciar";
+}
+
+function obtenerClaseFase(estado: EstadoInvestigacionAnalista | null) {
+  if (!estado) return "border-slate-200 bg-white text-slate-300";
+
+  return `${obtenerColorEstadoAnalista(estado)} border-transparent`;
+}
+
+function obtenerClaseIconoFase(claseFase: string) {
+  return [
+    "relative z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm",
+    "cursor-help transition-all duration-200 ease-out",
+    "hover:-translate-y-0.5 hover:scale-110 hover:shadow-md hover:ring-4 hover:ring-slate-100",
+    claseFase,
+  ].join(" ");
+}
+
+function EncabezadoFase() {
+  return (
+    <span className="inline-flex items-center justify-center gap-1">
+      Fase
+      <span title="Pase el mouse sobre cada icono para ver el estado">
+        <Info
+          size={13}
+          className="cursor-help text-slate-400"
+          aria-label="Pase el mouse sobre cada icono para ver el estado"
+        />
+      </span>
+    </span>
+  );
+}
+
+function obtenerClaseFasePorAsignacion(
+  pedido: PedidoListEntry,
+  estados: number[],
+  claseFaseVacia: string,
+  claseFasePendiente: string,
+) {
+  const asignacion = obtenerAsignacionFasePedido(pedido, estados);
+  const estadoInforme = obtenerEstadoInformeAsignacion(
+    asignacion?.idEstadoInforme,
+    asignacion?.descripcionEstadoInforme,
+  );
+
+  if (!asignacion) return claseFaseVacia;
+  if (!estadoInforme) return claseFasePendiente;
+
+  return obtenerClaseFase(estadoInforme);
+}
+
+function obtenerTituloFasePedido(
+  pedido: PedidoListEntry,
+  estados: number[],
+  rol: "Analista" | "Traductor",
+) {
+  const asignacion = obtenerAsignacionFasePedido(pedido, estados);
+
+  return `${rol} - ${obtenerTextoEstadoFase(
+    asignacion?.idEstadoInforme,
+    asignacion?.descripcionEstadoInforme,
+  )}`;
+}
+
+function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
+  const requiereTraduccion = pedido.requiereTraduccion === 1;
+  const estadoPipeline = obtenerEstadoPipelinePedido(pedido);
+  const claseFaseVacia = "border-slate-200 bg-white text-slate-300";
+  const claseFasePendiente = "border-slate-300 bg-slate-100 text-slate-500";
+  const claseFaseCompletada = "border-green-200 bg-green-50 text-green-600";
+  const estadosAnalista = [
+    FASE_ASIGNACION.ASIGNADO_ANALISTA,
+    FASE_ASIGNACION.ANALISIS_COMPLETO,
+    FASE_ASIGNACION.REASIGNADO_ANALISTA,
+  ];
+  const estadosTraduccion = [
+    FASE_ASIGNACION.ASIGNADO_TRADUCCION,
+    FASE_ASIGNACION.REASIGNADO_TRADUCCION,
+    FASE_ASIGNACION.TRADUCCION_COMPLETA,
+  ];
+  const analistaCompletado = [
+    "analista-completo",
+    "traduccion-activa",
+    "completo",
+  ].includes(estadoPipeline);
+  const traduccionCompletada = estadoPipeline === "completo";
+  const analistaActivo = estadoPipeline === "analista-activo" || estadoPipeline === "ambos-asignados";
+  const traduccionActiva = estadoPipeline === "traduccion-activa";
+  const claseAnalistaCalculada = obtenerClaseFasePorAsignacion(
+    pedido,
+    estadosAnalista,
+    claseFaseVacia,
+    claseFasePendiente,
+  );
+  const claseAnalista = claseAnalistaCalculada !== claseFaseVacia
+    ? claseAnalistaCalculada
+    : analistaCompletado
+    ? claseFaseCompletada
+    : analistaActivo
+      ? claseFasePendiente
+      : claseFaseVacia;
+  const descripcionAnalista = obtenerTituloFasePedido(
+    pedido,
+    estadosAnalista,
+    "Analista",
+  );
+
+  if (!requiereTraduccion) {
+    return (
+      <div className="mx-auto flex w-16 items-center justify-center" title="No requiere traduccion">
+        <span
+          className={obtenerClaseIconoFase(claseAnalista)}
+          title={descripcionAnalista}
+        >
+          <FileSearch size={14} />
+        </span>
+      </div>
+    );
+  }
+
+  const claseTraduccionCalculada = obtenerClaseFasePorAsignacion(
+    pedido,
+    estadosTraduccion,
+    claseFaseVacia,
+    claseFasePendiente,
+  );
+  const claseTraduccion = claseTraduccionCalculada !== claseFaseVacia
+    ? claseTraduccionCalculada
+    : traduccionCompletada
+    ? claseFaseCompletada
+    : traduccionActiva
+      ? claseFasePendiente
+      : estadoPipeline === "ambos-asignados"
+        ? claseFasePendiente
+      : claseFaseVacia;
+  const claseLinea = traduccionCompletada || traduccionActiva ? "bg-green-200" : "bg-slate-200";
+  const descripcionTraduccion = obtenerTituloFasePedido(
+    pedido,
+    estadosTraduccion,
+    "Traductor",
+  );
+
+  return (
+    <div className="relative mx-auto flex w-16 items-center justify-between" title="Analista / Traduccion">
+      <span className={`absolute left-4 right-4 top-1/2 h-1 -translate-y-1/2 rounded-full ${claseLinea}`} />
+      <span
+        className={obtenerClaseIconoFase(claseAnalista)}
+        title={descripcionAnalista}
+      >
+        <FileSearch size={14} />
+      </span>
+      <span
+        className={obtenerClaseIconoFase(claseTraduccion)}
+        title={descripcionTraduccion}
+      >
+        <Languages size={14} />
+      </span>
+    </div>
+  );
+}
+
+export default function PedidoManagement() {
   const {
-    data: pedidosData,
-    isLoading,
+    abrirAsignacionPedido,
+    abrirDetallePedido,
+    abrirEdicionPedido,
+    cambiarBusqueda,
+    cambiarEstadosFiltro,
+    cambiarPaginaPedido,
+    cancelarPedido,
+    cancelarPedidoMutation,
+    cerrarDetallePedido,
+    cerrarEdicionPedido,
+    cerrarModalAsignacion,
+    eliminarPedido,
+    eliminarPedidoMutation,
+    estaAbiertoModalCrear,
+    estaAbiertoModalDetalle,
+    estaAbiertoModalEditar,
+    filtroEstados,
+    idPedidoSeleccionado,
     isError,
+    isLoading,
+    modalAsignacion,
+    paginaActual,
+    pedidoACancelar,
+    pedidoAEliminar,
+    pedidosData,
+    pedidosFiltrados,
     refetch,
-  } = useQuery({
-    queryKey: ["pedidos", paginaActual, busquedaConRetardo, estadosFiltroClave, versionFiltroEstados],
-    queryFn: () =>
-      pedidoService.list({
-        numPag: paginaActual,
-        busqueda: busquedaConRetardo || undefined,
-        idEstado: estadosFiltroClave || undefined,
-      }),
-    gcTime: 0,
-  });
+    refrescarDespuesAsignacion,
+    setEstaAbiertoModalCrear,
+    setPedidoACancelar,
+    setPedidoAEliminar,
+    terminoBusqueda,
+  } = useGestionPedidos();
+  const { idMenuActivo, estiloMenu, alternarMenu, cerrarMenu } = useMenuFlotanteTabla();
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const handleEstadosChange = (ids: number[]) => {
-    setFilterEstados(ids);
-    setVersionFiltroEstados((version) => version + 1);
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= (pedidosData?.totalPaginas || 1)) {
-      setCurrentPage(page);
+  const columnas = PEDIDO_COLUMNS.map((columna, indice) => {
+    if (indice === 5) {
+      return {
+        ...columna,
+        label: <EncabezadoFase />,
+      };
     }
-  };
 
-  const pedidosFiltrados = useMemo(() => {
-    const pedidos = pedidosData?.lstPedido;
-    if (!pedidos || estadosFiltroOrdenados.length === 0) return pedidos;
+    if (indice !== 4) return columna;
 
-    const estadosSeleccionados = new Set(estadosFiltroOrdenados);
-    return pedidos.filter((pedido) => estadosSeleccionados.has(pedido.estado));
-  }, [estadosFiltroOrdenados, pedidosData?.lstPedido]);
-
-  const tieneAsignaciones = (pedido: PedidoListEntry) => pedido.asignaciones.length > 0;
+    return {
+      ...columna,
+      label: (
+        <CustomEncabezadoFiltroTabla
+          titulo="Estado"
+          opciones={ESTADO_OPTIONS}
+          valores={filtroEstados}
+          onChange={cambiarEstadosFiltro}
+        />
+      ),
+    };
+  });
 
   const renderRow = (pedido: PedidoListEntry) => (
     <>
       <td className="px-6 py-4">
-        <span className="text-sm font-bold text-brand-black">{pedido.cliente}</span>
+        <span className="block truncate text-sm font-bold text-brand-black" title={pedido.cliente}>
+          {pedido.cliente}
+        </span>
       </td>
       <td className="px-6 py-4">
-        <span className="text-sm text-gray-600">{pedido.investigado}</span>
+        <span className="block truncate text-sm text-gray-600" title={pedido.investigado}>
+          {pedido.investigado}
+        </span>
       </td>
       <td className="px-6 py-4 text-center">
         <span className="text-sm text-gray-600">{pedido.idioma}</span>
@@ -170,8 +342,13 @@ export default function PedidoManagement() {
       </td>
       <td className="px-6 py-4 text-center">
         <div className="flex justify-center">
-          {getEstadoBadge(pedido.descripcionEstado, pedido.colorLetra, pedido.colorFondo)}
+          <CustomChipEstado colorTexto={pedido.colorLetra} colorFondo={pedido.colorFondo}>
+            {pedido.descripcionEstado}
+          </CustomChipEstado>
         </div>
+      </td>
+      <td className="px-6 py-4 text-center">
+        {obtenerIndicadorFasePedido(pedido)}
       </td>
       <td className="px-6 py-4 text-center">
         {pedido.fechaMod ? (
@@ -190,18 +367,7 @@ export default function PedidoManagement() {
       </td>
       <td className="px-6 py-4 text-right">
         <button
-          onClick={(e) => {
-            if (idMenuActivo === pedido.idPedido) {
-              setActiveMenuId(null);
-            } else {
-              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              const menuHeight = 196;
-              const spaceBelow = window.innerHeight - rect.bottom;
-              const top = spaceBelow < menuHeight ? rect.top - menuHeight - 4 : rect.bottom + 4;
-              setMenuDropdownStyle({ top, right: window.innerWidth - rect.right });
-              setActiveMenuId(pedido.idPedido);
-            }
-          }}
+          onClick={(evento) => alternarMenu(evento, pedido.idPedido, 196)}
           className="p-2 text-gray-400 hover:text-brand-black hover:bg-gray-100 rounded-lg transition-all cursor-pointer hover:scale-110 active:scale-90"
         >
           <MoreHorizontal size={18} />
@@ -209,16 +375,15 @@ export default function PedidoManagement() {
 
         {idMenuActivo === pedido.idPedido && (
           <>
-            <div className="fixed inset-0 z-10" onClick={() => setActiveMenuId(null)} />
+            <div className="fixed inset-0 z-10" onClick={cerrarMenu} />
             <div
               className="fixed w-52 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100"
-              style={menuDropdownStyle}
+              style={estiloMenu}
             >
               <button
                 onClick={() => {
-                  setSelectedPedidoId(pedido.idPedido);
-                  setIsDetailModalOpen(true);
-                  setActiveMenuId(null);
+                  abrirDetallePedido(pedido.idPedido);
+                  cerrarMenu();
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
               >
@@ -229,9 +394,8 @@ export default function PedidoManagement() {
                 <>
                   <button
                     onClick={() => {
-                      setSelectedPedidoId(pedido.idPedido);
-                      setIsEditModalOpen(true);
-                      setActiveMenuId(null);
+                      abrirEdicionPedido(pedido.idPedido);
+                      cerrarMenu();
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
                   >
@@ -240,29 +404,18 @@ export default function PedidoManagement() {
                   </button>
                   <button
                     onClick={() => {
-                      if (tieneAsignaciones(pedido)) {
-                        navigate("/coordinador/asignaciones", {
-                          state: {
-                            busquedaInicial: pedido.investigado,
-                          },
-                        });
-                      } else {
-                        setModalAsignacion({
-                          key: Date.now(),
-                          pedidosIniciales: [pedido],
-                        });
-                      }
-                      setActiveMenuId(null);
+                      abrirAsignacionPedido(pedido);
+                      cerrarMenu();
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
                   >
                     <UserPlus size={14} />
-                    <span>{tieneAsignaciones(pedido) ? "Ver asignacion" : "Asignar"}</span>
+                    <span>{pedido.asignaciones.length > 0 ? "Ver asignacion" : "Asignar"}</span>
                   </button>
                   <button
                     onClick={() => {
                       setPedidoACancelar(pedido);
-                      setActiveMenuId(null);
+                      cerrarMenu();
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
                   >
@@ -274,7 +427,7 @@ export default function PedidoManagement() {
               <button
                 onClick={() => {
                   setPedidoAEliminar(pedido);
-                  setActiveMenuId(null);
+                  cerrarMenu();
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
               >
@@ -290,7 +443,7 @@ export default function PedidoManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-3">
         {TARJETAS_ESTADO_PEDIDO.map((tarjeta) => {
           const Icono = tarjeta.Icono;
           const total = pedidosData?.[tarjeta.clave] ?? 0;
@@ -326,23 +479,12 @@ export default function PedidoManagement() {
               placeholder="Busca por cliente o investigado"
               className="w-full pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm placeholder:text-gray-400 focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
               value={terminoBusqueda}
-              onChange={handleSearchChange}
+              onChange={(evento) => cambiarBusqueda(evento.target.value)}
             />
           </div>
 
-          <MultiCustomSelectorBuscable
-            label="Estado"
-            hideLabel
-            triggerIcon={Filter}
-            options={ESTADO_OPTIONS}
-            value={filtroEstados}
-            onChange={handleEstadosChange}
-            resumirSelecciones
-            placeholder="Todos los estados"
-          />
-
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={() => setEstaAbiertoModalCrear(true)}
             className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus size={16} />
@@ -352,7 +494,7 @@ export default function PedidoManagement() {
       </div>
 
       <CustomTabla
-        columns={PEDIDO_COLUMNS}
+        columns={columnas}
         data={pedidosFiltrados}
         getId={(p) => p.idPedido}
         renderRow={renderRow}
@@ -364,37 +506,31 @@ export default function PedidoManagement() {
         paginaActual={paginaActual}
         totalPages={pedidosData?.totalPaginas ?? 1}
         totalRecords={pedidosData?.totalRegistros ?? 0}
-        onPageChange={handlePageChange}
+        onPageChange={cambiarPaginaPedido}
         entityLabel="pedidos"
       />
       <ModalPedido
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        isOpen={estaAbiertoModalCrear}
+        onClose={() => setEstaAbiertoModalCrear(false)}
         modo="crear"
       />
       <ModalPedido
-        isOpen={isEditModalOpen}
-        onClose={() => { setIsEditModalOpen(false); setSelectedPedidoId(null); }}
+        isOpen={estaAbiertoModalEditar}
+        onClose={cerrarEdicionPedido}
         pedidoId={idPedidoSeleccionado}
         modo="editar"
       />
       <CustomModalDetallePedido
-        isOpen={isDetailModalOpen}
-        onClose={() => {
-          setIsDetailModalOpen(false);
-          setSelectedPedidoId(null);
-        }}
+        isOpen={estaAbiertoModalDetalle}
+        onClose={cerrarDetallePedido}
         pedidoId={idPedidoSeleccionado}
       />
       {modalAsignacion ? (
         <ModalFlujoAsignacion
           key={modalAsignacion.key}
           isOpen
-          onClose={() => setModalAsignacion(null)}
-          onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
-            queryClient.invalidateQueries({ queryKey: ["pedidos"] });
-          }}
+          onClose={cerrarModalAsignacion}
+          onSuccess={refrescarDespuesAsignacion}
           pedidosIniciales={modalAsignacion.pedidosIniciales}
           tabInicial="asignacion"
           titulo="Nueva Asignación"
@@ -403,7 +539,7 @@ export default function PedidoManagement() {
       <CustomModalConfirmacionEliminacion
         isOpen={pedidoACancelar !== null}
         onClose={() => setPedidoACancelar(null)}
-        onConfirm={() => cancelarPedidoMutation.mutate(pedidoACancelar!.idPedido)}
+        onConfirm={cancelarPedido}
         title="Cancelar pedido"
         isSubmitting={cancelarPedidoMutation.isPending}
       >
@@ -415,7 +551,7 @@ export default function PedidoManagement() {
       <CustomModalConfirmacionEliminacion
         isOpen={pedidoAEliminar !== null}
         onClose={() => setPedidoAEliminar(null)}
-        onConfirm={() => eliminarPedidoMutation.mutate(pedidoAEliminar!.idPedido)}
+        onConfirm={eliminarPedido}
         title="Eliminar pedido"
         isSubmitting={eliminarPedidoMutation.isPending}
       >

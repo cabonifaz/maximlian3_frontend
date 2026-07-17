@@ -1,11 +1,12 @@
-import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
+import { TIMEOUT_EXTRACCION_MS } from "@maximilian/shared/constants/services/informe.service.constants";
+import { ENDPOINTS_INFORME } from "@maximilian/shared/constants/endpoints/informe.endpoint";
+import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilian-service";
 import { servicioBanco } from "./banco.service";
 import { servicioCompania } from "./compania.service";
-import { servicioDirectorioEjecutivo } from "./directorioEjecutivo.service";
-import { servicioTablaMaestra } from "./tablaMaestra.service";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { servicioDirectorioEjecutivo } from "./directorio-ejecutivo.service";
+import { servicioTablaMaestra, type OpcionesTablaMaestraPorId } from "./tabla-maestra.service";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   ImagenPendienteSubida,
   InformeAutocompletarRequest,
@@ -18,6 +19,7 @@ import type {
   RespuestaDocumentoInformeGenerado,
   InformeExtraerDocumentoRequest,
   InformeExtraccionResponse,
+  InformeHistorialCompania,
   InformeListEntry,
   InformeListParams,
   InformeListResponse,
@@ -25,6 +27,8 @@ import type {
   InformeObtenerUrlPrefirmadaRequest,
   InformeObtenerUrlPrefirmadaResponse,
   InformeObtenerResponse,
+  ParametrosHistorialInformesCompania,
+  RespuestaHistorialInformesCompania,
   InformeTraducirRequest,
 } from "@maximilian/shared/types/informe.type";
 import type {
@@ -34,15 +38,28 @@ import type {
   EstadoInvestigacionAnalista,
 } from "@maximilian/shared/types/investigacion.type";
 import {
-  formatearMontoDecimales,
+  normalizarMontoDecimales,
+  normalizarMontoDosDecimales,
   obtenerNumeroDesdeMonto,
+  obtenerTextoNumerico,
+  formatearTextoNumericoDecimales,
 } from "@maximilian/shared/utils/formato-monto.util";
+import { formatearFechaIsoADdMmYyyy } from "@maximilian/shared/utils/fecha.util";
 import {
   adaptarCuentaBalanceDesdeApi,
   esCampoEnteroEstadoFinanciero,
   obtenerClaveEstadoFinanciero,
   obtenerValorCampoEstadoFinanciero,
 } from "@maximilian/shared/utils/estados-financieros.util";
+import {
+  obtenerBooleanoFlexible as obtenerBooleano,
+  obtenerIndicadorBinario,
+  obtenerLista,
+  obtenerNumero,
+  obtenerNumeroOpcional,
+  obtenerRegistro,
+  obtenerTexto,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
 type RegistroCompaniaInvestigacion = DatosInvestigacionAnalista["companiasRelacionadas"][number];
 type RegistroBancoInvestigacion = DatosInvestigacionAnalista["bancos"][number];
@@ -50,57 +67,6 @@ type RegistroDirectorioInvestigacion = DatosInvestigacionAnalista["directorioEje
 type RegistroLocalInvestigacion = DatosInvestigacionAnalista["locales"][number];
 type RegistroBalanceInvestigacion = DatosInvestigacionAnalista["balances"][number];
 type RegistroProveedorInvestigacion = DatosInvestigacionAnalista["proveedores"][number];
-
-const TIMEOUT_EXTRACCION_MS = 10 * 60 * 1000;
-
-function obtenerNumero(...valores: unknown[]): number {
-  for (const valor of valores) {
-    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-    if (typeof valor === "string" && valor.trim() !== "") {
-      const numero = Number(valor);
-      if (Number.isFinite(numero)) return numero;
-    }
-  }
-
-  return 0;
-}
-
-function obtenerNumeroOpcional(...valores: unknown[]): number | undefined {
-  for (const valor of valores) {
-    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-    if (typeof valor === "string" && valor.trim() !== "") {
-      const numero = Number(valor);
-      if (Number.isFinite(numero)) return numero;
-    }
-  }
-
-  return undefined;
-}
-
-function obtenerTexto(...valores: unknown[]): string {
-  for (const valor of valores) {
-    if (typeof valor === "string") {
-      const texto = valor.trim();
-      if (texto) return texto;
-    }
-  }
-
-  return "";
-}
-
-function obtenerBooleano(...valores: unknown[]): boolean {
-  for (const valor of valores) {
-    if (typeof valor === "boolean") return valor;
-    if (typeof valor === "number") return valor === 1;
-    if (typeof valor === "string") {
-      const texto = valor.trim().toLowerCase();
-      if (["1", "true", "si", "sí", "s"].includes(texto)) return true;
-      if (["0", "false", "no", "n"].includes(texto)) return false;
-    }
-  }
-
-  return false;
-}
 
 function obtenerTipoDocumentoArchivo(...valores: unknown[]): "" | "Informativo" | "Evidencia" {
   for (const valor of valores) {
@@ -203,61 +169,8 @@ function normalizarArchivosInvestigacion(
   });
 }
 
-function obtenerRegistro(...valores: unknown[]): Record<string, unknown> {
-  for (const valor of valores) {
-    if (typeof valor === "object" && valor !== null && !Array.isArray(valor)) {
-      return valor as Record<string, unknown>;
-    }
-  }
-
-  return {};
-}
-
-function obtenerLista(...valores: unknown[]): unknown[] {
-  for (const valor of valores) {
-    if (Array.isArray(valor)) return valor;
-  }
-
-  return [];
-}
-
 function formatearFechaEntrada(valor: string): string {
-  const texto = valor.trim();
-  if (!texto) return "";
-
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) return texto;
-
-  const coincidenciaIso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (coincidenciaIso) {
-    const [, ano, mes, dia] = coincidenciaIso;
-    return `${dia}/${mes}/${ano}`;
-  }
-
-  return texto;
-}
-
-function formatearNumero(valor: unknown, decimales = 2): string {
-  const numero = obtenerNumeroOpcional(valor);
-  if (numero == null) return "";
-  return numero.toFixed(decimales);
-}
-
-function formatearPorcentaje(valor: unknown, decimales = 2): string {
-  const numero = obtenerNumeroOpcional(valor);
-  if (numero == null) return "";
-  return numero.toFixed(decimales);
-}
-
-function formatearMonto(valor: unknown, decimales = 2): string {
-  const numero = obtenerNumeroOpcional(valor);
-  if (numero == null) return "";
-  return formatearMontoDecimales(numero, decimales);
-}
-
-function formatearEntero(valor: unknown): string {
-  const numero = obtenerNumeroOpcional(valor);
-  if (numero == null) return "";
-  return String(Math.trunc(numero));
+  return formatearFechaIsoADdMmYyyy(valor, "");
 }
 
 function obtenerValorRegistro(registro: Record<string, unknown>, ...claves: string[]) {
@@ -283,10 +196,10 @@ function normalizarEstado(...valores: unknown[]): EstadoInvestigacionAnalista {
     }
 
     if (typeof valor === "number") {
-      if (valor === 5) return "rechazado";
+      if (valor === 5) return "pendiente-aprobacion";
       if (valor === 4) return "aprobado";
-      if (valor === 3) return "pendiente-aprobacion";
-      if (valor === 2) return "en-proceso";
+      if (valor === 3) return "en-proceso";
+      if (valor === 2) return "rechazado";
       if (valor === 1) return "asignado";
     }
   }
@@ -327,7 +240,21 @@ function normalizarFilaInforme(fila: unknown): InformeListEntry {
     idInformeOriginal: obtenerNumeroOpcional(registro.idInformeOriginal, registro.IdInformeOriginal) ?? null,
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido),
     idEstado,
+    idFase: obtenerNumeroOpcional(registro.idFase, registro.IdFase),
+    requiereTraduccion: obtenerIndicadorBinario(
+      registro.requiereTraduccion,
+      registro.RequiereTraduccion,
+    ),
     idIdioma: obtenerNumeroOpcional(registro.idIdioma, registro.IdIdioma),
+    idPlantilla: obtenerNumeroOpcional(registro.idPlantilla, registro.IdPlantilla),
+    plantilla: obtenerTexto(
+      registro.plantilla,
+      registro.Plantilla,
+      registro.nombrePlantilla,
+      registro.NombrePlantilla,
+      registro.plantillaInforme,
+      registro.PlantillaInforme,
+    ) || undefined,
     codigo: obtenerTexto(registro.codigo, registro.Codigo, registro.codigoPedido, registro.CodigoPedido) || "-",
     vigencia: obtenerTexto(registro.vigencia, registro.Vigencia, registro.porVencerTexto, registro.PorVencerTexto) || "-",
     vigenciaColor: obtenerTexto(
@@ -411,6 +338,47 @@ function normalizarRespuestaLista(resultado: unknown): InformeListResponse {
     vigente: obtenerNumero(registro.vigente, registro.Vigente),
     vencido: obtenerNumero(registro.vencido, registro.Vencido),
     totalRegistros: obtenerNumero(registro.totalRegistros, registro.TotalRegistros, listaOriginal.length),
+    totalPaginas: obtenerNumero(registro.totalPaginas, registro.TotalPaginas, 1),
+  };
+}
+
+function normalizarInformeHistorialCompania(fila: unknown): InformeHistorialCompania {
+  const registro = obtenerRegistro(fila);
+
+  return {
+    idInforme: obtenerNumero(registro.idInforme, registro.IdInforme),
+    idPedido: obtenerNumero(registro.idPedido, registro.IdPedido),
+    idioma: obtenerTexto(registro.idioma, registro.Idioma) || "-",
+    nombre: obtenerTexto(registro.nombre, registro.Nombre) || "-",
+    fecha: obtenerTexto(
+      registro.fecha,
+      registro.Fecha,
+      registro.fechaInforme,
+      registro.FechaInforme,
+      registro.fechaCreacion,
+      registro.FechaCreacion,
+    ) || "-",
+  };
+}
+
+function normalizarRespuestaHistorialCompania(
+  resultado: unknown,
+): RespuestaHistorialInformesCompania {
+  const registro = obtenerRegistro(resultado);
+  const listaOriginal = obtenerLista(
+    registro.lstInformes,
+    registro.LstInformes,
+    registro.lstInforme,
+    registro.LstInforme,
+  );
+
+  return {
+    lstInformes: listaOriginal.map(normalizarInformeHistorialCompania),
+    totalRegistros: obtenerNumero(
+      registro.totalRegistros,
+      registro.TotalRegistros,
+      listaOriginal.length,
+    ),
     totalPaginas: obtenerNumero(registro.totalPaginas, registro.TotalPaginas, 1),
   };
 }
@@ -684,14 +652,14 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     monedaTipoCambio: idTipoCambio && idTipoCambio > 0
       ? String(idTipoCambio)
       : obtenerTexto(registro.monedaTipoCambio, registro.MonedaTipoCambio),
-    capitalInicial: formatearMonto(registro.capitalInicial, 2),
-    capitalDesembolsado: formatearMonto(registro.capitalPagado, 2),
+    capitalInicial: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.capitalInicial)),
+    capitalDesembolsado: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.capitalPagado)),
     ultimaAmpliacion: formatearFechaEntrada(obtenerTexto(registro.fechaUltimoIncremento, registro.FechaUltimoIncremento)),
-    patrimonioNeto: formatearMonto(registro.patrimonioNeto, 2),
+    patrimonioNeto: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.patrimonioNeto)),
     tipoAcciones: obtenerTexto(registro.tipoAcciones, registro.TipoAcciones),
-    valorAcciones: formatearMonto(registro.valorAcciones, 2),
+    valorAcciones: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.valorAcciones)),
     obligacionBolsa: obtenerBooleano(registro.cotizaBolsa, registro.CotizaBolsa) ? "Si" : "No",
-    tipoCambio: formatearMonto(registro.tipoCambio, 6),
+    tipoCambio: normalizarMontoDecimales(obtenerTextoNumerico(registro.tipoCambio), 6),
     antecedentes: obtenerTexto(registro.antecedentes, registro.Antecedentes),
     aspectosLegales: obtenerTexto(registro.aspectosLegales, registro.AspectosLegales),
     comentariosEmpresasRelacionadas: obtenerTexto(
@@ -719,27 +687,39 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     };
   });
 
+  const idIsicCategoria = obtenerNumeroOpcional(registro.idIsicCategoria, registro.IdIsicCategoria);
+  const idIsicClase = obtenerNumeroOpcional(registro.idIsicClase, registro.IdIsicClase);
+  const valorCategoriaCiiu = idIsicCategoria && idIsicCategoria > 0 ? String(idIsicCategoria) : "";
+  const valorClaseCiiu = idIsicClase && idIsicClase > 0 ? String(idIsicClase) : "";
+  const idVentasCreditoTiempo = obtenerNumeroOpcional(registro.idVentasCreditoTiempo, registro.IdVentasCreditoTiempo);
+  const idComprasCreditoNacionalesTiempo = obtenerNumeroOpcional(
+    registro.idComprasCreditoNacionalesTiempo,
+    registro.IdComprasCreditoNacionalesTiempo,
+  );
+  const idComprasCreditoInternacionalesTiempo = obtenerNumeroOpcional(
+    registro.idComprasCreditoInternacionalesTiempo,
+    registro.IdComprasCreditoInternacionalesTiempo,
+  );
+
   datos.operacionPrincipal = {
     sector: obtenerTexto(registro.sector, registro.Sector),
     actividad: obtenerTexto(registro.actividad, registro.Actividad),
-    categoriaCiiu: String(obtenerNumeroOpcional(registro.idIsicCategoria, registro.IdIsicCategoria) ?? "")
+    categoriaCiiu: valorCategoriaCiiu
       || obtenerTexto(registro.isicCategoria, registro.IsicCategoria, registro.categoriaCiiu, registro.CategoriaCiiu),
-    claseCiiu: String(obtenerNumeroOpcional(registro.idIsicClase, registro.IdIsicClase) ?? "")
+    claseCiiu: valorClaseCiiu
       || obtenerTexto(registro.isicClase, registro.IsicClase, registro.claseCiiu, registro.ClaseCiiu),
     actividadPrincipal: obtenerTexto(registro.actividadPrincipal, registro.ActividadPrincipal),
-    ventasContadoPorcentaje: formatearNumero(registro.ventasContado, 2),
+    ventasContadoPorcentaje: formatearTextoNumericoDecimales(registro.ventasContado, 2),
     ventasContadoDetalle: obtenerTexto(registro.ventasContadoText, registro.VentasContadoText),
-    ventasCreditoPorcentaje: formatearNumero(registro.ventasCredito, 2),
+    ventasCreditoPorcentaje: formatearTextoNumericoDecimales(registro.ventasCredito, 2),
     ventasCreditoDetalle: obtenerTexto(registro.ventasCreditoText, registro.VentasCreditoText),
-    ventasCreditoTiempo: String(
-      obtenerNumeroOpcional(registro.idVentasCreditoTiempo, registro.IdVentasCreditoTiempo) ?? "",
-    ) || obtenerTexto(
+    ventasCreditoTiempo: (idVentasCreditoTiempo && idVentasCreditoTiempo > 0 ? String(idVentasCreditoTiempo) : "") || obtenerTexto(
       registro.ventasCreditoTiempo,
       registro.VentasCreditoTiempo,
       registro.ventasCreditoSeleccion,
       registro.VentasCreditoSeleccion,
     ),
-    territorioVentasPorcentaje: formatearNumero(
+    territorioVentasPorcentaje: formatearTextoNumericoDecimales(
       registro.ventasNacionales
         ?? registro.VentasNacionales
         ?? registro.territorioVentas
@@ -752,18 +732,18 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       registro.territorioText,
       registro.TerritorioText,
     ),
-    ventasExtranjeroPorcentaje: formatearNumero(registro.ventasInternacionales, 2),
+    ventasExtranjeroPorcentaje: formatearTextoNumericoDecimales(registro.ventasInternacionales, 2),
     ventasExtranjeroDetalle: obtenerTexto(registro.ventasInternacionalesText, registro.VentasInternacionalesText),
-    comprasNacionalesPorcentaje: formatearNumero(registro.comprasNacionales ?? registro.ComprasNacionales, 2),
+    comprasNacionalesPorcentaje: formatearTextoNumericoDecimales(registro.comprasNacionales ?? registro.ComprasNacionales, 2),
     comprasNacionalesDetalle: obtenerTexto(registro.comprasNacionalesText, registro.ComprasNacionalesText),
-    comprasContadoNacionalesPorcentaje: formatearNumero(registro.comprasContadoNacionales ?? registro.ComprasContadoNacionales, 2),
+    comprasContadoNacionalesPorcentaje: formatearTextoNumericoDecimales(registro.comprasContadoNacionales ?? registro.ComprasContadoNacionales, 2),
     comprasContadoNacionalesDetalle: obtenerTexto(registro.comprasContadoNacionalesText, registro.ComprasContadoNacionalesText),
-    comprasCreditoNacionalesPorcentaje: formatearNumero(registro.comprasCreditoNacionales ?? registro.ComprasCreditoNacionales, 2),
+    comprasCreditoNacionalesPorcentaje: formatearTextoNumericoDecimales(registro.comprasCreditoNacionales ?? registro.ComprasCreditoNacionales, 2),
     comprasCreditoNacionalesDetalle: obtenerTexto(registro.comprasCreditoNacionalesText, registro.ComprasCreditoNacionalesText),
-    comprasCreditoNacionalesTiempo: String(
-      obtenerNumeroOpcional(registro.idComprasCreditoNacionalesTiempo, registro.IdComprasCreditoNacionalesTiempo) ?? "",
-    ),
-    comprasExtranjeroPorcentaje: formatearNumero(
+    comprasCreditoNacionalesTiempo: idComprasCreditoNacionalesTiempo && idComprasCreditoNacionalesTiempo > 0
+      ? String(idComprasCreditoNacionalesTiempo)
+      : "",
+    comprasExtranjeroPorcentaje: formatearTextoNumericoDecimales(
       registro.comprasInternacionales
         ?? registro.ComprasInternacionales
         ?? registro.comprasExtranjero
@@ -776,14 +756,14 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       registro.comprasExtranjeroText,
       registro.ComprasExtranjeroText,
     ),
-    comprasContadoInternacionalesPorcentaje: formatearNumero(registro.comprasContadoInternacionales ?? registro.ComprasContadoInternacionales, 2),
+    comprasContadoInternacionalesPorcentaje: formatearTextoNumericoDecimales(registro.comprasContadoInternacionales ?? registro.ComprasContadoInternacionales, 2),
     comprasContadoInternacionalesDetalle: obtenerTexto(registro.comprasContadoInternacionalesText, registro.ComprasContadoInternacionalesText),
-    comprasCreditoInternacionalesPorcentaje: formatearNumero(registro.comprasCreditoInternacionales ?? registro.ComprasCreditoInternacionales, 2),
+    comprasCreditoInternacionalesPorcentaje: formatearTextoNumericoDecimales(registro.comprasCreditoInternacionales ?? registro.ComprasCreditoInternacionales, 2),
     comprasCreditoInternacionalesDetalle: obtenerTexto(registro.comprasCreditoInternacionalesText, registro.ComprasCreditoInternacionalesText),
-    comprasCreditoInternacionalesTiempo: String(
-      obtenerNumeroOpcional(registro.idComprasCreditoInternacionalesTiempo, registro.IdComprasCreditoInternacionalesTiempo) ?? "",
-    ),
-    numeroEmpleados: formatearEntero(registro.numeroEmpleados),
+    comprasCreditoInternacionalesTiempo: idComprasCreditoInternacionalesTiempo && idComprasCreditoInternacionalesTiempo > 0
+      ? String(idComprasCreditoInternacionalesTiempo)
+      : "",
+    numeroEmpleados: obtenerTextoNumerico(registro.numeroEmpleados),
     numeroEmpleadosDetalle: obtenerTexto(registro.numeroEmpleadosText, registro.NumeroEmpleadosText),
     comentariosOperaciones: obtenerTexto(registro.comentariosOperaciones, registro.ComentariosOperaciones),
   };
@@ -800,13 +780,13 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       idMesInicio: obtenerNumeroOpcional(item.mesInicio, item.MesInicio),
       idMesFin: obtenerNumeroOpcional(item.mesFin, item.MesFin),
       idMoneda: obtenerNumeroOpcional(item.idMoneda, item.IdMoneda),
-      anio: formatearEntero(item.anio ?? item.Anio),
+      anio: obtenerTextoNumerico(item.anio ?? item.Anio),
       mes: obtenerTexto(item.mesInicioDescripcion, item.MesInicioDescripcion, item.mes, item.Mes),
       moneda: obtenerTexto(item.moneda, item.Moneda),
       paises: obtenerTexto(item.paises, item.Paises),
       productos: obtenerTexto(item.productos, item.Productos),
-      monto: formatearMonto(item.monto, 2),
-      operaciones: formatearEntero(item.numOperaciones ?? item.NumOperaciones),
+      monto: obtenerTextoNumerico(item.monto),
+      operaciones: obtenerTextoNumerico(item.numOperaciones ?? item.NumOperaciones),
     }));
 
   datos.exportaciones = operaciones
@@ -816,13 +796,13 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       idMesInicio: obtenerNumeroOpcional(item.mesInicio, item.MesInicio),
       idMesFin: obtenerNumeroOpcional(item.mesFin, item.MesFin),
       idMoneda: obtenerNumeroOpcional(item.idMoneda, item.IdMoneda),
-      anio: formatearEntero(item.anio ?? item.Anio),
+      anio: obtenerTextoNumerico(item.anio ?? item.Anio),
       mes: obtenerTexto(item.mesInicioDescripcion, item.MesInicioDescripcion, item.mes, item.Mes),
       moneda: obtenerTexto(item.moneda, item.Moneda),
       paises: obtenerTexto(item.paises, item.Paises),
       productos: obtenerTexto(item.productos, item.Productos),
-      monto: formatearMonto(item.monto, 2),
-      operaciones: formatearEntero(item.numOperaciones ?? item.NumOperaciones),
+      monto: obtenerTextoNumerico(item.monto),
+      operaciones: obtenerTextoNumerico(item.numOperaciones ?? item.NumOperaciones),
     }));
 
   datos.locales = obtenerLista(registro.locales, registro.Locales).map((item) => {
@@ -899,7 +879,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       tipo: obtenerTexto(balance.tipo, balance.Tipo),
       idTipoEstadoFinanciero,
       tipoEstadoFinanciero,
-      tipoCambio: formatearMonto(balance.tipoCambio, 2),
+      tipoCambio: obtenerTextoNumerico(balance.tipoCambio),
       idMoneda,
       operacionCambio: obtenerTexto(balance.moneda, balance.Moneda),
       idTipoBalance,
@@ -911,26 +891,26 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       detalleCuentas: Object.keys(cuentaBalance).length > 0
         ? {
             balanceGeneral: {
-              totalCorrientes: formatearMonto(valorCuenta("totalCorriente", "totalActivoCorriente"), 2),
-              totalNoCorrientes: formatearMonto(valorCuenta("totalNoCorriente", "totalActivoNoCorriente"), 2),
-              otrosActivos: formatearMonto(valorCuenta("otrosActivos"), 2),
-              totalActivos: formatearMonto(valorCuenta("totalActivos", "totalActivo"), 2),
-              totalPasivosCorrientes: formatearMonto(valorCuenta("totalPasivosCorrientes", "totalPasivoCorriente"), 2),
-              totalPasivosNoCorrientes: formatearMonto(valorCuenta("totalPasivosNoCorrientes", "totalPasivoNoCorriente"), 2),
-              otrosPasivos: formatearMonto(valorCuenta("otrosPasivos"), 2),
-              totalPasivos: formatearMonto(valorCuenta("totalPasivos", "totalPasivo"), 2),
-              patrimonio: formatearMonto(valorCuenta("patrimonio", "totalPatrimonio"), 2),
-              totalPasivoPatrimonio: formatearMonto(valorCuenta("totalPasivoPatrimonio", "totalPasivosPatrimonio"), 2),
+              totalCorrientes: obtenerTextoNumerico(valorCuenta("totalCorriente", "totalActivoCorriente")),
+              totalNoCorrientes: obtenerTextoNumerico(valorCuenta("totalNoCorriente", "totalActivoNoCorriente")),
+              otrosActivos: obtenerTextoNumerico(valorCuenta("otrosActivos")),
+              totalActivos: obtenerTextoNumerico(valorCuenta("totalActivos", "totalActivo")),
+              totalPasivosCorrientes: obtenerTextoNumerico(valorCuenta("totalPasivosCorrientes", "totalPasivoCorriente")),
+              totalPasivosNoCorrientes: obtenerTextoNumerico(valorCuenta("totalPasivosNoCorrientes", "totalPasivoNoCorriente")),
+              otrosPasivos: obtenerTextoNumerico(valorCuenta("otrosPasivos")),
+              totalPasivos: obtenerTextoNumerico(valorCuenta("totalPasivos", "totalPasivo")),
+              patrimonio: obtenerTextoNumerico(valorCuenta("patrimonio", "totalPatrimonio")),
+              totalPasivoPatrimonio: obtenerTextoNumerico(valorCuenta("totalPasivoPatrimonio", "totalPasivosPatrimonio")),
             },
             estadoGananciasPerdidas: {
-              ventasNetas: formatearMonto(valorCuenta("ventasNetas", "ingresosOrdinarios", "ingresosIntereses", "primasGanadasNetas"), 2),
-              utilidadGanancia: formatearMonto(valorCuenta("utilidadPerdida", "gananciaNeta", "utilidadEjercicio", "utilidadNeta"), 2),
+              ventasNetas: obtenerTextoNumerico(valorCuenta("ventasNetas", "ingresosOrdinarios", "ingresosIntereses", "primasGanadasNetas")),
+              utilidadGanancia: obtenerTextoNumerico(valorCuenta("utilidadPerdida", "gananciaNeta", "utilidadEjercicio", "utilidadNeta")),
             },
             ratios: {
-              liquidez: formatearNumero(valorCuenta("indiceLiquidez"), 2),
-              capitalTrabajo: formatearMonto(valorCuenta("capitalTrabajo"), 2),
-              endeudamiento: formatearPorcentaje(valorCuenta("ratioEndeudamiento")),
-              rentabilidad: formatearPorcentaje(valorCuenta("ratioRentabilidad")),
+              liquidez: obtenerTextoNumerico(valorCuenta("indiceLiquidez")),
+              capitalTrabajo: obtenerTextoNumerico(valorCuenta("capitalTrabajo")),
+              endeudamiento: obtenerTextoNumerico(valorCuenta("ratioEndeudamiento")),
+              rentabilidad: obtenerTextoNumerico(valorCuenta("ratioRentabilidad")),
             },
             tipoBalanceTurquia: claveEstadoFinanciero === "turquia"
               ? (
@@ -954,10 +934,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
                   return [clave, valor];
                 }
                 if (/(indebtedness|profitability)/.test(clave)) {
-                  return [clave, formatearPorcentaje(valor)];
+                  return [clave, obtenerTextoNumerico(valor)];
                 }
-                const esRatioNumero = claveEstadoFinanciero !== "turquia" && /liquidity/.test(clave);
-                return [clave, esRatioNumero ? formatearNumero(valor, 2) : formatearMonto(valor, 2)];
+                return [clave, obtenerTextoNumerico(valor)];
               }),
             ),
           }
@@ -1012,12 +991,12 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       )) || undefined,
       idMoneda: obtenerNumeroOpcional(proveedor.idMoneda, proveedor.IdMoneda),
       operacionCambioMoneda: obtenerTexto(proveedor.moneda, proveedor.Moneda),
-      tipoCambio: formatearMonto(proveedor.tipoCambio, 6) || undefined,
+      tipoCambio: obtenerTextoNumerico(proveedor.tipoCambio) || undefined,
       idLimiteCredito,
       idPlazoCredito,
       limiteCredito: obtenerTexto(proveedor.plazoCredito, proveedor.PlazoCredito)
         || (idPlazoCredito ? String(idPlazoCredito) : ""),
-      promedioMensual: formatearMonto(proveedor.promedioMensual, 2) || undefined,
+      promedioMensual: obtenerTextoNumerico(proveedor.promedioMensual) || undefined,
     };
   });
 
@@ -1074,10 +1053,10 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       idCargo: obtenerNumeroOpcional(ejecutivo.idCargo, ejecutivo.IdCargo),
       ejecutivo: nombreCompleto,
       cargo: obtenerTexto(ejecutivo.cargos, ejecutivo.Cargos, ejecutivo.cargo, ejecutivo.Cargo, ejecutivo.idCargo, ejecutivo.IdCargo),
-      porcentaje: formatearNumero(ejecutivo.participacion, 8),
+      porcentaje: formatearTextoNumericoDecimales(ejecutivo.participacion, 8),
       lista: obtenerBooleano(ejecutivo.apareceImpresoLista, ejecutivo.ApareceImpresoLista),
       detalleEjecutivo: obtenerBooleano(ejecutivo.imprimeDatosEjecutivos, ejecutivo.ImprimeDatosEjecutivos),
-      orden: formatearEntero(ejecutivo.orden),
+      orden: obtenerTextoNumerico(ejecutivo.orden),
       vinculadoDesde: formatearFechaEntrada(obtenerTexto(ejecutivo.vinculadoDesde, ejecutivo.VinculadoDesde, ejecutivo.formularioVinculado, ejecutivo.FormularioVinculado)),
       companiaAnterior: obtenerTexto(ejecutivo.companiaAnterior, ejecutivo.CompaniaAnterior),
       esParteDirectorio: obtenerBooleano(ejecutivo.esParticipanteDirectiva, ejecutivo.EsParticipanteDirectiva),
@@ -1091,6 +1070,34 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   return {
     idInforme: obtenerNumero(registro.idInforme, registro.IdInforme) || undefined,
     idPedido: obtenerNumero(registro.idPedido, registro.IdPedido) || undefined,
+    idEstadoInforme: obtenerNumeroOpcional(
+      registro.idEstadoInforme,
+      registro.IdEstadoInforme,
+      registro.idEstado,
+      registro.IdEstado,
+      registro.estado,
+      registro.Estado,
+    ),
+    estadoInforme: obtenerTexto(
+      registro.estadoInforme,
+      registro.EstadoInforme,
+      registro.descripcionEstado,
+      registro.DescripcionEstado,
+      registro.estado,
+      registro.Estado,
+    ) || undefined,
+    estado: normalizarEstado(
+      registro.estadoInforme,
+      registro.EstadoInforme,
+      registro.descripcionEstado,
+      registro.DescripcionEstado,
+      registro.estado,
+      registro.Estado,
+      registro.idEstadoInforme,
+      registro.IdEstadoInforme,
+      registro.idEstado,
+      registro.IdEstado,
+    ),
     idFormatoFecha: obtenerNumeroOpcional(registro.idFormatoFecha, registro.IdFormatoFecha),
     idTipoPersona: obtenerNumeroOpcional(registro.idTipoPersona, registro.IdTipoPersona),
     idPais: obtenerNumeroOpcional(registro.idPais, registro.IdPais),
@@ -1104,49 +1111,51 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     idCiudadRegistro: obtenerNumeroOpcional(registro.idCiudadRegistro, registro.IdCiudadRegistro),
     idSector: obtenerNumeroOpcional(registro.idSector, registro.IdSector),
     idActividad: obtenerNumeroOpcional(registro.idActividad, registro.IdActividad),
-    idIsicCategoria: obtenerNumeroOpcional(registro.idIsicCategoria, registro.IdIsicCategoria),
-    idIsicClase: obtenerNumeroOpcional(registro.idIsicClase, registro.IdIsicClase),
+    idIsicCategoria: idIsicCategoria && idIsicCategoria > 0 ? idIsicCategoria : undefined,
+    idIsicClase: idIsicClase && idIsicClase > 0 ? idIsicClase : undefined,
     datosInvestigacion: datos,
     archivosInvestigacion,
   };
 }
 
 async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Promise<InformeObtenerResponse> {
-  const [
-    sectores,
-    tiposLocal,
-    tiposBalance,
-    estadosFinancieros,
-    monedas,
-    tiposProveedor,
-    limitesCreditoProveedor,
-    paises,
-    tiposDocumento,
-    tiposPersona,
-    estadosCliente,
-    tiposEmpresa,
-    ciudades,
-    actividadesEconomicas,
-    clasesCiiu,
-    tiemposCreditoVentas,
-  ]: EntradaTablaMaestra[][] = await Promise.all([
-    servicioTablaMaestra.list(TablaMaestraId.SECTOR_ECONOMICO).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.TIPO_LOCAL).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.TIPO_BALANCE).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.ESTADO_FINANCIERO).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.MONEDA).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.TIPO_PROVEEDOR).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.LIMITE_CREDITO_PROVEEDOR).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.PAIS).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.TIPO_REG_TRIBUTARIO).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.ESTADO_CLIENTE).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.TIPO_EMPRESA).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.CIUDAD).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.ACTIVIDAD_ECONOMICA).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.CLASE_CIIU).catch(() => []),
-    servicioTablaMaestra.list(TablaMaestraId.TIEMPO_CREDITO_VENTAS).catch(() => []),
-  ]);
+  const idsTablaMaestra = [
+    TablaMaestraId.SECTOR_ECONOMICO,
+    TablaMaestraId.TIPO_LOCAL,
+    TablaMaestraId.TIPO_BALANCE,
+    TablaMaestraId.ESTADO_FINANCIERO,
+    TablaMaestraId.MONEDA,
+    TablaMaestraId.TIPO_PROVEEDOR,
+    TablaMaestraId.LIMITE_CREDITO_PROVEEDOR,
+    TablaMaestraId.PAIS,
+    TablaMaestraId.TIPO_REG_TRIBUTARIO,
+    TablaMaestraId.TIPO_PERSONA,
+    TablaMaestraId.ESTADO_CLIENTE,
+    TablaMaestraId.TIPO_EMPRESA,
+    TablaMaestraId.CIUDAD,
+    TablaMaestraId.ACTIVIDAD_ECONOMICA,
+    TablaMaestraId.CLASE_CIIU,
+    TablaMaestraId.TIEMPO_CREDITO_VENTAS,
+  ];
+  const opcionesTablaMaestra = await servicioTablaMaestra
+    .listarPorIds(idsTablaMaestra)
+    .catch((): OpcionesTablaMaestraPorId => ({}));
+  const sectores = opcionesTablaMaestra[TablaMaestraId.SECTOR_ECONOMICO] ?? [];
+  const tiposLocal = opcionesTablaMaestra[TablaMaestraId.TIPO_LOCAL] ?? [];
+  const tiposBalance = opcionesTablaMaestra[TablaMaestraId.TIPO_BALANCE] ?? [];
+  const estadosFinancieros = opcionesTablaMaestra[TablaMaestraId.ESTADO_FINANCIERO] ?? [];
+  const monedas = opcionesTablaMaestra[TablaMaestraId.MONEDA] ?? [];
+  const tiposProveedor = opcionesTablaMaestra[TablaMaestraId.TIPO_PROVEEDOR] ?? [];
+  const limitesCreditoProveedor = opcionesTablaMaestra[TablaMaestraId.LIMITE_CREDITO_PROVEEDOR] ?? [];
+  const paises = opcionesTablaMaestra[TablaMaestraId.PAIS] ?? [];
+  const tiposDocumento = opcionesTablaMaestra[TablaMaestraId.TIPO_REG_TRIBUTARIO] ?? [];
+  const tiposPersona = opcionesTablaMaestra[TablaMaestraId.TIPO_PERSONA] ?? [];
+  const estadosCliente = opcionesTablaMaestra[TablaMaestraId.ESTADO_CLIENTE] ?? [];
+  const tiposEmpresa = opcionesTablaMaestra[TablaMaestraId.TIPO_EMPRESA] ?? [];
+  const ciudades = opcionesTablaMaestra[TablaMaestraId.CIUDAD] ?? [];
+  const actividadesEconomicas = opcionesTablaMaestra[TablaMaestraId.ACTIVIDAD_ECONOMICA] ?? [];
+  const clasesCiiu = opcionesTablaMaestra[TablaMaestraId.CLASE_CIIU] ?? [];
+  const tiemposCreditoVentas = opcionesTablaMaestra[TablaMaestraId.TIEMPO_CREDITO_VENTAS] ?? [];
 
   const companias: RegistroCompaniaInvestigacion[] = await Promise.all(
     respuesta.datosInvestigacion.companiasRelacionadas.map(async (compania): Promise<RegistroCompaniaInvestigacion> => {
@@ -1350,21 +1359,6 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
     aspectosLegales.monedaTipoCambio = entradaMonedaTipoCambio.string1 ?? aspectosLegales.monedaTipoCambio;
   }
 
-  const isoDivisas = entradaMonedaDivisas?.string2 ?? null;
-  const isoTipoCambio = entradaMonedaTipoCambio?.string2 ?? null;
-
-  if (isoDivisas) {
-    const agregarIso = (valor: string) => valor ? `${valor} ${isoDivisas}` : valor;
-    if (aspectosLegales.capitalInicial) aspectosLegales.capitalInicial = agregarIso(aspectosLegales.capitalInicial);
-    if (aspectosLegales.capitalDesembolsado) aspectosLegales.capitalDesembolsado = agregarIso(aspectosLegales.capitalDesembolsado);
-    if (aspectosLegales.patrimonioNeto) aspectosLegales.patrimonioNeto = agregarIso(aspectosLegales.patrimonioNeto);
-    if (aspectosLegales.valorAcciones) aspectosLegales.valorAcciones = agregarIso(aspectosLegales.valorAcciones);
-  }
-
-  if (aspectosLegales.tipoCambio && isoTipoCambio && isoDivisas) {
-    aspectosLegales.tipoCambio = `1 ${isoTipoCambio} = ${aspectosLegales.tipoCambio} ${isoDivisas}`;
-  }
-
   return {
     ...respuesta,
     datosInvestigacion: {
@@ -1386,27 +1380,56 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
 
 export const informeService = {
   list: async (params: InformeListParams): Promise<InformeListResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Informe/listar", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_INFORME.listar, {
       params: {
         Busqueda: params.busqueda,
         IdPedido: params.idPedido,
         IdEstado: params.idEstado,
+        IdPlantilla: params.idPlantilla,
+        IdTipoTramite: params.idTipoTramite,
         NumPag: params.numPag,
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/listar")) {
-      throw new Error(data.mensaje || "Error al listar los informes");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.listar)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarRespuestaLista(data.result);
   },
 
-  create: async (payload: InformeCrearRequest): Promise<InformeCrearResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/crear", payload);
+  listarHistorialPorCompania: async ({
+    idCompania,
+    numPag = 1,
+    idIdioma,
+    fechaInicio,
+    fechaFin,
+  }: ParametrosHistorialInformesCompania): Promise<RespuestaHistorialInformesCompania> => {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(
+      ENDPOINTS_INFORME.listarIdPorCompania,
+      {
+        params: {
+          IdCompania: idCompania,
+          NumPag: numPag,
+          IdIdioma: idIdioma,
+          FchInicio: fechaInicio,
+          FchFin: fechaFin,
+        },
+      },
+    );
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/crear")) {
-      throw new Error(data.mensaje || "Error al crear el informe");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.listarIdPorCompania)) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return normalizarRespuestaHistorialCompania(data.result);
+  },
+
+  create: async (payload: InformeCrearRequest): Promise<InformeCrearResponse> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME.crear, payload);
+
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.crear)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarRespuestaCrear(data.result);
@@ -1414,35 +1437,35 @@ export const informeService = {
 
   actualizarEstado: async (payload: InformeActualizarEstadoRequest): Promise<void> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
-      "/api/Informe/actualizarEstado",
+      ENDPOINTS_INFORME.actualizarEstado,
       payload,
     );
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/actualizarEstado")) {
-      throw new Error(data.mensaje || "Error al actualizar el estado del informe");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.actualizarEstado)) {
+      throw new ErrorRespuestaApi(data);
     }
   },
 
   editar: async (payload: InformeCrearRequest): Promise<InformeCrearResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/editar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME.editar, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/editar")) {
-      throw new Error(data.mensaje || "Error al editar el informe");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.editar)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarRespuestaCrear(data.result);
   },
 
   obtener: async ({ idPedido, idInforme }: InformeObtenerParams): Promise<InformeObtenerResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Informe/obtener", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_INFORME.obtener, {
       params: {
         IdPedido: idPedido,
         IdInforme: idInforme && idInforme > 0 ? idInforme : undefined,
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/obtener")) {
-      throw new Error(data.mensaje || "Error al obtener el informe");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.obtener)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     return enriquecerRespuestaObtener(normalizarRespuestaObtener(data.result));
@@ -1451,15 +1474,15 @@ export const informeService = {
   previsualizarDocumento: async (idInforme: number, idPedido: number): Promise<DocumentoInformeGenerado> => {
     const { data } = await maximilianService.get<
       ApiResponse<DocumentoInformeGenerado | RespuestaDocumentoInformeGenerado>
-    >("/api/Informe/previsualizarDocumento", {
+    >(ENDPOINTS_INFORME.previsualizarDocumento, {
       params: {
         IdInforme: idInforme,
         IdPedido: idPedido,
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/previsualizarDocumento")) {
-      throw new Error(data.mensaje || "No se pudo obtener la previsualización del documento");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.previsualizarDocumento)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     return "documento" in data.result ? data.result.documento : data.result;
@@ -1470,7 +1493,7 @@ export const informeService = {
     idPedido: number,
     formato?: FormatoDescargaInforme,
   ): Promise<DocumentoInformeObtenido> => {
-    const ruta = "/api/Informe/obtenerDocumento";
+    const ruta = ENDPOINTS_INFORME.obtenerDocumento;
     const { data } = await maximilianService.get<ApiResponse<DocumentoInformeObtenido>>(ruta, {
       params: {
         IdInforme: idInforme,
@@ -1480,7 +1503,7 @@ export const informeService = {
     });
 
     if (!esRespuestaOkCompatibilidad(data, ruta)) {
-      throw new Error(data.mensaje || "No se pudo obtener el documento PDF del informe");
+      throw new ErrorRespuestaApi(data);
     }
 
     return data.result;
@@ -1490,10 +1513,10 @@ export const informeService = {
   obtenerUrlPrefirmada: async (
     payload: InformeObtenerUrlPrefirmadaRequest,
   ): Promise<InformeObtenerUrlPrefirmadaResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/obtenerUrlPrefirmada", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME.obtenerUrlPrefirmada, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/obtenerUrlPrefirmada")) {
-      throw new Error(data.mensaje || "No se pudo obtener la URL prefirmada");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.obtenerUrlPrefirmada)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     const respuesta = normalizarRespuestaUrlPrefirmada(data.result);
@@ -1520,25 +1543,25 @@ export const informeService = {
 
 
   autocompletar: async (payload: InformeAutocompletarRequest): Promise<InformeExtraccionResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/autocompletar", payload, {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME.autocompletar, payload, {
       timeout: TIMEOUT_EXTRACCION_MS,
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/autocompletar")) {
-      throw new Error(data.mensaje || "No se pudo autocompletar el documento");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.autocompletar)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarRespuestaExtraccion(data.result);
   },
 
   traducir: async (payload: InformeTraducirRequest): Promise<InformeExtraccionResponse> => {
-    const ruta = "/api/Informe/traducir";
+    const ruta = ENDPOINTS_INFORME.traducir;
     const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, payload, {
       timeout: TIMEOUT_EXTRACCION_MS,
     });
 
     if (!esRespuestaOkCompatibilidad(data, ruta)) {
-      throw new Error(data.mensaje || "No se pudo traducir el informe");
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarRespuestaExtraccion(data.result);
@@ -1550,15 +1573,15 @@ export const informeService = {
     formulario.append("secciones", payload.secciones);
     formulario.append("prompt", payload.prompt);
 
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/extraerDocumento", formulario, {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME.extraerDocumento, formulario, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
       timeout: TIMEOUT_EXTRACCION_MS,
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Informe/extraerDocumento")) {
-      throw new Error(data.mensaje || "No se pudo extraer la informacion del documento");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.extraerDocumento)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarRespuestaExtraccion(data.result);
@@ -1591,9 +1614,9 @@ export const informeService = {
         ingresosOrdinarios: n(r["ingresos-ordinarios-totalizado"], egp.ventasNetas),
         gananciaNeta: n(r["ganancia-neta-totalizado"], egp.utilidadGanancia),
       };
-      const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Informe/calcularBalanceTotalizado", cuerpo);
-      if (!esRespuestaOkCompatibilidad(data, "/api/Informe/calcularBalanceTotalizado")) {
-        throw new Error(data.mensaje || "Error al calcular el balance");
+      const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME.calcularBalanceTotalizado, cuerpo);
+      if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.calcularBalanceTotalizado)) {
+        throw new ErrorRespuestaApi(data);
       }
       const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
       return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);
@@ -1662,10 +1685,10 @@ export const informeService = {
           n(obtenerValorCampoEstadoFinanciero(r, campo, payload.tipoEstadoFinanciero)),
         ]),
       );
-      const ruta = "/api/Informe/calcularBalanceDesagregado";
+      const ruta = ENDPOINTS_INFORME.calcularBalanceDesagregado;
       const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
       if (!esRespuestaOkCompatibilidad(data, ruta)) {
-        throw new Error(data.mensaje || "Error al calcular el balance");
+        throw new ErrorRespuestaApi(data);
       }
       const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
       return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);
@@ -1701,10 +1724,10 @@ export const informeService = {
           n(obtenerValorCampoEstadoFinanciero(r, campo, payload.tipoEstadoFinanciero)),
         ]),
       );
-      const ruta = "/api/Informe/calcularBalanceBanco";
+      const ruta = ENDPOINTS_INFORME.calcularBalanceBanco;
       const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
       if (!esRespuestaOkCompatibilidad(data, ruta)) {
-        throw new Error(data.mensaje || "Error al calcular el balance");
+        throw new ErrorRespuestaApi(data);
       }
       const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
       return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);
@@ -1739,10 +1762,10 @@ export const informeService = {
           n(obtenerValorCampoEstadoFinanciero(r, campo, payload.tipoEstadoFinanciero)),
         ]),
       );
-      const ruta = "/api/Informe/calcularBalanceSeguro";
+      const ruta = ENDPOINTS_INFORME.calcularBalanceSeguro;
       const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
       if (!esRespuestaOkCompatibilidad(data, ruta)) {
-        throw new Error(data.mensaje || "Error al calcular el balance");
+        throw new ErrorRespuestaApi(data);
       }
       const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
       return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);
@@ -1783,10 +1806,10 @@ export const informeService = {
         ebitda: valor("ebitda"),
         ganancia: valor("gananciaNeta"),
       };
-      const ruta = "/api/Informe/calcularBalanceTurquia";
+      const ruta = ENDPOINTS_INFORME.calcularBalanceTurquia;
       const { data } = await maximilianService.post<ApiResponse<unknown>>(ruta, cuerpo);
       if (!esRespuestaOkCompatibilidad(data, ruta)) {
-        throw new Error(data.mensaje || "Error al calcular el balance");
+        throw new ErrorRespuestaApi(data);
       }
       const resultado = obtenerRegistro(obtenerLista(data.result)[0], data.result);
       return adaptarCuentaBalanceDesdeApi(resultado, payload.tipoEstadoFinanciero);

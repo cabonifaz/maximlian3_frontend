@@ -9,7 +9,9 @@ import type {
 export interface InformeListParams {
   busqueda?: string;
   idPedido?: number;
-  idEstado?: number;
+  idEstado?: string;
+  idPlantilla?: string;
+  idTipoTramite?: string;
   numPag?: number;
 }
 
@@ -18,7 +20,11 @@ export interface InformeListEntry {
   idInformeOriginal?: number | null;
   idPedido: number;
   idEstado: number;
+  idFase?: number;
+  requiereTraduccion?: 0 | 1;
   idIdioma?: number;
+  idPlantilla?: number;
+  plantilla?: string;
   codigo: string;
   investigado: string;
   pais: string;
@@ -41,6 +47,28 @@ export interface InformeListResponse {
   rechazado: number;
   vigente: number;
   vencido: number;
+  totalRegistros: number;
+  totalPaginas: number;
+}
+
+export interface ParametrosHistorialInformesCompania {
+  idCompania: number;
+  numPag?: number;
+  idIdioma?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+}
+
+export interface InformeHistorialCompania {
+  idInforme: number;
+  idPedido: number;
+  idioma: string;
+  nombre: string;
+  fecha: string;
+}
+
+export interface RespuestaHistorialInformesCompania {
+  lstInformes: InformeHistorialCompania[];
   totalRegistros: number;
   totalPaginas: number;
 }
@@ -383,30 +411,30 @@ export interface InformeCrearRequest {
   idRegistro: string;
   idPlazo: string;
   idOperacionesCambioDivisas: number;
-  capitalInicial: number;
-  capitalPagado: number;
+  capitalInicial?: number;
+  capitalPagado?: number;
   fechaUltimoIncremento: string | null;
   idTipoIncremento: number;
-  patrimonioNeto: number;
+  patrimonioNeto?: number;
   tipoAcciones: string;
-  valorAcciones: number;
+  valorAcciones?: number;
   cotizaBolsa: boolean;
   idTipoCambio: number;
-  tipoCambio: number;
+  tipoCambio?: number;
   antecedentes: string;
   aspectosLegales: string;
   comentariosAspectoLegal: string;
   idSector: number;
   idActividad?: number;
   actividad: string;
-  idIsicCategoria: number;
-  idIsicClase: number;
+  idIsicCategoria?: number;
+  idIsicClase?: number;
   actividadPrincipal: string;
   ventasContado: number | null;
   ventasContadoText: string;
   ventasCredito: number | null;
   ventasCreditoText: string;
-  idVentasCreditoTiempo: number;
+  idVentasCreditoTiempo?: number;
   ventasNacionales: number | null;
   ventasNacionalesText: string;
   ventasInternacionales: number | null;
@@ -417,15 +445,15 @@ export interface InformeCrearRequest {
   comprasContadoNacionalesText: string;
   comprasCreditoNacionales: number | null;
   comprasCreditoNacionalesText: string;
-  idComprasCreditoNacionalesTiempo: number;
+  idComprasCreditoNacionalesTiempo?: number;
   comprasInternacionales: number | null;
   comprasInternacionalesText: string;
   comprasContadoInternacionales: number | null;
   comprasContadoInternacionalesText: string;
   comprasCreditoInternacionales: number | null;
   comprasCreditoInternacionalesText: string;
-  idComprasCreditoInternacionalesTiempo: number;
-  numeroEmpleados: number;
+  idComprasCreditoInternacionalesTiempo?: number;
+  numeroEmpleados?: number;
   numeroEmpleadosText: string;
   comentariosOperaciones: string;
   contenidoInformacionFinanciera: string;
@@ -492,6 +520,9 @@ export interface InformeEliminarObservacionRequest {
 export interface InformeObtenerResponse {
   idInforme?: number;
   idPedido?: number;
+  idEstadoInforme?: number;
+  estadoInforme?: string;
+  estado?: EstadoInvestigacionAnalista;
   idFormatoFecha?: number;
   idTipoPersona?: number;
   idPais?: number;
@@ -720,6 +751,21 @@ export interface PlantillaIndent {
   right?: string;
 }
 
+export interface FooterCell {
+  class?: string;
+  style?: string;
+  text?: string;
+  colspan?: number;
+  image?: string;
+  imageWidth?: string;
+  imageHeight?: string;
+  rows?: FooterRow[];
+}
+
+export interface FooterRow {
+  cells: FooterCell[];
+}
+
 export interface PlantillaDocumentoConfig {
   pageSize?: { width?: string; height?: string };
   margins?: { top?: string; bottom?: string; left?: string; right?: string };
@@ -728,14 +774,18 @@ export interface PlantillaDocumentoConfig {
   headingIndent?: PlantillaIndent;
   font?: { family?: string; size?: string; lineSpacing?: number };
   header?: { logo?: string; logoWidth?: string; logoHeight?: string; align?: string; gapAfter?: string; marginTop?: string };
-  footer?: { text?: string; pageLabel?: string; fontSize?: string; align?: string; showPageNumber?: boolean; gapBefore?: string; marginBottom?: string; pageFontSize?: string; pageColor?: string; pageGapBefore?: string };
+  footer?: { text?: string; pageLabel?: string; fontSize?: string; fontWeight?: string; fontStyle?: string; align?: string; showPageNumber?: boolean; gapBefore?: string; marginBottom?: string; pageFontSize?: string; pageColor?: string; pageGapBefore?: string; containerStyle?: string; pageStyle?: string; pageAlign?: string; layout?: string; pageBgColor?: string; pageColWidth?: string; pageTotal?: boolean; pageTotalLabel?: string; footerExtend?: string; rows?: FooterRow[] };
+  firstPageFooter?: { layout?: string; footerExtend?: string; containerStyle?: string; pageBgColor?: string; pageColor?: string; pageColWidth?: string; pageLabel?: string; pageTotal?: boolean; pageTotalLabel?: string; fontSize?: string; gapBefore?: string; rows?: FooterRow[] };
+
   pageBorder?: { width?: string; color?: string; top?: string; bottom?: string; left?: string; right?: string };
   watermark?: { image?: string; width?: string; height?: string; opacity?: number; position?: string };
+  firstPageWatermark?: { image?: string; width?: string; height?: string; opacity?: number; position?: string };
 }
 
 export interface PlantillaCeldaTabla {
   text: string;
   style?: string;
+  colspan?: number;
 }
 
 export interface PlantillaFilaEtiquetaValor {
@@ -744,17 +794,20 @@ export interface PlantillaFilaEtiquetaValor {
   separator?: string;
 }
 
+type PlantillaSeccionBase = { pageBreak?: boolean };
+
 export type PlantillaSeccion =
-  | { type: "heading"; level?: number; text: string; fontSize?: string }
-  | { type: "subtitle"; text: string }
-  | { type: "text"; field: string }
-  | { type: "keyValue"; style?: string; rows: PlantillaCeldaTabla[][] }
-  | { type: "borderedBox"; title: string; content?: string; rows?: PlantillaFilaEtiquetaValor[]; valueAlign?: string }
-  | { type: "referenceBox"; fontSize?: string; title: string; items: string[] }
-  | { type: "dataTable"; source?: string; columns: { header: string; field?: string }[]; rows?: unknown[]; style?: string; cellStyle?: string; headerStyle?: string; columnWidths?: string[] }
-  | { type: "repeat"; source?: string; sections: PlantillaSeccion[] }
-  | { type: "repeatDetail"; source?: string; titleField?: string; contentField?: string; items?: { title: string; content: string }[] }
-  | { type: "spacer"; height?: string };
+  | PlantillaSeccionBase & { type: "heading"; level?: number; text: string; fontSize?: string; style?: string }
+  | PlantillaSeccionBase & { type: "subtitle"; text: string }
+  | PlantillaSeccionBase & { type: "text"; field: string }
+  | PlantillaSeccionBase & { type: "keyValue"; style?: string; rows: PlantillaCeldaTabla[][] }
+  | PlantillaSeccionBase & { type: "borderedBox"; title: string; content?: string; rows?: PlantillaFilaEtiquetaValor[]; valueAlign?: string }
+  | PlantillaSeccionBase & { type: "referenceBox"; fontSize?: string; title: string; items: string[] }
+  | PlantillaSeccionBase & { type: "dataTable"; source?: string; columns: { header: string; field?: string }[]; rows?: unknown[]; style?: string; cellStyle?: string; headerStyle?: string; columnWidths?: string[] }
+  | PlantillaSeccionBase & { type: "repeat"; source?: string; sections: PlantillaSeccion[] }
+  | PlantillaSeccionBase & { type: "repeatDetail"; source?: string; titleField?: string; contentField?: string; items?: { title: string; content: string }[] }
+  | PlantillaSeccionBase & { type: "spacer"; height?: string }
+  | PlantillaSeccionBase & { type: "inline"; style?: string; runs: { text: string; style?: string }[] };
 
 export interface InformeGenerarUrlsArchivoRequest {
   idPedido: number;

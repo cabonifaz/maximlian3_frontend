@@ -9,8 +9,9 @@ import { type ReactNode, useEffect, useRef } from "react";
 import { CustomButton } from "./CustomButton";
 
 export interface TableColumn {
-  label: string;
+  label: ReactNode;
   className?: string;
+  width?: string;
 }
 
 interface CustomTablaProps<T> {
@@ -108,11 +109,18 @@ export function CustomTabla<T>({
   const colCount = columns.length + (selectable ? 1 : 0);
   const pages = getPaginationPages(paginaActual, totalPages);
   const navDisabled = !!(isLoading || isError);
+  const anchoColumnaDefecto = `${100 / Math.max(columns.length, 1)}%`;
 
   return (
     <div className="bg-brand-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full min-w-[900px] table-fixed text-left border-collapse [&_td]:max-w-0 [&_td]:break-words [&_td]:align-middle">
+          <colgroup>
+            {selectable ? <col className="w-10" /> : null}
+            {columns.map((col, i) => (
+              <col key={i} style={{ width: col.width ?? anchoColumnaDefecto }} />
+            ))}
+          </colgroup>
           <thead>
             <tr className="border-b border-gray-100">
               {selectable && (
@@ -129,9 +137,13 @@ export function CustomTabla<T>({
               {columns.map((col, i) => (
                 <th
                   key={i}
-                  className={`px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider ${col.className ?? ""}`}
+                  className={`px-6 py-4 text-xs font-semibold text-gray-400 ${col.className ?? ""}`}
                 >
-                  {col.label}
+                  {typeof col.label === "string" ? (
+                    <span className="uppercase tracking-wider">{col.label}</span>
+                  ) : (
+                    col.label
+                  )}
                 </th>
               ))}
             </tr>
@@ -182,7 +194,7 @@ export function CustomTabla<T>({
                 const isSelected = selectedIds?.has(id) ?? false;
                 return (
                   <tr
-                    key={id}
+                    key={`${id}-${index}`}
                     className={`hover:bg-gray-50/50 transition-colors ${isSelected ? "bg-brand-wine/5" : ""}`}
                   >
                     {selectable && (

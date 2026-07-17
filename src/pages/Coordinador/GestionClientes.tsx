@@ -1,232 +1,93 @@
-import { useMemo, useRef, useState } from "react";
+import { CLIENT_COLUMNS } from "@maximilian/shared/constants/pages/Coordinador/gestion-clientes.constants";
 import {
   Search,
-  Filter,
   Plus,
   MoreHorizontal,
   UserMinus,
-  X,
   Edit,
 } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ModalAgregarCliente } from "@maximilian/components/coordinador/ModalAgregarCliente";
 import { ModalDetalleCliente } from "@maximilian/components/coordinador/ModalDetalleCliente";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
+import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
-import { useRetardo } from "@maximilian/hooks/useRetardo";
-import { servicioCliente } from "@maximilian/services/cliente.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
-import {
-  type DatosFormularioInformacionCliente,
-  type DatosFormularioContacto,
-  type DatosFormularioTarifa,
-} from "@maximilian/schemas";
-import { type CreateClientRequest, type ClientListEntry } from "@maximilian/shared/types/cliente.type";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-
-interface ClientMutationParams {
-  data: DatosFormularioInformacionCliente;
-  contacts: DatosFormularioContacto[];
-  rates: DatosFormularioTarifa[];
-  reset: () => void;
-}
-
-const CLIENT_COLUMNS = [
-  { label: "Nombre" },
-  { label: "País" },
-  { label: "Tipo de Persona" },
-  { label: "Teléfono" },
-  { label: "Correo" },
-  { label: "Estado" },
-  { label: "Acciones", className: "text-right" },
-];
+import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
+import { useGestionClientes } from "@maximilian/hooks/useGestionClientes";
+import type { ClientListEntry } from "@maximilian/shared/types/cliente.type";
 
 export default function GestionClientes() {
-  const [terminoBusqueda, setSearchBar] = useState("");
-  const [paginaActual, setCurrentPage] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
-  const [idMenuActivo, setActiveMenuId] = useState<number | null>(null);
-  const [clientToDelete, setClientToDelete] = useState<ClientListEntry | null>(null);
-  const [filterPais, setFilterPais] = useState<number | undefined>(undefined);
-  const [filterEstado, setFilterEstado] = useState<number | undefined>(undefined);
-  const [isPaisOpen, setIsPaisOpen] = useState(false);
-  const [isEstadoOpen, setIsEstadoOpen] = useState(false);
-  const [paisSearch, setPaisSearch] = useState("");
-  const [paisDropdownStyle, setPaisDropdownStyle] = useState<React.CSSProperties>({});
-  const [estadoDropdownStyle, setEstadoDropdownStyle] = useState<React.CSSProperties>({});
-  const paisBtnRef = useRef<HTMLButtonElement>(null);
-  const estadoBtnRef = useRef<HTMLButtonElement>(null);
-
-  const busquedaConRetardo = useRetardo(terminoBusqueda);
-
-  const queryClient = useQueryClient();
-
   const {
-    data: clientsData,
-    isLoading: isLoadingClients,
-    isError: isErrorClients,
-    refetch: refetchClients,
-  } = useQuery({
-    queryKey: ["clients", paginaActual, busquedaConRetardo, filterPais, filterEstado],
-    queryFn: () =>
-      servicioCliente.list({
-        numPag: paginaActual,
-        busqueda: busquedaConRetardo || undefined,
-        idPais: filterPais,
-        idEstado: filterEstado,
-      }),
-  });
+    terminoBusqueda,
+    paginaActual,
+    cambiarBusqueda,
+    cambiarFiltroEstado,
+    cambiarFiltroPais,
+    cambiarPaginaCliente,
+    cerrarDetalleCliente,
+    clienteAEliminar,
+    clientesData,
+    crearCliente,
+    crearClienteMutation,
+    eliminarCliente,
+    eliminarClienteMutation,
+    estaAbiertoModalCrear,
+    estaAbiertoModalDetalle,
+    estaCargandoClientes,
+    estadosCliente,
+    filtroEstado,
+    filtroPais,
+    hayErrorClientes,
+    idClienteSeleccionado,
+    idMenuActivo,
+    paises,
+    recargarClientes,
+    seleccionarClienteAEliminar,
+    setClienteAEliminar,
+    setEstaAbiertoModalCrear,
+    setIdMenuActivo,
+    abrirDetalleCliente,
+  } = useGestionClientes();
 
-  const { data: paises } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.PAIS],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
-  });
-
-  const { data: estadosCliente } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.ESTADO_CLIENTE],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_CLIENTE),
-  });
-
-
-  const createClientMutation = useMutation({
-    mutationFn: ({ data, contacts, rates }: ClientMutationParams) => {
-      const apiRequest: CreateClientRequest = {
-        idTipoPersona: data.tipoPersona as number,
-        nombre: data.nombre,
-        nombreCorto: data.nombre.substring(0, 20),
-        idPais: data.pais as number,
-        idRegistroTributario: data.tipoRegistroTributario as number,
-        numRegistroTributario: data.numRegistroTributario ?? "",
-        correo: data.correo,
-        idEstado: 1,
-        webSite: data.sitioWeb || "",
-        telefono: data.telefono ?? "",
-        fax: data.fax ?? "",
-        direccion: data.direccion ?? "",
-        recomendacion: data.recomendacion ?? "",
-        idEmpresaAtencion: data.atendidoPor as number,
-        idIdioma: data.idioma as number,
-        logoClienteUrl: "",
-        imprimeLogoSafety: data.imprimeLogoSafety,
-        lstIdFormatoDocumento: data.formatoInforme as number[],
-        idMoneda: data.moneda as number,
-        idIdiomaFacturacion: data.idiomaFacturacion as number,
-        aplicaPenalidad: data.aplicaPenalidad,
-        idPlantilla: data.plantillaInforme,
-        contactos: contacts.map((c) => ({
-          nombres: c.nombre,
-          idTipoPersonaContacto: c.tipoPersona as number,
-          idTipoContacto: c.tipoContacto as number,
-          tipoContacto: c.tipoContacto === 0 ? (c.tipoContactoNuevo ?? null) : null,
-          areaTrabajo: c.areaTrabajo as number,
-          telefono: c.telefono ?? "",
-          correo: c.correo,
-          codigo: c.codigoContacto || null,
-          enviarCorreo: c.enviarCorreo,
-        })),
-        tarifario: rates.map((r) => ({
-          idProducto: r.producto as number,
-          idTipoTramite: r.tramite as number,
-          idPais: r.pais as number,
-          idMoneda: r.moneda as number,
-          diasMax: r.diasMax,
-          diasMin: r.diasMin,
-          precio: r.precio,
-          penalidad: r.penalidad,
-        })),
+  const columnas = CLIENT_COLUMNS.map((columna, indice) => {
+    if (indice === 1) {
+      return {
+        ...columna,
+        label: (
+          <CustomEncabezadoFiltroTabla
+            titulo="Pais"
+            opciones={paises}
+            valores={filtroPais ? [filtroPais] : []}
+            onChange={cambiarFiltroPais}
+            multiple={false}
+          />
+        ),
       };
-      return servicioCliente.create(apiRequest);
-    },
-    onSuccess: (_, { contacts, reset }) => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-      if (contacts.some((c) => c.tipoContacto === 0)) {
-        queryClient.invalidateQueries({ queryKey: ["masterTable", TablaMaestraId.TIPO_CONTACTO] });
-      }
-      setIsModalOpen(false);
-      reset();
-    },
-    onError: (error: Error) => {
-      console.error("Error al crear cliente:", error.message);
-    },
+    }
+
+    if (indice === 5) {
+      return {
+        ...columna,
+        label: (
+          <CustomEncabezadoFiltroTabla
+            titulo="Estado"
+            opciones={estadosCliente}
+            valores={filtroEstado ? [filtroEstado] : []}
+            onChange={cambiarFiltroEstado}
+            multiple={false}
+          />
+        ),
+      };
+    }
+
+    return columna;
   });
-
-  const deleteClientMutation = useMutation({
-    mutationFn: (idCliente: number) => servicioCliente.eliminate({ idCliente }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-    },
-    onError: (error: Error) => {
-      console.error("Error al desactivar cliente:", error.message);
-    },
-  });
-
-  const handleConfirmCreate = (
-    data: DatosFormularioInformacionCliente,
-    contacts: DatosFormularioContacto[],
-    rates: DatosFormularioTarifa[],
-    reset: () => void,
-  ) => {
-    createClientMutation.mutate({ data, contacts, rates, reset });
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchBar(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const handlePaisButtonClick = () => {
-    if (!isPaisOpen && paisBtnRef.current) {
-      const rect = paisBtnRef.current.getBoundingClientRect();
-      setPaisDropdownStyle({ top: rect.bottom + 8, left: rect.left, width: Math.max(rect.width, 220) });
-    }
-    setIsPaisOpen((v) => !v);
-    setIsEstadoOpen(false);
-  };
-
-  const handleEstadoButtonClick = () => {
-    if (!isEstadoOpen && estadoBtnRef.current) {
-      const rect = estadoBtnRef.current.getBoundingClientRect();
-      setEstadoDropdownStyle({ top: rect.bottom + 8, left: rect.left, width: Math.max(rect.width, 180) });
-    }
-    setIsEstadoOpen((v) => !v);
-    setIsPaisOpen(false);
-  };
-
-  const handleSelectPais = (idPais: number | undefined) => {
-    setFilterPais(idPais);
-    setCurrentPage(1);
-    setIsPaisOpen(false);
-    setPaisSearch("");
-  };
-
-  const handleSelectEstado = (idEstado: number | undefined) => {
-    setFilterEstado(idEstado);
-    setCurrentPage(1);
-    setIsEstadoOpen(false);
-  };
-
-  const filteredPaisOptions = useMemo(() => {
-    if (!paises) return [];
-    return paises
-      .filter((p) => p.string1?.toLowerCase().includes(paisSearch.toLowerCase()))
-      .sort((a, b) => (a.string1 || "").localeCompare(b.string1 || ""));
-  }, [paises, paisSearch]);
-
-  const selectedPaisLabel = paises?.find((p) => p.num1 === filterPais)?.string1;
-  const selectedEstadoLabel = estadosCliente?.find((e) => e.num1 === filterEstado)?.string1;
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= (clientsData?.totalPaginas || 1)) {
-      setCurrentPage(page);
-    }
-  };
 
   const renderRow = (client: ClientListEntry, index: number) => (
     <>
       <td className="px-6 py-4">
-        <span className="text-sm font-bold text-brand-black">{client.nombre}</span>
+        <span className="block truncate text-sm font-bold text-brand-black" title={client.nombre}>
+          {client.nombre}
+        </span>
       </td>
       <td className="px-6 py-4">
         <span className="text-sm text-gray-600">{client.pais || "-"}</span>
@@ -237,20 +98,24 @@ export default function GestionClientes() {
         </span>
       </td>
       <td className="px-6 py-4">
-        <span className="text-sm text-gray-600 font-medium">{client.telefono}</span>
+        <span className="block truncate text-sm font-medium text-gray-600" title={client.telefono}>
+          {client.telefono}
+        </span>
       </td>
       <td className="px-6 py-4">
-        <span className="text-sm text-gray-500">{client.correo}</span>
+        <span className="block truncate text-sm text-gray-500" title={client.correo}>
+          {client.correo}
+        </span>
       </td>
       <td className="px-6 py-4">
-        {client.estado?.toLowerCase() === "activo" ? (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600">
+        {client.estado ? (
+          <CustomChipEstado
+            claseColor={client.estado.toLowerCase() === "activo"
+              ? "bg-green-50 text-green-600"
+              : "bg-gray-100 text-gray-500"}
+          >
             {client.estado}
-          </span>
-        ) : client.estado ? (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500">
-            {client.estado}
-          </span>
+          </CustomChipEstado>
         ) : (
           <span className="text-sm text-gray-400">-</span>
         )}
@@ -258,7 +123,7 @@ export default function GestionClientes() {
       <td className="px-6 py-4 text-right relative">
         <button
           onClick={() =>
-            setActiveMenuId(
+            setIdMenuActivo(
               idMenuActivo === client.idCliente ? null : client.idCliente,
             )
           }
@@ -271,20 +136,18 @@ export default function GestionClientes() {
           <>
             <div
               className="fixed inset-0 z-10"
-              onClick={() => setActiveMenuId(null)}
+              onClick={() => setIdMenuActivo(null)}
             />
             <div
               className={`absolute right-6 ${
-                index >= (clientsData?.lstClientes.length ?? 0) - 2
+                index >= (clientesData?.lstClientes.length ?? 0) - 2
                   ? "bottom-10"
                   : "top-10"
               } w-48 bg-brand-white rounded-xl shadow-2xl border border-gray-200/50 py-1 z-20 animate-in fade-in zoom-in-95 duration-100`}
             >
               <button
                 onClick={() => {
-                  setSelectedClientId(client.idCliente);
-                  setIsDetailModalOpen(true);
-                  setActiveMenuId(null);
+                  abrirDetalleCliente(client.idCliente);
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
               >
@@ -293,8 +156,7 @@ export default function GestionClientes() {
               </button>
               <button
                 onClick={() => {
-                  setClientToDelete(client);
-                  setActiveMenuId(null);
+                  seleccionarClienteAEliminar(client);
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
               >
@@ -322,119 +184,13 @@ export default function GestionClientes() {
               placeholder="Busca por nombre o nro. de registro tributario"
               className="w-full pl-10 pr-4 py-2 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
               value={terminoBusqueda}
-              onChange={handleSearchChange}
+              onChange={(evento) => cambiarBusqueda(evento.target.value)}
             />
           </div>
 
-          {/* País filter */}
-          <div className="relative">
-            <button
-              ref={paisBtnRef}
-              onClick={handlePaisButtonClick}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-colors cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${filterPais ? "bg-brand-wine/10 border-brand-wine/30 text-brand-wine" : "bg-brand-white border-gray-200 text-gray-700 hover:bg-gray-50"}`}
-            >
-              <Filter className="w-4 h-4" />
-              <span>{selectedPaisLabel ?? "País"}</span>
-              {filterPais && (
-                <X
-                  className="w-3 h-3 ml-1"
-                  onClick={(e) => { e.stopPropagation(); handleSelectPais(undefined); }}
-                />
-              )}
-            </button>
-            {isPaisOpen && (
-              <>
-                <div className="fixed inset-0 z-100" onClick={() => setIsPaisOpen(false)} />
-                <div
-                  className="fixed bg-brand-white border border-gray-100 rounded-xl shadow-2xl z-101 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-                  style={paisDropdownStyle}
-                >
-                  <div className="p-2 border-b border-gray-50">
-                    <input
-                      type="text"
-                      className="w-full px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-xs outline-none focus:ring-2 focus:ring-brand-wine/10"
-                      placeholder="Buscar..."
-                      autoFocus
-                      value={paisSearch}
-                      onChange={(e) => setPaisSearch(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                  <div className="max-h-48 overflow-y-auto">
-                    <div
-                      className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${!filterPais ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-500 italic"}`}
-                      onClick={() => handleSelectPais(undefined)}
-                    >
-                      Todos
-                    </div>
-                    {filteredPaisOptions.length > 0 ? (
-                      filteredPaisOptions.map((opt) => (
-                        <div
-                          key={opt.num1}
-                          className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${filterPais === opt.num1 ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-600"}`}
-                          onClick={() => handleSelectPais(opt.num1!)}
-                        >
-                          {opt.string1}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="px-4 py-3 text-xs text-gray-400 italic text-center">
-                        No se encontraron resultados
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Estado filter */}
-          <div className="relative">
-            <button
-              ref={estadoBtnRef}
-              onClick={handleEstadoButtonClick}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-colors cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${filterEstado ? "bg-brand-wine/10 border-brand-wine/30 text-brand-wine" : "bg-brand-white border-gray-200 text-gray-700 hover:bg-gray-50"}`}
-            >
-              <div className={`w-2 h-2 rounded-full ${filterEstado ? "bg-brand-wine" : "bg-brand-wine"}`} />
-              <span>{selectedEstadoLabel ?? "Estado"}</span>
-              {filterEstado && (
-                <X
-                  className="w-3 h-3 ml-1"
-                  onClick={(e) => { e.stopPropagation(); handleSelectEstado(undefined); }}
-                />
-              )}
-            </button>
-            {isEstadoOpen && (
-              <>
-                <div className="fixed inset-0 z-100" onClick={() => setIsEstadoOpen(false)} />
-                <div
-                  className="fixed bg-brand-white border border-gray-100 rounded-xl shadow-2xl z-101 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-                  style={estadoDropdownStyle}
-                >
-                  <div className="max-h-48 overflow-y-auto">
-                    <div
-                      className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${!filterEstado ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-500 italic"}`}
-                      onClick={() => handleSelectEstado(undefined)}
-                    >
-                      Todos
-                    </div>
-                    {estadosCliente?.map((opt) => (
-                      <div
-                        key={opt.num1}
-                        className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${filterEstado === opt.num1 ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-600"}`}
-                        onClick={() => handleSelectEstado(opt.num1!)}
-                      >
-                        {opt.string1}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
 
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setEstaAbiertoModalCrear(true)}
             className="flex items-center gap-2 px-4 py-2 bg-brand-wine text-brand-white rounded-lg text-sm font-medium hover:bg-brand-wine/90 transition-all shadow-sm shadow-brand-wine/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus size={16} />
@@ -444,50 +200,44 @@ export default function GestionClientes() {
       </div>
 
       <CustomTabla
-        columns={CLIENT_COLUMNS}
-        data={clientsData?.lstClientes}
+        columns={columnas}
+        data={clientesData?.lstClientes}
         getId={(c) => c.idCliente}
         renderRow={renderRow}
-        isLoading={isLoadingClients}
-        isError={isErrorClients}
-        onRetry={() => refetchClients()}
+        isLoading={estaCargandoClientes}
+        isError={hayErrorClientes}
+        onRetry={() => recargarClientes()}
         emptyMessage="No se encontraron clientes."
         errorMessage="Error al cargar los clientes"
         paginaActual={paginaActual}
-        totalPages={clientsData?.totalPaginas ?? 1}
-        totalRecords={clientsData?.totalRegistros ?? 0}
-        onPageChange={handlePageChange}
+        totalPages={clientesData?.totalPaginas ?? 1}
+        totalRecords={clientesData?.totalRegistros ?? 0}
+        onPageChange={cambiarPaginaCliente}
         entityLabel="clientes"
       />
 
       <ModalAgregarCliente
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onConfirm={handleConfirmCreate}
-        isSubmitting={createClientMutation.isPending}
+        isOpen={estaAbiertoModalCrear}
+        onClose={() => setEstaAbiertoModalCrear(false)}
+        onConfirm={crearCliente}
+        isSubmitting={crearClienteMutation.isPending}
       />
 
       <ModalDetalleCliente
-        isOpen={isDetailModalOpen}
-        onClose={() => {
-          setIsDetailModalOpen(false);
-          setSelectedClientId(null);
-        }}
-        clientId={selectedClientId}
+        isOpen={estaAbiertoModalDetalle}
+        onClose={cerrarDetalleCliente}
+        clientId={idClienteSeleccionado}
       />
 
       <CustomModalConfirmacionEliminacion
-        isOpen={clientToDelete !== null}
-        onClose={() => setClientToDelete(null)}
-        onConfirm={() => {
-          deleteClientMutation.mutate(clientToDelete!.idCliente);
-          setClientToDelete(null);
-        }}
+        isOpen={clienteAEliminar !== null}
+        onClose={() => setClienteAEliminar(null)}
+        onConfirm={eliminarCliente}
         title="Desactivar cliente"
-        isSubmitting={deleteClientMutation.isPending}
+        isSubmitting={eliminarClienteMutation.isPending}
       >
-        <p><span className="font-bold">Nombre:</span> {clientToDelete?.nombre ?? "-"}</p>
-        <p><span className="font-bold">Correo:</span> {clientToDelete?.correo ?? "-"}</p>
+        <p><span className="font-bold">Nombre:</span> {clienteAEliminar?.nombre ?? "-"}</p>
+        <p><span className="font-bold">Correo:</span> {clienteAEliminar?.correo ?? "-"}</p>
       </CustomModalConfirmacionEliminacion>
     </div>
   );

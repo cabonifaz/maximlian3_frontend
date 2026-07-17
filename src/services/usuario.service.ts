@@ -1,5 +1,6 @@
-import maximilianService from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ENDPOINTS_USUARIO } from "@maximilian/shared/constants/endpoints/usuario.endpoint";
+import maximilianService from "./maximilian-service";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   CreateUserRequest,
@@ -10,33 +11,11 @@ import type {
   UserListRequest,
   UserListResponse,
 } from "@maximilian/shared/types/usuario.type";
-
-type RegistroGenerico = Record<string, unknown>;
-
-function esRegistro(valor: unknown): valor is RegistroGenerico {
-  return typeof valor === "object" && valor !== null;
-}
-
-function obtenerTexto(...valores: unknown[]): string {
-  for (const valor of valores) {
-    if (typeof valor === "string") {
-      const texto = valor.trim();
-      if (texto) return texto;
-    }
-  }
-
-  return "";
-}
-
-function obtenerNumero(valor: unknown): number | undefined {
-  if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-  if (typeof valor === "string" && valor.trim() !== "") {
-    const numero = Number(valor);
-    if (Number.isFinite(numero)) return numero;
-  }
-
-  return undefined;
-}
+import {
+  esRegistroRespuesta as esRegistro,
+  obtenerNumeroOpcional as obtenerNumero,
+  obtenerTexto,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
 function obtenerListaNumerica(valor: unknown, llaves: string[]): number[] {
   if (Array.isArray(valor)) {
@@ -108,11 +87,11 @@ export const servicioUsuario = {
       }
 
       const { data } = await maximilianService.get<ApiResponse<UserListResponse>>(
-        `/api/Usuario/listar?${parametros.toString()}`
+        `${ENDPOINTS_USUARIO.listar}?${parametros.toString()}`
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al listar usuarios");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;
@@ -130,14 +109,14 @@ export const servicioUsuario = {
     try {
       // In many of our project endpoints, 'result' is an array even for single objects
       const { data } = await maximilianService.get<ApiResponse<UserDetails | UserDetails[]>>(
-        "/api/Usuario/obtener",
+        ENDPOINTS_USUARIO.obtener,
         {
           params: { IdUsuario: idUsuario },
         }
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al obtener detalles del usuario");
+        throw new ErrorRespuestaApi(data);
       }
 
       // Handle both object and array response patterns
@@ -156,12 +135,12 @@ export const servicioUsuario = {
   create: async (userData: CreateUserRequest) => {
     try {
       const { data } = await maximilianService.post<ApiResponse<CreateUserResponse>>(
-        "/api/Usuario/crear",
+        ENDPOINTS_USUARIO.crear,
         userData
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al crear el usuario");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;
@@ -178,12 +157,12 @@ export const servicioUsuario = {
   update: async (updateData: UpdateUserRequest) => {
     try {
       const { data } = await maximilianService.post<ApiResponse<unknown>>(
-        "/api/Usuario/editar",
+        ENDPOINTS_USUARIO.editar,
         updateData
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al actualizar el usuario");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;
@@ -200,12 +179,12 @@ export const servicioUsuario = {
   delete: async (deleteData: DeleteUserRequest) => {
     try {
       const { data } = await maximilianService.post<ApiResponse<unknown>>(
-        "/api/Usuario/eliminar",
+        ENDPOINTS_USUARIO.eliminar,
         deleteData
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al eliminar el usuario");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;

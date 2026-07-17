@@ -13,6 +13,12 @@ export function obtenerNumeroOpcionalDesdeMonto(valor?: string) {
   return Number.isFinite(numero) ? numero : null;
 }
 
+export function obtenerTextoNumerico(valor: unknown) {
+  if (typeof valor === "number") return Number.isFinite(valor) ? String(valor) : "";
+  if (typeof valor === "string") return valor.trim();
+  return "";
+}
+
 export function formatearMontoDosDecimales(valor: string | number) {
   return formatearMontoDecimales(valor, 2);
 }
@@ -64,6 +70,64 @@ export function normalizarMontoDecimales(valor: string, decimales: number, permi
   if (Number.isNaN(numero)) return valor;
 
   return formatearMontoDecimales(numero, decimales);
+}
+
+export function sanitizarPorcentajeDecimales(valor: string, decimales: number) {
+  const valorNormalizado = valor.replace(",", ".").replace(/[^0-9.]/g, "");
+  const partes = valorNormalizado.split(".");
+  const entero = partes[0] ?? "";
+  const decimal = partes[1] ?? "";
+  const valorCompuesto = partes.length > 1 ? `${entero}.${decimal.slice(0, decimales)}` : entero;
+
+  if (!valorCompuesto) return "";
+
+  if (entero && Number.parseInt(entero, 10) > 100) {
+    return "100";
+  }
+
+  if (valorCompuesto === "100" || valorCompuesto.startsWith("100.")) {
+    return "100";
+  }
+
+  return valorCompuesto;
+}
+
+export function normalizarPorcentajeDecimales(valor: string, decimales: number) {
+  const valorLimpio = valor.trim().replace("%", "").replace(",", ".");
+  if (!valorLimpio) return "";
+
+  const numero = Number.parseFloat(valorLimpio);
+  if (Number.isNaN(numero)) return valor;
+
+  return numero.toFixed(decimales);
+}
+
+export function obtenerPorcentajeNumerico(valor?: string) {
+  const numero = Number.parseFloat((valor ?? "").replace("%", "").replace(",", ".").trim());
+  return Number.isNaN(numero) ? 0 : numero;
+}
+
+export function obtenerPorcentajeNumericoOpcional(valor?: string) {
+  const texto = (valor ?? "").replace("%", "").replace(",", ".").trim();
+  if (!texto) return null;
+
+  const numero = Number.parseFloat(texto);
+  return Number.isNaN(numero) ? null : numero;
+}
+
+export function formatearPorcentajeDecimales(valor: number, decimales: number, quitarCerosFinales = false) {
+  const porcentaje = valor.toFixed(decimales);
+  return `${quitarCerosFinales ? porcentaje.replace(/\.?0+$/, "") : porcentaje}%`;
+}
+
+export function formatearTextoNumericoDecimales(valor: unknown, decimales: number) {
+  const texto = obtenerTextoNumerico(valor);
+  if (!texto) return "";
+
+  const numero = Number.parseFloat(texto.replace("%", "").replace(",", "."));
+  if (Number.isNaN(numero)) return texto;
+
+  return numero.toFixed(decimales);
 }
 
 export function seleccionarTextoCampoEditable(event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {

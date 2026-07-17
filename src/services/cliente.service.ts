@@ -1,5 +1,6 @@
-import maximilianService from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ENDPOINTS_CLIENTE } from "@maximilian/shared/constants/endpoints/cliente.endpoint";
+import maximilianService from "./maximilian-service";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   CreateClientRequest,
@@ -35,12 +36,12 @@ export const servicioCliente = {
   list: async (params: ClientListRequest): Promise<ClientListResponse> => {
     try {
       const { data } = await maximilianService.get<ApiResponse<ClientListResponse>>(
-        "/api/Cliente/listar",
+        ENDPOINTS_CLIENTE.listar,
         { params }
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al listar los clientes");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;
@@ -57,12 +58,12 @@ export const servicioCliente = {
   create: async (clientData: CreateClientRequest) => {
     try {
       const { data } = await maximilianService.post<ApiResponse<CreateClientResponse>>(
-        "/api/Cliente/crear",
+        ENDPOINTS_CLIENTE.crear,
         clientData
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al crear el cliente");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result;
@@ -78,11 +79,11 @@ export const servicioCliente = {
    */
   getById: async (idCliente: number): Promise<ClientDetail> => {
     const { data } = await maximilianService.get<ApiResponse<ClientDetail[]>>(
-      "/api/Cliente/obtener",
+      ENDPOINTS_CLIENTE.obtener,
       { params: { idCliente } }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
-      throw new Error(data.mensaje || "Error al obtener el cliente");
+      throw new ErrorRespuestaApi(data);
     }
     return data.result[0];
   },
@@ -90,12 +91,12 @@ export const servicioCliente = {
   eliminate: async (data: DeleteClientRequest) => {
     try {
       const { data: responseData } = await maximilianService.post<ApiResponse<{ idCliente: number }[]>>(
-        "/api/Cliente/eliminar",
+        ENDPOINTS_CLIENTE.eliminar,
         data
       );
 
       if (responseData.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(responseData.mensaje || "Error al desactivar el cliente");
+        throw new ErrorRespuestaApi(responseData);
       }
 
       return responseData.result;
@@ -111,11 +112,11 @@ export const servicioCliente = {
     numPag: number;
   }): Promise<TarifarioListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<TarifarioListResponse>>(
-      "/api/Tarifario/listar",
+      ENDPOINTS_CLIENTE.listarTarifario,
       { params }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
-      throw new Error(data.mensaje || "Error al listar el tarifario");
+      throw new ErrorRespuestaApi(data);
     }
     return data.result;
   },
@@ -126,11 +127,11 @@ export const servicioCliente = {
     numPag?: number;
   }): Promise<ContactoListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<ContactoListResponse>>(
-      "/api/ClienteContacto/listar",
+      ENDPOINTS_CLIENTE.listarContactos,
       { params: { IdCliente: params.idCliente, Busqueda: params.busqueda, NumPag: params.numPag } }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
-      throw new Error(data.mensaje || "Error al listar los contactos");
+      throw new ErrorRespuestaApi(data);
     }
     return data.result;
   },
@@ -141,76 +142,76 @@ export const servicioCliente = {
    */
   update: async (clientData: UpdateClientRequest) => {
     const { data } = await maximilianService.post<ApiResponse<CreateClientResponse[]>>(
-      "/api/Cliente/editar",
+      ENDPOINTS_CLIENTE.editar,
       clientData
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
-      throw new Error(data.mensaje || "Error al actualizar el cliente");
+      throw new ErrorRespuestaApi(data);
     }
     return data.result[0];
   },
 
   createTarifario: async (data: CreateTarifarioRequest): Promise<{ idTarifario: number }> => {
     const { data: res } = await maximilianService.post<ApiResponse<{ idTarifario: number }[]>>(
-      "/api/Tarifario/crear", data
+      ENDPOINTS_CLIENTE.crearTarifario, data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al crear tarifa");
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
   updateTarifario: async (data: UpdateTarifarioRequest): Promise<{ idTarifario: number }> => {
     const { data: res } = await maximilianService.post<ApiResponse<{ idTarifario: number }[]>>(
-      "/api/Tarifario/editar", data
+      ENDPOINTS_CLIENTE.editarTarifario, data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al editar tarifa");
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
   deleteTarifario: async (data: DeleteTarifarioRequest): Promise<{ idTarifario: number }> => {
     const { data: res } = await maximilianService.post<ApiResponse<{ idTarifario: number }[]>>(
-      "/api/Tarifario/eliminar", data
+      ENDPOINTS_CLIENTE.eliminarTarifario, data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al eliminar tarifa");
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
   createContacto: async (data: CreateContactoRequest): Promise<{ idClienteContacto: number }> => {
     const { data: res } = await maximilianService.post<ApiResponse<{ idClienteContacto: number }[]>>(
-      "/api/ClienteContacto/crear", data
+      ENDPOINTS_CLIENTE.crearContacto, data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al crear contacto");
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
   updateContacto: async (data: UpdateContactoRequest): Promise<{ idClienteContacto: number }> => {
     const { data: res } = await maximilianService.post<ApiResponse<{ idClienteContacto: number }[]>>(
-      "/api/ClienteContacto/editar", data
+      ENDPOINTS_CLIENTE.editarContacto, data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al editar contacto");
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
   deleteContacto: async (data: DeleteContactoRequest): Promise<{ idClienteContacto: number }> => {
     const { data: res } = await maximilianService.post<ApiResponse<{ idClienteContacto: number }[]>>(
-      "/api/ClienteContacto/eliminar", data
+      ENDPOINTS_CLIENTE.eliminarContacto, data
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje || "Error al eliminar contacto");
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
   getTarifarioById: async (data: GetTarifarioRequest): Promise<TarifarioDetail> => {
     const { data: res } = await maximilianService.get<ApiResponse<TarifarioDetail[]>>(
-      "/api/Tarifario/obtener", { params: data }
+      ENDPOINTS_CLIENTE.obtenerTarifario, { params: data }
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
   getContactoById: async (data: GetContactoRequest): Promise<ContactoDetail> => {
     const { data: res } = await maximilianService.get<ApiResponse<ContactoDetail[]>>(
-      "/api/ClienteContacto/obtener", { params: data }
+      ENDPOINTS_CLIENTE.obtenerContacto, { params: data }
     );
-    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new Error(res.mensaje);
+    if (res.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(res);
     return res.result[0];
   },
 
@@ -221,18 +222,18 @@ export const servicioCliente = {
     IdPais?: number;
   }): Promise<TarifarioCortaEntry[]> => {
     const { data } = await maximilianService.get<ApiResponse<TarifarioCortaResponse>>(
-      "/api/Tarifario/listaCorta",
+      ENDPOINTS_CLIENTE.listaCortaTarifario,
       { params: { idCliente: params.idCliente, IdTipoProducto: params.IdTipoProducto, IdTipoTramite: params.IdTipoTramite, IdPais: params.IdPais } }
     );
-    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return data.result.lstTarifario;
   },
 
   listaCorta: async (): Promise<ClienteCorta[]> => {
     const { data } = await maximilianService.get<ApiResponse<ClienteListaCortaResponse>>(
-      "/api/Cliente/listaCorta"
+      ENDPOINTS_CLIENTE.listaCorta
     );
-    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new Error(data.mensaje);
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return data.result.lstCliente;
   },
 };

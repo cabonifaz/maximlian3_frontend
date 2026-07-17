@@ -1,6 +1,8 @@
 import { Check, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import type { RegistroDirectorioEjecutivoAnalista } from "@maximilian/shared/types/investigacion.type";
+import { formatearFechaIsoADdMmYyyy } from "@maximilian/shared/utils/fecha.util";
+import { formatearPorcentajeDecimales, obtenerPorcentajeNumericoOpcional } from "@maximilian/shared/utils/formato-monto.util";
 
 interface PropsCustomModalRevisionEjecutivosExtraccion {
   ejecutivos: RegistroDirectorioEjecutivoAnalista[];
@@ -92,14 +94,11 @@ function obtenerCargoEjecutivo(
 }
 
 function formatearParticipacion(valor?: string) {
-  const numero = Number.parseFloat((valor ?? "").replace("%", "").replace(",", "."));
-  if (Number.isNaN(numero)) return "-";
-  return `${numero.toFixed(8).replace(/\.?0+$/, "")}%`;
+  const porcentaje = obtenerPorcentajeNumericoOpcional(valor);
+  if (porcentaje == null) return "-";
+  return formatearPorcentajeDecimales(porcentaje, 8, true);
 }
 
 function formatearFecha(valor?: string) {
-  if (!valor) return "-";
-  const coincidenciaIso = valor.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!coincidenciaIso) return valor;
-  return `${coincidenciaIso[3]}/${coincidenciaIso[2]}/${coincidenciaIso[1]}`;
+  return formatearFechaIsoADdMmYyyy(valor);
 }

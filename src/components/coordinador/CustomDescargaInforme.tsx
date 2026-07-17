@@ -1,3 +1,4 @@
+import { FORMATOS } from "@maximilian/shared/constants/components/coordinador/custom-descarga-informe.constants";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Download } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -5,18 +6,13 @@ import type { FormatoDescargaInforme } from "@maximilian/shared/types/informe.ty
 
 interface PropsCustomDescargaInforme {
   deshabilitado?: boolean;
+  puedeDescargarXml?: boolean;
   onDescargar: (formato: FormatoDescargaInforme) => void;
 }
 
-const FORMATOS: Array<{ valor: FormatoDescargaInforme; etiqueta: string }> = [
-  { valor: ".pdf", etiqueta: "PDF" },
-  { valor: ".docx", etiqueta: "DOCX" },
-  { valor: ".html", etiqueta: "HTML" },
-  { valor: ".xml", etiqueta: "XML" },
-];
-
 export function CustomDescargaInforme({
   deshabilitado = false,
+  puedeDescargarXml = false,
   onDescargar,
 }: PropsCustomDescargaInforme) {
   const [estaAbierto, setEstaAbierto] = useState(false);
@@ -43,12 +39,13 @@ export function CustomDescargaInforme({
       <CustomButton
         size="sm"
         disabled={deshabilitado}
+        aria-label="Descargar informe"
         aria-haspopup="menu"
         aria-expanded={estaAbierto}
+        title="Descargar informe"
         onClick={() => setEstaAbierto((valorActual) => !valorActual)}
       >
         <Download size={14} />
-        Descargar
         <ChevronDown size={14} />
       </CustomButton>
 
@@ -60,7 +57,7 @@ export function CustomDescargaInforme({
           <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Descargar como
           </p>
-          {FORMATOS.map((formato) => (
+          {FORMATOS.filter((formato) => formato.valor !== ".xml" || puedeDescargarXml).map((formato) => (
             <CustomButton
               key={formato.valor}
               variant="ghost"

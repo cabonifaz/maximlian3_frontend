@@ -1,32 +1,10 @@
 import { X } from "lucide-react";
-import { useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
-import { useForm, type Resolver } from "react-hook-form";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { esquemaContacto, type DatosFormularioContacto } from "@maximilian/schemas";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
-import {
-  obtenerDescripcionTablaMaestra,
-  obtenerSiguienteNumTablaMaestra,
-  type EntradaTablaMaestra,
-  type TablaMaestraCrearRequest,
-  TablaMaestraId,
-} from "@maximilian/shared/types/tabla-maestra.type";
-
-const contactResolver: Resolver<DatosFormularioContacto> = async (...args) => {
-  const result = await zodResolver(esquemaContacto)(...args);
-  const { tipoContacto, tipoContactoNuevo } = args[0];
-  if (tipoContacto === 0 && !tipoContactoNuevo?.trim()) {
-    result.errors = {
-      ...result.errors,
-      tipoContacto: { type: "custom", message: "El tipo de contacto es requerido" },
-    };
-  }
-  return result;
-};
+import type { DatosFormularioContacto } from "@maximilian/schemas";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { useModalAgregarContacto } from "@maximilian/hooks/useModalAgregarContacto";
 
 interface ModalAgregarContactoProps {
   isOpen: boolean;
@@ -37,70 +15,30 @@ interface ModalAgregarContactoProps {
 
 export function ModalAgregarContacto({ isOpen, onClose, onConfirm, defaultValues }: ModalAgregarContactoProps) {
   const {
+    agregarTipoContacto,
+    areaTrabajo,
+    cambiarTipoContacto,
+    confirmar,
+    formulario,
+    tipoContacto,
+    tipoContactoNuevo,
+    tipoPersona,
+  } = useModalAgregarContacto({
+    isOpen,
+    onClose,
+    onConfirm,
+    defaultValues,
+  });
+  const {
     register,
     handleSubmit,
     formState: { errors },
-    reset,
-    watch,
     setValue,
     trigger,
-  } = useForm<DatosFormularioContacto>({
-    resolver: contactResolver,
-    mode: "onTouched",
-  });
-  const queryClient = useQueryClient();
-  const crearTipoContactoMutation = useMutation({
-    mutationFn: async (termino: string) => {
-      const terminoLimpio = termino.trim();
-      const opcionesActuales = await queryClient.fetchQuery<EntradaTablaMaestra[]>({
-        queryKey: ["masterTable", TablaMaestraId.TIPO_CONTACTO],
-        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_CONTACTO),
-        staleTime: 0,
-      });
-      const payload: TablaMaestraCrearRequest = {
-        idMaestro: TablaMaestraId.TIPO_CONTACTO,
-        descripcion: obtenerDescripcionTablaMaestra(TablaMaestraId.TIPO_CONTACTO),
-        string1: terminoLimpio,
-        num1: obtenerSiguienteNumTablaMaestra(opcionesActuales),
-        num2: null,
-        num3: null,
-        string2: null,
-        string3: null,
-        date1: null,
-        date2: null,
-        date3: null,
-      };
-
-      await servicioTablaMaestra.crear(payload);
-      await queryClient.invalidateQueries({ queryKey: ["masterTable", TablaMaestraId.TIPO_CONTACTO] });
-      const opcionesActualizadas = await queryClient.fetchQuery({
-        queryKey: ["masterTable", TablaMaestraId.TIPO_CONTACTO],
-        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_CONTACTO),
-        staleTime: 0,
-      });
-
-      const terminoNormalizado = terminoLimpio.toLowerCase();
-      return opcionesActualizadas.find((opcion) => (opcion.string1 ?? "").trim().toLowerCase() === terminoNormalizado);
-    },
-  });
-
-  useEffect(() => {
-    reset(defaultValues ?? { enviarCorreo: false } as DatosFormularioContacto);
-  }, [defaultValues, isOpen, reset]);
+  } = formulario;
 
 
   if (!isOpen) return null;
-
-  const watchedTipoPersona = watch("tipoPersona");
-  const watchedTipoContacto = watch("tipoContacto");
-  const watchedTipoContactoNuevo = watch("tipoContactoNuevo");
-  const watchedAreaTrabajo = watch("areaTrabajo");
-
-  const handleConfirm = (data: DatosFormularioContacto) => {
-    onConfirm(data);
-    reset();
-    onClose();
-  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -112,13 +50,13 @@ export function ModalAgregarContacto({ isOpen, onClose, onConfirm, defaultValues
           </CustomButton>
         </div>
 
-        <form onSubmit={handleSubmit(handleConfirm)} className="p-8 space-y-6">
+        <form onSubmit={handleSubmit(confirmar)} className="p-8 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CustomSelectorBuscable
               label="Tipo Persona"
               required
               idMaster={TablaMaestraId.TIPO_PERSONA}
-              value={watchedTipoPersona}
+              value={tipoPersona}
               onChange={(val) =>
                 setValue("tipoPersona", val, { shouldValidate: true })
               }
@@ -131,23 +69,12 @@ export function ModalAgregarContacto({ isOpen, onClose, onConfirm, defaultValues
               label="Tipo de Contacto"
               required
               idMaster={TablaMaestraId.TIPO_CONTACTO}
-              value={watchedTipoContacto}
-              onChange={(val) => {
-                setValue("tipoContacto", val, { shouldValidate: true });
-                if (val !== 0) setValue("tipoContactoNuevo", undefined);
-              }}
+              value={tipoContacto}
+              onChange={cambiarTipoContacto}
               onBlur={() => trigger("tipoContacto")}
               autoSeleccionarOpcionUnica
-              onAddNew={(term) => {
-                setValue("tipoContacto", 0, { shouldValidate: true });
-                setValue("tipoContactoNuevo", term, { shouldValidate: true });
-                void crearTipoContactoMutation.mutateAsync(term).then((opcion) => {
-                  if (!opcion?.num1) return;
-                  setValue("tipoContacto", opcion.num1, { shouldValidate: true });
-                  setValue("tipoContactoNuevo", undefined, { shouldValidate: true });
-                });
-              }}
-              displayValue={watchedTipoContacto === 0 ? watchedTipoContactoNuevo : undefined}
+              onAddNew={agregarTipoContacto}
+              displayValue={tipoContacto === 0 ? tipoContactoNuevo : undefined}
               error={errors.tipoContacto?.message}
             />
 
@@ -200,7 +127,7 @@ export function ModalAgregarContacto({ isOpen, onClose, onConfirm, defaultValues
                 label="Área de Trabajo"
                 required
                 idMaster={TablaMaestraId.AREA_TRABAJO}
-                value={watchedAreaTrabajo}
+                value={areaTrabajo}
                 onChange={(val) =>
                 setValue("areaTrabajo", val, { shouldValidate: true })
               }

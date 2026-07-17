@@ -19,6 +19,7 @@ import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSele
 import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomEntradaUrl } from "@maximilian/components/common/CustomEntradaUrl";
+import { useRetardo } from "@maximilian/hooks/useRetardo";
 
 interface ModalAgregarClienteProps {
   isOpen: boolean;
@@ -82,6 +83,7 @@ export function ModalAgregarCliente({
   const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null);
   const [contactsPag, setContactsPag] = useState(1);
   const [contactSearch, setContactSearch] = useState("");
+  const busquedaContactoConRetardo = useRetardo(contactSearch);
 
   const {
     register: infoRegister,
@@ -701,7 +703,7 @@ export function ModalAgregarCliente({
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {(() => {
-                      const term = contactSearch.toLowerCase();
+                      const term = busquedaContactoConRetardo.toLowerCase();
                       const filtered = addedContacts
                         .map((c, originalIndex) => ({ ...c, originalIndex }))
                         .filter(c =>
@@ -734,8 +736,16 @@ export function ModalAgregarCliente({
                                 />
                               </td>
                               <td className="px-4 py-3 text-gray-600">{contact.nombre}</td>
-                              <td className="px-4 py-3 text-gray-600">{contact.correo}</td>
-                              <td className="px-4 py-3 text-gray-600">{contact.telefono}</td>
+                              <td className="px-4 py-3 text-gray-600">
+                                <span className="block max-w-44 truncate" title={contact.correo}>
+                                  {contact.correo}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">
+                                <span className="block max-w-36 truncate" title={contact.telefono}>
+                                  {contact.telefono}
+                                </span>
+                              </td>
                               <td className="px-4 py-3 text-gray-600">{contact.tipoContactoLabel}</td>
                               <td className="px-4 py-3 text-gray-600">{contact.areaTrabajoLabel}</td>
                               <td className="px-4 py-3 text-center">
