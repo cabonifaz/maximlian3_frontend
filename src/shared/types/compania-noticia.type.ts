@@ -11,6 +11,16 @@ export interface CompaniaNoticiaArchivo {
   uploadUrl: string;
 }
 
+export interface CompaniaNoticiaArchivoRequest {
+  idCompaniaNoticiaArchivo: number;
+  idTipoArchivo: number;
+  nombreArchivo: string;
+  nombreDocumento: string;
+  formatoArchivo: string;
+  archivoUrl: string;
+  uploadUrl: string;
+}
+
 export interface CompaniaNoticiaListaItem {
   idCompaniaNoticia: number;
   idCompania: number;
@@ -59,7 +69,7 @@ export interface CompaniaNoticiaCrearRequest {
   descripcion: string;
   fechaNoticia: string;
   categoria: string;
-  archivos: CompaniaNoticiaArchivo[];
+  archivos: CompaniaNoticiaArchivoRequest[];
 }
 
 export interface CompaniaNoticiaEditarRequest extends CompaniaNoticiaCrearRequest {

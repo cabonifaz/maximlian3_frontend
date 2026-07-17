@@ -33,6 +33,7 @@ import { formatearTamanoArchivo } from "@maximilian/shared/utils/archivo.util";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
 import type {
   CompaniaNoticiaArchivo,
+  CompaniaNoticiaArchivoRequest,
   CompaniaNoticiaCrearRequest,
   CompaniaNoticiaEditarRequest,
   CompaniaNoticiaListaItem,
@@ -270,7 +271,7 @@ export function CustomBancoNoticias({
         fechaNoticia: new Date(`${datos.fechaNoticia}T00:00:00`).toISOString(),
         categoria: datos.categoria.trim(),
         archivos: [
-          ...archivosExistentes,
+          ...archivosExistentes.map(convertirArchivoExistentePayload),
           ...archivosNuevos,
         ],
     };
@@ -1317,11 +1318,8 @@ function BotonCerrar({ onCerrar }: { onCerrar: () => void }) {
 function convertirArchivo(
   archivo: File,
   opcionesFormatoArchivo?: EntradaTablaMaestra[],
-): CompaniaNoticiaArchivo {
+): CompaniaNoticiaArchivoRequest {
   const tipoArchivo = archivo.type || "application/octet-stream";
-  const extension = archivo.name.includes(".")
-    ? archivo.name.split(".").pop() || ""
-    : "";
 
   return {
     idCompaniaNoticiaArchivo: 0,
@@ -1329,11 +1327,22 @@ function convertirArchivo(
     nombreArchivo: archivo.name,
     nombreDocumento: archivo.name,
     formatoArchivo: tipoArchivo,
-    extension,
-    tamanoBytes: archivo.size,
     archivoUrl: "",
-    downloadUrl: "",
     uploadUrl: "",
+  };
+}
+
+function convertirArchivoExistentePayload(
+  archivo: CompaniaNoticiaArchivo,
+): CompaniaNoticiaArchivoRequest {
+  return {
+    idCompaniaNoticiaArchivo: archivo.idCompaniaNoticiaArchivo,
+    idTipoArchivo: archivo.idTipoArchivo,
+    nombreArchivo: archivo.nombreArchivo,
+    nombreDocumento: archivo.nombreDocumento || archivo.nombreArchivo,
+    formatoArchivo: archivo.formatoArchivo,
+    archivoUrl: archivo.archivoUrl,
+    uploadUrl: archivo.uploadUrl,
   };
 }
 
