@@ -221,6 +221,8 @@ export const servicioCompaniaNoticiaBalance = {
         NumPag: params.numPag,
         TipoEstadoFinanciero: params.tipoEstadoFinanciero,
         Estado: params.estado,
+        FchInicio: params.fechaInicio,
+        FchFin: params.fechaFin,
       },
     });
 

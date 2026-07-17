@@ -139,6 +139,8 @@ export const servicioCompaniaNoticia = {
         IdCompania: params.idCompania,
         Busqueda: params.busqueda,
         NumPag: params.numPag,
+        FchInicio: params.fechaInicio,
+        FchFin: params.fechaFin,
       },
     });
 

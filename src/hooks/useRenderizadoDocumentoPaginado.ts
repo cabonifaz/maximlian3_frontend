@@ -49,6 +49,7 @@ export function useRenderizadoDocumentoPaginado(
       /* cross-origin fallback */
     }
     setError("No se pudo calcular la altura final del informe.");
+    finalizarRenderizadoDocumento();
   }, [finalizarRenderizadoDocumento]);
 
   const documentoKey = useMemo(
@@ -222,6 +223,7 @@ ${contenido}
     estaPaginando,
     alturaIframe,
     error,
+    limpiarError: () => setError(null),
     srcdoc,
     tokenRenderDocumento,
     manejarCargaIframe,

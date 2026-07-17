@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { Hand, MousePointer2, Minus, Plus, RotateCcw } from "lucide-react";
+import { Hand, MousePointer2, Minus, Plus, RotateCcw, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { usePanZoomInforme } from "@maximilian/hooks/usePanZoomInforme";
 import { useRenderizadoDocumentoPaginado } from "@maximilian/hooks/useRenderizadoDocumentoPaginado";
@@ -60,6 +60,7 @@ export function CustomVisorDocumentoInforme({
     estaPaginando,
     alturaIframe,
     error,
+    limpiarError,
     srcdoc,
     tokenRenderDocumento,
     manejarCargaIframe,
@@ -185,8 +186,19 @@ export function CustomVisorDocumentoInforme({
           </div>
         )}
         {error && (
-          <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
+          <div className="mx-3 mt-3 flex items-center justify-between gap-3 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <span>{error}</span>
+            <CustomButton
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0 text-red-500 hover:bg-red-100"
+              onClick={limpiarError}
+              aria-label="Cerrar alerta"
+              title="Cerrar alerta"
+            >
+              <X size={14} />
+            </CustomButton>
           </div>
         )}
         <div

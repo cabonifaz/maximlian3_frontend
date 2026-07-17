@@ -1124,11 +1124,7 @@ export function CustomVistaPreviaInformeComparado({
     return (
       <div className={className}>
         {contenidoEntreTabsYTarjetas}
-        {estaCargandoDocumento ? (
-          <div className="min-h-[calc(100vh-12rem)] rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <PantallaCarga message="Generando vista previa del documento..." />
-          </div>
-        ) : documentoGenerado ? (
+        {estaCargandoDocumento ? null : documentoGenerado ? (
           <div className={`relative min-h-0 ${ocuparAltoDisponibleDocumento ? "flex-1" : ""}`}>
             {estaRenderizandoDocumento ? (
               <div className="absolute inset-0 z-30 flex min-h-[calc(100vh-12rem)] items-center justify-center rounded-3xl border border-slate-200 bg-white/95 shadow-sm backdrop-blur-sm">

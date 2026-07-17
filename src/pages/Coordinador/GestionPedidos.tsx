@@ -1,4 +1,4 @@
-import { PEDIDO_COLUMNS, ESTADO_OPTIONS, TARJETAS_ESTADO_PEDIDO, FASE_ASIGNACION } from "@maximilian/shared/constants/pages/Coordinador/gestion-pedidos.constants";
+import { PEDIDO_COLUMNS, TARJETAS_ESTADO_PEDIDO, FASE_ASIGNACION } from "@maximilian/shared/constants/pages/Coordinador/gestion-pedidos.constants";
 import {
   Edit,
   Eye,
@@ -285,6 +285,7 @@ export default function PedidoManagement() {
     isError,
     isLoading,
     modalAsignacion,
+    opcionesEstadoPedido,
     paginaActual,
     pedidoACancelar,
     pedidoAEliminar,
@@ -314,7 +315,7 @@ export default function PedidoManagement() {
       label: (
         <CustomEncabezadoFiltroTabla
           titulo="Estado"
-          opciones={ESTADO_OPTIONS}
+          opciones={opcionesEstadoPedido}
           valores={filtroEstados}
           onChange={cambiarEstadosFiltro}
         />
