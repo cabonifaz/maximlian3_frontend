@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { servicioAutenticacion } from "@maximilian/services/autenticacion.service";
+import { finalizarTransicionSolicitudesPorCambioRol } from "@maximilian/services/maximilian-service";
 import {
   limpiarSesionLocal,
   obtenerSesionUsuarioGuardada,
@@ -52,6 +53,7 @@ export function useGuardiaRol(rolRequerido: string) {
         navigate("/iniciar-sesion", { replace: true });
         return;
       } finally {
+        finalizarTransicionSolicitudesPorCambioRol();
         setEstaVerificando(false);
       }
     };

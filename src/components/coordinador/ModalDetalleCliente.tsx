@@ -138,6 +138,7 @@ export function ModalDetalleCliente({
         plantillaInforme: client.idPlantilla,
         imprimeLogoSafety: client.imprimeLogoSafety,
         aplicaPenalidad: client.aplicaPenalidad,
+        emitirPrefactura: client.emitirPrefactura,
         recomendacion: client.recomendacion ?? "",
       });
     }
@@ -631,6 +632,17 @@ export function ModalDetalleCliente({
                         Aplica penalidad
                       </label>
                     </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        {...infoRegister("emitirPrefactura")}
+                        id="emitirPrefacturaDetalle"
+                        className="w-4 h-4 accent-brand-wine cursor-pointer"
+                      />
+                      <label htmlFor="emitirPrefacturaDetalle" className="text-sm font-bold text-gray-700 cursor-pointer">
+                        Emitir Prefactura
+                      </label>
+                    </div>
                   </div>
 
                   <div className="md:col-span-2 space-y-2">
@@ -890,6 +902,7 @@ export function ModalDetalleCliente({
                 idMoneda: formData.moneda as number,
                 idIdiomaFacturacion: formData.idiomaFacturacion as number,
                 aplicaPenalidad: formData.aplicaPenalidad ?? false,
+                emitirPrefactura: formData.emitirPrefactura ?? false,
                 idPlantilla: formData.plantillaInforme ?? client.idPlantilla,
               });
             })}

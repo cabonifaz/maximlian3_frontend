@@ -1,5 +1,5 @@
 import type { Query, QueryClient } from "@tanstack/react-query";
-import { cancelarSolicitudesPendientesPorCambioRol } from "@maximilian/services/maximilian-service";
+import { iniciarTransicionSolicitudesPorCambioRol } from "@maximilian/services/maximilian-service";
 
 function esConsultaCompartidaEntreRoles(consulta: Query) {
   return consulta.queryKey[0] === "masterTable";
@@ -13,7 +13,7 @@ export async function invalidarConsultasAntesDeCambiarRol(
   };
 
   await clienteConsultas.cancelQueries(filtroConsultasPorRol);
-  cancelarSolicitudesPendientesPorCambioRol();
+  iniciarTransicionSolicitudesPorCambioRol();
   await clienteConsultas.invalidateQueries({
     ...filtroConsultasPorRol,
     refetchType: "none",

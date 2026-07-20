@@ -48,6 +48,7 @@ export const esquemaInformacionCliente = z.object({
   plantillaInforme: idRequerido("La plantilla de informe es requerida"),
   imprimeLogoSafety: z.boolean(),
   aplicaPenalidad: z.boolean(),
+  emitirPrefactura: z.boolean(),
   recomendacion: z.string().optional(),
 });
 
