@@ -244,12 +244,12 @@ export function CustomModalListaPersonasAnalista({
                           <td className="px-5 py-5">
                             <span
                               className={`rounded-full px-3 py-1 text-xs font-bold ${
-                                registro.existeInformacion
+                                registro.textoExisteInformacion === "Si"
                                   ? "bg-green-50 text-green-600"
                                   : "bg-slate-100 text-slate-400"
                               }`}
                             >
-                              {registro.existeInformacion ? "Si" : "No"}
+                              {registro.textoExisteInformacion}
                             </span>
                           </td>
                           <td className="px-5 py-5 text-center">

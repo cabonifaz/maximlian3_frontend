@@ -34,7 +34,8 @@ function mapearCompaniaARegistro(
     tipoDocumento: `${compania.tipoDocumento ?? "-"} - ${compania.numeroDocumento}`,
     pais: compania.pais,
     telefono: compania.telefono,
-    existeInformacion: compania.existeInformacion,
+    existeInformacion: compania.existeInformacion === "Si",
+    textoExisteInformacion: compania.existeInformacion,
   };
 }
 

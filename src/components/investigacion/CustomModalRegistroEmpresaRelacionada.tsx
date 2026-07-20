@@ -14,6 +14,7 @@ export interface RegistroPersonaAnalista {
   pais: string;
   telefono: string;
   existeInformacion: boolean;
+  textoExisteInformacion?: string;
   idCompania?: number;
   idTipoPersona?: number;
   idTipoDocumento?: number;

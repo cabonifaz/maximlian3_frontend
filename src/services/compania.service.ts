@@ -13,7 +13,6 @@ import type {
   CompaniaObtenerParams,
 } from "@maximilian/shared/types/compania.type";
 import {
-  obtenerBooleanoFlexible as obtenerBooleano,
   obtenerLista,
   obtenerNumeroOpcional as obtenerNumero,
   obtenerRegistro,
@@ -29,13 +28,18 @@ function normalizarCompania(item: unknown): CompaniaListaItem {
     idTipoDocumento: obtenerNumero(registro.idTipoDocumento, registro.IdTipoDocumento),
     idPais: obtenerNumero(registro.idPais, registro.IdPais),
     direccion: obtenerTexto(registro.direccion, registro.Direccion) || undefined,
-    ubigeo: obtenerTexto(registro.ubigeo, registro.Ubigeo) || undefined,
+    ubigeo: obtenerTexto(
+      registro.ciudadProvinciaEstado,
+      registro.CiudadProvinciaEstado,
+      registro.ubigeo,
+      registro.Ubigeo,
+    ) || undefined,
     codigoPostal: obtenerTexto(registro.codigoPostal, registro.CodigoPostal) || undefined,
     numeroDocumento: obtenerTexto(registro.numeroDocumento, registro.NumeroDocumento, registro.taxNum, registro.TaxNum),
     nombreCompleto: obtenerTexto(registro.nombreCompleto, registro.NombreCompleto, registro.nombre, registro.Nombre),
     pais: obtenerTexto(registro.pais, registro.Pais, registro.nombrePais, registro.NombrePais) || "-",
     telefono: obtenerTexto(registro.telefono, registro.Telefono) || "-",
-    existeInformacion: obtenerBooleano(registro.existeInformacion, registro.ExisteInformacion),
+    existeInformacion: obtenerTexto(registro.existeInformacion, registro.ExisteInformacion),
     tipoPersona: obtenerTexto(registro.tipoPersona, registro.TipoPersona) || undefined,
     tipoDocumento: obtenerTexto(registro.tipoDocumento, registro.TipoDocumento) || undefined,
   };

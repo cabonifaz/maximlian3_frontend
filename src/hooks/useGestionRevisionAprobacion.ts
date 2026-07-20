@@ -36,14 +36,14 @@ export function useGestionRevisionAprobacion() {
       idEstadoFiltro,
       idTipoTramiteFiltro,
     ],
-    queryFn: () =>
+    queryFn: ({ signal }) =>
       informeService.list({
         numPag: paginaActual,
         busqueda: terminoBusquedaConRetardo.trim() || undefined,
         idPlantilla: idPlantillaFiltro,
         idEstado: idEstadoFiltro,
         idTipoTramite: idTipoTramiteFiltro,
-      }),
+      }, signal),
     enabled: terminoBusqueda === terminoBusquedaConRetardo,
     retry: false,
     refetchOnMount: "always",
