@@ -4,14 +4,49 @@ import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/ap
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   EntradaTablaMaestra,
+  ParametrosListadoTablaMaestra,
+  RespuestaListadoTablaMaestra,
   TablaMaestraCrearRequest,
   TablaMaestraEditarRequest,
   TablaMaestraGuardarResponse,
 } from "@maximilian/shared/types/tabla-maestra.type";
 import {
+  obtenerLista,
   obtenerNumeroOpcional as obtenerNumero,
   obtenerRegistro,
 } from "@maximilian/shared/utils/normalizacion-respuesta.util";
+
+function normalizarListadoParametros(
+  resultado: unknown,
+): RespuestaListadoTablaMaestra {
+  if (Array.isArray(resultado)) {
+    return {
+      listaTablaMaestra: resultado as EntradaTablaMaestra[],
+      totalRegistros: resultado.length,
+      totalPaginas: 1,
+    };
+  }
+
+  const registro = obtenerRegistro(resultado);
+  const listaTablaMaestra = obtenerLista(
+    registro.listaTablaMaestra,
+    registro.ListaTablaMaestra,
+    registro.lstTablaMaestra,
+    registro.LstTablaMaestra,
+  ) as EntradaTablaMaestra[];
+
+  return {
+    listaTablaMaestra,
+    totalRegistros:
+      obtenerNumero(
+        registro.totalRegistros,
+        registro.TotalRegistros,
+        listaTablaMaestra.length,
+      ) ?? 0,
+    totalPaginas:
+      obtenerNumero(registro.totalPaginas, registro.TotalPaginas, 1) ?? 1,
+  };
+}
 
 export type OpcionesTablaMaestraPorId = Record<number, EntradaTablaMaestra[]>;
 type SolicitudTablaMaestra = {
@@ -195,6 +230,26 @@ export const servicioTablaMaestra = {
       console.error(`Error fetching TablaMaestra parameters for IDs ${idsUnicos.join(",")}:`, error);
       throw error;
     }
+  },
+  listarParametros: async ({
+    idMaestro,
+    numPag,
+  }: ParametrosListadoTablaMaestra): Promise<RespuestaListadoTablaMaestra> => {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(
+      ENDPOINTS_TABLA_MAESTRA.listar,
+      {
+        params: {
+          IdMaestro: idMaestro,
+          NumPag: numPag,
+        },
+      },
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return normalizarListadoParametros(data.result);
   },
   crear: async (payload: TablaMaestraCrearRequest): Promise<TablaMaestraGuardarResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_TABLA_MAESTRA.crear, payload);

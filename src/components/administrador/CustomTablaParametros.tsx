@@ -298,7 +298,7 @@ export function CustomTablaParametros({ modelo }: PropsCustomTablaParametros) {
       <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4">
         <p className="text-xs font-medium text-slate-400">
           Mostrando {modelo.registrosPagina.length} de{" "}
-          {modelo.parametrosFiltrados.length} registros
+          {modelo.totalRegistros} registros
         </p>
         <div className="flex items-center gap-1">
           <button
