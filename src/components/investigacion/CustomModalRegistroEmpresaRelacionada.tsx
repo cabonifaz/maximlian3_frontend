@@ -126,7 +126,7 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
               </div>
               <div>
                 <p className="text-sm font-bold text-slate-800">
-                  Identificacion
+                  Identificación
                 </p>
                 <p className="text-xs text-slate-400">
                   Datos base de la entidad
@@ -152,20 +152,20 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
                 placeholder="Seleccione tipo documento"
               />
               <div className="space-y-2">
-                <CustomLabel>Numero de Documento</CustomLabel>
+                <CustomLabel>Número de documento</CustomLabel>
                 <input
                   value={numeroDocumento}
                   onChange={(event) => setNumeroDocumento(event.target.value)}
-                  placeholder="Ingrese el numero de documento"
+                  placeholder="Ingrese el número de documento"
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
                 />
               </div>
               <div className="space-y-2">
-                <CustomLabel>Nombre Completo / Razon Social</CustomLabel>
+                <CustomLabel>Nombre completo / Razón social</CustomLabel>
                 <input
                   value={nombreCompleto}
                   onChange={(event) => setNombreCompleto(event.target.value)}
-                  placeholder="Ingrese el nombre completo o razon social"
+                  placeholder="Ingrese el nombre completo o razón social"
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
                 />
               </div>
@@ -179,28 +179,28 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
               </div>
               <div>
                 <p className="text-sm font-bold text-slate-800">
-                  Ubicacion y contacto
+                  Ubicación y contacto
                 </p>
                 <p className="text-xs text-slate-400">
-                  Informacion complementaria para busqueda
+                  Información complementaria para búsqueda
                 </p>
               </div>
             </div>
             <div className="space-y-4">
               <CustomSelectorBuscable
-                label="Pais"
+                label="País"
                 options={opcionesPais}
                 value={idPais}
                 onChange={setIdPais}
                 onClear={() => setIdPais(undefined)}
-                placeholder="Seleccione un pais"
+                placeholder="Seleccione un país"
               />
               <div className="space-y-2">
-                <CustomLabel>Direccion</CustomLabel>
+                <CustomLabel>Dirección</CustomLabel>
                 <input
                   value={direccion}
                   onChange={(event) => setDireccion(event.target.value)}
-                  placeholder="Ingrese la direccion"
+                  placeholder="Ingrese la dirección"
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
                 />
               </div>
@@ -217,17 +217,17 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
                   />
                 </div>
                 <div className="space-y-2">
-                  <CustomLabel>Codigo Postal</CustomLabel>
+                  <CustomLabel>Código postal</CustomLabel>
                   <input
                     value={codigoPostal}
                     onChange={(event) => setCodigoPostal(event.target.value)}
-                    placeholder="Ingrese codigo postal"
+                    placeholder="Ingrese código postal"
                     className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <CustomLabel>Telefono</CustomLabel>
+                <CustomLabel>Teléfono</CustomLabel>
                 <div className="relative">
                   <Phone
                     size={15}
@@ -236,7 +236,7 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
                   <input
                     value={telefono}
                     onChange={(event) => setTelefono(event.target.value)}
-                    placeholder="Ingrese el telefono"
+                  placeholder="Ingrese el teléfono"
                     className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
                   />
                 </div>
@@ -248,7 +248,7 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
                   onChange={(event) => setExisteInformacion(event.target.checked)}
                   className="h-4 w-4 accent-brand-wine"
                 />
-                Existe informacion disponible
+                  Existe información disponible
               </label>
             </div>
           </div>

@@ -210,7 +210,7 @@ function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
 
   if (!requiereTraduccion) {
     return (
-      <div className="mx-auto flex w-16 items-center justify-center" title="No requiere traduccion">
+      <div className="mx-auto flex w-16 items-center justify-center" title="No requiere traducción">
         <span
           className={obtenerClaseIconoFase(claseAnalista)}
           title={descripcionAnalista}
@@ -244,7 +244,7 @@ function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
   );
 
   return (
-    <div className="relative mx-auto flex w-16 items-center justify-between" title="Analista / Traduccion">
+    <div className="relative mx-auto flex w-16 items-center justify-between" title="Analista / Traducción">
       <span className={`absolute left-4 right-4 top-1/2 h-1 -translate-y-1/2 rounded-full ${claseLinea}`} />
       <span
         className={obtenerClaseIconoFase(claseAnalista)}
@@ -411,7 +411,7 @@ export default function PedidoManagement() {
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
                   >
                     <UserPlus size={14} />
-                    <span>{pedido.asignaciones.length > 0 ? "Ver asignacion" : "Asignar"}</span>
+                    <span>{pedido.asignaciones.length > 0 ? "Ver asignación" : "Asignar"}</span>
                   </button>
                   <button
                     onClick={() => {

@@ -730,7 +730,7 @@ export function ResumenPedidoInvestigacionAnalista({
               <p className="mt-1 text-sm font-bold text-slate-900">{resumen.nombreSolicitado}</p>
             </div>
             <div className="xl:border-l xl:border-gray-100 xl:pl-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">Pais</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">País</p>
               <p className="mt-1 text-sm font-bold text-slate-900">{resumen.pais}</p>
             </div>
             <div className="xl:border-l xl:border-gray-100 xl:pl-4">

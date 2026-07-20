@@ -98,7 +98,11 @@ export function ModalAgregarCliente({
   } = useForm<DatosFormularioInformacionCliente>({
     resolver: zodResolver(esquemaInformacionCliente),
     mode: "onTouched",
-    defaultValues: { imprimeLogoSafety: false, aplicaPenalidad: false },
+    defaultValues: {
+      imprimeLogoSafety: false,
+      aplicaPenalidad: false,
+      emitirPrefactura: false,
+    },
   });
 
   const queryClient = useQueryClient();
@@ -511,6 +515,17 @@ export function ModalAgregarCliente({
                       />
                       <label htmlFor="aplicaPenalidad" className="text-sm font-bold text-gray-700 cursor-pointer">
                         Aplica penalidad
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        {...infoRegister("emitirPrefactura")}
+                        id="emitirPrefactura"
+                        className="w-4 h-4 accent-brand-wine cursor-pointer"
+                      />
+                      <label htmlFor="emitirPrefactura" className="text-sm font-bold text-gray-700 cursor-pointer">
+                        Emitir Prefactura
                       </label>
                     </div>
                   </div>

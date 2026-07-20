@@ -4,7 +4,7 @@ export const PEDIDO_COLUMNS = [
   { label: "Cliente", width: "24%" },
   { label: "Investigado", width: "24%" },
   { label: "Idioma del informe", width: "14%" },
-  { label: "Tipo de tramite", width: "16%" },
+  { label: "Tipo de trámite", width: "16%" },
   { label: "Vencimiento", width: "14%" },
   { label: "Ver detalle", className: "text-center", width: "8%" },
 ];

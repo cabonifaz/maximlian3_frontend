@@ -28,7 +28,7 @@ export function CustomCamposEdicionParametro({
     <>
       <td className="px-5 py-3">
         <span className="inline-flex h-9 min-w-16 items-center rounded-md bg-slate-100 px-3 text-xs font-bold text-slate-500">
-          {numero ?? "Automatico"}
+          {numero ?? "Automático"}
         </span>
       </td>
       {columnasVisibles.codigo && !configuracion.codigoDespuesDescripcion ? (
@@ -92,7 +92,7 @@ export function CustomCamposEdicionParametro({
           onChange={(event) =>
             onCambiar({ ...valores, descripcion: event.target.value })
           }
-          placeholder={configuracion.etiquetaDescripcion ?? "Descripcion"}
+          placeholder={configuracion.etiquetaDescripcion ?? "Descripción"}
           className="h-9 w-full rounded-md border border-blue-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
         />
       </td>
@@ -137,7 +137,7 @@ export function CustomCamposEdicionParametro({
                   traduccionIngles1: event.target.value,
                 })
               }
-              placeholder="Traduccion"
+              placeholder="Traducción"
               className="h-9 w-full rounded-md border border-blue-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             />
             <input
@@ -165,7 +165,7 @@ export function CustomCamposEdicionParametro({
                   traduccionPortugues1: event.target.value,
                 })
               }
-              placeholder="Traducao"
+              placeholder="Tradução"
               className="h-9 w-full rounded-md border border-blue-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             />
             <input

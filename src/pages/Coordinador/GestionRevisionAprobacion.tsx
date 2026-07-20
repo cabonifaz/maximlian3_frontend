@@ -63,7 +63,7 @@ function obtenerIndicadorFase(registro: InformeListEntry) {
   );
   if (!requiereTraduccion) {
     return (
-      <div className="mx-auto flex w-16 items-center justify-center" title="No requiere traduccion">
+      <div className="mx-auto flex w-16 items-center justify-center" title="No requiere traducción">
         <span className={obtenerClaseIconoFase(clasesAnalista)} title={tituloAnalista}>
           <FileSearch size={14} />
         </span>
@@ -83,7 +83,7 @@ function obtenerIndicadorFase(registro: InformeListEntry) {
     : "bg-slate-200";
 
   return (
-    <div className="relative mx-auto flex w-16 items-center justify-between" title="Analista / Traduccion">
+    <div className="relative mx-auto flex w-16 items-center justify-between" title="Analista / Traducción">
       <span className={`absolute left-4 right-4 top-1/2 h-1 -translate-y-1/2 rounded-full ${clasesLinea}`} />
       <span className={obtenerClaseIconoFase(clasesAnalista)} title={tituloAnalista}>
         <FileSearch size={14} />
@@ -178,7 +178,7 @@ export default function GestionRevisionAprobacion() {
       className: "text-center",
       width: "8%",
     },
-    { label: "Accion", className: "text-right", width: "12%" },
+    { label: "Acción", className: "text-right", width: "12%" },
   ];
 
   return (
@@ -239,7 +239,7 @@ export default function GestionRevisionAprobacion() {
           isLoading={isLoading}
           isError={isError}
           onRetry={() => void refetch()}
-          errorMessage="No se pudo cargar la bandeja de revision."
+          errorMessage="No se pudo cargar la bandeja de revisión."
           paginaActual={paginaActual}
           totalPages={respuestaInformes?.totalPaginas ?? 1}
           totalRecords={respuestaInformes?.totalRegistros ?? 0}

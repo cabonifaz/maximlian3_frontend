@@ -63,12 +63,10 @@ export const rutasCoordinador: RouteObject[] = [
       },
       {
         path: "facturacion",
-        element: (
-          <div className="p-8">
-            <h1 className="text-2xl font-bold text-brand-black">Facturacion</h1>
-            <p className="mt-4 text-gray-600">Pagina en construccion...</p>
-          </div>
-        ),
+        lazy: () =>
+          import("@maximilian/pages/Coordinador/GestionFacturacion").then((m) => ({
+            Component: m.default,
+          })),
       },
     ],
   },

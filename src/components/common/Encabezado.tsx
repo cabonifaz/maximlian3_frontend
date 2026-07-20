@@ -88,7 +88,7 @@ export function Encabezado({ role: rolInicial }: PropsEncabezado) {
                       className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                     >
                       <LogOut size={16} />
-                      <span>Cerrar sesion</span>
+                      <span>Cerrar sesión</span>
                     </button>
                   </div>
                 </div>
@@ -99,7 +99,7 @@ export function Encabezado({ role: rolInicial }: PropsEncabezado) {
       </header>
 
       {estaCambiandoRol && <PantallaCarga message="Cambiando de rol..." />}
-      {estaCerrandoSesion && <PantallaCarga message="Cerrando sesion..." />}
+      {estaCerrandoSesion && <PantallaCarga message="Cerrando sesión..." />}
     </>
   );
 }

@@ -24,6 +24,7 @@ type ConfiguracionAutenticada = InternalAxiosRequestConfig & {
 };
 
 const fuentesSolicitudesPendientes = new Set<CancelTokenSource>();
+let cambioRolEnCurso = false;
 
 const maximilianService = axios.create({
   baseURL:
@@ -41,11 +42,16 @@ function retirarSolicitudPendiente(config?: ConfiguracionAutenticada) {
   }
 }
 
-export function cancelarSolicitudesPendientesPorCambioRol() {
+export function iniciarTransicionSolicitudesPorCambioRol() {
+  cambioRolEnCurso = true;
   fuentesSolicitudesPendientes.forEach((fuente) => {
     fuente.cancel("Solicitud cancelada por cambio de rol");
   });
   fuentesSolicitudesPendientes.clear();
+}
+
+export function finalizarTransicionSolicitudesPorCambioRol() {
+  cambioRolEnCurso = false;
 }
 
 function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
@@ -147,6 +153,12 @@ async function aplicarEncabezadosAutenticacion(
 
 maximilianService.interceptors.request.use(
   async (config) => {
+    if (cambioRolEnCurso) {
+      return Promise.reject(
+        new axios.CanceledError("Solicitud cancelada durante el cambio de rol"),
+      );
+    }
+
     const configAutenticada = config as ConfiguracionAutenticada;
     const fuenteCancelacionCambioRol = axios.CancelToken.source();
     configAutenticada.cancelToken = fuenteCancelacionCambioRol.token;

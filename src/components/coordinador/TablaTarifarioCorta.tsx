@@ -55,7 +55,7 @@ export function TablaTarifarioCorta({
               <tr className="border-b border-gray-200">
                 <th className="py-2.5 px-3 w-10" />
                 <th className="text-left py-2.5 px-4 text-xs font-bold text-gray-400 uppercase tracking-wide">
-                  Tipo Tramite
+                  Tipo trámite
                 </th>
                 <th className="text-left py-2.5 px-4 text-xs font-bold text-gray-400 uppercase tracking-wide">
                   Precio

@@ -142,7 +142,7 @@ export function useModalLocalInforme({
           ? ""
           : imagenes.length === 1
             ? imagenes[0].nombre
-            : `${imagenes.length} imagenes adjuntas`,
+            : `${imagenes.length} imágenes adjuntas`,
       imagenUrl: imagenes[0]?.url,
       imagenTipo: imagenes[0]?.tipo,
       imagenes,
@@ -205,7 +205,7 @@ export function useModalLocalInforme({
     imagenes.length === 0
       ? "Sin imagen adjunta"
       : `${imagenes.length} ${
-          imagenes.length === 1 ? "imagen adjunta" : "imagenes adjuntas"
+          imagenes.length === 1 ? "imagen adjunta" : "imágenes adjuntas"
         }`;
 
   return {

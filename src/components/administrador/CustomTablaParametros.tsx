@@ -38,12 +38,12 @@ export function CustomTablaParametros({ modelo }: PropsCustomTablaParametros) {
           <thead>
             <tr className="border-b border-slate-100">
               <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
-                Numeracion
+                Numeración
               </th>
               {modelo.columnasVisibles.codigo &&
               !modelo.configuracionCampos.codigoDespuesDescripcion ? (
                 <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
-                  {modelo.configuracionCampos.etiquetaCodigo ?? "Codigo"}
+                  {modelo.configuracionCampos.etiquetaCodigo ?? "Código"}
                 </th>
               ) : null}
               {modelo.columnasVisibles.referencia ? (
@@ -52,12 +52,12 @@ export function CustomTablaParametros({ modelo }: PropsCustomTablaParametros) {
                 </th>
               ) : null}
               <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
-                {modelo.configuracionCampos.etiquetaDescripcion ?? "Descripcion"}
+                {modelo.configuracionCampos.etiquetaDescripcion ?? "Descripción"}
               </th>
               {modelo.columnasVisibles.codigo &&
               modelo.configuracionCampos.codigoDespuesDescripcion ? (
                 <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
-                  {modelo.configuracionCampos.etiquetaCodigo ?? "Codigo"}
+                  {modelo.configuracionCampos.etiquetaCodigo ?? "Código"}
                 </th>
               ) : null}
               {modelo.columnasVisibles.detalle ? (
@@ -67,12 +67,12 @@ export function CustomTablaParametros({ modelo }: PropsCustomTablaParametros) {
               ) : null}
               {modelo.columnasVisibles.ingles ? (
                 <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
-                  Ingles
+                  Inglés
                 </th>
               ) : null}
               {modelo.columnasVisibles.portugues ? (
                 <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
-                  Portugues
+                  Portugués
                 </th>
               ) : null}
               <th className="px-5 py-4 text-right text-[11px] font-bold uppercase text-slate-300">
@@ -306,7 +306,7 @@ export function CustomTablaParametros({ modelo }: PropsCustomTablaParametros) {
             onClick={() => modelo.cambiarPagina(modelo.paginaActual - 1)}
             disabled={modelo.paginaActual === 1 || modelo.isLoading || modelo.isError}
             className="flex h-8 w-8 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Pagina anterior"
+          aria-label="Página anterior"
           >
             <ChevronLeft size={16} />
           </button>
@@ -342,7 +342,7 @@ export function CustomTablaParametros({ modelo }: PropsCustomTablaParametros) {
               modelo.isError
             }
             className="flex h-8 w-8 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Pagina siguiente"
+          aria-label="Página siguiente"
           >
             <ChevronRight size={16} />
           </button>

@@ -70,10 +70,10 @@ export function useModalProcesamientoInforme({
 
   const descripcion = useMemo(() => {
     if (alcance === "general") {
-      return "Se procesaran los documentos para completar todas las secciones del informe.";
+      return "Se procesarán los documentos para completar todas las secciones del informe.";
     }
 
-    return "Se procesaran los documentos para completar unicamente los campos de la seccion seleccionada.";
+    return "Se procesarán los documentos para completar únicamente los campos de la sección seleccionada.";
   }, [alcance]);
 
   const seccionesConOpciones = useMemo(

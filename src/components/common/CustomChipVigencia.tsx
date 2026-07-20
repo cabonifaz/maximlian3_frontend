@@ -31,7 +31,7 @@ export function CustomChipVigencia({
       <span>{esVencido ? "Vencido" : texto}</span>
       {esVencido && dias ? (
         <span className="text-[11px] font-medium opacity-80">
-          {dias} {dias === "1" ? "dia" : "dias"}
+          {dias} {dias === "1" ? "día" : "días"}
         </span>
       ) : null}
     </CustomChipEstado>

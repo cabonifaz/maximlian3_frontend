@@ -32,6 +32,7 @@ export function construirPayloadCrearCliente(
     idMoneda: datosCliente.moneda as number,
     idIdiomaFacturacion: datosCliente.idiomaFacturacion as number,
     aplicaPenalidad: datosCliente.aplicaPenalidad,
+    emitirPrefactura: datosCliente.emitirPrefactura,
     idPlantilla: datosCliente.plantillaInforme,
     contactos: contactos.map((contacto) => ({
       nombres: contacto.nombre,

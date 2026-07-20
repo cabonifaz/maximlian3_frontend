@@ -90,7 +90,7 @@ export function CustomModalArchivosInvestigacionAnalista({
           {!soloLectura ? (
             <CustomBloqueCargaArchivosAnalista
               ref={bloqueCargaRef}
-              textoIndicativo="Arrastra archivos aqui o haz clic para subir"
+              textoIndicativo="Arrastra archivos aquí o haz clic para subir"
               onAgregarArchivos={agregarArchivos}
             />
           ) : null}
@@ -112,7 +112,7 @@ export function CustomModalArchivosInvestigacionAnalista({
                         Formato
                       </th>
                       <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">
-                        Tamano
+                        Tamaño
                       </th>
                       <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">
                         Tipo

@@ -179,7 +179,7 @@ export function CustomModalObservacionesRechazoAnalista({
                           ) : (
                             <>
                               <ChevronDown size={14} />
-                              Desplegar mas texto
+                              Desplegar más texto
                             </>
                           )}
                         </button>
@@ -206,7 +206,7 @@ export function CustomModalObservacionesRechazoAnalista({
 
         <div
           role="separator"
-          aria-label="Cambiar tamano del panel"
+          aria-label="Cambiar tamaño del panel"
           className="absolute bottom-1 left-1 z-10 flex h-8 w-8 touch-none cursor-nesw-resize items-end justify-start rounded-bl-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
           onPointerDown={iniciarRedimension}
           onPointerMove={redimensionarPanel}

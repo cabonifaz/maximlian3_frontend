@@ -43,6 +43,7 @@ export type CreateClientRequest = {
   idMoneda: number;
   idIdiomaFacturacion: number;
   aplicaPenalidad: boolean;
+  emitirPrefactura: boolean;
   idPlantilla: number;
   contactos: CreateClientContactRequest[];
   tarifario: CreateClientRateRequest[];
@@ -76,6 +77,7 @@ export type ClientDetail = {
   idMoneda: number;
   idIdiomaFacturacion: number;
   aplicaPenalidad: boolean;
+  emitirPrefactura: boolean;
   idPlantilla: number;
   idEstado: number;
 };

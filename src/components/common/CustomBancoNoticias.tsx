@@ -489,24 +489,24 @@ export function CustomBancoNoticias({
                 }}
               />
               <CampoFormulario
-                etiqueta="Titulo"
+                etiqueta="Título"
                 error={errors.titulo?.message}
                 requerido
               >
                 <input
                   className="h-11 w-full rounded-lg border border-slate-100 bg-slate-50 px-3 text-sm text-slate-600 outline-none focus:border-slate-300"
-                  placeholder="Ej. Actualizacion de protocolos de seguridad"
+                  placeholder="Ej. Actualización de protocolos de seguridad"
                   {...register("titulo")}
                 />
               </CampoFormulario>
               <CampoFormulario
-                etiqueta="Descripcion"
+                etiqueta="Descripción"
                 error={errors.descripcion?.message}
                 requerido
               >
                 <textarea
                   className="min-h-36 w-full resize-none rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-300"
-                  placeholder="Detalle la informacion de la noticia o reporte aqui..."
+                  placeholder="Detalle la información de la noticia o reporte aquí..."
                   {...register("descripcion")}
                 />
               </CampoFormulario>
@@ -528,7 +528,7 @@ export function CustomBancoNoticias({
                   placeholder="Seleccione fecha"
                 />
                 <CampoFormulario
-                  etiqueta="Categoria"
+                  etiqueta="Categoría"
                   error={errors.categoria?.message}
                   requerido
                 >
@@ -591,7 +591,7 @@ export function CustomBancoNoticias({
           }
         }}
         title="Eliminar noticia"
-        descripcion="Esta accion eliminara la noticia seleccionada y no se puede deshacer."
+        descripcion="Esta acción eliminará la noticia seleccionada y no se puede deshacer."
         textoConfirmar="Eliminar"
         textoCargandoConfirmar="Eliminando..."
         isSubmitting={eliminarNoticiaMutation.isPending}
@@ -647,7 +647,7 @@ function CustomModalDetalleNoticia({
       <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 bg-slate-50/60 px-8 py-6">
         <div className="min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-            Banco de informacion
+            Banco de información
           </p>
           <h2 className="mt-1 text-lg font-bold text-slate-950">
             Detalle de Noticia
@@ -701,7 +701,7 @@ function CustomModalDetalleNoticia({
 
             <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                Descripcion
+                Descripción
               </p>
               <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">
                 {noticia.descripcion}
@@ -727,13 +727,13 @@ function CustomModalDetalleNoticia({
                   etiqueta="Documento"
                   valor={compania?.numeroDocumento}
                 />
-                <DetalleCompania etiqueta="Pais" valor={compania?.pais} />
+                <DetalleCompania etiqueta="País" valor={compania?.pais} />
                 <DetalleCompania
-                  etiqueta="Telefono"
+                  etiqueta="Teléfono"
                   valor={compania?.telefono}
                 />
                 <DetalleCompania
-                  etiqueta="Direccion"
+                  etiqueta="Dirección"
                   valor={compania?.direccion}
                   className="sm:col-span-2"
                 />
@@ -1079,10 +1079,10 @@ function CampoArchivos({
           <UploadCloud size={18} />
         </span>
         <span className="mt-3 text-sm font-bold text-slate-600">
-          Haga clic o arrastre archivos aqui
+                  Haga clic o arrastre archivos aquí
         </span>
         <span className="text-xs text-slate-400">
-          Soporta documentos e imagenes adjuntas
+                  Soporta documentos e imágenes adjuntas
         </span>
       </label>
       {archivosExistentes.length > 0 ? (
@@ -1236,7 +1236,7 @@ function CustomPaginacionBanco({
           onClick={() => onCambiarPagina(paginaActual - 1)}
           disabled={deshabilitado || paginaActual <= 1}
           className="rounded-lg p-2 text-slate-300 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-30"
-          aria-label="Pagina anterior"
+          aria-label="Página anterior"
         >
           <ChevronLeft size={14} />
         </button>
@@ -1269,7 +1269,7 @@ function CustomPaginacionBanco({
           onClick={() => onCambiarPagina(paginaActual + 1)}
           disabled={deshabilitado || paginaActual >= totalPaginas}
           className="rounded-lg p-2 text-slate-300 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-30"
-          aria-label="Pagina siguiente"
+          aria-label="Página siguiente"
         >
           <ChevronRight size={14} />
         </button>

@@ -117,9 +117,9 @@ function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
           <tr className="border-b border-gray-100">
             <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-400">Nombre</th>
             <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-400">Formato</th>
-            <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-400">Tamano</th>
+            <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-400">Tamaño</th>
             <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-400">Fecha de carga</th>
-            <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-gray-400">Accion</th>
+            <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-gray-400">Acción</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-50">
@@ -192,7 +192,7 @@ export function CustomModalDetallePedido({
   const errorContent = (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertCircle size={40} className="text-red-400" />
-      <p className="text-sm text-gray-600">No se pudo cargar la informacion del pedido.</p>
+      <p className="text-sm text-gray-600">No se pudo cargar la información del pedido.</p>
       <CustomButton variant="secondary" size="sm" onClick={() => refetch()}>
         <RotateCcw size={14} />
         REINTENTAR
@@ -257,7 +257,7 @@ export function CustomModalDetallePedido({
 
         <div className="flex min-h-120 flex-1 flex-col gap-5">
           <CustomSelectorBuscable
-            label="Pais del Informe"
+            label="País del informe"
             options={paises}
             value={tarifarioSeleccionado?.idPais}
             onChange={() => {}}
@@ -271,7 +271,7 @@ export function CustomModalDetallePedido({
             disabled
           />
           <CustomSelectorBuscable
-            label="Tipo de Tramite"
+            label="Tipo de trámite"
             options={tiposTramite}
             value={tarifarioSeleccionado?.idTipoTramite}
             onChange={() => {}}
@@ -314,7 +314,7 @@ export function CustomModalDetallePedido({
         </div>
 
         <div className="flex flex-1 flex-col gap-5">
-          <CampoSoloLectura etiqueta="Codigo" valor={pedido.codigo || "-"} />
+          <CampoSoloLectura etiqueta="Código" valor={pedido.codigo || "-"} />
           <CustomSelectorBuscable
             label="Atendido por"
             options={empresasAtencion}
@@ -324,10 +324,10 @@ export function CustomModalDetallePedido({
           />
           <CampoSoloLectura etiqueta="Desde" valor={formatearFecha(pedido.fchDesde)} />
           <CampoSoloLectura etiqueta="Hasta" valor={formatearFecha(pedido.fchHasta)} />
-          <CampoSoloLectura etiqueta="Monto Credito" valor={formatearMonto(pedido.montoCredito, tarifarioSeleccionado?.simboloMoneda)} />
+          <CampoSoloLectura etiqueta="Monto crédito" valor={formatearMonto(pedido.montoCredito, tarifarioSeleccionado?.simboloMoneda)} />
           <div className="flex gap-2">
             <div className="flex-1">
-              <CampoSoloLectura etiqueta="Plazo Credito" valor={pedido.plazoCredito != null ? String(pedido.plazoCredito) : "-"} />
+              <CampoSoloLectura etiqueta="Plazo crédito" valor={pedido.plazoCredito != null ? String(pedido.plazoCredito) : "-"} />
             </div>
             <div className="w-40">
               <CustomSelectorBuscable
@@ -356,7 +356,7 @@ export function CustomModalDetallePedido({
         },
         {
           id: "info-pedido",
-          label: "Informacion del Pedido",
+          label: "Información del pedido",
           content: infoPedidoContent,
         },
         {

@@ -195,7 +195,7 @@ export const SECCIONES_LISTA_EXTRACCION = new Set([
 ]);
 
 export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
-  porcentaje: "Porcentaje de participacion",
+  porcentaje: "Porcentaje de participación",
   esParteDirectorio: "Forma parte del directorio Ejecutivo",
   lista: "Figura en el listado de ejecutivos",
   detalleEjecutivo: "Se tiene los detalles del Ejecutivo",
@@ -204,26 +204,26 @@ export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
   tipoAcciones: "Tipo de Acciones",
   comentariosEmpresasRelacionadas: "Comentarios sobre Empresas Relacionadas",
   ventasContadoDetalle: "Detalle Ventas al Contado",
-  ventasCreditoDetalle: "Detalle Ventas a Credito",
+  ventasCreditoDetalle: "Detalle ventas a crédito",
   territorioVentasDetalle: "Detalle Ventas Nacionales",
   ventasExtranjeroDetalle: "Detalle Ventas Extranjero",
   comprasNacionalesDetalle: "Detalle Compras Nacionales",
   comprasContadoNacionalesDetalle: "Detalle Compras al Contado",
-  comprasCreditoNacionalesDetalle: "Detalle Compras a Credito en Nacionales",
+  comprasCreditoNacionalesDetalle: "Detalle compras a crédito nacionales",
   comprasExtranjeroDetalle: "Detalle Compras Extranjero",
   comprasContadoInternacionalesDetalle:
     "Detalle Compras al Contado Extranjeras",
-  comprasCreditoInternacionalesDetalle: "Detalle Compras a Credito Extranjeras",
+  comprasCreditoInternacionalesDetalle: "Detalle compras a crédito extranjeras",
   numeroEmpleadosDetalle: "Detalle Empleados",
   comentariosOperaciones: "Comentarios sobre las Operaciones",
-  importaciones: "Importaciones: Paises y Productos",
-  exportaciones: "Exportaciones: Paises y Productos",
+  importaciones: "Importaciones: Países y productos",
+  exportaciones: "Exportaciones: Países y productos",
   comentariosFinancieros: "Comentarios Financieros",
   activosFijos: "Activos",
   comentariosProveedores: "Comentarios de los Proveedores",
   referenciasBancos: "Referencias de Bancos",
-  informacionGeneral: "Informacion General",
-  opinionCredito: "Opinion de Credito",
+  informacionGeneral: "Información general",
+  opinionCredito: "Opinión de crédito",
 };
 
 export const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {

@@ -3,19 +3,19 @@ import type { ConfiguracionCamposParametro } from "@maximilian/shared/types/conf
 
 export const PARAMETROS_DISPONIBLES: ParametroDisponible[] = [
   { idMaestro: TablaMaestraId.MONEDA, etiqueta: "Tipo de moneda" },
-  { idMaestro: TablaMaestraId.PAIS, etiqueta: "Pais" },
+  { idMaestro: TablaMaestraId.PAIS, etiqueta: "País" },
   { idMaestro: TablaMaestraId.IDIOMA, etiqueta: "Idioma" },
-  { idMaestro: TablaMaestraId.TIPO_TRAMITE, etiqueta: "Tipo de tramite" },
+  { idMaestro: TablaMaestraId.TIPO_TRAMITE, etiqueta: "Tipo de trámite" },
   { idMaestro: TablaMaestraId.ROLES, etiqueta: "Roles" },
   {
     idMaestro: TablaMaestraId.TIPO_REG_TRIBUTARIO,
     etiqueta: "Tipo reg. tributario",
   },
   { idMaestro: TablaMaestraId.TIPO_CONTACTO, etiqueta: "Tipo contacto" },
-  { idMaestro: TablaMaestraId.AREA_TRABAJO, etiqueta: "Area trabajo" },
+  { idMaestro: TablaMaestraId.AREA_TRABAJO, etiqueta: "Área trabajo" },
   { idMaestro: TablaMaestraId.ESTADO_CLIENTE, etiqueta: "Estado del cliente" },
   { idMaestro: TablaMaestraId.PRODUCTO, etiqueta: "Producto" },
-  { idMaestro: TablaMaestraId.EMPRESA_ATENCION, etiqueta: "Empresa atencion" },
+  { idMaestro: TablaMaestraId.EMPRESA_ATENCION, etiqueta: "Empresa atención" },
   {
     idMaestro: TablaMaestraId.PLANTILLA_INFORME,
     etiqueta: "Plantilla informe",
@@ -23,15 +23,15 @@ export const PARAMETROS_DISPONIBLES: ParametroDisponible[] = [
   { idMaestro: TablaMaestraId.TIPO_DOCUMENTO, etiqueta: "Tipo documento" },
   {
     idMaestro: TablaMaestraId.TIPO_PLAZO_CREDITO,
-    etiqueta: "Tipo plazo credito",
+    etiqueta: "Tipo plazo crédito",
   },
   { idMaestro: TablaMaestraId.TIPO_EMPRESA, etiqueta: "Tipo empresa" },
   { idMaestro: TablaMaestraId.CIUDAD, etiqueta: "Ciudad" },
   { idMaestro: TablaMaestraId.MES, etiqueta: "Mes" },
-  { idMaestro: TablaMaestraId.SECTOR_ECONOMICO, etiqueta: "Sector economico" },
+  { idMaestro: TablaMaestraId.SECTOR_ECONOMICO, etiqueta: "Sector económico" },
   {
     idMaestro: TablaMaestraId.CATEGORIA_CIIU,
-    etiqueta: "Categoria CIIU",
+    etiqueta: "Categoría CIIU",
   },
   { idMaestro: TablaMaestraId.TIPO_LOCAL, etiqueta: "Tipo de local" },
   { idMaestro: TablaMaestraId.TIPO_BALANCE, etiqueta: "Tipo de balance" },
@@ -45,16 +45,16 @@ export const PARAMETROS_DISPONIBLES: ParametroDisponible[] = [
     etiqueta: "Tipo documento identidad",
   },
   { idMaestro: TablaMaestraId.ESTADO_CIVIL, etiqueta: "Estado civil" },
-  { idMaestro: TablaMaestraId.PROFESION, etiqueta: "Profesion" },
-  { idMaestro: TablaMaestraId.ETAPA_ASIGNACION, etiqueta: "Fase asignacion" },
+  { idMaestro: TablaMaestraId.PROFESION, etiqueta: "Profesión" },
+  { idMaestro: TablaMaestraId.ETAPA_ASIGNACION, etiqueta: "Fase asignación" },
   { idMaestro: TablaMaestraId.CLASE_CIIU, etiqueta: "Clase CIIU" },
   {
     idMaestro: TablaMaestraId.LIMITE_CREDITO_PROVEEDOR,
-    etiqueta: "Limite credito proveedor",
+    etiqueta: "Límite crédito proveedor",
   },
   {
     idMaestro: TablaMaestraId.TIEMPO_CREDITO_VENTAS,
-    etiqueta: "Tiempo credito",
+    etiqueta: "Tiempo crédito",
   },
   { idMaestro: TablaMaestraId.CARGO_EJECUTIVO, etiqueta: "Cargo ejecutivo" },
   {
@@ -86,26 +86,26 @@ export const CONFIGURACION_CAMPOS_POR_MAESTRO: Partial<
   Record<TablaMaestraId, ConfiguracionCamposParametro>
 > = {
   [TablaMaestraId.ROLES]: {
-    etiquetaCodigo: "Descripcion",
+    etiquetaCodigo: "Descripción",
     codigoRequerido: true,
     etiquetaDescripcion: "Rol",
     codigoDespuesDescripcion: true,
   },
   [TablaMaestraId.MONEDA]: {
-    etiquetaCodigo: "Codigo",
-    etiquetaDetalle: "Simbolo",
+    etiquetaCodigo: "Código",
+    etiquetaDetalle: "Símbolo",
   },
   [TablaMaestraId.SECTOR_ECONOMICO]: {
-    etiquetaCodigo: "Codigo",
+    etiquetaCodigo: "Código",
     codigoRequerido: true,
   },
   [TablaMaestraId.CIUDAD]: {
-    etiquetaReferencia: "Pais",
+    etiquetaReferencia: "País",
     referenciaRequerida: true,
     idMaestroReferencia: TablaMaestraId.PAIS,
   },
   [TablaMaestraId.CATEGORIA_CIIU]: {
-    etiquetaCodigo: "Codigo",
+    etiquetaCodigo: "Código",
     codigoRequerido: true,
     etiquetaReferencia: "Sector padre",
     referenciaRequerida: true,
@@ -113,9 +113,9 @@ export const CONFIGURACION_CAMPOS_POR_MAESTRO: Partial<
     mostrarReferenciaConCodigo: true,
   },
   [TablaMaestraId.CLASE_CIIU]: {
-    etiquetaCodigo: "Codigo",
+    etiquetaCodigo: "Código",
     codigoRequerido: true,
-    etiquetaReferencia: "Categoria padre",
+    etiquetaReferencia: "Categoría padre",
     referenciaRequerida: true,
     idMaestroReferencia: TablaMaestraId.CATEGORIA_CIIU,
     mostrarReferenciaConCodigo: true,

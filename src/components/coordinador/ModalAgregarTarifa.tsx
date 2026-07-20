@@ -64,7 +64,7 @@ export function ModalAgregarTarifa({
             />
 
             <CustomSelectorBuscable
-              label="Pais"
+              label="País"
               required
               idMaster={TablaMaestraId.PAIS}
               value={valores.pais as number | undefined}
@@ -74,7 +74,7 @@ export function ModalAgregarTarifa({
               onBlur={() => trigger("pais")}
               autoSeleccionarOpcionUnica
               error={errors.pais?.message}
-              placeholder="Selecciona un pais"
+              placeholder="Selecciona un país"
             />
 
             <CustomSelectorBuscable
@@ -92,7 +92,7 @@ export function ModalAgregarTarifa({
             />
 
             <CustomSelectorBuscable
-              label="Tramite"
+              label="Trámite"
               required
               idMaster={TablaMaestraId.TIPO_TRAMITE}
               value={valores.tramite as number | undefined}
@@ -102,11 +102,11 @@ export function ModalAgregarTarifa({
               onBlur={() => trigger("tramite")}
               autoSeleccionarOpcionUnica
               error={errors.tramite?.message}
-              placeholder="Selecciona tramite"
+              placeholder="Selecciona trámite"
             />
 
             <div className="space-y-2">
-              <CustomLabel required>Dias Min.</CustomLabel>
+              <CustomLabel required>Días mín.</CustomLabel>
               <input
                 {...register("diasMin", {
                   valueAsNumber: true,
@@ -123,7 +123,7 @@ export function ModalAgregarTarifa({
             </div>
 
             <div className="space-y-2">
-              <CustomLabel required>Dias Max.</CustomLabel>
+              <CustomLabel required>Días máx.</CustomLabel>
               <input
                 {...register("diasMax", {
                   valueAsNumber: true,

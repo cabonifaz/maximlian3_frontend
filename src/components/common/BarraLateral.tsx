@@ -53,11 +53,11 @@ export function BarraLateral({ items }: PropsBarraLateral) {
           className="flex items-center gap-3 px-4 py-3 w-full text-gray-500 hover:text-brand-wine hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <LogOut size={20} />
-          <span>Cerrar Sesion</span>
+          <span>Cerrar sesión</span>
         </button>
       </div>
 
-      {estaCerrandoSesion && <PantallaCarga message="Cerrando sesion..." />}
+      {estaCerrandoSesion && <PantallaCarga message="Cerrando sesión..." />}
     </aside>
   );
 }

@@ -18,6 +18,7 @@ import {
 
 function normalizarListadoParametros(
   resultado: unknown,
+  idMaestro: number,
 ): RespuestaListadoTablaMaestra {
   if (Array.isArray(resultado)) {
     return {
@@ -28,12 +29,20 @@ function normalizarListadoParametros(
   }
 
   const registro = obtenerRegistro(resultado);
-  const listaTablaMaestra = obtenerLista(
+  const listaRespuesta = obtenerLista(
     registro.listaTablaMaestra,
     registro.ListaTablaMaestra,
     registro.lstTablaMaestra,
     registro.LstTablaMaestra,
-  ) as EntradaTablaMaestra[];
+  );
+  const grupoSeleccionado = listaRespuesta
+    .map(obtenerRegistro)
+    .find(
+      (grupo) => obtenerNumero(grupo.idMaestro, grupo.IdMaestro) === idMaestro,
+    );
+  const listaTablaMaestra = grupoSeleccionado
+    ? obtenerLista(grupoSeleccionado.items, grupoSeleccionado.Items) as EntradaTablaMaestra[]
+    : listaRespuesta as EntradaTablaMaestra[];
 
   return {
     listaTablaMaestra,
@@ -122,6 +131,24 @@ function normalizarOpcionesPorIdMaestro(resultado: unknown, idsMaestro: number[]
   }
 
   const registro = obtenerRegistro(resultado);
+  const gruposTablaMaestra = obtenerLista(
+    registro.lstTablaMaestra,
+    registro.LstTablaMaestra,
+  ).map(obtenerRegistro);
+
+  if (gruposTablaMaestra.length > 0) {
+    return idsMaestro.reduce<OpcionesTablaMaestraPorId>((acumulado, idMaestro) => {
+      const grupo = gruposTablaMaestra.find(
+        (item) => obtenerNumero(item.idMaestro, item.IdMaestro) === idMaestro,
+      );
+      acumulado[idMaestro] = obtenerLista(
+        grupo?.items,
+        grupo?.Items,
+      ) as EntradaTablaMaestra[];
+      return acumulado;
+    }, {});
+  }
+
   return idsMaestro.reduce<OpcionesTablaMaestraPorId>((acumulado, idMaestro) => {
     const opciones = registro[idMaestro] ?? registro[String(idMaestro)];
     acumulado[idMaestro] = Array.isArray(opciones) ? opciones as EntradaTablaMaestra[] : [];
@@ -239,7 +266,7 @@ export const servicioTablaMaestra = {
       ENDPOINTS_TABLA_MAESTRA.listar,
       {
         params: {
-          IdMaestro: idMaestro,
+          idsMaestro: String(idMaestro),
           NumPag: numPag,
         },
       },
@@ -249,7 +276,7 @@ export const servicioTablaMaestra = {
       throw new ErrorRespuestaApi(data);
     }
 
-    return normalizarListadoParametros(data.result);
+    return normalizarListadoParametros(data.result, idMaestro);
   },
   crear: async (payload: TablaMaestraCrearRequest): Promise<TablaMaestraGuardarResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_TABLA_MAESTRA.crear, payload);

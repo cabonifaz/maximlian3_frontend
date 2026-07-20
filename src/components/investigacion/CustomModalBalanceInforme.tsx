@@ -76,7 +76,7 @@ export function CustomModalBalanceAnalista({
               {registroInicial ? "Editar Balance" : "Agregar Balance"}
             </h2>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
-              Registro de informacion financiera
+              Registro de información financiera
             </p>
           </div>
           <CustomButton variant="ghost" size="icon" onClick={onCerrar}>
@@ -153,7 +153,7 @@ export function CustomModalBalanceAnalista({
           ) : null}
 
           <div className="space-y-2">
-            <CustomLabel>Operacion de Cambio</CustomLabel>
+            <CustomLabel>Operación de cambio</CustomLabel>
             <CustomSelectorBuscable
               options={opcionesMoneda}
               value={obtenerIdSeleccion(opcionesMoneda, operacionCambio)}
