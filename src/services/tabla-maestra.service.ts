@@ -18,21 +18,16 @@ import {
 
 function normalizarListadoParametros(
   resultado: unknown,
+  idMaestro: number,
 ): RespuestaListadoTablaMaestra {
-  if (Array.isArray(resultado)) {
-    return {
-      listaTablaMaestra: resultado as EntradaTablaMaestra[],
-      totalRegistros: resultado.length,
-      totalPaginas: 1,
-    };
-  }
-
   const registro = obtenerRegistro(resultado);
+  const grupoSeleccionado = obtenerLista(registro.lstTablaMaestra)
+    .map(obtenerRegistro)
+    .find(
+      (grupo) => obtenerNumero(grupo.idMaestro) === idMaestro,
+    );
   const listaTablaMaestra = obtenerLista(
-    registro.listaTablaMaestra,
-    registro.ListaTablaMaestra,
-    registro.lstTablaMaestra,
-    registro.LstTablaMaestra,
+    grupoSeleccionado?.items,
   ) as EntradaTablaMaestra[];
 
   return {
@@ -40,11 +35,10 @@ function normalizarListadoParametros(
     totalRegistros:
       obtenerNumero(
         registro.totalRegistros,
-        registro.TotalRegistros,
         listaTablaMaestra.length,
       ) ?? 0,
     totalPaginas:
-      obtenerNumero(registro.totalPaginas, registro.TotalPaginas, 1) ?? 1,
+      obtenerNumero(registro.totalPaginas, 1) ?? 1,
   };
 }
 
@@ -239,7 +233,7 @@ export const servicioTablaMaestra = {
       ENDPOINTS_TABLA_MAESTRA.listar,
       {
         params: {
-          IdMaestro: idMaestro,
+          idsMaestro: String(idMaestro),
           NumPag: numPag,
         },
       },
@@ -249,7 +243,7 @@ export const servicioTablaMaestra = {
       throw new ErrorRespuestaApi(data);
     }
 
-    return normalizarListadoParametros(data.result);
+    return normalizarListadoParametros(data.result, idMaestro);
   },
   crear: async (payload: TablaMaestraCrearRequest): Promise<TablaMaestraGuardarResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_TABLA_MAESTRA.crear, payload);
