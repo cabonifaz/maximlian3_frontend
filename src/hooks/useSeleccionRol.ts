@@ -1,12 +1,14 @@
 import { useNavigate } from "react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { servicioAutenticacion } from "@maximilian/services/autenticacion.service";
 import type { Role } from "@maximilian/shared/types/autenticacion.type";
 import { obtenerRutaPorRol } from "@maximilian/shared/utils/autenticacion-navegacion.util";
+import { invalidarConsultasAntesDeCambiarRol } from "@maximilian/shared/utils/consultas-rol.util";
 import { useCerrarSesion } from "./useCerrarSesion";
 
 export function useSeleccionRol() {
   const navigate = useNavigate();
+  const clienteConsultas = useQueryClient();
   const { cerrarSesion, estaCerrandoSesion } = useCerrarSesion();
 
   const {
@@ -20,7 +22,9 @@ export function useSeleccionRol() {
     retry: 1,
   });
 
-  const seleccionarRol = (rol: Role) => {
+  const seleccionarRol = async (rol: Role) => {
+    await invalidarConsultasAntesDeCambiarRol(clienteConsultas);
+
     sessionStorage.setItem("selected_role", rol.rol);
     sessionStorage.setItem("selected_role_id", rol.idRol.toString());
     sessionStorage.setItem("user_session", JSON.stringify(datosUsuario));

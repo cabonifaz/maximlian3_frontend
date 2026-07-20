@@ -92,6 +92,21 @@ function normalizarListadoDirectorio(resultado: unknown): DirectorioEjecutivoLis
   };
 }
 
+function normalizarDirectorioObtenido(resultado: unknown) {
+  const registroDesdeLista = normalizarListadoDirectorio(resultado).registros[0];
+  if (registroDesdeLista) return registroDesdeLista;
+
+  const registro = obtenerRegistro(resultado);
+  const idDirectorioEjecutivo = obtenerNumero(
+    registro.idDirectorioEjecutivo,
+    registro.IdDirectorioEjecutivo,
+    registro.id,
+    registro.Id,
+  );
+
+  return idDirectorioEjecutivo ? normalizarRegistroDirectorio(registro) : null;
+}
+
 function normalizarGuardado(resultado: unknown): DirectorioEjecutivoGuardarResponse {
   if (Array.isArray(resultado)) return normalizarGuardado(resultado[0]);
 
@@ -140,7 +155,7 @@ async function obtenerDirectorio(
         throw new ErrorRespuestaApi(data);
       }
 
-      const registro = normalizarListadoDirectorio(data.result).registros[0] ?? null;
+      const registro = normalizarDirectorioObtenido(data.result);
       cacheDirectorioObtener.set(clave, registro);
       return registro;
     })

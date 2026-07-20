@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { opcionesCriterio } from "@maximilian/shared/constants/components/investigacion/custom-modal-lista-personas.constants";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioCompania } from "@maximilian/services/compania.service";
+import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
 import type { EmpresaRelacionadaAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type { RegistroPersonaAnalista } from "@maximilian/components/investigacion/CustomModalRegistroEmpresaRelacionada";
@@ -13,6 +14,28 @@ interface ParametrosUseModalListaPersonasInforme {
   onGuardar: (empresa: EmpresaRelacionadaAnalista) => void;
   opcionesPais?: EntradaTablaMaestra[];
   opcionesTipoPersona?: EntradaTablaMaestra[];
+}
+
+function mapearCompaniaARegistro(
+  compania: CompaniaListaItem,
+): RegistroPersonaAnalista {
+  return {
+    id: compania.idCompania,
+    idCompania: compania.idCompania,
+    idTipoPersona: compania.idTipoPersona,
+    idTipoDocumento: compania.idTipoDocumento,
+    idPais: compania.idPais,
+    direccion: compania.direccion,
+    ubigeo: compania.ubigeo,
+    codigoPostal: compania.codigoPostal,
+    numeroDocumento: compania.numeroDocumento,
+    tipoPersona: compania.tipoPersona ?? "",
+    nombres: compania.nombreCompleto,
+    tipoDocumento: `${compania.tipoDocumento ?? "-"} - ${compania.numeroDocumento}`,
+    pais: compania.pais,
+    telefono: compania.telefono,
+    existeInformacion: compania.existeInformacion,
+  };
 }
 
 export function useModalListaPersonasInforme({
@@ -59,20 +82,7 @@ export function useModalListaPersonasInforme({
 
   const registros = useMemo<RegistroPersonaAnalista[]>(
     () =>
-      (respuestaCompanias?.lstCompania ?? []).map((compania) => ({
-        id: compania.idCompania,
-        idCompania: compania.idCompania,
-        idTipoPersona: compania.idTipoPersona,
-        idTipoDocumento: compania.idTipoDocumento,
-        idPais: compania.idPais,
-        numeroDocumento: compania.numeroDocumento,
-        tipoPersona: compania.tipoPersona ?? "",
-        nombres: compania.nombreCompleto,
-        tipoDocumento: `${compania.tipoDocumento ?? "-"} - ${compania.numeroDocumento}`,
-        pais: compania.pais,
-        telefono: compania.telefono,
-        existeInformacion: compania.existeInformacion,
-      })),
+      (respuestaCompanias?.lstCompania ?? []).map(mapearCompaniaARegistro),
     [respuestaCompanias?.lstCompania],
   );
 
@@ -135,7 +145,7 @@ export function useModalListaPersonasInforme({
   const eliminarCompaniaMutation = useMutation({
     mutationFn: async () => {
       if (!registroAEliminar?.idCompania) {
-        throw new Error("No se encontro la compania a eliminar.");
+        throw new Error("No se encontro la compañía a eliminar.");
       }
 
       await servicioCompania.eliminar({ idCompania: registroAEliminar.idCompania });
@@ -150,6 +160,18 @@ export function useModalListaPersonasInforme({
 
   const abrirNuevoRegistro = () => {
     setRegistroEdicion(null);
+    setEstaAbiertoModalRegistro(true);
+  };
+
+  const prepararEdicionRegistro = async (registro: RegistroPersonaAnalista) => {
+    if (!registro.idCompania) return;
+
+    const companiaDetalle = await servicioCompania.obtener({
+      idCompania: registro.idCompania,
+    });
+    setRegistroEdicion(
+      companiaDetalle ? mapearCompaniaARegistro(companiaDetalle) : registro,
+    );
     setEstaAbiertoModalRegistro(true);
   };
 
@@ -195,6 +217,7 @@ export function useModalListaPersonasInforme({
     manejarGuardarCompania,
     manejarGuardarRegistro,
     paginaActual,
+    prepararEdicionRegistro,
     refetch,
     registroAEliminar,
     registroEdicion,

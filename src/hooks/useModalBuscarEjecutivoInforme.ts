@@ -33,6 +33,7 @@ export function useModalBuscarEjecutivoInforme({
   const [idPais, setIdPais] = useState<number | undefined>(undefined);
   const [descripcion, setDescripcion] = useState(busquedaInicial);
   const [busquedaActiva, setBusquedaActiva] = useState(busquedaInicial);
+  const [paginaActual, setPaginaActual] = useState(1);
 
   const { data: opcionesTipoPersonaBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
@@ -62,11 +63,11 @@ export function useModalBuscarEjecutivoInforme({
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["directorio-ejecutivo", "buscar", busquedaActiva],
+    queryKey: ["directorio-ejecutivo", "buscar", busquedaActiva, paginaActual],
     queryFn: () =>
       servicioDirectorioEjecutivo.listar({
         busqueda: busquedaActiva.trim() || undefined,
-        numPag: 1,
+        numPag: paginaActual,
       }),
     enabled: estaAbierto,
     retry: false,
@@ -102,6 +103,7 @@ export function useModalBuscarEjecutivoInforme({
       setIdPais(undefined);
       setDescripcion("");
       setBusquedaActiva("");
+      setPaginaActual(1);
       return;
     }
 
@@ -152,6 +154,24 @@ export function useModalBuscarEjecutivoInforme({
     void refetch();
   };
 
+  const manejarBuscar = () => {
+    setPaginaActual(1);
+    setBusquedaActiva(descripcion);
+  };
+
+  const prepararEdicionRegistro = async (
+    registro: RegistroPersonaDirectorioAnalista,
+  ) => {
+    const idDirectorioEjecutivo =
+      registro.idDirectorioEjecutivo ?? registro.id;
+    if (!idDirectorioEjecutivo) return;
+
+    const registroDetalle = await servicioDirectorioEjecutivo.obtener({
+      idDirectorioEjecutivo,
+    });
+    setRegistroEdicion(registroDetalle ?? registro);
+  };
+
   return {
     busquedaActiva,
     descripcion,
@@ -161,21 +181,24 @@ export function useModalBuscarEjecutivoInforme({
     idTipoPersona,
     isError,
     isFetching,
+    manejarBuscar,
     manejarGuardarRegistro,
     manejarSeleccionar,
     opcionesPais,
     opcionesTipoPersona,
+    paginaActual,
+    prepararEdicionRegistro,
     refetch,
     registroAEliminar,
     registroEdicion,
     registroSeleccionado,
     resultados,
     respuestaDirectorio,
-    setBusquedaActiva,
     setDescripcion,
     setIdPais,
     setIdRegistroSeleccionado,
     setIdTipoPersona,
+    setPaginaActual,
     setRegistroAEliminar,
     setRegistroEdicion,
   };

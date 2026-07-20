@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioBanco } from "@maximilian/services/banco.service";
-import type { BancoListaItem } from "@maximilian/shared/types/banco.type";
+import type { BancoListaItem, BancoListResponse } from "@maximilian/shared/types/banco.type";
 
 interface ParametrosUseModalBusquedaBancoInforme {
   estaAbierto: boolean;
@@ -86,12 +86,37 @@ export function useModalBusquedaBancoInforme({
         throw new Error("No se encontro el banco a eliminar.");
       }
 
-      await servicioBanco.eliminar({ idBanco: bancoAEliminar.idBanco });
+      const idBanco = bancoAEliminar.idBanco;
+      await servicioBanco.eliminar({ idBanco });
+      return idBanco;
     },
-    onSuccess: async () => {
+    onSuccess: async (idBancoEliminado) => {
+      queryClient.setQueriesData<BancoListResponse>(
+        { queryKey: ["bancos-busqueda-modal"] },
+        (respuestaActual) => {
+          if (!respuestaActual) return respuestaActual;
+
+          const cantidadEliminada = respuestaActual.lstBanco.some(
+            (banco) => banco.idBanco === idBancoEliminado,
+          )
+            ? 1
+            : 0;
+
+          return {
+            ...respuestaActual,
+            lstBanco: respuestaActual.lstBanco.filter(
+              (banco) => banco.idBanco !== idBancoEliminado,
+            ),
+            totalRegistros: Math.max(
+              0,
+              respuestaActual.totalRegistros - cantidadEliminada,
+            ),
+          };
+        },
+      );
       await queryClient.invalidateQueries({ queryKey: ["bancos-busqueda-modal"] });
       setBancoAEliminar(null);
-      if (bancoSeleccionado?.idBanco === bancoAEliminar?.idBanco) {
+      if (bancoSeleccionado?.idBanco === idBancoEliminado) {
         setIdBancoSeleccionado(null);
       }
     },
@@ -115,8 +140,9 @@ export function useModalBusquedaBancoInforme({
     setPaginaActual(1);
   };
 
-  const prepararEdicionBanco = (banco: BancoListaItem) => {
-    setBancoEnEdicion(banco);
+  const prepararEdicionBanco = async (banco: BancoListaItem) => {
+    const bancoDetalle = await servicioBanco.obtener({ idBanco: banco.idBanco });
+    setBancoEnEdicion(bancoDetalle ?? banco);
     setEstaAbiertoModalCrearBanco(true);
   };
 

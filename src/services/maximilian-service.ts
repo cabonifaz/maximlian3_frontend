@@ -6,6 +6,8 @@ import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import { cerrarSesionExpirada } from "./sesion.service";
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { ENDPOINTS_ASIGNACION } from "@maximilian/shared/constants/endpoints/asignacion.endpoint";
+import { ENDPOINTS_BANCO } from "@maximilian/shared/constants/endpoints/banco.endpoint";
+import { ENDPOINTS_COMPANIA } from "@maximilian/shared/constants/endpoints/compania.endpoint";
 import { ENDPOINTS_COMPANIA_NOTICIA } from "@maximilian/shared/constants/endpoints/compania-noticia.endpoint";
 import { ENDPOINTS_COMPANIA_NOTICIA_BALANCE } from "@maximilian/shared/constants/endpoints/compania-noticia-balance.endpoint";
 import { ENDPOINTS_COMPANIA_NOTICIA_DETALLE } from "@maximilian/shared/constants/endpoints/compania-noticia-detalle.endpoint";
@@ -43,6 +45,8 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
     || url.includes(ENDPOINTS_INFORME.extraerDocumento)
     || url.includes(ENDPOINTS_INFORME.traducir);
   const esEndpointDirectorioEjecutivo = url.includes(ENDPOINTS_DIRECTORIO_EJECUTIVO.base);
+  const esEndpointBanco = url.includes(ENDPOINTS_BANCO.base);
+  const esEndpointCompania = url.includes(ENDPOINTS_COMPANIA.base);
   const esEndpointCompaniaNoticia = url.includes(ENDPOINTS_COMPANIA_NOTICIA.base);
   const esEndpointCompaniaNoticiaBalance = url.includes(ENDPOINTS_COMPANIA_NOTICIA_BALANCE.base);
   const esEndpointCompaniaNoticiaDetalle = url.includes(ENDPOINTS_COMPANIA_NOTICIA_DETALLE.base);
@@ -64,6 +68,14 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
   }
 
   if (esEndpointDirectorioEjecutivo && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "OK" || Boolean(data.result);
+  }
+
+  if (esEndpointBanco && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "OK" || Boolean(data.result);
+  }
+
+  if (esEndpointCompania && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
     return data.mensaje === "OK" || Boolean(data.result);
   }
 

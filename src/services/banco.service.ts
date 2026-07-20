@@ -69,6 +69,16 @@ function normalizarGuardado(resultado: unknown): BancoGuardarResponse {
   };
 }
 
+function normalizarBancoObtenido(resultado: unknown) {
+  const bancoDesdeLista = normalizarLista(resultado).lstBanco[0];
+  if (bancoDesdeLista) return bancoDesdeLista;
+
+  const registro = obtenerRegistro(resultado);
+  const idBanco = obtenerNumero(registro.idBanco, registro.IdBanco);
+
+  return idBanco ? normalizarBanco(registro) : null;
+}
+
 const cacheBancoObtener = new Map<string, BancoListaItem | null>();
 const solicitudesBancoObtener = new Map<string, Promise<BancoListaItem | null>>();
 
@@ -98,7 +108,7 @@ async function obtenerBanco(params: BancoObtenerParams): Promise<BancoListaItem 
         throw new ErrorRespuestaApi(data);
       }
 
-      const banco = normalizarLista(data.result).lstBanco[0] ?? null;
+      const banco = normalizarBancoObtenido(data.result);
       cacheBancoObtener.set(clave, banco);
       return banco;
     })

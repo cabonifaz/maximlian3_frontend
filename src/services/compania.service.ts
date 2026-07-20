@@ -87,6 +87,16 @@ function normalizarGuardado(resultado: unknown): CompaniaGuardarResponse {
   };
 }
 
+function normalizarCompaniaObtenida(resultado: unknown) {
+  const companiaDesdeLista = normalizarLista(resultado).lstCompania[0];
+  if (companiaDesdeLista) return companiaDesdeLista;
+
+  const registro = obtenerRegistro(resultado);
+  const idCompania = obtenerNumero(registro.idCompania, registro.IdCompania);
+
+  return idCompania ? normalizarCompania(registro) : null;
+}
+
 const cacheCompaniaObtener = new Map<string, CompaniaListaItem | null>();
 const solicitudesCompaniaObtener = new Map<string, Promise<CompaniaListaItem | null>>();
 
@@ -118,7 +128,7 @@ async function obtenerCompania(params: CompaniaObtenerParams): Promise<CompaniaL
         throw new ErrorRespuestaApi(data);
       }
 
-      const compania = normalizarLista(data.result).lstCompania[0] ?? null;
+      const compania = normalizarCompaniaObtenida(data.result);
       cacheCompaniaObtener.set(clave, compania);
       return compania;
     })
