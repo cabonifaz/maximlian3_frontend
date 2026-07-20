@@ -116,6 +116,24 @@ function normalizarOpcionesPorIdMaestro(resultado: unknown, idsMaestro: number[]
   }
 
   const registro = obtenerRegistro(resultado);
+  const gruposTablaMaestra = obtenerLista(
+    registro.lstTablaMaestra,
+    registro.LstTablaMaestra,
+  ).map(obtenerRegistro);
+
+  if (gruposTablaMaestra.length > 0) {
+    return idsMaestro.reduce<OpcionesTablaMaestraPorId>((acumulado, idMaestro) => {
+      const grupo = gruposTablaMaestra.find(
+        (item) => obtenerNumero(item.idMaestro, item.IdMaestro) === idMaestro,
+      );
+      acumulado[idMaestro] = obtenerLista(
+        grupo?.items,
+        grupo?.Items,
+      ) as EntradaTablaMaestra[];
+      return acumulado;
+    }, {});
+  }
+
   return idsMaestro.reduce<OpcionesTablaMaestraPorId>((acumulado, idMaestro) => {
     const opciones = registro[idMaestro] ?? registro[String(idMaestro)];
     acumulado[idMaestro] = Array.isArray(opciones) ? opciones as EntradaTablaMaestra[] : [];
