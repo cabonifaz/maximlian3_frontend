@@ -20,25 +20,40 @@ function normalizarListadoParametros(
   resultado: unknown,
   idMaestro: number,
 ): RespuestaListadoTablaMaestra {
+  if (Array.isArray(resultado)) {
+    return {
+      listaTablaMaestra: resultado as EntradaTablaMaestra[],
+      totalRegistros: resultado.length,
+      totalPaginas: 1,
+    };
+  }
+
   const registro = obtenerRegistro(resultado);
-  const grupoSeleccionado = obtenerLista(registro.lstTablaMaestra)
+  const listaRespuesta = obtenerLista(
+    registro.listaTablaMaestra,
+    registro.ListaTablaMaestra,
+    registro.lstTablaMaestra,
+    registro.LstTablaMaestra,
+  );
+  const grupoSeleccionado = listaRespuesta
     .map(obtenerRegistro)
     .find(
-      (grupo) => obtenerNumero(grupo.idMaestro) === idMaestro,
+      (grupo) => obtenerNumero(grupo.idMaestro, grupo.IdMaestro) === idMaestro,
     );
-  const listaTablaMaestra = obtenerLista(
-    grupoSeleccionado?.items,
-  ) as EntradaTablaMaestra[];
+  const listaTablaMaestra = grupoSeleccionado
+    ? obtenerLista(grupoSeleccionado.items, grupoSeleccionado.Items) as EntradaTablaMaestra[]
+    : listaRespuesta as EntradaTablaMaestra[];
 
   return {
     listaTablaMaestra,
     totalRegistros:
       obtenerNumero(
         registro.totalRegistros,
+        registro.TotalRegistros,
         listaTablaMaestra.length,
       ) ?? 0,
     totalPaginas:
-      obtenerNumero(registro.totalPaginas, 1) ?? 1,
+      obtenerNumero(registro.totalPaginas, registro.TotalPaginas, 1) ?? 1,
   };
 }
 
