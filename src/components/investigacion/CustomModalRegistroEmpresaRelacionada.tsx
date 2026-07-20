@@ -14,6 +14,7 @@ export interface RegistroPersonaAnalista {
   pais: string;
   telefono: string;
   existeInformacion: boolean;
+  textoExisteInformacion?: string;
   idCompania?: number;
   idTipoPersona?: number;
   idTipoDocumento?: number;
@@ -94,7 +95,7 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8ea0c0]">
-                Base de datos de companias
+                Base de datos de compañías
               </p>
               <h2 className="mt-2 text-[22px] font-bold text-slate-900">
                 {registroInicial
@@ -145,6 +146,7 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
                 label="Tipo de Documento"
                 options={opcionesTipoDocumento}
                 value={idTipoDocumento}
+                displayValue={registroInicial?.tipoDocumento.split(" - ")[0]}
                 onChange={setIdTipoDocumento}
                 onClear={() => setIdTipoDocumento(undefined)}
                 placeholder="Seleccione tipo documento"

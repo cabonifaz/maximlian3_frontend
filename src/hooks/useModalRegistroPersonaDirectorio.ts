@@ -158,6 +158,11 @@ export function useModalRegistroPersonaDirectorio({
         registroInicial?.id ??
         Date.now();
 
+      const registroActualizado = await servicioDirectorioEjecutivo.obtener({
+        idDirectorioEjecutivo,
+      });
+      if (registroActualizado) return registroActualizado;
+
       return {
         ...registro,
         id: idDirectorioEjecutivo,

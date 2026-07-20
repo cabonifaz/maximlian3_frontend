@@ -34,21 +34,24 @@ export function CustomModalBuscarEjecutivoAnalista({
     idTipoPersona,
     isError,
     isFetching,
+    manejarBuscar,
     manejarGuardarRegistro,
     manejarSeleccionar,
     opcionesPais,
     opcionesTipoPersona,
+    paginaActual,
+    prepararEdicionRegistro,
     refetch,
     registroAEliminar,
     registroEdicion,
     registroSeleccionado,
     resultados,
     respuestaDirectorio,
-    setBusquedaActiva,
     setDescripcion,
     setIdPais,
     setIdRegistroSeleccionado,
     setIdTipoPersona,
+    setPaginaActual,
     setRegistroAEliminar,
     setRegistroEdicion,
   } = useModalBuscarEjecutivoInforme({
@@ -144,7 +147,7 @@ export function CustomModalBuscarEjecutivoAnalista({
                   className="h-10 rounded-lg px-4"
                   loading={isFetching}
                   loadingText="Buscando..."
-                  onClick={() => setBusquedaActiva(descripcion)}
+                  onClick={manejarBuscar}
                 >
                   <Search size={14} />
                   Buscar
@@ -246,7 +249,7 @@ export function CustomModalBuscarEjecutivoAnalista({
                                 type="button"
                                 onClick={(event) => {
                                   event.stopPropagation();
-                                  setRegistroEdicion(registro);
+                                  void prepararEdicionRegistro(registro);
                                 }}
                                 className="inline-flex text-[#2764ff] transition-colors hover:text-[#1d4ed8]"
                               >
@@ -270,6 +273,35 @@ export function CustomModalBuscarEjecutivoAnalista({
                   )}
                 </tbody>
               </table>
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <CustomButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() =>
+                  setPaginaActual((pagina) => Math.max(1, pagina - 1))
+                }
+                disabled={paginaActual <= 1 || isFetching}
+              >
+                Anterior
+              </CustomButton>
+              <span className="text-sm font-medium text-slate-500">
+                Pagina {paginaActual} de {respuestaDirectorio?.totalPaginas ?? 1}
+              </span>
+              <CustomButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setPaginaActual((pagina) => pagina + 1)}
+                disabled={
+                  isFetching ||
+                  paginaActual >= (respuestaDirectorio?.totalPaginas ?? 1)
+                }
+              >
+                Siguiente
+              </CustomButton>
             </div>
           </div>
 

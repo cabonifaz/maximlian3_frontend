@@ -4,14 +4,49 @@ import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/ap
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
   EntradaTablaMaestra,
+  ParametrosListadoTablaMaestra,
+  RespuestaListadoTablaMaestra,
   TablaMaestraCrearRequest,
   TablaMaestraEditarRequest,
   TablaMaestraGuardarResponse,
 } from "@maximilian/shared/types/tabla-maestra.type";
 import {
+  obtenerLista,
   obtenerNumeroOpcional as obtenerNumero,
   obtenerRegistro,
 } from "@maximilian/shared/utils/normalizacion-respuesta.util";
+
+function normalizarListadoParametros(
+  resultado: unknown,
+): RespuestaListadoTablaMaestra {
+  if (Array.isArray(resultado)) {
+    return {
+      listaTablaMaestra: resultado as EntradaTablaMaestra[],
+      totalRegistros: resultado.length,
+      totalPaginas: 1,
+    };
+  }
+
+  const registro = obtenerRegistro(resultado);
+  const listaTablaMaestra = obtenerLista(
+    registro.listaTablaMaestra,
+    registro.ListaTablaMaestra,
+    registro.lstTablaMaestra,
+    registro.LstTablaMaestra,
+  ) as EntradaTablaMaestra[];
+
+  return {
+    listaTablaMaestra,
+    totalRegistros:
+      obtenerNumero(
+        registro.totalRegistros,
+        registro.TotalRegistros,
+        listaTablaMaestra.length,
+      ) ?? 0,
+    totalPaginas:
+      obtenerNumero(registro.totalPaginas, registro.TotalPaginas, 1) ?? 1,
+  };
+}
 
 export type OpcionesTablaMaestraPorId = Record<number, EntradaTablaMaestra[]>;
 type SolicitudTablaMaestra = {
@@ -21,7 +56,7 @@ type SolicitudTablaMaestra = {
 
 const solicitudesPendientes = new Map<number, SolicitudTablaMaestra[]>();
 const cacheOpcionesTablaMaestra = new Map<number, EntradaTablaMaestra[]>();
-const solicitudesEnCursoPorClave = new Map<string, Promise<OpcionesTablaMaestraPorId>>();
+const solicitudesEnCursoPorId = new Map<number, Promise<EntradaTablaMaestra[]>>();
 let temporizadorSolicitudes: ReturnType<typeof setTimeout> | null = null;
 
 function normalizarRespuestaGuardado(resultado: unknown): TablaMaestraGuardarResponse {
@@ -106,10 +141,11 @@ async function obtenerOpcionesPorIdsMaestro(idsMaestro: number[]): Promise<Opcio
     }, {});
   }
 
-  const claveSolicitud = [...idsPendientes].sort((a, b) => a - b).join(",");
-  let solicitudEnCurso = solicitudesEnCursoPorClave.get(claveSolicitud);
-  if (!solicitudEnCurso) {
-    solicitudEnCurso = maximilianService
+  const idsSinSolicitud = idsPendientes.filter((idMaestro) => !solicitudesEnCursoPorId.has(idMaestro));
+
+  if (idsSinSolicitud.length > 0) {
+    const claveSolicitud = [...idsSinSolicitud].sort((a, b) => a - b).join(",");
+    const solicitudEnCurso = maximilianService
       .get<ApiResponse<unknown>>(ENDPOINTS_TABLA_MAESTRA.listar, {
         params: { idsMaestro: claveSolicitud },
       })
@@ -118,21 +154,27 @@ async function obtenerOpcionesPorIdsMaestro(idsMaestro: number[]): Promise<Opcio
           throw new ErrorRespuestaApi(data);
         }
 
-        const opcionesPorId = normalizarOpcionesPorIdMaestro(data.result, idsPendientes);
-        idsPendientes.forEach((idMaestro) => {
+        const opcionesPorId = normalizarOpcionesPorIdMaestro(data.result, idsSinSolicitud);
+        idsSinSolicitud.forEach((idMaestro) => {
           cacheOpcionesTablaMaestra.set(idMaestro, opcionesPorId[idMaestro] ?? []);
         });
         return opcionesPorId;
-      })
-      .finally(() => {
-        solicitudesEnCursoPorClave.delete(claveSolicitud);
       });
-    solicitudesEnCursoPorClave.set(claveSolicitud, solicitudEnCurso);
+
+    idsSinSolicitud.forEach((idMaestro) => {
+      const solicitudIndividual = solicitudEnCurso
+        .then((opcionesPorId) => opcionesPorId[idMaestro] ?? [])
+        .finally(() => {
+          solicitudesEnCursoPorId.delete(idMaestro);
+        });
+      solicitudesEnCursoPorId.set(idMaestro, solicitudIndividual);
+    });
   }
 
-  const opcionesPendientes = await solicitudEnCurso;
+  await Promise.all(idsPendientes.map((idMaestro) => solicitudesEnCursoPorId.get(idMaestro)));
+
   return idsUnicos.reduce<OpcionesTablaMaestraPorId>((acumulado, idMaestro) => {
-    acumulado[idMaestro] = cacheOpcionesTablaMaestra.get(idMaestro) ?? opcionesPendientes[idMaestro] ?? [];
+    acumulado[idMaestro] = cacheOpcionesTablaMaestra.get(idMaestro) ?? [];
     return acumulado;
   }, {});
 }
@@ -188,6 +230,26 @@ export const servicioTablaMaestra = {
       console.error(`Error fetching TablaMaestra parameters for IDs ${idsUnicos.join(",")}:`, error);
       throw error;
     }
+  },
+  listarParametros: async ({
+    idMaestro,
+    numPag,
+  }: ParametrosListadoTablaMaestra): Promise<RespuestaListadoTablaMaestra> => {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(
+      ENDPOINTS_TABLA_MAESTRA.listar,
+      {
+        params: {
+          IdMaestro: idMaestro,
+          NumPag: numPag,
+        },
+      },
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return normalizarListadoParametros(data.result);
   },
   crear: async (payload: TablaMaestraCrearRequest): Promise<TablaMaestraGuardarResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_TABLA_MAESTRA.crear, payload);

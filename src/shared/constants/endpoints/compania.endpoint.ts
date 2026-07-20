@@ -1,4 +1,5 @@
 export const ENDPOINTS_COMPANIA = {
+  base: "/api/Compania/",
   obtener: "/api/Compania/obtener",
   listar: "/api/Compania/listar",
   crear: "/api/Compania/crear",

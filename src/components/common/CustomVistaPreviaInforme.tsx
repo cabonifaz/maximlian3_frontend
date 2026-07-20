@@ -122,7 +122,7 @@ const traduccionesVistaPreviaInforme: Record<string, string> = {
   "Comentario": "Comment",
   "Comentarios legales": "Legal comments",
   "Comentarios operaciones": "Operations comments",
-  "Compania relacionada": "Related company",
+  "Compañía relacionada": "Related company",
   "Contacto": "Contact",
   "Correo electronico": "Email",
   "Datos Generales": "General Data",
@@ -480,7 +480,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
       ),
       ...crearBloquesDesdeLista(
         "companias-relacionadas",
-        "Compania relacionada",
+        "Compañía relacionada",
         datosInvestigacion.companiasRelacionadas as unknown as Record<string, unknown>[],
         {
           empresa: "Empresa",
@@ -760,7 +760,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
         pais: "Pais",
         porcentaje: "Participacion %",
         vinculadoDesde: "Vinculado desde",
-        companiaAnterior: "Compania anterior",
+        companiaAnterior: "Compañía anterior",
         esParteDirectorio: "Es parte del directorio",
         lista: "Aparece en lista",
         detalleEjecutivo: "Imprime detalle",

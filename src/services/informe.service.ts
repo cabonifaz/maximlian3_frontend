@@ -1379,7 +1379,10 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
 }
 
 export const informeService = {
-  list: async (params: InformeListParams): Promise<InformeListResponse> => {
+  list: async (
+    params: InformeListParams,
+    senal?: AbortSignal,
+  ): Promise<InformeListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_INFORME.listar, {
       params: {
         Busqueda: params.busqueda,
@@ -1389,6 +1392,7 @@ export const informeService = {
         IdTipoTramite: params.idTipoTramite,
         NumPag: params.numPag,
       },
+      signal: senal,
     });
 
     if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.listar)) {

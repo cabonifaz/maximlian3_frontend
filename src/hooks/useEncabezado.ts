@@ -6,6 +6,7 @@ import {
   obtenerRutaPorRol,
   obtenerSesionUsuarioGuardada,
 } from "@maximilian/shared/utils/autenticacion-navegacion.util";
+import { invalidarConsultasAntesDeCambiarRol } from "@maximilian/shared/utils/consultas-rol.util";
 import { useCerrarSesion } from "./useCerrarSesion";
 
 export function useEncabezado(rolInicial?: string) {
@@ -35,12 +36,7 @@ export function useEncabezado(rolInicial?: string) {
 
       if (!rol) return;
 
-      await clienteConsultas.cancelQueries({
-        predicate: (consulta) => consulta.queryKey[0] !== "masterTable",
-      });
-      clienteConsultas.removeQueries({
-        predicate: (consulta) => consulta.queryKey[0] !== "masterTable",
-      });
+      await invalidarConsultasAntesDeCambiarRol(clienteConsultas);
 
       sessionStorage.setItem("selected_role", rol.rol);
       sessionStorage.setItem("selected_role_id", rol.idRol.toString());

@@ -66,7 +66,7 @@ function normalizarNoticia(item: unknown): CompaniaNoticiaListaItem {
       registro.NombreCompleto,
       registro.empresa,
       registro.Empresa,
-    ) || (idCompania ? `Compania ${idCompania}` : "-"),
+    ) || (idCompania ? `Compañía ${idCompania}` : "-"),
     titulo: obtenerTexto(registro.titulo, registro.Titulo) || "-",
     descripcion: obtenerTexto(registro.descripcion, registro.Descripcion),
     fechaNoticia: obtenerTexto(registro.fechaNoticia, registro.FechaNoticia),

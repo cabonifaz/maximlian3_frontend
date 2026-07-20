@@ -4,8 +4,14 @@ import { toast } from "sonner";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import { cerrarSesionExpirada } from "./sesion.service";
-import type { AxiosError, InternalAxiosRequestConfig } from "axios";
+import type {
+  AxiosError,
+  CancelTokenSource,
+  InternalAxiosRequestConfig,
+} from "axios";
 import { ENDPOINTS_ASIGNACION } from "@maximilian/shared/constants/endpoints/asignacion.endpoint";
+import { ENDPOINTS_BANCO } from "@maximilian/shared/constants/endpoints/banco.endpoint";
+import { ENDPOINTS_COMPANIA } from "@maximilian/shared/constants/endpoints/compania.endpoint";
 import { ENDPOINTS_COMPANIA_NOTICIA } from "@maximilian/shared/constants/endpoints/compania-noticia.endpoint";
 import { ENDPOINTS_COMPANIA_NOTICIA_BALANCE } from "@maximilian/shared/constants/endpoints/compania-noticia-balance.endpoint";
 import { ENDPOINTS_COMPANIA_NOTICIA_DETALLE } from "@maximilian/shared/constants/endpoints/compania-noticia-detalle.endpoint";
@@ -13,8 +19,11 @@ import { ENDPOINTS_DIRECTORIO_EJECUTIVO } from "@maximilian/shared/constants/end
 import { ENDPOINTS_INFORME } from "@maximilian/shared/constants/endpoints/informe.endpoint";
 
 type ConfiguracionAutenticada = InternalAxiosRequestConfig & {
+  fuenteCancelacionCambioRol?: CancelTokenSource;
   reintentoAutenticacion?: boolean;
 };
+
+const fuentesSolicitudesPendientes = new Set<CancelTokenSource>();
 
 const maximilianService = axios.create({
   baseURL:
@@ -25,6 +34,19 @@ const maximilianService = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+function retirarSolicitudPendiente(config?: ConfiguracionAutenticada) {
+  if (config?.fuenteCancelacionCambioRol) {
+    fuentesSolicitudesPendientes.delete(config.fuenteCancelacionCambioRol);
+  }
+}
+
+export function cancelarSolicitudesPendientesPorCambioRol() {
+  fuentesSolicitudesPendientes.forEach((fuente) => {
+    fuente.cancel("Solicitud cancelada por cambio de rol");
+  });
+  fuentesSolicitudesPendientes.clear();
+}
 
 function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
   if (data.idTipoMensaje === MessageType.SUCCESS) return true;
@@ -43,6 +65,8 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
     || url.includes(ENDPOINTS_INFORME.extraerDocumento)
     || url.includes(ENDPOINTS_INFORME.traducir);
   const esEndpointDirectorioEjecutivo = url.includes(ENDPOINTS_DIRECTORIO_EJECUTIVO.base);
+  const esEndpointBanco = url.includes(ENDPOINTS_BANCO.base);
+  const esEndpointCompania = url.includes(ENDPOINTS_COMPANIA.base);
   const esEndpointCompaniaNoticia = url.includes(ENDPOINTS_COMPANIA_NOTICIA.base);
   const esEndpointCompaniaNoticiaBalance = url.includes(ENDPOINTS_COMPANIA_NOTICIA_BALANCE.base);
   const esEndpointCompaniaNoticiaDetalle = url.includes(ENDPOINTS_COMPANIA_NOTICIA_DETALLE.base);
@@ -67,6 +91,14 @@ function esRespuestaOkCompatibilidad(data: ApiResponse<unknown>, url?: string) {
     return data.mensaje === "OK" || Boolean(data.result);
   }
 
+  if (esEndpointBanco && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "OK" || Boolean(data.result);
+  }
+
+  if (esEndpointCompania && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
+    return data.mensaje === "OK" || Boolean(data.result);
+  }
+
   if (esEndpointCompaniaNoticia && data.idTipoMensaje === MessageType.BUSINESS_RULE_VIOLATION) {
     return data.mensaje === "OK" || Boolean(data.result);
   }
@@ -88,11 +120,11 @@ async function aplicarEncabezadosAutenticacion(
   config: InternalAxiosRequestConfig,
   forzarRefresco = false,
 ) {
-  const { tokens } = await fetchAuthSession({ forceRefresh: forzarRefresco });
-  const tokenAcceso = tokens?.accessToken?.toString();
   const idRolSeleccionado = sessionStorage.getItem("selected_role_id");
   const sesionUsuario = sessionStorage.getItem("user_session");
   const sesion = sesionUsuario ? JSON.parse(sesionUsuario) : null;
+  const { tokens } = await fetchAuthSession({ forceRefresh: forzarRefresco });
+  const tokenAcceso = tokens?.accessToken?.toString();
 
   if (tokenAcceso) {
     config.headers.Authorization = `Bearer ${tokenAcceso}`;
@@ -115,14 +147,21 @@ async function aplicarEncabezadosAutenticacion(
 
 maximilianService.interceptors.request.use(
   async (config) => {
+    const configAutenticada = config as ConfiguracionAutenticada;
+    const fuenteCancelacionCambioRol = axios.CancelToken.source();
+    configAutenticada.cancelToken = fuenteCancelacionCambioRol.token;
+    configAutenticada.fuenteCancelacionCambioRol = fuenteCancelacionCambioRol;
+    fuentesSolicitudesPendientes.add(fuenteCancelacionCambioRol);
+
     try {
-      await aplicarEncabezadosAutenticacion(config);
+      await aplicarEncabezadosAutenticacion(configAutenticada);
     } catch (error) {
+      retirarSolicitudPendiente(configAutenticada);
       console.error("Error fetching Cognito token:", error);
       void cerrarSesionExpirada();
       return Promise.reject(error);
     }
-    return config;
+    return configAutenticada;
   },
   (error) => {
     return Promise.reject(error);
@@ -132,6 +171,7 @@ maximilianService.interceptors.request.use(
 // Global response interceptor for snackbar notifications
 maximilianService.interceptors.response.use(
   (response) => {
+    retirarSolicitudPendiente(response.config as ConfiguracionAutenticada);
     const data = response.data as ApiResponse<unknown>;
 
     // If it's a standard API response with idTipoMensaje
@@ -157,6 +197,7 @@ maximilianService.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const configOriginal = error.config as ConfiguracionAutenticada | undefined;
+    retirarSolicitudPendiente(configOriginal);
 
     if (
       error.response?.status === 401
