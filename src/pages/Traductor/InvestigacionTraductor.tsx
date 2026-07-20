@@ -3681,6 +3681,9 @@ function PantallaInvestigacionAnalista({
         nombreCompleto: compania.empresa,
         idPais: compania.idPais ?? 0,
         telefono: compania.telefono ?? "",
+        direccion: compania.direccion ?? "",
+        ciudadProvinciaEstado: compania.ubigeo ?? "",
+        codigoPostal: compania.codigoPostal ?? "",
         existeInformacion: true,
       });
 

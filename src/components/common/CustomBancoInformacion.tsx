@@ -489,7 +489,10 @@ function SeccionEmpresas({
               </span>
             </td>
             <td className="px-6 py-4">
-              <span className="text-sm font-semibold text-slate-600">
+              <span
+                className="block truncate text-sm font-semibold text-slate-600"
+                title={empresa.pais}
+              >
                 {empresa.pais}
               </span>
             </td>

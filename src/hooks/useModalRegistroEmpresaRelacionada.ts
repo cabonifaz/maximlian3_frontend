@@ -124,7 +124,7 @@ export function useModalRegistroEmpresaRelacionada({
           nombreCompleto: payloadBase.nombreCompleto,
           pais: obtenerTextoPorId(opcionesPais, payloadBase.idPais) || "-",
           telefono: payloadBase.telefono || "-",
-          existeInformacion: payloadBase.existeInformacion,
+          existeInformacion: payloadBase.existeInformacion ? "Si" : "No",
           tipoPersona:
             obtenerTextoPorId(opcionesTipoPersona, payloadBase.idTipoPersona) ||
             undefined,
@@ -143,6 +143,9 @@ export function useModalRegistroEmpresaRelacionada({
             nombreCompleto: payloadBase.nombreCompleto,
             idPais: payloadBase.idPais,
             telefono: payloadBase.telefono,
+            direccion: payloadBase.direccion,
+            ciudadProvinciaEstado: payloadBase.ubigeo,
+            codigoPostal: payloadBase.codigoPostal,
             existeInformacion: payloadBase.existeInformacion,
           } satisfies CompaniaEditarRequest)
         : tipoCreacion === "compania"
@@ -153,6 +156,9 @@ export function useModalRegistroEmpresaRelacionada({
               nombreCompleto: payloadBase.nombreCompleto,
               idPais: payloadBase.idPais,
               telefono: payloadBase.telefono,
+              direccion: payloadBase.direccion,
+              ciudadProvinciaEstado: payloadBase.ubigeo,
+              codigoPostal: payloadBase.codigoPostal,
               existeInformacion: payloadBase.existeInformacion,
             })
           : await servicioCompania.crearDirectorioEjecutivo({
@@ -200,7 +206,7 @@ export function useModalRegistroEmpresaRelacionada({
         nombreCompleto: payloadBase.nombreCompleto,
         pais: obtenerTextoPorId(opcionesPais, payloadBase.idPais) || "-",
         telefono: payloadBase.telefono || "-",
-        existeInformacion: payloadBase.existeInformacion,
+        existeInformacion: payloadBase.existeInformacion ? "Si" : "No",
         tipoPersona:
           obtenerTextoPorId(opcionesTipoPersona, payloadBase.idTipoPersona) ||
           undefined,
@@ -227,7 +233,8 @@ export function useModalRegistroEmpresaRelacionada({
         tipoDocumento: `${companiaGuardada.tipoDocumento ?? obtenerTextoPorId(opcionesTipoDocumento, companiaGuardada.idTipoDocumento)} - ${companiaGuardada.numeroDocumento}`,
         pais: companiaGuardada.pais,
         telefono: companiaGuardada.telefono,
-        existeInformacion: companiaGuardada.existeInformacion,
+        existeInformacion: companiaGuardada.existeInformacion === "Si",
+        textoExisteInformacion: companiaGuardada.existeInformacion,
       });
       onCerrar();
     },

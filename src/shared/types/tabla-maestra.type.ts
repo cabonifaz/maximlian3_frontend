@@ -74,6 +74,17 @@ export type EntradaTablaMaestra = {
 
 export type MasterTableResponse = EntradaTablaMaestra[];
 
+export interface ParametrosListadoTablaMaestra {
+  idMaestro: number;
+  numPag: number;
+}
+
+export interface RespuestaListadoTablaMaestra {
+  listaTablaMaestra: EntradaTablaMaestra[];
+  totalRegistros: number;
+  totalPaginas: number;
+}
+
 export interface TablaMaestraCrearRequest {
   idMaestro: number;
   idIdioma?: number | null;

@@ -16,8 +16,6 @@ import {
   obtenerColumnasVisiblesParametro,
   obtenerConfiguracionCamposParametro,
   obtenerPaginasParametros,
-  obtenerTotalPaginasParametros,
-  paginarParametros,
 } from "@maximilian/shared/utils/configuracion-parametros.util";
 import {
   crearPayloadParametro,
@@ -37,15 +35,24 @@ export function useConfiguracionParametros() {
   const [mensajeValidacion, setMensajeValidacion] = useState("");
 
   const {
-    data: parametros,
+    data: respuestaParametros,
     isLoading,
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["masterTable", idMaestroSeleccionado],
-    queryFn: () => servicioTablaMaestra.list(idMaestroSeleccionado),
-    staleTime: Infinity,
+    queryKey: [
+      "parametros-administrador",
+      idMaestroSeleccionado,
+      paginaActual,
+    ],
+    queryFn: () =>
+      servicioTablaMaestra.listarParametros({
+        idMaestro: idMaestroSeleccionado,
+        numPag: paginaActual,
+      }),
   });
+
+  const parametros = respuestaParametros?.listaTablaMaestra;
 
   const configuracionCampos = obtenerConfiguracionCamposParametro(
     idMaestroSeleccionado,
@@ -64,7 +71,7 @@ export function useConfiguracionParametros() {
       servicioTablaMaestra.crear(payload),
     onSuccess: () => {
       clienteConsultas.invalidateQueries({
-        queryKey: ["masterTable", idMaestroSeleccionado],
+        queryKey: ["parametros-administrador", idMaestroSeleccionado],
       });
       setFilaFormulario(null);
       setMensajeValidacion("");
@@ -77,7 +84,7 @@ export function useConfiguracionParametros() {
       servicioTablaMaestra.editar(payload),
     onSuccess: () => {
       clienteConsultas.invalidateQueries({
-        queryKey: ["masterTable", idMaestroSeleccionado],
+        queryKey: ["parametros-administrador", idMaestroSeleccionado],
       });
       setFilaFormulario(null);
       setMensajeValidacion("");
@@ -89,8 +96,9 @@ export function useConfiguracionParametros() {
     [filtroConRetardo, parametros],
   );
 
-  const totalPaginas = obtenerTotalPaginasParametros(parametrosFiltrados.length);
-  const registrosPagina = paginarParametros(parametrosFiltrados, paginaActual);
+  const totalPaginas = respuestaParametros?.totalPaginas ?? 1;
+  const totalRegistros = respuestaParametros?.totalRegistros ?? 0;
+  const registrosPagina = parametrosFiltrados;
   const estaGuardando = mutacionCrear.isPending || mutacionEditar.isPending;
   const columnasVisibles = obtenerColumnasVisiblesParametro(
     parametros,
@@ -204,6 +212,7 @@ export function useConfiguracionParametros() {
     totalColumnas,
     anchoMinimoTabla,
     totalPaginas,
+    totalRegistros,
     paginas,
     estaGuardando,
     isLoading,
