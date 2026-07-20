@@ -75,7 +75,7 @@ export function CustomModalBuscarEjecutivoAnalista({
                   Directorio ejecutivo
                 </p>
                 <h2 className="mt-2 text-2xl font-bold text-slate-900">
-                  Busqueda de ejecutivos
+                  Búsqueda de ejecutivos
                 </h2>
                 <p className="mt-2 text-sm text-slate-500">
                   Busque, seleccione o administre ejecutivos registrados
@@ -101,7 +101,7 @@ export function CustomModalBuscarEjecutivoAnalista({
                 placeholder="Todos"
               />
               <CustomSelectorBuscable
-                label="Pais"
+              label="País"
                 options={opcionesPais}
                 value={idPais}
                 onChange={setIdPais}
@@ -111,7 +111,7 @@ export function CustomModalBuscarEjecutivoAnalista({
                 placeholder="Todos"
               />
               <div className="space-y-2">
-                <CustomLabel>Busqueda</CustomLabel>
+                <CustomLabel>Búsqueda</CustomLabel>
                 <div className="relative">
                   <Search
                     size={16}
@@ -159,9 +159,9 @@ export function CustomModalBuscarEjecutivoAnalista({
               <table className="w-full text-left">
                 <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.16em] text-[#9aa9c2]">
                   <tr>
-                    <th className="px-5 py-4">Nombre / Razon Social</th>
+                    <th className="px-5 py-4">Nombre / Razón social</th>
                     <th className="px-5 py-4">Documento</th>
-                    <th className="px-5 py-4">Pais</th>
+                    <th className="px-5 py-4">País</th>
                     <th className="px-5 py-4">ID Fiscal</th>
                     <th className="px-5 py-4 text-center">Acciones</th>
                   </tr>
@@ -288,7 +288,7 @@ export function CustomModalBuscarEjecutivoAnalista({
                 Anterior
               </CustomButton>
               <span className="text-sm font-medium text-slate-500">
-                Pagina {paginaActual} de {respuestaDirectorio?.totalPaginas ?? 1}
+                Página {paginaActual} de {respuestaDirectorio?.totalPaginas ?? 1}
               </span>
               <CustomButton
                 type="button"
@@ -340,7 +340,7 @@ export function CustomModalBuscarEjecutivoAnalista({
         onClose={() => setRegistroAEliminar(null)}
         onConfirm={() => eliminarDirectorioMutation.mutate()}
         title="Eliminar Empresa o Persona"
-        descripcion="Se eliminara el registro seleccionado del directorio ejecutivo."
+        descripcion="Se eliminará el registro seleccionado del directorio ejecutivo."
         isSubmitting={eliminarDirectorioMutation.isPending}
         textoConfirmar="Eliminar"
         textoCargandoConfirmar="Eliminando..."

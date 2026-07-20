@@ -226,7 +226,7 @@ function ReferenciaTraduccion({
           : "",
       ].join(" ")}
       aria-label="Ver valor original"
-      title={esClickeable ? "Abrir comparacion de traduccion" : undefined}
+      title={esClickeable ? "Abrir comparación de traducción" : undefined}
     >
       <Info size={15} />
     </button>
@@ -4917,7 +4917,7 @@ function PantallaInvestigacionAnalista({
       toast.dismiss(toastIdTraduccion);
       return;
     } catch (error) {
-      toast.error("No se pudo traducir la informacion del informe.", {
+      toast.error("No se pudo traducir la información del informe.", {
         id: toastIdTraduccion,
       });
       throw error;
@@ -5182,7 +5182,7 @@ function PantallaInvestigacionAnalista({
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesTipoRegTributario}
         idMaestro={TablaMaestraId.TIPO_REG_TRIBUTARIO}
-        marcador="Seleccione tipo de identificacion fiscal"
+                    marcador="Seleccione tipo de identificación fiscal"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion(
           "identificacion.tipoIdentificacionFiscal",
         )}
@@ -5458,7 +5458,7 @@ function PantallaInvestigacionAnalista({
           onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)}
         />
         <CampoInvestigacionAnalista
-          etiqueta="Fecha de Constitucion"
+                    etiqueta="Fecha de constitución"
           valor={datosInvestigacion.aspectosLegales.fechaConstitucion}
           soloLectura={esSoloLectura}
           tipoEntrada="fecha"
@@ -8303,7 +8303,7 @@ function PantallaInvestigacionAnalista({
             : "-"}
         </p>
         <p>
-          <span className="font-bold">Periodo:</span>{" "}
+          <span className="font-bold">Período:</span>{" "}
           {indiceBalanceAEliminar != null
             ? (datosInvestigacion.balances[indiceBalanceAEliminar]?.periodo ??
               "-")
@@ -8578,7 +8578,7 @@ function PantallaInvestigacionAnalista({
         varianteConfirmar="primary"
       >
         <p>
-          <span className="font-bold">Accion:</span> Se guardará el avance
+          <span className="font-bold">Acción:</span> Se guardará el avance
           actual del informe.
         </p>
         <p>
@@ -8953,7 +8953,7 @@ export default function InvestigacionTraductor() {
     : "local";
 
   if (usaDatosBackend && (estaCargandoInforme || estaCargandoInformeOriginal)) {
-    return <PantallaCarga message="Cargando informacion del informe..." />;
+    return <PantallaCarga message="Cargando información del informe..." />;
   }
 
   return (

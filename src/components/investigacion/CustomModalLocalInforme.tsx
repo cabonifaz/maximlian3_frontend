@@ -73,7 +73,7 @@ export function CustomModalLocalAnalista({
             <IconoImagen size={16} />
           </span>
           <span className="text-sm font-semibold text-slate-500">
-            Sin imagenes
+            Sin imágenes
           </span>
         </div>
       );
@@ -87,7 +87,7 @@ export function CustomModalLocalAnalista({
           </span>
           <div>
             <p className="text-sm font-semibold text-slate-700">
-              Imagenes del local
+              Imágenes del local
             </p>
             <p className="text-xs text-slate-400">{etiquetaImagenes}</p>
           </div>
@@ -139,7 +139,7 @@ export function CustomModalLocalAnalista({
             <Upload size={16} />
           </span>
           <span className="text-sm font-semibold text-slate-500">
-            Haga clic para subir una o varias imagenes
+            Haga clic para subir una o varias imágenes
           </span>
         </button>
       );
@@ -154,7 +154,7 @@ export function CustomModalLocalAnalista({
             </span>
             <div>
               <p className="text-sm font-semibold text-slate-700">
-                Imagenes del local
+                Imágenes del local
               </p>
               <p className="text-xs text-slate-400">{etiquetaImagenes}</p>
             </div>
@@ -266,7 +266,7 @@ export function CustomModalLocalAnalista({
             </div>
 
             <div className="space-y-2">
-              <CustomLabel>Direccion</CustomLabel>
+              <CustomLabel>Dirección</CustomLabel>
               <input
                 value={direccion}
                 onChange={(event) => setDireccion(event.target.value)}
@@ -284,14 +284,14 @@ export function CustomModalLocalAnalista({
                 onChange={(event) => setComentario(event.target.value)}
                 onFocus={seleccionarTextoCampoEditable}
                 disabled={soloLectura}
-                placeholder="Describa brevemente las caracteristicas del local..."
+                placeholder="Describa brevemente las características del local..."
                 rows={4}
                 className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-default disabled:bg-slate-50"
               />
             </div>
 
             <div className="space-y-2">
-              <CustomLabel>Imagenes del Local</CustomLabel>
+              <CustomLabel>Imágenes del local</CustomLabel>
               {!soloLectura && (
                 <input
                   ref={inputArchivoRef}

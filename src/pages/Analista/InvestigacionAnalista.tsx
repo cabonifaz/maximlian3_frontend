@@ -3167,7 +3167,7 @@ function PantallaInvestigacionAnalista({
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesTipoRegTributario}
         idMaestro={TablaMaestraId.TIPO_REG_TRIBUTARIO}
-        marcador="Seleccione tipo de identificacion fiscal"
+              marcador="Seleccione tipo de identificación fiscal"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.tipoIdentificacionFiscal")}
         onChange={(valor) => actualizarIdentificacion("tipoIdentificacionFiscal", valor)}
       />
@@ -3308,7 +3308,7 @@ function PantallaInvestigacionAnalista({
           onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)}
         />
         <CampoInvestigacionAnalista
-          etiqueta="Fecha de Constitucion"
+              etiqueta="Fecha de constitución"
           valor={datosInvestigacion.aspectosLegales.fechaConstitucion}
           soloLectura={esSoloLectura}
           tipoEntrada="fecha"
@@ -4866,7 +4866,7 @@ function PantallaInvestigacionAnalista({
         title="Eliminar Balance"
       >
         <p><span className="font-bold">Código:</span> {indiceBalanceAEliminar != null ? datosInvestigacion.balances[indiceBalanceAEliminar]?.codigo ?? "-" : "-"}</p>
-        <p><span className="font-bold">Periodo:</span> {indiceBalanceAEliminar != null ? datosInvestigacion.balances[indiceBalanceAEliminar]?.periodo ?? "-" : "-"}</p>
+        <p><span className="font-bold">Período:</span> {indiceBalanceAEliminar != null ? datosInvestigacion.balances[indiceBalanceAEliminar]?.periodo ?? "-" : "-"}</p>
       </CustomModalConfirmacionEliminacion>
 
       <CustomModalProveedorAnalista
@@ -5060,7 +5060,7 @@ function PantallaInvestigacionAnalista({
         textoCargandoConfirmar="Guardando..."
         varianteConfirmar="primary"
       >
-        <p><span className="font-bold">Accion:</span> Se guardará el avance actual del informe.</p>
+        <p><span className="font-bold">Acción:</span> Se guardará el avance actual del informe.</p>
         <p><span className="font-bold">Destino:</span> Serás redirigido a Mi Bandeja.</p>
       </CustomModalConfirmacionAccion>
 
@@ -5283,7 +5283,7 @@ export default function InvestigacionAnalista() {
   const claveDatos = usaDatosBackend ? String(informeObtenido?.idInforme ?? "cargando") : "local";
 
   if (usaDatosBackend && estaCargandoInforme) {
-    return <PantallaCarga message="Cargando informacion del informe..." />;
+    return <PantallaCarga message="Cargando información del informe..." />;
   }
 
   return (

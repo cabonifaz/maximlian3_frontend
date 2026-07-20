@@ -390,7 +390,7 @@ function obtenerGrupoVisualTurquia(campoId: string) {
       "exchange-rate-p",
     ].includes(campoId)
   ) {
-    return "Datos del periodo";
+    return "Datos del período";
   }
 
   if (["cash", "stocks", "creditors", "current-total"].includes(campoId)) {
@@ -485,7 +485,7 @@ function obtenerGrupoVisualTurquia(campoId: string) {
       "profit",
     ].includes(campoId)
   ) {
-    return "Cierre del periodo";
+    return "Cierre del período";
   }
 
   return "";
@@ -1611,7 +1611,7 @@ export function CustomModalDetalleCuentasAnalista({
       title="Detalle de Cuentas"
       subtitle={
         <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em]">
-          <span className="text-[#8ea0c0]">Gestion de cuentas contables</span>
+          <span className="text-[#8ea0c0]">Gestión de cuentas contables</span>
           {tipoEstadoFinanciero ? (
             <span className="rounded-full bg-brand-wine/10 px-2.5 py-1 text-brand-wine">
               {tipoEstadoFinanciero}

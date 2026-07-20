@@ -88,7 +88,7 @@ export function CustomBancoInformacion({
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-slate-950">
-          Banco de Informacion
+          Banco de Información
         </h1>
         {puedeAgregarNoticias ? (
           <CustomButton
@@ -136,10 +136,10 @@ export function CustomBancoInformacion({
             className="h-12 w-full rounded-xl border border-slate-100 bg-white pl-11 pr-4 text-sm text-slate-600 outline-none transition focus:border-slate-300 focus:ring-4 focus:ring-slate-100"
             placeholder={
               pestanaActiva === "empresas"
-                ? "Buscar por razon social del pedido, informe, nombre comercial o documento..."
+                ? "Buscar por razón social del pedido, informe, nombre comercial o documento..."
                 : pestanaActiva === "credito"
-                  ? "Buscar por Investigado o pais..."
-                  : "Buscar noticias, reportes o articulos..."
+                  ? "Buscar por investigado o país..."
+                  : "Buscar noticias, reportes o artículos..."
             }
           />
         </label>
@@ -270,7 +270,7 @@ function SeccionCredito({
   return (
     <section className="space-y-4">
       <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-300">
-        Reportes de credito actualizados
+        Reportes de crédito actualizados
       </p>
       <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
@@ -314,7 +314,7 @@ function SeccionCredito({
         <EstadoCargandoBancoInformacion />
       ) : hayError ? (
         <EstadoBancoInformacion
-          texto="No se pudo cargar la informacion crediticia."
+          texto="No se pudo cargar la información crediticia."
           accion={
             <CustomButton variant="secondary" size="sm" onClick={onReintentar}>
               Reintentar
@@ -322,7 +322,7 @@ function SeccionCredito({
           }
         />
       ) : reportes.length === 0 ? (
-        <EstadoBancoInformacion texto="No hay informacion crediticia registrada." />
+        <EstadoBancoInformacion texto="No hay información crediticia registrada." />
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
           {reportes.map((reporte) => (
@@ -436,12 +436,12 @@ function SeccionEmpresas({
 
       <CustomTabla
         columns={[
-          { label: "Razon Social", width: "20%" },
+          { label: "Razón social", width: "20%" },
           { label: "Documento", width: "12%" },
           {
             label: (
               <CustomEncabezadoFiltroTabla
-                titulo="Pais"
+                titulo="País"
                 opciones={opcionesPais}
                 valores={idsPaisFiltro}
                 onChange={onPaisFiltroChange}
@@ -449,8 +449,8 @@ function SeccionEmpresas({
             ),
             width: "10%",
           },
-          { label: "Direccion", width: "20%" },
-          { label: "Telefono", width: "10%" },
+          { label: "Dirección", width: "20%" },
+          { label: "Teléfono", width: "10%" },
           {
             label: (
               <CustomEncabezadoFiltroTabla

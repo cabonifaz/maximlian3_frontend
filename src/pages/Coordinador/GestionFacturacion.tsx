@@ -140,7 +140,7 @@ export default function GestionFacturacion() {
         </span>
       </td>
       <td className="px-6 py-4 text-center text-sm font-medium text-slate-600">
-        {facturacion.prefacturable ? "Si" : "No"}
+        {facturacion.prefacturable ? "Sí" : "No"}
       </td>
       <td className="px-6 py-4 text-center text-sm font-medium text-slate-600">
         {facturacion.totalPedidos}
@@ -159,7 +159,7 @@ export default function GestionFacturacion() {
           type="button"
           onClick={(event) => handleAbrirMenu(event, facturacion)}
           className="rounded-lg p-2 text-slate-400 transition-all hover:bg-slate-100 hover:text-brand-black active:scale-95"
-          aria-label={`Acciones de facturacion para ${facturacion.cliente}`}
+          aria-label={`Acciones de facturación para ${facturacion.cliente}`}
         >
           <MoreHorizontal size={18} />
         </button>
@@ -180,7 +180,7 @@ export default function GestionFacturacion() {
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
               >
                 <Eye size={14} />
-                <span>Detalle de la facturacion</span>
+                <span>Detalle de la facturación</span>
               </button>
               <button
                 type="button"
@@ -191,7 +191,7 @@ export default function GestionFacturacion() {
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
               >
                 <FileText size={14} />
-                <span>Generar facturacion</span>
+                <span>Generar facturación</span>
               </button>
             </div>
           </>
@@ -203,7 +203,7 @@ export default function GestionFacturacion() {
   return (
     <div className="space-y-5">
       <div className="space-y-3">
-        <h1 className="text-2xl font-bold text-brand-black">Facturacion</h1>
+        <h1 className="text-2xl font-bold text-brand-black">Facturación</h1>
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -225,7 +225,7 @@ export default function GestionFacturacion() {
         isError={isError}
         onRetry={() => refetch()}
         emptyMessage="No se encontraron facturas."
-        errorMessage="Error al cargar la facturacion"
+        errorMessage="Error al cargar la facturación"
         paginaActual={paginaActual}
         totalPages={facturacionData?.totalPaginas ?? 1}
         totalRecords={facturacionData?.totalRegistros ?? 0}

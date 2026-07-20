@@ -83,7 +83,7 @@ export function useGestionAsignaciones() {
   const abrirModalNuevaAsignacion = () => {
     setModalAsignacion({
       key: Date.now(),
-      titulo: "Nueva Asignacion",
+      titulo: "Nueva asignación",
       tabInicial: "pedidos",
       pedidosIniciales: [],
       asignacionesIniciales: [
@@ -98,7 +98,7 @@ export function useGestionAsignaciones() {
     const esNuevaAsignacion = esNuevaAsignacionDesdeListado(asignacion);
     setModalAsignacion({
       key: Date.now(),
-      titulo: esNuevaAsignacion ? "Nueva Asignacion" : "Modificar Asignacion",
+      titulo: esNuevaAsignacion ? "Nueva asignación" : "Modificar asignación",
       tabInicial: "asignacion",
       pedidosIniciales: [convertirAsignacionAPedido(asignacion)],
       asignacionesIniciales: esNuevaAsignacion

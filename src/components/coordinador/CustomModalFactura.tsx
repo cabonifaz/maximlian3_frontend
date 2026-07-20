@@ -103,7 +103,7 @@ export function CustomModalFactura({
               <CampoFactura etiqueta="Cliente" valor={detalle.cliente} soloLectura={soloLectura} />
               <CampoFactura etiqueta="NI" valor={detalle.ni} soloLectura={soloLectura} />
               <CampoFactura etiqueta="OC/OS" valor={detalle.ordenCompra} soloLectura={soloLectura} />
-              <CampoFactura etiqueta="Emision" valor={detalle.fechaEmision} soloLectura={soloLectura} />
+              <CampoFactura etiqueta="Emisión" valor={detalle.fechaEmision} soloLectura={soloLectura} />
               <CampoFactura etiqueta="Vencimiento" valor={detalle.fechaVencimiento} soloLectura={soloLectura} />
             </div>
 
@@ -122,7 +122,7 @@ export function CustomModalFactura({
                   <thead className="bg-slate-50 text-xs font-bold text-slate-500">
                     <tr>
                       <th className="px-4 py-3">Cantidad</th>
-                      <th className="px-4 py-3">Descripcion</th>
+                      <th className="px-4 py-3">Descripción</th>
                       <th className="px-4 py-3 text-center">Dscto. %</th>
                       <th className="px-4 py-3 text-right">Valor U.</th>
                       <th className="px-4 py-3 text-right">Total</th>
@@ -228,9 +228,9 @@ export function CustomModalFactura({
           setConfirmacionSunatAbierta(false);
           onCerrar();
         }}
-        title="Confirmar emision"
-        descripcion="Esta a punto de emitir la factura a SUNAT, ¿Desea continuar el proceso?"
-        textoConfirmar="Si"
+        title="Confirmar emisión"
+        descripcion="Está a punto de emitir la factura a SUNAT. ¿Desea continuar el proceso?"
+        textoConfirmar="Sí"
         textoCargandoConfirmar="Confirmando..."
         varianteConfirmar="primary"
         anchoMaximoClassName="max-w-sm"

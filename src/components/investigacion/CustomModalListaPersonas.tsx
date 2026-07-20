@@ -103,7 +103,7 @@ export function CustomModalListaPersonasAnalista({
                 placeholder="Todos"
               />
               <CustomSelectorBuscable
-                label="Pais"
+                label="País"
                 options={opcionesPais}
                 value={idPais}
                 onChange={setIdPais}
@@ -123,7 +123,7 @@ export function CustomModalListaPersonasAnalista({
                 placeholder="Seleccione criterio"
               />
               <div className="space-y-2">
-                <CustomLabel>Busqueda</CustomLabel>
+                <CustomLabel>Búsqueda</CustomLabel>
                 <div className="relative">
                   <Search
                     size={16}
@@ -158,10 +158,10 @@ export function CustomModalListaPersonasAnalista({
               <table className="w-full text-left">
                 <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.16em] text-[#9aa9c2]">
                   <tr>
-                    <th className="px-5 py-4">Nombre / Razon Social</th>
+                    <th className="px-5 py-4">Nombre / Razón social</th>
                     <th className="px-5 py-4">Documento</th>
-                    <th className="px-5 py-4">Pais</th>
-                    <th className="px-5 py-4">Telefono</th>
+                    <th className="px-5 py-4">País</th>
+                    <th className="px-5 py-4">Teléfono</th>
                     <th className="px-5 py-4">Existe Inf.</th>
                     <th className="px-5 py-4 text-center">Acciones</th>
                   </tr>
@@ -294,7 +294,7 @@ export function CustomModalListaPersonasAnalista({
                 Anterior
               </CustomButton>
               <span className="text-sm font-medium text-slate-500">
-                Pagina {paginaActual} de {respuestaCompanias?.totalPaginas ?? 1}
+                Página {paginaActual} de {respuestaCompanias?.totalPaginas ?? 1}
               </span>
               <CustomButton
                 variant="secondary"
@@ -341,7 +341,7 @@ export function CustomModalListaPersonasAnalista({
         onClose={() => setRegistroAEliminar(null)}
         onConfirm={() => eliminarCompaniaMutation.mutate()}
         title="Eliminar Empresa o Persona"
-        descripcion="Se eliminara el registro seleccionado de la base de datos."
+        descripcion="Se eliminará el registro seleccionado de la base de datos."
         isSubmitting={eliminarCompaniaMutation.isPending}
         textoConfirmar="Eliminar"
         textoCargandoConfirmar="Eliminando..."

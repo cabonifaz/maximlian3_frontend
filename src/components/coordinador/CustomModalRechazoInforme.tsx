@@ -224,7 +224,7 @@ export function CustomModalRechazoInforme({
                 htmlFor="observacion-rechazo"
                 className="text-sm font-bold text-slate-700"
               >
-                Nueva observacion
+                Nueva observación
               </CustomLabel>
               <span className="text-xs font-medium text-slate-400">
                 Ctrl + Enter para agregar
@@ -241,7 +241,7 @@ export function CustomModalRechazoInforme({
                     agregarObservacion();
                   }
                 }}
-                placeholder="Ej. Corregir la seccion de referencias bancarias"
+                placeholder="Ej. Corregir la sección de referencias bancarias"
                 rows={4}
                 className="max-h-32 min-h-24 min-w-0 flex-1 resize-none overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:bg-white focus:ring-2 focus:ring-brand-black/5"
                 disabled={cargando}
@@ -326,9 +326,9 @@ export function CustomModalRechazoInforme({
                           ) : (
                             <p
                               className="line-clamp-3 min-h-8 flex-1 whitespace-pre-line break-words py-0.5 text-sm font-medium leading-6 text-slate-700"
-                              title={observacion.observacion.trim() || "Observacion sin texto"}
+                              title={observacion.observacion.trim() || "Observación sin texto"}
                             >
-                              {observacion.observacion.trim() || "Observacion sin texto"}
+                              {observacion.observacion.trim() || "Observación sin texto"}
                             </p>
                           )}
 
@@ -339,8 +339,8 @@ export function CustomModalRechazoInforme({
                               size="icon"
                               title={
                                 estaEditando
-                                  ? "Guardar observacion"
-                                  : "Editar observacion"
+                                  ? "Guardar observación"
+                                  : "Editar observación"
                               }
                               className={[
                                 "h-8 w-8 rounded-lg text-slate-500 hover:bg-white",
@@ -363,7 +363,7 @@ export function CustomModalRechazoInforme({
                               type="button"
                               variant="ghost"
                               size="icon"
-                              title="Eliminar observacion"
+                              title="Eliminar observación"
                               className="h-8 w-8 rounded-lg text-rose-500 hover:bg-white"
                               loading={idObservacionEliminando === observacion.idInformeObservacion}
                               disabled={cargando}
@@ -380,7 +380,7 @@ export function CustomModalRechazoInforme({
               </ol>
             ) : (
               <div className="flex min-h-0 flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-7 text-center text-sm text-slate-500">
-                Agrega al menos una observacion para rechazar el informe.
+                Agrega al menos una observación para rechazar el informe.
               </div>
             )}
           </div>
@@ -389,8 +389,8 @@ export function CustomModalRechazoInforme({
         <div className="flex shrink-0 flex-col gap-3 border-t border-slate-200 bg-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-500">
             {tieneObservacionNueva
-              ? "Se enviaran como lista numerada de correcciones."
-              : "Agrega al menos una observacion nueva para continuar."}
+              ? "Se enviarán como lista numerada de correcciones."
+              : "Agrega al menos una observación nueva para continuar."}
           </p>
           <div className="flex justify-end gap-3">
             <CustomButton

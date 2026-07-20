@@ -52,7 +52,7 @@ export function CustomModalExtraccionInformacionAnalista({
   onCerrar,
   onExtraer,
   etiquetaContexto = "",
-  textoBotonAccion = "Extraer informacion",
+  textoBotonAccion = "Extraer información",
   textoBotonAccionCargando = "Extrayendo...",
   textoBotonAccionDirecta = "Aplicar directamente",
   textoBotonAccionDirectaCargando = "Aplicando...",
@@ -174,7 +174,7 @@ export function CustomModalExtraccionInformacionAnalista({
             <div className="flex min-h-0 flex-col gap-4 lg:flex-1 lg:flex-row lg:items-stretch">
               <div className="shrink-0">
                 <CustomBloqueCargaArchivosAnalista
-                  textoIndicativo="Arrastra archivos aqui o haz clic para subir"
+                  textoIndicativo="Arrastra archivos aquí o haz clic para subir"
                   onAgregarArchivos={agregarArchivos}
                 />
               </div>
@@ -201,7 +201,7 @@ export function CustomModalExtraccionInformacionAnalista({
                               Formato
                             </th>
                             <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">
-                              Tamano
+                              Tamaño
                             </th>
                             <th className="px-3 py-2" />
                           </tr>

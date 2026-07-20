@@ -134,13 +134,13 @@ function getEstadoBadge(descripcion: string, colorLetra: string, colorFondo: str
   } else if (textoNormalizado.startsWith("asignado a ")) {
     lineas = ["Asignado a", ...dividirEnLineas(texto.slice("Asignado a ".length).trim() || "-")];
   } else if (textoNormalizado === "traduccion completa") {
-    lineas = ["Traduccion", "completa"];
+    lineas = ["Traducción", "completa"];
   } else if (textoNormalizado === "analisis completo") {
-    lineas = ["Analisis", "completo"];
+    lineas = ["Análisis", "completo"];
   } else if (textoNormalizado === "asignacion anulada") {
-    lineas = ["Asignacion", "anulada"];
+    lineas = ["Asignación", "anulada"];
   } else if (textoNormalizado === "sin asignacion") {
-    lineas = ["Sin", "Asignacion"];
+    lineas = ["Sin", "asignación"];
   }
 
   return (
@@ -354,15 +354,15 @@ export default function GestionAsignaciones() {
         </p>
         {asignacionAAnular ? (
           <CustomSelectorBuscable
-            label="Asignacion a eliminar"
+            label="Asignación a eliminar"
             options={construirOpcionesEliminacionAsignacion(asignacionAAnular)}
             value={idAsignacionAEliminar}
             onChange={(idAsignacionSeleccionada) => {
               setIdAsignacionAEliminar(idAsignacionSeleccionada);
             }}
-            placeholder="Seleccione una asignacion"
+            placeholder="Seleccione una asignación"
             required
-            error={idAsignacionAEliminar === undefined ? "Seleccione la asignacion a eliminar" : undefined}
+            error={idAsignacionAEliminar === undefined ? "Seleccione la asignación a eliminar" : undefined}
             dropdownZIndexClassName="z-[120]"
             overlayZIndexClassName="z-[110]"
           />

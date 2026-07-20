@@ -87,7 +87,7 @@ export function CustomModalFacturasCliente({
                 <tr key={factura.idFactura} className="hover:bg-slate-50/70">
                   <td className="px-1 py-4 text-xs font-bold text-slate-500">{factura.codigo}</td>
                   <td className="px-4 py-4 font-bold text-brand-black">{factura.investigado}</td>
-                  <td className="px-4 py-4 text-slate-600">{factura.penalidad ? "Si" : "No"}</td>
+                  <td className="px-4 py-4 text-slate-600">{factura.penalidad ? "Sí" : "No"}</td>
                   <td className="px-4 py-4 text-center">
                     <EstadoFacturaBadge estado={factura.estado} />
                   </td>

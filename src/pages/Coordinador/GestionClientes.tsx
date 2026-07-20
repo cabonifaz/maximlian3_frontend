@@ -54,7 +54,7 @@ export default function GestionClientes() {
         ...columna,
         label: (
           <CustomEncabezadoFiltroTabla
-            titulo="Pais"
+            titulo="País"
             opciones={paises}
             valores={filtroPais ? [filtroPais] : []}
             onChange={cambiarFiltroPais}

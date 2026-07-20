@@ -73,11 +73,11 @@ export function CustomModalCrearBancoAnalista({
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
-                {bancoInicial ? "Actualizacion en base de datos" : "Registro en base de datos"}
+                {bancoInicial ? "Actualización en base de datos" : "Registro en base de datos"}
               </p>
               <h2 className="mt-1 text-2xl font-bold text-brand-black">{bancoInicial ? "Editar Banco" : "Nuevo Banco"}</h2>
               <p className="mt-1 text-sm text-slate-500">
-                {bancoInicial ? "Actualice la informacion del banco seleccionado." : "Complete los datos principales para registrar el banco."}
+                {bancoInicial ? "Actualice la información del banco seleccionado." : "Complete los datos principales para registrar el banco."}
               </p>
             </div>
           </div>
@@ -90,18 +90,18 @@ export function CustomModalCrearBancoAnalista({
           <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
             <div className="mb-5">
               <p className="text-sm font-bold text-brand-black">Datos del banco</p>
-              <p className="mt-1 text-xs text-slate-400">Pais, nombre comercial y telefono de contacto.</p>
+              <p className="mt-1 text-xs text-slate-400">País, nombre comercial y teléfono de contacto.</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-[1fr_1.25fr_1fr]">
               <CustomSelectorBuscable
-                label="Pais"
+                label="País"
                 options={opcionesPais}
                 value={idPais}
                 onChange={setIdPais}
                 onClear={() => setIdPais(undefined)}
                 required
-                placeholder="Seleccione un pais"
+                placeholder="Seleccione un país"
               />
 
               <div className="space-y-2">
@@ -116,12 +116,12 @@ export function CustomModalCrearBancoAnalista({
               </div>
 
               <div className="space-y-2">
-                <CustomLabel required>Telefono</CustomLabel>
+                <CustomLabel required>Teléfono</CustomLabel>
                 <input
                   value={telefono}
                   onChange={(event) => setTelefono(event.target.value)}
                   onFocus={seleccionarTextoCampoEditable}
-                  placeholder="Ingrese el telefono"
+                  placeholder="Ingrese el teléfono"
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
                 />
               </div>
@@ -191,7 +191,7 @@ function CustomModalBusquedaBancoAnalista({
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">Bancos registrados</p>
-                <h2 className="mt-1 text-2xl font-bold text-brand-black">Busqueda de Banco</h2>
+                <h2 className="mt-1 text-2xl font-bold text-brand-black">Búsqueda de banco</h2>
                 <p className="mt-1 text-sm text-slate-500">Seleccione un banco de la base de datos o registre uno nuevo.</p>
               </div>
             </div>
@@ -203,7 +203,7 @@ function CustomModalBusquedaBancoAnalista({
           <div className="space-y-5 overflow-y-auto bg-slate-50/40 px-6 py-6 md:px-8">
             <div className="grid gap-4 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm md:grid-cols-[minmax(0,1fr)_auto]">
               <div className="space-y-2">
-                <CustomLabel>Busqueda</CustomLabel>
+                <CustomLabel>Búsqueda</CustomLabel>
                 <div className="relative">
                   <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
                   <input
@@ -233,8 +233,8 @@ function CustomModalBusquedaBancoAnalista({
                 <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9aa9c2]">
                   <tr>
                     <th className="px-5 py-4">Banco</th>
-                    <th className="px-5 py-4">Pais</th>
-                    <th className="px-5 py-4">Telefono</th>
+                    <th className="px-5 py-4">País</th>
+                    <th className="px-5 py-4">Teléfono</th>
                     <th className="px-5 py-4 text-center">Acciones</th>
                   </tr>
                 </thead>
@@ -335,7 +335,7 @@ function CustomModalBusquedaBancoAnalista({
                   Anterior
                 </CustomButton>
                 <span className="min-w-28 text-center text-sm font-semibold text-slate-500">
-                  Pagina {paginaActual} de {respuestaBancos?.totalPaginas ?? 1}
+                  Página {paginaActual} de {respuestaBancos?.totalPaginas ?? 1}
                 </span>
                 <CustomButton
                   variant="secondary"
@@ -373,7 +373,7 @@ function CustomModalBusquedaBancoAnalista({
         onClose={() => setBancoAEliminar(null)}
         onConfirm={() => eliminarBancoMutation.mutate()}
         title="Eliminar Banco"
-        descripcion="Se eliminara el banco seleccionado de la base de datos."
+        descripcion="Se eliminará el banco seleccionado de la base de datos."
         isSubmitting={eliminarBancoMutation.isPending}
         textoConfirmar="Eliminar"
         textoCargandoConfirmar="Eliminando..."
@@ -381,7 +381,7 @@ function CustomModalBusquedaBancoAnalista({
         zIndexClassName="z-[130]"
       >
         <p><span className="font-bold">Banco:</span> {bancoAEliminar?.nombre ?? "-"}</p>
-        <p><span className="font-bold">Pais:</span> {bancoAEliminar?.pais ?? "-"}</p>
+        <p><span className="font-bold">País:</span> {bancoAEliminar?.pais ?? "-"}</p>
       </CustomModalConfirmacionAccion>
     </>
   );
@@ -454,7 +454,7 @@ export function CustomModalBancoAnalista({
             </div>
 
             <div className="space-y-2">
-              <CustomLabel>Numero de Cuenta</CustomLabel>
+              <CustomLabel>Número de cuenta</CustomLabel>
               <input
                 value={numeroCuenta}
                 onChange={(event) => setNumeroCuenta(event.target.value)}
@@ -488,7 +488,7 @@ export function CustomModalBancoAnalista({
             </div>
 
             <div className="space-y-2">
-              <CustomLabel>Numero(s) de Telefono</CustomLabel>
+              <CustomLabel>Número(s) de teléfono</CustomLabel>
               <input
                 value={telefono}
                 onChange={(event) => setTelefono(event.target.value)}
@@ -499,7 +499,7 @@ export function CustomModalBancoAnalista({
             </div>
 
             {pais ? (
-              <p className="text-xs text-slate-400">Pais del banco: {pais}</p>
+              <p className="text-xs text-slate-400">País del banco: {pais}</p>
             ) : null}
           </div>
 

@@ -209,7 +209,7 @@ export default function RevisionInformeCoordinador() {
 
   const descargarDocumento = async (formato: FormatoDescargaInforme, idInformeDescarga = idInformeSeguro) => {
     if (formato === ".xml" && !puedeDescargarXml) {
-      toast.error("La descarga XML solo esta disponible para la plantilla permitida.");
+      toast.error("La descarga XML solo está disponible para la plantilla permitida.");
       return;
     }
 

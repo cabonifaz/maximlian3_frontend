@@ -48,7 +48,7 @@ export function CustomModalVistaPreviaTraductor({
         <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-100 px-4 py-4 sm:px-6 sm:py-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Vista previa</p>
-            <h2 className="mt-0.5 text-lg font-bold text-slate-800">Reporte de Investigacion</h2>
+            <h2 className="mt-0.5 text-lg font-bold text-slate-800">Reporte de investigación</h2>
           </div>
           <CustomButton variant="ghost" size="icon" onClick={onCerrar} aria-label="Cerrar vista previa">
             <X size={20} className="text-slate-500" />

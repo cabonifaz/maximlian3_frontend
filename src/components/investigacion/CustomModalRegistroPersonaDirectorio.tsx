@@ -73,7 +73,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
         >
           <div className="space-y-5 overflow-y-auto bg-slate-50/35 px-6 py-6 md:px-8">
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <EncabezadoSeccion icono={<UserRound size={18} />} titulo="Identificacion" subtitulo="Datos principales del registro" />
+              <EncabezadoSeccion icono={<UserRound size={18} />} titulo="Identificación" subtitulo="Datos principales del registro" />
               <div className="grid gap-4 md:grid-cols-[0.9fr_2fr_1fr]">
                 <CampoSelector nombre="tipoPersona" nombreId="idTipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersona} valorDefecto={registroInicial?.tipoPersona} valorDefectoId={registroInicial?.idTipoPersona} marcadorVacio="Seleccione tipo persona" />
                 <CampoInput nombre="nombres" etiqueta="Nombre Completo / Razón Social" marcador="Ingrese nombres completos" valorInicial={registroInicial?.nombres ?? nombreInicial} />
@@ -89,7 +89,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
           
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <EncabezadoSeccion icono={<FileText size={18} />} titulo="Documentos" subtitulo="Identificacion personal y fiscal" />
+              <EncabezadoSeccion icono={<FileText size={18} />} titulo="Documentos" subtitulo="Identificación personal y fiscal" />
               <div className="grid gap-4 md:grid-cols-[0.9fr_1fr_1fr_1fr]">
                 <CampoSelector nombre="tipoDocumentoIdentidad" nombreId="idTipoDocumento" etiqueta="Tipo Doc. Identidad" opciones={opcionesTipoDocumento} valorDefecto={registroInicial?.tipoDocumentoIdentidad} valorDefectoId={registroInicial?.idTipoDocumento} marcadorVacio="Seleccione tipo documento" />
                 <CampoInput nombre="numeroDocumentoIdentidad" etiqueta="Nro. Doc. Identidad" marcador="Ingrese nro. documento" valorInicial={registroInicial?.numeroDocumentoIdentidad} />
@@ -99,7 +99,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
             </section>
 
   <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <EncabezadoSeccion icono={<MapPin size={18} />} titulo="Ubicacion" subtitulo="Pais, nacionalidad y direccion" />
+              <EncabezadoSeccion icono={<MapPin size={18} />} titulo="Ubicación" subtitulo="País, nacionalidad y dirección" />
               <div className="grid gap-4 md:grid-cols-2">
                 <CampoSelector nombre="pais" nombreId="idPais" etiqueta="País" opciones={opcionesPais} valorDefecto={registroInicial?.pais} valorDefectoId={registroInicial?.idPais} marcadorVacio="Seleccione un país" />
                 <CampoSelector nombre="nacionalidad" nombreId="idNacionalidad" etiqueta="Nacionalidad" opciones={opcionesNacionalidad} valorDefecto={registroInicial?.nacionalidad} valorDefectoId={registroInicial?.idNacionalidad} marcadorVacio="Seleccione nacionalidad" />
@@ -112,7 +112,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <EncabezadoSeccion icono={<BadgeCheck size={18} />} titulo="Perfil" subtitulo="Informacion complementaria" />
+              <EncabezadoSeccion icono={<BadgeCheck size={18} />} titulo="Perfil" subtitulo="Información complementaria" />
               <div className="grid gap-4 md:grid-cols-2">
                 <CampoSelector nombre="estadoCivil" nombreId="idEstadoCivil" etiqueta="Estado Civil" opciones={opcionesEstadoCivil} valorDefecto={registroInicial?.estadoCivil} valorDefectoId={registroInicial?.idEstadoCivil} marcadorVacio="Seleccione estado civil" />
                 <CampoSelector nombre="profesion" nombreId="idProfesion" etiqueta="Profesión" opciones={opcionesProfesion} valorDefecto={registroInicial?.profesion} valorDefectoId={registroInicial?.idProfesion} marcadorVacio="Seleccione profesión" />
