@@ -11,6 +11,7 @@ import type {
   EntradaProductoFacturable,
   EntradaProductoFactura,
 } from "@maximilian/shared/types/facturacion.type";
+import { formatearFechaDdMmYyyy } from "@maximilian/shared/utils/fecha.util";
 
 function obtenerDescuentosIniciales(factura: DetalleFactura | null) {
   return Object.fromEntries(
@@ -98,6 +99,24 @@ export function useFormularioFactura(factura: DetalleFactura | null) {
     });
   };
 
+  const actualizarCampoFactura = (
+    campo: "cliente" | "ni" | "ordenCompra",
+    valor: string,
+  ) => {
+    setDetalle((actual) => actual ? { ...actual, [campo]: valor } : actual);
+  };
+
+  const actualizarFechaFactura = (
+    campo: "fechaEmision" | "fechaVencimiento",
+    fecha: Date | undefined,
+  ) => {
+    if (!fecha) return;
+    setDetalle((actual) => actual ? {
+      ...actual,
+      [campo]: formatearFechaDdMmYyyy(fecha),
+    } : actual);
+  };
+
   const iniciarEdicionDescuento = (producto: EntradaProductoFactura) => {
     if (idProductoDescuentoEdicion !== null) return;
     setIdProductoDescuentoEdicion(producto.idProductoFactura);
@@ -133,6 +152,8 @@ export function useFormularioFactura(factura: DetalleFactura | null) {
 
   return {
     agregarProductos,
+    actualizarCampoFactura,
+    actualizarFechaFactura,
     cancelarEdicionDescuento,
     confirmarDescuentos: formulario.handleSubmit,
     detalle,

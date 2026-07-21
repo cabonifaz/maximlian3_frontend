@@ -4,6 +4,12 @@ export function formatearFechaDdMmYyyy(fecha: Date) {
   return `${dia}/${mes}/${fecha.getFullYear()}`;
 }
 
+export function formatearFechaIsoLocal(fecha: Date) {
+  const dia = String(fecha.getDate()).padStart(2, "0");
+  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+  return `${fecha.getFullYear()}-${mes}-${dia}`;
+}
+
 export function formatearFechaIsoADdMmYyyy(valor?: string | null, fallback = "-", anoCorto = false) {
   const texto = valor?.trim() ?? "";
   if (!texto || texto.startsWith("0001-01-01")) return fallback;

@@ -1,14 +1,21 @@
 import { useEffect } from "react";
-import { ChevronDown, X } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { X } from "lucide-react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
 import {
   esquemaCuotaFactura,
   type DatosFormularioCuotaFactura,
 } from "@maximilian/schemas";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
+import { OPCIONES_ESTADO_CUOTA } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import type { EntradaCuotaFactura } from "@maximilian/shared/types/facturacion.type";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { convertirTextoAFecha, formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
 
 interface CustomModalCuotaFacturaProps {
   abierto: boolean;
@@ -20,11 +27,11 @@ interface CustomModalCuotaFacturaProps {
 
 function obtenerValoresIniciales(cuota?: EntradaCuotaFactura | null): DatosFormularioCuotaFactura {
   return {
-    moneda: cuota?.moneda ?? "Soles",
+    idMoneda: cuota?.idMoneda ?? 0,
     monto: cuota?.monto ?? 0,
-    vencimiento: cuota?.vencimiento ?? "",
+    vencimiento: convertirTextoAFecha(cuota?.vencimiento ?? ""),
     estado: cuota?.estado ?? "pendiente",
-  };
+  } as DatosFormularioCuotaFactura;
 }
 
 export function CustomModalCuotaFactura({
@@ -35,14 +42,26 @@ export function CustomModalCuotaFactura({
   onGuardar,
 }: CustomModalCuotaFacturaProps) {
   const {
+    control,
     formState: { errors },
     handleSubmit,
     register,
     reset,
+    setValue,
+    trigger,
   } = useForm<DatosFormularioCuotaFactura>({
     resolver: zodResolver(esquemaCuotaFactura),
     mode: "onTouched",
     defaultValues: obtenerValoresIniciales(cuota),
+  });
+  const idMoneda = useWatch({ control, name: "idMoneda" });
+  const vencimiento = useWatch({ control, name: "vencimiento" });
+  const estado = useWatch({ control, name: "estado" });
+  const { data: opcionesMoneda } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.MONEDA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
+    enabled: abierto,
+    staleTime: Infinity,
   });
 
   useEffect(() => {
@@ -61,6 +80,7 @@ export function CustomModalCuotaFactura({
       idCuotaFactura: cuota?.idCuotaFactura ?? 0,
       numeroCuota: cuota?.numeroCuota ?? numeroCuota,
       ...datos,
+      vencimiento: formatearFechaIsoLocal(datos.vencimiento),
     });
     reset();
   };
@@ -82,21 +102,21 @@ export function CustomModalCuotaFactura({
 
         <div className="grid gap-5 px-8 py-6 md:grid-cols-2">
           <div className="space-y-1.5">
-            <CustomLabel htmlFor="moneda-cuota" required>Moneda</CustomLabel>
-            <div className="relative">
-              <select
-                id="moneda-cuota"
-                {...register("moneda")}
-                className={`w-full appearance-none border-b bg-white py-2 pr-8 text-sm text-slate-600 outline-none ${
-                  errors.moneda ? "border-red-500" : "border-slate-200"
-                }`}
-              >
-                <option value="Soles">Soles</option>
-                <option value="Dolares">Dolares</option>
-              </select>
-              <ChevronDown size={16} className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-slate-400" />
-            </div>
-            {errors.moneda ? <p className="text-xs text-red-500">{errors.moneda.message}</p> : null}
+            <CustomSelectorBuscable
+              label="Moneda"
+              required
+              options={opcionesMoneda}
+              value={idMoneda || undefined}
+              onChange={(valor) => setValue("idMoneda", valor, {
+                shouldDirty: true,
+                shouldValidate: true,
+              })}
+              onBlur={() => void trigger("idMoneda")}
+              error={errors.idMoneda?.message}
+              placeholder="Seleccione una moneda"
+              dropdownZIndexClassName="z-[111]"
+              overlayZIndexClassName="z-[110]"
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -115,31 +135,33 @@ export function CustomModalCuotaFactura({
           </div>
 
           <div className="space-y-1.5">
-            <CustomLabel htmlFor="vencimiento-cuota" required>Fecha Vencimiento</CustomLabel>
-            <input
-              id="vencimiento-cuota"
-              {...register("vencimiento")}
-              type="date"
-              className={`w-full border-b py-2 text-sm text-slate-600 outline-none ${
-                errors.vencimiento ? "border-red-500" : "border-slate-200"
-              }`}
+            <CustomSelectorFecha
+              label="Fecha Vencimiento"
+              required
+              value={vencimiento}
+              onChange={(fecha) => setValue("vencimiento", fecha as Date, {
+                shouldDirty: true,
+                shouldValidate: true,
+              })}
+              error={errors.vencimiento?.message}
             />
-            {errors.vencimiento ? <p className="text-xs text-red-500">{errors.vencimiento.message}</p> : null}
           </div>
 
           <div className="space-y-1.5">
-            <CustomLabel htmlFor="estado-cuota" required>Estado</CustomLabel>
-            <div className="relative">
-              <select
-                id="estado-cuota"
-                {...register("estado")}
-                className="w-full appearance-none border-b border-slate-200 bg-white py-2 pr-8 text-sm text-slate-600 outline-none"
-              >
-                <option value="pendiente">Pendiente</option>
-                <option value="pagado">Pagado</option>
-              </select>
-              <ChevronDown size={16} className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-slate-400" />
-            </div>
+            <CustomSelectorBuscable
+              label="Estado"
+              required
+              options={OPCIONES_ESTADO_CUOTA}
+              value={estado === "pagado" ? 2 : 1}
+              onChange={(valor) => setValue(
+                "estado",
+                valor === 2 ? "pagado" : "pendiente",
+                { shouldDirty: true, shouldValidate: true },
+              )}
+              placeholder="Seleccione un estado"
+              dropdownZIndexClassName="z-[111]"
+              overlayZIndexClassName="z-[110]"
+            />
           </div>
         </div>
 

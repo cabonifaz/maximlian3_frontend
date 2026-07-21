@@ -12,9 +12,9 @@ export const esquemaDescuentosFactura = z.object({
 export type DatosFormularioDescuentosFactura = z.infer<typeof esquemaDescuentosFactura>;
 
 export const esquemaCuotaFactura = z.object({
-  moneda: z.string().min(1, "La moneda es requerida"),
+  idMoneda: z.number({ error: "La moneda es requerida" }).positive("La moneda es requerida"),
   monto: z.number({ error: "El monto es requerido" }).min(0, "El monto debe ser mayor o igual a 0"),
-  vencimiento: z.string().min(1, "La fecha de vencimiento es requerida"),
+  vencimiento: z.date({ error: "La fecha de vencimiento es requerida" }),
   estado: z.enum(["pendiente", "pagado"]),
 });
 

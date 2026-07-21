@@ -49,7 +49,7 @@ export interface EntradaProductoFactura {
 export interface EntradaCuotaFactura {
   idCuotaFactura: number;
   numeroCuota: number;
-  moneda: string;
+  idMoneda: number;
   monto: number;
   vencimiento: string;
   estado: "pendiente" | "pagado";

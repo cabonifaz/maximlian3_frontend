@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check, CheckCheck, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
-import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
 import {
   ESTILOS_TIPO_PRODUCTO_FACTURABLE,
   IDS_PRODUCTOS_FACTURA_SELECCIONADOS_INICIALES,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import type { EntradaProductoFacturable } from "@maximilian/shared/types/facturacion.type";
+import { convertirTextoAFecha } from "@maximilian/shared/utils/fecha.util";
 
 interface CustomModalProductosFacturaProps {
   abierto: boolean;
@@ -24,8 +26,22 @@ export function CustomModalProductosFactura({
   const [idsSeleccionados, setIdsSeleccionados] = useState<Set<number>>(
     new Set(IDS_PRODUCTOS_FACTURA_SELECCIONADOS_INICIALES),
   );
+  const [fechaDesde, setFechaDesde] = useState<Date | undefined>(new Date(2024, 0, 1));
+  const [fechaHasta, setFechaHasta] = useState<Date | undefined>(new Date(2024, 11, 31));
 
-  const todosSeleccionados = productos.length > 0 && productos.every((producto) => idsSeleccionados.has(producto.idProductoFacturable));
+  const productosFiltrados = useMemo(
+    () => productos.filter((producto) => {
+      const fechaProducto = convertirTextoAFecha(producto.fecha);
+      if (!fechaProducto) return true;
+      if (fechaDesde && fechaProducto < fechaDesde) return false;
+      if (fechaHasta && fechaProducto > fechaHasta) return false;
+      return true;
+    }),
+    [fechaDesde, fechaHasta, productos],
+  );
+
+  const todosSeleccionados = productosFiltrados.length > 0
+    && productosFiltrados.every((producto) => idsSeleccionados.has(producto.idProductoFacturable));
 
   const productosSeleccionados = useMemo(
     () => productos.filter((producto) => idsSeleccionados.has(producto.idProductoFacturable)),
@@ -46,26 +62,40 @@ export function CustomModalProductosFactura({
 
   const alternarTodos = () => {
     if (todosSeleccionados) {
-      setIdsSeleccionados(new Set());
+      setIdsSeleccionados((seleccionadosActuales) => {
+        const siguientes = new Set(seleccionadosActuales);
+        productosFiltrados.forEach((producto) => siguientes.delete(producto.idProductoFacturable));
+        return siguientes;
+      });
       return;
     }
 
-    setIdsSeleccionados(new Set(productos.map((producto) => producto.idProductoFacturable)));
+    setIdsSeleccionados((seleccionadosActuales) => new Set([
+      ...seleccionadosActuales,
+      ...productosFiltrados.map((producto) => producto.idProductoFacturable),
+    ]));
+  };
+
+  const reiniciarFiltros = () => {
+    setFechaDesde(new Date(2024, 0, 1));
+    setFechaHasta(new Date(2024, 11, 31));
   };
 
   const cerrar = () => {
     setIdsSeleccionados(new Set(IDS_PRODUCTOS_FACTURA_SELECCIONADOS_INICIALES));
+    reiniciarFiltros();
     onCerrar();
   };
 
   const confirmar = () => {
     onConfirmar(productosSeleccionados);
     setIdsSeleccionados(new Set(IDS_PRODUCTOS_FACTURA_SELECCIONADOS_INICIALES));
+    reiniciarFiltros();
   };
 
   if (!abierto) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm">
       <div className="w-full max-w-5xl overflow-hidden rounded-xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
@@ -78,25 +108,19 @@ export function CustomModalProductosFactura({
         <div className="space-y-4 px-6 py-5">
           <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
             <div className="space-y-1.5">
-              <CustomLabel htmlFor="productos-desde" className="text-[10px] font-bold uppercase text-slate-500">
-                Desde
-              </CustomLabel>
-              <input
-                id="productos-desde"
-                type="date"
-                defaultValue="2024-01-01"
-                className="w-full rounded-md border border-slate-200 px-3 py-2 text-xs text-slate-700 outline-none focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
+              <CustomSelectorFecha
+                label="Desde"
+                value={fechaDesde}
+                onChange={setFechaDesde}
+                placeholder="Desde"
               />
             </div>
             <div className="space-y-1.5">
-              <CustomLabel htmlFor="productos-hasta" className="text-[10px] font-bold uppercase text-slate-500">
-                Hasta
-              </CustomLabel>
-              <input
-                id="productos-hasta"
-                type="date"
-                defaultValue="2024-12-31"
-                className="w-full rounded-md border border-slate-200 px-3 py-2 text-xs text-slate-700 outline-none focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
+              <CustomSelectorFecha
+                label="Hasta"
+                value={fechaHasta}
+                onChange={setFechaHasta}
+                placeholder="Hasta"
               />
             </div>
             <CustomButton
@@ -137,7 +161,7 @@ export function CustomModalProductosFactura({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {productos.map((producto) => {
+                {productosFiltrados.map((producto) => {
                   const estaSeleccionado = idsSeleccionados.has(producto.idProductoFacturable);
                   const tipo = ESTILOS_TIPO_PRODUCTO_FACTURABLE[producto.tipo];
 
@@ -199,6 +223,7 @@ export function CustomModalProductosFactura({
           </CustomButton>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronRight, Edit, Eye, MoreHorizontal, Plus, RefreshCcw, SlidersHorizontal, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import {
   ESTILOS_ESTADO_FACTURA_CLIENTE,
+  OPCIONES_FILTRO_ESTADO_FACTURA,
   OPCIONES_MODIFICAR_ESTADO_FACTURA,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import type {
@@ -46,8 +48,20 @@ export function CustomModalFacturasCliente({
   const [idSubmenuEstadoActivo, setIdSubmenuEstadoActivo] = useState<number | null>(null);
   const [estiloMenu, setEstiloMenu] = useState<React.CSSProperties>({});
   const [submenuEstadoHaciaArriba, setSubmenuEstadoHaciaArriba] = useState(false);
+  const [idEstadoFiltro, setIdEstadoFiltro] = useState<number | undefined>();
 
-  const facturaMenuActivo = facturas.find((factura) => factura.idFactura === idMenuActivo);
+  const estadoFiltro = OPCIONES_FILTRO_ESTADO_FACTURA.find(
+    (opcion) => opcion.num1 === idEstadoFiltro,
+  )?.string2;
+  const facturasFiltradas = useMemo(
+    () => estadoFiltro
+      ? facturas.filter((factura) => factura.estado === estadoFiltro)
+      : facturas,
+    [estadoFiltro, facturas],
+  );
+  const facturaMenuActivo = facturasFiltradas.find(
+    (factura) => factura.idFactura === idMenuActivo,
+  );
 
   const alternarMenu = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -61,10 +75,17 @@ export function CustomModalFacturasCliente({
 
     const rectangulo = event.currentTarget.getBoundingClientRect();
     const anchoMenu = 176;
+    const anchoSubmenu = 224;
     const altoMenu = 124;
     const espacioInferior = window.innerHeight - rectangulo.bottom;
     setEstiloMenu({
-      left: Math.max(8, rectangulo.right - anchoMenu),
+      left: Math.max(
+        8,
+        Math.min(
+          rectangulo.right - anchoMenu,
+          window.innerWidth - anchoMenu - anchoSubmenu - 8,
+        ),
+      ),
       top: espacioInferior < altoMenu
         ? Math.max(8, rectangulo.top - altoMenu - 4)
         : rectangulo.bottom + 4,
@@ -113,9 +134,20 @@ export function CustomModalFacturasCliente({
             <button type="button" className="rounded-lg p-2 text-slate-400 hover:bg-slate-50">
               <SlidersHorizontal size={15} />
             </button>
-            <CustomButton variant="secondary" size="sm">
-              Estado
-            </CustomButton>
+            <div className="w-56">
+              <CustomSelectorBuscable
+                options={OPCIONES_FILTRO_ESTADO_FACTURA}
+                value={idEstadoFiltro}
+                onChange={setIdEstadoFiltro}
+                onClear={() => setIdEstadoFiltro(undefined)}
+                optional
+                mostrarTextoOpcionalEnLabel={false}
+                etiquetaOpcionVacia="Todos los estados"
+                placeholder="Estado"
+                dropdownZIndexClassName="z-[111]"
+                overlayZIndexClassName="z-[110]"
+              />
+            </div>
           </div>
         </div>
 
@@ -131,7 +163,7 @@ export function CustomModalFacturasCliente({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {facturas.map((factura) => (
+              {facturasFiltradas.map((factura) => (
                 <tr key={factura.idFactura} className="hover:bg-slate-50/70">
                   <td className="px-1 py-4 text-xs font-bold text-slate-500">{factura.codigo}</td>
                   <td className="px-4 py-4 font-bold text-brand-black">{factura.investigado}</td>
@@ -230,7 +262,7 @@ export function CustomModalFacturasCliente({
               <ChevronRight size={14} />
             </button>
             {idSubmenuEstadoActivo === facturaMenuActivo.idFactura ? (
-              <div className={`absolute right-full w-56 rounded-lg border border-slate-200 bg-white py-1 shadow-xl ${
+              <div className={`absolute left-full w-56 rounded-lg border border-slate-200 bg-white py-1 shadow-xl ${
                 submenuEstadoHaciaArriba ? "bottom-0" : "top-0"
               }`}>
                 {OPCIONES_MODIFICAR_ESTADO_FACTURA.map((opcion) => (

@@ -3,6 +3,7 @@ import type {
   EstadoFacturaCliente,
   EstadoFacturacionPrincipal,
 } from "@maximilian/shared/types/facturacion.type";
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
 export const COLUMNAS_FACTURACION = [
   { label: "Cliente" },
@@ -60,3 +61,66 @@ export const ESTILOS_TIPO_PRODUCTO_FACTURABLE: Record<
 };
 
 export const IDS_PRODUCTOS_FACTURA_SELECCIONADOS_INICIALES = [1, 2];
+
+export const OPCIONES_ESTADO_CUOTA: EntradaTablaMaestra[] = [
+  {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: "PENDIENTE",
+    num1: 1,
+    num2: null,
+    num3: null,
+    string1: "Pendiente",
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  },
+  {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: "PAGADO",
+    num1: 2,
+    num2: null,
+    num3: null,
+    string1: "Pagado",
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  },
+];
+
+function crearOpcionFiltroEstadoFactura(
+  num1: number,
+  string1: string,
+  string2: EstadoFacturaCliente,
+): EntradaTablaMaestra {
+  return {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: string1.toUpperCase(),
+    num1,
+    num2: null,
+    num3: null,
+    string1,
+    string2,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  };
+}
+
+export const OPCIONES_FILTRO_ESTADO_FACTURA = [
+  crearOpcionFiltroEstadoFactura(1, "Finalizado", "finalizado"),
+  crearOpcionFiltroEstadoFactura(2, "Pendiente", "pendiente"),
+  crearOpcionFiltroEstadoFactura(3, "En pre-factura", "en-pre-factura"),
+  crearOpcionFiltroEstadoFactura(4, "Pre-factura aprobada", "pre-factura-aprobada"),
+  crearOpcionFiltroEstadoFactura(5, "Pre-factura rechazada", "pre-factura-rechazada"),
+];

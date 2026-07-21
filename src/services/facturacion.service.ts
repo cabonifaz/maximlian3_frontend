@@ -255,7 +255,7 @@ function crearDetalleFactura(cliente: string, factura?: EntradaFacturaCliente | 
       {
         idCuotaFactura: 1,
         numeroCuota: 1,
-        moneda: "Soles",
+        idMoneda: 1,
         monto: totalProductos,
         vencimiento: "2026-01-22",
         estado: factura?.estado === "finalizado" ? "pagado" : "pendiente",

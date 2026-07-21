@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { MoreHorizontal, Pencil, Plus, Save, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
+import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
 import { CustomModalCuotaFactura } from "@maximilian/components/coordinador/CustomModalCuotaFactura";
 import { CustomModalProductosFactura } from "@maximilian/components/coordinador/CustomModalProductosFactura";
 import { useFormularioFactura } from "@maximilian/hooks/useFormularioFactura";
@@ -10,6 +12,7 @@ import type {
   EntradaCuotaFactura,
   EntradaProductoFacturable,
 } from "@maximilian/shared/types/facturacion.type";
+import { convertirTextoAFecha } from "@maximilian/shared/utils/fecha.util";
 
 interface CustomModalFacturaProps {
   abierto: boolean;
@@ -44,6 +47,8 @@ export function CustomModalFactura({
   const [confirmacionSunatAbierta, setConfirmacionSunatAbierta] = useState(false);
   const {
     agregarProductos: agregarProductosFormulario,
+    actualizarCampoFactura,
+    actualizarFechaFactura,
     cancelarEdicionDescuento,
     confirmarDescuentos,
     detalle,
@@ -71,6 +76,10 @@ export function CustomModalFactura({
     setConfiguracionModalCuota(null);
   };
 
+  const abrirProductosFacturables = () => {
+    setModalProductosAbierto(true);
+  };
+
   return (
     <>
       <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm">
@@ -93,18 +102,50 @@ export function CustomModalFactura({
 
           <div className="min-h-0 flex-1 space-y-7 overflow-y-auto px-8 py-6">
             <div className="grid gap-x-12 gap-y-5 md:grid-cols-2">
-              <CampoFactura etiqueta="Cliente" valor={detalle.cliente} soloLectura={soloLectura} />
-              <CampoFactura etiqueta="NI" valor={detalle.ni} soloLectura={soloLectura} />
-              <CampoFactura etiqueta="OC/OS" valor={detalle.ordenCompra} soloLectura={soloLectura} />
-              <CampoFactura etiqueta="Emisión" valor={detalle.fechaEmision} soloLectura={soloLectura} />
-              <CampoFactura etiqueta="Vencimiento" valor={detalle.fechaVencimiento} soloLectura={soloLectura} />
+              <CampoFactura
+                etiqueta="Cliente"
+                valor={detalle.cliente}
+                soloLectura={soloLectura}
+                onChange={(valor) => actualizarCampoFactura("cliente", valor)}
+              />
+              <CampoFactura
+                etiqueta="NI"
+                valor={detalle.ni}
+                soloLectura={soloLectura}
+                onChange={(valor) => actualizarCampoFactura("ni", valor)}
+              />
+              <CampoFactura
+                etiqueta="OC/OS"
+                valor={detalle.ordenCompra}
+                soloLectura={soloLectura}
+                onChange={(valor) => actualizarCampoFactura("ordenCompra", valor)}
+              />
+              <CustomSelectorFecha
+                label="Emisión"
+                required
+                disabled={soloLectura}
+                value={convertirTextoAFecha(detalle.fechaEmision)}
+                onChange={(fecha) => actualizarFechaFactura("fechaEmision", fecha)}
+              />
+              <CustomSelectorFecha
+                label="Vencimiento"
+                required
+                disabled={soloLectura}
+                value={convertirTextoAFecha(detalle.fechaVencimiento)}
+                onChange={(fecha) => actualizarFechaFactura("fechaVencimiento", fecha)}
+              />
             </div>
 
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold uppercase tracking-wide text-brand-black">Productos/Servicios</h3>
                 {!soloLectura ? (
-                  <CustomButton variant="secondary" size="sm" onClick={() => setModalProductosAbierto(true)}>
+                  <CustomButton
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={abrirProductosFacturables}
+                  >
                     <Plus size={14} />
                     Agregar productos
                   </CustomButton>
@@ -337,22 +378,29 @@ function CampoFactura({
   etiqueta,
   valor,
   soloLectura,
+  onChange,
 }: {
   etiqueta: string;
   valor: string;
   soloLectura: boolean;
+  onChange: (valor: string) => void;
 }) {
+  const idCampo = `factura-${etiqueta.toLowerCase().replaceAll("/", "-")}`;
+
   return (
-    <label className="space-y-1.5">
-      <span className="block text-xs font-bold text-slate-700">{etiqueta}</span>
+    <div className="space-y-1.5">
+      <CustomLabel htmlFor={idCampo} required>{etiqueta}</CustomLabel>
       <input
+        id={idCampo}
         value={valor}
         readOnly={soloLectura}
-        onChange={() => undefined}
-        className={`w-full border-b border-slate-200 py-2 text-sm outline-none ${
-          soloLectura ? "bg-white text-slate-600" : "text-slate-700 focus:border-brand-wine"
+        onChange={(event) => onChange(event.target.value)}
+        className={`w-full rounded-xl border border-gray-200 bg-brand-white px-4 py-2.5 text-sm outline-none transition-all ${
+          soloLectura
+            ? "cursor-not-allowed bg-slate-50 text-slate-500"
+            : "text-slate-700 focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
         }`}
       />
-    </label>
+    </div>
   );
 }
