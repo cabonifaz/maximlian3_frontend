@@ -1,15 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
-import { MoreHorizontal, Plus, X } from "lucide-react";
+import { useState } from "react";
+import { FilePenLine, MoreHorizontal, Pencil, Plus, Save, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
+import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
 import { CustomModalCuotaFactura } from "@maximilian/components/coordinador/CustomModalCuotaFactura";
 import { CustomModalProductosFactura } from "@maximilian/components/coordinador/CustomModalProductosFactura";
+import { useFormularioFactura } from "@maximilian/hooks/useFormularioFactura";
 import type {
   DetalleFactura,
   EntradaCuotaFactura,
   EntradaProductoFacturable,
-  EntradaProductoFactura,
 } from "@maximilian/shared/types/facturacion.type";
+import { convertirTextoAFecha } from "@maximilian/shared/utils/fecha.util";
 
 interface CustomModalFacturaProps {
   abierto: boolean;
@@ -21,19 +24,6 @@ interface CustomModalFacturaProps {
 
 function formatearMonto(valor: number) {
   return `S/ ${valor.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function crearProductoFactura(producto: EntradaProductoFacturable): EntradaProductoFactura {
-  const valorUnitario = 10256.09;
-
-  return {
-    idProductoFactura: Date.now() + producto.idProductoFacturable,
-    cantidad: 1,
-    descripcion: `${producto.codigo} - ${producto.tipo === "express" ? "Express" : producto.tipo === "normal" ? "Normal" : "Super Flash"}`,
-    descuentoPorcentaje: 0,
-    valorUnitario,
-    total: valorUnitario,
-  };
 }
 
 function EstadoCuotaBadge({ estado }: { estado: EntradaCuotaFactura["estado"] }) {
@@ -50,68 +40,127 @@ export function CustomModalFactura({
   productosFacturables,
   onCerrar,
 }: CustomModalFacturaProps) {
-  const [detalle, setDetalle] = useState<DetalleFactura | null>(factura);
   const [modalProductosAbierto, setModalProductosAbierto] = useState(false);
-  const [modalCuotaAbierto, setModalCuotaAbierto] = useState(false);
+  const [configuracionModalCuota, setConfiguracionModalCuota] = useState<{
+    cuota?: EntradaCuotaFactura;
+  } | null>(null);
   const [confirmacionSunatAbierta, setConfirmacionSunatAbierta] = useState(false);
+  const {
+    agregarProductos: agregarProductosFormulario,
+    actualizarCampoFactura,
+    actualizarFechaFactura,
+    cancelarEdicionDescuento,
+    confirmarDescuentos,
+    detalle,
+    erroresDescuentos,
+    guardarEdicionDescuento,
+    guardarCuota,
+    idProductoDescuentoEdicion,
+    iniciarEdicionDescuento,
+    obtenerTotalProducto,
+    registrarDescuento,
+    totalFactura,
+  } = useFormularioFactura(factura);
 
   const soloLectura = modo === "detalle";
-
-  useEffect(() => {
-    setDetalle(factura);
-  }, [factura]);
-
-  const totalFactura = useMemo(
-    () => detalle?.productos.reduce((total, producto) => total + producto.total, 0) ?? 0,
-    [detalle?.productos],
-  );
 
   if (!abierto || !detalle) return null;
 
   const agregarProductos = (productos: EntradaProductoFacturable[]) => {
-    setDetalle((actual) => {
-      if (!actual) return actual;
-      const productosNuevos = productos.map(crearProductoFactura);
-      return {
-        ...actual,
-        productos: [...actual.productos, ...productosNuevos],
-      };
-    });
+    agregarProductosFormulario(productos);
     setModalProductosAbierto(false);
   };
 
-  const agregarCuota = (cuota: EntradaCuotaFactura) => {
-    setDetalle((actual) => actual ? { ...actual, cuotas: [...actual.cuotas, cuota] } : actual);
-    setModalCuotaAbierto(false);
+  const guardarCuotaFactura = (cuota: EntradaCuotaFactura) => {
+    guardarCuota(cuota);
+    setConfiguracionModalCuota(null);
+  };
+
+  const abrirProductosFacturables = () => {
+    setModalProductosAbierto(true);
   };
 
   return (
     <>
-      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm">
-        <div className="flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-slate-100 px-8 py-5">
-            <h2 className="text-lg font-bold text-brand-black">
-              {soloLectura ? "Detalle de Factura" : "Agregar Factura"}
-            </h2>
+      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+        <form
+          onSubmit={confirmarDescuentos(() => onCerrar())}
+          className="flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/60 bg-white shadow-2xl shadow-slate-950/20"
+        >
+          <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-white to-brand-wine/5 px-8 py-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-wine/10 text-brand-wine">
+                <FilePenLine size={19} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-brand-black">
+                  {soloLectura
+                    ? "Detalle de Factura"
+                    : detalle.idFactura
+                      ? "Editar Factura"
+                      : "Agregar Factura"}
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {soloLectura
+                    ? "Consulta los productos, descuentos y cuotas registradas."
+                    : "Completa la información y revisa los importes antes de confirmar."}
+                </p>
+              </div>
+            </div>
             <CustomButton variant="ghost" size="icon" onClick={onCerrar} aria-label="Cerrar factura">
               <X size={18} className="text-slate-400" />
             </CustomButton>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-7 overflow-y-auto px-8 py-6">
-            <div className="grid gap-x-12 gap-y-5 md:grid-cols-2">
-              <CampoFactura etiqueta="Cliente" valor={detalle.cliente} soloLectura={soloLectura} />
-              <CampoFactura etiqueta="NI" valor={detalle.ni} soloLectura={soloLectura} />
-              <CampoFactura etiqueta="OC/OS" valor={detalle.ordenCompra} soloLectura={soloLectura} />
-              <CampoFactura etiqueta="Emisión" valor={detalle.fechaEmision} soloLectura={soloLectura} />
-              <CampoFactura etiqueta="Vencimiento" valor={detalle.fechaVencimiento} soloLectura={soloLectura} />
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto bg-slate-50/60 px-8 py-6">
+            <div className="grid gap-x-8 gap-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-2">
+              <CampoFactura
+                etiqueta="Cliente"
+                valor={detalle.cliente}
+                soloLectura={soloLectura}
+                onChange={(valor) => actualizarCampoFactura("cliente", valor)}
+              />
+              <CampoFactura
+                etiqueta="NI"
+                valor={detalle.ni}
+                soloLectura={soloLectura}
+                onChange={(valor) => actualizarCampoFactura("ni", valor)}
+              />
+              <CampoFactura
+                etiqueta="OC/OS"
+                valor={detalle.ordenCompra}
+                soloLectura={soloLectura}
+                onChange={(valor) => actualizarCampoFactura("ordenCompra", valor)}
+              />
+              <CustomSelectorFecha
+                label="Emisión"
+                required
+                disabled={soloLectura}
+                value={convertirTextoAFecha(detalle.fechaEmision)}
+                onChange={(fecha) => actualizarFechaFactura("fechaEmision", fecha)}
+              />
+              <CustomSelectorFecha
+                label="Vencimiento"
+                required
+                disabled={soloLectura}
+                value={convertirTextoAFecha(detalle.fechaVencimiento)}
+                onChange={(fecha) => actualizarFechaFactura("fechaVencimiento", fecha)}
+              />
             </div>
 
-            <section className="space-y-3">
+            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wide text-brand-black">Productos/Servicios</h3>
+                <div>
+                  <h3 className="text-sm font-bold text-brand-black">Productos y servicios</h3>
+                  <p className="mt-0.5 text-xs text-slate-400">Detalle de conceptos incluidos en la factura.</p>
+                </div>
                 {!soloLectura ? (
-                  <CustomButton variant="secondary" size="sm" onClick={() => setModalProductosAbierto(true)}>
+                  <CustomButton
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={abrirProductosFacturables}
+                  >
                     <Plus size={14} />
                     Agregar productos
                   </CustomButton>
@@ -130,30 +179,110 @@ export function CustomModalFactura({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {detalle.productos.map((producto) => (
+                    {detalle.productos.map((producto) => {
+                      const errorDescuento = erroresDescuentos?.[String(producto.idProductoFactura)];
+
+                      return (
                       <tr key={producto.idProductoFactura}>
                         <td className="px-4 py-3 text-slate-600">{producto.cantidad}</td>
                         <td className="px-4 py-3 font-medium text-slate-700">{producto.descripcion}</td>
-                        <td className="px-4 py-3 text-center text-slate-600">{producto.descuentoPorcentaje.toFixed(2)}%</td>
+                        <td className="px-4 py-3 text-center text-slate-600">
+                          {soloLectura ? (
+                            `${producto.descuentoPorcentaje}%`
+                          ) : idProductoDescuentoEdicion !== producto.idProductoFactura ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <span>{producto.descuentoPorcentaje}%</span>
+                              <CustomButton
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => iniciarEdicionDescuento(producto)}
+                                disabled={idProductoDescuentoEdicion !== null}
+                                aria-label={`Editar descuento de ${producto.descripcion}`}
+                              >
+                                <Pencil size={14} />
+                              </CustomButton>
+                            </div>
+                          ) : (
+                            <div className="mx-auto w-40">
+                              <div className="flex items-center justify-center gap-1">
+                                <div className="relative w-20">
+                                  <input
+                                    {...registrarDescuento(`descuentos.${producto.idProductoFactura}`, {
+                                      valueAsNumber: true,
+                                    })}
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    autoFocus
+                                    aria-label={`Descuento de ${producto.descripcion}`}
+                                    className={`w-full rounded-md border py-1.5 pl-2 pr-6 text-right text-sm outline-none focus:border-brand-wine ${
+                                      errorDescuento ? "border-red-500" : "border-slate-200"
+                                    }`}
+                                  />
+                                  <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">%</span>
+                                </div>
+                                <CustomButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-emerald-600"
+                                  onClick={() => void guardarEdicionDescuento(producto)}
+                                  aria-label={`Guardar descuento de ${producto.descripcion}`}
+                                >
+                                  <Save size={15} />
+                                </CustomButton>
+                                <CustomButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-red-500"
+                                  onClick={() => cancelarEdicionDescuento(producto)}
+                                  aria-label={`Cancelar descuento de ${producto.descripcion}`}
+                                >
+                                  <X size={15} />
+                                </CustomButton>
+                              </div>
+                              {errorDescuento ? (
+                                <p className="mt-1 text-left text-[10px] text-red-500">
+                                  {errorDescuento.message}
+                                </p>
+                              ) : null}
+                            </div>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-right text-slate-600">{formatearMonto(producto.valorUnitario)}</td>
-                        <td className="px-4 py-3 text-right font-medium text-slate-700">{formatearMonto(producto.total)}</td>
+                        <td className="px-4 py-3 text-right font-medium text-slate-700">
+                          {formatearMonto(soloLectura ? producto.total : obtenerTotalProducto(producto))}
+                        </td>
                         {!soloLectura ? (
                           <td className="px-4 py-3 text-right text-slate-400">
                             <MoreHorizontal size={16} />
                           </td>
                         ) : null}
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             </section>
 
-            <section className="space-y-3">
+            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wide text-brand-black">Cuotas</h3>
+                <div>
+                  <h3 className="text-sm font-bold text-brand-black">Cuotas</h3>
+                  <p className="mt-0.5 text-xs text-slate-400">Programa y controla el vencimiento de los pagos.</p>
+                </div>
                 {!soloLectura ? (
-                  <CustomButton variant="secondary" size="sm" onClick={() => setModalCuotaAbierto(true)}>
+                  <CustomButton
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setConfiguracionModalCuota({})}
+                  >
                     <Plus size={14} />
                     Agregar cuota
                   </CustomButton>
@@ -179,7 +308,16 @@ export function CustomModalFactura({
                         <td className="px-4 py-3 text-center"><EstadoCuotaBadge estado={cuota.estado} /></td>
                         {!soloLectura ? (
                           <td className="px-4 py-3 text-right text-slate-400">
-                            <MoreHorizontal size={16} />
+                            <CustomButton
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="ml-auto h-7 w-7"
+                              onClick={() => setConfiguracionModalCuota({ cuota })}
+                              aria-label={`Editar cuota ${cuota.numeroCuota}`}
+                            >
+                              <Pencil size={14} />
+                            </CustomButton>
                           </td>
                         ) : null}
                       </tr>
@@ -190,23 +328,40 @@ export function CustomModalFactura({
             </section>
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-slate-100 px-8 py-5">
+          <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-white px-8 py-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total de la factura</p>
+              <p className="text-lg font-black text-brand-black">{formatearMonto(totalFactura)}</p>
+            </div>
+            <div className="flex items-center gap-3">
             {soloLectura ? (
               <CustomButton variant="secondary" size="compact" onClick={onCerrar}>
                 Cerrar
               </CustomButton>
             ) : (
               <>
-                <CustomButton variant="secondary" size="compact" onClick={onCerrar}>
+                <CustomButton
+                  type="submit"
+                  variant="secondary"
+                  size="compact"
+                  disabled={idProductoDescuentoEdicion !== null}
+                >
                   Guardar
                 </CustomButton>
-                <CustomButton variant="primary" size="compact" onClick={() => setConfirmacionSunatAbierta(true)}>
+                <CustomButton
+                  type="button"
+                  variant="primary"
+                  size="compact"
+                  onClick={confirmarDescuentos(() => setConfirmacionSunatAbierta(true))}
+                  disabled={idProductoDescuentoEdicion !== null}
+                >
                   Confirmar con SUNAT
                 </CustomButton>
               </>
             )}
+            </div>
           </div>
-        </div>
+        </form>
       </div>
 
       <CustomModalProductosFactura
@@ -216,10 +371,11 @@ export function CustomModalFactura({
         onConfirmar={agregarProductos}
       />
       <CustomModalCuotaFactura
-        abierto={modalCuotaAbierto}
+        abierto={configuracionModalCuota !== null}
         numeroCuota={detalle.cuotas.length + 1}
-        onCerrar={() => setModalCuotaAbierto(false)}
-        onAgregar={agregarCuota}
+        cuota={configuracionModalCuota?.cuota}
+        onCerrar={() => setConfiguracionModalCuota(null)}
+        onGuardar={guardarCuotaFactura}
       />
       <CustomModalConfirmacionAccion
         isOpen={confirmacionSunatAbierta}
@@ -246,22 +402,29 @@ function CampoFactura({
   etiqueta,
   valor,
   soloLectura,
+  onChange,
 }: {
   etiqueta: string;
   valor: string;
   soloLectura: boolean;
+  onChange: (valor: string) => void;
 }) {
+  const idCampo = `factura-${etiqueta.toLowerCase().replaceAll("/", "-")}`;
+
   return (
-    <label className="space-y-1.5">
-      <span className="block text-xs font-bold text-slate-700">{etiqueta}</span>
+    <div className="space-y-1.5">
+      <CustomLabel htmlFor={idCampo} required>{etiqueta}</CustomLabel>
       <input
+        id={idCampo}
         value={valor}
         readOnly={soloLectura}
-        onChange={() => undefined}
-        className={`w-full border-b border-slate-200 py-2 text-sm outline-none ${
-          soloLectura ? "bg-white text-slate-600" : "text-slate-700 focus:border-brand-wine"
+        onChange={(event) => onChange(event.target.value)}
+        className={`w-full rounded-xl border border-gray-200 bg-brand-white px-4 py-2.5 text-sm outline-none transition-all ${
+          soloLectura
+            ? "cursor-not-allowed bg-slate-50 text-slate-500"
+            : "text-slate-700 focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
         }`}
       />
-    </label>
+    </div>
   );
 }

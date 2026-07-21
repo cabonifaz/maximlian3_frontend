@@ -11,7 +11,6 @@ import {
 } from "@maximilian/shared/types/tabla-maestra.type";
 import {
   crearValoresFormularioParametro,
-  filtrarParametros,
   obtenerClaveRegistroParametro,
   obtenerColumnasVisiblesParametro,
   obtenerConfiguracionCamposParametro,
@@ -43,11 +42,13 @@ export function useConfiguracionParametros() {
     queryKey: [
       "parametros-administrador",
       idMaestroSeleccionado,
+      filtroConRetardo,
       paginaActual,
     ],
     queryFn: () =>
       servicioTablaMaestra.listarParametros({
         idMaestro: idMaestroSeleccionado,
+        busqueda: filtroConRetardo,
         numPag: paginaActual,
       }),
   });
@@ -91,14 +92,9 @@ export function useConfiguracionParametros() {
     },
   });
 
-  const parametrosFiltrados = useMemo(
-    () => filtrarParametros(parametros, filtroConRetardo),
-    [filtroConRetardo, parametros],
-  );
-
   const totalPaginas = respuestaParametros?.totalPaginas ?? 1;
   const totalRegistros = respuestaParametros?.totalRegistros ?? 0;
-  const registrosPagina = parametrosFiltrados;
+  const registrosPagina = parametros ?? [];
   const estaGuardando = mutacionCrear.isPending || mutacionEditar.isPending;
   const columnasVisibles = obtenerColumnasVisiblesParametro(
     parametros,
@@ -204,7 +200,6 @@ export function useConfiguracionParametros() {
     filaFormulario,
     mensajeValidacion,
     parametros,
-    parametrosFiltrados,
     registrosPagina,
     opcionesReferencia,
     configuracionCampos,

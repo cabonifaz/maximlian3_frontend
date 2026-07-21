@@ -28,6 +28,7 @@ import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { TablaTarifarioCorta } from "@maximilian/components/coordinador/TablaTarifarioCorta";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
+import { useSelectorInvestigadoPedido } from "@maximilian/hooks/useSelectorInvestigadoPedido";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { pedidoSchema, type PedidoFormData } from "@maximilian/schemas";
 import type {
@@ -98,6 +99,7 @@ interface ClienteTarifaTabProps {
 }
 
 interface InfoPedidoTabProps {
+  abierto: boolean;
   register: UseFormRegister<PedidoFormData>;
   setValue: UseFormSetValue<PedidoFormData>;
   watch: UseFormWatch<PedidoFormData>;
@@ -305,6 +307,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, idTarif
 }
 
 function InfoPedidoTab({
+  abierto,
   register,
   setValue,
   watch,
@@ -320,6 +323,18 @@ function InfoPedidoTab({
   const fechaHasta = watch("fechaHasta");
   const idTipoPlazoCredito = watch("idTipoPlazoCredito");
   const autogenerarCodigo = watch("autogenerarCodigo");
+  const investigado = watch("investigado");
+
+  const selectorInvestigado = useSelectorInvestigadoPedido({
+    abierto,
+    investigado,
+    alCambiarInvestigado: (nombre) => {
+      setValue("investigado", nombre, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    },
+  });
 
   const { data: tiposPersona } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
@@ -349,16 +364,20 @@ function InfoPedidoTab({
     <div className="flex gap-6">
       {/* Left column */}
       <div className="flex-1 flex flex-col gap-5">
-        <div className="flex flex-col gap-1.5">
-          <CustomLabel required>Investigado</CustomLabel>
-          <input
-            type="text"
-            placeholder="Investigado"
-            {...register("investigado")}
-            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.investigado ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
-          />
-          {errors.investigado && <p className="text-xs text-red-500">{errors.investigado.message}</p>}
-        </div>
+        <CustomSelectorBuscable
+          label="Investigado"
+          required
+          options={selectorInvestigado.opciones}
+          value={selectorInvestigado.idCompaniaSeleccionada}
+          displayValue={selectorInvestigado.valorVisible}
+          onChange={selectorInvestigado.seleccionarCompania}
+          onOpen={selectorInvestigado.habilitarBusqueda}
+          alCambiarBusqueda={selectorInvestigado.setTerminoBusqueda}
+          onAddNew={selectorInvestigado.agregarInvestigado}
+          loading={selectorInvestigado.estaCargando}
+          placeholder="Busque o agregue un investigado"
+          error={errors.investigado?.message}
+        />
         <CustomSelectorBuscable
           label="Tipo de Persona"
           options={tiposPersona}
@@ -1131,6 +1150,8 @@ export function ModalPedido({
     ? errorContent
     : (
       <InfoPedidoTab
+        key={`${isOpen}-${pedidoId ?? "nuevo"}`}
+        abierto={isOpen}
         register={register}
         setValue={setValue}
         watch={watch}

@@ -1,7 +1,10 @@
-export type EstadoFacturacion =
+export type EstadoFacturacionPrincipal =
   | "finalizado"
   | "pendiente"
-  | "en-pre-factura"
+  | "en-pre-factura";
+
+export type EstadoFacturaCliente =
+  | EstadoFacturacionPrincipal
   | "pre-factura-aprobada"
   | "pre-factura-rechazada";
 
@@ -17,7 +20,7 @@ export interface EntradaFacturacion {
   totalPedidos: number;
   totalFacturados: number;
   idioma: string;
-  estado: EstadoFacturacion;
+  estado: EstadoFacturacionPrincipal;
 }
 
 export interface RespuestaListaFacturacion {
@@ -31,7 +34,7 @@ export interface EntradaFacturaCliente {
   codigo: string;
   investigado: string;
   penalidad: boolean;
-  estado: EstadoFacturacion;
+  estado: EstadoFacturaCliente;
 }
 
 export interface EntradaProductoFactura {
@@ -46,7 +49,7 @@ export interface EntradaProductoFactura {
 export interface EntradaCuotaFactura {
   idCuotaFactura: number;
   numeroCuota: number;
-  moneda: string;
+  idMoneda: number;
   monto: number;
   vencimiento: string;
   estado: "pendiente" | "pagado";
@@ -67,6 +70,7 @@ export interface EntradaProductoFacturable {
   idProductoFacturable: number;
   codigo: string;
   investigado: string;
+  aplicaPenalidad: boolean;
   tipo: "express" | "normal" | "super-flash";
   fecha: string;
 }

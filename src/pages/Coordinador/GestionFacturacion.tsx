@@ -1,53 +1,25 @@
 import { useMemo, useState } from "react";
 import { Eye, FileText, MoreHorizontal, Search } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomModalFactura } from "@maximilian/components/coordinador/CustomModalFactura";
 import { CustomModalFacturasCliente } from "@maximilian/components/coordinador/CustomModalFacturasCliente";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { facturacionService } from "@maximilian/services/facturacion.service";
+import {
+  COLUMNAS_FACTURACION,
+  ESTILOS_ESTADO_FACTURACION_PRINCIPAL,
+} from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import type {
   DetalleFactura,
   EntradaFacturaCliente,
   EntradaFacturacion,
-  EstadoFacturacion,
+  EstadoFacturaCliente,
+  EstadoFacturacionPrincipal,
 } from "@maximilian/shared/types/facturacion.type";
 
-const COLUMNAS_FACTURACION = [
-  { label: "Cliente" },
-  { label: "Prefacturable", className: "text-center" },
-  { label: "Total Pedidos", className: "text-center" },
-  { label: "Total Facturados", className: "text-center" },
-  { label: "Idioma", className: "text-center" },
-  { label: "Estado", className: "text-center" },
-  { label: "", className: "text-right w-16" },
-];
-
-const ESTILOS_ESTADO: Record<EstadoFacturacion, { texto: string; clase: string }> = {
-  finalizado: {
-    texto: "Finalizado",
-    clase: "bg-emerald-100 text-emerald-600",
-  },
-  pendiente: {
-    texto: "Pendiente",
-    clase: "bg-orange-100 text-orange-600",
-  },
-  "en-pre-factura": {
-    texto: "En pre-factura",
-    clase: "bg-blue-100 text-blue-600",
-  },
-  "pre-factura-aprobada": {
-    texto: "Pre-factura aprobada",
-    clase: "bg-cyan-100 text-cyan-700",
-  },
-  "pre-factura-rechazada": {
-    texto: "Pre-factura rechazada",
-    clase: "bg-red-100 text-red-600",
-  },
-};
-
-function EstadoBadge({ estado }: { estado: EstadoFacturacion }) {
-  const configuracion = ESTILOS_ESTADO[estado];
+function EstadoBadge({ estado }: { estado: EstadoFacturacionPrincipal }) {
+  const configuracion = ESTILOS_ESTADO_FACTURACION_PRINCIPAL[estado];
 
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${configuracion.clase}`}>
@@ -57,6 +29,7 @@ function EstadoBadge({ estado }: { estado: EstadoFacturacion }) {
 }
 
 export default function GestionFacturacion() {
+  const queryClient = useQueryClient();
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
   const [idMenuActivo, setIdMenuActivo] = useState<number | null>(null);
@@ -88,6 +61,20 @@ export default function GestionFacturacion() {
     queryFn: () => facturacionService.listarFacturasCliente(),
     enabled: clienteSeleccionado !== null,
   });
+
+  const modificarEstadoFactura = (
+    factura: EntradaFacturaCliente,
+    estado: EstadoFacturaCliente,
+  ) => {
+    queryClient.setQueryData<EntradaFacturaCliente[]>(
+      ["facturacion", "facturas-cliente", clienteSeleccionado?.idFacturacion],
+      (facturasActuales = []) => facturasActuales.map((facturaActual) =>
+        facturaActual.idFactura === factura.idFactura
+          ? { ...facturaActual, estado }
+          : facturaActual,
+      ),
+    );
+  };
 
   const { data: productosFacturables = [] } = useQuery({
     queryKey: ["facturacion", "productos-facturables"],
@@ -140,7 +127,13 @@ export default function GestionFacturacion() {
         </span>
       </td>
       <td className="px-6 py-4 text-center text-sm font-medium text-slate-600">
-        {facturacion.prefacturable ? "Sí" : "No"}
+        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${
+          facturacion.prefacturable
+            ? "bg-emerald-100 text-emerald-700"
+            : "bg-red-100 text-red-700"
+        }`}>
+          {facturacion.prefacturable ? "Sí" : "No"}
+        </span>
       </td>
       <td className="px-6 py-4 text-center text-sm font-medium text-slate-600">
         {facturacion.totalPedidos}
@@ -241,9 +234,13 @@ export default function GestionFacturacion() {
           onAgregarFactura={() => abrirEmisionFactura(clienteSeleccionado)}
           onVerFactura={(factura) => abrirDetalleFactura(clienteSeleccionado, factura)}
           onEditarFactura={(factura) => abrirEmisionFactura(clienteSeleccionado, factura)}
+          onModificarEstado={modificarEstadoFactura}
         />
       ) : null}
       <CustomModalFactura
+        key={modalFactura
+          ? `${modalFactura.modo}-${modalFactura.detalle?.idFactura ?? "nueva"}`
+          : "cerrada"}
         abierto={modalFactura !== null}
         modo={modalFactura?.modo ?? "detalle"}
         factura={modalFactura?.detalle ?? null}

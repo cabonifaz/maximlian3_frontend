@@ -142,7 +142,10 @@ export function ModalAgregarTarifa({
             <div className="space-y-2">
               <CustomLabel required>Precio</CustomLabel>
               <input
-                {...register("precio", { valueAsNumber: true })}
+                {...register("precio", {
+                  valueAsNumber: true,
+                  onBlur: () => void trigger(["precio", "penalidad"]),
+                })}
                 type="number"
                 step="0.01"
                 className={`w-full px-4 py-2.5 bg-brand-white border ${errors.precio ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
@@ -157,10 +160,13 @@ export function ModalAgregarTarifa({
             <div className="space-y-2">
               <CustomLabel optional>Penalidad</CustomLabel>
               <input
-                {...register("penalidad", { valueAsNumber: true })}
+                {...register("penalidad", {
+                  valueAsNumber: true,
+                  onBlur: () => void trigger(["precio", "penalidad"]),
+                })}
                 type="number"
                 step="0.01"
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+                className={`w-full px-4 py-2.5 bg-brand-white border ${errors.penalidad ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
               />
               {errors.penalidad && (
                 <p className="text-xs text-red-500">

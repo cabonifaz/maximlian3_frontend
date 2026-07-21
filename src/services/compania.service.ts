@@ -145,6 +145,18 @@ async function obtenerCompania(params: CompaniaObtenerParams): Promise<CompaniaL
 }
 
 export const servicioCompania = {
+  buscar: async (busqueda?: string): Promise<CompaniaListResponse> => {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA.buscar, {
+      params: { Busqueda: busqueda || undefined },
+    });
+
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA.buscar)) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return normalizarLista(data.result);
+  },
+
   list: async (params: CompaniaListParams): Promise<CompaniaListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA.listar, {
       params: {

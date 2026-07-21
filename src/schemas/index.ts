@@ -5,3 +5,4 @@ export * from "./detalle-cliente.schema";
 export * from "./pedido.schema";
 export * from "./investigacion.schema";
 export * from "./banco-informacion.schema";
+export * from "./facturacion.schema";
