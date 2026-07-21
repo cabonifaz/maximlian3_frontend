@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
-import { MoreHorizontal, Plus, X } from "lucide-react";
+import { useState } from "react";
+import { MoreHorizontal, Pencil, Plus, Save, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomModalCuotaFactura } from "@maximilian/components/coordinador/CustomModalCuotaFactura";
 import { CustomModalProductosFactura } from "@maximilian/components/coordinador/CustomModalProductosFactura";
+import { useFormularioFactura } from "@maximilian/hooks/useFormularioFactura";
 import type {
   DetalleFactura,
   EntradaCuotaFactura,
   EntradaProductoFacturable,
-  EntradaProductoFactura,
 } from "@maximilian/shared/types/facturacion.type";
 
 interface CustomModalFacturaProps {
@@ -21,19 +21,6 @@ interface CustomModalFacturaProps {
 
 function formatearMonto(valor: number) {
   return `S/ ${valor.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function crearProductoFactura(producto: EntradaProductoFacturable): EntradaProductoFactura {
-  const valorUnitario = 10256.09;
-
-  return {
-    idProductoFactura: Date.now() + producto.idProductoFacturable,
-    cantidad: 1,
-    descripcion: `${producto.codigo} - ${producto.tipo === "express" ? "Express" : producto.tipo === "normal" ? "Normal" : "Super Flash"}`,
-    descuentoPorcentaje: 0,
-    valorUnitario,
-    total: valorUnitario,
-  };
 }
 
 function EstadoCuotaBadge({ estado }: { estado: EntradaCuotaFactura["estado"] }) {
@@ -50,48 +37,54 @@ export function CustomModalFactura({
   productosFacturables,
   onCerrar,
 }: CustomModalFacturaProps) {
-  const [detalle, setDetalle] = useState<DetalleFactura | null>(factura);
   const [modalProductosAbierto, setModalProductosAbierto] = useState(false);
-  const [modalCuotaAbierto, setModalCuotaAbierto] = useState(false);
+  const [configuracionModalCuota, setConfiguracionModalCuota] = useState<{
+    cuota?: EntradaCuotaFactura;
+  } | null>(null);
   const [confirmacionSunatAbierta, setConfirmacionSunatAbierta] = useState(false);
+  const {
+    agregarProductos: agregarProductosFormulario,
+    cancelarEdicionDescuento,
+    confirmarDescuentos,
+    detalle,
+    erroresDescuentos,
+    guardarEdicionDescuento,
+    guardarCuota,
+    idProductoDescuentoEdicion,
+    iniciarEdicionDescuento,
+    obtenerTotalProducto,
+    registrarDescuento,
+    totalFactura,
+  } = useFormularioFactura(factura);
 
   const soloLectura = modo === "detalle";
-
-  useEffect(() => {
-    setDetalle(factura);
-  }, [factura]);
-
-  const totalFactura = useMemo(
-    () => detalle?.productos.reduce((total, producto) => total + producto.total, 0) ?? 0,
-    [detalle?.productos],
-  );
 
   if (!abierto || !detalle) return null;
 
   const agregarProductos = (productos: EntradaProductoFacturable[]) => {
-    setDetalle((actual) => {
-      if (!actual) return actual;
-      const productosNuevos = productos.map(crearProductoFactura);
-      return {
-        ...actual,
-        productos: [...actual.productos, ...productosNuevos],
-      };
-    });
+    agregarProductosFormulario(productos);
     setModalProductosAbierto(false);
   };
 
-  const agregarCuota = (cuota: EntradaCuotaFactura) => {
-    setDetalle((actual) => actual ? { ...actual, cuotas: [...actual.cuotas, cuota] } : actual);
-    setModalCuotaAbierto(false);
+  const guardarCuotaFactura = (cuota: EntradaCuotaFactura) => {
+    guardarCuota(cuota);
+    setConfiguracionModalCuota(null);
   };
 
   return (
     <>
       <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm">
-        <div className="flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+        <form
+          onSubmit={confirmarDescuentos(() => onCerrar())}
+          className="flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+        >
           <div className="flex items-center justify-between border-b border-slate-100 px-8 py-5">
             <h2 className="text-lg font-bold text-brand-black">
-              {soloLectura ? "Detalle de Factura" : "Agregar Factura"}
+              {soloLectura
+                ? "Detalle de Factura"
+                : detalle.idFactura
+                  ? "Editar Factura"
+                  : "Agregar Factura"}
             </h2>
             <CustomButton variant="ghost" size="icon" onClick={onCerrar} aria-label="Cerrar factura">
               <X size={18} className="text-slate-400" />
@@ -130,20 +123,92 @@ export function CustomModalFactura({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {detalle.productos.map((producto) => (
+                    {detalle.productos.map((producto) => {
+                      const errorDescuento = erroresDescuentos?.[String(producto.idProductoFactura)];
+
+                      return (
                       <tr key={producto.idProductoFactura}>
                         <td className="px-4 py-3 text-slate-600">{producto.cantidad}</td>
                         <td className="px-4 py-3 font-medium text-slate-700">{producto.descripcion}</td>
-                        <td className="px-4 py-3 text-center text-slate-600">{producto.descuentoPorcentaje.toFixed(2)}%</td>
+                        <td className="px-4 py-3 text-center text-slate-600">
+                          {soloLectura ? (
+                            `${producto.descuentoPorcentaje}%`
+                          ) : idProductoDescuentoEdicion !== producto.idProductoFactura ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <span>{producto.descuentoPorcentaje}%</span>
+                              <CustomButton
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => iniciarEdicionDescuento(producto)}
+                                disabled={idProductoDescuentoEdicion !== null}
+                                aria-label={`Editar descuento de ${producto.descripcion}`}
+                              >
+                                <Pencil size={14} />
+                              </CustomButton>
+                            </div>
+                          ) : (
+                            <div className="mx-auto w-40">
+                              <div className="flex items-center justify-center gap-1">
+                                <div className="relative w-20">
+                                  <input
+                                    {...registrarDescuento(`descuentos.${producto.idProductoFactura}`, {
+                                      valueAsNumber: true,
+                                    })}
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    autoFocus
+                                    aria-label={`Descuento de ${producto.descripcion}`}
+                                    className={`w-full rounded-md border py-1.5 pl-2 pr-6 text-right text-sm outline-none focus:border-brand-wine ${
+                                      errorDescuento ? "border-red-500" : "border-slate-200"
+                                    }`}
+                                  />
+                                  <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">%</span>
+                                </div>
+                                <CustomButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-emerald-600"
+                                  onClick={() => void guardarEdicionDescuento(producto)}
+                                  aria-label={`Guardar descuento de ${producto.descripcion}`}
+                                >
+                                  <Save size={15} />
+                                </CustomButton>
+                                <CustomButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-red-500"
+                                  onClick={() => cancelarEdicionDescuento(producto)}
+                                  aria-label={`Cancelar descuento de ${producto.descripcion}`}
+                                >
+                                  <X size={15} />
+                                </CustomButton>
+                              </div>
+                              {errorDescuento ? (
+                                <p className="mt-1 text-left text-[10px] text-red-500">
+                                  {errorDescuento.message}
+                                </p>
+                              ) : null}
+                            </div>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-right text-slate-600">{formatearMonto(producto.valorUnitario)}</td>
-                        <td className="px-4 py-3 text-right font-medium text-slate-700">{formatearMonto(producto.total)}</td>
+                        <td className="px-4 py-3 text-right font-medium text-slate-700">
+                          {formatearMonto(soloLectura ? producto.total : obtenerTotalProducto(producto))}
+                        </td>
                         {!soloLectura ? (
                           <td className="px-4 py-3 text-right text-slate-400">
                             <MoreHorizontal size={16} />
                           </td>
                         ) : null}
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -153,7 +218,12 @@ export function CustomModalFactura({
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold uppercase tracking-wide text-brand-black">Cuotas</h3>
                 {!soloLectura ? (
-                  <CustomButton variant="secondary" size="sm" onClick={() => setModalCuotaAbierto(true)}>
+                  <CustomButton
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setConfiguracionModalCuota({})}
+                  >
                     <Plus size={14} />
                     Agregar cuota
                   </CustomButton>
@@ -179,7 +249,16 @@ export function CustomModalFactura({
                         <td className="px-4 py-3 text-center"><EstadoCuotaBadge estado={cuota.estado} /></td>
                         {!soloLectura ? (
                           <td className="px-4 py-3 text-right text-slate-400">
-                            <MoreHorizontal size={16} />
+                            <CustomButton
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="ml-auto h-7 w-7"
+                              onClick={() => setConfiguracionModalCuota({ cuota })}
+                              aria-label={`Editar cuota ${cuota.numeroCuota}`}
+                            >
+                              <Pencil size={14} />
+                            </CustomButton>
                           </td>
                         ) : null}
                       </tr>
@@ -197,16 +276,27 @@ export function CustomModalFactura({
               </CustomButton>
             ) : (
               <>
-                <CustomButton variant="secondary" size="compact" onClick={onCerrar}>
+                <CustomButton
+                  type="submit"
+                  variant="secondary"
+                  size="compact"
+                  disabled={idProductoDescuentoEdicion !== null}
+                >
                   Guardar
                 </CustomButton>
-                <CustomButton variant="primary" size="compact" onClick={() => setConfirmacionSunatAbierta(true)}>
+                <CustomButton
+                  type="button"
+                  variant="primary"
+                  size="compact"
+                  onClick={confirmarDescuentos(() => setConfirmacionSunatAbierta(true))}
+                  disabled={idProductoDescuentoEdicion !== null}
+                >
                   Confirmar con SUNAT
                 </CustomButton>
               </>
             )}
           </div>
-        </div>
+        </form>
       </div>
 
       <CustomModalProductosFactura
@@ -216,10 +306,11 @@ export function CustomModalFactura({
         onConfirmar={agregarProductos}
       />
       <CustomModalCuotaFactura
-        abierto={modalCuotaAbierto}
+        abierto={configuracionModalCuota !== null}
         numeroCuota={detalle.cuotas.length + 1}
-        onCerrar={() => setModalCuotaAbierto(false)}
-        onAgregar={agregarCuota}
+        cuota={configuracionModalCuota?.cuota}
+        onCerrar={() => setConfiguracionModalCuota(null)}
+        onGuardar={guardarCuotaFactura}
       />
       <CustomModalConfirmacionAccion
         isOpen={confirmacionSunatAbierta}
