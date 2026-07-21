@@ -260,6 +260,7 @@ export const servicioTablaMaestra = {
   },
   listarParametros: async ({
     idMaestro,
+    busqueda,
     numPag,
   }: ParametrosListadoTablaMaestra): Promise<RespuestaListadoTablaMaestra> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>(
@@ -267,7 +268,8 @@ export const servicioTablaMaestra = {
       {
         params: {
           idsMaestro: String(idMaestro),
-          NumPag: numPag,
+          busqueda: busqueda?.trim() || undefined,
+          numPag,
         },
       },
     );

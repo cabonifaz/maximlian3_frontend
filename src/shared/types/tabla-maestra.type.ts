@@ -76,6 +76,7 @@ export type MasterTableResponse = EntradaTablaMaestra[];
 
 export interface ParametrosListadoTablaMaestra {
   idMaestro: number;
+  busqueda?: string;
   numPag: number;
 }
 
