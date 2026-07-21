@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MoreHorizontal, Pencil, Plus, Save, X } from "lucide-react";
+import { FilePenLine, MoreHorizontal, Pencil, Plus, Save, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
@@ -82,26 +82,38 @@ export function CustomModalFactura({
 
   return (
     <>
-      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
         <form
           onSubmit={confirmarDescuentos(() => onCerrar())}
-          className="flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+          className="flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/60 bg-white shadow-2xl shadow-slate-950/20"
         >
-          <div className="flex items-center justify-between border-b border-slate-100 px-8 py-5">
-            <h2 className="text-lg font-bold text-brand-black">
-              {soloLectura
-                ? "Detalle de Factura"
-                : detalle.idFactura
-                  ? "Editar Factura"
-                  : "Agregar Factura"}
-            </h2>
+          <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-white to-brand-wine/5 px-8 py-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-wine/10 text-brand-wine">
+                <FilePenLine size={19} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-brand-black">
+                  {soloLectura
+                    ? "Detalle de Factura"
+                    : detalle.idFactura
+                      ? "Editar Factura"
+                      : "Agregar Factura"}
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {soloLectura
+                    ? "Consulta los productos, descuentos y cuotas registradas."
+                    : "Completa la información y revisa los importes antes de confirmar."}
+                </p>
+              </div>
+            </div>
             <CustomButton variant="ghost" size="icon" onClick={onCerrar} aria-label="Cerrar factura">
               <X size={18} className="text-slate-400" />
             </CustomButton>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-7 overflow-y-auto px-8 py-6">
-            <div className="grid gap-x-12 gap-y-5 md:grid-cols-2">
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto bg-slate-50/60 px-8 py-6">
+            <div className="grid gap-x-8 gap-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-2">
               <CampoFactura
                 etiqueta="Cliente"
                 valor={detalle.cliente}
@@ -136,9 +148,12 @@ export function CustomModalFactura({
               />
             </div>
 
-            <section className="space-y-3">
+            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wide text-brand-black">Productos/Servicios</h3>
+                <div>
+                  <h3 className="text-sm font-bold text-brand-black">Productos y servicios</h3>
+                  <p className="mt-0.5 text-xs text-slate-400">Detalle de conceptos incluidos en la factura.</p>
+                </div>
                 {!soloLectura ? (
                   <CustomButton
                     type="button"
@@ -255,9 +270,12 @@ export function CustomModalFactura({
               </div>
             </section>
 
-            <section className="space-y-3">
+            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wide text-brand-black">Cuotas</h3>
+                <div>
+                  <h3 className="text-sm font-bold text-brand-black">Cuotas</h3>
+                  <p className="mt-0.5 text-xs text-slate-400">Programa y controla el vencimiento de los pagos.</p>
+                </div>
                 {!soloLectura ? (
                   <CustomButton
                     type="button"
@@ -310,7 +328,12 @@ export function CustomModalFactura({
             </section>
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-slate-100 px-8 py-5">
+          <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-white px-8 py-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total de la factura</p>
+              <p className="text-lg font-black text-brand-black">{formatearMonto(totalFactura)}</p>
+            </div>
+            <div className="flex items-center gap-3">
             {soloLectura ? (
               <CustomButton variant="secondary" size="compact" onClick={onCerrar}>
                 Cerrar
@@ -336,6 +359,7 @@ export function CustomModalFactura({
                 </CustomButton>
               </>
             )}
+            </div>
           </div>
         </form>
       </div>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronRight, Edit, Eye, MoreHorizontal, Plus, RefreshCcw, SlidersHorizontal, X } from "lucide-react";
+import { ChevronRight, Edit, Eye, MoreHorizontal, Plus, ReceiptText, RefreshCcw, SlidersHorizontal, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import {
@@ -117,19 +117,28 @@ export function CustomModalFacturasCliente({
 
   return (
     <>
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/35 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[90dvh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between px-8 py-5">
-          <h2 className="text-xl font-bold text-brand-black">Facturas</h2>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <div className="flex max-h-[90dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/60 bg-white shadow-2xl shadow-slate-950/20">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-white to-brand-wine/5 px-8 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-wine/10 text-brand-wine">
+              <ReceiptText size={19} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-brand-black">Facturas del cliente</h2>
+              <p className="mt-0.5 text-xs text-slate-500">Revisa, edita y actualiza el estado de cada factura.</p>
+            </div>
+          </div>
           <CustomButton variant="ghost" size="icon" onClick={cerrarModal} aria-label="Cerrar facturas">
             <X size={18} className="text-slate-400" />
           </CustomButton>
         </div>
 
-        <div className="flex items-center justify-between px-8 pb-4">
-          <p className="text-sm font-bold text-slate-700">
-            Cliente: <span className="font-bold">{cliente}</span>
-          </p>
+        <div className="flex items-center justify-between gap-4 bg-slate-50/70 px-8 py-4">
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Cliente</p>
+            <p className="mt-0.5 text-sm font-bold text-brand-black">{cliente}</p>
+          </div>
           <div className="flex items-center gap-3">
             <button type="button" className="rounded-lg p-2 text-slate-400 hover:bg-slate-50">
               <SlidersHorizontal size={15} />
@@ -151,7 +160,8 @@ export function CustomModalFacturasCliente({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-8">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-white px-8 py-5">
+          <div className="overflow-hidden rounded-2xl border border-slate-200">
           <table className="w-full text-left text-sm">
             <thead className="border-y border-slate-100 text-xs font-bold uppercase text-slate-400">
               <tr>
@@ -185,9 +195,10 @@ export function CustomModalFacturasCliente({
               ))}
             </tbody>
           </table>
+          </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-slate-100 px-8 py-5">
+        <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/60 px-8 py-4">
           <div className="flex flex-1 justify-center gap-2 text-xs">
             <button className="h-8 w-8 rounded-lg border border-slate-200 text-slate-500">{"<"}</button>
             <button className="h-8 w-8 rounded-lg bg-brand-black font-bold text-white">1</button>

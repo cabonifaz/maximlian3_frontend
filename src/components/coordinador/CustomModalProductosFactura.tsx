@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, CheckCheck, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Check, CheckCheck, ChevronLeft, ChevronRight, PackagePlus, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
 import {
@@ -96,17 +96,25 @@ export function CustomModalProductosFactura({
   if (!abierto) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-5xl overflow-hidden rounded-xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-          <h2 className="text-base font-bold text-brand-black">Productos a facturar</h2>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-5xl overflow-hidden rounded-3xl border border-white/60 bg-white shadow-2xl shadow-slate-950/25">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-white to-brand-wine/5 px-7 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-wine/10 text-brand-wine">
+              <PackagePlus size={19} />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-brand-black">Productos a facturar</h2>
+              <p className="mt-0.5 text-xs text-slate-500">Selecciona los productos que deseas incorporar a la factura.</p>
+            </div>
+          </div>
           <CustomButton variant="ghost" size="icon" onClick={cerrar} aria-label="Cerrar productos">
             <X size={16} className="text-slate-400" />
           </CustomButton>
         </div>
 
-        <div className="space-y-4 px-6 py-5">
-          <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+        <div className="space-y-5 bg-slate-50/60 px-7 py-6">
+          <div className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
             <div className="space-y-1.5">
               <CustomSelectorFecha
                 label="Desde"
@@ -135,7 +143,7 @@ export function CustomModalProductosFactura({
             </CustomButton>
           </div>
 
-          <div className="overflow-hidden rounded-lg border border-slate-200">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-[10px] font-bold text-slate-500">
                 <tr>
@@ -212,7 +220,10 @@ export function CustomModalProductosFactura({
           </div>
         </div>
 
-        <div className="flex justify-end border-t border-slate-100 px-6 py-4">
+        <div className="flex items-center justify-between border-t border-slate-100 bg-white px-7 py-4">
+          <p className="text-xs font-medium text-slate-400">
+            {productosSeleccionados.length} producto{productosSeleccionados.length === 1 ? "" : "s"} seleccionado{productosSeleccionados.length === 1 ? "" : "s"}
+          </p>
           <CustomButton
             variant="primary"
             size="compact"

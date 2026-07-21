@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { X } from "lucide-react";
+import { WalletCards, X } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
@@ -86,21 +86,31 @@ export function CustomModalCuotaFactura({
   };
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
       <form
         onSubmit={handleSubmit(guardar)}
-        className="w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl"
+        className="w-full max-w-xl overflow-hidden rounded-3xl border border-white/60 bg-white shadow-2xl shadow-slate-950/25"
       >
-        <div className="flex items-center justify-between border-b border-slate-100 px-8 py-5">
-          <h2 className="text-lg font-bold text-brand-black">
-            {cuota ? "Editar cuota" : "Nueva cuota"}
-          </h2>
+        <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-white to-brand-wine/5 px-7 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-wine/10 text-brand-wine">
+              <WalletCards size={19} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-brand-black">
+                {cuota ? "Editar cuota" : "Nueva cuota"}
+              </h2>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {cuota ? "Actualiza las condiciones de esta cuota." : "Define moneda, monto y fecha de vencimiento."}
+              </p>
+            </div>
+          </div>
           <CustomButton type="button" variant="ghost" size="icon" onClick={cerrar} aria-label="Cerrar cuota">
             <X size={18} className="text-slate-400" />
           </CustomButton>
         </div>
 
-        <div className="grid gap-5 px-8 py-6 md:grid-cols-2">
+        <div className="grid gap-5 bg-slate-50/60 px-7 py-6 md:grid-cols-2">
           <div className="space-y-1.5">
             <CustomSelectorBuscable
               label="Moneda"
@@ -165,7 +175,7 @@ export function CustomModalCuotaFactura({
           </div>
         </div>
 
-        <div className="flex justify-end border-t border-slate-100 px-8 py-5">
+        <div className="flex justify-end border-t border-slate-100 bg-white px-7 py-4">
           <CustomButton type="submit" variant="primary" size="compact">
             {cuota ? "Guardar" : "Agregar"}
           </CustomButton>
