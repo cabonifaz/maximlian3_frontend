@@ -2,14 +2,17 @@ import { useMemo, useState } from "react";
 import { Eye, FileText, MoreHorizontal, Search } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
+import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomModalFactura } from "@maximilian/components/coordinador/CustomModalFactura";
 import { CustomModalFacturasCliente } from "@maximilian/components/coordinador/CustomModalFacturasCliente";
+import { useFiltrosFacturacion } from "@maximilian/hooks/useFiltrosFacturacion";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { facturacionService } from "@maximilian/services/facturacion.service";
 import {
   COLUMNAS_FACTURACION,
   ESTILOS_ESTADO_FACTURACION_PRINCIPAL,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   DetalleFactura,
   EntradaFacturaCliente,
@@ -41,6 +44,17 @@ export default function GestionFacturacion() {
   } | null>(null);
 
   const busquedaConRetardo = useRetardo(terminoBusqueda);
+  const {
+    cambiarEstados,
+    cambiarIdiomas,
+    cambiarPrefacturables,
+    emitirPrefactura,
+    estadoFacturacion,
+    idIdiomaFacturacion,
+    idsEstado,
+    idsIdioma,
+    idsPrefacturable,
+  } = useFiltrosFacturacion(() => setPaginaActual(1));
 
   const {
     data: facturacionData,
@@ -48,11 +62,21 @@ export default function GestionFacturacion() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["facturacion", paginaActual, busquedaConRetardo],
+    queryKey: [
+      "facturacion",
+      paginaActual,
+      busquedaConRetardo,
+      emitirPrefactura,
+      idIdiomaFacturacion,
+      estadoFacturacion,
+    ],
     queryFn: () =>
       facturacionService.list({
         numPag: paginaActual,
         busqueda: busquedaConRetardo || undefined,
+        emitirPrefactura,
+        idIdiomaFacturacion,
+        estadoFacturacion,
       }),
   });
 
@@ -86,6 +110,55 @@ export default function GestionFacturacion() {
     () => facturacionData?.lstFacturacion ?? [],
     [facturacionData?.lstFacturacion],
   );
+
+  const columnas = COLUMNAS_FACTURACION.map((columna, indice) => {
+    if (indice === 1) {
+      return {
+        ...columna,
+        label: (
+          <CustomEncabezadoFiltroTabla
+            titulo="Prefacturable"
+            idMaster={TablaMaestraId.EMITIR_PREFACTURA}
+            valores={idsPrefacturable}
+            onChange={cambiarPrefacturables}
+            multiple={false}
+          />
+        ),
+      };
+    }
+
+    if (indice === 4) {
+      return {
+        ...columna,
+        label: (
+          <CustomEncabezadoFiltroTabla
+            titulo="Idioma"
+            idMaster={TablaMaestraId.IDIOMA}
+            valores={idsIdioma}
+            onChange={cambiarIdiomas}
+            multiple={false}
+          />
+        ),
+      };
+    }
+
+    if (indice === 5) {
+      return {
+        ...columna,
+        label: (
+          <CustomEncabezadoFiltroTabla
+            titulo="Estado"
+            idMaster={TablaMaestraId.ESTADO_FACTURACION}
+            valores={idsEstado}
+            onChange={cambiarEstados}
+            multiple={false}
+          />
+        ),
+      };
+    }
+
+    return columna;
+  });
 
   const handleCambiarBusqueda = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTerminoBusqueda(event.target.value);
@@ -127,13 +200,17 @@ export default function GestionFacturacion() {
         </span>
       </td>
       <td className="px-6 py-4 text-center text-sm font-medium text-slate-600">
-        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${
-          facturacion.prefacturable
-            ? "bg-emerald-100 text-emerald-700"
-            : "bg-red-100 text-red-700"
-        }`}>
-          {facturacion.prefacturable ? "Sí" : "No"}
-        </span>
+        {facturacion.prefacturable === null ? (
+          <span className="text-slate-400">-</span>
+        ) : (
+          <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${
+            facturacion.prefacturable
+              ? "bg-emerald-100 text-emerald-700"
+              : "bg-red-100 text-red-700"
+          }`}>
+            {facturacion.prefacturable ? "Sí" : "No"}
+          </span>
+        )}
       </td>
       <td className="px-6 py-4 text-center text-sm font-medium text-slate-600">
         {facturacion.totalPedidos}
@@ -210,7 +287,7 @@ export default function GestionFacturacion() {
       </div>
 
       <CustomTabla
-        columns={COLUMNAS_FACTURACION}
+        columns={columnas}
         data={facturaciones}
         getId={(facturacion) => facturacion.idFacturacion}
         renderRow={renderRow}

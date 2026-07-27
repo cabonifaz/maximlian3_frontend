@@ -83,7 +83,7 @@ export function useBandejaInvestigacion({ tipo }: ParametrosUseBandejaInvestigac
         numPag: paginaActual,
         busqueda: terminoBusquedaConRetardo.trim() || undefined,
       }),
-    enabled: terminoBusqueda === terminoBusquedaConRetardo,
+    enabled: terminoBusqueda.trim() === terminoBusquedaConRetardo,
     retry: false,
   });
 

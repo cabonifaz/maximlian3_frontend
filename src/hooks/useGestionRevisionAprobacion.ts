@@ -44,7 +44,7 @@ export function useGestionRevisionAprobacion() {
         idEstado: idEstadoFiltro,
         idTipoTramite: idTipoTramiteFiltro,
       }, signal),
-    enabled: terminoBusqueda === terminoBusquedaConRetardo,
+    enabled: terminoBusqueda.trim() === terminoBusquedaConRetardo,
     retry: false,
     refetchOnMount: "always",
   });

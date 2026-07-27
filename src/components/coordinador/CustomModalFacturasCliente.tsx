@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronRight, Edit, Eye, MoreHorizontal, Plus, ReceiptText, RefreshCcw, SlidersHorizontal, X } from "lucide-react";
+import { ChevronRight, Edit, Eye, MoreHorizontal, Plus, ReceiptText, RefreshCcw, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
-import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import {
   ESTILOS_ESTADO_FACTURA_CLIENTE,
   OPCIONES_FILTRO_ESTADO_FACTURA,
@@ -134,29 +134,10 @@ export function CustomModalFacturasCliente({
           </CustomButton>
         </div>
 
-        <div className="flex items-center justify-between gap-4 bg-slate-50/70 px-8 py-4">
+        <div className="flex bg-slate-50/70 px-8 py-4">
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Cliente</p>
             <p className="mt-0.5 text-sm font-bold text-brand-black">{cliente}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button type="button" className="rounded-lg p-2 text-slate-400 hover:bg-slate-50">
-              <SlidersHorizontal size={15} />
-            </button>
-            <div className="w-56">
-              <CustomSelectorBuscable
-                options={OPCIONES_FILTRO_ESTADO_FACTURA}
-                value={idEstadoFiltro}
-                onChange={setIdEstadoFiltro}
-                onClear={() => setIdEstadoFiltro(undefined)}
-                optional
-                mostrarTextoOpcionalEnLabel={false}
-                etiquetaOpcionVacia="Todos los estados"
-                placeholder="Estado"
-                dropdownZIndexClassName="z-[111]"
-                overlayZIndexClassName="z-[110]"
-              />
-            </div>
           </div>
         </div>
 
@@ -168,7 +149,17 @@ export function CustomModalFacturasCliente({
                 <th className="px-1 py-4">ID</th>
                 <th className="px-4 py-4">Investigado</th>
                 <th className="px-4 py-4">Penalidad</th>
-                <th className="px-4 py-4 text-center">Estado</th>
+                <th className="px-4 py-2 text-center">
+                  <CustomEncabezadoFiltroTabla
+                    titulo="Estado"
+                    opciones={OPCIONES_FILTRO_ESTADO_FACTURA}
+                    valores={idEstadoFiltro ? [idEstadoFiltro] : []}
+                    onChange={(valores) =>
+                      setIdEstadoFiltro(valores[valores.length - 1])
+                    }
+                    multiple={false}
+                  />
+                </th>
                 <th className="px-1 py-4 text-right" />
               </tr>
             </thead>
