@@ -95,10 +95,10 @@ export const OPCIONES_ESTADO_CUOTA: EntradaTablaMaestra[] = [
   },
 ];
 
-function crearOpcionFiltroEstadoFactura(
+function crearOpcionFiltroFacturacion(
   num1: number,
   string1: string,
-  string2: EstadoFacturaCliente,
+  string2: string,
 ): EntradaTablaMaestra {
   return {
     idEmpresa: 0,
@@ -118,9 +118,9 @@ function crearOpcionFiltroEstadoFactura(
 }
 
 export const OPCIONES_FILTRO_ESTADO_FACTURA = [
-  crearOpcionFiltroEstadoFactura(1, "Finalizado", "finalizado"),
-  crearOpcionFiltroEstadoFactura(2, "Pendiente", "pendiente"),
-  crearOpcionFiltroEstadoFactura(3, "En pre-factura", "en-pre-factura"),
-  crearOpcionFiltroEstadoFactura(4, "Pre-factura aprobada", "pre-factura-aprobada"),
-  crearOpcionFiltroEstadoFactura(5, "Pre-factura rechazada", "pre-factura-rechazada"),
+  crearOpcionFiltroFacturacion(1, "Finalizado", "finalizado"),
+  crearOpcionFiltroFacturacion(2, "Pendiente", "pendiente"),
+  crearOpcionFiltroFacturacion(3, "En pre-factura", "en-pre-factura"),
+  crearOpcionFiltroFacturacion(4, "Pre-factura aprobada", "pre-factura-aprobada"),
+  crearOpcionFiltroFacturacion(5, "Pre-factura rechazada", "pre-factura-rechazada"),
 ];

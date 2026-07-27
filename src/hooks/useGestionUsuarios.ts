@@ -56,7 +56,7 @@ export function useGestionUsuarios() {
         filtro: filtroConRetardo,
         idEstado: idEstadoFiltro,
       }),
-    enabled: filtro === filtroConRetardo,
+    enabled: filtro.trim() === filtroConRetardo,
   });
 
   const crearUsuarioMutation = useMutation({

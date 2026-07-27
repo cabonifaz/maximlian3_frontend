@@ -2,123 +2,19 @@ import type {
   DetalleFactura,
   EntradaFacturaCliente,
   EntradaFacturacion,
+  EntradaFacturacionApi,
   EntradaProductoFacturable,
   ParametrosListaFacturacion,
   RespuestaListaFacturacion,
+  ResultadoListaFacturacionApi,
 } from "@maximilian/shared/types/facturacion.type";
-
-const FACTURACIONES_MOCK: EntradaFacturacion[] = [
-  {
-    idFacturacion: 1,
-    cliente: "Software Factory",
-    prefacturable: true,
-    totalPedidos: 23,
-    totalFacturados: 23,
-    idioma: "Espanol",
-    estado: "finalizado",
-  },
-  {
-    idFacturacion: 2,
-    cliente: "Andina Soluciones Digitales",
-    prefacturable: false,
-    totalPedidos: 53,
-    totalFacturados: 53,
-    idioma: "Ingles",
-    estado: "pendiente",
-  },
-  {
-    idFacturacion: 3,
-    cliente: "Grupo Recursos Humanos Global",
-    prefacturable: true,
-    totalPedidos: 62,
-    totalFacturados: 62,
-    idioma: "Espanol",
-    estado: "en-pre-factura",
-  },
-  {
-    idFacturacion: 4,
-    cliente: "Nexa Consulting",
-    prefacturable: false,
-    totalPedidos: 2,
-    totalFacturados: 2,
-    idioma: "Ingles",
-    estado: "en-pre-factura",
-  },
-  {
-    idFacturacion: 5,
-    cliente: "Global Tech Systems",
-    prefacturable: true,
-    totalPedidos: 15,
-    totalFacturados: 12,
-    idioma: "Espanol",
-    estado: "pendiente",
-  },
-  {
-    idFacturacion: 6,
-    cliente: "Innovacion Medica S.A.C.",
-    prefacturable: true,
-    totalPedidos: 34,
-    totalFacturados: 34,
-    idioma: "Espanol",
-    estado: "finalizado",
-  },
-  {
-    idFacturacion: 7,
-    cliente: "Liderazgo & Gestion Corp",
-    prefacturable: false,
-    totalPedidos: 8,
-    totalFacturados: 8,
-    idioma: "Espanol",
-    estado: "pendiente",
-  },
-  {
-    idFacturacion: 8,
-    cliente: "Prime Logistics",
-    prefacturable: true,
-    totalPedidos: 112,
-    totalFacturados: 112,
-    idioma: "Ingles",
-    estado: "en-pre-factura",
-  },
-  {
-    idFacturacion: 9,
-    cliente: "Retail & Marketing Group",
-    prefacturable: false,
-    totalPedidos: 45,
-    totalFacturados: 45,
-    idioma: "Espanol",
-    estado: "en-pre-factura",
-  },
-  {
-    idFacturacion: 10,
-    cliente: "Digital Minds Agency",
-    prefacturable: true,
-    totalPedidos: 21,
-    totalFacturados: 21,
-    idioma: "Espanol",
-    estado: "pendiente",
-  },
-  {
-    idFacturacion: 11,
-    cliente: "Integral Risk Partners",
-    prefacturable: true,
-    totalPedidos: 18,
-    totalFacturados: 16,
-    idioma: "Ingles",
-    estado: "pendiente",
-  },
-  {
-    idFacturacion: 12,
-    cliente: "Mercado Industrial Sur",
-    prefacturable: false,
-    totalPedidos: 27,
-    totalFacturados: 27,
-    idioma: "Espanol",
-    estado: "finalizado",
-  },
-];
-
-const REGISTROS_POR_PAGINA = 10;
+import { ENDPOINTS_FACTURACION } from "@maximilian/shared/constants/endpoints/facturacion.endpoint";
+import {
+  ErrorRespuestaApi,
+  MessageType,
+  type ApiResponse,
+} from "@maximilian/shared/types/api.type";
+import maximilianService from "./maximilian-service";
 
 const FACTURAS_CLIENTE_MOCK: EntradaFacturaCliente[] = [
   {
@@ -201,13 +97,25 @@ const PRODUCTOS_FACTURABLES_MOCK: EntradaProductoFacturable[] = [
   },
 ];
 
-function filtrarFacturaciones(busqueda: string | undefined) {
-  const termino = busqueda?.trim().toLowerCase();
-  if (!termino) return FACTURACIONES_MOCK;
+function mapearFacturacion(facturacion: EntradaFacturacionApi): EntradaFacturacion {
+  const estados = {
+    Finalizado: "finalizado",
+    Pendiente: "pendiente",
+    "En pre-factura": "en-pre-factura",
+  } as const;
 
-  return FACTURACIONES_MOCK.filter((facturacion) =>
-    facturacion.cliente.toLowerCase().includes(termino),
-  );
+  return {
+    idFacturacion: facturacion.idCliente,
+    cliente: facturacion.nombre,
+    prefacturable:
+      facturacion.emitirPrefactura === null
+        ? null
+        : facturacion.emitirPrefactura === "Si",
+    totalPedidos: facturacion.totalPedidos,
+    totalFacturados: facturacion.pedidosFacturados,
+    idioma: facturacion.idIdiomaFacturacion,
+    estado: estados[facturacion.estadoFacturacion],
+  };
 }
 
 function crearDetalleFactura(cliente: string, factura?: EntradaFacturaCliente | null): DetalleFactura {
@@ -266,16 +174,27 @@ function crearDetalleFactura(cliente: string, factura?: EntradaFacturaCliente | 
 
 export const facturacionService = {
   list: async (params: ParametrosListaFacturacion): Promise<RespuestaListaFacturacion> => {
-    const paginaActual = Math.max(params.numPag ?? 1, 1);
-    const registrosFiltrados = filtrarFacturaciones(params.busqueda);
-    const inicio = (paginaActual - 1) * REGISTROS_POR_PAGINA;
-    const lstFacturacion = registrosFiltrados.slice(inicio, inicio + REGISTROS_POR_PAGINA);
-
-    return Promise.resolve({
-      lstFacturacion,
-      totalRegistros: registrosFiltrados.length,
-      totalPaginas: Math.max(Math.ceil(registrosFiltrados.length / REGISTROS_POR_PAGINA), 1),
+    const { data } = await maximilianService.get<
+      ApiResponse<ResultadoListaFacturacionApi>
+    >(ENDPOINTS_FACTURACION.listar, {
+      params: {
+        numPag: params.numPag,
+        busqueda: params.busqueda,
+        emitirPrefactura: params.emitirPrefactura,
+        idIdiomaFacturacion: params.idIdiomaFacturacion,
+        estadoFacturacion: params.estadoFacturacion,
+      },
     });
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return {
+      lstFacturacion: data.result.lstClientes.map(mapearFacturacion),
+      totalRegistros: data.result.totalRegistros,
+      totalPaginas: data.result.totalPaginas,
+    };
   },
 
   listarFacturasCliente: async (): Promise<EntradaFacturaCliente[]> => {

@@ -11,12 +11,15 @@ export type EstadoFacturaCliente =
 export interface ParametrosListaFacturacion {
   busqueda?: string;
   numPag?: number;
+  emitirPrefactura?: number;
+  idIdiomaFacturacion?: number;
+  estadoFacturacion?: number;
 }
 
 export interface EntradaFacturacion {
   idFacturacion: number;
   cliente: string;
-  prefacturable: boolean;
+  prefacturable: boolean | null;
   totalPedidos: number;
   totalFacturados: number;
   idioma: string;
@@ -25,6 +28,22 @@ export interface EntradaFacturacion {
 
 export interface RespuestaListaFacturacion {
   lstFacturacion: EntradaFacturacion[];
+  totalRegistros: number;
+  totalPaginas: number;
+}
+
+export interface EntradaFacturacionApi {
+  idCliente: number;
+  nombre: string;
+  emitirPrefactura: "Si" | "No" | null;
+  totalPedidos: number;
+  pedidosFacturados: number;
+  idIdiomaFacturacion: string;
+  estadoFacturacion: "Finalizado" | "Pendiente" | "En pre-factura";
+}
+
+export interface ResultadoListaFacturacionApi {
+  lstClientes: EntradaFacturacionApi[];
   totalRegistros: number;
   totalPaginas: number;
 }
