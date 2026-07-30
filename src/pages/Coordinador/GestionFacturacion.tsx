@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Eye, FileText, MoreHorizontal, Search } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomModalFactura } from "@maximilian/components/coordinador/CustomModalFactura";
@@ -17,7 +17,6 @@ import type {
   DetalleFactura,
   EntradaFacturaCliente,
   EntradaFacturacion,
-  EstadoFacturaCliente,
   EstadoFacturacionPrincipal,
 } from "@maximilian/shared/types/facturacion.type";
 
@@ -32,7 +31,6 @@ function EstadoBadge({ estado }: { estado: EstadoFacturacionPrincipal }) {
 }
 
 export default function GestionFacturacion() {
-  const queryClient = useQueryClient();
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
   const [idMenuActivo, setIdMenuActivo] = useState<number | null>(null);
@@ -79,26 +77,6 @@ export default function GestionFacturacion() {
         estadoFacturacion,
       }),
   });
-
-  const { data: facturasCliente = [] } = useQuery({
-    queryKey: ["facturacion", "facturas-cliente", clienteSeleccionado?.idFacturacion],
-    queryFn: () => facturacionService.listarFacturasCliente(),
-    enabled: clienteSeleccionado !== null,
-  });
-
-  const modificarEstadoFactura = (
-    factura: EntradaFacturaCliente,
-    estado: EstadoFacturaCliente,
-  ) => {
-    queryClient.setQueryData<EntradaFacturaCliente[]>(
-      ["facturacion", "facturas-cliente", clienteSeleccionado?.idFacturacion],
-      (facturasActuales = []) => facturasActuales.map((facturaActual) =>
-        facturaActual.idFactura === factura.idFactura
-          ? { ...facturaActual, estado }
-          : facturaActual,
-      ),
-    );
-  };
 
   const { data: productosFacturables = [] } = useQuery({
     queryKey: ["facturacion", "productos-facturables"],
@@ -261,7 +239,7 @@ export default function GestionFacturacion() {
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
               >
                 <FileText size={14} />
-                <span>Generar facturación</span>
+                <span>Emitir Factura</span>
               </button>
             </div>
           </>
@@ -305,13 +283,12 @@ export default function GestionFacturacion() {
       {clienteSeleccionado ? (
         <CustomModalFacturasCliente
           abierto={clienteSeleccionado !== null}
+          idCliente={clienteSeleccionado.idFacturacion}
           cliente={clienteSeleccionado.cliente}
-          facturas={facturasCliente}
           onCerrar={() => setClienteSeleccionado(null)}
           onAgregarFactura={() => abrirEmisionFactura(clienteSeleccionado)}
           onVerFactura={(factura) => abrirDetalleFactura(clienteSeleccionado, factura)}
           onEditarFactura={(factura) => abrirEmisionFactura(clienteSeleccionado, factura)}
-          onModificarEstado={modificarEstadoFactura}
         />
       ) : null}
       <CustomModalFactura

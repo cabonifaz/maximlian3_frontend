@@ -99,8 +99,8 @@ export default function BandejaAnalista() {
   } = useBandejaInvestigacion({ tipo: "analista" });
 
   const columnas = [
-    { label: "ID Pedido", width: "10%" },
-    { label: "Investigado", width: "31%" },
+    { label: "Código Pedido", width: "14%" },
+    { label: "Investigado", width: "27%" },
     { label: "País", width: "14%" },
     { label: "Fecha", width: "11%" },
     { label: "Tipo", className: "text-center", width: "8%" },
@@ -150,7 +150,7 @@ export default function BandejaAnalista() {
               <input
                 value={terminoBusqueda}
                 onChange={(event) => setTerminoBusqueda(event.target.value)}
-                placeholder="Buscar por ID o Investigado..."
+                placeholder="Buscar por Código o Investigado..."
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white pl-11 pr-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
               />
             </label>
@@ -174,7 +174,7 @@ export default function BandejaAnalista() {
           renderRow={(registro) => (
             <>
               <td className="px-6 py-4 text-sm font-medium text-slate-400">
-                {registro.idPedido}
+                {registro.codigoPedido || "-"}
               </td>
               <td className="max-w-48 px-6 py-4 text-sm font-semibold text-slate-700">
                 <span className="block truncate" title={registro.investigado}>

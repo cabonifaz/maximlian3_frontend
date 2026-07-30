@@ -6,7 +6,8 @@ export type EstadoFacturacionPrincipal =
 export type EstadoFacturaCliente =
   | EstadoFacturacionPrincipal
   | "pre-factura-aprobada"
-  | "pre-factura-rechazada";
+  | "pre-factura-rechazada"
+  | "anulado";
 
 export interface ParametrosListaFacturacion {
   busqueda?: string;
@@ -53,7 +54,40 @@ export interface EntradaFacturaCliente {
   codigo: string;
   investigado: string;
   penalidad: boolean;
+  codigoEstado: number;
   estado: EstadoFacturaCliente;
+}
+
+export interface ParametrosListaPedidosFacturacion {
+  idCliente: number;
+  busqueda?: string;
+  numPag: number;
+}
+
+export interface EntradaPedidoFacturacionApi {
+  idPedido: number;
+  codigo: string;
+  investigado: string | null;
+  aplicaPenalidad: "Si" | "No";
+  estadoFacturacion:
+    | "Pendiente"
+    | "En pre-factura"
+    | "Pre-factura aprobada"
+    | "Pre-factura rechazada"
+    | "Finalizado"
+    | "Anulado";
+}
+
+export interface ResultadoListaPedidosFacturacionApi {
+  lstPedidos: EntradaPedidoFacturacionApi[];
+  totalRegistros: number;
+  totalPaginas: number;
+}
+
+export interface RespuestaListaFacturasCliente {
+  lstFacturas: EntradaFacturaCliente[];
+  totalRegistros: number;
+  totalPaginas: number;
 }
 
 export interface EntradaProductoFactura {
