@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
 export function usePrecargaTablaMaestra(idsMaestro: number[], habilitado = true) {

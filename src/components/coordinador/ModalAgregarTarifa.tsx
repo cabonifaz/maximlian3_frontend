@@ -1,12 +1,10 @@
 import { X } from "lucide-react";
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { esquemaTarifa, type DatosFormularioTarifa } from "@maximilian/schemas";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
-import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { useModalAgregarTarifa } from "@maximilian/hooks/useModalAgregarTarifa";
+import type { DatosFormularioTarifa } from "@maximilian/schemas";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface ModalAgregarTarifaProps {
   isOpen: boolean;
@@ -15,56 +13,50 @@ interface ModalAgregarTarifaProps {
   defaultValues?: DatosFormularioTarifa;
 }
 
-export function ModalAgregarTarifa({ isOpen, onClose, onConfirm, defaultValues }: ModalAgregarTarifaProps) {
+export function ModalAgregarTarifa({
+  isOpen,
+  onClose,
+  onConfirm,
+  defaultValues,
+}: ModalAgregarTarifaProps) {
   const {
+    confirmarSubmit,
+    errors,
     register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    watch,
     setValue,
     trigger,
-  } = useForm<DatosFormularioTarifa>({
-    resolver: zodResolver(esquemaTarifa),
-    mode: "onTouched",
+    valores,
+  } = useModalAgregarTarifa({
+    estaAbierto: isOpen,
+    onCerrar: onClose,
+    onConfirmar: onConfirm,
+    valoresIniciales: defaultValues,
   });
 
-  const watchedProducto = watch("producto");
-  const watchedPais = watch("pais");
-  const watchedMoneda = watch("moneda");
-  const watchedTramite = watch("tramite");
-
-  useEffect(() => {
-    reset(defaultValues ?? ({} as DatosFormularioTarifa));
-  }, [defaultValues, isOpen, reset]);
-
-
   if (!isOpen) return null;
-
-  const handleConfirm = (data: DatosFormularioTarifa) => {
-    onConfirm(data);
-    reset();
-    onClose();
-  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-brand-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-brand-black">{defaultValues ? "Editar Tarifa" : "Nueva Tarifa"}</h2>
+          <h2 className="text-xl font-bold text-brand-black">
+            {defaultValues ? "Editar Tarifa" : "Nueva Tarifa"}
+          </h2>
           <CustomButton variant="ghost" size="icon" onClick={onClose}>
             <X size={20} className="text-gray-400" />
           </CustomButton>
         </div>
 
-        <form onSubmit={handleSubmit(handleConfirm)} className="p-8 space-y-6">
+        <form onSubmit={confirmarSubmit} className="p-8 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CustomSelectorBuscable
               label="Producto"
               required
               idMaster={TablaMaestraId.PRODUCTO}
-              value={watchedProducto as number | undefined}
-              onChange={(val) => setValue("producto", val, { shouldValidate: true })}
+              value={valores.producto as number | undefined}
+              onChange={(valor) =>
+                setValue("producto", valor, { shouldValidate: true })
+              }
               onBlur={() => trigger("producto")}
               autoSeleccionarOpcionUnica
               error={errors.producto?.message}
@@ -75,8 +67,10 @@ export function ModalAgregarTarifa({ isOpen, onClose, onConfirm, defaultValues }
               label="País"
               required
               idMaster={TablaMaestraId.PAIS}
-              value={watchedPais as number | undefined}
-              onChange={(val) => setValue("pais", val, { shouldValidate: true })}
+              value={valores.pais as number | undefined}
+              onChange={(valor) =>
+                setValue("pais", valor, { shouldValidate: true })
+              }
               onBlur={() => trigger("pais")}
               autoSeleccionarOpcionUnica
               error={errors.pais?.message}
@@ -87,8 +81,10 @@ export function ModalAgregarTarifa({ isOpen, onClose, onConfirm, defaultValues }
               label="Moneda"
               required
               idMaster={TablaMaestraId.MONEDA}
-              value={watchedMoneda as number | undefined}
-              onChange={(val) => setValue("moneda", val, { shouldValidate: true })}
+              value={valores.moneda as number | undefined}
+              onChange={(valor) =>
+                setValue("moneda", valor, { shouldValidate: true })
+              }
               onBlur={() => trigger("moneda")}
               autoSeleccionarOpcionUnica
               error={errors.moneda?.message}
@@ -99,8 +95,10 @@ export function ModalAgregarTarifa({ isOpen, onClose, onConfirm, defaultValues }
               label="Trámite"
               required
               idMaster={TablaMaestraId.TIPO_TRAMITE}
-              value={watchedTramite as number | undefined}
-              onChange={(val) => setValue("tramite", val, { shouldValidate: true })}
+              value={valores.tramite as number | undefined}
+              onChange={(valor) =>
+                setValue("tramite", valor, { shouldValidate: true })
+              }
               onBlur={() => trigger("tramite")}
               autoSeleccionarOpcionUnica
               error={errors.tramite?.message}
@@ -108,7 +106,7 @@ export function ModalAgregarTarifa({ isOpen, onClose, onConfirm, defaultValues }
             />
 
             <div className="space-y-2">
-              <CustomLabel required>Días Min.</CustomLabel>
+              <CustomLabel required>Días mín.</CustomLabel>
               <input
                 {...register("diasMin", {
                   valueAsNumber: true,
@@ -117,11 +115,15 @@ export function ModalAgregarTarifa({ isOpen, onClose, onConfirm, defaultValues }
                 type="number"
                 className={`w-full px-4 py-2.5 bg-brand-white border ${errors.diasMin ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
               />
-              {errors.diasMin && <p className="text-xs text-red-500">{errors.diasMin.message}</p>}
+              {errors.diasMin && (
+                <p className="text-xs text-red-500">
+                  {errors.diasMin.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <CustomLabel required>Días Max.</CustomLabel>
+              <CustomLabel required>Días máx.</CustomLabel>
               <input
                 {...register("diasMax", {
                   valueAsNumber: true,
@@ -130,29 +132,47 @@ export function ModalAgregarTarifa({ isOpen, onClose, onConfirm, defaultValues }
                 type="number"
                 className={`w-full px-4 py-2.5 bg-brand-white border ${errors.diasMax ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
               />
-              {errors.diasMax && <p className="text-xs text-red-500">{errors.diasMax.message}</p>}
+              {errors.diasMax && (
+                <p className="text-xs text-red-500">
+                  {errors.diasMax.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
               <CustomLabel required>Precio</CustomLabel>
               <input
-                {...register("precio", { valueAsNumber: true })}
+                {...register("precio", {
+                  valueAsNumber: true,
+                  onBlur: () => void trigger(["precio", "penalidad"]),
+                })}
                 type="number"
                 step="0.01"
                 className={`w-full px-4 py-2.5 bg-brand-white border ${errors.precio ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
               />
-              {errors.precio && <p className="text-xs text-red-500">{errors.precio.message}</p>}
+              {errors.precio && (
+                <p className="text-xs text-red-500">
+                  {errors.precio.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
               <CustomLabel optional>Penalidad</CustomLabel>
               <input
-                {...register("penalidad", { valueAsNumber: true })}
+                {...register("penalidad", {
+                  valueAsNumber: true,
+                  onBlur: () => void trigger(["precio", "penalidad"]),
+                })}
                 type="number"
                 step="0.01"
-                className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+                className={`w-full px-4 py-2.5 bg-brand-white border ${errors.penalidad ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
               />
-              {errors.penalidad && <p className="text-xs text-red-500">{errors.penalidad.message}</p>}
+              {errors.penalidad && (
+                <p className="text-xs text-red-500">
+                  {errors.penalidad.message}
+                </p>
+              )}
             </div>
           </div>
 

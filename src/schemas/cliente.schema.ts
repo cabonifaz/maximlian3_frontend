@@ -48,6 +48,7 @@ export const esquemaInformacionCliente = z.object({
   plantillaInforme: idRequerido("La plantilla de informe es requerida"),
   imprimeLogoSafety: z.boolean(),
   aplicaPenalidad: z.boolean(),
+  emitirPrefactura: z.boolean(),
   recomendacion: z.string().optional(),
 });
 
@@ -72,14 +73,6 @@ export const esquemaTarifa = z.object({
     (val) => (typeof val === "number" && isNaN(val) ? undefined : val),
     z.number().min(0, "La penalidad debe ser mayor o igual a 0").optional()
   ) as unknown as z.ZodOptional<z.ZodNumber>,
-}).superRefine((data, ctx) => {
-  if (data.diasMax <= data.diasMin) {
-    ctx.addIssue({
-      code: "custom",
-      message: "Días mínimos debe ser menor a días máximos",
-      path: ["diasMax"],
-    });
-  }
 });
 
 export const esquemaContacto = z.object({

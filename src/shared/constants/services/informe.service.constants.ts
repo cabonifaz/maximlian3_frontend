@@ -1,0 +1,1 @@
+export const TIMEOUT_EXTRACCION_MS = 10 * 60 * 1000;

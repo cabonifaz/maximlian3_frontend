@@ -24,6 +24,7 @@ export interface InformeListEntry {
   requiereTraduccion?: 0 | 1;
   idIdioma?: number;
   idPlantilla?: number;
+  plantilla?: string;
   codigo: string;
   investigado: string;
   pais: string;
@@ -46,6 +47,28 @@ export interface InformeListResponse {
   rechazado: number;
   vigente: number;
   vencido: number;
+  totalRegistros: number;
+  totalPaginas: number;
+}
+
+export interface ParametrosHistorialInformesCompania {
+  idCompania: number;
+  numPag?: number;
+  idIdioma?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+}
+
+export interface InformeHistorialCompania {
+  idInforme: number;
+  idPedido: number;
+  idioma: string;
+  nombre: string;
+  fecha: string;
+}
+
+export interface RespuestaHistorialInformesCompania {
+  lstInformes: InformeHistorialCompania[];
   totalRegistros: number;
   totalPaginas: number;
 }
@@ -388,30 +411,30 @@ export interface InformeCrearRequest {
   idRegistro: string;
   idPlazo: string;
   idOperacionesCambioDivisas: number;
-  capitalInicial: number;
-  capitalPagado: number;
+  capitalInicial?: number;
+  capitalPagado?: number;
   fechaUltimoIncremento: string | null;
   idTipoIncremento: number;
-  patrimonioNeto: number;
+  patrimonioNeto?: number;
   tipoAcciones: string;
-  valorAcciones: number;
+  valorAcciones?: number;
   cotizaBolsa: boolean;
   idTipoCambio: number;
-  tipoCambio: number;
+  tipoCambio?: number;
   antecedentes: string;
   aspectosLegales: string;
   comentariosAspectoLegal: string;
   idSector: number;
   idActividad?: number;
   actividad: string;
-  idIsicCategoria: number;
-  idIsicClase: number;
+  idIsicCategoria?: number;
+  idIsicClase?: number;
   actividadPrincipal: string;
   ventasContado: number | null;
   ventasContadoText: string;
   ventasCredito: number | null;
   ventasCreditoText: string;
-  idVentasCreditoTiempo: number;
+  idVentasCreditoTiempo?: number;
   ventasNacionales: number | null;
   ventasNacionalesText: string;
   ventasInternacionales: number | null;
@@ -422,15 +445,15 @@ export interface InformeCrearRequest {
   comprasContadoNacionalesText: string;
   comprasCreditoNacionales: number | null;
   comprasCreditoNacionalesText: string;
-  idComprasCreditoNacionalesTiempo: number;
+  idComprasCreditoNacionalesTiempo?: number;
   comprasInternacionales: number | null;
   comprasInternacionalesText: string;
   comprasContadoInternacionales: number | null;
   comprasContadoInternacionalesText: string;
   comprasCreditoInternacionales: number | null;
   comprasCreditoInternacionalesText: string;
-  idComprasCreditoInternacionalesTiempo: number;
-  numeroEmpleados: number;
+  idComprasCreditoInternacionalesTiempo?: number;
+  numeroEmpleados?: number;
   numeroEmpleadosText: string;
   comentariosOperaciones: string;
   contenidoInformacionFinanciera: string;

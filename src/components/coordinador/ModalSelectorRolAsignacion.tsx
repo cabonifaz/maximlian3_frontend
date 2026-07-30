@@ -1,10 +1,15 @@
-import { useState } from "react";
-import { Search, X, ArrowLeft } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
-import { servicioAsignacion } from "@maximilian/services/asignacion.service";
-import { useRetardo } from "@maximilian/hooks/useRetardo";
-import type { AssignmentCandidate, AssignmentRole } from "@maximilian/shared/types/asignacion.type";
+import { roleConfig } from "@maximilian/shared/constants/components/coordinador/modal-selector-rol-asignacion.constants";
+import {
+  obtenerClasesInsigniaAsignaciones,
+  obtenerEtiquetaAsignaciones,
+  useModalSelectorRolAsignacion,
+} from "@maximilian/hooks/useModalSelectorRolAsignacion";
+import type {
+  AssignmentCandidate,
+  AssignmentRole,
+} from "@maximilian/shared/types/asignacion.type";
 
 interface ModalSelectorRolAsignacionProps {
   isOpen: boolean;
@@ -14,30 +19,6 @@ interface ModalSelectorRolAsignacionProps {
   onSelect: (candidate: AssignmentCandidate) => void;
 }
 
-const roleConfig = {
-  analyst: {
-    title: "Asignar analista",
-  },
-  translator: {
-    title: "Asignar traductor(a)",
-  },
-} as const;
-
-function getBadgeClasses(count: number) {
-  if (count <= 2) return "bg-green-50 text-green-600";
-  if (count <= 4) return "bg-slate-100 text-slate-500";
-  if (count <= 5) return "bg-amber-50 text-amber-500";
-  return "bg-orange-50 text-orange-500";
-}
-
-function normalizarBusqueda(valor: string) {
-  return valor
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLowerCase();
-}
-
 export function ModalSelectorRolAsignacion({
   isOpen,
   role,
@@ -45,36 +26,20 @@ export function ModalSelectorRolAsignacion({
   onClose,
   onSelect,
 }: ModalSelectorRolAsignacionProps) {
-  const [terminoBusqueda, setSearchTerm] = useState("");
-  const busquedaConRetardo = useRetardo(terminoBusqueda, 250);
-
-  const { data: candidates, isLoading } = useQuery({
-    queryKey: ["assignment-candidates", role, idiomasPedido],
-    queryFn: () =>
-      servicioAsignacion.listCandidates({
-        role,
-        idiomasPedido,
-      }),
-    enabled: isOpen,
-  });
-
-  const candidatosFiltrados = (candidates ?? []).filter((candidate) => {
-    const terminoNormalizado = normalizarBusqueda(busquedaConRetardo);
-    if (!terminoNormalizado) return true;
-
-    return (
-      normalizarBusqueda(candidate.nombre).includes(terminoNormalizado)
-      || normalizarBusqueda(candidate.nombres ?? "").includes(terminoNormalizado)
-      || normalizarBusqueda(candidate.apellidos ?? "").includes(terminoNormalizado)
-    );
+  const {
+    candidatosFiltrados,
+    isLoading,
+    setTerminoBusqueda,
+    terminoBusqueda,
+  } = useModalSelectorRolAsignacion({
+    estaAbierto: isOpen,
+    idiomasPedido,
+    rol: role,
   });
 
   if (!isOpen) return null;
 
   const config = roleConfig[role];
-
-  const getAssignmentLabel = (cantidadAsignaciones: number) =>
-    cantidadAsignaciones <= 1 ? "asignación" : "asignaciones";
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/35 backdrop-blur-sm">
@@ -101,7 +66,7 @@ export function ModalSelectorRolAsignacion({
             <input
               type="text"
               value={terminoBusqueda}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(evento) => setTerminoBusqueda(evento.target.value)}
               placeholder="Buscar usuario..."
               className="w-full rounded-xl border border-gray-100 bg-gray-50 py-2.5 pl-10 pr-4 text-sm text-brand-black outline-none transition-all focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
             />
@@ -109,7 +74,9 @@ export function ModalSelectorRolAsignacion({
 
           <div className="space-y-3">
             {isLoading ? (
-              <div className="py-10 text-center text-sm text-gray-400">Cargando usuarios...</div>
+              <div className="py-10 text-center text-sm text-gray-400">
+                Cargando usuarios...
+              </div>
             ) : candidatosFiltrados.length ? (
               candidatosFiltrados.map((candidate) => (
                 <div
@@ -125,18 +92,23 @@ export function ModalSelectorRolAsignacion({
                         {candidate.nombres || candidate.nombre}
                       </p>
                       {candidate.apellidos ? (
-                        <p className="truncate text-sm text-slate-500">{candidate.apellidos}</p>
+                        <p className="truncate text-sm text-slate-500">
+                          {candidate.apellidos}
+                        </p>
                       ) : null}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <span
-                      className={`inline-flex whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${getBadgeClasses(
+                      className={`inline-flex whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${obtenerClasesInsigniaAsignaciones(
                         candidate.cantidadAsignaciones,
                       )}`}
                     >
-                      {candidate.cantidadAsignaciones} {getAssignmentLabel(candidate.cantidadAsignaciones)}
+                      {candidate.cantidadAsignaciones}{" "}
+                      {obtenerEtiquetaAsignaciones(
+                        candidate.cantidadAsignaciones,
+                      )}
                     </span>
                     <CustomButton
                       size="sm"
@@ -150,7 +122,9 @@ export function ModalSelectorRolAsignacion({
                 </div>
               ))
             ) : (
-              <div className="py-10 text-center text-sm text-gray-400">No se encontraron usuarios.</div>
+              <div className="py-10 text-center text-sm text-gray-400">
+                No se encontraron usuarios.
+              </div>
             )}
           </div>
         </div>

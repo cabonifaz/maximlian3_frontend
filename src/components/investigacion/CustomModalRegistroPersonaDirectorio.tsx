@@ -1,15 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useState, type ReactNode } from "react";
 import { BadgeCheck, FileText, MapPin, UserRound, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
-import { servicioDirectorioEjecutivo } from "@maximilian/services/directorioEjecutivo.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
-import type { DirectorioEjecutivoGuardarRequest } from "@maximilian/shared/types/directorio-ejecutivo.type";
+import { useModalRegistroPersonaDirectorio } from "@maximilian/hooks/useModalRegistroPersonaDirectorio";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/investigacion.type";
 import { seleccionarTextoEditableEnContenedor } from "@maximilian/shared/utils/formato-monto.util";
 
@@ -22,50 +18,6 @@ interface PropsCustomModalRegistroPersonaDirectorioAnalista {
   onGuardar: (registro: RegistroPersonaDirectorioAnalista) => void;
 }
 
-const ID_MAESTRO_ESTADO_CIVIL = 55;
-const ID_MAESTRO_PROFESION = 56;
-const ID_MAESTRO_TIPO_DOCUMENTO = 54;
-
-function obtenerTextoFormulario(formData: FormData, nombre: string) {
-  return String(formData.get(nombre) ?? "").trim();
-}
-
-function obtenerIdFormulario(formData: FormData, nombre: string) {
-  const valor = Number(formData.get(nombre));
-  return Number.isFinite(valor) ? valor : 0;
-}
-
-function normalizarFechaApi(fecha: string) {
-  if (!fecha) return null;
-  if (/^\d{4}-\d{2}-\d{2}/.test(fecha)) return `${fecha.slice(0, 10)}T00:00:00.000Z`;
-
-  const [dia, mes, ano] = fecha.split("/");
-  if (!dia || !mes || !ano) return null;
-  return `${ano}-${mes}-${dia}T00:00:00.000Z`;
-}
-
-function traducirOpcionesTablaMaestra(
-  opciones: EntradaTablaMaestra[] | undefined,
-  idIdioma?: number,
-) {
-  if (idIdioma !== 2 && idIdioma !== 3) return opciones;
-
-  const claveString1 = idIdioma === 2 ? "string4" : "string6";
-  const claveString2 = idIdioma === 2 ? "string5" : "string7";
-
-  return opciones?.map((opcion) => {
-    const textoPrincipal = opcion[claveString1]?.trim();
-    const textoSecundario = opcion[claveString2]?.trim();
-
-    return {
-      ...opcion,
-      string1: textoPrincipal || opcion.string1,
-      string2: textoSecundario || opcion.string2,
-      string3: textoSecundario || opcion.string3,
-    };
-  });
-}
-
 export function CustomModalRegistroPersonaDirectorioAnalista({
   estaAbierto,
   registroInicial,
@@ -74,136 +26,23 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
   onCerrar,
   onGuardar,
 }: PropsCustomModalRegistroPersonaDirectorioAnalista) {
-  const [fechaNacimiento, setFechaNacimiento] = useState(registroInicial?.fechaNacimiento ?? "");
-  const { data: opcionesTipoPersonaBase } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA),
-    enabled: estaAbierto,
-    staleTime: Infinity,
-  });
-
-  const { data: opcionesPaisBase } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.PAIS],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
-    enabled: estaAbierto,
-    staleTime: Infinity,
-  });
-
-  const { data: opcionesTipoDocumentoBase } = useQuery({
-    queryKey: ["masterTable", ID_MAESTRO_TIPO_DOCUMENTO],
-    queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_TIPO_DOCUMENTO),
-    enabled: estaAbierto,
-    staleTime: Infinity,
-  });
-
-  const { data: opcionesTipoIdFiscalBase } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_REG_TRIBUTARIO],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_REG_TRIBUTARIO),
-    enabled: estaAbierto,
-    staleTime: Infinity,
-  });
-
-  const { data: opcionesEstadoCivilBase } = useQuery({
-    queryKey: ["masterTable", ID_MAESTRO_ESTADO_CIVIL],
-    queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_ESTADO_CIVIL),
-    enabled: estaAbierto,
-    staleTime: Infinity,
-  });
-
-  const { data: opcionesProfesionBase } = useQuery({
-    queryKey: ["masterTable", ID_MAESTRO_PROFESION],
-    queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_PROFESION),
-    enabled: estaAbierto,
-    staleTime: Infinity,
-  });
-
-  const opcionesTipoPersona = useMemo(() => traducirOpcionesTablaMaestra(opcionesTipoPersonaBase, idIdioma), [idIdioma, opcionesTipoPersonaBase]);
-  const opcionesPais = useMemo(() => traducirOpcionesTablaMaestra(opcionesPaisBase, idIdioma), [idIdioma, opcionesPaisBase]);
-  const opcionesTipoDocumento = useMemo(() => traducirOpcionesTablaMaestra(opcionesTipoDocumentoBase, idIdioma), [idIdioma, opcionesTipoDocumentoBase]);
-  const opcionesTipoIdFiscal = useMemo(() => traducirOpcionesTablaMaestra(opcionesTipoIdFiscalBase, idIdioma), [idIdioma, opcionesTipoIdFiscalBase]);
-  const opcionesEstadoCivil = useMemo(() => traducirOpcionesTablaMaestra(opcionesEstadoCivilBase, idIdioma), [idIdioma, opcionesEstadoCivilBase]);
-  const opcionesProfesion = useMemo(() => traducirOpcionesTablaMaestra(opcionesProfesionBase, idIdioma), [idIdioma, opcionesProfesionBase]);
-
-  const opcionesNacionalidad = useMemo(
-    () => opcionesPais?.map((opcion) => ({
-      ...opcion,
-      string1: opcion.string3 || opcion.string1,
-    })),
-    [opcionesPais],
-  );
-
-  const crearRegistroMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
-      const registro: RegistroPersonaDirectorioAnalista = {
-        id: registroInicial?.id ?? 0,
-        idDirectorioEjecutivo: registroInicial?.idDirectorioEjecutivo,
-        idTipoPersona: obtenerIdFormulario(formData, "idTipoPersona"),
-        tipoPersona: obtenerTextoFormulario(formData, "tipoPersona"),
-        nombres: obtenerTextoFormulario(formData, "nombres"),
-        idPais: obtenerIdFormulario(formData, "idPais"),
-        pais: obtenerTextoFormulario(formData, "pais"),
-        direccionPrincipal: obtenerTextoFormulario(formData, "direccionPrincipal"),
-        ciudadProvinciaEstado: obtenerTextoFormulario(formData, "ciudadProvinciaEstado"),
-        codigoPostal: obtenerTextoFormulario(formData, "codigoPostal"),
-        idNacionalidad: obtenerIdFormulario(formData, "idNacionalidad"),
-        nacionalidad: obtenerTextoFormulario(formData, "nacionalidad"),
-        idTipoDocumento: obtenerIdFormulario(formData, "idTipoDocumento"),
-        tipoDocumentoIdentidad: obtenerTextoFormulario(formData, "tipoDocumentoIdentidad"),
-        numeroDocumentoIdentidad: obtenerTextoFormulario(formData, "numeroDocumentoIdentidad"),
-        taxIdType: obtenerIdFormulario(formData, "taxIdType"),
-        tipoIdFiscal: obtenerTextoFormulario(formData, "tipoIdFiscal"),
-        numeroIdFiscal: obtenerTextoFormulario(formData, "numeroIdFiscal"),
-        fechaNacimiento: obtenerTextoFormulario(formData, "fechaNacimiento"),
-        idEstadoCivil: obtenerIdFormulario(formData, "idEstadoCivil"),
-        estadoCivil: obtenerTextoFormulario(formData, "estadoCivil"),
-        idProfesion: obtenerIdFormulario(formData, "idProfesion"),
-        profesion: obtenerTextoFormulario(formData, "profesion"),
-        referenciaAdicional: obtenerTextoFormulario(formData, "referenciaAdicional"),
-      };
-
-      const payload: DirectorioEjecutivoGuardarRequest = {
-        idTipoPersona: registro.idTipoPersona ?? 0,
-        nombreCompleto: registro.nombres,
-        idPais: registro.idPais ?? 0,
-        direccion: registro.direccionPrincipal,
-        ubigeo: registro.ciudadProvinciaEstado,
-        codigoPostal: registro.codigoPostal,
-        idTipoDocumento: registro.idTipoDocumento ?? 0,
-        numeroDocumento: registro.numeroDocumentoIdentidad,
-        taxIdType: registro.taxIdType ?? 0,
-        taxNum: registro.numeroIdFiscal,
-        idNacionalidad: registro.idNacionalidad ?? 0,
-        fechaNacimiento: normalizarFechaApi(registro.fechaNacimiento),
-        idEstadoCivil: registro.idEstadoCivil ?? 0,
-        idProfesion: registro.idProfesion ?? 0,
-        referencias: registro.referenciaAdicional,
-      };
-
-      const respuesta = registroInicial?.idDirectorioEjecutivo
-        ? await servicioDirectorioEjecutivo.editar({
-          ...payload,
-          idDirectorioEjecutivo: registroInicial.idDirectorioEjecutivo,
-        })
-        : await servicioDirectorioEjecutivo.crear(payload);
-
-      const idDirectorioEjecutivo = respuesta.idDirectorioEjecutivo ?? registroInicial?.idDirectorioEjecutivo ?? registroInicial?.id ?? Date.now();
-
-      return {
-        ...registro,
-        id: idDirectorioEjecutivo,
-        idDirectorioEjecutivo,
-        idTipoPersona: payload.idTipoPersona,
-        idPais: payload.idPais,
-        idTipoDocumento: payload.idTipoDocumento,
-        taxIdType: payload.taxIdType,
-        idNacionalidad: payload.idNacionalidad,
-        idEstadoCivil: payload.idEstadoCivil,
-        idProfesion: payload.idProfesion,
-      };
-    },
-    onSuccess: (registro) => {
-      onGuardar(registro);
-    },
+  const {
+    crearRegistroMutation,
+    fechaNacimiento,
+    manejarSubmit,
+    opcionesEstadoCivil,
+    opcionesNacionalidad,
+    opcionesPais,
+    opcionesProfesion,
+    opcionesTipoDocumento,
+    opcionesTipoIdFiscal,
+    opcionesTipoPersona,
+    setFechaNacimiento,
+  } = useModalRegistroPersonaDirectorio({
+    estaAbierto,
+    idIdioma,
+    registroInicial,
+    onGuardar,
   });
 
   if (!estaAbierto) return null;
@@ -230,14 +69,11 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
 
         <form
           className="flex min-h-0 flex-1 flex-col"
-          onSubmit={(event) => {
-            event.preventDefault();
-            crearRegistroMutation.mutate(new FormData(event.currentTarget));
-          }}
+          onSubmit={manejarSubmit}
         >
           <div className="space-y-5 overflow-y-auto bg-slate-50/35 px-6 py-6 md:px-8">
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <EncabezadoSeccion icono={<UserRound size={18} />} titulo="Identificacion" subtitulo="Datos principales del registro" />
+              <EncabezadoSeccion icono={<UserRound size={18} />} titulo="Identificación" subtitulo="Datos principales del registro" />
               <div className="grid gap-4 md:grid-cols-[0.9fr_2fr_1fr]">
                 <CampoSelector nombre="tipoPersona" nombreId="idTipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersona} valorDefecto={registroInicial?.tipoPersona} valorDefectoId={registroInicial?.idTipoPersona} marcadorVacio="Seleccione tipo persona" />
                 <CampoInput nombre="nombres" etiqueta="Nombre Completo / Razón Social" marcador="Ingrese nombres completos" valorInicial={registroInicial?.nombres ?? nombreInicial} />
@@ -253,7 +89,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
           
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <EncabezadoSeccion icono={<FileText size={18} />} titulo="Documentos" subtitulo="Identificacion personal y fiscal" />
+              <EncabezadoSeccion icono={<FileText size={18} />} titulo="Documentos" subtitulo="Identificación personal y fiscal" />
               <div className="grid gap-4 md:grid-cols-[0.9fr_1fr_1fr_1fr]">
                 <CampoSelector nombre="tipoDocumentoIdentidad" nombreId="idTipoDocumento" etiqueta="Tipo Doc. Identidad" opciones={opcionesTipoDocumento} valorDefecto={registroInicial?.tipoDocumentoIdentidad} valorDefectoId={registroInicial?.idTipoDocumento} marcadorVacio="Seleccione tipo documento" />
                 <CampoInput nombre="numeroDocumentoIdentidad" etiqueta="Nro. Doc. Identidad" marcador="Ingrese nro. documento" valorInicial={registroInicial?.numeroDocumentoIdentidad} />
@@ -263,7 +99,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
             </section>
 
   <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <EncabezadoSeccion icono={<MapPin size={18} />} titulo="Ubicacion" subtitulo="Pais, nacionalidad y direccion" />
+              <EncabezadoSeccion icono={<MapPin size={18} />} titulo="Ubicación" subtitulo="País, nacionalidad y dirección" />
               <div className="grid gap-4 md:grid-cols-2">
                 <CampoSelector nombre="pais" nombreId="idPais" etiqueta="País" opciones={opcionesPais} valorDefecto={registroInicial?.pais} valorDefectoId={registroInicial?.idPais} marcadorVacio="Seleccione un país" />
                 <CampoSelector nombre="nacionalidad" nombreId="idNacionalidad" etiqueta="Nacionalidad" opciones={opcionesNacionalidad} valorDefecto={registroInicial?.nacionalidad} valorDefectoId={registroInicial?.idNacionalidad} marcadorVacio="Seleccione nacionalidad" />
@@ -276,7 +112,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <EncabezadoSeccion icono={<BadgeCheck size={18} />} titulo="Perfil" subtitulo="Informacion complementaria" />
+              <EncabezadoSeccion icono={<BadgeCheck size={18} />} titulo="Perfil" subtitulo="Información complementaria" />
               <div className="grid gap-4 md:grid-cols-2">
                 <CampoSelector nombre="estadoCivil" nombreId="idEstadoCivil" etiqueta="Estado Civil" opciones={opcionesEstadoCivil} valorDefecto={registroInicial?.estadoCivil} valorDefectoId={registroInicial?.idEstadoCivil} marcadorVacio="Seleccione estado civil" />
                 <CampoSelector nombre="profesion" nombreId="idProfesion" etiqueta="Profesión" opciones={opcionesProfesion} valorDefecto={registroInicial?.profesion} valorDefectoId={registroInicial?.idProfesion} marcadorVacio="Seleccione profesión" />
@@ -338,7 +174,7 @@ function EncabezadoSeccion({
   titulo,
   subtitulo,
 }: {
-  icono: React.ReactNode;
+  icono: ReactNode;
   titulo: string;
   subtitulo: string;
 }) {

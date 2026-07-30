@@ -12,8 +12,10 @@ export const TablaMaestraId = {
   ESTADO_CLIENTE: 36,
   PRODUCTO: 37,
   CLASE_INFORME: 37,
+  FORMATO_ARCHIVO: 34,
   EMPRESA_ATENCION: 38,
   PLANTILLA_INFORME: 39,
+  ESTADO_PEDIDO: 40,
   TIPO_DOCUMENTO: 41,
   TIPO_PLAZO_CREDITO: 42,
   TIPO_EMPRESA: 44,
@@ -41,9 +43,11 @@ export const TablaMaestraId = {
   FASE_EVIDENCIA: 63,
   OBLIGACION_BOLSA: 64,
   BOOLEAN: 64,
+  EMITIR_PREFACTURA: 64,
   FORMATO_FECHA_INFORME: 65,
   CATEGORIA_NOTICIA: 66,
   ESTADO_INF_CREDITICIO: 66,
+  ESTADO_FACTURACION: 67,
   ESTADO_ASIGNACION: 98,
   PAGINACION_FRACTAL: 99,
 } as const;
@@ -71,6 +75,18 @@ export type EntradaTablaMaestra = {
 };
 
 export type MasterTableResponse = EntradaTablaMaestra[];
+
+export interface ParametrosListadoTablaMaestra {
+  idMaestro: number;
+  busqueda?: string;
+  numPag: number;
+}
+
+export interface RespuestaListadoTablaMaestra {
+  listaTablaMaestra: EntradaTablaMaestra[];
+  totalRegistros: number;
+  totalPaginas: number;
+}
 
 export interface TablaMaestraCrearRequest {
   idMaestro: number;
@@ -130,8 +146,10 @@ const descripcionesTablaMaestraPorId: Partial<Record<TablaMaestraId, string>> = 
   [TablaMaestraId.TIPO_CONTACTO]: "TIPO CONTACTO",
   [TablaMaestraId.AREA_TRABAJO]: "AREA TRABAJO",
   [TablaMaestraId.ESTADO_CLIENTE]: "ESTADO DEL CLIENTE",
+  [TablaMaestraId.FORMATO_ARCHIVO]: "FORMATO ARCHIVO",
   [TablaMaestraId.EMPRESA_ATENCION]: "EMPRESA ATENCION",
   [TablaMaestraId.PLANTILLA_INFORME]: "PLANTILLA DOCUMENTO",
+  [TablaMaestraId.ESTADO_PEDIDO]: "ESTADO PEDIDO",
   [TablaMaestraId.TIPO_DOCUMENTO]: "TIPO DOCUMENTO",
   [TablaMaestraId.TIPO_PLAZO_CREDITO]: "TIPO PLAZO CREDITO",
   [TablaMaestraId.TIPO_EMPRESA]: "TIPO EMPRESA",

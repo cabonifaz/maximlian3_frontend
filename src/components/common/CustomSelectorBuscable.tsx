@@ -3,7 +3,7 @@ import { Search, Loader2, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSeleccionAutomaticaOpcionUnica } from "@maximilian/hooks/useSeleccionAutomaticaOpcionUnica";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { CustomLabel } from "./CustomLabel";
 
 export interface CustomSelectorBuscableProps {
@@ -22,6 +22,7 @@ export interface CustomSelectorBuscableProps {
   loading?: boolean;
   onOpen?: () => void;
   onBlur?: () => void;
+  alCambiarBusqueda?: (terminoBusqueda: string) => void;
   onAddNew?: (terminoBusqueda: string) => void;
   displayValue?: string;
   autoSeleccionarOpcionUnica?: boolean;
@@ -51,6 +52,7 @@ export function CustomSelectorBuscable({
   loading = false,
   onOpen,
   onBlur,
+  alCambiarBusqueda,
   onAddNew,
   displayValue,
   autoSeleccionarOpcionUnica = false,
@@ -65,7 +67,7 @@ export function CustomSelectorBuscable({
   puedeAgregarNuevo,
   onClear,
 }: CustomSelectorBuscableProps) {
-  const [terminoBusqueda, setSearchTerm] = useState("");
+  const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -154,6 +156,11 @@ export function CustomSelectorBuscable({
     onBlur?.();
   };
 
+  const cambiarTerminoBusqueda = (termino: string) => {
+    setTerminoBusqueda(termino);
+    alCambiarBusqueda?.(termino);
+  };
+
   return (
     <div className="relative space-y-2">
       {label != null && <CustomLabel required={required} optional={optional && mostrarTextoOpcionalEnLabel}>{label}</CustomLabel>}
@@ -191,7 +198,7 @@ export function CustomSelectorBuscable({
                 placeholder="Buscar..."
                 autoFocus
                 value={terminoBusqueda}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => cambiarTerminoBusqueda(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
@@ -209,7 +216,7 @@ export function CustomSelectorBuscable({
                         if (!onClear) return;
                         onClear?.();
                         setIsOpen(false);
-                        setSearchTerm("");
+                        cambiarTerminoBusqueda("");
                       }}
                     >
                       {etiquetaOpcionVacia}
@@ -223,7 +230,7 @@ export function CustomSelectorBuscable({
                         onClick={() => {
                           onChange(opt.num1!);
                           setIsOpen(false);
-                          setSearchTerm("");
+                          cambiarTerminoBusqueda("");
                         }}
                       >
                         {renderizarOpcion?.(opt) ?? obtenerEtiquetaOpcion?.(opt) ?? opt.string1}
@@ -246,7 +253,7 @@ export function CustomSelectorBuscable({
                   e.stopPropagation();
                   onAddNew(terminoLimpio);
                   setIsOpen(false);
-                  setSearchTerm("");
+                  cambiarTerminoBusqueda("");
                 }}
               >
                 {renderizarVistaPreviaAltaNueva?.(terminoBusqueda.trim())}

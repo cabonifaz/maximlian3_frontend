@@ -6,6 +6,7 @@ import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra
 
 interface PropsCustomEncabezadoFiltroTabla {
   titulo: string;
+  idMaster?: number;
   opciones?: EntradaTablaMaestra[];
   valores: number[];
   onChange: (valores: number[]) => void;
@@ -16,6 +17,7 @@ interface PropsCustomEncabezadoFiltroTabla {
 
 export function CustomEncabezadoFiltroTabla({
   titulo,
+  idMaster,
   opciones,
   valores,
   onChange,
@@ -88,6 +90,7 @@ export function CustomEncabezadoFiltroTabla({
               <MultiCustomSelectorBuscable
                 label={titulo}
                 triggerIcon={Filter}
+                idMaster={idMaster}
                 options={opciones}
                 value={valores}
                 onChange={actualizarSeleccion}
@@ -97,6 +100,7 @@ export function CustomEncabezadoFiltroTabla({
             ) : (
               <CustomSelectorBuscable
                 label={titulo}
+                idMaster={idMaster}
                 options={opciones}
                 value={valores[0]}
                 onChange={actualizarSeleccionUnica}

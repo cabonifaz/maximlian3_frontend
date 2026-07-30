@@ -1,0 +1,5 @@
+export const ID_MAESTRO_ESTADO_CIVIL = 55;
+
+export const ID_MAESTRO_PROFESION = 56;
+
+export const ID_MAESTRO_TIPO_DOCUMENTO = 54;

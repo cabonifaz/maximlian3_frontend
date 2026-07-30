@@ -1,14 +1,19 @@
+import { DEBOUNCE_MS } from "@maximilian/shared/constants/hooks/use-retardo.constants";
 import { useState, useEffect } from "react";
 
-const DEBOUNCE_MS = Number(import.meta.env.VITE_DEBOUNCE_MS ?? 1000);
-
-export function useRetardo<T>(value: T, delay = DEBOUNCE_MS): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+export function useRetardo<T>(valor: T, retraso = DEBOUNCE_MS): T {
+  const valorLimpio = (
+    typeof valor === "string" ? valor.trim() : valor
+  ) as T;
+  const [valorConRetardo, setValorConRetardo] = useState<T>(valorLimpio);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
+    const temporizador = setTimeout(
+      () => setValorConRetardo(valorLimpio),
+      retraso,
+    );
+    return () => clearTimeout(temporizador);
+  }, [retraso, valorLimpio]);
 
-  return debouncedValue;
+  return valorConRetardo;
 }

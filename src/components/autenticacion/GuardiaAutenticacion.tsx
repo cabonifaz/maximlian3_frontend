@@ -1,40 +1,12 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
-import { servicioAutenticacion } from "@maximilian/services/autenticacion.service";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
+import { useGuardiaAutenticacion } from "@maximilian/hooks/useGuardiaAutenticacion";
 
 interface PropsGuardiaAutenticacion {
   children: React.ReactNode;
 }
 
 export function GuardiaAutenticacion({ children }: PropsGuardiaAutenticacion) {
-  const navigate = useNavigate();
-  const [estaVerificando, setEstaVerificando] = useState(true);
-  const [tieneAcceso, setTieneAcceso] = useState(false);
-
-  useEffect(() => {
-    const verificarAutenticacion = async () => {
-      try {
-        const sesion = await servicioAutenticacion.getSession();
-        if (!sesion.tokens?.accessToken) {
-          navigate("/iniciar-sesion", { replace: true });
-          return;
-        }
-
-        setTieneAcceso(true);
-      } catch {
-        sessionStorage.removeItem("selected_role");
-        sessionStorage.removeItem("selected_role_id");
-        sessionStorage.removeItem("user_session");
-        navigate("/iniciar-sesion", { replace: true });
-        return;
-      } finally {
-        setEstaVerificando(false);
-      }
-    };
-
-    void verificarAutenticacion();
-  }, [navigate]);
+  const { estaVerificando, tieneAcceso } = useGuardiaAutenticacion();
 
   if (estaVerificando) {
     return <PantallaCarga />;

@@ -1,16 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomModalRegistroPersonaDirectorioAnalista } from "@maximilian/components/investigacion/CustomModalRegistroPersonaDirectorio";
-import { servicioDirectorioEjecutivo } from "@maximilian/services/directorioEjecutivo.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { useModalBuscarEjecutivoInforme } from "@maximilian/hooks/useModalBuscarEjecutivoInforme";
 import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/investigacion.type";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 
 interface PropsCustomModalBuscarEjecutivoAnalista {
   estaAbierto: boolean;
@@ -24,121 +19,50 @@ interface PropsCustomModalBuscarEjecutivoAnalista {
 
 export function CustomModalBuscarEjecutivoAnalista({
   estaAbierto,
-  registros: _registros,
+  registros,
   busquedaInicial = "",
   idIdioma,
   onCerrar,
   onSeleccionar,
   onAgregarEmpresaPersona,
 }: PropsCustomModalBuscarEjecutivoAnalista) {
-  const queryClient = useQueryClient();
-  const [registroEdicion, setRegistroEdicion] = useState<RegistroPersonaDirectorioAnalista | null>(null);
-  const [registroAEliminar, setRegistroAEliminar] = useState<RegistroPersonaDirectorioAnalista | null>(null);
-  const [idRegistroSeleccionado, setIdRegistroSeleccionado] = useState<number | null>(null);
-  const [idTipoPersona, setIdTipoPersona] = useState<number | undefined>(undefined);
-  const [idPais, setIdPais] = useState<number | undefined>(undefined);
-  const [descripcion, setDescripcion] = useState(busquedaInicial);
-  const [busquedaActiva, setBusquedaActiva] = useState(busquedaInicial);
-  const { data: opcionesTipoPersonaBase } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA),
-    enabled: estaAbierto,
-    staleTime: Infinity,
-  });
-  const { data: opcionesPaisBase } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.PAIS],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
-    enabled: estaAbierto,
-    staleTime: Infinity,
-  });
-  const opcionesTipoPersona = useMemo(() => traducirOpcionesTablaMaestra(opcionesTipoPersonaBase, idIdioma), [idIdioma, opcionesTipoPersonaBase]);
-  const opcionesPais = useMemo(() => traducirOpcionesTablaMaestra(opcionesPaisBase, idIdioma), [idIdioma, opcionesPaisBase]);
-
   const {
-    data: respuestaDirectorio,
-    isFetching,
+    descripcion,
+    eliminarDirectorioMutation,
+    idPais,
+    idRegistroSeleccionado,
+    idTipoPersona,
     isError,
+    isFetching,
+    manejarBuscar,
+    manejarGuardarRegistro,
+    manejarSeleccionar,
+    opcionesPais,
+    opcionesTipoPersona,
+    paginaActual,
+    prepararEdicionRegistro,
     refetch,
-  } = useQuery({
-    queryKey: ["directorio-ejecutivo", "buscar", busquedaActiva],
-    queryFn: () => servicioDirectorioEjecutivo.listar({
-      busqueda: busquedaActiva.trim() || undefined,
-      numPag: 1,
-    }),
-    enabled: estaAbierto,
-    retry: false,
-  });
-
-  const registrosFuente = useMemo(
-    () => respuestaDirectorio?.registros ?? _registros,
-    [_registros, respuestaDirectorio?.registros],
-  );
-
-  const resultados = useMemo(() => {
-    const termino = busquedaActiva.trim().toLowerCase();
-
-    return registrosFuente.filter((registro) => {
-      const coincideTipo = !idTipoPersona || registro.idTipoPersona === idTipoPersona;
-      const coincidePais = !idPais || registro.idPais === idPais;
-      const coincideDescripcion =
-        !termino ||
-        registro.nombres.toLowerCase().includes(termino) ||
-        registro.numeroDocumentoIdentidad.toLowerCase().includes(termino) ||
-        registro.numeroIdFiscal.toLowerCase().includes(termino);
-
-      return coincideTipo && coincidePais && coincideDescripcion;
-    });
-  }, [busquedaActiva, idPais, idTipoPersona, registrosFuente]);
-
-  useEffect(() => {
-    if (!estaAbierto) {
-      setRegistroEdicion(null);
-      setRegistroAEliminar(null);
-      setIdRegistroSeleccionado(null);
-      setIdTipoPersona(undefined);
-      setIdPais(undefined);
-      setDescripcion("");
-      setBusquedaActiva("");
-      return;
-    }
-
-    if (!resultados.length) {
-      setIdRegistroSeleccionado(null);
-      return;
-    }
-
-    setIdRegistroSeleccionado((valorActual) => (
-      valorActual != null && resultados.some((registro) => registro.id === valorActual)
-        ? valorActual
-        : resultados[0]?.id ?? null
-    ));
-  }, [estaAbierto, resultados]);
-
-  const eliminarDirectorioMutation = useMutation({
-    mutationFn: async () => {
-      const idDirectorioEjecutivo = registroAEliminar?.idDirectorioEjecutivo ?? registroAEliminar?.id;
-      if (!idDirectorioEjecutivo) {
-        throw new Error("No se encontró el registro a eliminar.");
-      }
-
-      await servicioDirectorioEjecutivo.eliminar({ idDirectorioEjecutivo });
-    },
-    onSuccess: async () => {
-      setRegistroAEliminar(null);
-      setIdRegistroSeleccionado(null);
-      await queryClient.invalidateQueries({ queryKey: ["directorio-ejecutivo"] });
-      await refetch();
-    },
+    registroAEliminar,
+    registroEdicion,
+    registroSeleccionado,
+    resultados,
+    respuestaDirectorio,
+    setDescripcion,
+    setIdPais,
+    setIdRegistroSeleccionado,
+    setIdTipoPersona,
+    setPaginaActual,
+    setRegistroAEliminar,
+    setRegistroEdicion,
+  } = useModalBuscarEjecutivoInforme({
+    busquedaInicial,
+    estaAbierto,
+    idIdioma,
+    onSeleccionar,
+    registros,
   });
 
   if (!estaAbierto) return null;
-
-  const registroSeleccionado = resultados.find((registro) => registro.id === idRegistroSeleccionado);
-
-  const manejarSeleccionar = () => {
-    if (!registroSeleccionado) return;
-    onSeleccionar(registroSeleccionado);
-  };
 
   return (
     <>
@@ -147,10 +71,15 @@ export function CustomModalBuscarEjecutivoAnalista({
           <div className="border-b border-slate-100 bg-[radial-gradient(circle_at_top_left,#f8fafc,white_55%)] px-8 py-7">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">Directorio ejecutivo</p>
-                <h2 className="mt-2 text-2xl font-bold text-slate-900">Búsqueda de ejecutivos</h2>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">
+                  Directorio ejecutivo
+                </p>
+                <h2 className="mt-2 text-2xl font-bold text-slate-900">
+                  Búsqueda de ejecutivos
+                </h2>
                 <p className="mt-2 text-sm text-slate-500">
-                  Busque, seleccione o administre ejecutivos registrados directamente desde la base de datos.
+                  Busque, seleccione o administre ejecutivos registrados
+                  directamente desde la base de datos.
                 </p>
               </div>
               <CustomButton variant="ghost" size="icon" onClick={onCerrar}>
@@ -172,7 +101,7 @@ export function CustomModalBuscarEjecutivoAnalista({
                 placeholder="Todos"
               />
               <CustomSelectorBuscable
-                label="País"
+              label="País"
                 options={opcionesPais}
                 value={idPais}
                 onChange={setIdPais}
@@ -184,7 +113,10 @@ export function CustomModalBuscarEjecutivoAnalista({
               <div className="space-y-2">
                 <CustomLabel>Búsqueda</CustomLabel>
                 <div className="relative">
-                  <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <Search
+                    size={16}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"
+                  />
                   <input
                     value={descripcion}
                     onChange={(event) => setDescripcion(event.target.value)}
@@ -206,7 +138,8 @@ export function CustomModalBuscarEjecutivoAnalista({
               </button>
               <div className="flex items-center gap-3">
                 <p className="text-xs text-slate-400">
-                  {respuestaDirectorio?.totalRegistros ?? 0} registro(s) encontrados
+                  {respuestaDirectorio?.totalRegistros ?? 0} registro(s)
+                  encontrados
                 </p>
                 <CustomButton
                   type="button"
@@ -214,7 +147,7 @@ export function CustomModalBuscarEjecutivoAnalista({
                   className="h-10 rounded-lg px-4"
                   loading={isFetching}
                   loadingText="Buscando..."
-                  onClick={() => setBusquedaActiva(descripcion)}
+                  onClick={manejarBuscar}
                 >
                   <Search size={14} />
                   Buscar
@@ -226,7 +159,7 @@ export function CustomModalBuscarEjecutivoAnalista({
               <table className="w-full text-left">
                 <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.16em] text-[#9aa9c2]">
                   <tr>
-                    <th className="px-5 py-4">Nombre / Razón Social</th>
+                    <th className="px-5 py-4">Nombre / Razón social</th>
                     <th className="px-5 py-4">Documento</th>
                     <th className="px-5 py-4">País</th>
                     <th className="px-5 py-4">ID Fiscal</th>
@@ -247,8 +180,14 @@ export function CustomModalBuscarEjecutivoAnalista({
                     <tr>
                       <td colSpan={5} className="px-5 py-10 text-center">
                         <div className="space-y-3">
-                          <p className="text-sm text-red-500">No se pudo cargar el directorio ejecutivo.</p>
-                          <CustomButton variant="secondary" size="sm" onClick={() => void refetch()}>
+                          <p className="text-sm text-red-500">
+                            No se pudo cargar el directorio ejecutivo.
+                          </p>
+                          <CustomButton
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => void refetch()}
+                          >
                             Reintentar
                           </CustomButton>
                         </div>
@@ -256,38 +195,61 @@ export function CustomModalBuscarEjecutivoAnalista({
                     </tr>
                   ) : resultados.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-5 py-10 text-center text-sm text-slate-400">
+                      <td
+                        colSpan={5}
+                        className="px-5 py-10 text-center text-sm text-slate-400"
+                      >
                         No se encontraron registros.
                       </td>
                     </tr>
                   ) : (
                     resultados.map((registro) => {
-                      const estaSeleccionado = idRegistroSeleccionado === registro.id;
+                      const estaSeleccionado =
+                        idRegistroSeleccionado === registro.id;
 
                       return (
                         <tr
                           key={registro.id}
-                          className={`cursor-pointer transition-colors ${estaSeleccionado ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
+                          className={`cursor-pointer transition-colors ${
+                            estaSeleccionado ? "bg-brand-wine/5" : "hover:bg-slate-50"
+                          }`}
                           onClick={() => setIdRegistroSeleccionado(registro.id)}
                         >
                           <td className="relative px-5 py-5">
-                            <span className={`pointer-events-none absolute inset-y-0 left-0 w-[3px] rounded-r-full transition-colors ${estaSeleccionado ? "bg-brand-wine" : ""}`} />
-                            <span className={`text-sm font-bold ${estaSeleccionado ? "text-brand-wine" : "text-brand-black"}`}>{registro.nombres}</span>
+                            <span
+                              className={`pointer-events-none absolute inset-y-0 left-0 w-[3px] rounded-r-full transition-colors ${
+                                estaSeleccionado ? "bg-brand-wine" : ""
+                              }`}
+                            />
+                            <span
+                              className={`text-sm font-bold ${
+                                estaSeleccionado
+                                  ? "text-brand-wine"
+                                  : "text-brand-black"
+                              }`}
+                            >
+                              {registro.nombres}
+                            </span>
                           </td>
                           <td className="px-5 py-5">
                             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
-                              {registro.tipoDocumentoIdentidad || "-"} - {registro.numeroDocumentoIdentidad || "-"}
+                              {registro.tipoDocumentoIdentidad || "-"} -{" "}
+                              {registro.numeroDocumentoIdentidad || "-"}
                             </span>
                           </td>
-                          <td className="px-5 py-5 text-sm text-slate-600">{registro.pais || "-"}</td>
-                          <td className="px-5 py-5 text-sm text-slate-600">{registro.numeroIdFiscal || "-"}</td>
+                          <td className="px-5 py-5 text-sm text-slate-600">
+                            {registro.pais || "-"}
+                          </td>
+                          <td className="px-5 py-5 text-sm text-slate-600">
+                            {registro.numeroIdFiscal || "-"}
+                          </td>
                           <td className="px-5 py-5 text-center">
                             <div className="flex items-center justify-center gap-4">
                               <button
                                 type="button"
                                 onClick={(event) => {
                                   event.stopPropagation();
-                                  setRegistroEdicion(registro);
+                                  void prepararEdicionRegistro(registro);
                                 }}
                                 className="inline-flex text-[#2764ff] transition-colors hover:text-[#1d4ed8]"
                               >
@@ -312,13 +274,52 @@ export function CustomModalBuscarEjecutivoAnalista({
                 </tbody>
               </table>
             </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <CustomButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() =>
+                  setPaginaActual((pagina) => Math.max(1, pagina - 1))
+                }
+                disabled={paginaActual <= 1 || isFetching}
+              >
+                Anterior
+              </CustomButton>
+              <span className="text-sm font-medium text-slate-500">
+                Página {paginaActual} de {respuestaDirectorio?.totalPaginas ?? 1}
+              </span>
+              <CustomButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setPaginaActual((pagina) => pagina + 1)}
+                disabled={
+                  isFetching ||
+                  paginaActual >= (respuestaDirectorio?.totalPaginas ?? 1)
+                }
+              >
+                Siguiente
+              </CustomButton>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 border-t border-gray-100 bg-gray-50/50 px-8 py-5">
-            <CustomButton type="button" variant="secondary" size="sm" onClick={onCerrar}>
+            <CustomButton
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={onCerrar}
+            >
               Cancelar
             </CustomButton>
-            <CustomButton type="button" size="sm" onClick={manejarSeleccionar} disabled={!registroSeleccionado}>
+            <CustomButton
+              type="button"
+              size="sm"
+              onClick={manejarSeleccionar}
+              disabled={!registroSeleccionado}
+            >
               Seleccionar
             </CustomButton>
           </div>
@@ -331,12 +332,7 @@ export function CustomModalBuscarEjecutivoAnalista({
         registroInicial={registroEdicion}
         idIdioma={idIdioma}
         onCerrar={() => setRegistroEdicion(null)}
-        onGuardar={(registro) => {
-          setRegistroEdicion(null);
-          setIdRegistroSeleccionado(registro.id);
-          void queryClient.invalidateQueries({ queryKey: ["directorio-ejecutivo"] });
-          void refetch();
-        }}
+        onGuardar={manejarGuardarRegistro}
       />
 
       <CustomModalConfirmacionAccion
@@ -351,8 +347,14 @@ export function CustomModalBuscarEjecutivoAnalista({
         varianteConfirmar="danger"
         zIndexClassName="z-[160]"
       >
-        <p><span className="font-bold">Registro:</span> {registroAEliminar?.nombres ?? "-"}</p>
-        <p><span className="font-bold">Documento:</span> {registroAEliminar?.numeroDocumentoIdentidad ?? "-"}</p>
+        <p>
+          <span className="font-bold">Registro:</span>{" "}
+          {registroAEliminar?.nombres ?? "-"}
+        </p>
+        <p>
+          <span className="font-bold">Documento:</span>{" "}
+          {registroAEliminar?.numeroDocumentoIdentidad ?? "-"}
+        </p>
       </CustomModalConfirmacionAccion>
     </>
   );

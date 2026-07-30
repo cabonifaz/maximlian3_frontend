@@ -1,3 +1,4 @@
+import { camposCalculadosEstadoFinanciero, camposRatioPorcentaje } from "@maximilian/shared/constants/components/investigacion/custom-modal-detalle-cuentas-informe.constants";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -13,7 +14,7 @@ import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPe
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
 import { informeService } from "@maximilian/services/informe.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type {
   DetalleBalanceGeneralAnalista,
   DetalleCuentasBalanceAnalista,
@@ -78,10 +79,6 @@ function obtenerNumero(valor: string) {
   return obtenerNumeroDesdeMonto(valor);
 }
 
-function formatearNumero(valor: number) {
-  return formatearMontoDosDecimales(valor);
-}
-
 function sanitizarNumero(valor: string, permitirNegativo = false) {
   return sanitizarMontoDosDecimales(valor, permitirNegativo);
 }
@@ -91,66 +88,6 @@ function esValorCeroOBlanco(valor: string) {
   if (!texto || texto === "-" || texto === "-.") return true;
   return Math.abs(obtenerNumero(texto)) < 0.000001;
 }
-
-const camposCalculadosEstadoFinanciero = new Set([
-  "total-activo-corriente",
-  "total-activo-no-corriente",
-  "total-activo",
-  "total-pasivo-corriente",
-  "total-pasivo-no-corriente",
-  "total-pasivos",
-  "total-patrimonio",
-  "total-pasivo-patrimonio",
-  "ganancia-bruta",
-  "ganancia-operativa",
-  "ganancia-antes-impuestos",
-  "ganancia-neta",
-  "liquidity-ratio",
-  "working-capital-ratio",
-  "current-indebtedness-ratio",
-  "profitability-ratio",
-  "liquidity-ratio-totalizado",
-  "working-capital-ratio-totalizado",
-  "current-indebtedness-ratio-totalizado",
-  "profitability-ratio-totalizado",
-  "total-activos-bancos",
-  "total-pasivo-bancos",
-  "total-patrimonio-bancos",
-  "total-pasivo-patrimonio-bancos",
-  "total-activos-seguros",
-  "total-pasivo-seguros",
-  "total-patrimonio-seguros",
-  "total-pasivo-patrimonio-seguros",
-  "current-total",
-  "net-fixed",
-  "total-assets-turquia",
-  "current-liabilities",
-  "total-non-current-liabilities",
-  "total-liabilities",
-  "total-equity",
-  "total-liabilities-equity",
-  "gross-profit",
-  "financial-pl",
-  "extra-other-pl",
-  "profit-loss-before-taxes",
-  "profit-loss-after-taxes",
-  "ebit",
-  "ebitda",
-  "profit",
-  "liquidity-index",
-  "working-capital",
-  "indebtedness-ratio",
-  "profitability-ratio-turquia",
-]);
-
-const camposRatioPorcentaje = new Set([
-  "current-indebtedness-ratio",
-  "profitability-ratio",
-  "current-indebtedness-ratio-totalizado",
-  "profitability-ratio-totalizado",
-  "indebtedness-ratio",
-  "profitability-ratio-turquia",
-]);
 
 function CampoDetalle({
   etiqueta,
@@ -180,7 +117,7 @@ function CampoDetalle({
   azul?: boolean;
 }) {
   const valorMostrado = mostrarComoPorcentaje
-    ? `${formatearNumero(obtenerNumero(valor))}%`
+    ? `${formatearMontoDosDecimales(obtenerNumero(valor))}%`
     : valor;
 
   return (
@@ -453,7 +390,7 @@ function obtenerGrupoVisualTurquia(campoId: string) {
       "exchange-rate-p",
     ].includes(campoId)
   ) {
-    return "Datos del periodo";
+    return "Datos del período";
   }
 
   if (["cash", "stocks", "creditors", "current-total"].includes(campoId)) {
@@ -548,7 +485,7 @@ function obtenerGrupoVisualTurquia(campoId: string) {
       "profit",
     ].includes(campoId)
   ) {
-    return "Cierre del periodo";
+    return "Cierre del período";
   }
 
   return "";
@@ -638,7 +575,7 @@ export function CustomModalDetalleCuentasAnalista({
         "total-pasivo-patrimonio": "totalPasivoPatrimonio",
       };
       const campoBalanceGeneral = equivalenciasBalanceTotalizado[campoObjetivo];
-      const valorFormateado = formatearNumero(obtenerNumero(valorCalculado));
+      const valorFormateado = formatearMontoDosDecimales(obtenerNumero(valorCalculado));
       const camposGananciaTurquia: Record<string, string> =
         esEstadoFinancieroTurquia &&
         ["profit-loss-after-taxes", "profit"].includes(campoObjetivo)
@@ -690,7 +627,7 @@ export function CustomModalDetalleCuentasAnalista({
           .filter(([campo]) => idsRatios.has(campo))
           .map(([campo, valor]) => [
             campo,
-            formatearNumero(obtenerNumero(valor)),
+            formatearMontoDosDecimales(obtenerNumero(valor)),
           ]),
       );
 
@@ -1674,7 +1611,7 @@ export function CustomModalDetalleCuentasAnalista({
       title="Detalle de Cuentas"
       subtitle={
         <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em]">
-          <span className="text-[#8ea0c0]">Gestion de cuentas contables</span>
+          <span className="text-[#8ea0c0]">Gestión de cuentas contables</span>
           {tipoEstadoFinanciero ? (
             <span className="rounded-full bg-brand-wine/10 px-2.5 py-1 text-brand-wine">
               {tipoEstadoFinanciero}

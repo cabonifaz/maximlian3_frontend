@@ -39,7 +39,7 @@ AWS Amplify (Cognito) handles auth. After login, users select a role on `RoleSel
 
 ### API Layer
 
-All HTTP calls go through the Axios instance in `src/services/maximilianService.ts`, which attaches four headers on every request:
+All HTTP calls go through the Axios instance in `src/services/maximilian-service.ts`, which attaches four headers on every request:
 - `Authorization: Bearer <accessToken>` — Cognito access token (from `fetchAuthSession()`)
 - `idRol` — from `sessionStorage.getItem("selected_role_id")`
 - `idUsuario` — from `sessionStorage.getItem("user_session")` parsed as `UserSession`
@@ -51,6 +51,8 @@ The response interceptor handles global toast notifications for errors/success.
 
 Service modules (`user.service.ts`, `client.service.ts`, etc.) use this instance. API responses follow the envelope: `{ idTipoMensaje, mensaje, result }`.
 
+API endpoint paths must be defined in a module-specific constants file under `src/shared/constants/endpoints/` and consumed from services and interceptors. Never write `/api/...` literals directly in service methods. Name each exported object `ENDPOINTS_<MODULO>` and group all routes used by that frontend module in its corresponding `*.endpoint.ts` file.
+
 #### API Response Convention
 Every endpoint returns `{ idTipoMensaje, mensaje, result }`:
 - `idTipoMensaje: 1` (`BUSINESS_RULE_VIOLATION`) — business rule error
@@ -61,6 +63,10 @@ The `mensaje` field always contains the user-facing message for the operation re
 The Axios interceptor in `maximilianService.ts` handles all toast notifications globally:
 - `toast.error(mensaje)` for any non-success response (idTipoMensaje ≠ 2)
 - `toast.success(mensaje)` for successful non-GET requests (mutations)
+
+Only show the message returned by the backend. If the backend does not return a response or `mensaje` is empty, do not display a toast and do not invent a fallback message. In service methods, throw `ErrorRespuestaApi` with the complete API response (for example, `throw new ErrorRespuestaApi(data)`), never a plain `Error` built from `mensaje`. Consumers must use `esErrorRespuestaApi(error)` and `error.idTipoMensaje`/`error.respuesta` when they need structured error details; never parse or compare `error.message` to identify an API error.
+
+Never identify an error by parsing its text (`error.message.includes(...)`, equality checks, regex, etc.). Prefer structured signals such as error classes, `name`/codes supplied by the provider, HTTP status, API response fields, or platform events. For Vite dynamic import failures, use the `vite:preloadError` event and its `payload` instead of matching the browser-specific message.
 
 **Never call `toast.success` manually in `onSuccess` handlers** — the interceptor covers it.
 
@@ -75,6 +81,20 @@ TanStack React Query v5 manages server state. Query keys follow the pattern `[en
 ### Forms
 
 React Hook Form + Zod schemas (in `src/schemas/`) handle all forms. Schemas are colocated with their feature context. Modal forms must call `reset()` (from `useForm`) both on close and after a successful submit so state does not persist across modal open/close cycles. Use `mode: "onTouched"` for field-level validation feedback.
+
+Every UI that collects and submits user-entered values is a form and must use a Zod schema, including investigation screens and all investigation modals. Investigation form schemas belong in `src/schemas/investigacion.schema.ts`; components must consume the inferred types instead of manually interpreting `FormData`. Schemas may validate the UI state and basic field shape, but must not duplicate backend business rules.
+
+### Backend-owned contracts and value formatting
+
+The backend and its stored procedures own business validation and API data contracts. The frontend must not infer alternate response shapes, recreate business rules, or silently correct values that violate the contract. Keep service adapters limited to transport concerns and typed mapping required by the declared backend contract.
+
+Preserve numeric and percentage values returned by the backend. Do not apply `toFixed`, truncate values, append `%`, or otherwise change precision in services, payload builders, or form submission handlers. Formatting is allowed only when it is strictly visual; reusable formatting must live under `src/shared/utils/`, never as duplicated helpers inside services or components.
+
+Services must reuse the response-reading primitives from `src/shared/utils/normalizacion-respuesta.util.ts` for generic extraction of records, numbers, text, lists, booleans, and binary indicators. Do not redeclare `obtenerRegistro`, `obtenerNumero`, `obtenerTexto`, `obtenerLista`, or equivalent generic helpers inside individual services. Keep only endpoint-specific typed mapping in each service; do not use shared normalizers to invent alternate backend contracts or business defaults.
+
+Files must follow their source-layer responsibility: reusable components in the appropriate `src/components/<module>/` directory, hooks in `src/hooks/`, schemas in `src/schemas/`, pure helpers in `src/shared/utils/`, types in `src/shared/types/`, and immutable configuration in `src/shared/constants/`. Do not create a same-named component directory merely to colocate hooks or utilities with one component.
+
+All `.ts` filenames under `src/services/`, `src/shared/types/`, and `src/shared/constants/` must use lowercase kebab-case, including their suffixes (for example, `compania-noticia.service.ts`, `compania-noticia.type.ts`, and `gestion-pedidos.constants.ts`). Preserve the established module directory names unless a task explicitly requests reorganizing folders.
 
 **Cross-field validation in custom resolvers**: When wrapping `zodResolver` in a custom `Resolver` to add cross-field checks (e.g. date comparison, conditional required fields), always make the resolver `async` and `await` the `zodResolver` call before mutating `result.errors`. `zodResolver` returns a `Promise` — reading or writing `result.errors` on the un-awaited Promise silently does nothing. Also prefer the resolver approach over Zod's `superRefine` for cross-field checks: `superRefine` may not run when other required fields in the schema fail validation simultaneously.
 
@@ -118,6 +138,8 @@ All TypeScript types live in `src/shared/types/`. Service request/response shape
 
 ## Git
 
+Do not create commits or push changes. Leave the worktree changes for the user to review, and suggest a Conventional Commit message when the work is ready.
+
 Never stage or commit anything under `.codex/`, or anything under `.playwright-mcp/`. These files are not in `.gitignore` but must be kept out of commits.
 
 Commit messages must follow Conventional Commits (`type: short description`) and be a single concise sentence with no line breaks. Do not add `Co-Authored-By` or any Claude contribution credits.
@@ -152,6 +174,14 @@ src/components/
 
 Always place a new component in the most specific module it belongs to. Only move a component to `common/` if it is actually reused across two or more modules. Never dump new components into the root of `src/components/` — every component belongs to a module.
 
+Pages must not define modal components inline. Any modal rendered by a page belongs in `src/components/<module>/` or `src/components/common/` when reused across modules, with a `Custom` prefix for custom-built modals. Pages may control modal open/close state and pass handlers, but the modal JSX and internal modal composition must live in the component layer.
+
+### File-level Constants
+
+Static constants declared at file level must live in a dedicated module-specific `*.constants.ts` file under `src/shared/constants/`, organized by source layer and feature (for example, `src/shared/constants/pages/Coordinador/` or `src/shared/constants/components/investigacion/`). This includes IDs, configuration objects, table columns, selector options, labels, pagination values, timeouts, storage keys, and other immutable module configuration. Components, pages, services, hooks, contexts, and utilities must import these constants instead of declaring them in the implementation file. Keep local variables, derived values, component state, and constants scoped inside a function when they only support that function. Do not create a single global constants dump; preserve the modular folder structure inside `src/shared/constants/`.
+
+Temporary exceptions: do not extract or modify file-level constants in `CustomVisorDocumentoInforme.tsx` or `CustomVistaPreviaInforme.tsx` unless a task explicitly requests those files.
+
 ### Component Size
 
 Keep components focused and small. A component that grows beyond ~150 lines is a signal to split it. Extract:
@@ -163,10 +193,13 @@ Place sub-components in their module folder alongside the parent (e.g., `src/com
 
 ### Custom Hooks
 
+Any component logic beyond basic rendering state must be extracted to a custom hook. Date validation, filter orchestration, pagination state, API query coordination, modal workflows, payload construction, and derived UI state belong in hooks, not directly in `.tsx` components.
+
 Extract logic from components into custom hooks (`use*.ts` in `src/hooks/` or colocated in the feature folder) when:
 - A component contains more than one `useEffect`, or a `useEffect` with complex logic
 - State and derived values are tightly coupled and reused across components
 - A block of logic (filtering, pagination, form orchestration) obscures the component's rendering intent
+- Pages and modals must keep business flow, payload construction, async orchestration, filtering, pagination, and form state in hooks instead of embedding that logic directly in `.tsx` render files
 
 Name hooks to describe what they do, not how (`useClientFilters`, not `useClientPageState`). Design every custom hook with reusability in mind even if it is currently only used in one place.
 

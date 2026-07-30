@@ -4,7 +4,7 @@ import { FileText } from "lucide-react";
 import type { DatosInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { DocumentoInformeGenerado } from "@maximilian/shared/types/informe.type";
 import { seccionesInvestigacionAnalista } from "@maximilian/shared/utils/investigacion.util";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { informeService } from "@maximilian/services/informe.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { CustomVisorDocumentoInforme } from "@maximilian/components/common/CustomVisorDocumentoInforme";
@@ -99,7 +99,7 @@ function formatearValorVistaPrevia(valor: unknown): string {
   }
 
   if (typeof valor === "boolean") {
-    return valor ? "Si" : "No";
+    return valor ? "Sí" : "No";
   }
 
   if (valor == null) {
@@ -112,35 +112,36 @@ function formatearValorVistaPrevia(valor: unknown): string {
 const traduccionesVistaPreviaInforme: Record<string, string> = {
   "Aprobado": "Approved",
   "Activo": "Active",
-  "Ano": "Year",
+  "Año": "Year",
   "Aspectos Legales": "Legal Aspects",
   "Balance general": "Balance sheet",
   "Bancos-Proveedores": "Banks-Suppliers",
-  "Categoria CIIU": "ISIC category",
+  "Categoría CIIU": "ISIC category",
   "Ciudad / Estado / Provincia": "City / State / Province",
-  "Codigo": "Code",
+  "Código": "Code",
   "Comentario": "Comment",
   "Comentarios legales": "Legal comments",
+  "Comentarios de operaciones": "Operations comments",
   "Comentarios operaciones": "Operations comments",
-  "Compania relacionada": "Related company",
+  "Compañía relacionada": "Related company",
   "Contacto": "Contact",
-  "Correo electronico": "Email",
+  "Correo electrónico": "Email",
   "Datos Generales": "General Data",
   "Datos de identificación": "Identification data",
   "Detalle": "Detail",
-  "Direccion": "Address",
-  "Direccion principal": "Main address",
+  "Dirección": "Address",
+  "Dirección principal": "Main address",
   "Ejecutivo": "Executive",
   "Empresa": "Company",
   "Estado actual": "Current status",
   "Estados Unidos": "United States",
   "Fecha": "Date",
-  "Fecha de constitucion": "Date of incorporation",
+  "Fecha de constitución": "Date of incorporation",
   "Identificación": "Identification",
   "Imagen principal": "Main image",
-  "Importacion": "Import",
+  "Importación": "Import",
   "Información Financiera": "Financial Information",
-  "Informacion financiera": "Financial information",
+  "Información financiera": "Financial information",
   "Investigación Normal": "Standard Investigation",
   "Jurídica": "Legal entity",
   "Mes": "Month",
@@ -148,31 +149,30 @@ const traduccionesVistaPreviaInforme: Record<string, string> = {
   "Nacional": "Domestic",
   "Nombre comercial": "Trade name",
   "Nombre de empresa": "Company name",
-  "Numero de cuenta": "Account number",
-  "Numero de empleados": "Number of employees",
-  "Numero de identificacion fiscal": "Tax identification number",
+  "Número de cuenta": "Account number",
+  "Número de empleados": "Number of employees",
+  "Número de identificación fiscal": "Tax identification number",
   "Operación principal": "Main operation",
-  "Operacion principal": "Main operation",
-  "Pais": "Country",
-  "Paises": "Countries",
-  "Periodo": "Period",
+  "País": "Country",
+  "Países": "Countries",
+  "Período": "Period",
   "Proveedor": "Supplier",
   "Ramo Operaciones": "Line of Business",
   "Referencias": "References",
   "Sector": "Sector",
   "Sede Principal": "Headquarters",
-  "Si": "Yes",
+  "Sí": "Yes",
   "Sin balances registrados.": "No balances registered.",
   "Sin datos de productos": "No product data",
   "Sin registros.": "No records.",
-  "Telefono": "Phone",
+  "Teléfono": "Phone",
   "Tipo": "Type",
   "Tipo de empresa": "Company type",
-  "Tipo de identificacion fiscal": "Tax identification type",
+  "Tipo de identificación fiscal": "Tax identification type",
   "Tipo de local": "Premises type",
   "Tipo de persona": "Person type",
   "Tipo de proveedor": "Supplier type",
-  "Total de imagenes": "Total images",
+  "Total de imágenes": "Total images",
   "Ventas netas": "Net sales",
 };
 
@@ -247,7 +247,7 @@ const etiquetasTurquia: Record<string, string> = {
   "currency": "Moneda",
   "currency-iso": "ISO de moneda",
   "currency-p": "Moneda (P/G)",
-  "length-period": "Duracion del periodo",
+  "length-period": "Duración del período",
   "reliability-level": "Nivel de confiabilidad",
   "exchange-rate": "Tipo de cambio",
   "exchange-rate-p": "Tipo de cambio (P/G)",
@@ -390,28 +390,28 @@ function crearBloqueOperacionPrincipal(
 
   agregarSimple(filas, op, "sector", "Sector");
   agregarSimple(filas, op, "actividad", "Actividad");
-  agregarSimple(filas, op, "categoriaCiiu", "Categoria CIIU");
+  agregarSimple(filas, op, "categoriaCiiu", "Categoría CIIU");
   agregarSimple(filas, op, "claseCiiu", "Clase CIIU");
   agregarSimple(filas, op, "actividadPrincipal", "Actividad principal");
 
   agregarPar(filas, op, "ventasContadoPorcentaje", "ventasContadoDetalle", "Ventas al Contado");
-  agregarCreditoCompras(filas, op, "ventasCreditoPorcentaje", "ventasCreditoDetalle", "ventasCreditoTiempo", "Ventas a Credito", "Tiempo de credito ventas", opcionesTiempoCredito);
+  agregarCreditoCompras(filas, op, "ventasCreditoPorcentaje", "ventasCreditoDetalle", "ventasCreditoTiempo", "Ventas a crédito", "Tiempo de crédito ventas", opcionesTiempoCredito);
   agregarPar(filas, op, "territorioVentasPorcentaje", "territorioVentasDetalle", "Ventas Nacionales");
   agregarPar(filas, op, "ventasExtranjeroPorcentaje", "ventasExtranjeroDetalle", "Ventas Extranjero");
 
   agregarPar(filas, op, "comprasNacionalesPorcentaje", "comprasNacionalesDetalle", "Compras Nacionales");
   agregarPar(filas, op, "comprasContadoNacionalesPorcentaje", "comprasContadoNacionalesDetalle", "Compras al Contado Nacionales");
-  agregarCreditoCompras(filas, op, "comprasCreditoNacionalesPorcentaje", "comprasCreditoNacionalesDetalle", "comprasCreditoNacionalesTiempo", "Compras a Credito Nacionales", "Tiempo de credito compras nacionales", opcionesTiempoCredito);
+  agregarCreditoCompras(filas, op, "comprasCreditoNacionalesPorcentaje", "comprasCreditoNacionalesDetalle", "comprasCreditoNacionalesTiempo", "Compras a crédito nacionales", "Tiempo de crédito compras nacionales", opcionesTiempoCredito);
 
   agregarPar(filas, op, "comprasExtranjeroPorcentaje", "comprasExtranjeroDetalle", "Compras Extranjero");
   agregarPar(filas, op, "comprasContadoInternacionalesPorcentaje", "comprasContadoInternacionalesDetalle", "Compras al Contado Extranjero");
-  agregarCreditoCompras(filas, op, "comprasCreditoInternacionalesPorcentaje", "comprasCreditoInternacionalesDetalle", "comprasCreditoInternacionalesTiempo", "Compras a Credito Extranjero", "Tiempo de credito compras extranjero", opcionesTiempoCredito);
+  agregarCreditoCompras(filas, op, "comprasCreditoInternacionalesPorcentaje", "comprasCreditoInternacionalesDetalle", "comprasCreditoInternacionalesTiempo", "Compras a crédito extranjero", "Tiempo de crédito compras extranjero", opcionesTiempoCredito);
 
-  agregarSimple(filas, op, "numeroEmpleados", "Numero de empleados");
+  agregarSimple(filas, op, "numeroEmpleados", "Número de empleados");
   agregarSimple(filas, op, "numeroEmpleadosDetalle", "Detalle empleados");
-  agregarSimple(filas, op, "comentariosOperaciones", "Comentarios operaciones");
+  agregarSimple(filas, op, "comentariosOperaciones", "Comentarios de operaciones");
 
-  return { id: "operacion-principal", titulo: "Operacion principal", filas };
+  return { id: "operacion-principal", titulo: "Operación principal", filas };
 }
 
 export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInvestigacionAnalista, opcionesTiempoCredito?: OpcionTiempo[]): SeccionVistaPreviaInforme[] {
@@ -429,16 +429,16 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           tipoPersona: "Tipo de persona",
           nombreEmpresa: "Nombre de empresa",
           nombreComercial: "Nombre comercial",
-          pais: "Pais",
-          operacionesCambio: "Operaciones cambio",
-          tipoIdentificacionFiscal: "Tipo de identificacion fiscal",
-          numeroIdentificacionFiscal: "Numero de identificacion fiscal",
-          direccionPrincipal: "Direccion principal",
+          pais: "País",
+          operacionesCambio: "Operaciones de cambio",
+          tipoIdentificacionFiscal: "Tipo de identificación fiscal",
+          numeroIdentificacionFiscal: "Número de identificación fiscal",
+          direccionPrincipal: "Dirección principal",
           ciudadEstadoProvincia: "Ciudad / Estado / Provincia",
-          numeroTelefono: "Telefono",
+          numeroTelefono: "Teléfono",
           numeroFax: "Fax",
-          correoElectronico: "Correo electronico",
-          paginaWeb: "Pagina web",
+          correoElectronico: "Correo electrónico",
+          paginaWeb: "Página web",
           estadoActual: "Estado actual",
         },
         ["datosAdicionales"],
@@ -457,21 +457,21 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
         datosInvestigacion.aspectosLegales as unknown as Record<string, unknown>,
         {
           tipoEmpresa: "Tipo de empresa",
-          fechaConstitucion: "Fecha de constitucion",
+          fechaConstitucion: "Fecha de constitución",
           ciudadRegistro: "Ciudad de registro",
-          notaria: "Notaria",
+          notaria: "Notaría",
           notario: "Notario",
           registro: "Registro",
           condiciones: "Condiciones",
-          operacionesCambioDivisas: "Operaciones cambio divisas",
+          operacionesCambioDivisas: "Operaciones de cambio de divisas",
           monedaTipoCambio: "Moneda tipo de cambio",
           capitalInicial: "Capital inicial",
           capitalDesembolsado: "Capital desembolsado",
-          ultimaAmpliacion: "Ultima ampliacion",
+          ultimaAmpliacion: "Última ampliación",
           patrimonioNeto: "Patrimonio neto",
           tipoAcciones: "Tipo de acciones",
           valorAcciones: "Valor de acciones",
-          obligacionBolsa: "Obligacion en bolsa",
+          obligacionBolsa: "Obligación en bolsa",
           tipoCambio: "Tipo de cambio",
           antecedentes: "Antecedentes",
           aspectosLegales: "Comentarios legales",
@@ -480,12 +480,12 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
       ),
       ...crearBloquesDesdeLista(
         "companias-relacionadas",
-        "Compania relacionada",
+        "Compañía relacionada",
         datosInvestigacion.companiasRelacionadas as unknown as Record<string, unknown>[],
         {
           empresa: "Empresa",
           idFiscal: "Id fiscal",
-          pais: "Pais",
+          pais: "País",
         },
         ["idInformeCompaniaRelacionada", "idCompania"],
       ),
@@ -505,7 +505,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           anio: "Año",
           mes: "Mes",
           moneda: "Moneda",
-          paises: "Paises",
+          paises: "Países",
           productos: "Productos",
           monto: "Monto",
           operaciones: "Operaciones",
@@ -520,7 +520,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           anio: "Año",
           mes: "Mes",
           moneda: "Moneda",
-          paises: "Paises",
+          paises: "Países",
           productos: "Productos",
           monto: "Monto",
           operaciones: "Operaciones",
@@ -539,10 +539,10 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
         })) as unknown as Record<string, unknown>[],
         {
           tipoLocal: "Tipo de local",
-          direccion: "Direccion",
+          direccion: "Dirección",
           comentario: "Comentario",
           imagen: "Imagen principal",
-          totalImagenes: "Total de imagenes",
+          totalImagenes: "Total de imágenes",
         },
       ),
     ],
@@ -554,7 +554,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
     bloques: [
       crearBloqueDesdeRegistro(
         "informacion-financiera-principal",
-        "Informacion financiera",
+        "Información financiera",
         datosInvestigacion.informacionFinanciera as unknown as Record<string, unknown>,
         {
           contenido: "Contenido",
@@ -700,15 +700,15 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           contacto: "Contacto",
           tipoProveedor: "Tipo de proveedor",
           tipoPersona: "Tipo de persona",
-          pais: "Pais",
+          pais: "País",
           taxIdType: "Tipo tax ID",
-          taxIdNumber: "Numero tax ID",
-          telefono: "Telefono",
+          taxIdNumber: "Número tax ID",
+          telefono: "Teléfono",
           comienzoNegociaciones: "Comienzo negociaciones",
           tieneReferenciaComercial: "Referencia comercial",
           operacionCambioMoneda: "Moneda",
           tipoCambio: "Tipo de cambio",
-          limiteCredito: "Limite de credito",
+          limiteCredito: "Límite de crédito",
           promedioMensual: "Promedio mensual",
         },
         ["idInformeProveedor", "idTipoProveedor", "idPais", "idTipoDocumento", "idMoneda", "idLimiteCredito", "idPlazoCredito", "esTieneReferenciaComercial"],
@@ -719,11 +719,11 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
         datosInvestigacion.bancos as unknown as Record<string, unknown>[],
         {
           banco: "Banco",
-          numeroCuenta: "Numero de cuenta",
+          numeroCuenta: "Número de cuenta",
           sector: "Sector",
-          telefono: "Telefono",
+          telefono: "Teléfono",
           sectoristaJefeCuenta: "Sectorista / jefe de cuenta",
-          pais: "Pais",
+          pais: "País",
         },
         ["idInformeBanco", "idBanco", "idPais", "idSector"],
       ),
@@ -739,8 +739,8 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
         "Datos generales",
         datosInvestigacion.datosGenerales as unknown as Record<string, unknown>,
         {
-          informacionGeneral: "Informacion general",
-          opinionCredito: "Opinion de credito",
+          informacionGeneral: "Información general",
+          opinionCredito: "Opinión de crédito",
         },
       ),
     ],
@@ -757,10 +757,10 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
         nombreCompleto: "Nombre completo",
         cargo: "Cargo",
         tipoPersona: "Tipo de persona",
-        pais: "Pais",
-        porcentaje: "Participacion %",
+        pais: "País",
+        porcentaje: "Participación %",
         vinculadoDesde: "Vinculado desde",
-        companiaAnterior: "Compania anterior",
+        companiaAnterior: "Compañía anterior",
         esParteDirectorio: "Es parte del directorio",
         lista: "Aparece en lista",
         detalleEjecutivo: "Imprime detalle",
@@ -1124,11 +1124,7 @@ export function CustomVistaPreviaInformeComparado({
     return (
       <div className={className}>
         {contenidoEntreTabsYTarjetas}
-        {estaCargandoDocumento ? (
-          <div className="min-h-[calc(100vh-12rem)] rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <PantallaCarga message="Generando vista previa del documento..." />
-          </div>
-        ) : documentoGenerado ? (
+        {estaCargandoDocumento ? null : documentoGenerado ? (
           <div className={`relative min-h-0 ${ocuparAltoDisponibleDocumento ? "flex-1" : ""}`}>
             {estaRenderizandoDocumento ? (
               <div className="absolute inset-0 z-30 flex min-h-[calc(100vh-12rem)] items-center justify-center rounded-3xl border border-slate-200 bg-white/95 shadow-sm backdrop-blur-sm">
@@ -1158,7 +1154,7 @@ export function CustomVistaPreviaInformeComparado({
     return (
       <div className={className}>
         <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500 shadow-sm">
-          No hay informacion disponible para mostrar.
+      No hay información disponible para mostrar.
         </div>
       </div>
     );

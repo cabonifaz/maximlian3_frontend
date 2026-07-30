@@ -21,7 +21,7 @@ export interface CompaniaListaItem {
   nombreCompleto: string;
   pais: string;
   telefono: string;
-  existeInformacion: boolean;
+  existeInformacion: string;
   tipoPersona?: string;
   tipoDocumento?: string;
 }
@@ -39,6 +39,9 @@ export interface CompaniaCrearRequest {
   nombreCompleto: string;
   idPais: number;
   telefono: string;
+  direccion: string;
+  ciudadProvinciaEstado: string;
+  codigoPostal: string;
   existeInformacion: boolean;
 }
 

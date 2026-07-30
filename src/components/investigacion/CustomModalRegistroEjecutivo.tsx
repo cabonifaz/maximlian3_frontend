@@ -1,18 +1,19 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { useModalRegistroEjecutivoInforme } from "@maximilian/hooks/useModalRegistroEjecutivoInforme";
 import type {
   RegistroDirectorioEjecutivoAnalista,
   RegistroPersonaDirectorioAnalista,
 } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
-import { seleccionarTextoEditableEnContenedor } from "@maximilian/shared/utils/formato-monto.util";
+import {
+  normalizarPorcentajeDecimales,
+  sanitizarPorcentajeDecimales,
+  seleccionarTextoEditableEnContenedor,
+} from "@maximilian/shared/utils/formato-monto.util";
 
 interface PropsCustomModalRegistroEjecutivoAnalista {
   estaAbierto: boolean;
@@ -37,64 +38,27 @@ export function CustomModalRegistroEjecutivoAnalista({
   onBuscarEjecutivo,
   onGuardar,
 }: PropsCustomModalRegistroEjecutivoAnalista) {
-  const ejecutivoDefecto = registroInicial?.nombreCompleto ?? personaSeleccionada?.nombres ?? "";
-  const tipoPersonaDefecto = registroInicial?.tipoPersona ?? personaSeleccionada?.tipoPersona ?? "Natural";
-  const paisDefecto = registroInicial?.pais ?? personaSeleccionada?.pais ?? "";
-  const [vinculadoDesde, setVinculadoDesde] = useState(registroInicial?.vinculadoDesde ?? "");
-  const cargoDefecto = registroInicial?.idCargo ? "" : limpiarTextoCargo(registroInicial?.cargo ?? "");
-  const [cargo, setCargo] = useState(cargoDefecto);
-  const [porcentajeParticipacion, setPorcentajeParticipacion] = useState(
-    limpiarPorcentaje(registroInicial?.porcentaje),
-  );
-  const { data: opcionesCargoBase } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.CARGO_DIRECTORIO],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CARGO_DIRECTORIO),
-    enabled: estaAbierto,
-    staleTime: Infinity,
+  const {
+    ejecutivoDefecto,
+    vinculadoDesde,
+    setVinculadoDesde,
+    cargoActual,
+    setCargo,
+    porcentajeParticipacion,
+    setPorcentajeParticipacion,
+    opcionesCargo,
+    tieneEjecutivoRegistrado,
+    manejarEnvio,
+  } = useModalRegistroEjecutivoInforme({
+    estaAbierto,
+    registroInicial,
+    personaSeleccionada,
+    requiereEjecutivoRegistrado,
+    idIdioma,
+    onGuardar,
   });
-  const opcionesCargo = useMemo(() => traducirOpcionesTablaMaestra(opcionesCargoBase, idIdioma), [idIdioma, opcionesCargoBase]);
-
-  const cargoMaestroRegistro = opcionesCargo
-    ?.find((opcion) => Number(opcion.num1) === Number(registroInicial?.idCargo))
-    ?.string1
-    ?.trim() ?? "";
-  const cargoActual = cargo || cargoMaestroRegistro || cargoDefecto;
-  const idDirectorioEjecutivo = registroInicial?.idDirectorioEjecutivo
-    ?? personaSeleccionada?.idDirectorioEjecutivo
-    ?? personaSeleccionada?.id;
-  const tieneEjecutivoRegistrado = Number(idDirectorioEjecutivo) > 0;
 
   if (!estaAbierto) return null;
-
-  const manejarEnvio = (formData: FormData) => {
-    if (requiereEjecutivoRegistrado && !tieneEjecutivoRegistrado) return;
-
-    const ejecutivo = String(formData.get("ejecutivo") ?? "").trim();
-    const idCargo = obtenerIdCargo(opcionesCargo, cargoActual) || registroInicial?.idCargo || 0;
-
-    const porcentaje = formatearPorcentajeParticipacion(porcentajeParticipacion);
-    const imprimirListado = formData.get("imprimirListado") === "si";
-    const imprimirDetalle = formData.get("imprimirDetalle") === "si";
-    const esParteDirectorio = formData.get("esParteDirectorio") === "si";
-
-    onGuardar({
-      idDirectorioEjecutivo,
-      ejecutivo: ejecutivo.length > 13 ? `${ejecutivo.slice(0, 13)}...` : ejecutivo,
-      idCargo,
-      cargo: cargoActual,
-      porcentaje,
-      lista: imprimirListado,
-      detalleEjecutivo: imprimirDetalle,
-      orden: registroInicial?.orden ?? "1",
-      vinculadoDesde: String(formData.get("vinculadoDesde") ?? "").trim(),
-      companiaAnterior: String(formData.get("companiaAnterior") ?? "").trim(),
-      esParteDirectorio,
-      pais: paisDefecto,
-      tipoPersona: tipoPersonaDefecto,
-      descripcionBusqueda: ejecutivo,
-      nombreCompleto: ejecutivo,
-    });
-  };
 
   return (
     <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
@@ -169,8 +133,8 @@ export function CustomModalRegistroEjecutivoAnalista({
                 etiqueta="% Participación"
                 marcador="0.00000000"
                 valor={porcentajeParticipacion}
-                onChange={(valor) => setPorcentajeParticipacion(sanitizarPorcentajeParticipacion(valor))}
-                onBlur={() => setPorcentajeParticipacion(limpiarPorcentaje(formatearPorcentajeParticipacion(porcentajeParticipacion)))}
+                onChange={(valor) => setPorcentajeParticipacion(sanitizarPorcentajeDecimales(valor, 8))}
+                onBlur={() => setPorcentajeParticipacion((valor) => normalizarPorcentajeDecimales(valor, 8))}
               />
             </div>
 
@@ -197,17 +161,6 @@ export function CustomModalRegistroEjecutivoAnalista({
       </div>
     </div>
   );
-}
-
-function limpiarTextoCargo(valor: string) {
-  return valor.replace("...", "").trim();
-}
-
-function obtenerIdCargo(opciones: { num1: number | null; string1: string | null }[] | undefined, valor: string) {
-  const idCargo = opciones?.find(
-    (opcion) => opcion.string1?.trim().toLowerCase() === valor.trim().toLowerCase(),
-  )?.num1;
-  return idCargo == null ? 0 : Number(idCargo);
 }
 
 function CampoInput({
@@ -258,40 +211,6 @@ function CampoInput({
       />
     </label>
   );
-}
-
-function limpiarPorcentaje(valor?: string) {
-  return (valor ?? "").replace("%", "").trim();
-}
-
-function sanitizarPorcentajeParticipacion(valor: string) {
-  const valorNormalizado = limpiarPorcentaje(valor).replace(",", ".").replace(/[^0-9.]/g, "");
-  const partes = valorNormalizado.split(".");
-  const entero = partes[0] ?? "";
-  const decimal = partes[1] ?? "";
-  const valorCompuesto = partes.length > 1 ? `${entero}.${decimal.slice(0, 8)}` : entero;
-
-  if (!valorCompuesto) return "";
-
-  if (entero && Number.parseInt(entero, 10) > 100) {
-    return "100";
-  }
-
-  if (valorCompuesto === "100" || valorCompuesto.startsWith("100.")) {
-    return "100";
-  }
-
-  return valorCompuesto;
-}
-
-function formatearPorcentajeParticipacion(valor: string) {
-  const valorLimpio = limpiarPorcentaje(valor).replace(",", ".");
-  if (!valorLimpio) return "0.00000000%";
-
-  const numero = Number.parseFloat(valorLimpio);
-  if (Number.isNaN(numero)) return "0.00000000%";
-
-  return `${numero.toFixed(8)}%`;
 }
 
 function GrupoRadio({

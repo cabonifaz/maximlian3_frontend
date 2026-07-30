@@ -1,3 +1,4 @@
+import { ENDPOINTS_AUTENTICACION } from "@maximilian/shared/constants/endpoints/autenticacion.endpoint";
 import {
   signIn,
   confirmSignIn,
@@ -8,8 +9,8 @@ import {
   fetchAuthSession,
 } from "aws-amplify/auth";
 import type { DatosFormularioInicioSesion } from "@maximilian/schemas";
-import maximilianService from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import maximilianService from "./maximilian-service";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type { LoginValidatorResponse } from "@maximilian/shared/types/autenticacion.type";
 import { limpiarDatosSesionLocal } from "./sesion.service";
@@ -33,11 +34,11 @@ export const servicioAutenticacion = {
   getUserRoles: async () => {
     try {
       const { data } = await maximilianService.get<ApiResponse<LoginValidatorResponse>>(
-        "/api/Login/validator"
+        ENDPOINTS_AUTENTICACION.validar
       );
 
       if (data.idTipoMensaje !== MessageType.SUCCESS) {
-        throw new Error(data.mensaje || "Error al obtener roles");
+        throw new ErrorRespuestaApi(data);
       }
 
       return data.result[0];

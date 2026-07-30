@@ -1,5 +1,6 @@
-import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilianService";
-import type { ApiResponse } from "@maximilian/shared/types/api.type";
+import { ENDPOINTS_BANCO } from "@maximilian/shared/constants/endpoints/banco.endpoint";
+import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilian-service";
+import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   BancoCrearRequest,
   BancoEditarRequest,
@@ -10,43 +11,12 @@ import type {
   BancoListResponse,
   BancoObtenerParams,
 } from "@maximilian/shared/types/banco.type";
-
-function obtenerNumero(...valores: unknown[]): number | undefined {
-  for (const valor of valores) {
-    if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-    if (typeof valor === "string" && valor.trim() !== "") {
-      const numero = Number(valor);
-      if (Number.isFinite(numero)) return numero;
-    }
-  }
-
-  return undefined;
-}
-
-function obtenerTexto(...valores: unknown[]): string {
-  for (const valor of valores) {
-    if (typeof valor === "string") {
-      const texto = valor.trim();
-      if (texto) return texto;
-    }
-  }
-
-  return "";
-}
-
-function obtenerRegistro(valor: unknown): Record<string, unknown> {
-  return typeof valor === "object" && valor !== null && !Array.isArray(valor)
-    ? valor as Record<string, unknown>
-    : {};
-}
-
-function obtenerLista(...valores: unknown[]): unknown[] {
-  for (const valor of valores) {
-    if (Array.isArray(valor)) return valor;
-  }
-
-  return [];
-}
+import {
+  obtenerLista,
+  obtenerNumeroOpcional as obtenerNumero,
+  obtenerRegistro,
+  obtenerTexto,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
 function normalizarBanco(item: unknown): BancoListaItem {
   const registro = obtenerRegistro(item);
@@ -99,6 +69,16 @@ function normalizarGuardado(resultado: unknown): BancoGuardarResponse {
   };
 }
 
+function normalizarBancoObtenido(resultado: unknown) {
+  const bancoDesdeLista = normalizarLista(resultado).lstBanco[0];
+  if (bancoDesdeLista) return bancoDesdeLista;
+
+  const registro = obtenerRegistro(resultado);
+  const idBanco = obtenerNumero(registro.idBanco, registro.IdBanco);
+
+  return idBanco ? normalizarBanco(registro) : null;
+}
+
 const cacheBancoObtener = new Map<string, BancoListaItem | null>();
 const solicitudesBancoObtener = new Map<string, Promise<BancoListaItem | null>>();
 
@@ -117,18 +97,18 @@ async function obtenerBanco(params: BancoObtenerParams): Promise<BancoListaItem 
   if (solicitudExistente) return solicitudExistente;
 
   const solicitud = maximilianService
-    .get<ApiResponse<unknown>>("/api/Banco/obtener", {
+    .get<ApiResponse<unknown>>(ENDPOINTS_BANCO.obtener, {
       params: {
         IdBanco: params.idBanco,
         Nombre: params.nombre,
       },
     })
     .then(({ data }) => {
-      if (!esRespuestaOkCompatibilidad(data, "/api/Banco/obtener")) {
-        throw new Error(data.mensaje || "Error al obtener el banco");
+      if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_BANCO.obtener)) {
+        throw new ErrorRespuestaApi(data);
       }
 
-      const banco = normalizarLista(data.result).lstBanco[0] ?? null;
+      const banco = normalizarBancoObtenido(data.result);
       cacheBancoObtener.set(clave, banco);
       return banco;
     })
@@ -142,15 +122,15 @@ async function obtenerBanco(params: BancoObtenerParams): Promise<BancoListaItem 
 
 export const servicioBanco = {
   list: async (params: BancoListParams): Promise<BancoListResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>("/api/Banco/listar", {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_BANCO.listar, {
       params: {
         Busqueda: params.busqueda,
         NumPag: params.numPag,
       },
     });
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Banco/listar")) {
-      throw new Error(data.mensaje || "Error al listar los bancos");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_BANCO.listar)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     return normalizarLista(data.result);
@@ -161,10 +141,10 @@ export const servicioBanco = {
   },
 
   crear: async (payload: BancoCrearRequest): Promise<BancoGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Banco/crear", [payload]);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_BANCO.crear, [payload]);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Banco/crear")) {
-      throw new Error(data.mensaje || "Error al crear el banco");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_BANCO.crear)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheBancoObtener.clear();
@@ -172,10 +152,10 @@ export const servicioBanco = {
   },
 
   editar: async (payload: BancoEditarRequest): Promise<BancoGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Banco/editar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_BANCO.editar, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Banco/editar")) {
-      throw new Error(data.mensaje || "Error al editar el banco");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_BANCO.editar)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheBancoObtener.clear();
@@ -183,10 +163,10 @@ export const servicioBanco = {
   },
 
   eliminar: async (payload: BancoEliminarRequest): Promise<void> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>("/api/Banco/eliminar", payload);
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_BANCO.eliminar, payload);
 
-    if (!esRespuestaOkCompatibilidad(data, "/api/Banco/eliminar")) {
-      throw new Error(data.mensaje || "Error al eliminar el banco");
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_BANCO.eliminar)) {
+      throw new ErrorRespuestaApi(data);
     }
 
     cacheBancoObtener.clear();

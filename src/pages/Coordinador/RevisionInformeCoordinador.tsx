@@ -1,3 +1,4 @@
+import { ID_ESTADO_INFORME_APROBADO } from "@maximilian/shared/constants/pages/Coordinador/revision-informe-coordinador.constants";
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -8,8 +9,8 @@ import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/Cu
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
 import { informeService } from "@maximilian/services/informe.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
-import { servicioInformeObservacion } from "@maximilian/services/informeObservacion.service";
-import { servicioTablaMaestra } from "@maximilian/services/tablaMaestra.service";
+import { servicioInformeObservacion } from "@maximilian/services/informe-observacion.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   FormatoDescargaInforme,
@@ -17,7 +18,6 @@ import type {
   InformeObservacion,
 } from "@maximilian/shared/types/informe.type";
 
-const ID_ESTADO_INFORME_APROBADO = 4;
 type TabInformeComparado = "original" | "traducido";
 
 export default function RevisionInformeCoordinador() {
@@ -209,7 +209,7 @@ export default function RevisionInformeCoordinador() {
 
   const descargarDocumento = async (formato: FormatoDescargaInforme, idInformeDescarga = idInformeSeguro) => {
     if (formato === ".xml" && !puedeDescargarXml) {
-      toast.error("La descarga XML solo esta disponible para la plantilla permitida.");
+      toast.error("La descarga XML solo está disponible para la plantilla permitida.");
       return;
     }
 

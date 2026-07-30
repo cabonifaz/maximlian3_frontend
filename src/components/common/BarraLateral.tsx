@@ -1,8 +1,7 @@
-import { NavLink, useNavigate } from "react-router";
 import { LogOut, Shield, type LucideIcon } from "lucide-react";
-import { servicioAutenticacion } from "@maximilian/services/autenticacion.service";
+import { NavLink } from "react-router";
+import { useCerrarSesion } from "@maximilian/hooks/useCerrarSesion";
 import PantallaCarga from "./PantallaCarga";
-import { useState } from "react";
 
 interface ElementoBarraLateral {
   name: string;
@@ -15,20 +14,7 @@ interface PropsBarraLateral {
 }
 
 export function BarraLateral({ items }: PropsBarraLateral) {
-  const navigate = useNavigate();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await servicioAutenticacion.logout();
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      navigate("/iniciar-sesion");
-    } catch (error) {
-      console.error("Error al cerrar sesión", error);
-      setIsLoggingOut(false);
-    }
-  };
+  const { cerrarSesion, estaCerrandoSesion } = useCerrarSesion();
 
   return (
     <aside className="w-64 bg-brand-white border-r border-gray-200 flex flex-col h-full shrink-0">
@@ -62,16 +48,16 @@ export function BarraLateral({ items }: PropsBarraLateral) {
 
       <div className="p-4 mt-auto border-t border-gray-100">
         <button
-          onClick={handleLogout}
-          disabled={isLoggingOut}
+          onClick={cerrarSesion}
+          disabled={estaCerrandoSesion}
           className="flex items-center gap-3 px-4 py-3 w-full text-gray-500 hover:text-brand-wine hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <LogOut size={20} />
-          <span>Cerrar Sesión</span>
+          <span>Cerrar sesión</span>
         </button>
       </div>
 
-      {isLoggingOut && <PantallaCarga message="Cerrando sesión..." />}
+      {estaCerrandoSesion && <PantallaCarga message="Cerrando sesión..." />}
     </aside>
   );
 }

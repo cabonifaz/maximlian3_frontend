@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  Pencil,
   Loader2,
   Plus,
   Search,
@@ -17,47 +18,38 @@ import {
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
+import { useFiltroRangoFechas } from "@maximilian/hooks/useFiltroRangoFechas";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
+import {
+  esquemaNoticiaBancoInformacion,
+  type DatosFormularioNoticiaBancoInformacion,
+  type DatosFormularioNoticiaBancoInformacionEntrada,
+} from "@maximilian/schemas/banco-informacion.schema";
 import { servicioCompania } from "@maximilian/services/compania.service";
-import { servicioCompaniaNoticia } from "@maximilian/services/companiaNoticia.service";
+import { servicioCompaniaNoticia } from "@maximilian/services/compania-noticia.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
+import { valoresIniciales } from "@maximilian/shared/constants/components/common/custom-banco-noticias.constants";
+import { formatearTamanoArchivo } from "@maximilian/shared/utils/archivo.util";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
 import type {
   CompaniaNoticiaArchivo,
+  CompaniaNoticiaArchivoRequest,
   CompaniaNoticiaCrearRequest,
+  CompaniaNoticiaEditarRequest,
   CompaniaNoticiaListaItem,
-} from "@maximilian/shared/types/companiaNoticia.type";
+} from "@maximilian/shared/types/compania-noticia.type";
+import { TablaMaestraId, type EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { CustomButton } from "./CustomButton";
+import { CustomFiltroRangoFechas } from "./CustomFiltroRangoFechas";
 import { CustomLabel } from "./CustomLabel";
+import { CustomModalConfirmacionAccion } from "./CustomModalConfirmacionAccion";
 import { CustomSelectorFecha } from "./CustomSelectorFecha";
-
-const esquemaNoticia = z.object({
-  idCompania: z.coerce
-    .number()
-    .int("Ingrese un ID valido")
-    .min(1, "Seleccione una compania"),
-  titulo: z.string().trim().min(1, "Ingrese el titulo"),
-  descripcion: z.string().trim().min(1, "Ingrese la descripcion"),
-  fechaNoticia: z.string().trim().min(1, "Ingrese la fecha"),
-  categoria: z.string().trim().min(1, "Ingrese la categoria"),
-});
-
-type FormularioNoticiaEntrada = z.input<typeof esquemaNoticia>;
-type FormularioNoticia = z.output<typeof esquemaNoticia>;
 
 interface PropsCustomBancoNoticias {
   busqueda: string;
   mostrarBotonAgregar?: boolean;
   senalApertura?: number;
 }
-
-const valoresIniciales: FormularioNoticiaEntrada = {
-  idCompania: 0,
-  titulo: "",
-  descripcion: "",
-  fechaNoticia: new Date().toISOString().slice(0, 10),
-  categoria: "",
-};
 
 export function CustomBancoNoticias({
   busqueda,
@@ -68,6 +60,10 @@ export function CustomBancoNoticias({
   const [estaAbiertoModalNoticia, setEstaAbiertoModalNoticia] = useState(false);
   const [noticiaDetalle, setNoticiaDetalle] =
     useState<CompaniaNoticiaListaItem | null>(null);
+  const [noticiaEditando, setNoticiaEditando] =
+    useState<CompaniaNoticiaListaItem | null>(null);
+  const [noticiaAEliminar, setNoticiaAEliminar] =
+    useState<CompaniaNoticiaListaItem | null>(null);
   const [companiaDetalle, setCompaniaDetalle] =
     useState<CompaniaListaItem | null>(null);
   const [idNoticiaCargandoDetalle, setIdNoticiaCargandoDetalle] = useState<
@@ -76,8 +72,23 @@ export function CustomBancoNoticias({
   const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>(
     [],
   );
+  const [archivosExistentes, setArchivosExistentes] = useState<
+    CompaniaNoticiaArchivo[]
+  >([]);
+  const [idArchivoEliminando, setIdArchivoEliminando] = useState<number | null>(
+    null,
+  );
   const [claveInputArchivo, setClaveInputArchivo] = useState(0);
   const [paginaNoticias, setPaginaNoticias] = useState(1);
+  const filtroFechasNoticias = useFiltroRangoFechas({
+    onCambio: () => setPaginaNoticias(1),
+  });
+
+  const { data: opcionesFormatoArchivo } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.FORMATO_ARCHIVO],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.FORMATO_ARCHIVO),
+    staleTime: Infinity,
+  });
 
   useEffect(() => {
     setPaginaNoticias(1);
@@ -90,8 +101,12 @@ export function CustomBancoNoticias({
     setValue,
     watch,
     formState: { errors },
-  } = useForm<FormularioNoticiaEntrada, unknown, FormularioNoticia>({
-    resolver: zodResolver(esquemaNoticia),
+  } = useForm<
+    DatosFormularioNoticiaBancoInformacionEntrada,
+    unknown,
+    DatosFormularioNoticiaBancoInformacion
+  >({
+    resolver: zodResolver(esquemaNoticiaBancoInformacion),
     mode: "onTouched",
     defaultValues: valoresIniciales,
   });
@@ -108,19 +123,38 @@ export function CustomBancoNoticias({
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["companiaNoticia", { busqueda, numPag: paginaNoticias }],
-    queryFn: () => servicioCompaniaNoticia.list({ busqueda, numPag: paginaNoticias }),
+    queryKey: [
+      "companiaNoticia",
+      {
+        busqueda,
+        fechaInicio: filtroFechasNoticias.fechaInicioParametro,
+        fechaFin: filtroFechasNoticias.fechaFinParametro,
+        numPag: paginaNoticias,
+      },
+    ],
+    queryFn: () =>
+      servicioCompaniaNoticia.list({
+        busqueda,
+        fechaInicio: filtroFechasNoticias.fechaInicioParametro,
+        fechaFin: filtroFechasNoticias.fechaFinParametro,
+        numPag: paginaNoticias,
+      }),
+    enabled: !filtroFechasNoticias.fechasInvalidas,
   });
 
-  const crearNoticiaMutation = useMutation({
+  const guardarNoticiaMutation = useMutation({
     mutationFn: async ({
       payload,
       archivos,
+      esEdicion,
     }: {
-      payload: CompaniaNoticiaCrearRequest;
+      payload: CompaniaNoticiaCrearRequest | CompaniaNoticiaEditarRequest;
       archivos: File[];
+      esEdicion: boolean;
     }) => {
-      const respuesta = await servicioCompaniaNoticia.crear(payload);
+      const respuesta = esEdicion
+        ? await servicioCompaniaNoticia.editar(payload as CompaniaNoticiaEditarRequest)
+        : await servicioCompaniaNoticia.crear(payload);
       await subirArchivosNoticia(respuesta.archivos, archivos);
       return respuesta;
     },
@@ -129,7 +163,60 @@ export function CustomBancoNoticias({
       cerrarModalNoticia();
     },
     onError: () => {
-      toast.error("No se pudo completar el registro de la noticia.");
+      toast.error("No se pudo guardar la noticia.");
+    },
+  });
+
+  const eliminarNoticiaMutation = useMutation({
+    mutationFn: (noticia: CompaniaNoticiaListaItem) =>
+      servicioCompaniaNoticia.eliminar({
+        idCompaniaNoticia: noticia.idCompaniaNoticia,
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["companiaNoticia"] });
+      setNoticiaAEliminar(null);
+      setNoticiaDetalle(null);
+      setCompaniaDetalle(null);
+    },
+    onError: () => {
+      toast.error("No se pudo eliminar la noticia.");
+    },
+  });
+
+  const eliminarArchivoMutation = useMutation({
+    mutationFn: (archivo: CompaniaNoticiaArchivo) =>
+      servicioCompaniaNoticia.eliminarArchivo({
+        idCompaniaNoticiaArchivo: archivo.idCompaniaNoticiaArchivo,
+      }),
+    onMutate: (archivo) => {
+      setIdArchivoEliminando(archivo.idCompaniaNoticiaArchivo);
+    },
+    onSuccess: async (_, archivo) => {
+      setArchivosExistentes((actuales) =>
+        actuales.filter(
+          (item) =>
+            item.idCompaniaNoticiaArchivo !== archivo.idCompaniaNoticiaArchivo,
+        ),
+      );
+      setNoticiaEditando((actual) =>
+        actual
+          ? {
+              ...actual,
+              archivos: actual.archivos.filter(
+                (item) =>
+                  item.idCompaniaNoticiaArchivo !==
+                  archivo.idCompaniaNoticiaArchivo,
+              ),
+            }
+          : actual,
+      );
+      await queryClient.invalidateQueries({ queryKey: ["companiaNoticia"] });
+    },
+    onError: () => {
+      toast.error("No se pudo eliminar el archivo adjunto.");
+    },
+    onSettled: () => {
+      setIdArchivoEliminando(null);
     },
   });
 
@@ -141,23 +228,88 @@ export function CustomBancoNoticias({
 
   const cerrarModalNoticia = () => {
     setEstaAbiertoModalNoticia(false);
+    setNoticiaEditando(null);
+    setArchivosExistentes([]);
     setArchivosSeleccionados([]);
     setClaveInputArchivo((valor) => valor + 1);
     reset(valoresIniciales);
   };
 
-  const guardarNoticia = (datos: FormularioNoticia) => {
-    crearNoticiaMutation.mutate({
-      payload: {
+  const abrirModalCrearNoticia = () => {
+    setNoticiaEditando(null);
+    setArchivosExistentes([]);
+    setArchivosSeleccionados([]);
+    reset(valoresIniciales);
+    setEstaAbiertoModalNoticia(true);
+  };
+
+  const abrirModalEditarNoticia = (noticia: CompaniaNoticiaListaItem) => {
+    setNoticiaEditando(noticia);
+    setArchivosExistentes(noticia.archivos);
+    setArchivosSeleccionados([]);
+    setClaveInputArchivo((valor) => valor + 1);
+    reset({
+      idCompania: noticia.idCompania,
+      titulo: noticia.titulo,
+      descripcion: noticia.descripcion,
+      fechaNoticia: convertirFechaApiATextoFecha(noticia.fechaNoticia),
+      categoria: noticia.categoria,
+    });
+    setNoticiaDetalle(null);
+    setCompaniaDetalle(null);
+    setEstaAbiertoModalNoticia(true);
+  };
+
+  const guardarNoticia = (datos: DatosFormularioNoticiaBancoInformacion) => {
+    const archivosNuevos = archivosSeleccionados.map((archivo) =>
+      convertirArchivo(archivo, opcionesFormatoArchivo),
+    );
+    const payloadBase: CompaniaNoticiaCrearRequest = {
         idCompania: datos.idCompania,
         titulo: datos.titulo.trim(),
         descripcion: datos.descripcion.trim(),
         fechaNoticia: new Date(`${datos.fechaNoticia}T00:00:00`).toISOString(),
         categoria: datos.categoria.trim(),
-        archivos: archivosSeleccionados.map(convertirArchivo),
-      },
+        archivos: [
+          ...archivosExistentes.map(convertirArchivoExistentePayload),
+          ...archivosNuevos,
+        ],
+    };
+
+    guardarNoticiaMutation.mutate({
+      payload: noticiaEditando
+        ? {
+            ...payloadBase,
+            idCompaniaNoticia: noticiaEditando.idCompaniaNoticia,
+          }
+        : payloadBase,
       archivos: archivosSeleccionados,
+      esEdicion: Boolean(noticiaEditando),
     });
+  };
+
+  const cargarDetalleNoticia = async (noticia: CompaniaNoticiaListaItem) => {
+    const [detalleNoticia, compania] = await Promise.all([
+      servicioCompaniaNoticia.obtener({
+        idCompaniaNoticia: noticia.idCompaniaNoticia,
+        idCompania: noticia.idCompania,
+      }),
+      servicioCompania.obtener({
+        idCompania: noticia.idCompania,
+      }),
+    ]);
+    const nombreCompania =
+      compania?.nombreCompleto
+      || obtenerNombreCompaniaNoticia(detalleNoticia)
+      || obtenerNombreCompaniaNoticia(noticia)
+      || "-";
+
+    return {
+      noticia: detalleNoticia
+        ? { ...noticia, ...detalleNoticia, compania: nombreCompania }
+        : { ...noticia, compania: nombreCompania },
+      compania,
+    };
   };
 
   const verDetalleNoticia = async (noticia: CompaniaNoticiaListaItem) => {
@@ -168,15 +320,9 @@ export function CustomBancoNoticias({
     let detalleNoticia: CompaniaNoticiaListaItem | null = null;
     let compania: CompaniaListaItem | null = null;
     try {
-      [detalleNoticia, compania] = await Promise.all([
-        servicioCompaniaNoticia.obtener({
-          idCompaniaNoticia: noticia.idCompaniaNoticia,
-          idCompania: noticia.idCompania,
-        }),
-        servicioCompania.obtener({
-          idCompania: noticia.idCompania,
-        }),
-      ]);
+      const detalle = await cargarDetalleNoticia(noticia);
+      detalleNoticia = detalle.noticia;
+      compania = detalle.compania;
     } catch {
       detalleNoticia = null;
       compania = null;
@@ -199,12 +345,24 @@ export function CustomBancoNoticias({
           {mostrarBotonAgregar ? (
             <CustomButton
               size="sm"
-              onClick={() => setEstaAbiertoModalNoticia(true)}
+              onClick={abrirModalCrearNoticia}
             >
               <Plus size={14} />
               Agregar Noticia
             </CustomButton>
           ) : null}
+        </div>
+
+        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+          <CustomFiltroRangoFechas
+            fechaInicio={filtroFechasNoticias.fechaInicioFiltro}
+            fechaFin={filtroFechasNoticias.fechaFinFiltro}
+            fechasInvalidas={filtroFechasNoticias.fechasInvalidas}
+            onFechaInicioChange={filtroFechasNoticias.cambiarFechaInicioFiltro}
+            onFechaFinChange={filtroFechasNoticias.cambiarFechaFinFiltro}
+            onLimpiarFechaInicio={filtroFechasNoticias.limpiarFechaInicioFiltro}
+            onLimpiarFechaFin={filtroFechasNoticias.limpiarFechaFinFiltro}
+          />
         </div>
 
         {isLoading ? (
@@ -242,7 +400,7 @@ export function CustomBancoNoticias({
                       </span>
                       <span className="inline-flex items-center gap-1.5 uppercase tracking-wide">
                         <CalendarDays size={14} className="text-slate-300" />
-                        {formatearFecha(noticia.fechaNoticia)}
+                        {noticia.fechaNoticia || "-"}
                       </span>
                     </div>
                     <div className="space-y-3">
@@ -293,6 +451,8 @@ export function CustomBancoNoticias({
       <CustomModalDetalleNoticia
         noticia={noticiaDetalle}
         compania={companiaDetalle}
+        onEditar={abrirModalEditarNoticia}
+        onEliminar={setNoticiaAEliminar}
         onCerrar={() => {
           setNoticiaDetalle(null);
           setCompaniaDetalle(null);
@@ -307,7 +467,7 @@ export function CustomBancoNoticias({
           >
             <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-8 py-6">
               <h2 className="text-lg font-bold text-slate-950">
-                Agregar Nueva Noticia
+                {noticiaEditando ? "Editar Noticia" : "Agregar Nueva Noticia"}
               </h2>
               <BotonCerrar onCerrar={cerrarModalNoticia} />
             </div>
@@ -318,6 +478,7 @@ export function CustomBancoNoticias({
                     ? idCompaniaSeleccionada
                     : Number(idCompaniaSeleccionada)
                 }
+                etiquetaInicial={noticiaEditando?.compania}
                 error={errors.idCompania?.message}
                 onSeleccionar={(compania) => {
                   setValue("idCompania", compania.idCompania, {
@@ -328,24 +489,24 @@ export function CustomBancoNoticias({
                 }}
               />
               <CampoFormulario
-                etiqueta="Titulo"
+                etiqueta="Título"
                 error={errors.titulo?.message}
                 requerido
               >
                 <input
                   className="h-11 w-full rounded-lg border border-slate-100 bg-slate-50 px-3 text-sm text-slate-600 outline-none focus:border-slate-300"
-                  placeholder="Ej. Actualizacion de protocolos de seguridad"
+                  placeholder="Ej. Actualización de protocolos de seguridad"
                   {...register("titulo")}
                 />
               </CampoFormulario>
               <CampoFormulario
-                etiqueta="Descripcion"
+                etiqueta="Descripción"
                 error={errors.descripcion?.message}
                 requerido
               >
                 <textarea
                   className="min-h-36 w-full resize-none rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-300"
-                  placeholder="Detalle la informacion de la noticia o reporte aqui..."
+                  placeholder="Detalle la información de la noticia o reporte aquí..."
                   {...register("descripcion")}
                 />
               </CampoFormulario>
@@ -367,7 +528,7 @@ export function CustomBancoNoticias({
                   placeholder="Seleccione fecha"
                 />
                 <CampoFormulario
-                  etiqueta="Categoria"
+                  etiqueta="Categoría"
                   error={errors.categoria?.message}
                   requerido
                 >
@@ -379,8 +540,13 @@ export function CustomBancoNoticias({
                 </CampoFormulario>
               </div>
               <CampoArchivos
+                archivosExistentes={archivosExistentes}
                 archivos={archivosSeleccionados}
                 claveInputArchivo={claveInputArchivo}
+                idArchivoEliminando={idArchivoEliminando}
+                onEliminarArchivoExistente={(archivo) =>
+                  eliminarArchivoMutation.mutate(archivo)
+                }
                 onCambiarArchivos={(archivos) =>
                   setArchivosSeleccionados((anteriores) => [
                     ...anteriores,
@@ -400,14 +566,14 @@ export function CustomBancoNoticias({
                 variant="secondary"
                 size="compact"
                 onClick={cerrarModalNoticia}
-                disabled={crearNoticiaMutation.isPending}
+                disabled={guardarNoticiaMutation.isPending}
               >
                 Cancelar
               </CustomButton>
               <CustomButton
                 type="submit"
                 size="compact"
-                loading={crearNoticiaMutation.isPending}
+                loading={guardarNoticiaMutation.isPending}
                 loadingText="Guardando..."
               >
                 Guardar
@@ -416,6 +582,24 @@ export function CustomBancoNoticias({
           </form>
         </CustomModalBase>
       ) : null}
+      <CustomModalConfirmacionAccion
+        isOpen={Boolean(noticiaAEliminar)}
+        onClose={() => setNoticiaAEliminar(null)}
+        onConfirm={() => {
+          if (noticiaAEliminar) {
+            eliminarNoticiaMutation.mutate(noticiaAEliminar);
+          }
+        }}
+        title="Eliminar noticia"
+        descripcion="Esta acción eliminará la noticia seleccionada y no se puede deshacer."
+        textoConfirmar="Eliminar"
+        textoCargandoConfirmar="Eliminando..."
+        isSubmitting={eliminarNoticiaMutation.isPending}
+        varianteConfirmar="danger"
+        zIndexClassName="z-[90]"
+      >
+        <p className="font-semibold">{noticiaAEliminar?.titulo}</p>
+      </CustomModalConfirmacionAccion>
     </>
   );
 }
@@ -423,10 +607,14 @@ export function CustomBancoNoticias({
 function CustomModalDetalleNoticia({
   noticia,
   compania,
+  onEditar,
+  onEliminar,
   onCerrar,
 }: {
   noticia: CompaniaNoticiaListaItem | null;
   compania: CompaniaListaItem | null;
+  onEditar: (noticia: CompaniaNoticiaListaItem) => void;
+  onEliminar: (noticia: CompaniaNoticiaListaItem) => void;
   onCerrar: () => void;
 }) {
   const [idArchivoAbriendo, setIdArchivoAbriendo] = useState<number | null>(
@@ -459,13 +647,37 @@ function CustomModalDetalleNoticia({
       <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 bg-slate-50/60 px-8 py-6">
         <div className="min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-            Banco de informacion
+            Banco de información
           </p>
           <h2 className="mt-1 text-lg font-bold text-slate-950">
             Detalle de Noticia
           </h2>
         </div>
-        <BotonCerrar onCerrar={onCerrar} />
+        <div className="flex shrink-0 items-center gap-2">
+          <CustomButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            title="Editar noticia"
+            aria-label="Editar noticia"
+            onClick={() => onEditar(noticia)}
+            className="text-slate-400 hover:bg-white hover:text-slate-700"
+          >
+            <Pencil size={17} />
+          </CustomButton>
+          <CustomButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            title="Eliminar noticia"
+            aria-label="Eliminar noticia"
+            onClick={() => onEliminar(noticia)}
+            className="text-slate-400 hover:bg-red-50 hover:text-red-500"
+          >
+            <Trash2 size={17} />
+          </CustomButton>
+          <BotonCerrar onCerrar={onCerrar} />
+        </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="grid gap-8 px-8 py-7 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -479,7 +691,7 @@ function CustomModalDetalleNoticia({
                 ) : null}
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
                   <CalendarDays size={13} />
-                  {formatearFecha(noticia.fechaNoticia)}
+                  {noticia.fechaNoticia || "-"}
                 </span>
               </div>
               <h3 className="text-2xl font-bold leading-tight text-slate-950 md:text-3xl">
@@ -489,7 +701,7 @@ function CustomModalDetalleNoticia({
 
             <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                Descripcion
+                Descripción
               </p>
               <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">
                 {noticia.descripcion}
@@ -515,13 +727,13 @@ function CustomModalDetalleNoticia({
                   etiqueta="Documento"
                   valor={compania?.numeroDocumento}
                 />
-                <DetalleCompania etiqueta="Pais" valor={compania?.pais} />
+                <DetalleCompania etiqueta="País" valor={compania?.pais} />
                 <DetalleCompania
-                  etiqueta="Telefono"
+                  etiqueta="Teléfono"
                   valor={compania?.telefono}
                 />
                 <DetalleCompania
-                  etiqueta="Direccion"
+                  etiqueta="Dirección"
                   valor={compania?.direccion}
                   className="sm:col-span-2"
                 />
@@ -646,10 +858,12 @@ function CampoFormulario({
 
 function CampoSelectorCompania({
   valor,
+  etiquetaInicial,
   error,
   onSeleccionar,
 }: {
   valor: number;
+  etiquetaInicial?: string;
   error?: string;
   onSeleccionar: (compania: CompaniaListaItem) => void;
 }) {
@@ -698,12 +912,9 @@ function CampoSelectorCompania({
   );
   const companiaSeleccionada =
     companiaActual?.idCompania === valor ? companiaActual : companiaEncontrada;
-
-  useEffect(() => {
-    if (companiaEncontrada) {
-      setCompaniaActual(companiaEncontrada);
-    }
-  }, [companiaEncontrada]);
+  const etiquetaCompaniaSeleccionada = companiaSeleccionada
+    ? obtenerEtiquetaCompania(companiaSeleccionada)
+    : etiquetaInicial;
 
   const cargarSiguientePagina = (event: UIEvent<HTMLDivElement>) => {
     const elemento = event.currentTarget;
@@ -721,7 +932,7 @@ function CampoSelectorCompania({
         required
         className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400"
       >
-        Compania
+        Compañía
       </CustomLabel>
       <div className="relative">
         <button
@@ -732,11 +943,9 @@ function CampoSelectorCompania({
           }`}
         >
           <span
-            className={`min-w-0 truncate ${companiaSeleccionada ? "text-slate-700" : "text-slate-400"}`}
+            className={`min-w-0 truncate ${etiquetaCompaniaSeleccionada ? "text-slate-700" : "text-slate-400"}`}
           >
-            {companiaSeleccionada
-              ? obtenerEtiquetaCompania(companiaSeleccionada)
-              : "Buscar y seleccionar compania..."}
+            {etiquetaCompaniaSeleccionada || "Buscar y seleccionar compañía..."}
           </span>
           <Search size={16} className="shrink-0 text-slate-400" />
         </button>
@@ -753,7 +962,7 @@ function CampoSelectorCompania({
                   value={busquedaCompania}
                   onChange={(event) => setBusquedaCompania(event.target.value)}
                   className="h-9 w-full rounded-lg border border-slate-100 bg-slate-50 pl-9 pr-3 text-xs text-slate-600 outline-none focus:border-slate-300"
-                  placeholder="Buscar compania..."
+                  placeholder="Buscar compañía..."
                   autoFocus
                 />
               </div>
@@ -766,7 +975,7 @@ function CampoSelectorCompania({
               ) : isError ? (
                 <div className="space-y-3 px-4 py-5 text-center">
                   <p className="text-xs font-semibold text-slate-400">
-                    No se pudieron cargar las companias.
+                    No se pudieron cargar las compañías.
                   </p>
                   <CustomButton
                     variant="secondary"
@@ -778,7 +987,7 @@ function CampoSelectorCompania({
                 </div>
               ) : companias.length === 0 ? (
                 <p className="px-4 py-5 text-center text-xs font-semibold text-slate-400">
-                  No se encontraron companias.
+                  No se encontraron compañías.
                 </p>
               ) : (
                 <>
@@ -832,13 +1041,19 @@ function CampoSelectorCompania({
 }
 
 function CampoArchivos({
+  archivosExistentes = [],
   archivos,
   claveInputArchivo,
+  idArchivoEliminando,
+  onEliminarArchivoExistente,
   onCambiarArchivos,
   onEliminarArchivo,
 }: {
+  archivosExistentes?: CompaniaNoticiaArchivo[];
   archivos: File[];
   claveInputArchivo: number;
+  idArchivoEliminando?: number | null;
+  onEliminarArchivoExistente?: (archivo: CompaniaNoticiaArchivo) => void;
   onCambiarArchivos: (archivos: File[]) => void;
   onEliminarArchivo: (indiceArchivo: number) => void;
 }) {
@@ -864,14 +1079,52 @@ function CampoArchivos({
           <UploadCloud size={18} />
         </span>
         <span className="mt-3 text-sm font-bold text-slate-600">
-          Haga clic o arrastre archivos aqui
+                  Haga clic o arrastre archivos aquí
         </span>
         <span className="text-xs text-slate-400">
-          Soporta documentos e imagenes adjuntas
+                  Soporta documentos e imágenes adjuntas
         </span>
       </label>
+      {archivosExistentes.length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+            Adjuntos actuales
+          </p>
+          {archivosExistentes.map((archivo) => (
+            <div
+              key={`${archivo.idCompaniaNoticiaArchivo}-${archivo.nombreArchivo}`}
+              className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2 shadow-sm"
+            >
+              <FileText size={16} className="text-slate-500" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-bold text-slate-700">
+                  {archivo.nombreArchivo}
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  {archivo.formatoArchivo || archivo.extension || "Archivo"}
+                </p>
+              </div>
+              <CustomButton
+                type="button"
+                variant="ghost"
+                size="icon"
+                title="Eliminar archivo"
+                aria-label="Eliminar archivo"
+                loading={idArchivoEliminando === archivo.idCompaniaNoticiaArchivo}
+                disabled={!onEliminarArchivoExistente}
+                onClick={() => onEliminarArchivoExistente?.(archivo)}
+              >
+                <Trash2 size={14} />
+              </CustomButton>
+            </div>
+          ))}
+        </div>
+      ) : null}
       {archivos.length > 0 ? (
         <div className="space-y-2">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+            Nuevos adjuntos
+          </p>
           {archivos.map((archivo, indice) => (
             <div
               key={`${archivo.name}-${archivo.lastModified}`}
@@ -983,7 +1236,7 @@ function CustomPaginacionBanco({
           onClick={() => onCambiarPagina(paginaActual - 1)}
           disabled={deshabilitado || paginaActual <= 1}
           className="rounded-lg p-2 text-slate-300 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-30"
-          aria-label="Pagina anterior"
+          aria-label="Página anterior"
         >
           <ChevronLeft size={14} />
         </button>
@@ -1016,7 +1269,7 @@ function CustomPaginacionBanco({
           onClick={() => onCambiarPagina(paginaActual + 1)}
           disabled={deshabilitado || paginaActual >= totalPaginas}
           className="rounded-lg p-2 text-slate-300 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-30"
-          aria-label="Pagina siguiente"
+          aria-label="Página siguiente"
         >
           <ChevronRight size={14} />
         </button>
@@ -1062,18 +1315,53 @@ function BotonCerrar({ onCerrar }: { onCerrar: () => void }) {
   );
 }
 
-function convertirArchivo(archivo: File): CompaniaNoticiaArchivo {
+function convertirArchivo(
+  archivo: File,
+  opcionesFormatoArchivo?: EntradaTablaMaestra[],
+): CompaniaNoticiaArchivoRequest {
   const tipoArchivo = archivo.type || "application/octet-stream";
 
   return {
     idCompaniaNoticiaArchivo: 0,
-    idTipoArchivo: 0,
+    idTipoArchivo: obtenerIdTipoArchivoPorMime(opcionesFormatoArchivo, tipoArchivo),
     nombreArchivo: archivo.name,
+    nombreDocumento: archivo.name,
     formatoArchivo: tipoArchivo,
     archivoUrl: "",
-    downloadUrl: "",
     uploadUrl: "",
   };
+}
+
+function convertirArchivoExistentePayload(
+  archivo: CompaniaNoticiaArchivo,
+): CompaniaNoticiaArchivoRequest {
+  return {
+    idCompaniaNoticiaArchivo: archivo.idCompaniaNoticiaArchivo,
+    idTipoArchivo: archivo.idTipoArchivo,
+    nombreArchivo: archivo.nombreArchivo,
+    nombreDocumento: archivo.nombreDocumento || archivo.nombreArchivo,
+    formatoArchivo: archivo.formatoArchivo,
+    archivoUrl: archivo.archivoUrl,
+    uploadUrl: archivo.uploadUrl,
+  };
+}
+
+function normalizarMime(valor?: string | null) {
+  return valor?.trim().toUpperCase() ?? "";
+}
+
+function obtenerIdTipoArchivoPorMime(
+  opcionesFormatoArchivo: EntradaTablaMaestra[] | undefined,
+  mimeType: string,
+) {
+  const mimeNormalizado = normalizarMime(mimeType);
+  if (!mimeNormalizado) return 0;
+
+  return (
+    opcionesFormatoArchivo?.find(
+      (opcion) => normalizarMime(opcion.string3) === mimeNormalizado,
+    )?.num1 ?? 0
+  );
 }
 
 async function subirArchivosNoticia(
@@ -1085,9 +1373,6 @@ async function subirArchivosNoticia(
   const archivosConUrl = archivosRespuesta.filter(
     (archivo) => archivo.uploadUrl,
   );
-  if (archivosConUrl.length !== archivosLocales.length) {
-    throw new Error("La respuesta de carga de archivos es invalida");
-  }
 
   await Promise.all(
     archivosLocales.map(async (archivoLocal, indice) => {
@@ -1115,27 +1400,19 @@ async function subirArchivosNoticia(
   );
 }
 
-function formatearFecha(fecha: string) {
-  if (!fecha) return "-";
-  const fechaParseada = new Date(fecha);
-  if (Number.isNaN(fechaParseada.getTime())) return fecha;
-
-  return new Intl.DateTimeFormat("es", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(fechaParseada);
-}
-
 function formatearTamano(tamano: number) {
-  if (tamano < 1024) return `${tamano} B`;
-  if (tamano < 1024 * 1024) return `${(tamano / 1024).toFixed(1)} KB`;
-
-  return `${(tamano / 1024 / 1024).toFixed(1)} MB`;
+  return formatearTamanoArchivo(tamano, { decimalesKb: 1 });
 }
 
 function obtenerEtiquetaCompania(compania: CompaniaListaItem) {
-  return compania.nombreCompleto || `Compania ${compania.idCompania}`;
+  return compania.nombreCompleto || `Compañía ${compania.idCompania}`;
+}
+
+function obtenerNombreCompaniaNoticia(noticia: CompaniaNoticiaListaItem | null) {
+  if (!noticia?.compania) return "";
+  const etiquetaGenerica = `Compañía ${noticia.idCompania}`;
+
+  return noticia.compania === etiquetaGenerica ? "" : noticia.compania;
 }
 
 function convertirTextoFechaADate(fecha: string) {
@@ -1145,6 +1422,21 @@ function convertirTextoFechaADate(fecha: string) {
   if (Number.isNaN(fechaParseada.getTime())) return undefined;
 
   return fechaParseada;
+}
+
+function convertirFechaApiATextoFecha(fecha: string) {
+  if (!fecha) return new Date().toISOString().slice(0, 10);
+
+  const fechaParseada = new Date(fecha);
+  if (Number.isNaN(fechaParseada.getTime())) {
+    return fecha.slice(0, 10);
+  }
+
+  const ano = fechaParseada.getFullYear();
+  const mes = String(fechaParseada.getMonth() + 1).padStart(2, "0");
+  const dia = String(fechaParseada.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
 }
 
 function convertirDateATextoFecha(fecha: Date | undefined) {

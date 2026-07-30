@@ -35,6 +35,7 @@ export const esquemaDetalleCliente = z.object({
   plantillaInforme: selectorRequerido("La plantilla de informe es requerida"),
   imprimeLogoSafety: z.boolean().optional(),
   aplicaPenalidad: z.boolean().optional(),
+  emitirPrefactura: z.boolean().optional(),
   recomendacion: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.tipoRegistroTributario && !data.numRegistroTributario) {
