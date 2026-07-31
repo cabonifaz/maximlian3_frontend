@@ -99,6 +99,7 @@ export interface CreatePedidoResponse {
 
 export interface GetPedidoResponse {
   idPedido: number;
+  codigoPedido?: string;
   codigo: string | null;
   idCliente: number;
   numeroDocumento: string;

@@ -98,7 +98,7 @@ export function CustomModalFactura({
                     ? "Detalle de Factura"
                     : detalle.idFactura
                       ? "Editar Factura"
-                      : "Agregar Factura"}
+                      : "Emitir Factura"}
                 </h2>
                 <p className="mt-0.5 text-xs text-slate-500">
                   {soloLectura

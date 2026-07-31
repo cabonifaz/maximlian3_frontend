@@ -417,7 +417,7 @@ interface PropsMenuSeccionesInvestigacionAnalista {
 }
 
 interface PropsResumenPedidoInvestigacionAnalista {
-  idPedido?: string;
+  codigoPedido?: string;
   plantilla?: string;
   idioma?: string;
   idFormatoFechaInforme?: number;
@@ -692,7 +692,7 @@ export function MenuSeccionesInvestigacionAnalista({
 }
 
 export function ResumenPedidoInvestigacionAnalista({
-  idPedido,
+  codigoPedido,
   plantilla,
   idioma,
   idFormatoFechaInforme = 2,
@@ -721,9 +721,9 @@ export function ResumenPedidoInvestigacionAnalista({
           <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
             <div className="border-l-[4px] border-brand-black pl-3">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">
-                id Pedido
+                Código Pedido
               </p>
-              <p className="mt-1 text-sm font-bold text-slate-900">{idPedido ?? "-"}</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">{codigoPedido || "-"}</p>
             </div>
             <div className="xl:border-l xl:border-gray-100 xl:pl-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">Investigado</p>

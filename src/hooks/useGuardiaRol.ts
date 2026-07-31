@@ -7,7 +7,7 @@ import {
   obtenerSesionUsuarioGuardada,
 } from "@maximilian/shared/utils/autenticacion-navegacion.util";
 
-export function useGuardiaRol(rolRequerido: string) {
+export function useGuardiaRol(rolRequerido: string, idRolRequerido?: number) {
   const navigate = useNavigate();
   const [estaVerificando, setEstaVerificando] = useState(true);
   const [tieneAcceso, setTieneAcceso] = useState(false);
@@ -23,8 +23,11 @@ export function useGuardiaRol(rolRequerido: string) {
 
         const sesionUsuario = obtenerSesionUsuarioGuardada();
         const rolSeleccionado = sessionStorage.getItem("selected_role");
+        const idRolSeleccionado = Number(
+          sessionStorage.getItem("selected_role_id"),
+        );
 
-        if (!sesionUsuario || !rolSeleccionado) {
+        if (!sesionUsuario || !rolSeleccionado || !idRolSeleccionado) {
           navigate("/seleccionar-rol", { replace: true });
           return;
         }
@@ -32,7 +35,9 @@ export function useGuardiaRol(rolRequerido: string) {
         const rolRequeridoNormalizado = rolRequerido.toUpperCase();
         const rolSeleccionadoNormalizado = rolSeleccionado.toUpperCase();
         const usuarioTieneRol = sesionUsuario.roles.some(
-          (rol) => rol.rol.toUpperCase() === rolSeleccionadoNormalizado,
+          (rol) =>
+            rol.rol.toUpperCase() === rolSeleccionadoNormalizado &&
+            rol.idRol === idRolSeleccionado,
         );
 
         if (!usuarioTieneRol) {
@@ -43,6 +48,14 @@ export function useGuardiaRol(rolRequerido: string) {
         }
 
         if (rolSeleccionadoNormalizado !== rolRequeridoNormalizado) {
+          navigate("/seleccionar-rol", { replace: true });
+          return;
+        }
+
+        if (
+          idRolRequerido !== undefined &&
+          idRolSeleccionado !== idRolRequerido
+        ) {
           navigate("/seleccionar-rol", { replace: true });
           return;
         }
@@ -59,7 +72,7 @@ export function useGuardiaRol(rolRequerido: string) {
     };
 
     void verificarAcceso();
-  }, [navigate, rolRequerido]);
+  }, [idRolRequerido, navigate, rolRequerido]);
 
   return {
     estaVerificando,
