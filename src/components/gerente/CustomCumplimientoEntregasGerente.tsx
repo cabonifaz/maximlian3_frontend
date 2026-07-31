@@ -1,10 +1,12 @@
-import { Search } from "lucide-react";
+import { BarChart3, Search } from "lucide-react";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomFiltroRangoFechas } from "@maximilian/components/common/CustomFiltroRangoFechas";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { NumberTicker } from "@maximilian/components/common/shadcn/number-ticker";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useCumplimientoEntregasDashboard } from "@maximilian/hooks/useDashboardGerente";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { obtenerCantidadDecimales } from "@maximilian/shared/utils/numero.util";
 import { CustomCargadorTarjetaDashboard } from "./CustomCargadorTarjetaDashboard";
 import { CustomFilaCumplimientoEntregasGerente } from "./CustomFilaCumplimientoEntregasGerente";
 
@@ -41,9 +43,41 @@ export function CustomCumplimientoEntregasGerente() {
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="mb-5 text-sm font-bold text-slate-800">
-        Cumplimiento de entregas
-      </h2>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-bold text-slate-800">
+          Cumplimiento de entregas
+        </h2>
+        {respuesta ? (
+          <div className="flex items-center gap-4 rounded-lg bg-slate-50 px-4 py-2 text-[10px] font-semibold">
+            <span className="inline-flex items-center gap-1.5 text-emerald-600">
+              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              <NumberTicker
+                value={respuesta.porcentajeEntregados}
+                decimalPlaces={obtenerCantidadDecimales(
+                  respuesta.porcentajeEntregados,
+                )}
+                className="tracking-normal text-inherit"
+              />
+              % Entregados
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-rose-500">
+              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              <NumberTicker
+                value={respuesta.porcentajeAtrasados}
+                decimalPlaces={obtenerCantidadDecimales(
+                  respuesta.porcentajeAtrasados,
+                )}
+                className="tracking-normal text-inherit"
+              />
+              % Atrasados
+            </span>
+            <BarChart3
+              size={20}
+              className="animacion-aparecer-grafica-dashboard text-emerald-500"
+            />
+          </div>
+        ) : null}
+      </div>
 
       <div className="mb-5 flex flex-col gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4 lg:flex-row lg:items-end">
         <div className="relative min-w-0 flex-1">
@@ -81,8 +115,12 @@ export function CustomCumplimientoEntregasGerente() {
       <CustomTabla
         columns={[
           { label: "Colaborador", width: "36%" },
-          { label: "Órdenes", width: "16%" },
-          { label: "Cumplimiento", width: "24%" },
+          { label: "Órdenes", width: "16%", className: "text-center" },
+          {
+            label: "Cumplimiento",
+            width: "24%",
+            className: "text-center",
+          },
           {
             label: (
               <CustomEncabezadoFiltroTabla
@@ -95,12 +133,11 @@ export function CustomCumplimientoEntregasGerente() {
               />
             ),
             width: "24%",
+            className: "text-center",
           },
         ]}
         data={respuesta?.lstUsuarios}
-        getId={(usuario) =>
-          usuario.idUsuario * 10_000 + usuario.idRolAsignado
-        }
+        getId={(usuario) => usuario.idUsuario}
         isLoading={estaActualizando}
         isError={hayError}
         onRetry={() => void recargar()}

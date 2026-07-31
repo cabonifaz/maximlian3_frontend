@@ -28,7 +28,6 @@ export interface ResumenUsuarioDashboard {
   idUsuario: number;
   nombreCompleto: string;
   iniciales: string;
-  idRolAsignado: number;
   descripcionRol: string;
   ordenes: number;
   aTiempo: number;
@@ -43,6 +42,8 @@ export interface RespuestaResumenUsuariosDashboard {
   lstUsuarios: ResumenUsuarioDashboard[];
   totalRegistros: number;
   totalPaginas: number;
+  porcentajeEntregados: number;
+  porcentajeAtrasados: number;
 }
 
 export interface PropsCargadorTarjetaDashboard {
