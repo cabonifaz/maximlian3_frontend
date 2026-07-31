@@ -1,15 +1,35 @@
-import { BarChart3, CalendarDays, Search } from "lucide-react";
-import {
-  colaboradoresGerente,
-  resumenCumplimientoGerente,
-} from "@maximilian/shared/constants/pages/Gerente/dashboard-gerente.constants";
-import { NumberTicker } from "@maximilian/components/common/shadcn/number-ticker";
+import { Search } from "lucide-react";
+import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
+import { CustomFiltroRangoFechas } from "@maximilian/components/common/CustomFiltroRangoFechas";
+import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomTabla } from "@maximilian/components/common/CustomTabla";
+import { useCumplimientoEntregasDashboard } from "@maximilian/hooks/useDashboardGerente";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { CustomCargadorTarjetaDashboard } from "./CustomCargadorTarjetaDashboard";
-import type { PropsTarjetaDashboard } from "@maximilian/shared/types/dashboard.type";
+import { CustomFilaCumplimientoEntregasGerente } from "./CustomFilaCumplimientoEntregasGerente";
 
-export function CustomCumplimientoEntregasGerente({
-  estaCargando = false,
-}: PropsTarjetaDashboard) {
+export function CustomCumplimientoEntregasGerente() {
+  const {
+    busqueda,
+    cambiarBusqueda,
+    fechaInicio,
+    fechaFin,
+    fechasInvalidas,
+    cambiarFechaInicio,
+    cambiarFechaFin,
+    limpiarFechaInicio,
+    limpiarFechaFin,
+    idsEficiencia,
+    cambiarEficiencia,
+    pagina,
+    cambiarPagina,
+    respuesta,
+    estaCargando,
+    estaActualizando,
+    hayError,
+    recargar,
+  } = useCumplimientoEntregasDashboard();
+
   if (estaCargando) {
     return (
       <CustomCargadorTarjetaDashboard
@@ -21,84 +41,80 @@ export function CustomCumplimientoEntregasGerente({
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-bold text-slate-800">Cumplimiento de entregas</h2>
-        <div className="flex items-center gap-4 rounded-lg bg-slate-50 px-4 py-2 text-[10px] font-semibold">
-          <span className="text-emerald-600">
-            ● <NumberTicker value={resumenCumplimientoGerente.porcentajeEntregados} className="tracking-normal text-inherit" />% Entregados
-          </span>
-          <span className="text-rose-500">
-            ● <NumberTicker value={resumenCumplimientoGerente.porcentajeAtrasados} className="tracking-normal text-inherit" />% Atrasados
-          </span>
-          <BarChart3
-            size={20}
-            className="animacion-aparecer-grafica-dashboard text-emerald-500"
+      <h2 className="mb-5 text-sm font-bold text-slate-800">
+        Cumplimiento de entregas
+      </h2>
+
+      <div className="mb-5 flex flex-col gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4 lg:flex-row lg:items-end">
+        <div className="relative min-w-0 flex-1">
+          <CustomLabel
+            htmlFor="busqueda-cumplimiento-entregas"
+            className="mb-1.5 block text-xs"
+          >
+            Colaborador
+          </CustomLabel>
+          <Search
+            size={15}
+            className="absolute bottom-2.5 left-3 text-slate-400"
+          />
+          <input
+            id="busqueda-cumplimiento-entregas"
+            type="search"
+            value={busqueda}
+            onChange={(evento) => cambiarBusqueda(evento.target.value)}
+            placeholder="Buscar colaborador..."
+            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-brand-wine/40 focus:ring-2 focus:ring-brand-wine/10"
           />
         </div>
+
+        <CustomFiltroRangoFechas
+          fechaInicio={fechaInicio}
+          fechaFin={fechaFin}
+          fechasInvalidas={fechasInvalidas}
+          onFechaInicioChange={cambiarFechaInicio}
+          onFechaFinChange={cambiarFechaFin}
+          onLimpiarFechaInicio={limpiarFechaInicio}
+          onLimpiarFechaFin={limpiarFechaFin}
+        />
       </div>
 
-      <div className="mb-6 grid gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-4 md:grid-cols-4">
-        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-400">
-          <Search size={14} />
-          Buscar colaborador...
-        </div>
-        {["Fecha inicio", "Fecha fin"].map((etiqueta) => (
-          <div
-            key={etiqueta}
-            className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2"
-          >
-            <span className="text-[10px] text-slate-400">{etiqueta}</span>
-            <CalendarDays size={14} className="text-slate-400" />
-          </div>
-        ))}
-        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] text-slate-500">
-          Todos los estados
-        </div>
-      </div>
-
-      <div className="overflow-x-auto">
-        <div className="min-w-[650px]">
-          <div className="grid grid-cols-[1.6fr_1fr_1fr_0.8fr] px-3 pb-3 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
-            <span>Colaborador</span>
-            <span>Órdenes (mes)</span>
-            <span>Cumplimiento</span>
-            <span>Eficiencia</span>
-          </div>
-          {colaboradoresGerente.map((colaborador) => (
-            <div
-              key={colaborador.nombre}
-              className="grid grid-cols-[1.6fr_1fr_1fr_0.8fr] items-center border-t border-slate-100 px-3 py-3 text-xs"
-            >
-              <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-50 text-[10px] font-bold text-indigo-500">
-                  {colaborador.iniciales}
-                </span>
-                <div>
-                  <strong className="block text-slate-700">{colaborador.nombre}</strong>
-                  <span className="text-[9px] text-slate-400">{colaborador.rol}</span>
-                </div>
-              </div>
-              <NumberTicker
-                value={colaborador.ordenes}
-                className="font-bold tracking-normal text-slate-700"
+      <CustomTabla
+        columns={[
+          { label: "Colaborador", width: "36%" },
+          { label: "Órdenes", width: "16%" },
+          { label: "Cumplimiento", width: "24%" },
+          {
+            label: (
+              <CustomEncabezadoFiltroTabla
+                titulo="Eficiencia"
+                idMaster={TablaMaestraId.EFICIENCIA_CUMPLIMIENTO}
+                valores={idsEficiencia}
+                onChange={cambiarEficiencia}
+                placeholder="Todas"
+                multiple={false}
               />
-              <strong className={colaborador.colorEficiencia}>
-                <NumberTicker
-                  value={colaborador.porcentajeCumplimiento}
-                  className="tracking-normal text-inherit"
-                />
-                % (
-                <NumberTicker
-                  value={colaborador.entregasCumplidas}
-                  className="tracking-normal text-inherit"
-                />
-                )
-              </strong>
-              <span className={colaborador.colorEficiencia}>◯ {colaborador.eficiencia}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+            ),
+            width: "24%",
+          },
+        ]}
+        data={respuesta?.lstUsuarios}
+        getId={(usuario) =>
+          usuario.idUsuario * 10_000 + usuario.idRolAsignado
+        }
+        isLoading={estaActualizando}
+        isError={hayError}
+        onRetry={() => void recargar()}
+        emptyMessage="No se encontraron colaboradores."
+        errorMessage="No se pudo cargar el cumplimiento de entregas."
+        paginaActual={pagina}
+        totalPages={Math.max(respuesta?.totalPaginas ?? 1, 1)}
+        totalRecords={respuesta?.totalRegistros ?? 0}
+        onPageChange={cambiarPagina}
+        entityLabel="colaboradores"
+        renderRow={(usuario) => (
+          <CustomFilaCumplimientoEntregasGerente usuario={usuario} />
+        )}
+      />
     </section>
   );
 }
