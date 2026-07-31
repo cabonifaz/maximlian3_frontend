@@ -51,6 +51,7 @@ export const TablaMaestraId = {
   TIPO_DOCUMENTO_SUNAT: 70,
   ESTADO_ASIGNACION: 98,
   PAGINACION_FRACTAL: 99,
+  EFICIENCIA_CUMPLIMIENTO: 101,
 } as const;
 
 export type TablaMaestraId =
@@ -181,6 +182,7 @@ const descripcionesTablaMaestraPorId: Partial<Record<TablaMaestraId, string>> =
     [TablaMaestraId.ESTADO_INFORME]: "ESTADO INFORME",
     [TablaMaestraId.CLASE_CIIU]: "CLASE CIIU",
     [TablaMaestraId.PAGINACION_FRACTAL]: "PAGINACION FRACTAL",
+    [TablaMaestraId.EFICIENCIA_CUMPLIMIENTO]: "CORTE % CUMPLIMIENTO",
   };
 
 export function obtenerDescripcionTablaMaestra(

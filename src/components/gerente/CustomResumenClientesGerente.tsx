@@ -1,4 +1,4 @@
-import { useDashboardGerente } from "@maximilian/hooks/useDashboardGerente";
+import { useResumenClientesDashboard } from "@maximilian/hooks/useDashboardGerente";
 import { formatearFechaVisual } from "@maximilian/shared/utils/fecha.util";
 import { NumberTicker } from "@maximilian/components/common/shadcn/number-ticker";
 import { CustomCargadorTarjetaDashboard } from "./CustomCargadorTarjetaDashboard";
@@ -6,7 +6,7 @@ import type { CSSProperties } from "react";
 
 export function CustomResumenClientesGerente() {
   const { resumenClientes, estaCargandoResumenClientes } =
-    useDashboardGerente();
+    useResumenClientesDashboard();
   const datosResumen = [
     {
       etiqueta: "Total de clientes",
