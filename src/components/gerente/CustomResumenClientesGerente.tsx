@@ -1,5 +1,8 @@
 import { useDashboardGerente } from "@maximilian/hooks/useDashboardGerente";
 import { formatearFechaVisual } from "@maximilian/shared/utils/fecha.util";
+import { NumberTicker } from "@maximilian/components/common/shadcn/number-ticker";
+import { CustomCargadorTarjetaDashboard } from "./CustomCargadorTarjetaDashboard";
+import type { CSSProperties } from "react";
 
 export function CustomResumenClientesGerente() {
   const { resumenClientes, estaCargandoResumenClientes } =
@@ -7,20 +10,16 @@ export function CustomResumenClientesGerente() {
   const datosResumen = [
     {
       etiqueta: "Total de clientes",
-      valor: resumenClientes?.totalClientes ?? "-",
-      variacion: resumenClientes
-        ? `${resumenClientes.porcentajeCrecimiento > 0 ? "+" : ""}${resumenClientes.porcentajeCrecimiento}%`
-        : "",
+      valor: resumenClientes?.totalClientes ?? 0,
+      variacion: resumenClientes?.porcentajeCrecimiento,
     },
     {
       etiqueta: "Activos",
-      valor: resumenClientes?.totalActivos ?? "-",
-      variacion: "",
+      valor: resumenClientes?.totalActivos ?? 0,
     },
     {
       etiqueta: "Inactivos",
-      valor: resumenClientes?.totalInactivos ?? "-",
-      variacion: "",
+      valor: resumenClientes?.totalInactivos ?? 0,
     },
   ];
   const fechaActualizacion = formatearFechaVisual(
@@ -36,10 +35,19 @@ export function CustomResumenClientesGerente() {
     "-",
   );
   const estiloPorcentaje = resumenClientes
-    ? {
-        background: `conic-gradient(#19b98a 0 ${resumenClientes.porcentajeActivos}%, #e2e8f0 ${resumenClientes.porcentajeActivos}% 100%)`,
-      }
+    ? ({
+        "--porcentaje-dashboard": resumenClientes.porcentajeActivos,
+      } as CSSProperties)
     : undefined;
+
+  if (estaCargandoResumenClientes) {
+    return (
+      <CustomCargadorTarjetaDashboard
+        titulo="resumen de clientes"
+        variante="resumen"
+      />
+    );
+  }
 
   return (
     <section
@@ -63,12 +71,11 @@ export function CustomResumenClientesGerente() {
               {dato.etiqueta}
             </p>
             <div className="flex items-baseline gap-2">
-              <strong
-                className={`text-2xl font-bold text-slate-800 ${estaCargandoResumenClientes ? "animate-pulse" : ""}`}
-              >
-                {dato.valor}
-              </strong>
-              {dato.variacion ? (
+              <NumberTicker
+                value={dato.valor}
+                className="text-2xl font-bold tracking-normal text-slate-800"
+              />
+              {dato.variacion !== undefined ? (
                 <span
                   className={`text-xs font-bold ${
                     (resumenClientes?.porcentajeCrecimiento ?? 0) < 0
@@ -76,7 +83,13 @@ export function CustomResumenClientesGerente() {
                       : "text-emerald-500"
                   }`}
                 >
-                  {dato.variacion}
+                  {dato.variacion > 0 ? "+" : ""}
+                  <NumberTicker
+                    value={dato.variacion}
+                    decimalPlaces={2}
+                    className="tracking-normal text-inherit"
+                  />
+                  %
                 </span>
               ) : null}
             </div>
@@ -84,14 +97,17 @@ export function CustomResumenClientesGerente() {
         ))}
 
         <div
-          className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-slate-200"
+          className="grafica-circular-dashboard mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-slate-200"
           style={estiloPorcentaje}
         >
           <div className="flex h-16 w-16 flex-col items-center justify-center rounded-full bg-white">
             <strong className="text-sm text-slate-800">
-              {resumenClientes
-                ? `${resumenClientes.porcentajeActivos}%`
-                : "-"}
+              <NumberTicker
+                value={resumenClientes?.porcentajeActivos ?? 0}
+                decimalPlaces={2}
+                className="tracking-normal text-slate-800"
+              />
+              %
             </strong>
             <span className="text-[8px] font-semibold uppercase text-slate-400">Activo</span>
           </div>
