@@ -1,7 +1,7 @@
 import { clasesEtiquetaCampoInvestigacion, marcadoresPorEtiqueta } from "@maximilian/shared/constants/components/investigacion/controles-informe.constants";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Briefcase, Building2, Check, Eye, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
+import { Briefcase, Building2, Check, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -676,7 +676,6 @@ export function MenuSeccionesInvestigacionAnalista({
                 {iconos[seccion.id]}
                 <span className="flex-1">{seccion.titulo}</span>
                 {estadoSeccion === "completado" ? <Check size={16} className={estaActiva ? "text-white" : "text-emerald-500"} /> : null}
-                {estadoSeccion === "borrador" ? <Eye size={16} className={estaActiva ? "text-white" : "text-amber-500"} /> : null}
               </button>
               {estadoSeccion === "borrador" ? (
                 <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-52 -translate-x-1/2 rounded-lg bg-brand-black px-3 py-2 text-center text-xs font-medium text-white shadow-lg group-hover:block">
