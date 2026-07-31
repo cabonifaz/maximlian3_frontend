@@ -1,7 +1,21 @@
 import { BarChart3 } from "lucide-react";
 import { estadosPedidosGerente } from "@maximilian/shared/constants/pages/Gerente/dashboard-gerente.constants";
+import { NumberTicker } from "@maximilian/components/common/shadcn/number-ticker";
+import { CustomCargadorTarjetaDashboard } from "./CustomCargadorTarjetaDashboard";
+import type { PropsTarjetaDashboard } from "@maximilian/shared/types/dashboard.type";
 
-export function CustomEstadoPedidosGerente() {
+export function CustomEstadoPedidosGerente({
+  estaCargando = false,
+}: PropsTarjetaDashboard) {
+  if (estaCargando) {
+    return (
+      <CustomCargadorTarjetaDashboard
+        titulo="estado de pedidos"
+        variante="grafica"
+      />
+    );
+  }
+
   return (
     <section className="h-full rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-5 flex items-center justify-between">
@@ -17,11 +31,14 @@ export function CustomEstadoPedidosGerente() {
                 <span className={`h-2.5 w-2.5 rounded-full ${estado.color}`} />
                 {estado.nombre}
               </span>
-              <strong className="text-slate-700">{estado.cantidad}</strong>
+              <NumberTicker
+                value={estado.cantidad}
+                className="font-bold tracking-normal text-slate-700"
+              />
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
               <div
-                className={`h-full rounded-full ${estado.color}`}
+                className={`animacion-crecer-horizontal-dashboard h-full rounded-full ${estado.color}`}
                 style={{ width: `${estado.porcentaje}%` }}
               />
             </div>

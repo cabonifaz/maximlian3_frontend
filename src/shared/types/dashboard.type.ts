@@ -6,3 +6,12 @@ export interface ResumenClientesDashboard {
   porcentajeCrecimiento: number;
   fechaActualizacion: string;
 }
+
+export interface PropsCargadorTarjetaDashboard {
+  titulo: string;
+  variante: "resumen" | "grafica" | "tabla";
+}
+
+export interface PropsTarjetaDashboard {
+  estaCargando?: boolean;
+}

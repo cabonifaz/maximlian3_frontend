@@ -3,6 +3,22 @@ export const CLAVE_CONSULTA_RESUMEN_CLIENTES_DASHBOARD = [
   "resumen-clientes",
 ] as const;
 
+export const fechasFacturacionGerente = [
+  { etiqueta: "Desde", fecha: "01/07/2026" },
+  { etiqueta: "Hasta", fecha: "31/07/2026" },
+];
+
+export const resumenFacturacionGerente = {
+  montoTotal: 142500,
+  ordenes: 312,
+  promedio: 456.7,
+};
+
+export const resumenCumplimientoGerente = {
+  porcentajeEntregados: 88,
+  porcentajeAtrasados: 12,
+};
+
 export const estadosPedidosGerente = [
   { nombre: "Pendiente", cantidad: 42, porcentaje: 34, color: "bg-amber-400" },
   { nombre: "Bajo investigación", cantidad: 18, porcentaje: 23, color: "bg-sky-400" },
@@ -25,7 +41,8 @@ export const colaboradoresGerente = [
     nombre: "Andrea Martínez",
     rol: "Analista",
     ordenes: 142,
-    cumplimiento: "86% (122)",
+    porcentajeCumplimiento: 86,
+    entregasCumplidas: 122,
     eficiencia: "Alta",
     colorEficiencia: "text-emerald-600",
   },
@@ -34,7 +51,8 @@ export const colaboradoresGerente = [
     nombre: "Ricardo Luna",
     rol: "Traductor",
     ordenes: 88,
-    cumplimiento: "72% (63)",
+    porcentajeCumplimiento: 72,
+    entregasCumplidas: 63,
     eficiencia: "Media",
     colorEficiencia: "text-amber-500",
   },
@@ -43,7 +61,8 @@ export const colaboradoresGerente = [
     nombre: "Carlos Pérez",
     rol: "Coordinador",
     ordenes: 94,
-    cumplimiento: "65% (61)",
+    porcentajeCumplimiento: 65,
+    entregasCumplidas: 61,
     eficiencia: "Baja",
     colorEficiencia: "text-rose-500",
   },

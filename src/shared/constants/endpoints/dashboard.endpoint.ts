@@ -1,3 +1,3 @@
 export const ENDPOINTS_DASHBOARD = {
-  resumenClientes: "/api/Dashboard/resumenClientes",
+  resumenClientes: "/api/Cliente/resumen",
 } as const;

@@ -11,7 +11,7 @@ import {
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
 import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -35,6 +35,8 @@ import { MultiCustomSelectorBuscable } from "@maximilian/components/common/Custo
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomEntradaUrl } from "@maximilian/components/common/CustomEntradaUrl";
+import { useDescripcionTipoDocumentoSunat } from "@maximilian/hooks/useDescripcionTipoDocumentoSunat";
+import { CustomLeyendaTipoDocumentoSunat } from "./CustomLeyendaTipoDocumentoSunat";
 
 interface ModalDetalleClienteProps {
   isOpen: boolean;
@@ -304,7 +306,10 @@ export function ModalDetalleCliente({
   });
 
   const watchedPais = infoWatch("pais");
-  const watchedTipoRegTributario = infoWatch("tipoRegistroTributario");
+  const tipoRegistroTributarioSeleccionado = useWatch({
+    control: infoControl,
+    name: "tipoRegistroTributario",
+  });
   const watchedAtendidoPor = infoWatch("atendidoPor");
   const watchedIdioma = infoWatch("idioma");
   const watchedIdiomaFacturacion = infoWatch("idiomaFacturacion");
@@ -312,6 +317,8 @@ export function ModalDetalleCliente({
   const watchedMoneda = infoWatch("moneda");
   const watchedFormatoInforme = infoWatch("formatoInforme");
   const watchedPlantillaInforme = infoWatch("plantillaInforme");
+  const { tipoDocumentoSunat, cargandoTipoDocumentoSunat } =
+    useDescripcionTipoDocumentoSunat(tipoRegistroTributarioSeleccionado, isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -327,7 +334,7 @@ export function ModalDetalleCliente({
 
     validarSelector("tipoPersona", watchedTipoPersona, tipoPersonaData);
     validarSelector("pais", watchedPais, paisData);
-    validarSelector("tipoRegistroTributario", watchedTipoRegTributario, tipoRegTributarioData);
+    validarSelector("tipoRegistroTributario", tipoRegistroTributarioSeleccionado, tipoRegTributarioData);
     validarSelector("moneda", watchedMoneda, rateMonedas);
     validarSelector("atendidoPor", watchedAtendidoPor, empresaAtencionData);
     validarSelector("idioma", watchedIdioma, idiomaData);
@@ -357,7 +364,7 @@ export function ModalDetalleCliente({
     watchedPais,
     watchedPlantillaInforme,
     watchedTipoPersona,
-    watchedTipoRegTributario,
+    tipoRegistroTributarioSeleccionado,
   ]);
 
   if (!isOpen) return null;
@@ -508,7 +515,7 @@ export function ModalDetalleCliente({
                     label="Tipo Registro Tributario"
                     required
                     options={tipoRegTributarioData}
-                    value={watchedTipoRegTributario}
+                    value={tipoRegistroTributarioSeleccionado}
                     onChange={(val) =>
                       setInfoValue("tipoRegistroTributario", val, {
                         shouldValidate: true,
@@ -521,15 +528,21 @@ export function ModalDetalleCliente({
                   />
 
                   <div className="space-y-2">
-                    <CustomLabel required={!!watchedTipoRegTributario}>Registro Tributario</CustomLabel>
+                    <CustomLabel required={!!tipoRegistroTributarioSeleccionado}>Registro Tributario</CustomLabel>
                     <input
                       {...infoRegister("numRegistroTributario")}
                       type="text"
-                      disabled={!watchedTipoRegTributario}
+                      disabled={!tipoRegistroTributarioSeleccionado}
                       className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.numRegistroTributario ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`}
                     />
                     {infoErrors.numRegistroTributario && <p className="text-xs text-red-500">{infoErrors.numRegistroTributario.message}</p>}
                   </div>
+
+                  <CustomLeyendaTipoDocumentoSunat
+                    valor={tipoDocumentoSunat}
+                    cargando={cargandoTipoDocumentoSunat}
+                    tieneTipoRegistro={!!tipoRegistroTributarioSeleccionado}
+                  />
 
                   <CustomSelectorBuscable
                     label="Moneda"
