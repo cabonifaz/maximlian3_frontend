@@ -29,20 +29,14 @@ export function CustomEstadoPedidosGerente() {
         {resumenPedidos.map((estado) => (
           <div key={estado.idEstado}>
             <div className="mb-1.5 flex items-center justify-between text-xs">
-              <span
-                className="flex items-center gap-2 font-medium"
-                style={{ color: estado.colorLetra }}
-              >
+              <span className="flex items-center gap-2 font-medium text-black">
                 <span
-                  className="h-2.5 w-2.5 rounded-full border"
-                  style={{
-                    backgroundColor: estado.colorFondo,
-                    borderColor: estado.colorLetra,
-                  }}
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: estado.colorFondo }}
                 />
                 {estado.descripcionEstado}
               </span>
-              <span style={{ color: estado.colorLetra }}>
+              <span className="text-black">
                 <NumberTicker
                   value={estado.cantidad}
                   className="font-bold tracking-normal text-inherit"
@@ -50,13 +44,12 @@ export function CustomEstadoPedidosGerente() {
               </span>
             </div>
             <div
-              className="h-1.5 overflow-hidden rounded-full"
-              style={{ backgroundColor: estado.colorFondo }}
+              className="h-1.5 overflow-hidden rounded-full bg-slate-100"
             >
               <div
                 className="animacion-crecer-horizontal-dashboard h-full rounded-full"
                 style={{
-                  backgroundColor: estado.colorLetra,
+                  backgroundColor: estado.colorFondo,
                   width: totalPedidos > 0
                     ? `${(estado.cantidad / totalPedidos) * 100}%`
                     : "0%",
