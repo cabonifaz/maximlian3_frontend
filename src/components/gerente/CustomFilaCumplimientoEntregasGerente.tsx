@@ -35,14 +35,14 @@ export function CustomFilaCumplimientoEntregasGerente({
           </div>
         </div>
       </td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 text-center">
         <NumberTicker
           value={usuario.ordenes}
           className="text-xs font-bold tracking-normal text-slate-700"
         />
       </td>
       <td
-        className="px-6 py-4 text-xs font-bold"
+        className="px-6 py-4 text-center text-xs font-bold"
         style={{ color: usuario.colorLetra }}
       >
         <NumberTicker
@@ -57,7 +57,7 @@ export function CustomFilaCumplimientoEntregasGerente({
         />
         )
       </td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 text-center">
         <span
           className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold"
           style={{
