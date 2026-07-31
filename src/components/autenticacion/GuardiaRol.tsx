@@ -3,11 +3,19 @@ import { useGuardiaRol } from "@maximilian/hooks/useGuardiaRol";
 
 interface PropsGuardiaRol {
   children: React.ReactNode;
+  idRolRequerido?: number;
   rolRequerido: string;
 }
 
-export function GuardiaRol({ children, rolRequerido }: PropsGuardiaRol) {
-  const { estaVerificando, tieneAcceso } = useGuardiaRol(rolRequerido);
+export function GuardiaRol({
+  children,
+  idRolRequerido,
+  rolRequerido,
+}: PropsGuardiaRol) {
+  const { estaVerificando, tieneAcceso } = useGuardiaRol(
+    rolRequerido,
+    idRolRequerido,
+  );
 
   if (estaVerificando) {
     return <PantallaCarga />;

@@ -3,10 +3,14 @@ import type {
   EntradaFacturaCliente,
   EntradaFacturacion,
   EntradaFacturacionApi,
+  EntradaPedidoFacturacionApi,
   EntradaProductoFacturable,
   ParametrosListaFacturacion,
+  ParametrosListaPedidosFacturacion,
+  RespuestaListaFacturasCliente,
   RespuestaListaFacturacion,
   ResultadoListaFacturacionApi,
+  ResultadoListaPedidosFacturacionApi,
 } from "@maximilian/shared/types/facturacion.type";
 import { ENDPOINTS_FACTURACION } from "@maximilian/shared/constants/endpoints/facturacion.endpoint";
 import {
@@ -15,44 +19,6 @@ import {
   type ApiResponse,
 } from "@maximilian/shared/types/api.type";
 import maximilianService from "./maximilian-service";
-
-const FACTURAS_CLIENTE_MOCK: EntradaFacturaCliente[] = [
-  {
-    idFactura: 1,
-    codigo: "SR-2024-001",
-    investigado: "LexCorp Asesores",
-    penalidad: true,
-    estado: "finalizado",
-  },
-  {
-    idFactura: 2,
-    codigo: "SR-2024-002",
-    investigado: "Finanzas Estrategicas",
-    penalidad: true,
-    estado: "en-pre-factura",
-  },
-  {
-    idFactura: 3,
-    codigo: "SR-2024-003",
-    investigado: "Andean Compliance",
-    penalidad: true,
-    estado: "pre-factura-aprobada",
-  },
-  {
-    idFactura: 4,
-    codigo: "SR-2024-004",
-    investigado: "TrustLegal Consultores",
-    penalidad: false,
-    estado: "pre-factura-rechazada",
-  },
-  {
-    idFactura: 5,
-    codigo: "SR-2024-005",
-    investigado: "Grupo Logistico Pacifico",
-    penalidad: false,
-    estado: "finalizado",
-  },
-];
 
 const PRODUCTOS_FACTURABLES_MOCK: EntradaProductoFacturable[] = [
   {
@@ -115,6 +81,35 @@ function mapearFacturacion(facturacion: EntradaFacturacionApi): EntradaFacturaci
     totalFacturados: facturacion.pedidosFacturados,
     idioma: facturacion.idIdiomaFacturacion,
     estado: estados[facturacion.estadoFacturacion],
+  };
+}
+
+function mapearPedidoFacturacion(
+  pedido: EntradaPedidoFacturacionApi,
+): EntradaFacturaCliente {
+  const estados = {
+    Pendiente: { estado: "pendiente", codigoEstado: 1 },
+    "En pre-factura": { estado: "en-pre-factura", codigoEstado: 2 },
+    "Pre-factura aprobada": {
+      estado: "pre-factura-aprobada",
+      codigoEstado: 3,
+    },
+    "Pre-factura rechazada": {
+      estado: "pre-factura-rechazada",
+      codigoEstado: 4,
+    },
+    Finalizado: { estado: "finalizado", codigoEstado: 5 },
+    Anulado: { estado: "anulado", codigoEstado: 6 },
+  } as const;
+  const estado = estados[pedido.estadoFacturacion];
+
+  return {
+    idFactura: pedido.idPedido,
+    codigo: pedido.codigo,
+    investigado: pedido.investigado ?? "",
+    penalidad: pedido.aplicaPenalidad === "Si",
+    codigoEstado: estado.codigoEstado,
+    estado: estado.estado,
   };
 }
 
@@ -197,8 +192,28 @@ export const facturacionService = {
     };
   },
 
-  listarFacturasCliente: async (): Promise<EntradaFacturaCliente[]> => {
-    return Promise.resolve(FACTURAS_CLIENTE_MOCK);
+  listarFacturasCliente: async (
+    params: ParametrosListaPedidosFacturacion,
+  ): Promise<RespuestaListaFacturasCliente> => {
+    const { data } = await maximilianService.get<
+      ApiResponse<ResultadoListaPedidosFacturacionApi>
+    >(ENDPOINTS_FACTURACION.listarPedidos, {
+      params: {
+        idCliente: params.idCliente,
+        busqueda: params.busqueda,
+        numPag: params.numPag,
+      },
+    });
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return {
+      lstFacturas: data.result.lstPedidos.map(mapearPedidoFacturacion),
+      totalRegistros: data.result.totalRegistros,
+      totalPaginas: data.result.totalPaginas,
+    };
   },
 
   obtenerDetalleFactura: async (

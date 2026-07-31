@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus, MailCheck, MailX } from "lucide-react";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
@@ -20,6 +20,8 @@ import { MultiCustomSelectorBuscable } from "@maximilian/components/common/Custo
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomEntradaUrl } from "@maximilian/components/common/CustomEntradaUrl";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
+import { useDescripcionTipoDocumentoSunat } from "@maximilian/hooks/useDescripcionTipoDocumentoSunat";
+import { CustomLeyendaTipoDocumentoSunat } from "./CustomLeyendaTipoDocumentoSunat";
 
 interface ModalAgregarClienteProps {
   isOpen: boolean;
@@ -109,6 +111,12 @@ export function ModalAgregarCliente({
   });
 
   const queryClient = useQueryClient();
+  const tipoRegistroTributarioSeleccionado = useWatch({
+    control: infoControl,
+    name: "tipoRegistroTributario",
+  });
+  const { tipoDocumentoSunat, cargandoTipoDocumentoSunat } =
+    useDescripcionTipoDocumentoSunat(tipoRegistroTributarioSeleccionado, isOpen);
 
   const getCached = (id: number) =>
     queryClient.getQueryData<EntradaTablaMaestra[]>(["masterTable", id]) ?? [];
@@ -243,7 +251,6 @@ export function ModalAgregarCliente({
   };
 
   const watchedPais = infoWatch("pais");
-  const watchedTipoRegTributario = infoWatch("tipoRegistroTributario");
   const watchedAtendidoPor = infoWatch("atendidoPor");
   const watchedIdioma = infoWatch("idioma");
   const watchedIdiomaFacturacion = infoWatch("idiomaFacturacion");
@@ -396,7 +403,7 @@ export function ModalAgregarCliente({
                     label="Tipo Registro Tributario"
                     required
                     idMaster={TablaMaestraId.TIPO_REG_TRIBUTARIO}
-                    value={watchedTipoRegTributario}
+                    value={tipoRegistroTributarioSeleccionado}
                     onChange={(val) =>
                       setInfoValue("tipoRegistroTributario", val, {
                         shouldValidate: true,
@@ -408,14 +415,14 @@ export function ModalAgregarCliente({
                   />
 
                   <div className="space-y-2">
-                    <CustomLabel required={!!watchedTipoRegTributario}>
+                    <CustomLabel required={!!tipoRegistroTributarioSeleccionado}>
                       Registro Tributario
                     </CustomLabel>
                     <input
                       {...infoRegister("numRegistroTributario")}
                       type="text"
                       placeholder="Registro Tributario"
-                      disabled={!watchedTipoRegTributario}
+                      disabled={!tipoRegistroTributarioSeleccionado}
                       className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.numRegistroTributario ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`}
                     />
                     {infoErrors.numRegistroTributario && (
@@ -424,6 +431,12 @@ export function ModalAgregarCliente({
                       </p>
                     )}
                   </div>
+
+                  <CustomLeyendaTipoDocumentoSunat
+                    valor={tipoDocumentoSunat}
+                    cargando={cargandoTipoDocumentoSunat}
+                    tieneTipoRegistro={!!tipoRegistroTributarioSeleccionado}
+                  />
 
                   <CustomSelectorBuscable
                     label="Moneda"

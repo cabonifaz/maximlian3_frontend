@@ -1,11 +1,22 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronRight, Edit, Eye, MoreHorizontal, Plus, ReceiptText, RefreshCcw, X } from "lucide-react";
-import { CustomButton } from "@maximilian/components/common/CustomButton";
-import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import {
+  ChevronRight,
+  Edit,
+  Eye,
+  MoreHorizontal,
+  Plus,
+  ReceiptText,
+  RefreshCcw,
+  Search,
+  X,
+} from "lucide-react";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomTabla } from "@maximilian/components/common/CustomTabla";
+import { useListadoFacturasCliente } from "@maximilian/hooks/useListadoFacturasCliente";
+import {
+  CODIGOS_ESTADO_FACTURA_SOLO_LECTURA,
   ESTILOS_ESTADO_FACTURA_CLIENTE,
-  OPCIONES_FILTRO_ESTADO_FACTURA,
   OPCIONES_MODIFICAR_ESTADO_FACTURA,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import type {
@@ -15,16 +26,15 @@ import type {
 
 interface CustomModalFacturasClienteProps {
   abierto: boolean;
+  idCliente: number;
   cliente: string;
-  facturas: EntradaFacturaCliente[];
   onCerrar: () => void;
   onAgregarFactura: () => void;
   onVerFactura: (factura: EntradaFacturaCliente) => void;
   onEditarFactura: (factura: EntradaFacturaCliente) => void;
-  onModificarEstado: (factura: EntradaFacturaCliente, estado: EstadoFacturaCliente) => void;
 }
 
-function EstadoFacturaBadge({ estado }: { estado: EstadoFacturaCliente }) {
+function CustomEstadoFacturaBadge({ estado }: { estado: EstadoFacturaCliente }) {
   const configuracion = ESTILOS_ESTADO_FACTURA_CLIENTE[estado];
 
   return (
@@ -36,32 +46,36 @@ function EstadoFacturaBadge({ estado }: { estado: EstadoFacturaCliente }) {
 
 export function CustomModalFacturasCliente({
   abierto,
+  idCliente,
   cliente,
-  facturas,
   onCerrar,
   onAgregarFactura,
   onVerFactura,
   onEditarFactura,
-  onModificarEstado,
 }: CustomModalFacturasClienteProps) {
   const [idMenuActivo, setIdMenuActivo] = useState<number | null>(null);
   const [idSubmenuEstadoActivo, setIdSubmenuEstadoActivo] = useState<number | null>(null);
   const [estiloMenu, setEstiloMenu] = useState<React.CSSProperties>({});
   const [submenuEstadoHaciaArriba, setSubmenuEstadoHaciaArriba] = useState(false);
-  const [idEstadoFiltro, setIdEstadoFiltro] = useState<number | undefined>();
-
-  const estadoFiltro = OPCIONES_FILTRO_ESTADO_FACTURA.find(
-    (opcion) => opcion.num1 === idEstadoFiltro,
-  )?.string2;
-  const facturasFiltradas = useMemo(
-    () => estadoFiltro
-      ? facturas.filter((factura) => factura.estado === estadoFiltro)
-      : facturas,
-    [estadoFiltro, facturas],
-  );
-  const facturaMenuActivo = facturasFiltradas.find(
+  const {
+    terminoBusqueda,
+    paginaActual,
+    facturasPagina,
+    totalRegistros,
+    totalPaginas,
+    isLoading,
+    isError,
+    cambiarBusqueda,
+    cambiarPagina,
+    actualizarEstadoFactura,
+    reintentar,
+  } = useListadoFacturasCliente(idCliente);
+  const facturaMenuActivo = facturasPagina.find(
     (factura) => factura.idFactura === idMenuActivo,
   );
+  const facturaMenuSoloLectura = facturaMenuActivo
+    ? CODIGOS_ESTADO_FACTURA_SOLO_LECTURA.includes(facturaMenuActivo.codigoEstado)
+    : false;
 
   const alternarMenu = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -74,9 +88,12 @@ export function CustomModalFacturasCliente({
     }
 
     const rectangulo = event.currentTarget.getBoundingClientRect();
+    const esSoloLectura = CODIGOS_ESTADO_FACTURA_SOLO_LECTURA.includes(
+      factura.codigoEstado,
+    );
     const anchoMenu = 176;
-    const anchoSubmenu = 224;
-    const altoMenu = 124;
+    const anchoSubmenu = esSoloLectura ? 0 : 224;
+    const altoMenu = esSoloLectura ? 44 : 124;
     const espacioInferior = window.innerHeight - rectangulo.bottom;
     setEstiloMenu({
       left: Math.max(
@@ -113,6 +130,35 @@ export function CustomModalFacturasCliente({
     onCerrar();
   };
 
+  const columnas = [
+    { label: "ID", width: "18%" },
+    { label: "Investigado", width: "34%" },
+    { label: "Penalidad", width: "15%" },
+    { label: "Estado", className: "text-center", width: "25%" },
+    { label: "", className: "text-right", width: "8%" },
+  ];
+
+  const renderizarFilaFactura = (factura: EntradaFacturaCliente) => (
+    <>
+      <td className="px-6 py-4 text-xs font-bold text-slate-500">{factura.codigo}</td>
+      <td className="px-6 py-4 font-bold text-brand-black">{factura.investigado}</td>
+      <td className="px-6 py-4 text-slate-600">{factura.penalidad ? "Sí" : "No"}</td>
+      <td className="px-6 py-4 text-center">
+        <CustomEstadoFacturaBadge estado={factura.estado} />
+      </td>
+      <td className="px-6 py-4 text-right">
+        <button
+          type="button"
+          onClick={(event) => alternarMenu(event, factura)}
+          className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-brand-black"
+          aria-label={`Acciones de ${factura.codigo}`}
+        >
+          <MoreHorizontal size={17} />
+        </button>
+      </td>
+    </>
+  );
+
   if (!abierto) return null;
 
   return (
@@ -134,72 +180,47 @@ export function CustomModalFacturasCliente({
           </CustomButton>
         </div>
 
-        <div className="flex bg-slate-50/70 px-8 py-4">
+        <div className="flex items-center justify-between gap-4 bg-slate-50/70 px-8 py-4">
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Cliente</p>
             <p className="mt-0.5 text-sm font-bold text-brand-black">{cliente}</p>
           </div>
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="search"
+              placeholder="Buscar factura"
+              value={terminoBusqueda}
+              onChange={(event) => cambiarBusqueda(event.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
+              aria-label="Buscar factura del cliente"
+            />
+          </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-white px-8 py-5">
-          <div className="overflow-hidden rounded-2xl border border-slate-200">
-          <table className="w-full text-left text-sm">
-            <thead className="border-y border-slate-100 text-xs font-bold uppercase text-slate-400">
-              <tr>
-                <th className="px-1 py-4">ID</th>
-                <th className="px-4 py-4">Investigado</th>
-                <th className="px-4 py-4">Penalidad</th>
-                <th className="px-4 py-2 text-center">
-                  <CustomEncabezadoFiltroTabla
-                    titulo="Estado"
-                    opciones={OPCIONES_FILTRO_ESTADO_FACTURA}
-                    valores={idEstadoFiltro ? [idEstadoFiltro] : []}
-                    onChange={(valores) =>
-                      setIdEstadoFiltro(valores[valores.length - 1])
-                    }
-                    multiple={false}
-                  />
-                </th>
-                <th className="px-1 py-4 text-right" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {facturasFiltradas.map((factura) => (
-                <tr key={factura.idFactura} className="hover:bg-slate-50/70">
-                  <td className="px-1 py-4 text-xs font-bold text-slate-500">{factura.codigo}</td>
-                  <td className="px-4 py-4 font-bold text-brand-black">{factura.investigado}</td>
-                  <td className="px-4 py-4 text-slate-600">{factura.penalidad ? "Sí" : "No"}</td>
-                  <td className="px-4 py-4 text-center">
-                    <EstadoFacturaBadge estado={factura.estado} />
-                  </td>
-                  <td className="relative px-1 py-4 text-right">
-                    <button
-                      type="button"
-                      onClick={(event) => alternarMenu(event, factura)}
-                      className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-brand-black"
-                      aria-label={`Acciones de ${factura.codigo}`}
-                    >
-                      <MoreHorizontal size={17} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          </div>
+          <CustomTabla
+            columns={columnas}
+            data={facturasPagina}
+            getId={(factura) => factura.idFactura}
+            renderRow={renderizarFilaFactura}
+            isLoading={isLoading}
+            isError={isError}
+            onRetry={() => reintentar()}
+            emptyMessage="No se encontraron facturas."
+            errorMessage="Error al cargar las facturas del cliente."
+            paginaActual={paginaActual}
+            totalPages={totalPaginas}
+            totalRecords={totalRegistros}
+            onPageChange={cambiarPagina}
+            entityLabel="facturas"
+          />
         </div>
 
-        <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/60 px-8 py-4">
-          <div className="flex flex-1 justify-center gap-2 text-xs">
-            <button className="h-8 w-8 rounded-lg border border-slate-200 text-slate-500">{"<"}</button>
-            <button className="h-8 w-8 rounded-lg bg-brand-black font-bold text-white">1</button>
-            <button className="h-8 w-8 rounded-lg border border-slate-200 text-slate-500">2</button>
-            <button className="h-8 w-8 rounded-lg border border-slate-200 text-slate-500">3</button>
-            <button className="h-8 w-8 rounded-lg border border-slate-200 text-slate-500">{">"}</button>
-          </div>
+        <div className="flex justify-end border-t border-slate-100 bg-slate-50/60 px-8 py-4">
           <CustomButton variant="primary" size="compact" onClick={onAgregarFactura}>
             <Plus size={14} />
-            Agregar factura
+            Emitir Factura
           </CustomButton>
         </div>
       </div>
@@ -227,29 +248,31 @@ export function CustomModalFacturasCliente({
             <Eye size={14} />
             Ver factura
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              cerrarMenu();
-              onEditarFactura(facturaMenuActivo);
-            }}
-            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-          >
-            <Edit size={14} />
-            Editar factura
-          </button>
-          <div
-            className="relative"
-            onMouseEnter={(event) => abrirSubmenuEstado(
-              event.currentTarget,
-              facturaMenuActivo.idFactura,
-            )}
-            onMouseLeave={() => setIdSubmenuEstadoActivo(null)}
-            onFocus={(event) => abrirSubmenuEstado(
-              event.currentTarget,
-              facturaMenuActivo.idFactura,
-            )}
-          >
+          {!facturaMenuSoloLectura ? (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  cerrarMenu();
+                  onEditarFactura(facturaMenuActivo);
+                }}
+                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              >
+                <Edit size={14} />
+                Editar factura
+              </button>
+              <div
+                className="relative"
+                onMouseEnter={(event) => abrirSubmenuEstado(
+                  event.currentTarget,
+                  facturaMenuActivo.idFactura,
+                )}
+                onMouseLeave={() => setIdSubmenuEstadoActivo(null)}
+                onFocus={(event) => abrirSubmenuEstado(
+                  event.currentTarget,
+                  facturaMenuActivo.idFactura,
+                )}
+              >
             <button
               type="button"
               onClick={() => setIdSubmenuEstadoActivo(
@@ -272,7 +295,11 @@ export function CustomModalFacturasCliente({
                     key={opcion.valor}
                     type="button"
                     onClick={() => {
-                      onModificarEstado(facturaMenuActivo, opcion.valor);
+                      actualizarEstadoFactura(
+                        facturaMenuActivo,
+                        opcion.valor,
+                        opcion.codigoEstado,
+                      );
                       cerrarMenu();
                     }}
                     className={`flex w-full items-center px-4 py-2 text-left text-sm hover:bg-slate-50 ${
@@ -286,7 +313,9 @@ export function CustomModalFacturasCliente({
                 ))}
               </div>
             ) : null}
-          </div>
+              </div>
+            </>
+          ) : null}
         </div>
       </>,
       document.body,

@@ -7,6 +7,7 @@ export function obtenerRutaPorRol(rol?: string | null) {
   if (rolNormalizado === "ANALISTA") return "/analista";
   if (rolNormalizado === "TRADUCTOR") return "/traductor";
   if (rolNormalizado === "COORDINADOR") return "/coordinador";
+  if (rolNormalizado === "GERENTE") return "/gerente";
 
   return "/seleccionar-rol";
 }

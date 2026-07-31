@@ -121,7 +121,7 @@ export default function GestionRevisionAprobacion() {
   } = useGestionRevisionAprobacion();
 
   const columnas = [
-    { label: "ID Pedido", width: "8%" },
+    { label: "Código Pedido", width: "12%" },
     { label: "Investigado", width: "21%" },
     { label: "Vigencia", width: "11%" },
     {
@@ -249,7 +249,7 @@ export default function GestionRevisionAprobacion() {
           renderRow={(registro) => (
             <>
               <td className="px-6 py-4 text-sm font-medium text-slate-400">
-                #{registro.idPedido}
+                {registro.codigoPedido || "-"}
               </td>
               <td className="max-w-48 px-6 py-4 text-sm font-semibold text-slate-700">
                 <span className="block truncate" title={registro.investigado}>

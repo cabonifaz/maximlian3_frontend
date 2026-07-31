@@ -1,7 +1,7 @@
 import { clasesEtiquetaCampoInvestigacion, marcadoresPorEtiqueta } from "@maximilian/shared/constants/components/investigacion/controles-informe.constants";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Briefcase, Building2, Check, Eye, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
+import { Briefcase, Building2, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -417,7 +417,7 @@ interface PropsMenuSeccionesInvestigacionAnalista {
 }
 
 interface PropsResumenPedidoInvestigacionAnalista {
-  idPedido?: string;
+  codigoPedido?: string;
   plantilla?: string;
   idioma?: string;
   idFormatoFechaInforme?: number;
@@ -675,8 +675,6 @@ export function MenuSeccionesInvestigacionAnalista({
               >
                 {iconos[seccion.id]}
                 <span className="flex-1">{seccion.titulo}</span>
-                {estadoSeccion === "completado" ? <Check size={16} className={estaActiva ? "text-white" : "text-emerald-500"} /> : null}
-                {estadoSeccion === "borrador" ? <Eye size={16} className={estaActiva ? "text-white" : "text-amber-500"} /> : null}
               </button>
               {estadoSeccion === "borrador" ? (
                 <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-52 -translate-x-1/2 rounded-lg bg-brand-black px-3 py-2 text-center text-xs font-medium text-white shadow-lg group-hover:block">
@@ -692,7 +690,7 @@ export function MenuSeccionesInvestigacionAnalista({
 }
 
 export function ResumenPedidoInvestigacionAnalista({
-  idPedido,
+  codigoPedido,
   plantilla,
   idioma,
   idFormatoFechaInforme = 2,
@@ -721,9 +719,9 @@ export function ResumenPedidoInvestigacionAnalista({
           <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
             <div className="border-l-[4px] border-brand-black pl-3">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">
-                id Pedido
+                Código Pedido
               </p>
-              <p className="mt-1 text-sm font-bold text-slate-900">{idPedido ?? "-"}</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">{codigoPedido || "-"}</p>
             </div>
             <div className="xl:border-l xl:border-gray-100 xl:pl-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">Investigado</p>

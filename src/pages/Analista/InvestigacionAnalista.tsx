@@ -4667,7 +4667,12 @@ function PantallaInvestigacionAnalista({
     <ProveedorFormatoFechaInforme formato={formatoFechaInformeVisual}>
     <div ref={contenedorPantallaRef} className="space-y-6">
       <ResumenPedidoInvestigacionAnalista
-        idPedido={String(datosPedidoNavegacion?.idPedido ?? idPedido ?? "")}
+        codigoPedido={
+          datosPedidoNavegacion?.codigoPedido
+          || registroAsignacionPedido?.codigoPedido
+          || registroPedidoSeleccionado?.codigoPedido
+          || ""
+        }
         plantilla={nombrePlantilla}
         idioma={nombreIdioma}
         idFormatoFechaInforme={idFormatoFechaInforme}

@@ -255,7 +255,8 @@ function normalizarFilaInforme(fila: unknown): InformeListEntry {
       registro.plantillaInforme,
       registro.PlantillaInforme,
     ) || undefined,
-    codigo: obtenerTexto(registro.codigo, registro.Codigo, registro.codigoPedido, registro.CodigoPedido) || "-",
+    codigoPedido: obtenerTexto(registro.codigoPedido, registro.CodigoPedido),
+    codigo: obtenerTexto(registro.codigo, registro.Codigo) || "-",
     vigencia: obtenerTexto(registro.vigencia, registro.Vigencia, registro.porVencerTexto, registro.PorVencerTexto) || "-",
     vigenciaColor: obtenerTexto(
       registro.porVencerColor,

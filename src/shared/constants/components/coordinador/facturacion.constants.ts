@@ -37,6 +37,10 @@ export const ESTILOS_ESTADO_FACTURA_CLIENTE: Record<
     texto: "Pre-factura rechazada",
     clase: "bg-red-100 text-red-600",
   },
+  anulado: {
+    texto: "Anulado",
+    clase: "bg-slate-200 text-slate-600",
+  },
 };
 
 export const OPCIONES_MODIFICAR_ESTADO_FACTURA: Array<{
@@ -45,11 +49,14 @@ export const OPCIONES_MODIFICAR_ESTADO_FACTURA: Array<{
     "en-pre-factura" | "pre-factura-aprobada" | "pre-factura-rechazada"
   >;
   etiqueta: string;
+  codigoEstado: number;
 }> = [
-  { valor: "en-pre-factura", etiqueta: "En pre-factura" },
-  { valor: "pre-factura-rechazada", etiqueta: "Pre-factura rechazada" },
-  { valor: "pre-factura-aprobada", etiqueta: "Pre-factura aprobada" },
+  { valor: "en-pre-factura", etiqueta: "En pre-factura", codigoEstado: 2 },
+  { valor: "pre-factura-rechazada", etiqueta: "Pre-factura rechazada", codigoEstado: 4 },
+  { valor: "pre-factura-aprobada", etiqueta: "Pre-factura aprobada", codigoEstado: 3 },
 ];
+
+export const CODIGOS_ESTADO_FACTURA_SOLO_LECTURA = [5, 6];
 
 export const ESTILOS_TIPO_PRODUCTO_FACTURABLE: Record<
   EntradaProductoFacturable["tipo"],
@@ -93,34 +100,4 @@ export const OPCIONES_ESTADO_CUOTA: EntradaTablaMaestra[] = [
     date2: null,
     date3: null,
   },
-];
-
-function crearOpcionFiltroFacturacion(
-  num1: number,
-  string1: string,
-  string2: string,
-): EntradaTablaMaestra {
-  return {
-    idEmpresa: 0,
-    idTablaMaestra: null,
-    idMaestro: 0,
-    descripcion: string1.toUpperCase(),
-    num1,
-    num2: null,
-    num3: null,
-    string1,
-    string2,
-    string3: null,
-    date1: null,
-    date2: null,
-    date3: null,
-  };
-}
-
-export const OPCIONES_FILTRO_ESTADO_FACTURA = [
-  crearOpcionFiltroFacturacion(1, "Finalizado", "finalizado"),
-  crearOpcionFiltroFacturacion(2, "Pendiente", "pendiente"),
-  crearOpcionFiltroFacturacion(3, "En pre-factura", "en-pre-factura"),
-  crearOpcionFiltroFacturacion(4, "Pre-factura aprobada", "pre-factura-aprobada"),
-  crearOpcionFiltroFacturacion(5, "Pre-factura rechazada", "pre-factura-rechazada"),
 ];

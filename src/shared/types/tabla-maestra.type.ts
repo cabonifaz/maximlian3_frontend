@@ -48,11 +48,14 @@ export const TablaMaestraId = {
   CATEGORIA_NOTICIA: 66,
   ESTADO_INF_CREDITICIO: 66,
   ESTADO_FACTURACION: 67,
+  TIPO_DOCUMENTO_SUNAT: 70,
   ESTADO_ASIGNACION: 98,
   PAGINACION_FRACTAL: 99,
+  EFICIENCIA_CUMPLIMIENTO: 101,
 } as const;
 
-export type TablaMaestraId = (typeof TablaMaestraId)[keyof typeof TablaMaestraId];
+export type TablaMaestraId =
+  (typeof TablaMaestraId)[keyof typeof TablaMaestraId];
 
 export type EntradaTablaMaestra = {
   idEmpresa: number;
@@ -135,55 +138,67 @@ export interface TablaMaestraGuardarResponse {
   date3?: string | null;
 }
 
-const descripcionesTablaMaestraPorId: Partial<Record<TablaMaestraId, string>> = {
-  [TablaMaestraId.TIPO_PERSONA]: "TIPO PERSONA",
-  [TablaMaestraId.PAIS]: "PAIS",
-  [TablaMaestraId.IDIOMA]: "IDIOMA",
-  [TablaMaestraId.TIPO_TRAMITE]: "TIPO DE TRAMITE",
-  [TablaMaestraId.ROLES]: "ROLES",
-  [TablaMaestraId.TIPO_REG_TRIBUTARIO]: "TIPO REG TRIBUTARIO",
-  [TablaMaestraId.MONEDA]: "MONEDA",
-  [TablaMaestraId.TIPO_CONTACTO]: "TIPO CONTACTO",
-  [TablaMaestraId.AREA_TRABAJO]: "AREA TRABAJO",
-  [TablaMaestraId.ESTADO_CLIENTE]: "ESTADO DEL CLIENTE",
-  [TablaMaestraId.FORMATO_ARCHIVO]: "FORMATO ARCHIVO",
-  [TablaMaestraId.EMPRESA_ATENCION]: "EMPRESA ATENCION",
-  [TablaMaestraId.PLANTILLA_INFORME]: "PLANTILLA DOCUMENTO",
-  [TablaMaestraId.ESTADO_PEDIDO]: "ESTADO PEDIDO",
-  [TablaMaestraId.TIPO_DOCUMENTO]: "TIPO DOCUMENTO",
-  [TablaMaestraId.TIPO_PLAZO_CREDITO]: "TIPO PLAZO CREDITO",
-  [TablaMaestraId.TIPO_EMPRESA]: "TIPO EMPRESA",
-  [TablaMaestraId.CIUDAD]: "CIUDAD",
-  [TablaMaestraId.MES]: "MES",
-  [TablaMaestraId.SECTOR_ECONOMICO]: "SECTOR ECONOMICO",
-  [TablaMaestraId.ACTIVIDAD_ECONOMICA]: "CATEGORIA CIIU",
-  [TablaMaestraId.TIPO_LOCAL]: "TIPO DE LOCAL",
-  [TablaMaestraId.TIPO_BALANCE]: "TIPO DE BALANCE",
-  [TablaMaestraId.ESTADO_FINANCIERO]: "ESTADO FINANCIERO",
-  [TablaMaestraId.TIPO_PROVEEDOR]: "TIPO DE PROVEEDOR",
-  [TablaMaestraId.TIPO_DOCUMENTO_IDENTIDAD]: "TIPO DOCUMENTO IDENTIDAD",
-  [TablaMaestraId.ESTADO_CIVIL]: "ESTADO CIVIL",
-  [TablaMaestraId.PROFESION]: "PROFESION",
-  [TablaMaestraId.LIMITE_CREDITO_PROVEEDOR]: "LIMITE DE CREDITO PROVEEDOR",
-  [TablaMaestraId.TIEMPO_CREDITO_VENTAS]: "TIEMPO CREDITO",
-  [TablaMaestraId.CARGO_DIRECTORIO]: "CARGO EJECUTIVO",
-  [TablaMaestraId.NIVEL_CONFIABILIDAD]: "NIVEL CONFIABILIDAD",
-  [TablaMaestraId.TIPO_EVIDENCIA]: "TIPO ARCHIVO INFORME",
-  [TablaMaestraId.FASE_EVIDENCIA]: "FASE INFORME",
-  [TablaMaestraId.OBLIGACION_BOLSA]: "BOOLEAN",
-  [TablaMaestraId.FORMATO_FECHA_INFORME]: "FORMATO FECHA INFORME",
-  [TablaMaestraId.CATEGORIA_NOTICIA]: "ESTADO INF CREDITICIO",
-  [TablaMaestraId.ESTADO_ASIGNACION]: "ESTADO ASIGNACION",
-  [TablaMaestraId.ESTADO_INFORME]: "ESTADO INFORME",
-  [TablaMaestraId.CLASE_CIIU]: "CLASE CIIU",
-  [TablaMaestraId.PAGINACION_FRACTAL]: "PAGINACION FRACTAL",
-};
+const descripcionesTablaMaestraPorId: Partial<Record<TablaMaestraId, string>> =
+  {
+    [TablaMaestraId.TIPO_PERSONA]: "TIPO PERSONA",
+    [TablaMaestraId.PAIS]: "PAIS",
+    [TablaMaestraId.IDIOMA]: "IDIOMA",
+    [TablaMaestraId.TIPO_TRAMITE]: "TIPO DE TRAMITE",
+    [TablaMaestraId.ROLES]: "ROLES",
+    [TablaMaestraId.TIPO_REG_TRIBUTARIO]: "TIPO REG TRIBUTARIO",
+    [TablaMaestraId.MONEDA]: "MONEDA",
+    [TablaMaestraId.TIPO_CONTACTO]: "TIPO CONTACTO",
+    [TablaMaestraId.AREA_TRABAJO]: "AREA TRABAJO",
+    [TablaMaestraId.ESTADO_CLIENTE]: "ESTADO DEL CLIENTE",
+    [TablaMaestraId.FORMATO_ARCHIVO]: "FORMATO ARCHIVO",
+    [TablaMaestraId.EMPRESA_ATENCION]: "EMPRESA ATENCION",
+    [TablaMaestraId.PLANTILLA_INFORME]: "PLANTILLA DOCUMENTO",
+    [TablaMaestraId.ESTADO_PEDIDO]: "ESTADO PEDIDO",
+    [TablaMaestraId.TIPO_DOCUMENTO]: "TIPO DOCUMENTO",
+    [TablaMaestraId.TIPO_PLAZO_CREDITO]: "TIPO PLAZO CREDITO",
+    [TablaMaestraId.TIPO_EMPRESA]: "TIPO EMPRESA",
+    [TablaMaestraId.CIUDAD]: "CIUDAD",
+    [TablaMaestraId.MES]: "MES",
+    [TablaMaestraId.SECTOR_ECONOMICO]: "SECTOR ECONOMICO",
+    [TablaMaestraId.ACTIVIDAD_ECONOMICA]: "CATEGORIA CIIU",
+    [TablaMaestraId.TIPO_LOCAL]: "TIPO DE LOCAL",
+    [TablaMaestraId.TIPO_BALANCE]: "TIPO DE BALANCE",
+    [TablaMaestraId.ESTADO_FINANCIERO]: "ESTADO FINANCIERO",
+    [TablaMaestraId.TIPO_PROVEEDOR]: "TIPO DE PROVEEDOR",
+    [TablaMaestraId.TIPO_DOCUMENTO_IDENTIDAD]: "TIPO DOCUMENTO IDENTIDAD",
+    [TablaMaestraId.ESTADO_CIVIL]: "ESTADO CIVIL",
+    [TablaMaestraId.PROFESION]: "PROFESION",
+    [TablaMaestraId.LIMITE_CREDITO_PROVEEDOR]: "LIMITE DE CREDITO PROVEEDOR",
+    [TablaMaestraId.TIEMPO_CREDITO_VENTAS]: "TIEMPO CREDITO",
+    [TablaMaestraId.CARGO_DIRECTORIO]: "CARGO EJECUTIVO",
+    [TablaMaestraId.NIVEL_CONFIABILIDAD]: "NIVEL CONFIABILIDAD",
+    [TablaMaestraId.TIPO_EVIDENCIA]: "TIPO ARCHIVO INFORME",
+    [TablaMaestraId.FASE_EVIDENCIA]: "FASE INFORME",
+    [TablaMaestraId.OBLIGACION_BOLSA]: "BOOLEAN",
+    [TablaMaestraId.FORMATO_FECHA_INFORME]: "FORMATO FECHA INFORME",
+    [TablaMaestraId.CATEGORIA_NOTICIA]: "ESTADO INF CREDITICIO",
+    [TablaMaestraId.TIPO_DOCUMENTO_SUNAT]: "TIPO DOCUMENTO SUNAT",
+    [TablaMaestraId.ESTADO_ASIGNACION]: "ESTADO ASIGNACION",
+    [TablaMaestraId.ESTADO_INFORME]: "ESTADO INFORME",
+    [TablaMaestraId.CLASE_CIIU]: "CLASE CIIU",
+    [TablaMaestraId.PAGINACION_FRACTAL]: "PAGINACION FRACTAL",
+    [TablaMaestraId.EFICIENCIA_CUMPLIMIENTO]: "CORTE % CUMPLIMIENTO",
+  };
 
-export function obtenerDescripcionTablaMaestra(idMaestro: number, descripcionBase?: string) {
-  const descripcion = descripcionesTablaMaestraPorId[idMaestro as TablaMaestraId];
+export function obtenerDescripcionTablaMaestra(
+  idMaestro: number,
+  descripcionBase?: string,
+) {
+  const descripcion =
+    descripcionesTablaMaestraPorId[idMaestro as TablaMaestraId];
   return descripcion ?? descripcionBase?.trim().toUpperCase() ?? "";
 }
 
-export function obtenerSiguienteNumTablaMaestra(opciones: EntradaTablaMaestra[]) {
-  return opciones.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1;
+export function obtenerSiguienteNumTablaMaestra(
+  opciones: EntradaTablaMaestra[],
+) {
+  return (
+    opciones.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) +
+    1
+  );
 }
