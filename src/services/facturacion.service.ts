@@ -5,13 +5,17 @@ import type {
   EntradaFacturacionApi,
   EntradaPedidoFacturacionApi,
   EntradaProductoFacturable,
+  EntradaProductoFacturableApi,
   GuardarBorradorFacturaRequest,
   ParametrosListaFacturacion,
   ParametrosListaPedidosFacturacion,
+  ParametrosListaProductosFacturables,
   RespuestaListaFacturasCliente,
   RespuestaListaFacturacion,
+  RespuestaListaProductosFacturables,
   ResultadoListaFacturacionApi,
   ResultadoListaPedidosFacturacionApi,
+  ResultadoListaProductosFacturablesApi,
 } from "@maximilian/shared/types/facturacion.type";
 import { ENDPOINTS_FACTURACION } from "@maximilian/shared/constants/endpoints/facturacion.endpoint";
 import {
@@ -22,49 +26,6 @@ import {
 import maximilianService from "./maximilian-service";
 import { formatearFechaDdMmYyyy } from "@maximilian/shared/utils/fecha.util";
 import { servicioCliente } from "./cliente.service";
-
-const PRODUCTOS_FACTURABLES_MOCK: EntradaProductoFacturable[] = [
-  {
-    idProductoFacturable: 1,
-    codigo: "SR-2024-001",
-    investigado: "Inversiones Delta S.A.C.",
-    aplicaPenalidad: true,
-    tipo: "express",
-    fecha: "15/05/2024",
-  },
-  {
-    idProductoFacturable: 2,
-    codigo: "SR-2024-002",
-    investigado: "Constructora Horizonte",
-    aplicaPenalidad: false,
-    tipo: "normal",
-    fecha: "18/05/2024",
-  },
-  {
-    idProductoFacturable: 3,
-    codigo: "SR-2024-003",
-    investigado: "Servicios Integrales Express",
-    aplicaPenalidad: true,
-    tipo: "super-flash",
-    fecha: "20/05/2024",
-  },
-  {
-    idProductoFacturable: 4,
-    codigo: "SR-2024-004",
-    investigado: "Consultoria Nexus",
-    aplicaPenalidad: false,
-    tipo: "normal",
-    fecha: "22/05/2024",
-  },
-  {
-    idProductoFacturable: 5,
-    codigo: "SR-2024-005",
-    investigado: "Logistica Maritima S.A.",
-    aplicaPenalidad: true,
-    tipo: "express",
-    fecha: "25/05/2024",
-  },
-];
 
 function mapearFacturacion(
   facturacion: EntradaFacturacionApi,
@@ -118,75 +79,52 @@ function mapearPedidoFacturacion(
   };
 }
 
+function convertirPorcentajeANumero(porcentaje: string) {
+  const valor = Number(porcentaje.trim().replace("%", ""));
+  return Number.isNaN(valor) ? 0 : valor;
+}
+
+function mapearProductoFacturable(
+  pedido: EntradaProductoFacturableApi,
+): EntradaProductoFacturable {
+  const tipoNormalizado = pedido.tipoTramite
+    .trim()
+    .toLowerCase()
+    .replaceAll(" ", "-");
+  const tipo = tipoNormalizado === "express" || tipoNormalizado === "super-flash"
+    ? tipoNormalizado
+    : "normal";
+
+  return {
+    idProductoFacturable: pedido.idPedido,
+    codigo: pedido.codigo,
+    investigado: pedido.investigado,
+    aplicaPenalidad: pedido.aplicaPenalidad === "Si",
+    tipo,
+    fecha: pedido.fecha,
+    penalidad: pedido.penalidad,
+    precio: pedido.precio,
+    descuentoPorcentaje: convertirPorcentajeANumero(
+      pedido.descuentoPorcentaje,
+    ),
+  };
+}
+
 function crearDetalleFactura(
   idCliente: number,
   cliente: string,
   numeroIdentificacion: string,
   factura?: EntradaFacturaCliente | null,
 ): DetalleFactura {
-  const productosBase =
-    factura?.idFactura === 1
-      ? [
-          {
-            idProductoFactura: 1,
-            idPedido: 1,
-            cantidad: 1,
-            descripcion: "SR-2024-001 - Express",
-            descuentoPorcentaje: 0,
-            valorUnitario: 10.09,
-            precioUnitario: 0,
-            porcentajeIgv: 0,
-            total: 10.09,
-          },
-          {
-            idProductoFactura: 2,
-            idPedido: 2,
-            cantidad: 1,
-            descripcion: "SR-2024-002 - Normal",
-            descuentoPorcentaje: 0,
-            valorUnitario: 10.09,
-            precioUnitario: 0,
-            porcentajeIgv: 0,
-            total: 10.09,
-          },
-        ]
-      : [
-          {
-            idProductoFactura: 1,
-            idPedido: factura?.idFactura ?? 1,
-            cantidad: 1,
-            descripcion: "SR-2024-001 - Express",
-            descuentoPorcentaje: 0,
-            valorUnitario: 10.09,
-            precioUnitario: 0,
-            porcentajeIgv: 0,
-            total: 10.09,
-          },
-        ];
-
-  const totalProductos = productosBase.reduce(
-    (total, producto) => total + producto.total,
-    0,
-  );
-
   return {
     idFactura: factura?.idFactura ?? null,
     idCliente,
     cliente,
     ni: numeroIdentificacion,
-    ordenCompra: "OC 4589",
+    ordenCompra: "",
     fechaEmision: formatearFechaDdMmYyyy(new Date()),
-    productos: productosBase,
-    cuotas: [
-      {
-        idCuotaFactura: 1,
-        numeroCuota: 1,
-        idMoneda: 1,
-        monto: totalProductos,
-        vencimiento: "2026-01-22",
-        estado: factura?.estado === "finalizado" ? "pagado" : "pendiente",
-      },
-    ],
+    productos: [],
+    cuotas: [],
   };
 }
 
@@ -255,10 +193,22 @@ export const facturacionService = {
     );
   },
 
-  listarProductosFacturables: async (): Promise<
-    EntradaProductoFacturable[]
-  > => {
-    return Promise.resolve(PRODUCTOS_FACTURABLES_MOCK);
+  listarProductosFacturables: async (
+    parametros: ParametrosListaProductosFacturables,
+  ): Promise<RespuestaListaProductosFacturables> => {
+    const { data } = await maximilianService.get<
+      ApiResponse<ResultadoListaProductosFacturablesApi>
+    >(ENDPOINTS_FACTURACION.listarPedidosFacturables, { params: parametros });
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return {
+      productos: data.result.pedidos.map(mapearProductoFacturable),
+      totalRegistros: data.result.totalRegistros,
+      totalPaginas: data.result.totalPaginas,
+    };
   },
 
   guardarBorrador: async (

@@ -42,21 +42,32 @@ function obtenerPorcentajesIgvIniciales(factura: DetalleFactura | null) {
   );
 }
 
+function obtenerAfectacionesIgvIniciales(factura: DetalleFactura | null) {
+  return Object.fromEntries(
+    (factura?.productos ?? []).map((producto) => [
+      String(producto.idProductoFactura),
+      Number(producto.idAfectacionIgvMaestro) || 0,
+    ]),
+  );
+}
+
 function crearProductoFactura(
   producto: EntradaProductoFacturable,
 ): EntradaProductoFactura {
-  const valorUnitario = 10.09;
+  const valorUnitario = producto.precio;
+  const descuentoPorcentaje = producto.descuentoPorcentaje;
 
   return {
     idProductoFactura: Date.now() + producto.idProductoFacturable,
     idPedido: producto.idProductoFacturable,
     cantidad: 1,
     descripcion: `${producto.codigo} - ${producto.tipo === "express" ? "Express" : producto.tipo === "normal" ? "Normal" : "Super Flash"}`,
-    descuentoPorcentaje: 0,
+    descuentoPorcentaje,
     valorUnitario,
-    precioUnitario: 0,
+    precioUnitario: producto.precio,
     porcentajeIgv: 0,
-    total: valorUnitario,
+    idAfectacionIgvMaestro: 0,
+    total: valorUnitario * (1 - descuentoPorcentaje / 100),
   };
 }
 
@@ -79,12 +90,17 @@ export function useFormularioFactura(
       descuentos: obtenerDescuentosIniciales(factura),
       preciosUnitarios: obtenerPreciosIniciales(factura),
       porcentajesIgv: obtenerPorcentajesIgvIniciales(factura),
+      afectacionesIgv: obtenerAfectacionesIgvIniciales(factura),
     },
   });
-  const { clearErrors, getValues, setValue, trigger } = formulario;
+  const { clearErrors, getValues, setValue, trigger, unregister } = formulario;
   const descuentos = useWatch({
     control: formulario.control,
     name: "descuentos",
+  });
+  const afectacionesIgv = useWatch({
+    control: formulario.control,
+    name: "afectacionesIgv",
   });
   const idTipoDocumentoMaestro = useWatch({
     control: formulario.control,
@@ -137,16 +153,73 @@ export function useFormularioFactura(
 
   const agregarProductos = (productos: EntradaProductoFacturable[]) => {
     const productosNuevos = productos.map(crearProductoFactura);
-    productosNuevos.forEach((producto) => {
-      setValue(`descuentos.${producto.idProductoFactura}`, 0);
-      setValue(`preciosUnitarios.${producto.idProductoFactura}`, 0);
-      setValue(`porcentajesIgv.${producto.idProductoFactura}`, 0);
+    const descuentosNuevos = Object.fromEntries(
+      productosNuevos.map((producto) => [
+        String(producto.idProductoFactura),
+        producto.descuentoPorcentaje,
+      ]),
+    );
+    const preciosNuevos = Object.fromEntries(
+      productosNuevos.map((producto) => [
+        String(producto.idProductoFactura),
+        producto.precioUnitario,
+      ]),
+    );
+    const porcentajesIgvNuevos = Object.fromEntries(
+      productosNuevos.map((producto) => [
+        String(producto.idProductoFactura),
+        producto.porcentajeIgv,
+      ]),
+    );
+    const afectacionesIgvNuevas = Object.fromEntries(
+      productosNuevos.map((producto) => [
+        String(producto.idProductoFactura),
+        Number(producto.idAfectacionIgvMaestro) || 0,
+      ]),
+    );
+
+    setValue("descuentos", {
+      ...getValues("descuentos"),
+      ...descuentosNuevos,
+    });
+    setValue("preciosUnitarios", {
+      ...getValues("preciosUnitarios"),
+      ...preciosNuevos,
+    });
+    setValue("porcentajesIgv", {
+      ...getValues("porcentajesIgv"),
+      ...porcentajesIgvNuevos,
+    });
+    setValue("afectacionesIgv", {
+      ...getValues("afectacionesIgv"),
+      ...afectacionesIgvNuevas,
     });
     setDetalle((actual) =>
       actual
         ? {
             ...actual,
             productos: [...actual.productos, ...productosNuevos],
+          }
+        : actual,
+    );
+  };
+
+  const quitarProducto = (producto: EntradaProductoFactura) => {
+    unregister(`descuentos.${producto.idProductoFactura}`);
+    unregister(`preciosUnitarios.${producto.idProductoFactura}`);
+    unregister(`porcentajesIgv.${producto.idProductoFactura}`);
+    unregister(`afectacionesIgv.${producto.idProductoFactura}`);
+    setIdProductoDescuentoEdicion((idActual) =>
+      idActual === producto.idProductoFactura ? null : idActual,
+    );
+    setDetalle((actual) =>
+      actual
+        ? {
+            ...actual,
+            productos: actual.productos.filter(
+              (productoActual) =>
+                productoActual.idProductoFactura !== producto.idProductoFactura,
+            ),
           }
         : actual,
     );
@@ -177,6 +250,42 @@ export function useFormularioFactura(
           : [...actual.cuotas, cuotaGuardada],
       };
     });
+  };
+
+  const quitarCuota = (idCuotaFactura: number) => {
+    setDetalle((actual) =>
+      actual
+        ? {
+            ...actual,
+            cuotas: actual.cuotas
+              .filter(
+                (cuotaActual) =>
+                  cuotaActual.idCuotaFactura !== idCuotaFactura,
+              )
+              .map((cuotaActual, indice) => ({
+                ...cuotaActual,
+                numeroCuota: indice + 1,
+              })),
+          }
+        : actual,
+    );
+  };
+
+  const seleccionarAfectacionIgv = (
+    idProductoFactura: number,
+    valor: number,
+  ) => {
+    setValue(
+      "afectacionesIgv",
+      {
+        ...getValues("afectacionesIgv"),
+        [String(idProductoFactura)]: valor,
+      },
+      {
+        shouldDirty: true,
+        shouldValidate: true,
+      },
+    );
   };
 
   const actualizarCampoFactura = (
@@ -225,6 +334,7 @@ export function useFormularioFactura(
   };
 
   return {
+    afectacionesIgv,
     agregarProductos,
     actualizarCampoFactura,
     cancelarEdicionDescuento,
@@ -240,9 +350,12 @@ export function useFormularioFactura(
     idProductoDescuentoEdicion,
     iniciarEdicionDescuento,
     obtenerTotalProducto,
+    quitarCuota,
+    quitarProducto,
     registrarDescuento: formulario.register,
     registrarPorcentajeIgv: formulario.register,
     registrarPrecioUnitario: formulario.register,
+    seleccionarAfectacionIgv,
     seleccionarFormaPago: (valor: number) =>
       setValue("idFormaPago", valor, {
         shouldDirty: true,

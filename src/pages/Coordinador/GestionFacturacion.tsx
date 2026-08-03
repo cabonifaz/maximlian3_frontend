@@ -78,12 +78,6 @@ export default function GestionFacturacion() {
       }),
   });
 
-  const { data: productosFacturables = [] } = useQuery({
-    queryKey: ["facturacion", "productos-facturables"],
-    queryFn: () => facturacionService.listarProductosFacturables(),
-    enabled: modalFactura?.modo === "emitir",
-  });
-
   const facturaciones = useMemo(
     () => facturacionData?.lstFacturacion ?? [],
     [facturacionData?.lstFacturacion],
@@ -306,7 +300,6 @@ export default function GestionFacturacion() {
         abierto={modalFactura !== null}
         modo={modalFactura?.modo ?? "detalle"}
         factura={modalFactura?.detalle ?? null}
-        productosFacturables={productosFacturables}
         onCerrar={() => setModalFactura(null)}
       />
     </div>

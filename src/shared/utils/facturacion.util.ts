@@ -43,7 +43,7 @@ export function construirPayloadGuardarBorradorFactura(
         valorUnitario: producto.valorUnitario,
         precioUnitario: datos.preciosUnitarios[claveProducto],
         montoDescuento: producto.cantidad * producto.valorUnitario * descuentoPorcentaje / 100,
-        afectacionIgvCodigo: "",
+        idAfectacionIgvMaestro: datos.afectacionesIgv[claveProducto],
         porcentajeIgv: datos.porcentajesIgv[claveProducto],
       };
     }),

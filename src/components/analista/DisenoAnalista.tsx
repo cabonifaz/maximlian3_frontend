@@ -9,13 +9,13 @@ export default function DisenoAnalista() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-gray-50">
-      <BarraLateral items={elementosMenuAnalista} estaColapsada={estaColapsada} />
+      <BarraLateral
+        items={elementosMenuAnalista}
+        estaColapsada={estaColapsada}
+        alAlternarBarraLateral={() => setEstaColapsada((valorActual) => !valorActual)}
+      />
       <div className="flex-1 flex min-w-0 flex-col">
-        <Encabezado
-          role="Analista"
-          estaColapsada={estaColapsada}
-          alAlternarBarraLateral={() => setEstaColapsada((valorActual) => !valorActual)}
-        />
+        <Encabezado role="Analista" />
         <main className="flex-1 overflow-y-auto bg-white/50 p-8">
           <Outlet />
         </main>

@@ -23,6 +23,11 @@ export const esquemaFormularioFactura = z.object({
       .min(0, "El IGV debe ser mayor o igual a 0")
       .max(100, "El IGV debe ser menor o igual a 100"),
   ),
+  afectacionesIgv: z.record(
+    z.string(),
+    z.number({ error: "La afectacion IGV es requerida" })
+      .positive("La afectacion IGV es requerida"),
+  ),
 });
 
 export type DatosFormularioFactura = z.infer<typeof esquemaFormularioFactura>;

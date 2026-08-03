@@ -69,8 +69,6 @@ export const ESTILOS_TIPO_PRODUCTO_FACTURABLE: Record<
   "super-flash": { texto: "SUPER FLASH", clase: "bg-red-100 text-red-700" },
 };
 
-export const IDS_PRODUCTOS_FACTURA_SELECCIONADOS_INICIALES = [1, 2];
-
 export const OPCIONES_ESTADO_CUOTA: EntradaTablaMaestra[] = [
   {
     idEmpresa: 0,

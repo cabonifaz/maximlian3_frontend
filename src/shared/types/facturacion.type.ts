@@ -99,6 +99,7 @@ export interface EntradaProductoFactura {
   valorUnitario: number;
   precioUnitario: number;
   porcentajeIgv: number;
+  idAfectacionIgvMaestro: number;
   total: number;
 }
 
@@ -129,6 +130,41 @@ export interface EntradaProductoFacturable {
   aplicaPenalidad: boolean;
   tipo: "express" | "normal" | "super-flash";
   fecha: string;
+  penalidad: number;
+  precio: number;
+  descuentoPorcentaje: number;
+}
+
+export interface ParametrosListaProductosFacturables {
+  idCliente: number;
+  idTipoTramite?: number;
+  fechaInicio?: string;
+  fechaFin?: string;
+  numPag: number;
+}
+
+export interface EntradaProductoFacturableApi {
+  idPedido: number;
+  codigo: string;
+  investigado: string;
+  aplicaPenalidad: "Si" | "No";
+  tipoTramite: string;
+  fecha: string;
+  penalidad: number;
+  precio: number;
+  descuentoPorcentaje: string;
+}
+
+export interface ResultadoListaProductosFacturablesApi {
+  totalRegistros: number;
+  totalPaginas: number;
+  pedidos: EntradaProductoFacturableApi[];
+}
+
+export interface RespuestaListaProductosFacturables {
+  productos: EntradaProductoFacturable[];
+  totalRegistros: number;
+  totalPaginas: number;
 }
 
 export interface CuotaGuardarBorradorFactura {
@@ -152,7 +188,7 @@ export interface LineaGuardarBorradorFactura {
   valorUnitario: number;
   precioUnitario: number;
   montoDescuento: number;
-  afectacionIgvCodigo: string;
+  idAfectacionIgvMaestro: number;
   porcentajeIgv: number;
 }
 
