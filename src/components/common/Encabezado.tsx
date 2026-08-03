@@ -1,12 +1,25 @@
-import { Check, ChevronDown, LogOut } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import { useEncabezado } from "@maximilian/hooks/useEncabezado";
 
 interface PropsEncabezado {
   role?: string;
+  estaColapsada: boolean;
+  alAlternarBarraLateral: () => void;
 }
 
-export function Encabezado({ role: rolInicial }: PropsEncabezado) {
+export function Encabezado({
+  role: rolInicial,
+  estaColapsada,
+  alAlternarBarraLateral,
+}: PropsEncabezado) {
   const {
     cambiarRol,
     cerrarSesion,
@@ -22,7 +35,20 @@ export function Encabezado({ role: rolInicial }: PropsEncabezado) {
 
   return (
     <>
-      <header className="h-16 bg-brand-white border-b border-gray-100 px-8 flex items-center justify-end gap-6 sticky top-0 z-50 shrink-0">
+      <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center justify-between gap-6 border-b border-gray-100 bg-brand-white px-8">
+        <CustomButton
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={alAlternarBarraLateral}
+          aria-label={estaColapsada ? "Expandir menú lateral" : "Colapsar menú lateral"}
+          aria-expanded={!estaColapsada}
+          title={estaColapsada ? "Expandir menú" : "Colapsar menú"}
+          className="shrink-0 text-gray-500 hover:text-brand-black"
+        >
+          {estaColapsada ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+        </CustomButton>
+
         <div className="flex items-center gap-4 border-l pl-6 border-gray-100 h-10">
           <div className="text-right hidden sm:block">
             <p className="text-sm font-bold text-brand-black leading-tight truncate max-w-[150px]">
