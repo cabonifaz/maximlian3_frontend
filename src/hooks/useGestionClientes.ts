@@ -10,7 +10,11 @@ import type {
 } from "@maximilian/schemas";
 import type { ClientListEntry } from "@maximilian/shared/types/cliente.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import { construirPayloadCrearCliente } from "@maximilian/shared/utils/gestion-clientes.util";
+import {
+  construirPayloadCrearCliente,
+  construirPayloadCrearContacto,
+  construirPayloadCrearTarifa,
+} from "@maximilian/shared/utils/gestion-clientes.util";
 
 interface ParametrosCrearCliente {
   datosCliente: DatosFormularioInformacionCliente;
@@ -66,8 +70,25 @@ export function useGestionClientes() {
   });
 
   const crearClienteMutation = useMutation({
-    mutationFn: ({ datosCliente, contactos, tarifas }: ParametrosCrearCliente) =>
-      servicioCliente.create(construirPayloadCrearCliente(datosCliente, contactos, tarifas)),
+    mutationFn: async ({ datosCliente, contactos, tarifas }: ParametrosCrearCliente) => {
+      const clienteCreado = await servicioCliente.create(
+        construirPayloadCrearCliente(datosCliente),
+      );
+
+      for (const contacto of contactos) {
+        await servicioCliente.createContacto(
+          construirPayloadCrearContacto(clienteCreado.idCliente, contacto),
+        );
+      }
+
+      for (const tarifa of tarifas) {
+        await servicioCliente.createTarifario(
+          construirPayloadCrearTarifa(clienteCreado.idCliente, tarifa),
+        );
+      }
+
+      return clienteCreado;
+    },
     onSuccess: (_, { contactos, reset }) => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       if (contactos.some((contacto) => contacto.tipoContacto === 0)) {

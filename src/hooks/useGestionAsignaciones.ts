@@ -64,10 +64,15 @@ export function useGestionAsignaciones() {
   const anularAsignacionMutation = useMutation({
     mutationFn: ({ idAsignacion }: { idAsignacion: number }) =>
       servicioAsignacion.delete({ idAsignacion }),
-    onSuccess: () => {
+    onSuccess: async () => {
       setAsignacionAAnular(null);
       setIdAsignacionAEliminar(undefined);
-      queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
+      await queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
+      await queryClient.invalidateQueries({
+        predicate: (consulta) =>
+          typeof consulta.queryKey[0] === "string"
+          && consulta.queryKey[0].startsWith("assignment-candidates"),
+      });
     },
   });
 

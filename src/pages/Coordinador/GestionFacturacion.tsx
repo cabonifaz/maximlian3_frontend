@@ -161,12 +161,20 @@ export default function GestionFacturacion() {
   };
 
   const abrirDetalleFactura = async (facturacion: EntradaFacturacion, factura?: EntradaFacturaCliente | null) => {
-    const detalle = await facturacionService.obtenerDetalleFactura(facturacion.cliente, factura);
+    const detalle = await facturacionService.obtenerDetalleFactura(
+      facturacion.idFacturacion,
+      facturacion.cliente,
+      factura,
+    );
     setModalFactura({ modo: "detalle", detalle });
   };
 
   const abrirEmisionFactura = async (facturacion: EntradaFacturacion, factura?: EntradaFacturaCliente | null) => {
-    const detalle = await facturacionService.obtenerDetalleFactura(facturacion.cliente, factura);
+    const detalle = await facturacionService.obtenerDetalleFactura(
+      facturacion.idFacturacion,
+      facturacion.cliente,
+      factura,
+    );
     setModalFactura({ modo: "emitir", detalle });
   };
 

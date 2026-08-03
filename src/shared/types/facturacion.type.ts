@@ -92,10 +92,13 @@ export interface RespuestaListaFacturasCliente {
 
 export interface EntradaProductoFactura {
   idProductoFactura: number;
+  idPedido: number;
   cantidad: number;
   descripcion: string;
   descuentoPorcentaje: number;
   valorUnitario: number;
+  precioUnitario: number;
+  porcentajeIgv: number;
   total: number;
 }
 
@@ -110,11 +113,11 @@ export interface EntradaCuotaFactura {
 
 export interface DetalleFactura {
   idFactura: number | null;
+  idCliente: number;
   cliente: string;
   ni: string;
   ordenCompra: string;
   fechaEmision: string;
-  fechaVencimiento: string;
   productos: EntradaProductoFactura[];
   cuotas: EntradaCuotaFactura[];
 }
@@ -126,4 +129,40 @@ export interface EntradaProductoFacturable {
   aplicaPenalidad: boolean;
   tipo: "express" | "normal" | "super-flash";
   fecha: string;
+}
+
+export interface CuotaGuardarBorradorFactura {
+  numeroCuota: number;
+  fechaVencimiento: string;
+  monto: number;
+}
+
+export interface DocumentoAfectadoGuardarBorradorFactura {
+  idDocumentoElectronicoRelacionado: number;
+  tipoReferenciaCodigo: string | null;
+  motivoCodigo: string | null;
+  motivoDescripcion: string | null;
+}
+
+export interface LineaGuardarBorradorFactura {
+  idPedido: number;
+  productoSunatCodigo: string | null;
+  unidadMedidaCodigo: string;
+  cantidad: number;
+  valorUnitario: number;
+  precioUnitario: number;
+  montoDescuento: number;
+  afectacionIgvCodigo: string;
+  porcentajeIgv: number;
+}
+
+export interface GuardarBorradorFacturaRequest {
+  idTipoDocumentoMaestro: number;
+  idMonedaMaestro: number;
+  idTipoOperacionMaestro: number;
+  idFormaPago: number;
+  cuotas: CuotaGuardarBorradorFactura[];
+  idCliente: number;
+  documentoAfectado: DocumentoAfectadoGuardarBorradorFactura | null;
+  lineas: LineaGuardarBorradorFactura[];
 }

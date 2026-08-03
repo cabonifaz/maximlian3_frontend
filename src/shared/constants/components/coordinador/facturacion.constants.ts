@@ -58,6 +58,8 @@ export const OPCIONES_MODIFICAR_ESTADO_FACTURA: Array<{
 
 export const CODIGOS_ESTADO_FACTURA_SOLO_LECTURA = [5, 6];
 
+export const ID_FORMA_PAGO_CONTADO = 1;
+
 export const ESTILOS_TIPO_PRODUCTO_FACTURABLE: Record<
   EntradaProductoFacturable["tipo"],
   { texto: string; clase: string }

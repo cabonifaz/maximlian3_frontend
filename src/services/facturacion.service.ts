@@ -5,6 +5,7 @@ import type {
   EntradaFacturacionApi,
   EntradaPedidoFacturacionApi,
   EntradaProductoFacturable,
+  GuardarBorradorFacturaRequest,
   ParametrosListaFacturacion,
   ParametrosListaPedidosFacturacion,
   RespuestaListaFacturasCliente,
@@ -19,6 +20,8 @@ import {
   type ApiResponse,
 } from "@maximilian/shared/types/api.type";
 import maximilianService from "./maximilian-service";
+import { formatearFechaDdMmYyyy } from "@maximilian/shared/utils/fecha.util";
+import { servicioCliente } from "./cliente.service";
 
 const PRODUCTOS_FACTURABLES_MOCK: EntradaProductoFacturable[] = [
   {
@@ -63,7 +66,9 @@ const PRODUCTOS_FACTURABLES_MOCK: EntradaProductoFacturable[] = [
   },
 ];
 
-function mapearFacturacion(facturacion: EntradaFacturacionApi): EntradaFacturacion {
+function mapearFacturacion(
+  facturacion: EntradaFacturacionApi,
+): EntradaFacturacion {
   const estados = {
     Finalizado: "finalizado",
     Pendiente: "pendiente",
@@ -113,46 +118,64 @@ function mapearPedidoFacturacion(
   };
 }
 
-function crearDetalleFactura(cliente: string, factura?: EntradaFacturaCliente | null): DetalleFactura {
-  const productosBase = factura?.idFactura === 1
-    ? [
-        {
-          idProductoFactura: 1,
-          cantidad: 1,
-          descripcion: "SR-2024-001 - Express",
-          descuentoPorcentaje: 0,
-          valorUnitario: 10256.09,
-          total: 10256.09,
-        },
-        {
-          idProductoFactura: 2,
-          cantidad: 1,
-          descripcion: "SR-2024-002 - Normal",
-          descuentoPorcentaje: 0,
-          valorUnitario: 10256.09,
-          total: 10256.09,
-        },
-      ]
-    : [
-        {
-          idProductoFactura: 1,
-          cantidad: 1,
-          descripcion: "SR-2024-001 - Express",
-          descuentoPorcentaje: 0,
-          valorUnitario: 10256.09,
-          total: 10256.09,
-        },
-      ];
+function crearDetalleFactura(
+  idCliente: number,
+  cliente: string,
+  numeroIdentificacion: string,
+  factura?: EntradaFacturaCliente | null,
+): DetalleFactura {
+  const productosBase =
+    factura?.idFactura === 1
+      ? [
+          {
+            idProductoFactura: 1,
+            idPedido: 1,
+            cantidad: 1,
+            descripcion: "SR-2024-001 - Express",
+            descuentoPorcentaje: 0,
+            valorUnitario: 10.09,
+            precioUnitario: 0,
+            porcentajeIgv: 0,
+            total: 10.09,
+          },
+          {
+            idProductoFactura: 2,
+            idPedido: 2,
+            cantidad: 1,
+            descripcion: "SR-2024-002 - Normal",
+            descuentoPorcentaje: 0,
+            valorUnitario: 10.09,
+            precioUnitario: 0,
+            porcentajeIgv: 0,
+            total: 10.09,
+          },
+        ]
+      : [
+          {
+            idProductoFactura: 1,
+            idPedido: factura?.idFactura ?? 1,
+            cantidad: 1,
+            descripcion: "SR-2024-001 - Express",
+            descuentoPorcentaje: 0,
+            valorUnitario: 10.09,
+            precioUnitario: 0,
+            porcentajeIgv: 0,
+            total: 10.09,
+          },
+        ];
 
-  const totalProductos = productosBase.reduce((total, producto) => total + producto.total, 0);
+  const totalProductos = productosBase.reduce(
+    (total, producto) => total + producto.total,
+    0,
+  );
 
   return {
     idFactura: factura?.idFactura ?? null,
+    idCliente,
     cliente,
-    ni: "12643",
+    ni: numeroIdentificacion,
     ordenCompra: "OC 4589",
-    fechaEmision: "03/10/2026",
-    fechaVencimiento: "03/10/2026",
+    fechaEmision: formatearFechaDdMmYyyy(new Date()),
     productos: productosBase,
     cuotas: [
       {
@@ -168,7 +191,9 @@ function crearDetalleFactura(cliente: string, factura?: EntradaFacturaCliente | 
 }
 
 export const facturacionService = {
-  list: async (params: ParametrosListaFacturacion): Promise<RespuestaListaFacturacion> => {
+  list: async (
+    params: ParametrosListaFacturacion,
+  ): Promise<RespuestaListaFacturacion> => {
     const { data } = await maximilianService.get<
       ApiResponse<ResultadoListaFacturacionApi>
     >(ENDPOINTS_FACTURACION.listar, {
@@ -217,13 +242,37 @@ export const facturacionService = {
   },
 
   obtenerDetalleFactura: async (
+    idCliente: number,
     cliente: string,
     factura?: EntradaFacturaCliente | null,
   ): Promise<DetalleFactura> => {
-    return Promise.resolve(crearDetalleFactura(cliente, factura));
+    const detalleCliente = await servicioCliente.getById(idCliente);
+    return crearDetalleFactura(
+      idCliente,
+      cliente,
+      detalleCliente.numRegistroTributario ?? "",
+      factura,
+    );
   },
 
-  listarProductosFacturables: async (): Promise<EntradaProductoFacturable[]> => {
+  listarProductosFacturables: async (): Promise<
+    EntradaProductoFacturable[]
+  > => {
     return Promise.resolve(PRODUCTOS_FACTURABLES_MOCK);
+  },
+
+  guardarBorrador: async (
+    solicitud: GuardarBorradorFacturaRequest,
+  ): Promise<unknown> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.guardarBorrador,
+      solicitud,
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result;
   },
 };
