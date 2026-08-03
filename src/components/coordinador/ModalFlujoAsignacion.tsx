@@ -291,8 +291,8 @@ export function ModalFlujoAsignacion({
     <div className="space-y-8">
       <p className="text-2xl font-bold text-brand-black">Pedidos seleccionados: {cantidadSeleccionados}</p>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100">
-        <table className="w-full table-fixed border-collapse text-left [&_td]:max-w-0 [&_td]:break-words">
+      <div className="max-w-full overflow-x-auto rounded-2xl border border-gray-100">
+        <table className="w-full min-w-[900px] table-fixed border-collapse text-left [&_td]:max-w-0 [&_td]:break-words">
           <colgroup>
             <col className="w-[12%]" />
             <col className="w-[24%]" />

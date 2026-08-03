@@ -150,8 +150,8 @@ export function CustomModalProductosFactura({
             </CustomButton>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <table className="w-full text-left text-xs">
+          <div className="max-w-full overflow-x-auto overscroll-x-contain rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table className="w-full min-w-[900px] text-left text-xs">
               <thead className="bg-slate-50 text-[10px] font-bold text-slate-500">
                 <tr>
                   <th className="w-12 px-4 py-2.5">

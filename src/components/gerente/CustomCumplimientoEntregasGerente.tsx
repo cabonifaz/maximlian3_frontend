@@ -48,7 +48,12 @@ export function CustomCumplimientoEntregasGerente() {
           Cumplimiento de entregas
         </h2>
         {respuesta ? (
-          <div className="flex items-center gap-4 rounded-lg bg-slate-50 px-4 py-2 text-[10px] font-semibold">
+          <div
+            aria-busy={estaActualizando}
+            className={`flex items-center gap-4 rounded-lg bg-slate-50 px-4 py-2 text-[10px] font-semibold transition-opacity ${
+              estaActualizando ? "animate-pulse opacity-45" : "opacity-100"
+            }`}
+          >
             <span className="inline-flex items-center gap-1.5 text-emerald-600">
               <span className="h-1.5 w-1.5 rounded-full bg-current" />
               <NumberTicker

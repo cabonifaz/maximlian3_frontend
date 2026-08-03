@@ -48,9 +48,15 @@ export function TablaTarifarioCorta({
   return (
     <div>
       {error && <p className="text-xs text-red-500 mb-1">{error}</p>}
-      <div className="border border-gray-200 rounded-xl overflow-hidden">
-        <div className="overflow-y-auto max-h-65">
-          <table className="w-full text-sm">
+      <div className="h-[16.25rem] w-full overflow-hidden rounded-xl border border-gray-200">
+        <div className="h-full w-full overflow-auto">
+          <table className="w-full min-w-[700px] table-fixed text-sm">
+            <colgroup>
+              <col className="w-10" />
+              <col className="w-[300px]" />
+              <col className="w-[180px]" />
+              <col className="w-[180px]" />
+            </colgroup>
             <thead className="sticky top-0 bg-gray-50 z-10">
               <tr className="border-b border-gray-200">
                 <th className="py-2.5 px-3 w-10" />

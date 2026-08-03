@@ -338,6 +338,16 @@ export function CustomBancoNoticias({
   return (
     <>
       <section className="space-y-4">
+        <CustomFiltroRangoFechas
+          fechaInicio={filtroFechasNoticias.fechaInicioFiltro}
+          fechaFin={filtroFechasNoticias.fechaFinFiltro}
+          fechasInvalidas={filtroFechasNoticias.fechasInvalidas}
+          onFechaInicioChange={filtroFechasNoticias.cambiarFechaInicioFiltro}
+          onFechaFinChange={filtroFechasNoticias.cambiarFechaFinFiltro}
+          onLimpiarFechaInicio={filtroFechasNoticias.limpiarFechaInicioFiltro}
+          onLimpiarFechaFin={filtroFechasNoticias.limpiarFechaFinFiltro}
+        />
+
         <div className="flex items-center justify-between gap-3">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-300">
             Noticias recientes
@@ -351,18 +361,6 @@ export function CustomBancoNoticias({
               Agregar Noticia
             </CustomButton>
           ) : null}
-        </div>
-
-        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-          <CustomFiltroRangoFechas
-            fechaInicio={filtroFechasNoticias.fechaInicioFiltro}
-            fechaFin={filtroFechasNoticias.fechaFinFiltro}
-            fechasInvalidas={filtroFechasNoticias.fechasInvalidas}
-            onFechaInicioChange={filtroFechasNoticias.cambiarFechaInicioFiltro}
-            onFechaFinChange={filtroFechasNoticias.cambiarFechaFinFiltro}
-            onLimpiarFechaInicio={filtroFechasNoticias.limpiarFechaInicioFiltro}
-            onLimpiarFechaFin={filtroFechasNoticias.limpiarFechaFinFiltro}
-          />
         </div>
 
         {isLoading ? (
