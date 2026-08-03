@@ -61,7 +61,19 @@ export function BarraLateral({ items, estaColapsada }: PropsBarraLateral) {
             }
           >
             <item.icon size={20} className="shrink-0" />
-            {!estaColapsada && <span className="truncate">{item.name}</span>}
+            {!estaColapsada && (
+              <span
+                className="min-w-0 flex-1 truncate"
+                onMouseEnter={(evento) => {
+                  evento.currentTarget.title =
+                    evento.currentTarget.scrollWidth > evento.currentTarget.clientWidth
+                      ? item.name
+                      : "";
+                }}
+              >
+                {item.name}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
