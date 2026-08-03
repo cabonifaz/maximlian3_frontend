@@ -1,6 +1,7 @@
 import type {
   EntradaProductoFacturable,
   EstadoFacturaCliente,
+  IdEstadoFacturacionActualizable,
   EstadoFacturacionPrincipal,
 } from "@maximilian/shared/types/facturacion.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
@@ -37,6 +38,10 @@ export const ESTILOS_ESTADO_FACTURA_CLIENTE: Record<
     texto: "Pre-factura rechazada",
     clase: "bg-red-100 text-red-600",
   },
+  "borrador-factura": {
+    texto: "Borrador Factura",
+    clase: "bg-amber-100 text-amber-700",
+  },
   anulado: {
     texto: "Anulado",
     clase: "bg-slate-200 text-slate-600",
@@ -49,7 +54,7 @@ export const OPCIONES_MODIFICAR_ESTADO_FACTURA: Array<{
     "en-pre-factura" | "pre-factura-aprobada" | "pre-factura-rechazada"
   >;
   etiqueta: string;
-  codigoEstado: number;
+  codigoEstado: IdEstadoFacturacionActualizable;
 }> = [
   { valor: "en-pre-factura", etiqueta: "En pre-factura", codigoEstado: 2 },
   { valor: "pre-factura-rechazada", etiqueta: "Pre-factura rechazada", codigoEstado: 4 },
@@ -57,6 +62,8 @@ export const OPCIONES_MODIFICAR_ESTADO_FACTURA: Array<{
 ];
 
 export const CODIGOS_ESTADO_FACTURA_SOLO_LECTURA = [5, 6];
+
+export const ID_FORMA_PAGO_CONTADO = 1;
 
 export const ESTILOS_TIPO_PRODUCTO_FACTURABLE: Record<
   EntradaProductoFacturable["tipo"],
@@ -66,8 +73,6 @@ export const ESTILOS_TIPO_PRODUCTO_FACTURABLE: Record<
   normal: { texto: "NORMAL", clase: "bg-blue-100 text-blue-700" },
   "super-flash": { texto: "SUPER FLASH", clase: "bg-red-100 text-red-700" },
 };
-
-export const IDS_PRODUCTOS_FACTURA_SELECCIONADOS_INICIALES = [1, 2];
 
 export const OPCIONES_ESTADO_CUOTA: EntradaTablaMaestra[] = [
   {

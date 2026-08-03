@@ -36,6 +36,7 @@ export default function GestionFacturacion() {
   const [idMenuActivo, setIdMenuActivo] = useState<number | null>(null);
   const [menuDropdownStyle, setMenuDropdownStyle] = useState<React.CSSProperties>({});
   const [clienteSeleccionado, setClienteSeleccionado] = useState<EntradaFacturacion | null>(null);
+  const [estaCargandoModalFactura, setEstaCargandoModalFactura] = useState(false);
   const [modalFactura, setModalFactura] = useState<{
     modo: "emitir" | "detalle";
     detalle: DetalleFactura | null;
@@ -76,12 +77,6 @@ export default function GestionFacturacion() {
         idIdiomaFacturacion,
         estadoFacturacion,
       }),
-  });
-
-  const { data: productosFacturables = [] } = useQuery({
-    queryKey: ["facturacion", "productos-facturables"],
-    queryFn: () => facturacionService.listarProductosFacturables(),
-    enabled: modalFactura?.modo === "emitir",
   });
 
   const facturaciones = useMemo(
@@ -161,13 +156,35 @@ export default function GestionFacturacion() {
   };
 
   const abrirDetalleFactura = async (facturacion: EntradaFacturacion, factura?: EntradaFacturaCliente | null) => {
-    const detalle = await facturacionService.obtenerDetalleFactura(facturacion.cliente, factura);
-    setModalFactura({ modo: "detalle", detalle });
+    setEstaCargandoModalFactura(true);
+    try {
+      const detalle = await facturacionService.obtenerDetalleFactura(
+        facturacion.idFacturacion,
+        facturacion.cliente,
+        factura,
+      );
+      setModalFactura({ modo: "detalle", detalle });
+    } catch {
+      return;
+    } finally {
+      setEstaCargandoModalFactura(false);
+    }
   };
 
   const abrirEmisionFactura = async (facturacion: EntradaFacturacion, factura?: EntradaFacturaCliente | null) => {
-    const detalle = await facturacionService.obtenerDetalleFactura(facturacion.cliente, factura);
-    setModalFactura({ modo: "emitir", detalle });
+    setEstaCargandoModalFactura(true);
+    try {
+      const detalle = await facturacionService.obtenerDetalleFactura(
+        facturacion.idFacturacion,
+        facturacion.cliente,
+        factura,
+      );
+      setModalFactura({ modo: "emitir", detalle });
+    } catch {
+      return;
+    } finally {
+      setEstaCargandoModalFactura(false);
+    }
   };
 
   const renderRow = (facturacion: EntradaFacturacion) => (
@@ -289,6 +306,7 @@ export default function GestionFacturacion() {
           onAgregarFactura={() => abrirEmisionFactura(clienteSeleccionado)}
           onVerFactura={(factura) => abrirDetalleFactura(clienteSeleccionado, factura)}
           onEditarFactura={(factura) => abrirEmisionFactura(clienteSeleccionado, factura)}
+          cargandoAccion={estaCargandoModalFactura}
         />
       ) : null}
       <CustomModalFactura
@@ -298,7 +316,6 @@ export default function GestionFacturacion() {
         abierto={modalFactura !== null}
         modo={modalFactura?.modo ?? "detalle"}
         factura={modalFactura?.detalle ?? null}
-        productosFacturables={productosFacturables}
         onCerrar={() => setModalFactura(null)}
       />
     </div>

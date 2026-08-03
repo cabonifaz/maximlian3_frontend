@@ -1,95 +1,109 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, CheckCheck, ChevronLeft, ChevronRight, PackagePlus, X } from "lucide-react";
+import { Check, CheckCheck, ChevronLeft, ChevronRight, Loader2, PackagePlus, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
-import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
-import {
-  ESTILOS_TIPO_PRODUCTO_FACTURABLE,
-  IDS_PRODUCTOS_FACTURA_SELECCIONADOS_INICIALES,
-} from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
+import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
+import { CustomFiltroRangoFechas } from "@maximilian/components/common/CustomFiltroRangoFechas";
+import { useProductosFacturables } from "@maximilian/hooks/useProductosFacturables";
+import { ESTILOS_TIPO_PRODUCTO_FACTURABLE } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import type { EntradaProductoFacturable } from "@maximilian/shared/types/facturacion.type";
-import { convertirTextoAFecha } from "@maximilian/shared/utils/fecha.util";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { formatearFechaIsoADdMmYyyy } from "@maximilian/shared/utils/fecha.util";
+import { formatearMontoDosDecimales } from "@maximilian/shared/utils/formato-monto.util";
 
 interface CustomModalProductosFacturaProps {
   abierto: boolean;
-  productos: EntradaProductoFacturable[];
+  idCliente: number;
+  idsProductosAgregados: number[];
   onCerrar: () => void;
   onConfirmar: (productos: EntradaProductoFacturable[]) => void;
 }
 
 export function CustomModalProductosFactura({
   abierto,
-  productos,
+  idCliente,
+  idsProductosAgregados,
   onCerrar,
   onConfirmar,
 }: CustomModalProductosFacturaProps) {
-  const [idsSeleccionados, setIdsSeleccionados] = useState<Set<number>>(
-    new Set(IDS_PRODUCTOS_FACTURA_SELECCIONADOS_INICIALES),
-  );
-  const [fechaDesde, setFechaDesde] = useState<Date | undefined>(new Date(2024, 0, 1));
-  const [fechaHasta, setFechaHasta] = useState<Date | undefined>(new Date(2024, 11, 31));
+  const [productosSeleccionados, setProductosSeleccionados] = useState<
+    Map<number, EntradaProductoFacturable>
+  >(new Map());
+  const {
+    cambiarFechaFin,
+    cambiarFechaInicio,
+    cambiarPagina,
+    cambiarTipoTramite,
+    estaCargando,
+    fechaFin,
+    fechaInicio,
+    fechasInvalidas,
+    hayError,
+    idTipoTramite,
+    paginaActual,
+    productos,
+    recargar,
+    reiniciarFiltros,
+    totalPaginas,
+    totalRegistros,
+  } = useProductosFacturables(idCliente, abierto);
+  const estaProductoAgregado = (idProductoFacturable: number) =>
+    idsProductosAgregados.includes(idProductoFacturable);
+  const estaProductoSeleccionado = (idProductoFacturable: number) =>
+    estaProductoAgregado(idProductoFacturable)
+    || productosSeleccionados.has(idProductoFacturable);
+  const todosSeleccionados = productos.length > 0
+    && productos.every((producto) =>
+      estaProductoSeleccionado(producto.idProductoFacturable),
+    );
+  const cantidadProductosSeleccionados = new Set([
+    ...idsProductosAgregados,
+    ...productosSeleccionados.keys(),
+  ]).size;
 
-  const productosFiltrados = useMemo(
-    () => productos.filter((producto) => {
-      const fechaProducto = convertirTextoAFecha(producto.fecha);
-      if (!fechaProducto) return true;
-      if (fechaDesde && fechaProducto < fechaDesde) return false;
-      if (fechaHasta && fechaProducto > fechaHasta) return false;
-      return true;
-    }),
-    [fechaDesde, fechaHasta, productos],
-  );
-
-  const todosSeleccionados = productosFiltrados.length > 0
-    && productosFiltrados.every((producto) => idsSeleccionados.has(producto.idProductoFacturable));
-
-  const productosSeleccionados = useMemo(
-    () => productos.filter((producto) => idsSeleccionados.has(producto.idProductoFacturable)),
-    [idsSeleccionados, productos],
-  );
-
-  const alternarProducto = (idProductoFacturable: number) => {
-    setIdsSeleccionados((previo) => {
-      const siguiente = new Set(previo);
-      if (siguiente.has(idProductoFacturable)) {
-        siguiente.delete(idProductoFacturable);
+  const alternarProducto = (producto: EntradaProductoFacturable) => {
+    if (estaProductoAgregado(producto.idProductoFacturable)) return;
+    setProductosSeleccionados((previos) => {
+      const siguientes = new Map(previos);
+      if (siguientes.has(producto.idProductoFacturable)) {
+        siguientes.delete(producto.idProductoFacturable);
       } else {
-        siguiente.add(idProductoFacturable);
+        siguientes.set(producto.idProductoFacturable, producto);
       }
-      return siguiente;
+      return siguientes;
     });
   };
 
   const alternarTodos = () => {
     if (todosSeleccionados) {
-      setIdsSeleccionados((seleccionadosActuales) => {
-        const siguientes = new Set(seleccionadosActuales);
-        productosFiltrados.forEach((producto) => siguientes.delete(producto.idProductoFacturable));
+      setProductosSeleccionados((seleccionadosActuales) => {
+        const siguientes = new Map(seleccionadosActuales);
+        productos.forEach((producto) => siguientes.delete(producto.idProductoFacturable));
         return siguientes;
       });
       return;
     }
 
-    setIdsSeleccionados((seleccionadosActuales) => new Set([
-      ...seleccionadosActuales,
-      ...productosFiltrados.map((producto) => producto.idProductoFacturable),
-    ]));
-  };
-
-  const reiniciarFiltros = () => {
-    setFechaDesde(new Date(2024, 0, 1));
-    setFechaHasta(new Date(2024, 11, 31));
+    setProductosSeleccionados((seleccionadosActuales) => {
+      const siguientes = new Map(seleccionadosActuales);
+      productos.forEach((producto) => {
+        if (!estaProductoAgregado(producto.idProductoFacturable)) {
+          siguientes.set(producto.idProductoFacturable, producto);
+        }
+      });
+      return siguientes;
+    });
   };
 
   const cerrar = () => {
-    setIdsSeleccionados(new Set(IDS_PRODUCTOS_FACTURA_SELECCIONADOS_INICIALES));
+    setProductosSeleccionados(new Map());
     reiniciarFiltros();
     onCerrar();
   };
 
   const confirmar = () => {
-    onConfirmar(productosSeleccionados);
-    setIdsSeleccionados(new Set(IDS_PRODUCTOS_FACTURA_SELECCIONADOS_INICIALES));
+    onConfirmar(Array.from(productosSeleccionados.values()));
+    setProductosSeleccionados(new Map());
     reiniciarFiltros();
   };
 
@@ -114,23 +128,16 @@ export function CustomModalProductosFactura({
         </div>
 
         <div className="space-y-5 bg-slate-50/60 px-7 py-6">
-          <div className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
-            <div className="space-y-1.5">
-              <CustomSelectorFecha
-                label="Desde"
-                value={fechaDesde}
-                onChange={setFechaDesde}
-                placeholder="Desde"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <CustomSelectorFecha
-                label="Hasta"
-                value={fechaHasta}
-                onChange={setFechaHasta}
-                placeholder="Hasta"
-              />
-            </div>
+          <div className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+            <CustomFiltroRangoFechas
+              fechaInicio={fechaInicio}
+              fechaFin={fechaFin}
+              fechasInvalidas={fechasInvalidas}
+              onFechaInicioChange={cambiarFechaInicio}
+              onFechaFinChange={cambiarFechaFin}
+              onLimpiarFechaInicio={() => cambiarFechaInicio(undefined)}
+              onLimpiarFechaFin={() => cambiarFechaFin(undefined)}
+            />
             <CustomButton
               type="button"
               variant="secondary"
@@ -143,8 +150,8 @@ export function CustomModalProductosFactura({
             </CustomButton>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <table className="w-full text-left text-xs">
+          <div className="max-w-full overflow-x-auto overscroll-x-contain rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table className="w-full min-w-[900px] text-left text-xs">
               <thead className="bg-slate-50 text-[10px] font-bold text-slate-500">
                 <tr>
                   <th className="w-12 px-4 py-2.5">
@@ -164,13 +171,49 @@ export function CustomModalProductosFactura({
                   <th className="px-4 py-2.5">ID</th>
                   <th className="px-4 py-2.5">Investigado</th>
                   <th className="px-4 py-2.5 text-center">Aplica penalidad</th>
-                  <th className="px-4 py-2.5 text-center">Tipo</th>
+                  <th className="px-4 py-2.5 text-center">
+                    <CustomEncabezadoFiltroTabla
+                      titulo="Tipo"
+                      idMaster={TablaMaestraId.TIPO_TRAMITE}
+                      valores={idTipoTramite ? [idTipoTramite] : []}
+                      onChange={(valores) => cambiarTipoTramite(valores.at(-1))}
+                      placeholder="Todos"
+                      multiple={false}
+                    />
+                  </th>
                   <th className="px-4 py-2.5 text-center">Fecha</th>
+                  <th className="px-4 py-2.5 text-right">Precio</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {productosFiltrados.map((producto) => {
-                  const estaSeleccionado = idsSeleccionados.has(producto.idProductoFacturable);
+                {estaCargando ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
+                      <Loader2 className="mx-auto animate-spin" size={20} />
+                    </td>
+                  </tr>
+                ) : hayError ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-10 text-center">
+                      <p className="mb-3 text-sm text-red-500">No se pudieron cargar los pedidos.</p>
+                      <CustomButton type="button" variant="secondary" size="sm" onClick={() => void recargar()}>
+                        Reintentar
+                      </CustomButton>
+                    </td>
+                  </tr>
+                ) : productos.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-10 text-center text-sm italic text-slate-400">
+                      No hay pedidos disponibles para facturar.
+                    </td>
+                  </tr>
+                ) : productos.map((producto) => {
+                  const yaEstaAgregado = estaProductoAgregado(
+                    producto.idProductoFacturable,
+                  );
+                  const estaSeleccionado = estaProductoSeleccionado(
+                    producto.idProductoFacturable,
+                  );
                   const tipo = ESTILOS_TIPO_PRODUCTO_FACTURABLE[producto.tipo];
 
                   return (
@@ -178,11 +221,17 @@ export function CustomModalProductosFactura({
                       <td className="px-4 py-2.5">
                         <button
                           type="button"
-                          onClick={() => alternarProducto(producto.idProductoFacturable)}
+                          onClick={() => alternarProducto(producto)}
+                          disabled={yaEstaAgregado}
                           className={`flex h-4 w-4 items-center justify-center rounded-full border transition-colors ${
                             estaSeleccionado ? "border-brand-black bg-brand-black text-white" : "border-slate-300"
-                          }`}
-                          aria-label={`Seleccionar ${producto.codigo}`}
+                          } ${yaEstaAgregado ? "cursor-not-allowed opacity-70" : ""}`}
+                          aria-label={
+                            yaEstaAgregado
+                              ? `${producto.codigo} ya esta agregado`
+                              : `Seleccionar ${producto.codigo}`
+                          }
+                          title={yaEstaAgregado ? "Producto ya agregado" : undefined}
                         >
                           {estaSeleccionado ? <Check size={10} /> : null}
                         </button>
@@ -197,7 +246,12 @@ export function CustomModalProductosFactura({
                           {tipo.texto}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 text-center text-slate-600">{producto.fecha}</td>
+                      <td className="px-4 py-2.5 text-center text-slate-600">
+                        {formatearFechaIsoADdMmYyyy(producto.fecha)}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-medium text-slate-700">
+                        {formatearMontoDosDecimales(producto.precio)}
+                      </td>
                     </tr>
                   );
                 })}
@@ -205,16 +259,26 @@ export function CustomModalProductosFactura({
             </table>
           </div>
 
-          <div className="flex items-center justify-center gap-4 text-[10px] text-slate-500">
-            <button type="button" className="text-slate-400" aria-label="Página anterior">
+          <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
+            <button
+              type="button"
+              disabled={paginaActual <= 1}
+              onClick={() => cambiarPagina(paginaActual - 1)}
+              className="text-slate-400 disabled:opacity-30"
+              aria-label="Página anterior"
+            >
               <ChevronLeft size={14} />
             </button>
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-black font-bold text-white">1</span>
-            <span>2</span>
-            <span>3</span>
-            <span>...</span>
-            <span>12</span>
-            <button type="button" className="text-slate-400" aria-label="Página siguiente">
+            <span className="font-medium">
+              Página {paginaActual} de {totalPaginas} · {totalRegistros} pedido{totalRegistros === 1 ? "" : "s"}
+            </span>
+            <button
+              type="button"
+              disabled={paginaActual >= totalPaginas}
+              onClick={() => cambiarPagina(paginaActual + 1)}
+              className="text-slate-400 disabled:opacity-30"
+              aria-label="Página siguiente"
+            >
               <ChevronRight size={14} />
             </button>
           </div>
@@ -222,13 +286,13 @@ export function CustomModalProductosFactura({
 
         <div className="flex items-center justify-between border-t border-slate-100 bg-white px-7 py-4">
           <p className="text-xs font-medium text-slate-400">
-            {productosSeleccionados.length} producto{productosSeleccionados.length === 1 ? "" : "s"} seleccionado{productosSeleccionados.length === 1 ? "" : "s"}
+            {cantidadProductosSeleccionados} producto{cantidadProductosSeleccionados === 1 ? "" : "s"} seleccionado{cantidadProductosSeleccionados === 1 ? "" : "s"}
           </p>
           <CustomButton
             variant="primary"
             size="compact"
             onClick={confirmar}
-            disabled={productosSeleccionados.length === 0}
+            disabled={productosSeleccionados.size === 0}
           >
             Confirmar
           </CustomButton>

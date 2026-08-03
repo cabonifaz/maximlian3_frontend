@@ -2,7 +2,6 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  Loader2,
   RefreshCw,
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef } from "react";
@@ -32,6 +31,7 @@ interface CustomTablaProps<T> {
   selectable?: boolean;
   selectedIds?: Set<number>;
   onSelectionChange?: (ids: Set<number>) => void;
+  cantidadFilasVisibles?: number;
 }
 
 function getPaginationPages(current: number, total: number): (number | "...")[] {
@@ -68,6 +68,7 @@ export function CustomTabla<T>({
   selectable,
   selectedIds,
   onSelectionChange,
+  cantidadFilasVisibles = 5,
 }: CustomTablaProps<T>) {
   const selectAllRef = useRef<HTMLInputElement>(null);
 
@@ -113,8 +114,16 @@ export function CustomTabla<T>({
 
   return (
     <div className="bg-brand-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px] table-fixed text-left border-collapse [&_td]:max-w-0 [&_td]:break-words [&_td]:align-middle">
+      <div className="max-w-full overflow-x-auto overscroll-x-contain">
+        <table
+          className="w-full table-fixed border-collapse text-left [&_td]:max-w-0 [&_td]:break-words [&_td]:align-middle"
+          style={{
+            minWidth: Math.max(
+              900,
+              columns.length * 160 + (selectable ? 48 : 0),
+            ),
+          }}
+        >
           <colgroup>
             {selectable ? <col className="w-10" /> : null}
             {columns.map((col, i) => (
@@ -150,77 +159,109 @@ export function CustomTabla<T>({
           </thead>
           <tbody className="divide-y divide-gray-50">
             {isLoading ? (
-              <tr>
-                <td colSpan={colCount} className="px-6 py-20 text-center">
-                  <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="w-10 h-10 text-brand-wine animate-spin" />
-                    <p className="text-sm font-medium text-gray-500">
-                      Cargando...
-                    </p>
-                  </div>
-                </td>
-              </tr>
+              Array.from({ length: cantidadFilasVisibles }, (_, indiceFila) => (
+                <tr key={`esqueleto-${indiceFila}`} className="h-[57px]">
+                  {Array.from({ length: colCount }, (_, indiceColumna) => (
+                    <td
+                      key={`esqueleto-${indiceFila}-${indiceColumna}`}
+                      className="px-6 py-4"
+                    >
+                      <div
+                        className={`h-3 animate-pulse rounded-full bg-slate-100 ${
+                          indiceColumna % 3 === 0
+                            ? "w-3/4"
+                            : indiceColumna % 2 === 0
+                              ? "mx-auto w-1/2"
+                              : "w-2/3"
+                        }`}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))
             ) : isError ? (
-              <tr>
+              <tr style={{ height: cantidadFilasVisibles * 57 }}>
                 <td colSpan={colCount} className="px-6 py-20 text-center">
                   <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
-                      <AlertCircle className="w-6 h-6 text-red-500" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+                      <AlertCircle className="h-6 w-6 text-red-500" />
                     </div>
                     <p className="text-sm font-bold text-brand-black">
                       {errorMessage}
                     </p>
-                    {onRetry && (
+                    {onRetry ? (
                       <CustomButton variant="wine" size="sm" onClick={onRetry}>
                         <RefreshCw size={14} />
                         <span>REINTENTAR</span>
                       </CustomButton>
-                    )}
+                    ) : null}
                   </div>
                 </td>
               </tr>
             ) : !data || data.length === 0 ? (
-              <tr>
+              <tr style={{ height: cantidadFilasVisibles * 57 }}>
                 <td
                   colSpan={colCount}
-                  className="px-6 py-20 text-center text-sm text-gray-400 italic"
+                  className="px-6 py-20 text-center text-sm italic text-gray-400"
                 >
                   {emptyMessage}
                 </td>
               </tr>
             ) : (
-              data.map((item, index) => {
-                const id = getId(item);
-                const isSelected = selectedIds?.has(id) ?? false;
-                return (
-                  <tr
-                    key={`${id}-${index}`}
-                    className={`hover:bg-gray-50/50 transition-colors ${isSelected ? "bg-brand-wine/5" : ""}`}
-                  >
-                    {selectable && (
-                      <td className="px-6 py-4 w-10">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => handleSelectRow(id)}
-                          className="w-4 h-4 rounded border-gray-300 accent-brand-wine cursor-pointer"
-                        />
-                      </td>
-                    )}
-                    {renderRow(item, index, isSelected)}
-                  </tr>
-                );
-              })
+              <>
+                {data.map((item, index) => {
+                  const id = getId(item);
+                  const isSelected = selectedIds?.has(id) ?? false;
+
+                  return (
+                    <tr
+                      key={`${id}-${index}`}
+                      className={`h-[57px] transition-colors hover:bg-gray-50/50 ${
+                        isSelected ? "bg-brand-wine/5" : ""
+                      }`}
+                    >
+                      {selectable ? (
+                        <td className="w-10 px-6 py-4">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleSelectRow(id)}
+                            className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-brand-wine"
+                          />
+                        </td>
+                      ) : null}
+                      {renderRow(item, index, isSelected)}
+                    </tr>
+                  );
+                })}
+                {Array.from(
+                  {
+                    length: Math.max(
+                      0,
+                      cantidadFilasVisibles - data.length,
+                    ),
+                  },
+                  (_, indice) => (
+                    <tr
+                      key={`espacio-reservado-${indice}`}
+                      className="h-[57px]"
+                      aria-hidden="true"
+                    >
+                      <td colSpan={colCount} />
+                    </tr>
+                  ),
+                )}
+              </>
             )}
           </tbody>
         </table>
       </div>
 
-      <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+      <div className="flex flex-col gap-3 border-t border-gray-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <p className="text-xs text-gray-400 font-medium">
           Mostrando {data?.length ?? 0} de {totalRecords} {entityLabel}
         </p>
-        <div className="flex items-center gap-3">
+        <div className="flex max-w-full items-center gap-3 overflow-x-auto pb-1 sm:pb-0">
           <button
             onClick={() => onPageChange(paginaActual - 1)}
             disabled={navDisabled || paginaActual === 1}

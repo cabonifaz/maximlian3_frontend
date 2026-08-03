@@ -214,6 +214,11 @@ export function useModalFlujoAsignacion({
       await queryClient.invalidateQueries({ queryKey: ["assignment-orders"] });
       await queryClient.invalidateQueries({ queryKey: ["pedidos"] });
       await queryClient.invalidateQueries({ queryKey: ["pedidos-asignacion-modal"] });
+      await queryClient.invalidateQueries({
+        predicate: (consulta) =>
+          typeof consulta.queryKey[0] === "string"
+          && consulta.queryKey[0].startsWith("assignment-candidates"),
+      });
       onSuccess?.();
       onClose();
     },

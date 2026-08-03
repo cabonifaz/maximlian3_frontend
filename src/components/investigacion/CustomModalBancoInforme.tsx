@@ -228,8 +228,8 @@ function CustomModalBusquedaBancoAnalista({
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
-              <table className="w-full text-left">
+            <div className="max-w-full overflow-x-auto rounded-3xl border border-slate-100 bg-white shadow-sm">
+              <table className="w-full min-w-[760px] text-left">
                 <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9aa9c2]">
                   <tr>
                     <th className="px-5 py-4">Banco</th>

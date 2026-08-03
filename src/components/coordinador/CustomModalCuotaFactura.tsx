@@ -58,8 +58,8 @@ export function CustomModalCuotaFactura({
   const vencimiento = useWatch({ control, name: "vencimiento" });
   const estado = useWatch({ control, name: "estado" });
   const { data: opcionesMoneda } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.MONEDA],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
+    queryKey: ["masterTable", TablaMaestraId.MONEDA_SUNAT],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA_SUNAT),
     enabled: abierto,
     staleTime: Infinity,
   });
@@ -78,6 +78,8 @@ export function CustomModalCuotaFactura({
   const guardar = (datos: DatosFormularioCuotaFactura) => {
     onGuardar({
       idCuotaFactura: cuota?.idCuotaFactura ?? 0,
+      idCuotaDocumentoElectronico:
+        cuota?.idCuotaDocumentoElectronico ?? 0,
       numeroCuota: cuota?.numeroCuota ?? numeroCuota,
       ...datos,
       vencimiento: formatearFechaIsoLocal(datos.vencimiento),

@@ -1,12 +1,25 @@
-import { Check, ChevronDown, LogOut } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  LogOut,
+  PanelLeftOpen,
+  Shield,
+} from "lucide-react";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import { useEncabezado } from "@maximilian/hooks/useEncabezado";
 
 interface PropsEncabezado {
   role?: string;
+  estaAbiertaBarraLateralMobile?: boolean;
+  alAlternarBarraLateralMobile?: () => void;
 }
 
-export function Encabezado({ role: rolInicial }: PropsEncabezado) {
+export function Encabezado({
+  role: rolInicial,
+  estaAbiertaBarraLateralMobile = false,
+  alAlternarBarraLateralMobile,
+}: PropsEncabezado) {
   const {
     cambiarRol,
     cerrarSesion,
@@ -22,7 +35,29 @@ export function Encabezado({ role: rolInicial }: PropsEncabezado) {
 
   return (
     <>
-      <header className="h-16 bg-brand-white border-b border-gray-100 px-8 flex items-center justify-end gap-6 sticky top-0 z-50 shrink-0">
+      <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-gray-100 bg-brand-white px-4 md:gap-6 md:px-8">
+        <div className="flex min-w-0 items-center gap-3">
+          {alAlternarBarraLateralMobile ? (
+            <CustomButton
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={alAlternarBarraLateralMobile}
+              aria-label="Abrir menú lateral"
+              aria-expanded={estaAbiertaBarraLateralMobile}
+              className="shrink-0 text-gray-500 md:hidden"
+            >
+              <PanelLeftOpen size={20} />
+            </CustomButton>
+          ) : null}
+          <div className="rounded-lg bg-brand-black p-2">
+            <Shield className="h-5 w-5 text-brand-white" />
+          </div>
+          <span className="truncate whitespace-nowrap text-lg font-bold tracking-tight text-brand-black sm:text-xl">
+            Safety Report
+          </span>
+        </div>
+
         <div className="flex items-center gap-4 border-l pl-6 border-gray-100 h-10">
           <div className="text-right hidden sm:block">
             <p className="text-sm font-bold text-brand-black leading-tight truncate max-w-[150px]">

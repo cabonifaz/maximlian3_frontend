@@ -725,13 +725,13 @@ function AnexosTab({
         </div>
 
         {/* Table */}
-        <div className="flex-1 overflow-y-auto max-h-64 border border-gray-100 rounded-xl">
+        <div className="max-h-64 max-w-full flex-1 overflow-auto rounded-xl border border-gray-100">
           {!showTable ? (
             <div className="flex items-center justify-center h-full min-h-40 text-sm text-gray-400">
               No hay archivos adjuntos
             </div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[560px] text-sm">
               <thead className="sticky top-0 z-30 bg-white">
                 <tr className="border-b border-gray-100">
                   <th className="text-left py-2 px-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Nombre</th>

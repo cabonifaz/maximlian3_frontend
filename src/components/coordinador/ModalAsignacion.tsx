@@ -40,8 +40,8 @@ export function ModalAsignacion({
         <div className="space-y-8 px-8 py-6">
           <p className="text-2xl font-bold text-brand-black">Pedidos seleccionados: {selectedCount}</p>
 
-          <div className="overflow-hidden rounded-2xl border border-gray-100">
-            <table className="w-full border-collapse text-left">
+          <div className="max-w-full overflow-x-auto rounded-2xl border border-gray-100">
+            <table className="w-full min-w-[720px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-gray-100">
                   <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-400">Nro.</th>

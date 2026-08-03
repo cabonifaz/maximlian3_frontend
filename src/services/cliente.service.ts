@@ -55,9 +55,9 @@ export const servicioCliente = {
    * Create a new client in the system.
    * @param clientData Data for the new client.
    */
-  create: async (clientData: CreateClientRequest) => {
+  create: async (clientData: CreateClientRequest): Promise<CreateClientResponse> => {
     try {
-      const { data } = await maximilianService.post<ApiResponse<CreateClientResponse>>(
+      const { data } = await maximilianService.post<ApiResponse<CreateClientResponse[]>>(
         ENDPOINTS_CLIENTE.crear,
         clientData
       );
@@ -66,7 +66,7 @@ export const servicioCliente = {
         throw new ErrorRespuestaApi(data);
       }
 
-      return data.result;
+      return data.result[0];
     } catch (error) {
       console.error("Error creating client:", error);
       throw error;

@@ -111,8 +111,8 @@ function AnexosDetalleTab({ pedidoId }: { pedidoId: number | null }) {
         onChange={(e) => setBusqueda(e.target.value)}
         className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
       />
-      <div className="overflow-hidden rounded-2xl border border-gray-100">
-        <table className="w-full text-left text-sm">
+      <div className="max-w-full overflow-x-auto rounded-2xl border border-gray-100">
+        <table className="w-full min-w-[700px] text-left text-sm">
         <thead className="bg-white">
           <tr className="border-b border-gray-100">
             <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-400">Nombre</th>

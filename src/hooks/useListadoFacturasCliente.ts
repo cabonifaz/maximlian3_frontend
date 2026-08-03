@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { facturacionService } from "@maximilian/services/facturacion.service";
 import type {
   EntradaFacturaCliente,
-  EstadoFacturaCliente,
-  RespuestaListaFacturasCliente,
+  IdEstadoFacturacionActualizable,
 } from "@maximilian/shared/types/facturacion.type";
 
 export function useListadoFacturasCliente(idCliente: number) {
@@ -37,6 +40,22 @@ export function useListadoFacturasCliente(idCliente: number) {
     enabled: idCliente > 0,
   });
 
+  const actualizarEstadoMutation = useMutation({
+    mutationFn: ({
+      idPedido,
+      idEstadoFacturacion,
+    }: {
+      idPedido: number;
+      idEstadoFacturacion: IdEstadoFacturacionActualizable;
+    }) =>
+      facturacionService.actualizarEstado(
+        idPedido,
+        idEstadoFacturacion,
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["facturacion"] }),
+  });
+
   const totalPaginas = Math.max(respuesta?.totalPaginas ?? 1, 1);
 
   const cambiarBusqueda = (valor: string) => {
@@ -52,22 +71,12 @@ export function useListadoFacturasCliente(idCliente: number) {
 
   const actualizarEstadoFactura = (
     factura: EntradaFacturaCliente,
-    estado: EstadoFacturaCliente,
-    codigoEstado: number,
+    idEstadoFacturacion: IdEstadoFacturacionActualizable,
   ) => {
-    queryClient.setQueryData<RespuestaListaFacturasCliente>(
-      claveConsulta,
-      (respuestaActual) => respuestaActual
-        ? {
-            ...respuestaActual,
-            lstFacturas: respuestaActual.lstFacturas.map((facturaActual) =>
-              facturaActual.idFactura === factura.idFactura
-                ? { ...facturaActual, estado, codigoEstado }
-                : facturaActual,
-            ),
-          }
-        : respuestaActual,
-    );
+    actualizarEstadoMutation.mutate({
+      idPedido: factura.idFactura,
+      idEstadoFacturacion,
+    });
   };
 
   return {
@@ -81,6 +90,7 @@ export function useListadoFacturasCliente(idCliente: number) {
     cambiarBusqueda,
     cambiarPagina,
     actualizarEstadoFactura,
+    estaActualizandoEstado: actualizarEstadoMutation.isPending,
     reintentar: refetch,
   };
 }

@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { CustomBancoNoticias } from "@maximilian/components/common/CustomBancoNoticias";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
-import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomFiltroRangoFechas } from "@maximilian/components/common/CustomFiltroRangoFechas";
 import { CustomModalHistorialInformesCompania } from "@maximilian/components/common/CustomModalHistorialInformesCompania";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
@@ -269,47 +268,45 @@ function SeccionCredito({
 }) {
   return (
     <section className="space-y-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-300">
-        Reportes de crédito actualizados
-      </p>
-      <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-          <CustomFiltroRangoFechas
-            fechaInicio={fechaInicioFiltro}
-            fechaFin={fechaFinFiltro}
-            fechasInvalidas={fechasInvalidas}
-            onFechaInicioChange={onFechaInicioFiltroChange}
-            onFechaFinChange={onFechaFinFiltroChange}
-            onLimpiarFechaInicio={onLimpiarFechaInicio}
-            onLimpiarFechaFin={onLimpiarFechaFin}
-          />
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,15rem)_minmax(0,12rem)]">
-            <div className="min-w-0">
-              <MultiCustomSelectorBuscable
-                label="Tipo de Estado Financiero"
-                options={opcionesEstadoFinanciero}
-                value={idsEstadoFinancieroFiltro}
-                onChange={onEstadoFinancieroFiltroChange}
-                placeholder="Todos"
-                resumirSelecciones
-              />
-            </div>
-            <div className="min-w-0">
-              <CustomSelectorBuscable
-                label="Estado"
-                options={opcionesEstado}
-                value={idEstadoFiltro}
-                onChange={(id) => onEstadoFiltroChange([id])}
-                onClear={() => onEstadoFiltroChange([])}
-                optional
-                mostrarTextoOpcionalEnLabel={false}
-                etiquetaOpcionVacia="Todos"
-                placeholder="Todos"
-              />
-            </div>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+        <CustomFiltroRangoFechas
+          fechaInicio={fechaInicioFiltro}
+          fechaFin={fechaFinFiltro}
+          fechasInvalidas={fechasInvalidas}
+          onFechaInicioChange={onFechaInicioFiltroChange}
+          onFechaFinChange={onFechaFinFiltroChange}
+          onLimpiarFechaInicio={onLimpiarFechaInicio}
+          onLimpiarFechaFin={onLimpiarFechaFin}
+        />
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,15rem)_minmax(0,12rem)]">
+          <div className="min-w-0">
+            <MultiCustomSelectorBuscable
+              label="Tipo de Estado Financiero"
+              options={opcionesEstadoFinanciero}
+              value={idsEstadoFinancieroFiltro}
+              onChange={onEstadoFinancieroFiltroChange}
+              placeholder="Todos"
+              resumirSelecciones
+            />
+          </div>
+          <div className="min-w-0">
+            <CustomSelectorBuscable
+              label="Estado"
+              options={opcionesEstado}
+              value={idEstadoFiltro}
+              onChange={(id) => onEstadoFiltroChange([id])}
+              onClear={() => onEstadoFiltroChange([])}
+              optional
+              mostrarTextoOpcionalEnLabel={false}
+              etiquetaOpcionVacia="Todos"
+              placeholder="Todos"
+            />
           </div>
         </div>
       </div>
+      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-300">
+        Reportes de crédito actualizados
+      </p>
       {estaCargando ? (
         <EstadoCargandoBancoInformacion />
       ) : hayError ? (
@@ -419,6 +416,29 @@ function SeccionEmpresas({
 }) {
   return (
     <section className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,12rem)_minmax(0,18rem)]">
+        <div className="min-w-0">
+          <MultiCustomSelectorBuscable
+            label="País"
+            options={opcionesPais}
+            value={idsPaisFiltro}
+            onChange={onPaisFiltroChange}
+            placeholder="Todos"
+            resumirSelecciones
+          />
+        </div>
+        <div className="min-w-0">
+          <MultiCustomSelectorBuscable
+            label="Actividad Económica"
+            options={opcionesActividadEconomica}
+            value={idsActividadEconomicaFiltro}
+            onChange={onActividadEconomicaFiltroChange}
+            placeholder="Todas"
+            resumirSelecciones
+          />
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-300">
           Listado de empresas registradas
@@ -438,30 +458,10 @@ function SeccionEmpresas({
         columns={[
           { label: "Razón social", width: "20%" },
           { label: "Documento", width: "12%" },
-          {
-            label: (
-              <CustomEncabezadoFiltroTabla
-                titulo="País"
-                opciones={opcionesPais}
-                valores={idsPaisFiltro}
-                onChange={onPaisFiltroChange}
-              />
-            ),
-            width: "10%",
-          },
+          { label: "País", width: "10%" },
           { label: "Dirección", width: "20%" },
           { label: "Teléfono", width: "10%" },
-          {
-            label: (
-              <CustomEncabezadoFiltroTabla
-                titulo="Actividad Economica"
-                opciones={opcionesActividadEconomica}
-                valores={idsActividadEconomicaFiltro}
-                onChange={onActividadEconomicaFiltroChange}
-              />
-            ),
-            width: "18%",
-          },
+          { label: "Actividad Económica", width: "18%" },
           { label: "Historial", width: "10%" },
         ]}
         data={empresas}
