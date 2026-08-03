@@ -1,6 +1,7 @@
 import {
   LogOut,
-  Shield,
+  PanelLeftClose,
+  PanelLeftOpen,
   type LucideIcon,
 } from "lucide-react";
 import { NavLink } from "react-router";
@@ -17,9 +18,14 @@ interface ElementoBarraLateral {
 interface PropsBarraLateral {
   items: ElementoBarraLateral[];
   estaColapsada: boolean;
+  alAlternarBarraLateral: () => void;
 }
 
-export function BarraLateral({ items, estaColapsada }: PropsBarraLateral) {
+export function BarraLateral({
+  items,
+  estaColapsada,
+  alAlternarBarraLateral,
+}: PropsBarraLateral) {
   const { cerrarSesion, estaCerrandoSesion } = useCerrarSesion();
 
   return (
@@ -28,16 +34,20 @@ export function BarraLateral({ items, estaColapsada }: PropsBarraLateral) {
       className={`flex h-full shrink-0 flex-col border-r border-gray-200 bg-brand-white transition-[width] duration-300 ease-in-out ${estaColapsada ? "w-20" : "w-64"}`}
     >
       <div
-        className={`flex items-center py-6 ${estaColapsada ? "justify-center px-3" : "gap-3 px-6"}`}
+        className={`flex items-center py-6 ${estaColapsada ? "justify-center px-3" : "px-6"}`}
       >
-        <div className="bg-brand-black p-2 rounded-lg">
-          <Shield className="text-brand-white w-6 h-6" />
-        </div>
-        {!estaColapsada && (
-          <span className="whitespace-nowrap text-xl font-bold tracking-tight text-brand-black">
-            Safety Report
-          </span>
-        )}
+        <CustomButton
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={alAlternarBarraLateral}
+          aria-label={estaColapsada ? "Expandir menú lateral" : "Colapsar menú lateral"}
+          aria-expanded={!estaColapsada}
+          title={estaColapsada ? "Expandir menú" : "Colapsar menú"}
+          className="text-gray-500 hover:text-brand-black"
+        >
+          {estaColapsada ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+        </CustomButton>
       </div>
 
       <nav

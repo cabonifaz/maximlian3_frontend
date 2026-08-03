@@ -78,12 +78,6 @@ export default function GestionFacturacion() {
       }),
   });
 
-  const { data: productosFacturables = [] } = useQuery({
-    queryKey: ["facturacion", "productos-facturables"],
-    queryFn: () => facturacionService.listarProductosFacturables(),
-    enabled: modalFactura?.modo === "emitir",
-  });
-
   const facturaciones = useMemo(
     () => facturacionData?.lstFacturacion ?? [],
     [facturacionData?.lstFacturacion],
@@ -161,12 +155,20 @@ export default function GestionFacturacion() {
   };
 
   const abrirDetalleFactura = async (facturacion: EntradaFacturacion, factura?: EntradaFacturaCliente | null) => {
-    const detalle = await facturacionService.obtenerDetalleFactura(facturacion.cliente, factura);
+    const detalle = await facturacionService.obtenerDetalleFactura(
+      facturacion.idFacturacion,
+      facturacion.cliente,
+      factura,
+    );
     setModalFactura({ modo: "detalle", detalle });
   };
 
   const abrirEmisionFactura = async (facturacion: EntradaFacturacion, factura?: EntradaFacturaCliente | null) => {
-    const detalle = await facturacionService.obtenerDetalleFactura(facturacion.cliente, factura);
+    const detalle = await facturacionService.obtenerDetalleFactura(
+      facturacion.idFacturacion,
+      facturacion.cliente,
+      factura,
+    );
     setModalFactura({ modo: "emitir", detalle });
   };
 
@@ -298,7 +300,6 @@ export default function GestionFacturacion() {
         abierto={modalFactura !== null}
         modo={modalFactura?.modo ?? "detalle"}
         factura={modalFactura?.detalle ?? null}
-        productosFacturables={productosFacturables}
         onCerrar={() => setModalFactura(null)}
       />
     </div>

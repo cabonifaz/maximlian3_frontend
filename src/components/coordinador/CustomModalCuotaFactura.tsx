@@ -58,8 +58,8 @@ export function CustomModalCuotaFactura({
   const vencimiento = useWatch({ control, name: "vencimiento" });
   const estado = useWatch({ control, name: "estado" });
   const { data: opcionesMoneda } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.MONEDA],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
+    queryKey: ["masterTable", TablaMaestraId.MONEDA_SUNAT],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA_SUNAT),
     enabled: abierto,
     staleTime: Infinity,
   });

@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { FilePenLine, MoreHorizontal, Pencil, Plus, Save, X } from "lucide-react";
+import { FilePenLine, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
-import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomModalCuotaFactura } from "@maximilian/components/coordinador/CustomModalCuotaFactura";
 import { CustomModalProductosFactura } from "@maximilian/components/coordinador/CustomModalProductosFactura";
 import { useFormularioFactura } from "@maximilian/hooks/useFormularioFactura";
@@ -12,13 +12,13 @@ import type {
   EntradaCuotaFactura,
   EntradaProductoFacturable,
 } from "@maximilian/shared/types/facturacion.type";
-import { convertirTextoAFecha } from "@maximilian/shared/utils/fecha.util";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { ID_FORMA_PAGO_CONTADO } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
 interface CustomModalFacturaProps {
   abierto: boolean;
   modo: "emitir" | "detalle";
   factura: DetalleFactura | null;
-  productosFacturables: EntradaProductoFacturable[];
   onCerrar: () => void;
 }
 
@@ -37,7 +37,6 @@ export function CustomModalFactura({
   abierto,
   modo,
   factura,
-  productosFacturables,
   onCerrar,
 }: CustomModalFacturaProps) {
   const [modalProductosAbierto, setModalProductosAbierto] = useState(false);
@@ -46,21 +45,33 @@ export function CustomModalFactura({
   } | null>(null);
   const [confirmacionSunatAbierta, setConfirmacionSunatAbierta] = useState(false);
   const {
+    afectacionesIgv,
     agregarProductos: agregarProductosFormulario,
     actualizarCampoFactura,
-    actualizarFechaFactura,
     cancelarEdicionDescuento,
-    confirmarDescuentos,
+    confirmarFormulario,
     detalle,
-    erroresDescuentos,
+    erroresFormulario,
+    guardarBorrador,
+    guardarBorradorMutation,
     guardarEdicionDescuento,
     guardarCuota,
     idProductoDescuentoEdicion,
     iniciarEdicionDescuento,
     obtenerTotalProducto,
+    quitarCuota,
+    quitarProducto,
     registrarDescuento,
+    registrarPorcentajeIgv,
+    registrarPrecioUnitario,
+    seleccionarAfectacionIgv,
+    seleccionarFormaPago,
+    seleccionarMoneda,
+    seleccionarTipoDocumento,
+    seleccionarTipoOperacion,
     totalFactura,
-  } = useFormularioFactura(factura);
+    valoresMaestros,
+  } = useFormularioFactura(factura, onCerrar);
 
   const soloLectura = modo === "detalle";
 
@@ -84,8 +95,8 @@ export function CustomModalFactura({
     <>
       <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
         <form
-          onSubmit={confirmarDescuentos(() => onCerrar())}
-          className="flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/60 bg-white shadow-2xl shadow-slate-950/20"
+          onSubmit={guardarBorrador}
+          className="flex max-h-[92dvh] w-full max-w-[95vw] flex-col overflow-hidden rounded-3xl border border-white/60 bg-white shadow-2xl shadow-slate-950/20"
         >
           <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-white to-brand-wine/5 px-8 py-5">
             <div className="flex items-center gap-3">
@@ -120,31 +131,66 @@ export function CustomModalFactura({
                 soloLectura={soloLectura}
                 onChange={(valor) => actualizarCampoFactura("cliente", valor)}
               />
+              <CustomSelectorBuscable
+                label="Tipo de comprobante"
+                required
+                idMaster={TablaMaestraId.TIPO_DOCUMENTO_COMPROBANTE}
+                value={valoresMaestros.idTipoDocumentoMaestro || undefined}
+                onChange={seleccionarTipoDocumento}
+                obtenerEtiquetaOpcion={(opcion) => [opcion.string1, opcion.string2]
+                  .filter(Boolean)
+                  .join(" - ")}
+                disabled={soloLectura}
+                error={erroresFormulario.idTipoDocumentoMaestro?.message}
+              />
+              <CustomSelectorBuscable
+                label="Tipo de operación"
+                required
+                idMaster={TablaMaestraId.TIPO_OPERACION_SUNAT}
+                value={valoresMaestros.idTipoOperacionMaestro || undefined}
+                onChange={seleccionarTipoOperacion}
+                obtenerEtiquetaOpcion={(opcion) => [opcion.string1, opcion.string2]
+                  .filter(Boolean)
+                  .join(" - ")}
+                disabled={soloLectura}
+                error={erroresFormulario.idTipoOperacionMaestro?.message}
+              />
+              <CustomSelectorBuscable
+                label="Moneda"
+                required
+                idMaster={TablaMaestraId.MONEDA_SUNAT}
+                value={valoresMaestros.idMonedaMaestro || undefined}
+                onChange={seleccionarMoneda}
+                disabled={soloLectura}
+                error={erroresFormulario.idMonedaMaestro?.message}
+              />
+              <CustomSelectorBuscable
+                label="Forma de pago"
+                required
+                idMaster={TablaMaestraId.FORMA_PAGO_SUNAT}
+                value={valoresMaestros.idFormaPago || undefined}
+                onChange={seleccionarFormaPago}
+                disabled={soloLectura}
+                error={erroresFormulario.idFormaPago?.message}
+              />
               <CampoFactura
                 etiqueta="NI"
                 valor={detalle.ni}
-                soloLectura={soloLectura}
+                soloLectura
                 onChange={(valor) => actualizarCampoFactura("ni", valor)}
               />
               <CampoFactura
                 etiqueta="OC/OS"
                 valor={detalle.ordenCompra}
                 soloLectura={soloLectura}
+                opcional
                 onChange={(valor) => actualizarCampoFactura("ordenCompra", valor)}
               />
-              <CustomSelectorFecha
-                label="Emisión"
-                required
-                disabled={soloLectura}
-                value={convertirTextoAFecha(detalle.fechaEmision)}
-                onChange={(fecha) => actualizarFechaFactura("fechaEmision", fecha)}
-              />
-              <CustomSelectorFecha
-                label="Vencimiento"
-                required
-                disabled={soloLectura}
-                value={convertirTextoAFecha(detalle.fechaVencimiento)}
-                onChange={(fecha) => actualizarFechaFactura("fechaVencimiento", fecha)}
+              <CampoFactura
+                etiqueta="Emisión"
+                valor={detalle.fechaEmision}
+                soloLectura
+                onChange={() => undefined}
               />
             </div>
 
@@ -166,7 +212,7 @@ export function CustomModalFactura({
                   </CustomButton>
                 ) : null}
               </div>
-              <div className="overflow-hidden rounded-lg border border-slate-200">
+              <div className="overflow-x-auto rounded-lg border border-slate-200">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs font-bold text-slate-500">
                     <tr>
@@ -174,13 +220,20 @@ export function CustomModalFactura({
                       <th className="px-4 py-3">Descripción</th>
                       <th className="px-4 py-3 text-center">Dscto. %</th>
                       <th className="px-4 py-3 text-right">Valor U.</th>
+                      <th className="px-4 py-3 text-right">Precio U.</th>
+                      <th className="min-w-60 px-4 py-3">Afectacion IGV</th>
+                      <th className="px-4 py-3 text-right">IGV %</th>
                       <th className="px-4 py-3 text-right">Total</th>
-                      {!soloLectura ? <th className="w-10 px-4 py-3" /> : null}
+                      {!soloLectura ? <th className="px-4 py-3 text-center">Acciones</th> : null}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {detalle.productos.map((producto) => {
-                      const errorDescuento = erroresDescuentos?.[String(producto.idProductoFactura)];
+                      const claveProducto = String(producto.idProductoFactura);
+                      const errorDescuento = erroresFormulario.descuentos?.[claveProducto];
+                      const errorPrecioUnitario = erroresFormulario.preciosUnitarios?.[claveProducto];
+                      const errorPorcentajeIgv = erroresFormulario.porcentajesIgv?.[claveProducto];
+                      const errorAfectacionIgv = erroresFormulario.afectacionesIgv?.[claveProducto];
 
                       return (
                       <tr key={producto.idProductoFactura}>
@@ -254,12 +307,89 @@ export function CustomModalFactura({
                           )}
                         </td>
                         <td className="px-4 py-3 text-right text-slate-600">{formatearMonto(producto.valorUnitario)}</td>
+                        <td className="px-4 py-3 text-right text-slate-600">
+                          {soloLectura ? formatearMonto(producto.precioUnitario) : (
+                            <div className="ml-auto w-28">
+                              <input
+                                {...registrarPrecioUnitario(`preciosUnitarios.${producto.idProductoFactura}`, {
+                                  valueAsNumber: true,
+                                })}
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                aria-label={`Precio unitario de ${producto.descripcion}`}
+                                className={`w-full rounded-md border px-2 py-1.5 text-right text-sm outline-none focus:border-brand-wine ${
+                                  errorPrecioUnitario ? "border-red-500" : "border-slate-200"
+                                }`}
+                              />
+                              {errorPrecioUnitario ? (
+                                <p className="mt-1 text-[10px] text-red-500">{errorPrecioUnitario.message}</p>
+                              ) : null}
+                            </div>
+                          )}
+                        </td>
+                        <td className="min-w-60 px-4 py-3">
+                          {soloLectura ? (
+                            <span className="text-slate-600">
+                              {producto.idAfectacionIgvMaestro}
+                            </span>
+                          ) : (
+                            <CustomSelectorBuscable
+                              idMaster={TablaMaestraId.AFECTACION_IGV_SUNAT}
+                              value={afectacionesIgv?.[claveProducto] || undefined}
+                              onChange={(valor) =>
+                                seleccionarAfectacionIgv(
+                                  producto.idProductoFactura,
+                                  valor,
+                                )}
+                              placeholder="Seleccione afectacion"
+                              required
+                              obtenerEtiquetaOpcion={(opcion) =>
+                                [opcion.string1, opcion.string2]
+                                  .filter(Boolean)
+                                  .join(" - ")}
+                              error={errorAfectacionIgv?.message}
+                            />
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-600">
+                          {soloLectura ? `${producto.porcentajeIgv}%` : (
+                            <div className="ml-auto w-24">
+                              <input
+                                {...registrarPorcentajeIgv(`porcentajesIgv.${producto.idProductoFactura}`, {
+                                  valueAsNumber: true,
+                                })}
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                aria-label={`IGV de ${producto.descripcion}`}
+                                className={`w-full rounded-md border px-2 py-1.5 text-right text-sm outline-none focus:border-brand-wine ${
+                                  errorPorcentajeIgv ? "border-red-500" : "border-slate-200"
+                                }`}
+                              />
+                              {errorPorcentajeIgv ? (
+                                <p className="mt-1 text-[10px] text-red-500">{errorPorcentajeIgv.message}</p>
+                              ) : null}
+                            </div>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-right font-medium text-slate-700">
                           {formatearMonto(soloLectura ? producto.total : obtenerTotalProducto(producto))}
                         </td>
                         {!soloLectura ? (
-                          <td className="px-4 py-3 text-right text-slate-400">
-                            <MoreHorizontal size={16} />
+                          <td className="px-4 py-3 text-center">
+                            <CustomButton
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="mx-auto h-7 w-7 text-red-500"
+                              onClick={() => quitarProducto(producto)}
+                              aria-label={`Quitar ${producto.descripcion} de la factura`}
+                              title="Quitar de la lista"
+                            >
+                              <Trash2 size={14} />
+                            </CustomButton>
                           </td>
                         ) : null}
                       </tr>
@@ -270,6 +400,7 @@ export function CustomModalFactura({
               </div>
             </section>
 
+            {valoresMaestros.idFormaPago !== ID_FORMA_PAGO_CONTADO ? (
             <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
@@ -288,7 +419,7 @@ export function CustomModalFactura({
                   </CustomButton>
                 ) : null}
               </div>
-              <div className="overflow-hidden rounded-lg border border-slate-200">
+              <div className="overflow-x-auto rounded-lg border border-slate-200">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs font-bold text-slate-500">
                     <tr>
@@ -296,7 +427,7 @@ export function CustomModalFactura({
                       <th className="px-4 py-3 text-right">Monto</th>
                       <th className="px-4 py-3 text-center">Venc.</th>
                       <th className="px-4 py-3 text-center">Estado</th>
-                      {!soloLectura ? <th className="w-10 px-4 py-3" /> : null}
+                      {!soloLectura ? <th className="px-4 py-3 text-center">Acciones</th> : null}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -307,17 +438,31 @@ export function CustomModalFactura({
                         <td className="px-4 py-3 text-center text-slate-600">{cuota.vencimiento}</td>
                         <td className="px-4 py-3 text-center"><EstadoCuotaBadge estado={cuota.estado} /></td>
                         {!soloLectura ? (
-                          <td className="px-4 py-3 text-right text-slate-400">
-                            <CustomButton
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="ml-auto h-7 w-7"
-                              onClick={() => setConfiguracionModalCuota({ cuota })}
-                              aria-label={`Editar cuota ${cuota.numeroCuota}`}
-                            >
-                              <Pencil size={14} />
-                            </CustomButton>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-1">
+                              <CustomButton
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => setConfiguracionModalCuota({ cuota })}
+                                aria-label={`Editar cuota ${cuota.numeroCuota}`}
+                                title="Editar cuota"
+                              >
+                                <Pencil size={14} />
+                              </CustomButton>
+                              <CustomButton
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-red-500"
+                                onClick={() => quitarCuota(cuota.idCuotaFactura)}
+                                aria-label={`Quitar cuota ${cuota.numeroCuota}`}
+                                title="Quitar de la lista"
+                              >
+                                <Trash2 size={14} />
+                              </CustomButton>
+                            </div>
                           </td>
                         ) : null}
                       </tr>
@@ -326,6 +471,7 @@ export function CustomModalFactura({
                 </table>
               </div>
             </section>
+            ) : null}
           </div>
 
           <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-white px-8 py-4">
@@ -345,6 +491,8 @@ export function CustomModalFactura({
                   variant="secondary"
                   size="compact"
                   disabled={idProductoDescuentoEdicion !== null}
+                  loading={guardarBorradorMutation.isPending}
+                  loadingText="Guardando..."
                 >
                   Guardar
                 </CustomButton>
@@ -352,8 +500,8 @@ export function CustomModalFactura({
                   type="button"
                   variant="primary"
                   size="compact"
-                  onClick={confirmarDescuentos(() => setConfirmacionSunatAbierta(true))}
-                  disabled={idProductoDescuentoEdicion !== null}
+                  onClick={confirmarFormulario(() => setConfirmacionSunatAbierta(true))}
+                  disabled={idProductoDescuentoEdicion !== null || guardarBorradorMutation.isPending}
                 >
                   Confirmar con SUNAT
                 </CustomButton>
@@ -366,7 +514,10 @@ export function CustomModalFactura({
 
       <CustomModalProductosFactura
         abierto={modalProductosAbierto}
-        productos={productosFacturables}
+        idCliente={detalle.idCliente}
+        idsProductosAgregados={detalle.productos.map(
+          (producto) => producto.idPedido,
+        )}
         onCerrar={() => setModalProductosAbierto(false)}
         onConfirmar={agregarProductos}
       />
@@ -380,9 +531,9 @@ export function CustomModalFactura({
       <CustomModalConfirmacionAccion
         isOpen={confirmacionSunatAbierta}
         onClose={() => setConfirmacionSunatAbierta(false)}
-        onConfirm={() => {
+        onConfirm={async () => {
           setConfirmacionSunatAbierta(false);
-          onCerrar();
+          await guardarBorrador();
         }}
         title="Confirmar emisión"
         descripcion="Está a punto de emitir la factura a SUNAT. ¿Desea continuar el proceso?"
@@ -402,18 +553,22 @@ function CampoFactura({
   etiqueta,
   valor,
   soloLectura,
+  opcional = false,
   onChange,
 }: {
   etiqueta: string;
   valor: string;
   soloLectura: boolean;
+  opcional?: boolean;
   onChange: (valor: string) => void;
 }) {
   const idCampo = `factura-${etiqueta.toLowerCase().replaceAll("/", "-")}`;
 
   return (
     <div className="space-y-1.5">
-      <CustomLabel htmlFor={idCampo} required>{etiqueta}</CustomLabel>
+      <CustomLabel htmlFor={idCampo} required={!opcional} optional={opcional}>
+        {etiqueta}
+      </CustomLabel>
       <input
         id={idCampo}
         value={valor}

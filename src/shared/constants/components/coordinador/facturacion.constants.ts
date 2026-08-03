@@ -58,6 +58,8 @@ export const OPCIONES_MODIFICAR_ESTADO_FACTURA: Array<{
 
 export const CODIGOS_ESTADO_FACTURA_SOLO_LECTURA = [5, 6];
 
+export const ID_FORMA_PAGO_CONTADO = 1;
+
 export const ESTILOS_TIPO_PRODUCTO_FACTURABLE: Record<
   EntradaProductoFacturable["tipo"],
   { texto: string; clase: string }
@@ -66,8 +68,6 @@ export const ESTILOS_TIPO_PRODUCTO_FACTURABLE: Record<
   normal: { texto: "NORMAL", clase: "bg-blue-100 text-blue-700" },
   "super-flash": { texto: "SUPER FLASH", clase: "bg-red-100 text-red-700" },
 };
-
-export const IDS_PRODUCTOS_FACTURA_SELECCIONADOS_INICIALES = [1, 2];
 
 export const OPCIONES_ESTADO_CUOTA: EntradaTablaMaestra[] = [
   {
