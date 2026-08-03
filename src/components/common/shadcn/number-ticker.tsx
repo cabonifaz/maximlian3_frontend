@@ -9,6 +9,8 @@ interface NumberTickerProps extends ComponentPropsWithoutRef<"span"> {
   direction?: "up" | "down"
   delay?: number
   decimalPlaces?: number
+  amortiguacion?: number
+  rigidez?: number
 }
 
 export function NumberTicker({
@@ -18,13 +20,15 @@ export function NumberTicker({
   delay = 0,
   className,
   decimalPlaces = 0,
+  amortiguacion = 50,
+  rigidez = 180,
   ...props
 }: NumberTickerProps) {
   const ref = useRef<HTMLSpanElement>(null)
   const motionValue = useMotionValue(direction === "down" ? value : startValue)
   const springValue = useSpring(motionValue, {
-    damping: 50,
-    stiffness: 180,
+    damping: amortiguacion,
+    stiffness: rigidez,
   })
   const isInView = useInView(ref, { once: true, margin: "0px" })
 

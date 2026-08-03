@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { servicioDashboard } from "@maximilian/services/dashboard.service";
+import { facturacionService } from "@maximilian/services/facturacion.service";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import {
   CLAVE_CONSULTA_RESUMEN_CLIENTES_DASHBOARD,
+  CLAVE_CONSULTA_RESUMEN_FACTURACION_DASHBOARD,
   CLAVE_CONSULTA_RESUMEN_PEDIDOS_DASHBOARD,
   CLAVE_CONSULTA_RESUMEN_USUARIOS_DASHBOARD,
 } from "@maximilian/shared/constants/pages/Gerente/dashboard-gerente.constants";
@@ -37,6 +39,20 @@ export function useResumenPedidosDashboard() {
   };
 }
 
+export function useResumenFacturacionDashboard() {
+  const consultaResumenFacturacion = useQuery({
+    queryKey: CLAVE_CONSULTA_RESUMEN_FACTURACION_DASHBOARD,
+    queryFn: ({ signal }) => facturacionService.obtenerResumen({}, signal),
+    retry: false,
+  });
+
+  return {
+    resumenFacturacion: consultaResumenFacturacion.data,
+    estaCargandoResumenFacturacion:
+      consultaResumenFacturacion.isLoading,
+  };
+}
+
 export function useCumplimientoEntregasDashboard() {
   const [busqueda, setBusqueda] = useState("");
   const [fechaInicio, setFechaInicio] = useState<Date>();
@@ -61,6 +77,7 @@ export function useCumplimientoEntregasDashboard() {
     queryFn: ({ signal }) =>
       servicioDashboard.obtenerResumenUsuarios(parametros, signal),
     enabled: !fechasInvalidas,
+    placeholderData: keepPreviousData,
     retry: false,
   });
 

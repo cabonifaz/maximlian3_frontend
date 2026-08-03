@@ -185,13 +185,13 @@ export function CustomModalExtraccionInformacionAnalista({
                     <CustomLabel>Documentos</CustomLabel>
                   </div>
 
-                  <div className="max-h-72 overflow-y-auto rounded-xl border border-gray-100">
+                  <div className="max-h-72 max-w-full overflow-auto rounded-xl border border-gray-100">
                     {archivosSeleccionados.length === 0 ? (
                       <div className="flex min-h-20 items-center justify-center text-sm text-gray-400">
                         No hay archivos adjuntos
                       </div>
                     ) : (
-                      <table className="w-full text-sm">
+                      <table className="w-full min-w-[560px] text-sm">
                         <thead className="sticky top-0 z-10 bg-white">
                           <tr className="border-b border-gray-100">
                             <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">

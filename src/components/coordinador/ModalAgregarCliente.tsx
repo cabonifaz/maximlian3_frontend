@@ -623,8 +623,8 @@ export function ModalAgregarCliente({
                   </div>
                 </div>
 
-                <div className="border border-gray-100 rounded-2xl overflow-hidden min-h-60">
-                  <table className="w-full text-left border-collapse text-xs">
+                <div className="min-h-60 max-w-full overflow-x-auto rounded-2xl border border-gray-100">
+                  <table className="w-full min-w-[800px] border-collapse text-left text-xs">
                     <thead className="bg-gray-50 text-gray-400 uppercase">
                       <tr>
                         <th className="px-3 py-3 w-8" />
@@ -753,8 +753,8 @@ export function ModalAgregarCliente({
                   </div>
                 </div>
 
-                <div className="border border-gray-100 rounded-2xl overflow-hidden min-h-60">
-                  <table className="w-full text-left border-collapse text-xs">
+                <div className="min-h-60 max-w-full overflow-x-auto rounded-2xl border border-gray-100">
+                  <table className="w-full min-w-[800px] border-collapse text-left text-xs">
                     <thead className="bg-gray-50 text-gray-400 uppercase">
                       <tr>
                         <th className="px-3 py-3 w-8" />

@@ -1,10 +1,5 @@
 import { z } from "zod";
 
-const registroMontoFactura = z.record(
-  z.string(),
-  z.number({ error: "El valor es requerido" }).min(0, "El valor debe ser mayor o igual a 0"),
-);
-
 export const esquemaFormularioFactura = z.object({
   idTipoDocumentoMaestro: z.number().positive("El tipo de comprobante es requerido"),
   idMonedaMaestro: z.number().positive("La moneda es requerida"),
@@ -16,7 +11,7 @@ export const esquemaFormularioFactura = z.object({
       .min(0, "El descuento debe ser mayor o igual a 0")
       .max(100, "El descuento debe ser menor o igual a 100"),
   ),
-  preciosUnitarios: registroMontoFactura,
+
   porcentajesIgv: z.record(
     z.string(),
     z.number({ error: "El IGV es requerido" })

@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Edit,
   Eye,
+  Loader2,
   MoreHorizontal,
   Plus,
   ReceiptText,
@@ -32,6 +33,7 @@ interface CustomModalFacturasClienteProps {
   onAgregarFactura: () => void;
   onVerFactura: (factura: EntradaFacturaCliente) => void;
   onEditarFactura: (factura: EntradaFacturaCliente) => void;
+  cargandoAccion?: boolean;
 }
 
 function CustomEstadoFacturaBadge({ estado }: { estado: EstadoFacturaCliente }) {
@@ -52,6 +54,7 @@ export function CustomModalFacturasCliente({
   onAgregarFactura,
   onVerFactura,
   onEditarFactura,
+  cargandoAccion = false,
 }: CustomModalFacturasClienteProps) {
   const [idMenuActivo, setIdMenuActivo] = useState<number | null>(null);
   const [idSubmenuEstadoActivo, setIdSubmenuEstadoActivo] = useState<number | null>(null);
@@ -68,6 +71,7 @@ export function CustomModalFacturasCliente({
     cambiarBusqueda,
     cambiarPagina,
     actualizarEstadoFactura,
+    estaActualizandoEstado,
     reintentar,
   } = useListadoFacturasCliente(idCliente);
   const facturaMenuActivo = facturasPagina.find(
@@ -164,7 +168,13 @@ export function CustomModalFacturasCliente({
   return (
     <>
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[90dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/60 bg-white shadow-2xl shadow-slate-950/20">
+      <div className="relative flex max-h-[90dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/60 bg-white shadow-2xl shadow-slate-950/20">
+        {cargandoAccion ? (
+          <div className="absolute inset-0 z-[110] flex flex-col items-center justify-center gap-3 bg-white/85 backdrop-blur-sm">
+            <Loader2 className="h-9 w-9 animate-spin text-brand-wine" />
+            <p className="text-sm font-medium text-slate-600">Cargando factura...</p>
+          </div>
+        ) : null}
         <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-white to-brand-wine/5 px-8 py-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-wine/10 text-brand-wine">
@@ -218,7 +228,13 @@ export function CustomModalFacturasCliente({
         </div>
 
         <div className="flex justify-end border-t border-slate-100 bg-slate-50/60 px-8 py-4">
-          <CustomButton variant="primary" size="compact" onClick={onAgregarFactura}>
+          <CustomButton
+            variant="primary"
+            size="compact"
+            onClick={onAgregarFactura}
+            loading={cargandoAccion}
+            loadingText="Cargando..."
+          >
             <Plus size={14} />
             Emitir Factura
           </CustomButton>
@@ -250,17 +266,19 @@ export function CustomModalFacturasCliente({
           </button>
           {!facturaMenuSoloLectura ? (
             <>
-              <button
-                type="button"
-                onClick={() => {
-                  cerrarMenu();
-                  onEditarFactura(facturaMenuActivo);
-                }}
-                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-              >
-                <Edit size={14} />
-                Editar factura
-              </button>
+              {facturaMenuActivo.estado === "borrador-factura" ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    cerrarMenu();
+                    onEditarFactura(facturaMenuActivo);
+                  }}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  <Edit size={14} />
+                  Editar factura
+                </button>
+              ) : null}
               <div
                 className="relative"
                 onMouseEnter={(event) => abrirSubmenuEstado(
@@ -297,12 +315,12 @@ export function CustomModalFacturasCliente({
                     onClick={() => {
                       actualizarEstadoFactura(
                         facturaMenuActivo,
-                        opcion.valor,
                         opcion.codigoEstado,
                       );
                       cerrarMenu();
                     }}
-                    className={`flex w-full items-center px-4 py-2 text-left text-sm hover:bg-slate-50 ${
+                    disabled={estaActualizandoEstado}
+                    className={`flex w-full items-center px-4 py-2 text-left text-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 ${
                       facturaMenuActivo.estado === opcion.valor
                         ? "font-bold text-brand-wine"
                         : "text-slate-700"

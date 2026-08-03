@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -13,22 +13,17 @@ import type {
   EntradaProductoFacturable,
   EntradaProductoFactura,
 } from "@maximilian/shared/types/facturacion.type";
-import { construirPayloadGuardarBorradorFactura } from "@maximilian/shared/utils/facturacion.util";
+import {
+  calcularPrecioUnitarioFactura,
+  construirPayloadGuardarBorradorFactura,
+  construirPayloadGuardarCambiosFactura,
+} from "@maximilian/shared/utils/facturacion.util";
 
 function obtenerDescuentosIniciales(factura: DetalleFactura | null) {
   return Object.fromEntries(
     (factura?.productos ?? []).map((producto) => [
       String(producto.idProductoFactura),
       producto.descuentoPorcentaje,
-    ]),
-  );
-}
-
-function obtenerPreciosIniciales(factura: DetalleFactura | null) {
-  return Object.fromEntries(
-    (factura?.productos ?? []).map((producto) => [
-      String(producto.idProductoFactura),
-      producto.precioUnitario,
     ]),
   );
 }
@@ -60,6 +55,10 @@ function crearProductoFactura(
   return {
     idProductoFactura: Date.now() + producto.idProductoFacturable,
     idPedido: producto.idProductoFacturable,
+    numeroLinea: 0,
+    idLineaDocumentoElectronico: 0,
+    productoSunatCodigo: null,
+    unidadMedidaCodigo: "",
     cantidad: 1,
     descripcion: `${producto.codigo} - ${producto.tipo === "express" ? "Express" : producto.tipo === "normal" ? "Normal" : "Super Flash"}`,
     descuentoPorcentaje,
@@ -67,6 +66,7 @@ function crearProductoFactura(
     precioUnitario: producto.precio,
     porcentajeIgv: 0,
     idAfectacionIgvMaestro: 0,
+    afectacionIgvDescripcion: "",
     total: valorUnitario * (1 - descuentoPorcentaje / 100),
   };
 }
@@ -75,6 +75,7 @@ export function useFormularioFactura(
   factura: DetalleFactura | null,
   onGuardado?: () => void,
 ) {
+  const queryClient = useQueryClient();
   const [detalle, setDetalle] = useState<DetalleFactura | null>(factura);
   const [idProductoDescuentoEdicion, setIdProductoDescuentoEdicion] = useState<
     number | null
@@ -83,12 +84,12 @@ export function useFormularioFactura(
     resolver: zodResolver(esquemaFormularioFactura),
     mode: "onTouched",
     defaultValues: {
-      idTipoDocumentoMaestro: 0,
-      idMonedaMaestro: 0,
-      idTipoOperacionMaestro: 0,
-      idFormaPago: 0,
+      idTipoDocumentoMaestro: factura?.idTipoDocumentoMaestro ?? 0,
+      idMonedaMaestro: factura?.idMonedaMaestro ?? 0,
+      idTipoOperacionMaestro: factura?.idTipoOperacionMaestro ?? 0,
+      idFormaPago: factura?.idFormaPago ?? 0,
       descuentos: obtenerDescuentosIniciales(factura),
-      preciosUnitarios: obtenerPreciosIniciales(factura),
+
       porcentajesIgv: obtenerPorcentajesIgvIniciales(factura),
       afectacionesIgv: obtenerAfectacionesIgvIniciales(factura),
     },
@@ -101,6 +102,10 @@ export function useFormularioFactura(
   const afectacionesIgv = useWatch({
     control: formulario.control,
     name: "afectacionesIgv",
+  });
+  const porcentajesIgv = useWatch({
+    control: formulario.control,
+    name: "porcentajesIgv",
   });
   const idTipoDocumentoMaestro = useWatch({
     control: formulario.control,
@@ -118,37 +123,94 @@ export function useFormularioFactura(
     control: formulario.control,
     name: "idFormaPago",
   });
-  const guardarBorradorMutation = useMutation({
+  const guardarFacturaMutation = useMutation({
     mutationFn: (datos: DatosFormularioFactura) => {
       if (!detalle) return Promise.resolve();
+      if (detalle.idDocumentoElectronico !== null) {
+        return facturacionService.guardarCambios(
+          detalle.idDocumentoElectronico,
+          construirPayloadGuardarCambiosFactura(detalle, datos),
+        );
+      }
+
       return facturacionService.guardarBorrador(
         construirPayloadGuardarBorradorFactura(detalle, datos),
       );
     },
-    onSuccess: onGuardado,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["facturacion"] });
+      onGuardado?.();
+    },
+  });
+
+  const emitirFacturaMutation = useMutation({
+    mutationFn: async (datos: DatosFormularioFactura) => {
+      if (!detalle) return;
+
+      let idDocumentoElectronico = detalle.idDocumentoElectronico;
+      if (idDocumentoElectronico === null) {
+        idDocumentoElectronico =
+          await facturacionService.guardarBorrador(
+            construirPayloadGuardarBorradorFactura(detalle, datos),
+          );
+      } else {
+        await facturacionService.guardarCambios(
+          idDocumentoElectronico,
+          construirPayloadGuardarCambiosFactura(detalle, datos),
+        );
+      }
+
+      await facturacionService.emitir(idDocumentoElectronico);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["facturacion"] });
+      onGuardado?.();
+    },
   });
 
   const obtenerDescuento = (producto: EntradaProductoFactura) =>
     descuentos?.[String(producto.idProductoFactura)] ??
     producto.descuentoPorcentaje;
 
-  const obtenerTotalProducto = (producto: EntradaProductoFactura) => {
-    const subtotal = producto.cantidad * producto.valorUnitario;
-    return subtotal * (1 - obtenerDescuento(producto) / 100);
+  const obtenerPrecioUnitario = (producto: EntradaProductoFactura) => {
+    const claveProducto = String(producto.idProductoFactura);
+
+    return calcularPrecioUnitarioFactura(
+      producto.valorUnitario,
+      afectacionesIgv?.[claveProducto] ?? producto.idAfectacionIgvMaestro,
+      porcentajesIgv?.[claveProducto] ?? producto.porcentajeIgv,
+    );
   };
+
+  const obtenerTotalProducto = (producto: EntradaProductoFactura) =>
+    producto.cantidad
+    * obtenerPrecioUnitario(producto)
+    * (1 - obtenerDescuento(producto) / 100);
 
   const totalFactura = useMemo(
     () =>
       detalle?.productos.reduce((total, producto) => {
+        const claveProducto = String(producto.idProductoFactura);
         const descuento =
-          descuentos?.[String(producto.idProductoFactura)] ??
-          producto.descuentoPorcentaje;
-        return (
-          total +
-          producto.cantidad * producto.valorUnitario * (1 - descuento / 100)
+          descuentos?.[claveProducto] ?? producto.descuentoPorcentaje;
+        const precioUnitario = calcularPrecioUnitarioFactura(
+          producto.valorUnitario,
+          afectacionesIgv?.[claveProducto] ??
+            producto.idAfectacionIgvMaestro,
+          porcentajesIgv?.[claveProducto] ?? producto.porcentajeIgv,
         );
+
+        return total
+          + producto.cantidad
+          * precioUnitario
+          * (1 - descuento / 100);
       }, 0) ?? 0,
-    [descuentos, detalle?.productos],
+    [
+      afectacionesIgv,
+      descuentos,
+      detalle?.productos,
+      porcentajesIgv,
+    ],
   );
 
   const agregarProductos = (productos: EntradaProductoFacturable[]) => {
@@ -159,12 +221,7 @@ export function useFormularioFactura(
         producto.descuentoPorcentaje,
       ]),
     );
-    const preciosNuevos = Object.fromEntries(
-      productosNuevos.map((producto) => [
-        String(producto.idProductoFactura),
-        producto.precioUnitario,
-      ]),
-    );
+
     const porcentajesIgvNuevos = Object.fromEntries(
       productosNuevos.map((producto) => [
         String(producto.idProductoFactura),
@@ -182,10 +239,7 @@ export function useFormularioFactura(
       ...getValues("descuentos"),
       ...descuentosNuevos,
     });
-    setValue("preciosUnitarios", {
-      ...getValues("preciosUnitarios"),
-      ...preciosNuevos,
-    });
+
     setValue("porcentajesIgv", {
       ...getValues("porcentajesIgv"),
       ...porcentajesIgvNuevos,
@@ -206,7 +260,7 @@ export function useFormularioFactura(
 
   const quitarProducto = (producto: EntradaProductoFactura) => {
     unregister(`descuentos.${producto.idProductoFactura}`);
-    unregister(`preciosUnitarios.${producto.idProductoFactura}`);
+
     unregister(`porcentajesIgv.${producto.idProductoFactura}`);
     unregister(`afectacionesIgv.${producto.idProductoFactura}`);
     setIdProductoDescuentoEdicion((idActual) =>
@@ -234,7 +288,12 @@ export function useFormularioFactura(
           0,
           ...actual.cuotas.map((cuotaActual) => cuotaActual.idCuotaFactura),
         ) + 1;
-      const cuotaGuardada = { ...cuota, idCuotaFactura };
+      const cuotaGuardada = {
+        ...cuota,
+        idCuotaFactura,
+        idCuotaDocumentoElectronico:
+          cuota.idCuotaDocumentoElectronico || 0,
+      };
       const existeCuota = actual.cuotas.some(
         (cuotaActual) => cuotaActual.idCuotaFactura === idCuotaFactura,
       );
@@ -341,20 +400,25 @@ export function useFormularioFactura(
     confirmarFormulario: formulario.handleSubmit,
     detalle,
     erroresFormulario: formulario.formState.errors,
-    guardarBorrador: formulario.handleSubmit((datos) =>
-      guardarBorradorMutation.mutateAsync(datos),
+    emitirFactura: formulario.handleSubmit((datos) =>
+      emitirFacturaMutation.mutateAsync(datos),
     ),
-    guardarBorradorMutation,
+    emitirFacturaMutation,
+    guardarFactura: formulario.handleSubmit((datos) =>
+      guardarFacturaMutation.mutateAsync(datos),
+    ),
+    guardarFacturaMutation,
     guardarEdicionDescuento,
     guardarCuota,
     idProductoDescuentoEdicion,
     iniciarEdicionDescuento,
+    obtenerPrecioUnitario,
     obtenerTotalProducto,
     quitarCuota,
     quitarProducto,
     registrarDescuento: formulario.register,
     registrarPorcentajeIgv: formulario.register,
-    registrarPrecioUnitario: formulario.register,
+
     seleccionarAfectacionIgv,
     seleccionarFormaPago: (valor: number) =>
       setValue("idFormaPago", valor, {

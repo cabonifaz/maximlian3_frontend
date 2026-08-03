@@ -154,8 +154,8 @@ export function CustomModalListaPersonasAnalista({
               </p>
             </div>
 
-            <div className="overflow-hidden rounded-3xl border border-slate-100">
-              <table className="w-full text-left">
+            <div className="max-w-full overflow-x-auto rounded-3xl border border-slate-100">
+              <table className="w-full min-w-[700px] text-left">
                 <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.16em] text-[#9aa9c2]">
                   <tr>
                     <th className="px-5 py-4">Nombre / Razón social</th>

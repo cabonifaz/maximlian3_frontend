@@ -3,10 +3,13 @@ export type EstadoFacturacionPrincipal =
   | "pendiente"
   | "en-pre-factura";
 
+export type IdEstadoFacturacionActualizable = 2 | 3 | 4;
+
 export type EstadoFacturaCliente =
   | EstadoFacturacionPrincipal
   | "pre-factura-aprobada"
   | "pre-factura-rechazada"
+  | "borrador-factura"
   | "anulado";
 
 export interface ParametrosListaFacturacion {
@@ -74,6 +77,7 @@ export interface EntradaPedidoFacturacionApi {
     | "En pre-factura"
     | "Pre-factura aprobada"
     | "Pre-factura rechazada"
+    | "Borrador Factura"
     | "Finalizado"
     | "Anulado";
 }
@@ -93,6 +97,10 @@ export interface RespuestaListaFacturasCliente {
 export interface EntradaProductoFactura {
   idProductoFactura: number;
   idPedido: number;
+  numeroLinea: number;
+  idLineaDocumentoElectronico: number;
+  productoSunatCodigo: string | null;
+  unidadMedidaCodigo: string;
   cantidad: number;
   descripcion: string;
   descuentoPorcentaje: number;
@@ -100,11 +108,13 @@ export interface EntradaProductoFactura {
   precioUnitario: number;
   porcentajeIgv: number;
   idAfectacionIgvMaestro: number;
+  afectacionIgvDescripcion: string;
   total: number;
 }
 
 export interface EntradaCuotaFactura {
   idCuotaFactura: number;
+  idCuotaDocumentoElectronico: number;
   numeroCuota: number;
   idMoneda: number;
   monto: number;
@@ -114,7 +124,16 @@ export interface EntradaCuotaFactura {
 
 export interface DetalleFactura {
   idFactura: number | null;
+  idDocumentoElectronico: number | null;
   idCliente: number;
+  idTipoDocumentoMaestro: number;
+  idMonedaMaestro: number;
+  idTipoOperacionMaestro: number;
+  idFormaPago: number;
+  tipoDocumentoDescripcion: string;
+  monedaDescripcion: string;
+  tipoOperacionDescripcion: string;
+  formaPagoDescripcion: string;
   cliente: string;
   ni: string;
   ordenCompra: string;
@@ -152,7 +171,7 @@ export interface EntradaProductoFacturableApi {
   fecha: string;
   penalidad: number;
   precio: number;
-  descuentoPorcentaje: string;
+  descuentoPorcentaje: number;
 }
 
 export interface ResultadoListaProductosFacturablesApi {
@@ -185,15 +204,122 @@ export interface LineaGuardarBorradorFactura {
   productoSunatCodigo: string | null;
   unidadMedidaCodigo: string;
   cantidad: number;
-  valorUnitario: number;
-  precioUnitario: number;
   montoDescuento: number;
   idAfectacionIgvMaestro: number;
   porcentajeIgv: number;
 }
 
+export interface CabeceraFacturaApi {
+  idDocumentoElectronico: number;
+  idEmpresa: number;
+  idExterno: string;
+  numeroReferencia: string | null;
+  tipoDocumentoCodigo: string;
+  serie: string;
+  correlativo: number;
+  estadoCodigo: string;
+  fechaEmision: string;
+  horaEmision: string;
+  monedaCodigo: string;
+  tipoOperacionCodigo: string;
+  formaPagoCodigo: string;
+  empresaRuc: string;
+  empresaRazonSocial: string;
+  empresaNombreComercial: string;
+  empresaDireccion: string;
+  empresaUbigeo: string;
+  clienteTipoDocumentoCodigo: string;
+  clienteNumeroDocumento: string;
+  clienteNombre: string;
+  clienteDireccion: string;
+  clienteCorreo: string;
+  clientePaisCodigo: string;
+  totalGravado: number;
+  totalInafecto: number;
+  totalExonerado: number;
+  totalGratuito: number;
+  totalIgv: number;
+  totalIsc: number;
+  totalOtrosTributos: number;
+  totalDescuento: number;
+  totalCargo: number;
+  totalImporte: number;
+}
+
+export interface LineaFacturaApi {
+  idLineaDocumentoElectronico: number;
+  numeroLinea: number;
+  productoCodigo: string;
+  productoSunatCodigo: string | null;
+  descripcion: string;
+  unidadMedidaCodigo: string;
+  cantidad: number;
+  valorUnitario: number;
+  precioUnitario: number;
+  montoDescuento: number;
+  afectacionIgvCodigo: string;
+  porcentajeIgv: number;
+  montoIgv: number;
+  montoIsc: number;
+  montoOtrosTributos: number;
+  valorLinea: number;
+  totalLinea: number;
+}
+
+export interface CuotaFacturaApi {
+  idCuotaDocumentoElectronico: number;
+  numeroCuota: number;
+  fechaVencimiento: string;
+  monto: number;
+}
+
+export interface ResultadoObtenerFacturaApi {
+  cabecera: CabeceraFacturaApi;
+  lineas: LineaFacturaApi[];
+  referencia: unknown | null;
+  cuotas: CuotaFacturaApi[];
+}
+
+export interface LineaGuardarCambiosFactura
+  extends LineaGuardarBorradorFactura {
+  numeroLinea: number;
+  idLineaDocumentoElectronico: number;
+}
+
+export interface CuotaGuardarCambiosFactura
+  extends CuotaGuardarBorradorFactura {
+  idCuotaDocumentoElectronico: number;
+}
+
+export interface GuardarCambiosFacturaRequest {
+  idFormaPago: number;
+  numeroReferencia: string;
+  idMonedaMaestro: number;
+  idTipoOperacionMaestro: number;
+  lineas: LineaGuardarCambiosFactura[];
+  cuotas: CuotaGuardarCambiosFactura[];
+}
+
+export interface ResultadoGuardarBorradorFactura {
+  idDocumentoElectronico: number;
+}
+
+export interface ParametrosResumenFacturacion {
+  fechaDesde?: string;
+  fechaHasta?: string;
+}
+
+export interface ResumenFacturacion {
+  fechaDesde: string;
+  fechaHasta: string;
+  montoTotalMensual: number;
+  cantidadFacturasEmitidas: number;
+  promedioIngresoMensual: number | null;
+}
+
 export interface GuardarBorradorFacturaRequest {
   idTipoDocumentoMaestro: number;
+  numeroReferencia: string;
   idMonedaMaestro: number;
   idTipoOperacionMaestro: number;
   idFormaPago: number;
