@@ -14,17 +14,23 @@ function convertirFechaAIso(fecha: string) {
   return `${ano}-${mes}-${dia}`;
 }
 
+// Refleja el mismo cálculo que el backend (SP_DocumentoElectronico_Insertar/GuardarCambios):
+// PrecioUnitario = (ValorLinea + MontoIgv) / Cantidad = valorUnitario * (1 - descuento%) * (1 + IGV%).
+// Antes no incluía el descuento, mostrando un precio unitario distinto al que realmente se factura a SUNAT.
 export function calcularPrecioUnitarioFactura(
   valorUnitario: number,
   idAfectacionIgvMaestro: number,
   porcentajeIgv: number,
+  descuentoPorcentaje: number,
 ) {
   const esGravado = idAfectacionIgvMaestro >= 10
     && idAfectacionIgvMaestro <= 17;
 
+  const valorUnitarioConDescuento = valorUnitario * (1 - descuentoPorcentaje / 100);
+
   return esGravado
-    ? valorUnitario * (1 + porcentajeIgv / 100)
-    : valorUnitario;
+    ? valorUnitarioConDescuento * (1 + porcentajeIgv / 100)
+    : valorUnitarioConDescuento;
 }
 
 export function construirPayloadGuardarBorradorFactura(

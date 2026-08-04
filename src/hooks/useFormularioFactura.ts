@@ -212,13 +212,13 @@ export function useFormularioFactura(
       producto.valorUnitario,
       afectacionesIgv?.[claveProducto] ?? producto.idAfectacionIgvMaestro,
       porcentajesIgv?.[claveProducto] ?? producto.porcentajeIgv,
+      obtenerDescuento(producto),
     );
   };
 
+  // precioUnitario ya incluye el descuento (ver calcularPrecioUnitarioFactura) — no volver a aplicarlo acá.
   const obtenerTotalProducto = (producto: EntradaProductoFactura) =>
-    producto.cantidad
-    * obtenerPrecioUnitario(producto)
-    * (1 - obtenerDescuento(producto) / 100);
+    producto.cantidad * obtenerPrecioUnitario(producto);
 
   const totalFactura = useMemo(
     () =>
@@ -231,12 +231,10 @@ export function useFormularioFactura(
           afectacionesIgv?.[claveProducto] ??
             producto.idAfectacionIgvMaestro,
           porcentajesIgv?.[claveProducto] ?? producto.porcentajeIgv,
+          descuento,
         );
 
-        return total
-          + producto.cantidad
-          * precioUnitario
-          * (1 - descuento / 100);
+        return total + producto.cantidad * precioUnitario;
       }, 0) ?? 0,
     [
       afectacionesIgv,
