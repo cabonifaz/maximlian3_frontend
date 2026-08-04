@@ -8,12 +8,14 @@ interface ParametrosSelectorInvestigadoPedido {
   abierto: boolean;
   investigado: string;
   alCambiarInvestigado: (investigado: string) => void;
+  alCambiarCompania: (idCompania: number) => void;
 }
 
 export function useSelectorInvestigadoPedido({
   abierto,
   investigado,
   alCambiarInvestigado,
+  alCambiarCompania,
 }: ParametrosSelectorInvestigadoPedido) {
   const [busquedaHabilitada, setBusquedaHabilitada] = useState(false);
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
@@ -52,11 +54,13 @@ export function useSelectorInvestigadoPedido({
 
     setIdCompaniaSeleccionada(idCompania);
     alCambiarInvestigado(compania.string1);
+    alCambiarCompania(idCompania);
   };
 
   const agregarInvestigado = (nombre: string) => {
     setIdCompaniaSeleccionada(0);
     alCambiarInvestigado(nombre);
+    alCambiarCompania(0);
   };
 
   return {

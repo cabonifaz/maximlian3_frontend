@@ -28,6 +28,7 @@ export const pedidoSchema = z
     nroDocumentoCliente: z.string().optional(),
     nroDocumento: z.string().optional(),
     investigado: z.string().min(1, "El investigado es requerido"),
+    idCompania: z.number().optional(),
     idPais: z.number({ error: "El país del informe es requerido" }),
     idIdioma: z.number({ error: "El idioma del informe es requerido" }),
     idClaseInforme: z.number({ error: "La clase de informe es requerida" }),
