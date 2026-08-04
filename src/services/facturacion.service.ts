@@ -82,7 +82,7 @@ function mapearPedidoFacturacion(
       estado: "borrador-factura",
       codigoEstado: 0,
     },
-    Finalizado: { estado: "finalizado", codigoEstado: 5 },
+    Aprobado: { estado: "aprobado", codigoEstado: 5 },
     Anulado: { estado: "anulado", codigoEstado: 6 },
   } as const;
   const estado = estados[pedido.estadoFacturacion];
@@ -158,6 +158,7 @@ function obtenerIdPedidoLinea(
 async function obtenerFacturaRegistrada(
   idPedido: number,
   idCliente: number,
+  codigoEstadoFacturacion: number,
 ): Promise<DetalleFactura> {
   const [{ data }, opcionesPorMaestro] = await Promise.all([
     maximilianService.get<ApiResponse<ResultadoObtenerFacturaApi>>(
@@ -198,6 +199,7 @@ async function obtenerFacturaRegistrada(
 
   return {
     idFactura: idPedido,
+    codigoEstadoFacturacion,
     idDocumentoElectronico: cabecera.idDocumentoElectronico,
     idCliente,
     idTipoDocumentoMaestro: opcionTipoDocumento?.num1 ?? 0,
@@ -268,6 +270,7 @@ function crearDetalleFactura(
 ): DetalleFactura {
   return {
     idFactura: factura?.idFactura ?? null,
+    codigoEstadoFacturacion: factura?.codigoEstado ?? null,
     idDocumentoElectronico: null,
     idCliente,
     idTipoDocumentoMaestro: 0,
@@ -344,7 +347,11 @@ export const facturacionService = {
     factura?: EntradaFacturaCliente | null,
   ): Promise<DetalleFactura> => {
     if (factura) {
-      return obtenerFacturaRegistrada(factura.idFactura, idCliente);
+      return obtenerFacturaRegistrada(
+        factura.idFactura,
+        idCliente,
+        factura.codigoEstado,
+      );
     }
 
     const detalleCliente = await servicioCliente.getById(idCliente);

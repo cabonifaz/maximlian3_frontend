@@ -1,0 +1,1 @@
+export const ID_IDIOMA_ESPANOL_TABLA_MAESTRA = 1;

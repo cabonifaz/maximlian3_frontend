@@ -36,7 +36,7 @@ export const CustomBloqueCargaArchivosAnalista = forwardRef<
       onDragOver={manejarDragOver}
       onDragLeave={() => setEstaArrastrando(false)}
       onDrop={manejarDrop}
-      className={`flex min-h-72 w-44 shrink-0 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-4 text-center transition-colors ${
+      className={`flex min-h-40 w-full shrink-0 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-4 text-center transition-colors lg:min-h-72 lg:w-44 ${
         estaArrastrando
           ? "border-brand-wine bg-brand-wine/5"
           : "border-gray-200 hover:border-brand-wine/40 hover:bg-gray-50"

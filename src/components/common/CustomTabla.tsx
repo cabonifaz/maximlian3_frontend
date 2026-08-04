@@ -263,6 +263,7 @@ export function CustomTabla<T>({
         </p>
         <div className="flex max-w-full items-center gap-3 overflow-x-auto pb-1 sm:pb-0">
           <button
+            type="button"
             onClick={() => onPageChange(paginaActual - 1)}
             disabled={navDisabled || paginaActual === 1}
             className="flex items-center gap-1 text-xs text-gray-500 hover:text-brand-black disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-not-allowed"
@@ -282,8 +283,9 @@ export function CustomTabla<T>({
               ) : (
                 <button
                   key={page}
+                  type="button"
                   onClick={() => onPageChange(page)}
-                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer hover:scale-110 ${
+                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     page === paginaActual
                       ? "bg-brand-black text-brand-white shadow shadow-black/10"
                       : "text-gray-400 hover:bg-gray-100 hover:text-brand-black"
@@ -295,6 +297,7 @@ export function CustomTabla<T>({
             )}
           </div>
           <button
+            type="button"
             onClick={() => onPageChange(paginaActual + 1)}
             disabled={navDisabled || paginaActual === totalPages}
             className="flex items-center gap-1 text-xs text-gray-500 hover:text-brand-black disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-not-allowed"

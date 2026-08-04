@@ -1,4 +1,8 @@
-import { clasesEtiquetaCampoInvestigacion, marcadoresPorEtiqueta } from "@maximilian/shared/constants/components/investigacion/controles-informe.constants";
+import {
+  clasesEtiquetaCampoInvestigacion,
+  marcadoresPorEtiqueta,
+} from "@maximilian/shared/constants/components/investigacion/controles-informe.constants";
+import { ID_IDIOMA_ESPANOL_TABLA_MAESTRA } from "@maximilian/shared/constants/tabla-maestra.constants";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Briefcase, Building2, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
@@ -162,13 +166,20 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
 
       const payload: TablaMaestraCrearRequest = construirPayloadAltaNueva?.(termino, opcionesActuales) ?? {
           idMaestro,
+          idIdioma: ID_IDIOMA_ESPANOL_TABLA_MAESTRA,
+          inputText: termino,
+          inputText2: null,
           descripcion: obtenerDescripcionTablaMaestra(idMaestro),
-          string1: termino,
           num1: obtenerSiguienteNumTablaMaestra(opcionesActuales),
           num2: num2AltaNueva,
           num3: null,
+          string1: null,
           string2: null,
           string3: null,
+          string4: null,
+          string5: null,
+          string6: null,
+          string7: null,
           date1: null,
           date2: null,
           date3: null,
@@ -575,12 +586,12 @@ export function PestanasInvestigacionAnalista({
   onChange,
 }: PropsPestanasInvestigacionAnalista) {
   return (
-    <div className="flex flex-wrap gap-6 border-b border-gray-100">
+    <div className="flex gap-4 overflow-x-auto border-b border-gray-100 sm:flex-wrap sm:gap-6 sm:overflow-visible">
       {opciones.map((opcion) => {
         const activa = opcion.id === valorActivo;
 
         return (
-          <div key={opcion.id} className="group relative">
+          <div key={opcion.id} className="group relative shrink-0">
             <button
               type="button"
               disabled={opcion.disabled}
@@ -620,13 +631,13 @@ export function ContenedorSeccionInvestigacionAnalista({
   botonExtra,
 }: PropsContenedorSeccionInvestigacionAnalista) {
   return (
-    <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+    <section className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <span className="rounded-full bg-red-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-red-400">
+        <div className="flex min-w-0 items-start gap-3 sm:items-center">
+          <span className="shrink-0 rounded-full bg-red-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-red-400">
             Sección {numero}/8
           </span>
-          <h2 className="text-2xl font-bold text-brand-black">{titulo}</h2>
+          <h2 className="min-w-0 break-words text-xl font-bold text-brand-black sm:text-2xl">{titulo}</h2>
         </div>
         {botonExtra}
       </div>
@@ -653,17 +664,17 @@ export function MenuSeccionesInvestigacionAnalista({
   };
 
   return (
-    <aside className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+    <aside className="min-w-0 rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
       <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">
         Secciones del Reporte
       </p>
-      <div className="space-y-3">
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 xl:mx-0 xl:block xl:space-y-3 xl:overflow-visible xl:px-0 xl:pb-0">
         {secciones.map((seccion) => {
           const estaActiva = seccion.id === idSeccionActiva;
           const estadoSeccion = estadoSecciones?.[seccion.id];
 
           return (
-            <div key={seccion.id} className="group relative">
+            <div key={seccion.id} className="group relative min-w-52 shrink-0 xl:min-w-0">
               <button
                 type="button"
                 onClick={() => onSeleccionar(seccion.id)}
@@ -709,7 +720,7 @@ export function ResumenPedidoInvestigacionAnalista({
   const estaBloqueadoFormatoFecha = formatoFechaInformeSoloLectura || !onFormatoFechaInformeChange;
 
   return (
-    <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+    <section className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
       <div className="flex flex-col gap-5">
         <div className="space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">
@@ -780,7 +791,7 @@ export function ResumenPedidoInvestigacionAnalista({
             {accionesSecundarias}
           </div>
 
-          <div className="min-w-[220px]">
+          <div className="w-full lg:w-auto lg:min-w-[220px]">
             <CustomSelectorBuscable
               label="Formato de fecha"
               idMaster={TablaMaestraId.FORMATO_FECHA_INFORME}

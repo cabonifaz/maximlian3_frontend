@@ -43,14 +43,14 @@ export function ModalAgregarContacto({ isOpen, onClose, onConfirm, defaultValues
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-brand-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-        <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-4 sm:px-8 sm:py-6">
           <h2 className="text-xl font-bold text-brand-black">{defaultValues ? "Editar Contacto" : "Nuevo Contacto"}</h2>
           <CustomButton variant="ghost" size="icon" onClick={onClose}>
             <X size={20} className="text-gray-400" />
           </CustomButton>
         </div>
 
-        <form onSubmit={handleSubmit(confirmar)} className="p-8 space-y-6">
+        <form onSubmit={handleSubmit(confirmar)} className="space-y-6 p-4 sm:p-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CustomSelectorBuscable
               label="Tipo Persona"
@@ -137,7 +137,7 @@ export function ModalAgregarContacto({ isOpen, onClose, onConfirm, defaultValues
               />
             </div>
 
-            <div className="col-span-2 flex items-center gap-2">
+            <div className="flex items-center gap-2 md:col-span-2">
               <input
                 type="checkbox"
                 id="enviarCorreo"

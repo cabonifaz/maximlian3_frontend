@@ -3,13 +3,14 @@ export type EstadoFacturacionPrincipal =
   | "pendiente"
   | "en-pre-factura";
 
-export type IdEstadoFacturacionActualizable = 2 | 3 | 4;
+export type IdEstadoFacturacionActualizable = 2 | 3 | 4 | 6;
 
 export type EstadoFacturaCliente =
   | EstadoFacturacionPrincipal
   | "pre-factura-aprobada"
   | "pre-factura-rechazada"
   | "borrador-factura"
+  | "aprobado"
   | "anulado";
 
 export interface ParametrosListaFacturacion {
@@ -78,7 +79,7 @@ export interface EntradaPedidoFacturacionApi {
     | "Pre-factura aprobada"
     | "Pre-factura rechazada"
     | "Borrador Factura"
-    | "Finalizado"
+    | "Aprobado"
     | "Anulado";
 }
 
@@ -124,6 +125,7 @@ export interface EntradaCuotaFactura {
 
 export interface DetalleFactura {
   idFactura: number | null;
+  codigoEstadoFacturacion: number | null;
   idDocumentoElectronico: number | null;
   idCliente: number;
   idTipoDocumentoMaestro: number;

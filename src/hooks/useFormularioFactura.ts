@@ -18,6 +18,7 @@ import {
   construirPayloadGuardarBorradorFactura,
   construirPayloadGuardarCambiosFactura,
 } from "@maximilian/shared/utils/facturacion.util";
+import { ID_ESTADO_FACTURA_ANULADA } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
 function obtenerDescuentosIniciales(factura: DetalleFactura | null) {
   return Object.fromEntries(
@@ -78,6 +79,9 @@ export function useFormularioFactura(
   const queryClient = useQueryClient();
   const [detalle, setDetalle] = useState<DetalleFactura | null>(factura);
   const [idProductoDescuentoEdicion, setIdProductoDescuentoEdicion] = useState<
+    number | null
+  >(null);
+  const [idProductoIgvEdicion, setIdProductoIgvEdicion] = useState<
     number | null
   >(null);
   const formulario = useForm<DatosFormularioFactura>({
@@ -161,6 +165,20 @@ export function useFormularioFactura(
       }
 
       await facturacionService.emitir(idDocumentoElectronico);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["facturacion"] });
+      onGuardado?.();
+    },
+  });
+
+  const anularFacturaMutation = useMutation({
+    mutationFn: () => {
+      if (!detalle?.idFactura) return Promise.resolve();
+      return facturacionService.actualizarEstado(
+        detalle.idFactura,
+        ID_ESTADO_FACTURA_ANULADA,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["facturacion"] });
@@ -266,6 +284,9 @@ export function useFormularioFactura(
     setIdProductoDescuentoEdicion((idActual) =>
       idActual === producto.idProductoFactura ? null : idActual,
     );
+    setIdProductoIgvEdicion((idActual) =>
+      idActual === producto.idProductoFactura ? null : idActual,
+    );
     setDetalle((actual) =>
       actual
         ? {
@@ -355,7 +376,10 @@ export function useFormularioFactura(
   };
 
   const iniciarEdicionDescuento = (producto: EntradaProductoFactura) => {
-    if (idProductoDescuentoEdicion !== null) return;
+    if (
+      idProductoDescuentoEdicion !== null
+      || idProductoIgvEdicion !== null
+    ) return;
     setIdProductoDescuentoEdicion(producto.idProductoFactura);
   };
 
@@ -392,11 +416,56 @@ export function useFormularioFactura(
     setIdProductoDescuentoEdicion(null);
   };
 
+  const iniciarEdicionIgv = (producto: EntradaProductoFactura) => {
+    if (
+      idProductoDescuentoEdicion !== null
+      || idProductoIgvEdicion !== null
+    ) return;
+    setIdProductoIgvEdicion(producto.idProductoFactura);
+  };
+
+  const cancelarEdicionIgv = (producto: EntradaProductoFactura) => {
+    const rutaIgv =
+      `porcentajesIgv.${producto.idProductoFactura}` as const;
+    setValue(rutaIgv, producto.porcentajeIgv);
+    clearErrors(rutaIgv);
+    setIdProductoIgvEdicion(null);
+  };
+
+  const guardarEdicionIgv = async (producto: EntradaProductoFactura) => {
+    const rutaIgv =
+      `porcentajesIgv.${producto.idProductoFactura}` as const;
+    const esValido = await trigger(rutaIgv);
+    if (!esValido) return;
+
+    const porcentajeIgv = getValues(rutaIgv);
+    setDetalle((actual) =>
+      actual
+        ? {
+            ...actual,
+            productos: actual.productos.map((productoActual) =>
+              productoActual.idProductoFactura === producto.idProductoFactura
+                ? { ...productoActual, porcentajeIgv }
+                : productoActual,
+            ),
+          }
+        : actual,
+    );
+    setIdProductoIgvEdicion(null);
+  };
+
+  const hayEdicionProductoPendiente =
+    idProductoDescuentoEdicion !== null
+    || idProductoIgvEdicion !== null;
+
   return {
     afectacionesIgv,
     agregarProductos,
+    anularFactura: () => anularFacturaMutation.mutate(),
+    anularFacturaMutation,
     actualizarCampoFactura,
     cancelarEdicionDescuento,
+    cancelarEdicionIgv,
     confirmarFormulario: formulario.handleSubmit,
     detalle,
     erroresFormulario: formulario.formState.errors,
@@ -409,9 +478,13 @@ export function useFormularioFactura(
     ),
     guardarFacturaMutation,
     guardarEdicionDescuento,
+    guardarEdicionIgv,
     guardarCuota,
+    hayEdicionProductoPendiente,
     idProductoDescuentoEdicion,
+    idProductoIgvEdicion,
     iniciarEdicionDescuento,
+    iniciarEdicionIgv,
     obtenerPrecioUnitario,
     obtenerTotalProducto,
     quitarCuota,

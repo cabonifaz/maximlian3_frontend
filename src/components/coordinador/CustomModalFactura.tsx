@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FilePenLine, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { CircleX, FilePenLine, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
@@ -13,7 +13,10 @@ import type {
   EntradaProductoFacturable,
 } from "@maximilian/shared/types/facturacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import { ID_FORMA_PAGO_CONTADO } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
+import {
+  ID_ESTADO_FACTURA_APROBADA,
+  ID_FORMA_PAGO_CONTADO,
+} from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
 interface CustomModalFacturaProps {
   abierto: boolean;
@@ -44,11 +47,15 @@ export function CustomModalFactura({
     cuota?: EntradaCuotaFactura;
   } | null>(null);
   const [confirmacionSunatAbierta, setConfirmacionSunatAbierta] = useState(false);
+  const [confirmacionAnulacionAbierta, setConfirmacionAnulacionAbierta] = useState(false);
   const {
     afectacionesIgv,
     agregarProductos: agregarProductosFormulario,
+    anularFactura,
+    anularFacturaMutation,
     actualizarCampoFactura,
     cancelarEdicionDescuento,
+    cancelarEdicionIgv,
     confirmarFormulario,
     detalle,
     emitirFactura,
@@ -57,9 +64,13 @@ export function CustomModalFactura({
     guardarFactura,
     guardarFacturaMutation,
     guardarEdicionDescuento,
+    guardarEdicionIgv,
     guardarCuota,
+    hayEdicionProductoPendiente,
     idProductoDescuentoEdicion,
+    idProductoIgvEdicion,
     iniciarEdicionDescuento,
+    iniciarEdicionIgv,
     obtenerPrecioUnitario,
     obtenerTotalProducto,
     quitarCuota,
@@ -79,6 +90,9 @@ export function CustomModalFactura({
   const soloLectura = modo === "detalle";
 
   if (!abierto || !detalle) return null;
+
+  const puedeAnularFactura =
+    detalle.codigoEstadoFacturacion === ID_ESTADO_FACTURA_APROBADA;
 
   const agregarProductos = (productos: EntradaProductoFacturable[]) => {
     agregarProductosFormulario(productos);
@@ -262,7 +276,7 @@ export function CustomModalFactura({
                                 size="icon"
                                 className="h-7 w-7"
                                 onClick={() => iniciarEdicionDescuento(producto)}
-                                disabled={idProductoDescuentoEdicion !== null}
+                                disabled={hayEdicionProductoPendiente}
                                 aria-label={`Editar descuento de ${producto.descripcion}`}
                               >
                                 <Pencil size={14} />
@@ -347,24 +361,74 @@ export function CustomModalFactura({
                             />
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right text-slate-600">
-                          {soloLectura ? `${producto.porcentajeIgv}%` : (
-                            <div className="ml-auto w-24">
-                              <input
-                                {...registrarPorcentajeIgv(`porcentajesIgv.${producto.idProductoFactura}`, {
-                                  valueAsNumber: true,
-                                })}
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.01"
-                                aria-label={`IGV de ${producto.descripcion}`}
-                                className={`w-full rounded-md border px-2 py-1.5 text-right text-sm outline-none focus:border-brand-wine ${
-                                  errorPorcentajeIgv ? "border-red-500" : "border-slate-200"
-                                }`}
-                              />
+                        <td className="px-4 py-3 text-center text-slate-600">
+                          {soloLectura ? (
+                            `${producto.porcentajeIgv}%`
+                          ) : idProductoIgvEdicion !== producto.idProductoFactura ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <span>{producto.porcentajeIgv}%</span>
+                              <CustomButton
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => iniciarEdicionIgv(producto)}
+                                disabled={hayEdicionProductoPendiente}
+                                aria-label={`Editar IGV de ${producto.descripcion}`}
+                              >
+                                <Pencil size={14} />
+                              </CustomButton>
+                            </div>
+                          ) : (
+                            <div className="mx-auto w-40">
+                              <div className="flex items-center justify-center gap-1">
+                                <div className="relative w-20">
+                                  <input
+                                    {...registrarPorcentajeIgv(
+                                      `porcentajesIgv.${producto.idProductoFactura}`,
+                                      { valueAsNumber: true },
+                                    )}
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    autoFocus
+                                    aria-label={`IGV de ${producto.descripcion}`}
+                                    className={`w-full rounded-md border py-1.5 pl-2 pr-6 text-right text-sm outline-none focus:border-brand-wine ${
+                                      errorPorcentajeIgv
+                                        ? "border-red-500"
+                                        : "border-slate-200"
+                                    }`}
+                                  />
+                                  <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                                    %
+                                  </span>
+                                </div>
+                                <CustomButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-emerald-600"
+                                  onClick={() => void guardarEdicionIgv(producto)}
+                                  aria-label={`Guardar IGV de ${producto.descripcion}`}
+                                >
+                                  <Save size={15} />
+                                </CustomButton>
+                                <CustomButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-red-500"
+                                  onClick={() => cancelarEdicionIgv(producto)}
+                                  aria-label={`Cancelar IGV de ${producto.descripcion}`}
+                                >
+                                  <X size={15} />
+                                </CustomButton>
+                              </div>
                               {errorPorcentajeIgv ? (
-                                <p className="mt-1 text-[10px] text-red-500">{errorPorcentajeIgv.message}</p>
+                                <p className="mt-1 text-left text-[10px] text-red-500">
+                                  {errorPorcentajeIgv.message}
+                                </p>
                               ) : null}
                             </div>
                           )}
@@ -475,6 +539,17 @@ export function CustomModalFactura({
               <p className="text-lg font-black text-brand-black">{formatearMonto(totalFactura)}</p>
             </div>
             <div className="flex items-center gap-3">
+            {puedeAnularFactura ? (
+              <CustomButton
+                type="button"
+                variant="danger"
+                size="compact"
+                onClick={() => setConfirmacionAnulacionAbierta(true)}
+              >
+                <CircleX size={14} />
+                Anular factura
+              </CustomButton>
+            ) : null}
             {soloLectura ? (
               <CustomButton variant="secondary" size="compact" onClick={onCerrar}>
                 Cerrar
@@ -486,7 +561,7 @@ export function CustomModalFactura({
                   variant="secondary"
                   size="compact"
                   disabled={
-                    idProductoDescuentoEdicion !== null
+                    hayEdicionProductoPendiente
                     || emitirFacturaMutation.isPending
                   }
                   loading={guardarFacturaMutation.isPending}
@@ -500,7 +575,7 @@ export function CustomModalFactura({
                   size="compact"
                   onClick={confirmarFormulario(() => setConfirmacionSunatAbierta(true))}
                   disabled={
-                    idProductoDescuentoEdicion !== null
+                    hayEdicionProductoPendiente
                     || guardarFacturaMutation.isPending
                     || emitirFacturaMutation.isPending
                   }
@@ -530,6 +605,24 @@ export function CustomModalFactura({
         onCerrar={() => setConfiguracionModalCuota(null)}
         onGuardar={guardarCuotaFactura}
       />
+      <CustomModalConfirmacionAccion
+        isOpen={confirmacionAnulacionAbierta}
+        onClose={() => setConfirmacionAnulacionAbierta(false)}
+        onConfirm={anularFactura}
+        title="Anular factura"
+        descripcion="La factura aprobada cambiará al estado Anulado. ¿Desea continuar?"
+        isSubmitting={anularFacturaMutation.isPending}
+        textoConfirmar="Anular factura"
+        textoCargandoConfirmar="Anulando..."
+        varianteConfirmar="danger"
+        anchoMaximoClassName="max-w-sm"
+        zIndexClassName="z-[95]"
+      >
+        <p className="text-sm text-slate-700">
+          Esta acción no se puede deshacer.
+        </p>
+      </CustomModalConfirmacionAccion>
+
       <CustomModalConfirmacionAccion
         isOpen={confirmacionSunatAbierta}
         onClose={() => setConfirmacionSunatAbierta(false)}
