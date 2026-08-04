@@ -8,6 +8,7 @@ import {
   type EntradaTablaMaestra,
   type TablaMaestraCrearRequest,
   type TablaMaestraEditarRequest,
+  type TablaMaestraEliminarRequest,
 } from "@maximilian/shared/types/tabla-maestra.type";
 import {
   crearValoresFormularioParametro,
@@ -33,6 +34,8 @@ export function useConfiguracionParametros() {
   const [filaFormulario, setFilaFormulario] =
     useState<FilaFormularioParametro | null>(null);
   const [mensajeValidacion, setMensajeValidacion] = useState("");
+  const [parametroAEliminar, setParametroAEliminar] =
+    useState<EntradaTablaMaestra | null>(null);
 
   const {
     data: respuestaParametros,
@@ -93,10 +96,31 @@ export function useConfiguracionParametros() {
     },
   });
 
+  const mutacionEliminar = useMutation({
+    mutationFn: (payload: TablaMaestraEliminarRequest) =>
+      servicioTablaMaestra.eliminar(payload),
+    onSuccess: () => {
+      clienteConsultas.invalidateQueries({
+        queryKey: ["parametros-administrador", idMaestroSeleccionado],
+      });
+      clienteConsultas.invalidateQueries({
+        queryKey: ["masterTable", idMaestroSeleccionado],
+      });
+      setParametroAEliminar(null);
+      setFilaFormulario(null);
+      setPaginaActual((pagina) =>
+        registrosPagina.length === 1 && pagina > 1 ? pagina - 1 : pagina,
+      );
+    },
+  });
+
   const totalPaginas = respuestaParametros?.totalPaginas ?? 1;
   const totalRegistros = respuestaParametros?.totalRegistros ?? 0;
   const registrosPagina = parametros ?? [];
-  const estaGuardando = mutacionCrear.isPending || mutacionEditar.isPending;
+  const estaGuardando =
+    mutacionCrear.isPending
+    || mutacionEditar.isPending
+    || mutacionEliminar.isPending;
   const columnasVisibles = obtenerColumnasVisiblesParametro(
     parametros,
     configuracionCampos,
@@ -140,6 +164,23 @@ export function useConfiguracionParametros() {
   const cancelarFormulario = () => {
     setFilaFormulario(null);
     setMensajeValidacion("");
+  };
+
+  const solicitarEliminarParametro = (parametro: EntradaTablaMaestra) => {
+    if (parametro.idTablaMaestra === null) return;
+    setParametroAEliminar(parametro);
+  };
+
+  const cancelarEliminacionParametro = () => {
+    if (mutacionEliminar.isPending) return;
+    setParametroAEliminar(null);
+  };
+
+  const confirmarEliminacionParametro = () => {
+    if (parametroAEliminar?.idTablaMaestra == null) return;
+    mutacionEliminar.mutate({
+      idTablaMaestra: parametroAEliminar.idTablaMaestra,
+    });
   };
 
   const cambiarValoresFormulario = (valores: FilaFormularioParametro["valores"]) => {
@@ -204,6 +245,7 @@ export function useConfiguracionParametros() {
     paginaActual,
     filaFormulario,
     mensajeValidacion,
+    parametroAEliminar,
     parametros,
     registrosPagina,
     opcionesReferencia,
@@ -215,6 +257,7 @@ export function useConfiguracionParametros() {
     totalRegistros,
     paginas,
     estaGuardando,
+    estaEliminando: mutacionEliminar.isPending,
     isLoading,
     isError,
     mostrarFilaCreacion: filaFormulario?.modo === "crear",
@@ -223,6 +266,9 @@ export function useConfiguracionParametros() {
     iniciarCreacion,
     iniciarEdicion,
     cancelarFormulario,
+    solicitarEliminarParametro,
+    cancelarEliminacionParametro,
+    confirmarEliminacionParametro,
     cambiarValoresFormulario,
     guardarFormulario,
     cambiarPagina,

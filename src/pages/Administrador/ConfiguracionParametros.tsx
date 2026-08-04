@@ -1,9 +1,11 @@
 import { AlertCircle, Plus, Search } from "lucide-react";
 import { CustomTablaParametros } from "@maximilian/components/administrador/CustomTablaParametros";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { useConfiguracionParametros } from "@maximilian/hooks/useConfiguracionParametros";
 import { opcionesParametros } from "@maximilian/shared/constants/pages/Administrador/configuracion-parametros.constants";
+import { obtenerDescripcionParametro } from "@maximilian/shared/utils/configuracion-parametros.util";
 
 export default function ConfiguracionParametros() {
   const modelo = useConfiguracionParametros();
@@ -68,6 +70,24 @@ export default function ConfiguracionParametros() {
 
         <CustomTablaParametros modelo={modelo} />
       </section>
+
+      <CustomModalConfirmacionAccion
+        isOpen={modelo.parametroAEliminar !== null}
+        onClose={modelo.cancelarEliminacionParametro}
+        onConfirm={modelo.confirmarEliminacionParametro}
+        title="Eliminar parametro"
+        descripcion="El registro seleccionado se eliminará de la tabla maestra. ¿Desea continuar?"
+        isSubmitting={modelo.estaEliminando}
+        textoConfirmar="Eliminar"
+        textoCargandoConfirmar="Eliminando..."
+        varianteConfirmar="danger"
+      >
+        <p className="font-semibold text-brand-black">
+          {modelo.parametroAEliminar
+            ? obtenerDescripcionParametro(modelo.parametroAEliminar)
+            : ""}
+        </p>
+      </CustomModalConfirmacionAccion>
     </div>
   );
 }

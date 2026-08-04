@@ -122,6 +122,10 @@ export interface TablaMaestraCrearRequest extends CamposSolicitudTablaMaestra {
 
 export type TablaMaestraEditarRequest = CamposSolicitudTablaMaestra;
 
+export interface TablaMaestraEliminarRequest {
+  idTablaMaestra: number;
+}
+
 export interface TablaMaestraGuardarResponse {
   idTablaMaestra?: number;
   idMaestro?: number;

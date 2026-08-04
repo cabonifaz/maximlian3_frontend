@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Edit2,
   Loader2,
+  Trash2,
   X,
 } from "lucide-react";
 import { CustomCamposEdicionParametro } from "@maximilian/components/administrador/CustomCamposEdicionParametro";
@@ -273,17 +274,33 @@ export function CustomTablaParametros({ modelo }: PropsCustomTablaParametros) {
                             </CustomButton>
                           </>
                         ) : (
-                          <CustomButton
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => modelo.iniciarEdicion(parametro)}
-                            disabled={modelo.estaGuardando}
-                            className="h-8 w-8 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                            title="Editar"
-                          >
-                            <Edit2 size={16} />
-                          </CustomButton>
+                          <>
+                            <CustomButton
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => modelo.iniciarEdicion(parametro)}
+                              disabled={modelo.estaGuardando}
+                              className="h-8 w-8 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                              title="Editar"
+                            >
+                              <Edit2 size={16} />
+                            </CustomButton>
+                            <CustomButton
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => modelo.solicitarEliminarParametro(parametro)}
+                              disabled={
+                                modelo.estaGuardando
+                                || parametro.idTablaMaestra === null
+                              }
+                              className="h-8 w-8 rounded-md text-red-400 hover:bg-red-50 hover:text-red-600"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={16} />
+                            </CustomButton>
+                          </>
                         )}
                       </div>
                     </td>
