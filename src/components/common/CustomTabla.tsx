@@ -285,7 +285,7 @@ export function CustomTabla<T>({
                   key={page}
                   type="button"
                   onClick={() => onPageChange(page)}
-                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer hover:scale-110 ${
+                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     page === paginaActual
                       ? "bg-brand-black text-brand-white shadow shadow-black/10"
                       : "text-gray-400 hover:bg-gray-100 hover:text-brand-black"
