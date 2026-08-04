@@ -3,14 +3,12 @@ import type {
   DatosFormularioInformacionCliente,
   DatosFormularioTarifa,
 } from "@maximilian/schemas";
-import type {
-  CreateClientRequest,
-  CreateContactoRequest,
-  CreateTarifarioRequest,
-} from "@maximilian/shared/types/cliente.type";
+import type { CreateClientRequest } from "@maximilian/shared/types/cliente.type";
 
 export function construirPayloadCrearCliente(
   datosCliente: DatosFormularioInformacionCliente,
+  contactos: DatosFormularioContacto[],
+  tarifas: DatosFormularioTarifa[],
 ): CreateClientRequest {
   return {
     idTipoPersona: datosCliente.tipoPersona as number,
@@ -36,42 +34,29 @@ export function construirPayloadCrearCliente(
     aplicaPenalidad: datosCliente.aplicaPenalidad,
     emitirPrefactura: datosCliente.emitirPrefactura,
     idPlantilla: datosCliente.plantillaInforme,
-    contactos: [],
-    tarifario: [],
-  };
-}
-
-export function construirPayloadCrearContacto(
-  idCliente: number,
-  contacto: DatosFormularioContacto,
-): CreateContactoRequest {
-  return {
-    idCliente,
-    nombres: contacto.nombre,
-    idTipoPersonaContacto: contacto.tipoPersona as number,
-    idTipoContacto: contacto.tipoContacto as number,
-    tipoContacto: contacto.tipoContacto === 0 ? (contacto.tipoContactoNuevo ?? null) : null,
-    idAreaTrabajo: contacto.areaTrabajo as number,
-    telefono: contacto.telefono || null,
-    correo: contacto.correo || null,
-    codigo: contacto.codigoContacto || null,
-    enviarCorreo: contacto.enviarCorreo,
-  };
-}
-
-export function construirPayloadCrearTarifa(
-  idCliente: number,
-  tarifa: DatosFormularioTarifa,
-): CreateTarifarioRequest {
-  return {
-    idCliente,
-    idProducto: tarifa.producto as number,
-    idTipoTramite: tarifa.tramite as number,
-    idPais: tarifa.pais as number,
-    idMoneda: tarifa.moneda as number,
-    diasMax: tarifa.diasMax,
-    diasMin: tarifa.diasMin,
-    precio: tarifa.precio,
-    penalidad: tarifa.penalidad,
+    contactos: contactos.map((contacto) => ({
+      codigo: contacto.codigoContacto || null,
+      nombres: contacto.nombre,
+      idTipoPersonaContacto: contacto.tipoPersona as number,
+      idTipoContacto: contacto.tipoContacto as number,
+      tipoContacto:
+        contacto.tipoContacto === 0
+          ? (contacto.tipoContactoNuevo ?? null)
+          : null,
+      areaTrabajo: contacto.areaTrabajo as number,
+      telefono: contacto.telefono || "",
+      correo: contacto.correo || "",
+      enviarCorreo: contacto.enviarCorreo,
+    })),
+    tarifario: tarifas.map((tarifa) => ({
+      idProducto: tarifa.producto as number,
+      idTipoTramite: tarifa.tramite as number,
+      idPais: tarifa.pais as number,
+      idMoneda: tarifa.moneda as number,
+      diasMax: tarifa.diasMax,
+      diasMin: tarifa.diasMin,
+      precio: tarifa.precio,
+      penalidad: tarifa.penalidad ?? 0,
+    })),
   };
 }

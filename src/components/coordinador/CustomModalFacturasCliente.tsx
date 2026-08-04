@@ -16,6 +16,7 @@ import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useListadoFacturasCliente } from "@maximilian/hooks/useListadoFacturasCliente";
 import {
+  CODIGOS_ESTADO_FACTURA_MODIFICABLE,
   CODIGOS_ESTADO_FACTURA_SOLO_LECTURA,
   ESTILOS_ESTADO_FACTURA_CLIENTE,
   OPCIONES_MODIFICAR_ESTADO_FACTURA,
@@ -80,6 +81,11 @@ export function CustomModalFacturasCliente({
   const facturaMenuSoloLectura = facturaMenuActivo
     ? CODIGOS_ESTADO_FACTURA_SOLO_LECTURA.includes(facturaMenuActivo.codigoEstado)
     : false;
+  const facturaMenuPuedeModificarEstado = facturaMenuActivo
+    ? CODIGOS_ESTADO_FACTURA_MODIFICABLE.includes(
+        facturaMenuActivo.codigoEstado,
+      )
+    : false;
 
   const alternarMenu = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -92,12 +98,12 @@ export function CustomModalFacturasCliente({
     }
 
     const rectangulo = event.currentTarget.getBoundingClientRect();
-    const esSoloLectura = CODIGOS_ESTADO_FACTURA_SOLO_LECTURA.includes(
-      factura.codigoEstado,
-    );
+    const puedeModificarEstado =
+      CODIGOS_ESTADO_FACTURA_MODIFICABLE.includes(factura.codigoEstado);
+    const puedeEditar = factura.estado === "borrador-factura";
     const anchoMenu = 176;
-    const anchoSubmenu = esSoloLectura ? 0 : 224;
-    const altoMenu = esSoloLectura ? 44 : 124;
+    const anchoSubmenu = puedeModificarEstado ? 224 : 0;
+    const altoMenu = puedeModificarEstado || puedeEditar ? 84 : 44;
     const espacioInferior = window.innerHeight - rectangulo.bottom;
     setEstiloMenu({
       left: Math.max(
@@ -279,6 +285,7 @@ export function CustomModalFacturasCliente({
                   Editar factura
                 </button>
               ) : null}
+              {facturaMenuPuedeModificarEstado ? (
               <div
                 className="relative"
                 onMouseEnter={(event) => abrirSubmenuEstado(
@@ -332,6 +339,7 @@ export function CustomModalFacturasCliente({
               </div>
             ) : null}
               </div>
+              ) : null}
             </>
           ) : null}
         </div>

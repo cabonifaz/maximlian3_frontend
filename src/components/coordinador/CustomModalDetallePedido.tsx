@@ -205,7 +205,7 @@ export function CustomModalDetallePedido({
     : isError || !pedido
     ? errorContent
     : (
-      <div className="flex gap-6">
+      <div className="flex flex-col gap-6 lg:flex-row">
         <div className="flex flex-1 flex-col gap-5">
           <CustomSelectorBuscable
             label="Cliente"
@@ -255,7 +255,7 @@ export function CustomModalDetallePedido({
           </div>
         </div>
 
-        <div className="flex min-h-120 flex-1 flex-col gap-5">
+        <div className="flex flex-1 flex-col gap-5 lg:min-h-120">
           <CustomSelectorBuscable
             label="País del informe"
             options={paises}
@@ -298,7 +298,7 @@ export function CustomModalDetallePedido({
     : isError || !pedido
     ? errorContent
     : (
-      <div className="flex gap-6">
+      <div className="flex flex-col gap-6 lg:flex-row">
         <div className="flex flex-1 flex-col gap-5">
           <CampoSoloLectura etiqueta="Investigado" valor={pedido.investigarRazonSocialNombres || "-"} />
           <CustomSelectorBuscable
@@ -325,11 +325,11 @@ export function CustomModalDetallePedido({
           <CampoSoloLectura etiqueta="Desde" valor={formatearFecha(pedido.fchDesde)} />
           <CampoSoloLectura etiqueta="Hasta" valor={formatearFecha(pedido.fchHasta)} />
           <CampoSoloLectura etiqueta="Monto crédito" valor={formatearMonto(pedido.montoCredito, tarifarioSeleccionado?.simboloMoneda)} />
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <div className="flex-1">
               <CampoSoloLectura etiqueta="Plazo crédito" valor={pedido.plazoCredito != null ? String(pedido.plazoCredito) : "-"} />
             </div>
-            <div className="w-40">
+            <div className="w-full sm:w-40">
               <CustomSelectorBuscable
                 label="Tipo"
                 options={tiposPlazoCredito}
