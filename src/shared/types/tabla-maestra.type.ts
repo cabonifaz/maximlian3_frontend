@@ -54,6 +54,7 @@ export const TablaMaestraId = {
   MONEDA_SUNAT: 73,
   FORMA_PAGO_SUNAT: 74,
   AFECTACION_IGV_SUNAT: 75,
+  UNIDAD_MEDIDA_SUNAT: 76,
   ESTADO_ASIGNACION: 98,
   PAGINACION_FRACTAL: 99,
   EFICIENCIA_CUMPLIMIENTO: 101,
@@ -121,6 +122,10 @@ export interface TablaMaestraCrearRequest extends CamposSolicitudTablaMaestra {
 }
 
 export type TablaMaestraEditarRequest = CamposSolicitudTablaMaestra;
+
+export interface TablaMaestraEliminarRequest {
+  idTablaMaestra: number;
+}
 
 export interface TablaMaestraGuardarResponse {
   idTablaMaestra?: number;

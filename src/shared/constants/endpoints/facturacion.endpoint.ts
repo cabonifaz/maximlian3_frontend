@@ -9,6 +9,7 @@ export const ENDPOINTS_FACTURACION = {
     `/api/PedidoFactura/guardarCambios/${idDocumentoElectronico}`,
   actualizarEstado: (idPedido: number) =>
     `/api/PedidoFactura/estado/${idPedido}`,
+  anular: "/api/PedidoFactura/anular",
   emitir: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/emitir/${idDocumentoElectronico}`,
 } as const;

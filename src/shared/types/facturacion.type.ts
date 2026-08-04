@@ -3,15 +3,19 @@ export type EstadoFacturacionPrincipal =
   | "pendiente"
   | "en-pre-factura";
 
-export type IdEstadoFacturacionActualizable = 2 | 3 | 4 | 6;
+export type IdEstadoFacturacionActualizable = 2 | 3 | 4 | 7;
 
 export type EstadoFacturaCliente =
-  | EstadoFacturacionPrincipal
+  | "listo-para-facturacion"
+  | "en-pre-factura"
   | "pre-factura-aprobada"
   | "pre-factura-rechazada"
   | "borrador-factura"
   | "aprobado"
-  | "anulado";
+  | "rechazado"
+  | "pendiente-anulacion"
+  | "anulacion-aprobada"
+  | "anulacion-rechazada";
 
 export interface ParametrosListaFacturacion {
   busqueda?: string;
@@ -74,13 +78,16 @@ export interface EntradaPedidoFacturacionApi {
   investigado: string | null;
   aplicaPenalidad: "Si" | "No";
   estadoFacturacion:
-    | "Pendiente"
+    | "Listo para facturación"
     | "En pre-factura"
     | "Pre-factura aprobada"
     | "Pre-factura rechazada"
-    | "Borrador Factura"
     | "Aprobado"
-    | "Anulado";
+    | "Rechazado"
+    | "Pendiente Anulación"
+    | "Anulación Aprobada"
+    | "Anulación Rechazada"
+    | "Borrador Factura";
 }
 
 export interface ResultadoListaPedidosFacturacionApi {
@@ -101,7 +108,8 @@ export interface EntradaProductoFactura {
   numeroLinea: number;
   idLineaDocumentoElectronico: number;
   productoSunatCodigo: string | null;
-  unidadMedidaCodigo: string;
+  idUnidadMedidaMaestro: number;
+  unidadMedidaDescripcion: string;
   cantidad: number;
   descripcion: string;
   descuentoPorcentaje: number;
@@ -204,7 +212,7 @@ export interface DocumentoAfectadoGuardarBorradorFactura {
 export interface LineaGuardarBorradorFactura {
   idPedido: number;
   productoSunatCodigo: string | null;
-  unidadMedidaCodigo: string;
+  idUnidadMedidaMaestro: number;
   cantidad: number;
   montoDescuento: number;
   idAfectacionIgvMaestro: number;
@@ -300,6 +308,14 @@ export interface GuardarCambiosFacturaRequest {
   idTipoOperacionMaestro: number;
   lineas: LineaGuardarCambiosFactura[];
   cuotas: CuotaGuardarCambiosFactura[];
+}
+
+export interface AnularFacturaRequest {
+  fechaReferencia: string;
+  items: Array<{
+    idDocumentoElectronico: number;
+    motivoDescripcion: string;
+  }>;
 }
 
 export interface ResultadoGuardarBorradorFactura {
