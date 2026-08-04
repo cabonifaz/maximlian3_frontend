@@ -47,6 +47,15 @@ function obtenerAfectacionesIgvIniciales(factura: DetalleFactura | null) {
   );
 }
 
+function obtenerUnidadesMedidaIniciales(factura: DetalleFactura | null) {
+  return Object.fromEntries(
+    (factura?.productos ?? []).map((producto) => [
+      String(producto.idProductoFactura),
+      Number(producto.idUnidadMedidaMaestro) || 0,
+    ]),
+  );
+}
+
 function crearProductoFactura(
   producto: EntradaProductoFacturable,
 ): EntradaProductoFactura {
@@ -59,7 +68,8 @@ function crearProductoFactura(
     numeroLinea: 0,
     idLineaDocumentoElectronico: 0,
     productoSunatCodigo: null,
-    unidadMedidaCodigo: "",
+    idUnidadMedidaMaestro: 0,
+    unidadMedidaDescripcion: "",
     cantidad: 1,
     descripcion: `${producto.codigo} - ${producto.tipo === "express" ? "Express" : producto.tipo === "normal" ? "Normal" : "Super Flash"}`,
     descuentoPorcentaje,
@@ -96,6 +106,7 @@ export function useFormularioFactura(
 
       porcentajesIgv: obtenerPorcentajesIgvIniciales(factura),
       afectacionesIgv: obtenerAfectacionesIgvIniciales(factura),
+      unidadesMedida: obtenerUnidadesMedidaIniciales(factura),
     },
   });
   const { clearErrors, getValues, setValue, trigger, unregister } = formulario;
@@ -106,6 +117,10 @@ export function useFormularioFactura(
   const afectacionesIgv = useWatch({
     control: formulario.control,
     name: "afectacionesIgv",
+  });
+  const unidadesMedida = useWatch({
+    control: formulario.control,
+    name: "unidadesMedida",
   });
   const porcentajesIgv = useWatch({
     control: formulario.control,
@@ -252,6 +267,12 @@ export function useFormularioFactura(
         Number(producto.idAfectacionIgvMaestro) || 0,
       ]),
     );
+    const unidadesMedidaNuevas = Object.fromEntries(
+      productosNuevos.map((producto) => [
+        String(producto.idProductoFactura),
+        Number(producto.idUnidadMedidaMaestro) || 0,
+      ]),
+    );
 
     setValue("descuentos", {
       ...getValues("descuentos"),
@@ -265,6 +286,10 @@ export function useFormularioFactura(
     setValue("afectacionesIgv", {
       ...getValues("afectacionesIgv"),
       ...afectacionesIgvNuevas,
+    });
+    setValue("unidadesMedida", {
+      ...getValues("unidadesMedida"),
+      ...unidadesMedidaNuevas,
     });
     setDetalle((actual) =>
       actual
@@ -281,6 +306,7 @@ export function useFormularioFactura(
 
     unregister(`porcentajesIgv.${producto.idProductoFactura}`);
     unregister(`afectacionesIgv.${producto.idProductoFactura}`);
+    unregister(`unidadesMedida.${producto.idProductoFactura}`);
     setIdProductoDescuentoEdicion((idActual) =>
       idActual === producto.idProductoFactura ? null : idActual,
     );
@@ -359,6 +385,23 @@ export function useFormularioFactura(
       "afectacionesIgv",
       {
         ...getValues("afectacionesIgv"),
+        [String(idProductoFactura)]: valor,
+      },
+      {
+        shouldDirty: true,
+        shouldValidate: true,
+      },
+    );
+  };
+
+  const seleccionarUnidadMedida = (
+    idProductoFactura: number,
+    valor: number,
+  ) => {
+    setValue(
+      "unidadesMedida",
+      {
+        ...getValues("unidadesMedida"),
         [String(idProductoFactura)]: valor,
       },
       {
@@ -493,6 +536,7 @@ export function useFormularioFactura(
     registrarPorcentajeIgv: formulario.register,
 
     seleccionarAfectacionIgv,
+    seleccionarUnidadMedida,
     seleccionarFormaPago: (valor: number) =>
       setValue("idFormaPago", valor, {
         shouldDirty: true,
@@ -520,5 +564,6 @@ export function useFormularioFactura(
       idTipoOperacionMaestro,
     },
     totalFactura,
+    unidadesMedida,
   };
 }

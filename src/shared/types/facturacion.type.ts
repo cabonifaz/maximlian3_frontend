@@ -101,7 +101,8 @@ export interface EntradaProductoFactura {
   numeroLinea: number;
   idLineaDocumentoElectronico: number;
   productoSunatCodigo: string | null;
-  unidadMedidaCodigo: string;
+  idUnidadMedidaMaestro: number;
+  unidadMedidaDescripcion: string;
   cantidad: number;
   descripcion: string;
   descuentoPorcentaje: number;
@@ -204,7 +205,7 @@ export interface DocumentoAfectadoGuardarBorradorFactura {
 export interface LineaGuardarBorradorFactura {
   idPedido: number;
   productoSunatCodigo: string | null;
-  unidadMedidaCodigo: string;
+  idUnidadMedidaMaestro: number;
   cantidad: number;
   montoDescuento: number;
   idAfectacionIgvMaestro: number;

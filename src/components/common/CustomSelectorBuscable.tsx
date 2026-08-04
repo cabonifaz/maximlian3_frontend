@@ -30,6 +30,7 @@ export interface CustomSelectorBuscableProps {
   overlayZIndexClassName?: string;
   etiquetaOpcionVacia?: string;
   ordenarOpciones?: boolean;
+  ordenarPorNum1?: boolean;
   obtenerEtiquetaOpcion?: (opcion: EntradaTablaMaestra) => string;
   renderizarOpcion?: (opcion: EntradaTablaMaestra) => ReactNode;
   renderizarValorSeleccionado?: (opcion: EntradaTablaMaestra) => ReactNode;
@@ -60,6 +61,7 @@ export function CustomSelectorBuscable({
   overlayZIndexClassName = "z-[100]",
   etiquetaOpcionVacia = "Seleccione",
   ordenarOpciones = true,
+  ordenarPorNum1 = false,
   obtenerEtiquetaOpcion,
   renderizarOpcion,
   renderizarValorSeleccionado,
@@ -95,10 +97,17 @@ export function CustomSelectorBuscable({
 
     if (!ordenarOpciones) return opcionesFiltradas;
 
+    if (ordenarPorNum1) {
+      return [...opcionesFiltradas].sort(
+        (a, b) => (a.num1 ?? Number.MAX_SAFE_INTEGER)
+          - (b.num1 ?? Number.MAX_SAFE_INTEGER),
+      );
+    }
+
     return [...opcionesFiltradas].sort((a, b) =>
       (obtenerEtiquetaOpcion?.(a) || a.string1 || "").localeCompare(obtenerEtiquetaOpcion?.(b) || b.string1 || ""),
     );
-  }, [obtenerEtiquetaOpcion, ordenarOpciones, resolvedOptions, terminoBusqueda]);
+  }, [obtenerEtiquetaOpcion, ordenarOpciones, ordenarPorNum1, resolvedOptions, terminoBusqueda]);
 
   const selectedOption = resolvedOptions?.find((opt) => opt.num1 === value);
   const displayText = selectedOption

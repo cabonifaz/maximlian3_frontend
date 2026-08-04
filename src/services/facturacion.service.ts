@@ -170,6 +170,7 @@ async function obtenerFacturaRegistrada(
       TablaMaestraId.MONEDA_SUNAT,
       TablaMaestraId.FORMA_PAGO_SUNAT,
       TablaMaestraId.AFECTACION_IGV_SUNAT,
+      TablaMaestraId.UNIDAD_MEDIDA_SUNAT,
     ]),
   ]);
 
@@ -196,6 +197,8 @@ async function obtenerFacturaRegistrada(
   );
   const opcionesAfectacionIgv =
     opcionesPorMaestro[TablaMaestraId.AFECTACION_IGV_SUNAT] ?? [];
+  const opcionesUnidadMedida =
+    opcionesPorMaestro[TablaMaestraId.UNIDAD_MEDIDA_SUNAT] ?? [];
 
   return {
     idFactura: idPedido,
@@ -222,6 +225,10 @@ async function obtenerFacturaRegistrada(
         opcionesAfectacionIgv,
         linea.afectacionIgvCodigo,
       );
+      const opcionUnidadMedida = buscarOpcionTablaMaestra(
+        opcionesUnidadMedida,
+        linea.unidadMedidaCodigo,
+      );
 
       return {
         idProductoFactura: linea.idLineaDocumentoElectronico,
@@ -233,7 +240,9 @@ async function obtenerFacturaRegistrada(
         idLineaDocumentoElectronico:
           linea.idLineaDocumentoElectronico,
         productoSunatCodigo: linea.productoSunatCodigo,
-        unidadMedidaCodigo: linea.unidadMedidaCodigo,
+        idUnidadMedidaMaestro: opcionUnidadMedida?.num1 ?? 0,
+        unidadMedidaDescripcion:
+          obtenerEtiquetaTablaMaestra(opcionUnidadMedida),
         cantidad: linea.cantidad,
         descripcion: [linea.productoCodigo, linea.descripcion]
           .filter(Boolean)

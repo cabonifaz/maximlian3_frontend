@@ -23,6 +23,11 @@ export const esquemaFormularioFactura = z.object({
     z.number({ error: "La afectacion IGV es requerida" })
       .positive("La afectacion IGV es requerida"),
   ),
+  unidadesMedida: z.record(
+    z.string(),
+    z.number({ error: "La unidad de medida es requerida" })
+      .positive("La unidad de medida es requerida"),
+  ),
 });
 
 export type DatosFormularioFactura = z.infer<typeof esquemaFormularioFactura>;

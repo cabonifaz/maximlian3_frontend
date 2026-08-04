@@ -79,11 +79,13 @@ export function CustomModalFactura({
     registrarPorcentajeIgv,
 
     seleccionarAfectacionIgv,
+    seleccionarUnidadMedida,
     seleccionarFormaPago,
     seleccionarMoneda,
     seleccionarTipoDocumento,
     seleccionarTipoOperacion,
     totalFactura,
+    unidadesMedida,
     valoresMaestros,
   } = useFormularioFactura(factura, onCerrar);
 
@@ -238,15 +240,16 @@ export function CustomModalFactura({
                 ) : null}
               </div>
               <div className="overflow-x-auto rounded-lg border border-slate-200">
-                <table className="w-full min-w-[1280px] text-left text-sm">
+                <table className="w-full min-w-[1400px] text-left text-sm">
                   <thead className="bg-slate-50 text-xs font-bold text-slate-500">
                     <tr>
                       <th className="px-4 py-3">Cantidad</th>
                       <th className="px-4 py-3">Descripción</th>
+                      <th className="w-48 min-w-48 max-w-48 px-4 py-3">Unidad de medida</th>
                       <th className="px-4 py-3 text-center">Dscto. %</th>
                       <th className="px-4 py-3 text-right">Valor U.</th>
                       <th className="px-4 py-3 text-right">Precio U.</th>
-                      <th className="min-w-60 px-4 py-3">Afectacion IGV</th>
+                      <th className="w-48 min-w-48 max-w-48 px-4 py-3">Afectacion IGV</th>
                       <th className="px-4 py-3 text-right">IGV %</th>
                       <th className="px-4 py-3 text-right">Total</th>
                       {!soloLectura ? <th className="px-4 py-3 text-center">Acciones</th> : null}
@@ -259,11 +262,39 @@ export function CustomModalFactura({
 
                       const errorPorcentajeIgv = erroresFormulario.porcentajesIgv?.[claveProducto];
                       const errorAfectacionIgv = erroresFormulario.afectacionesIgv?.[claveProducto];
+                      const errorUnidadMedida = erroresFormulario.unidadesMedida?.[claveProducto];
 
                       return (
                       <tr key={producto.idProductoFactura}>
                         <td className="px-4 py-3 text-slate-600">{producto.cantidad}</td>
                         <td className="px-4 py-3 font-medium text-slate-700">{producto.descripcion}</td>
+                        <td className="w-48 min-w-48 max-w-48 px-4 py-3">
+                          {soloLectura ? (
+                            <span className="text-slate-600">
+                              {producto.unidadMedidaDescripcion
+                                || producto.idUnidadMedidaMaestro}
+                            </span>
+                          ) : (
+                            <CustomSelectorBuscable
+                              idMaster={TablaMaestraId.UNIDAD_MEDIDA_SUNAT}
+                              value={unidadesMedida?.[claveProducto] || undefined}
+                              displayValue={producto.unidadMedidaDescripcion}
+                              onChange={(valor) =>
+                                seleccionarUnidadMedida(
+                                  producto.idProductoFactura,
+                                  valor,
+                                )}
+                              placeholder="Seleccione unidad"
+                              required
+                              ordenarPorNum1
+                              obtenerEtiquetaOpcion={(opcion) =>
+                                [opcion.string1, opcion.string2]
+                                  .filter(Boolean)
+                                  .join(" - ")}
+                              error={errorUnidadMedida?.message}
+                            />
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-center text-slate-600">
                           {soloLectura ? (
                             `${producto.descuentoPorcentaje}%`
@@ -335,7 +366,7 @@ export function CustomModalFactura({
                         <td className="px-4 py-3 text-right text-slate-600">
                           {formatearMonto(obtenerPrecioUnitario(producto))}
                         </td>
-                        <td className="min-w-60 px-4 py-3">
+                        <td className="w-48 min-w-48 max-w-48 px-4 py-3">
                           {soloLectura ? (
                             <span className="text-slate-600">
                               {producto.afectacionIgvDescripcion

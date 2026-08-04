@@ -53,7 +53,7 @@ export function construirPayloadGuardarBorradorFactura(
       return {
         idPedido: producto.idPedido,
         productoSunatCodigo: producto.productoSunatCodigo,
-        unidadMedidaCodigo: producto.unidadMedidaCodigo,
+        idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
         cantidad: producto.cantidad,
 
         montoDescuento: producto.cantidad * producto.valorUnitario * descuentoPorcentaje / 100,
@@ -80,7 +80,7 @@ export function construirPayloadGuardarCambiosFactura(
       return {
         idPedido: producto.idPedido,
         productoSunatCodigo: producto.productoSunatCodigo,
-        unidadMedidaCodigo: producto.unidadMedidaCodigo,
+        idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
         cantidad: producto.cantidad,
 
         montoDescuento:
