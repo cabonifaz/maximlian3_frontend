@@ -29,7 +29,14 @@ export const ESTILOS_ESTADO_FACTURA_CLIENTE: Record<
   EstadoFacturaCliente,
   { texto: string; clase: string }
 > = {
-  ...ESTILOS_ESTADO_FACTURACION_PRINCIPAL,
+  "listo-para-facturacion": {
+    texto: "Listo para facturación",
+    clase: "bg-orange-100 text-orange-700",
+  },
+  "en-pre-factura": {
+    texto: "En pre-factura",
+    clase: "bg-blue-100 text-blue-600",
+  },
   "pre-factura-aprobada": {
     texto: "Pre-factura aprobada",
     clase: "bg-cyan-100 text-cyan-700",
@@ -46,9 +53,21 @@ export const ESTILOS_ESTADO_FACTURA_CLIENTE: Record<
     texto: "Aprobado",
     clase: "bg-emerald-100 text-emerald-700",
   },
-  anulado: {
-    texto: "Anulado",
-    clase: "bg-slate-200 text-slate-600",
+  rechazado: {
+    texto: "Rechazado",
+    clase: "bg-red-100 text-red-700",
+  },
+  "pendiente-anulacion": {
+    texto: "Pendiente Anulación",
+    clase: "bg-amber-100 text-amber-700",
+  },
+  "anulacion-aprobada": {
+    texto: "Anulación Aprobada",
+    clase: "bg-slate-200 text-slate-700",
+  },
+  "anulacion-rechazada": {
+    texto: "Anulación Rechazada",
+    clase: "bg-rose-100 text-rose-700",
   },
 };
 
@@ -66,15 +85,18 @@ export const OPCIONES_MODIFICAR_ESTADO_FACTURA: Array<{
 ];
 
 export const ID_ESTADO_FACTURA_APROBADA = 5;
-export const ID_ESTADO_FACTURA_ANULADA = 6;
+export const ID_ESTADO_FACTURA_PENDIENTE_ANULACION = 7;
 
 export const CODIGOS_ESTADO_FACTURA_SOLO_LECTURA = [
   ID_ESTADO_FACTURA_APROBADA,
-  ID_ESTADO_FACTURA_ANULADA,
+  ID_ESTADO_FACTURA_PENDIENTE_ANULACION,
+  9,
 ];
+export const CODIGOS_ESTADO_FACTURA_EDITABLES = [6, 8, 10];
 export const CODIGOS_ESTADO_FACTURA_MODIFICABLE: number[] = [2, 3, 4];
 
 export const ID_FORMA_PAGO_CONTADO = 1;
+export const PORCENTAJE_IGV_PREDETERMINADO = 18;
 
 export const ESTILOS_TIPO_PRODUCTO_FACTURABLE: Record<
   EntradaProductoFacturable["tipo"],

@@ -1088,7 +1088,6 @@ export function ModalPedido({
       guardarPedido({
         ...datosComunes,
         idPedido: pedidoId!,
-        IdEmpresaAtencion: data.idEmpresaAtencion,
         idEstado: pedido!.idEstado,
       });
       return;
@@ -1097,7 +1096,7 @@ export function ModalPedido({
     guardarPedido({
       ...datosComunes,
       codigo: data.autogenerarCodigo ? null : (data.codigo ?? ""),
-      IdEmpresaAtencion: data.idEmpresaAtencion,
+      idEmpresaAtencion: data.idEmpresaAtencion,
       idEstado: 1,
       archivos: [],
     });

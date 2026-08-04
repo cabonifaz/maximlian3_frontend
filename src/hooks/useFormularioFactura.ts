@@ -4,6 +4,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   esquemaFormularioFactura,
+  type DatosFormularioAnulacionFactura,
   type DatosFormularioFactura,
 } from "@maximilian/schemas";
 import { facturacionService } from "@maximilian/services/facturacion.service";
@@ -18,7 +19,11 @@ import {
   construirPayloadGuardarBorradorFactura,
   construirPayloadGuardarCambiosFactura,
 } from "@maximilian/shared/utils/facturacion.util";
-import { ID_ESTADO_FACTURA_ANULADA } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
+import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
+import {
+  ID_FORMA_PAGO_CONTADO,
+  PORCENTAJE_IGV_PREDETERMINADO,
+} from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
 function obtenerDescuentosIniciales(factura: DetalleFactura | null) {
   return Object.fromEntries(
@@ -47,6 +52,15 @@ function obtenerAfectacionesIgvIniciales(factura: DetalleFactura | null) {
   );
 }
 
+function obtenerUnidadesMedidaIniciales(factura: DetalleFactura | null) {
+  return Object.fromEntries(
+    (factura?.productos ?? []).map((producto) => [
+      String(producto.idProductoFactura),
+      Number(producto.idUnidadMedidaMaestro) || 0,
+    ]),
+  );
+}
+
 function crearProductoFactura(
   producto: EntradaProductoFacturable,
 ): EntradaProductoFactura {
@@ -59,13 +73,14 @@ function crearProductoFactura(
     numeroLinea: 0,
     idLineaDocumentoElectronico: 0,
     productoSunatCodigo: null,
-    unidadMedidaCodigo: "",
+    idUnidadMedidaMaestro: 0,
+    unidadMedidaDescripcion: "",
     cantidad: 1,
     descripcion: `${producto.codigo} - ${producto.tipo === "express" ? "Express" : producto.tipo === "normal" ? "Normal" : "Super Flash"}`,
     descuentoPorcentaje,
     valorUnitario,
     precioUnitario: producto.precio,
-    porcentajeIgv: 0,
+    porcentajeIgv: PORCENTAJE_IGV_PREDETERMINADO,
     idAfectacionIgvMaestro: 0,
     afectacionIgvDescripcion: "",
     total: valorUnitario * (1 - descuentoPorcentaje / 100),
@@ -96,9 +111,17 @@ export function useFormularioFactura(
 
       porcentajesIgv: obtenerPorcentajesIgvIniciales(factura),
       afectacionesIgv: obtenerAfectacionesIgvIniciales(factura),
+      unidadesMedida: obtenerUnidadesMedidaIniciales(factura),
     },
   });
-  const { clearErrors, getValues, setValue, trigger, unregister } = formulario;
+  const {
+    clearErrors,
+    getValues,
+    setError,
+    setValue,
+    trigger,
+    unregister,
+  } = formulario;
   const descuentos = useWatch({
     control: formulario.control,
     name: "descuentos",
@@ -106,6 +129,10 @@ export function useFormularioFactura(
   const afectacionesIgv = useWatch({
     control: formulario.control,
     name: "afectacionesIgv",
+  });
+  const unidadesMedida = useWatch({
+    control: formulario.control,
+    name: "unidadesMedida",
   });
   const porcentajesIgv = useWatch({
     control: formulario.control,
@@ -173,12 +200,18 @@ export function useFormularioFactura(
   });
 
   const anularFacturaMutation = useMutation({
-    mutationFn: () => {
-      if (!detalle?.idFactura) return Promise.resolve();
-      return facturacionService.actualizarEstado(
-        detalle.idFactura,
-        ID_ESTADO_FACTURA_ANULADA,
-      );
+    mutationFn: (datos: DatosFormularioAnulacionFactura) => {
+      if (!detalle?.idDocumentoElectronico) return Promise.resolve();
+
+      return facturacionService.anular({
+        fechaReferencia: formatearFechaIsoLocal(datos.fechaReferencia),
+        items: [
+          {
+            idDocumentoElectronico: detalle.idDocumentoElectronico,
+            motivoDescripcion: datos.motivoDescripcion,
+          },
+        ],
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["facturacion"] });
@@ -197,13 +230,13 @@ export function useFormularioFactura(
       producto.valorUnitario,
       afectacionesIgv?.[claveProducto] ?? producto.idAfectacionIgvMaestro,
       porcentajesIgv?.[claveProducto] ?? producto.porcentajeIgv,
+      obtenerDescuento(producto),
     );
   };
 
+  // precioUnitario ya incluye el descuento (ver calcularPrecioUnitarioFactura) — no volver a aplicarlo acá.
   const obtenerTotalProducto = (producto: EntradaProductoFactura) =>
-    producto.cantidad
-    * obtenerPrecioUnitario(producto)
-    * (1 - obtenerDescuento(producto) / 100);
+    producto.cantidad * obtenerPrecioUnitario(producto);
 
   const totalFactura = useMemo(
     () =>
@@ -216,12 +249,10 @@ export function useFormularioFactura(
           afectacionesIgv?.[claveProducto] ??
             producto.idAfectacionIgvMaestro,
           porcentajesIgv?.[claveProducto] ?? producto.porcentajeIgv,
+          descuento,
         );
 
-        return total
-          + producto.cantidad
-          * precioUnitario
-          * (1 - descuento / 100);
+        return total + producto.cantidad * precioUnitario;
       }, 0) ?? 0,
     [
       afectacionesIgv,
@@ -231,7 +262,33 @@ export function useFormularioFactura(
     ],
   );
 
+  const validarTotalCuotas = (datos: DatosFormularioFactura) => {
+    if (!detalle || datos.idFormaPago === ID_FORMA_PAGO_CONTADO) {
+      clearErrors("root.cuotas");
+      return true;
+    }
+
+    const totalCuotas = detalle.cuotas.reduce(
+      (total, cuota) => total + cuota.monto,
+      0,
+    );
+    const coincidenImportes = Math.round(totalCuotas * 100)
+      === Math.round(totalFactura * 100);
+
+    if (!coincidenImportes) {
+      setError("root.cuotas", {
+        type: "custom",
+        message: "La suma de las cuotas debe ser igual al total de la factura.",
+      });
+      return false;
+    }
+
+    clearErrors("root.cuotas");
+    return true;
+  };
+
   const agregarProductos = (productos: EntradaProductoFacturable[]) => {
+    clearErrors("root.cuotas");
     const productosNuevos = productos.map(crearProductoFactura);
     const descuentosNuevos = Object.fromEntries(
       productosNuevos.map((producto) => [
@@ -252,6 +309,12 @@ export function useFormularioFactura(
         Number(producto.idAfectacionIgvMaestro) || 0,
       ]),
     );
+    const unidadesMedidaNuevas = Object.fromEntries(
+      productosNuevos.map((producto) => [
+        String(producto.idProductoFactura),
+        Number(producto.idUnidadMedidaMaestro) || 0,
+      ]),
+    );
 
     setValue("descuentos", {
       ...getValues("descuentos"),
@@ -266,6 +329,10 @@ export function useFormularioFactura(
       ...getValues("afectacionesIgv"),
       ...afectacionesIgvNuevas,
     });
+    setValue("unidadesMedida", {
+      ...getValues("unidadesMedida"),
+      ...unidadesMedidaNuevas,
+    });
     setDetalle((actual) =>
       actual
         ? {
@@ -277,10 +344,12 @@ export function useFormularioFactura(
   };
 
   const quitarProducto = (producto: EntradaProductoFactura) => {
+    clearErrors("root.cuotas");
     unregister(`descuentos.${producto.idProductoFactura}`);
 
     unregister(`porcentajesIgv.${producto.idProductoFactura}`);
     unregister(`afectacionesIgv.${producto.idProductoFactura}`);
+    unregister(`unidadesMedida.${producto.idProductoFactura}`);
     setIdProductoDescuentoEdicion((idActual) =>
       idActual === producto.idProductoFactura ? null : idActual,
     );
@@ -301,6 +370,7 @@ export function useFormularioFactura(
   };
 
   const guardarCuota = (cuota: EntradaCuotaFactura) => {
+    clearErrors("root.cuotas");
     setDetalle((actual) => {
       if (!actual) return actual;
       const idCuotaFactura =
@@ -333,6 +403,7 @@ export function useFormularioFactura(
   };
 
   const quitarCuota = (idCuotaFactura: number) => {
+    clearErrors("root.cuotas");
     setDetalle((actual) =>
       actual
         ? {
@@ -355,10 +426,28 @@ export function useFormularioFactura(
     idProductoFactura: number,
     valor: number,
   ) => {
+    clearErrors("root.cuotas");
     setValue(
       "afectacionesIgv",
       {
         ...getValues("afectacionesIgv"),
+        [String(idProductoFactura)]: valor,
+      },
+      {
+        shouldDirty: true,
+        shouldValidate: true,
+      },
+    );
+  };
+
+  const seleccionarUnidadMedida = (
+    idProductoFactura: number,
+    valor: number,
+  ) => {
+    setValue(
+      "unidadesMedida",
+      {
+        ...getValues("unidadesMedida"),
         [String(idProductoFactura)]: valor,
       },
       {
@@ -401,6 +490,8 @@ export function useFormularioFactura(
       producto.valorUnitario *
       (1 - descuentoPorcentaje / 100);
 
+    clearErrors("root.cuotas");
+
     setDetalle((actual) =>
       actual
         ? {
@@ -439,6 +530,7 @@ export function useFormularioFactura(
     if (!esValido) return;
 
     const porcentajeIgv = getValues(rutaIgv);
+    clearErrors("root.cuotas");
     setDetalle((actual) =>
       actual
         ? {
@@ -461,21 +553,27 @@ export function useFormularioFactura(
   return {
     afectacionesIgv,
     agregarProductos,
-    anularFactura: () => anularFacturaMutation.mutate(),
+    anularFactura: (datos: DatosFormularioAnulacionFactura) =>
+      anularFacturaMutation.mutate(datos),
     anularFacturaMutation,
     actualizarCampoFactura,
     cancelarEdicionDescuento,
     cancelarEdicionIgv,
-    confirmarFormulario: formulario.handleSubmit,
+    confirmarFormulario: (alConfirmar: () => void) =>
+      formulario.handleSubmit((datos) => {
+        if (validarTotalCuotas(datos)) alConfirmar();
+      }),
     detalle,
     erroresFormulario: formulario.formState.errors,
-    emitirFactura: formulario.handleSubmit((datos) =>
-      emitirFacturaMutation.mutateAsync(datos),
-    ),
+    emitirFactura: formulario.handleSubmit((datos) => {
+      if (!validarTotalCuotas(datos)) return Promise.resolve();
+      return emitirFacturaMutation.mutateAsync(datos);
+    }),
     emitirFacturaMutation,
-    guardarFactura: formulario.handleSubmit((datos) =>
-      guardarFacturaMutation.mutateAsync(datos),
-    ),
+    guardarFactura: formulario.handleSubmit((datos) => {
+      if (!validarTotalCuotas(datos)) return Promise.resolve();
+      return guardarFacturaMutation.mutateAsync(datos);
+    }),
     guardarFacturaMutation,
     guardarEdicionDescuento,
     guardarEdicionIgv,
@@ -493,11 +591,14 @@ export function useFormularioFactura(
     registrarPorcentajeIgv: formulario.register,
 
     seleccionarAfectacionIgv,
-    seleccionarFormaPago: (valor: number) =>
+    seleccionarUnidadMedida,
+    seleccionarFormaPago: (valor: number) => {
+      clearErrors("root.cuotas");
       setValue("idFormaPago", valor, {
         shouldDirty: true,
         shouldValidate: true,
-      }),
+      });
+    },
     seleccionarMoneda: (valor: number) =>
       setValue("idMonedaMaestro", valor, {
         shouldDirty: true,
@@ -520,5 +621,6 @@ export function useFormularioFactura(
       idTipoOperacionMaestro,
     },
     totalFactura,
+    unidadesMedida,
   };
 }
