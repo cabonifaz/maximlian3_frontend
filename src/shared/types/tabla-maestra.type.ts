@@ -96,12 +96,8 @@ export interface RespuestaListadoTablaMaestra {
   totalPaginas: number;
 }
 
-export interface TablaMaestraCrearRequest {
+interface CamposSolicitudTablaMaestra {
   idMaestro: number;
-  idIdioma?: number | null;
-  inputText?: string | null;
-  inputText2?: string | null;
-  descripcion?: string;
   num1?: number | null;
   num2?: number | null;
   num3?: number | null;
@@ -117,9 +113,14 @@ export interface TablaMaestraCrearRequest {
   date3?: string | null;
 }
 
-export interface TablaMaestraEditarRequest extends TablaMaestraCrearRequest {
-  idTablaMaestra?: number;
+export interface TablaMaestraCrearRequest extends CamposSolicitudTablaMaestra {
+  idIdioma?: number | null;
+  inputText?: string | null;
+  inputText2?: string | null;
+  descripcion?: string;
 }
+
+export type TablaMaestraEditarRequest = CamposSolicitudTablaMaestra;
 
 export interface TablaMaestraGuardarResponse {
   idTablaMaestra?: number;

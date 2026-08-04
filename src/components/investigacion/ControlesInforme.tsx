@@ -1,4 +1,8 @@
-import { clasesEtiquetaCampoInvestigacion, marcadoresPorEtiqueta } from "@maximilian/shared/constants/components/investigacion/controles-informe.constants";
+import {
+  clasesEtiquetaCampoInvestigacion,
+  marcadoresPorEtiqueta,
+} from "@maximilian/shared/constants/components/investigacion/controles-informe.constants";
+import { ID_IDIOMA_ESPANOL_TABLA_MAESTRA } from "@maximilian/shared/constants/tabla-maestra.constants";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Briefcase, Building2, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
@@ -162,13 +166,20 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
 
       const payload: TablaMaestraCrearRequest = construirPayloadAltaNueva?.(termino, opcionesActuales) ?? {
           idMaestro,
+          idIdioma: ID_IDIOMA_ESPANOL_TABLA_MAESTRA,
+          inputText: termino,
+          inputText2: null,
           descripcion: obtenerDescripcionTablaMaestra(idMaestro),
-          string1: termino,
           num1: obtenerSiguienteNumTablaMaestra(opcionesActuales),
           num2: num2AltaNueva,
           num3: null,
+          string1: null,
           string2: null,
           string3: null,
+          string4: null,
+          string5: null,
+          string6: null,
+          string7: null,
           date1: null,
           date2: null,
           date3: null,

@@ -17,6 +17,7 @@ import {
   obtenerPaginasParametros,
 } from "@maximilian/shared/utils/configuracion-parametros.util";
 import {
+  crearPayloadEdicionParametro,
   crearPayloadParametro,
   validarFormularioParametro,
 } from "@maximilian/shared/utils/configuracion-parametros-payload.util";
@@ -165,22 +166,26 @@ export function useConfiguracionParametros() {
         filaFormulario.claveRegistro,
     );
 
-    const payload = crearPayloadParametro(
-      idMaestroSeleccionado,
-      filaFormulario.valores,
-      parametros ?? [],
-      parametroActual,
-    );
-
     if (filaFormulario.modo === "crear") {
-      mutacionCrear.mutate(payload);
+      mutacionCrear.mutate(
+        crearPayloadParametro(
+          idMaestroSeleccionado,
+          filaFormulario.valores,
+          parametros ?? [],
+        ),
+      );
       return;
     }
 
-    mutacionEditar.mutate({
-      ...payload,
-      idTablaMaestra: filaFormulario.idTablaMaestra,
-    });
+    if (!parametroActual) return;
+
+    mutacionEditar.mutate(
+      crearPayloadEdicionParametro(
+        idMaestroSeleccionado,
+        filaFormulario.valores,
+        parametroActual,
+      ),
+    );
   };
 
   const cambiarPagina = (pagina: number) => {
