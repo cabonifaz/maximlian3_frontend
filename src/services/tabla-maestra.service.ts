@@ -8,6 +8,7 @@ import type {
   RespuestaListadoTablaMaestra,
   TablaMaestraCrearRequest,
   TablaMaestraEditarRequest,
+  TablaMaestraEliminarRequest,
   TablaMaestraGuardarResponse,
 } from "@maximilian/shared/types/tabla-maestra.type";
 import {
@@ -299,5 +300,18 @@ export const servicioTablaMaestra = {
 
     cacheOpcionesTablaMaestra.delete(payload.idMaestro);
     return normalizarRespuestaGuardado(data.result);
+  },
+  eliminar: async (payload: TablaMaestraEliminarRequest): Promise<unknown> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      ENDPOINTS_TABLA_MAESTRA.eliminar,
+      payload,
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    cacheOpcionesTablaMaestra.clear();
+    return data.result;
   },
 };
