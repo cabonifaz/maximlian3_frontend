@@ -334,6 +334,9 @@ function InfoPedidoTab({
         shouldDirty: true,
       });
     },
+    alCambiarCompania: (idCompania) => {
+      setValue("idCompania", idCompania, { shouldDirty: true });
+    },
   });
 
   const { data: tiposPersona } = useQuery({
@@ -900,6 +903,7 @@ function useFormReset(
       nroDocumentoCliente: pedido.numeroDocumento ?? "",
       nroDocumento: pedido.numeroDocumentoInvestigado ?? "",
       investigado: pedido.investigarRazonSocialNombres ?? "",
+      idCompania: pedido.idCompania,
       idTipoPersona: pedido.idTipoPersona,
       idEmpresaAtencion: pedido.idCompania,
       idIdioma: pedido.idIdioma,
@@ -1069,6 +1073,7 @@ export function ModalPedido({
       idTipoPersona: data.idTipoPersona,
       numeroDocumentoInvestigado: data.nroDocumento ?? "",
       investigarRazonSocialNombres: data.investigado,
+      idCompania: data.idCompania ?? 0,
       idTarifario: data.idTarifario,
       idPlantilla: data.idPlantillaInforme,
       idIdioma: data.idIdioma,
