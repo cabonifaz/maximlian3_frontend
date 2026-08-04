@@ -62,7 +62,7 @@ export function CustomModalPestanas({
       <div className={`bg-brand-white w-full ${maxWidth} rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[85vh]`}>
 
         {/* Encabezado */}
-        <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-4 sm:px-8 sm:py-6">
           <div>
             <h2 className="text-xl font-bold text-brand-black">{title}</h2>
             {subtitle && <div className="mt-1">{subtitle}</div>}
@@ -73,9 +73,9 @@ export function CustomModalPestanas({
         </div>
 
         {/* Tab strip */}
-        <div className="px-8 pt-6 shrink-0">
+        <div className="shrink-0 overflow-x-auto px-4 pt-4 sm:px-8 sm:pt-6">
           {tabVariant === "segmented" ? (
-            <div className="bg-gray-50 p-1 rounded-2xl flex gap-1">
+            <div className="flex min-w-[32rem] gap-1 rounded-2xl bg-gray-50 p-1 sm:min-w-0">
               {tabs.map((tab) => (
                 <div key={tab.id} className="group relative flex-1">
                   <button
@@ -140,12 +140,12 @@ export function CustomModalPestanas({
         </div>
 
         {/* Scrollable content */}
-        <div className="p-8 flex-1 overflow-y-auto min-h-0">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-8">
           {tabs.find((t) => t.id === currentTab)?.content}
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-6 border-t border-gray-100 bg-gray-50/50 shrink-0">
+        <div className="shrink-0 border-t border-gray-100 bg-gray-50/50 px-4 py-4 sm:px-8 sm:py-6">
           {footer}
         </div>
 

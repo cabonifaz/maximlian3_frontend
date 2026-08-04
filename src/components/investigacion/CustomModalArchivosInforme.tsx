@@ -71,8 +71,8 @@ export function CustomModalArchivosInvestigacionAnalista({
 
   return (
     <div className="fixed inset-0 z-[115] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
-      <div className="flex w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-8 py-6">
+      <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-4 sm:px-8 sm:py-6">
           <div>
             <h2 className="text-2xl font-bold text-brand-black">
               Archivos del informe
@@ -86,7 +86,7 @@ export function CustomModalArchivosInvestigacionAnalista({
           </CustomButton>
         </div>
 
-        <div className="flex gap-4 px-8 py-6">
+        <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-4 py-4 sm:px-8 sm:py-6 lg:flex-row">
           {!soloLectura ? (
             <CustomBloqueCargaArchivosAnalista
               ref={bloqueCargaRef}
@@ -298,7 +298,7 @@ export function CustomModalArchivosInvestigacionAnalista({
         </div>
 
         {!soloLectura ? (
-          <div className="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/50 px-8 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-5">
             <p className="text-xs font-medium text-slate-500">
               {archivosNuevosSinTipo.length > 0
                 ? "Completa el tipo de archivo antes de adjuntar."

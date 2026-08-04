@@ -119,9 +119,9 @@ export function ModalUsuario({
             </div>
           </div>
 
-          <div className="min-h-80 p-8">
+          <div className="min-h-80 p-4 sm:p-8">
             {tabActiva === "info" ? (
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <CustomLabel required className="text-sm font-semibold text-brand-black">
                     Nombre
@@ -190,7 +190,7 @@ export function ModalUsuario({
                   )}
                 </div>
 
-                <div className="col-span-2 space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <CustomLabel
                     required={!esModoEdicion}
                     className="text-sm font-semibold text-brand-black"
@@ -214,7 +214,7 @@ export function ModalUsuario({
                 </div>
 
                 {esModoEdicion && (
-                  <div className="col-span-2 flex items-center gap-3">
+                  <div className="flex items-center gap-3 md:col-span-2">
                     <input
                       type="checkbox"
                       {...register("activo")}
@@ -232,7 +232,7 @@ export function ModalUsuario({
               </div>
             ) : (
               <div
-                className={`grid transition-all duration-300 ${estaSeleccionadoTraductor ? "grid-cols-2 gap-12" : "grid-cols-1"}`}
+                className={`grid transition-all duration-300 ${estaSeleccionadoTraductor ? "grid-cols-1 gap-8 md:grid-cols-2 md:gap-12" : "grid-cols-1"}`}
               >
                 <div className="space-y-4">
                   <CustomLabel required as="p" className="mb-4 text-sm font-semibold text-brand-black">
@@ -290,7 +290,7 @@ export function ModalUsuario({
                 </div>
 
                 {estaSeleccionadoTraductor && (
-                  <div className="space-y-4 border-l border-gray-100 pl-12 animate-in fade-in slide-in-from-left-4 duration-300">
+                  <div className="animate-in space-y-4 border-t border-gray-100 pt-8 fade-in slide-in-from-left-4 duration-300 md:border-l md:border-t-0 md:pl-12 md:pt-0">
                     <div className="mb-4 flex items-center gap-2">
                       <Globe size={18} className="text-brand-wine" />
                       <CustomLabel required as="p" className="text-sm font-semibold text-brand-black">

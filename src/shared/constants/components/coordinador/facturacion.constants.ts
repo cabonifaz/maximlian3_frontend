@@ -62,6 +62,7 @@ export const OPCIONES_MODIFICAR_ESTADO_FACTURA: Array<{
 ];
 
 export const CODIGOS_ESTADO_FACTURA_SOLO_LECTURA = [5, 6];
+export const CODIGOS_ESTADO_FACTURA_MODIFICABLE: number[] = [2, 3, 4];
 
 export const ID_FORMA_PAGO_CONTADO = 1;
 

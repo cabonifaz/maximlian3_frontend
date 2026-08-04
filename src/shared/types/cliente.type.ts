@@ -6,7 +6,7 @@ export type CreateClientRateRequest = {
   diasMax: number;
   diasMin: number;
   precio: number;
-  penalidad?: number;
+  penalidad: number;
 };
 
 export type CreateClientContactRequest = {

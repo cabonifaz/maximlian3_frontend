@@ -4665,7 +4665,7 @@ function PantallaInvestigacionAnalista({
 
   return (
     <ProveedorFormatoFechaInforme formato={formatoFechaInformeVisual}>
-    <div ref={contenedorPantallaRef} className="space-y-6">
+    <div ref={contenedorPantallaRef} className="min-w-0 space-y-6">
       <ResumenPedidoInvestigacionAnalista
         codigoPedido={
           datosPedidoNavegacion?.codigoPedido
@@ -4687,7 +4687,7 @@ function PantallaInvestigacionAnalista({
         formatoFechaInformeSoloLectura={esSoloLectura}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[240px_minmax(0,1fr)]">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[240px_minmax(0,1fr)]">
         <MenuSeccionesInvestigacionAnalista
           idSeccionActiva={idSeccionActiva}
           onSeleccionar={setIdSeccionActiva}
@@ -4695,12 +4695,12 @@ function PantallaInvestigacionAnalista({
           secciones={seccionesInvestigacionAnalista}
         />
 
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           <ContenedorSeccionInvestigacionAnalista numero={seccionActual.indice} titulo={seccionActual.titulo} botonExtra={botonExtraSeccion}>
             {renderizarContenidoSeccion()}
           </ContenedorSeccionInvestigacionAnalista>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-gray-100 bg-white px-5 py-4 shadow-sm">
+          <div className="flex flex-col items-stretch gap-3 rounded-3xl border border-gray-100 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <CustomButton
               variant="secondary"
               size="sm"
@@ -4710,7 +4710,7 @@ function PantallaInvestigacionAnalista({
               Guardar Borrador
             </CustomButton>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <CustomButton
                 variant="secondary"
                 size="sm"

@@ -193,7 +193,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, idTarif
   };
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col gap-6 lg:flex-row">
       {/* Left column */}
       <div className="flex-1 flex flex-col gap-5">
         <CustomSelectorBuscable
@@ -251,7 +251,7 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, idTarif
       </div>
 
       {/* Right column */}
-      <div className="flex-1 flex flex-col gap-5 min-h-120">
+      <div className="flex flex-1 flex-col gap-5 lg:min-h-120">
         <CustomSelectorBuscable
           label={<span className="inline-flex items-center gap-1.5"><Filter size={13} className="text-gray-400" />País del Informe</span>}
           required
@@ -361,7 +361,7 @@ function InfoPedidoTab({
   }, [autogenerarCodigo, clearErrors, permitirAutogenerarCodigo, setValue]);
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col gap-6 lg:flex-row">
       {/* Left column */}
       <div className="flex-1 flex flex-col gap-5">
         <CustomSelectorBuscable
@@ -420,7 +420,7 @@ function InfoPedidoTab({
       <div className="flex-1 flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <CustomLabel required={!autogenerarCodigo}>Código</CustomLabel>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <input
               type="text"
               placeholder={autogenerarCodigo ? "Autogenerado" : "Código"}
@@ -481,7 +481,7 @@ function InfoPedidoTab({
         </div>
         <div className="flex flex-col gap-1.5">
           <CustomLabel optional>Plazo Crédito</CustomLabel>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <input
               type="text"
               inputMode="numeric"
@@ -489,7 +489,7 @@ function InfoPedidoTab({
               {...register("plazoCredito")}
               className={`flex-1 px-4 py-2.5 bg-brand-white border ${errors.plazoCredito ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
             />
-            <div className="w-40">
+            <div className="w-full sm:w-40">
               <CustomSelectorBuscable
                 options={tiposPlazoCredito}
                 value={idTipoPlazoCredito}
@@ -658,14 +658,14 @@ function AnexosTab({
   const showTable = isLoading || filteredArchivos.length > 0 || filteredNewFiles.length > 0;
 
   return (
-    <div className="flex gap-4 min-h-75">
+    <div className="flex min-h-75 flex-col gap-4 lg:flex-row">
       {/* Left: drag & drop */}
       <div
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        className={`w-44 shrink-0 flex flex-col items-center justify-center gap-3 p-4 border-2 border-dashed rounded-2xl cursor-pointer transition-colors ${isDragging ? "border-brand-wine bg-brand-wine/5" : "border-gray-200 hover:border-brand-wine/40 hover:bg-gray-50"}`}
+        className={`flex w-full shrink-0 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-4 transition-colors lg:w-44 ${isDragging ? "border-brand-wine bg-brand-wine/5" : "border-gray-200 hover:border-brand-wine/40 hover:bg-gray-50"}`}
       >
         <div className="p-3 rounded-full bg-gray-100">
           <Upload size={22} className="text-gray-400" />
@@ -685,7 +685,7 @@ function AnexosTab({
       {/* Right: search + filters + table */}
       <div className="flex-1 flex flex-col gap-3 min-w-0">
         {/* Search + filter row */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <input
             type="text"
             placeholder="Buscar por nombre..."
@@ -693,7 +693,7 @@ function AnexosTab({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
           />
-          <div className="w-36 shrink-0">
+          <div className="w-full shrink-0 sm:w-36">
             <CustomSelectorBuscable
               options={formatoOptions}
               value={valorFormatoSeleccionado ?? undefined}

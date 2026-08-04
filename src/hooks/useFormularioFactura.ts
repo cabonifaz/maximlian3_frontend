@@ -80,6 +80,9 @@ export function useFormularioFactura(
   const [idProductoDescuentoEdicion, setIdProductoDescuentoEdicion] = useState<
     number | null
   >(null);
+  const [idProductoIgvEdicion, setIdProductoIgvEdicion] = useState<
+    number | null
+  >(null);
   const formulario = useForm<DatosFormularioFactura>({
     resolver: zodResolver(esquemaFormularioFactura),
     mode: "onTouched",
@@ -266,6 +269,9 @@ export function useFormularioFactura(
     setIdProductoDescuentoEdicion((idActual) =>
       idActual === producto.idProductoFactura ? null : idActual,
     );
+    setIdProductoIgvEdicion((idActual) =>
+      idActual === producto.idProductoFactura ? null : idActual,
+    );
     setDetalle((actual) =>
       actual
         ? {
@@ -355,7 +361,10 @@ export function useFormularioFactura(
   };
 
   const iniciarEdicionDescuento = (producto: EntradaProductoFactura) => {
-    if (idProductoDescuentoEdicion !== null) return;
+    if (
+      idProductoDescuentoEdicion !== null
+      || idProductoIgvEdicion !== null
+    ) return;
     setIdProductoDescuentoEdicion(producto.idProductoFactura);
   };
 
@@ -392,11 +401,54 @@ export function useFormularioFactura(
     setIdProductoDescuentoEdicion(null);
   };
 
+  const iniciarEdicionIgv = (producto: EntradaProductoFactura) => {
+    if (
+      idProductoDescuentoEdicion !== null
+      || idProductoIgvEdicion !== null
+    ) return;
+    setIdProductoIgvEdicion(producto.idProductoFactura);
+  };
+
+  const cancelarEdicionIgv = (producto: EntradaProductoFactura) => {
+    const rutaIgv =
+      `porcentajesIgv.${producto.idProductoFactura}` as const;
+    setValue(rutaIgv, producto.porcentajeIgv);
+    clearErrors(rutaIgv);
+    setIdProductoIgvEdicion(null);
+  };
+
+  const guardarEdicionIgv = async (producto: EntradaProductoFactura) => {
+    const rutaIgv =
+      `porcentajesIgv.${producto.idProductoFactura}` as const;
+    const esValido = await trigger(rutaIgv);
+    if (!esValido) return;
+
+    const porcentajeIgv = getValues(rutaIgv);
+    setDetalle((actual) =>
+      actual
+        ? {
+            ...actual,
+            productos: actual.productos.map((productoActual) =>
+              productoActual.idProductoFactura === producto.idProductoFactura
+                ? { ...productoActual, porcentajeIgv }
+                : productoActual,
+            ),
+          }
+        : actual,
+    );
+    setIdProductoIgvEdicion(null);
+  };
+
+  const hayEdicionProductoPendiente =
+    idProductoDescuentoEdicion !== null
+    || idProductoIgvEdicion !== null;
+
   return {
     afectacionesIgv,
     agregarProductos,
     actualizarCampoFactura,
     cancelarEdicionDescuento,
+    cancelarEdicionIgv,
     confirmarFormulario: formulario.handleSubmit,
     detalle,
     erroresFormulario: formulario.formState.errors,
@@ -409,9 +461,13 @@ export function useFormularioFactura(
     ),
     guardarFacturaMutation,
     guardarEdicionDescuento,
+    guardarEdicionIgv,
     guardarCuota,
+    hayEdicionProductoPendiente,
     idProductoDescuentoEdicion,
+    idProductoIgvEdicion,
     iniciarEdicionDescuento,
+    iniciarEdicionIgv,
     obtenerPrecioUnitario,
     obtenerTotalProducto,
     quitarCuota,
