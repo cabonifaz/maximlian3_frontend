@@ -55,7 +55,10 @@ export function useResumenFacturacionDashboard() {
 
 export function useCumplimientoEntregasDashboard() {
   const [busqueda, setBusqueda] = useState("");
-  const [fechaInicio, setFechaInicio] = useState<Date>();
+  const [fechaInicio, setFechaInicio] = useState<Date | undefined>(() => {
+    const fechaActual = new Date();
+    return new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1);
+  });
   const [fechaFin, setFechaFin] = useState<Date>();
   const [idsEficiencia, setIdsEficiencia] = useState<number[]>([]);
   const [pagina, setPagina] = useState(1);
