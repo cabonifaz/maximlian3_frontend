@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FilePenLine, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { CircleX, FilePenLine, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
@@ -13,7 +13,10 @@ import type {
   EntradaProductoFacturable,
 } from "@maximilian/shared/types/facturacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import { ID_FORMA_PAGO_CONTADO } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
+import {
+  ID_ESTADO_FACTURA_APROBADA,
+  ID_FORMA_PAGO_CONTADO,
+} from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
 interface CustomModalFacturaProps {
   abierto: boolean;
@@ -44,9 +47,12 @@ export function CustomModalFactura({
     cuota?: EntradaCuotaFactura;
   } | null>(null);
   const [confirmacionSunatAbierta, setConfirmacionSunatAbierta] = useState(false);
+  const [confirmacionAnulacionAbierta, setConfirmacionAnulacionAbierta] = useState(false);
   const {
     afectacionesIgv,
     agregarProductos: agregarProductosFormulario,
+    anularFactura,
+    anularFacturaMutation,
     actualizarCampoFactura,
     cancelarEdicionDescuento,
     cancelarEdicionIgv,
@@ -84,6 +90,9 @@ export function CustomModalFactura({
   const soloLectura = modo === "detalle";
 
   if (!abierto || !detalle) return null;
+
+  const puedeAnularFactura =
+    detalle.codigoEstadoFacturacion === ID_ESTADO_FACTURA_APROBADA;
 
   const agregarProductos = (productos: EntradaProductoFacturable[]) => {
     agregarProductosFormulario(productos);
@@ -530,6 +539,17 @@ export function CustomModalFactura({
               <p className="text-lg font-black text-brand-black">{formatearMonto(totalFactura)}</p>
             </div>
             <div className="flex items-center gap-3">
+            {puedeAnularFactura ? (
+              <CustomButton
+                type="button"
+                variant="danger"
+                size="compact"
+                onClick={() => setConfirmacionAnulacionAbierta(true)}
+              >
+                <CircleX size={14} />
+                Anular factura
+              </CustomButton>
+            ) : null}
             {soloLectura ? (
               <CustomButton variant="secondary" size="compact" onClick={onCerrar}>
                 Cerrar
@@ -585,6 +605,24 @@ export function CustomModalFactura({
         onCerrar={() => setConfiguracionModalCuota(null)}
         onGuardar={guardarCuotaFactura}
       />
+      <CustomModalConfirmacionAccion
+        isOpen={confirmacionAnulacionAbierta}
+        onClose={() => setConfirmacionAnulacionAbierta(false)}
+        onConfirm={anularFactura}
+        title="Anular factura"
+        descripcion="La factura aprobada cambiará al estado Anulado. ¿Desea continuar?"
+        isSubmitting={anularFacturaMutation.isPending}
+        textoConfirmar="Anular factura"
+        textoCargandoConfirmar="Anulando..."
+        varianteConfirmar="danger"
+        anchoMaximoClassName="max-w-sm"
+        zIndexClassName="z-[95]"
+      >
+        <p className="text-sm text-slate-700">
+          Esta acción no se puede deshacer.
+        </p>
+      </CustomModalConfirmacionAccion>
+
       <CustomModalConfirmacionAccion
         isOpen={confirmacionSunatAbierta}
         onClose={() => setConfirmacionSunatAbierta(false)}

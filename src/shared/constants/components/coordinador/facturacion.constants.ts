@@ -42,6 +42,10 @@ export const ESTILOS_ESTADO_FACTURA_CLIENTE: Record<
     texto: "Borrador Factura",
     clase: "bg-amber-100 text-amber-700",
   },
+  aprobado: {
+    texto: "Aprobado",
+    clase: "bg-emerald-100 text-emerald-700",
+  },
   anulado: {
     texto: "Anulado",
     clase: "bg-slate-200 text-slate-600",
@@ -61,7 +65,13 @@ export const OPCIONES_MODIFICAR_ESTADO_FACTURA: Array<{
   { valor: "pre-factura-aprobada", etiqueta: "Pre-factura aprobada", codigoEstado: 3 },
 ];
 
-export const CODIGOS_ESTADO_FACTURA_SOLO_LECTURA = [5, 6];
+export const ID_ESTADO_FACTURA_APROBADA = 5;
+export const ID_ESTADO_FACTURA_ANULADA = 6;
+
+export const CODIGOS_ESTADO_FACTURA_SOLO_LECTURA = [
+  ID_ESTADO_FACTURA_APROBADA,
+  ID_ESTADO_FACTURA_ANULADA,
+];
 export const CODIGOS_ESTADO_FACTURA_MODIFICABLE: number[] = [2, 3, 4];
 
 export const ID_FORMA_PAGO_CONTADO = 1;
