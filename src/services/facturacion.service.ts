@@ -1,5 +1,6 @@
 import type {
   DetalleFactura,
+  AnularFacturaRequest,
   EntradaFacturaCliente,
   EntradaFacturacion,
   EntradaFacturacionApi,
@@ -68,7 +69,10 @@ function mapearPedidoFacturacion(
   pedido: EntradaPedidoFacturacionApi,
 ): EntradaFacturaCliente {
   const estados = {
-    Pendiente: { estado: "pendiente", codigoEstado: 1 },
+    "Listo para facturación": {
+      estado: "listo-para-facturacion",
+      codigoEstado: 1,
+    },
     "En pre-factura": { estado: "en-pre-factura", codigoEstado: 2 },
     "Pre-factura aprobada": {
       estado: "pre-factura-aprobada",
@@ -78,12 +82,24 @@ function mapearPedidoFacturacion(
       estado: "pre-factura-rechazada",
       codigoEstado: 4,
     },
+    Aprobado: { estado: "aprobado", codigoEstado: 5 },
+    Rechazado: { estado: "rechazado", codigoEstado: 6 },
+    "Pendiente Anulación": {
+      estado: "pendiente-anulacion",
+      codigoEstado: 7,
+    },
+    "Anulación Aprobada": {
+      estado: "anulacion-aprobada",
+      codigoEstado: 8,
+    },
+    "Anulación Rechazada": {
+      estado: "anulacion-rechazada",
+      codigoEstado: 9,
+    },
     "Borrador Factura": {
       estado: "borrador-factura",
-      codigoEstado: 0,
+      codigoEstado: 10,
     },
-    Aprobado: { estado: "aprobado", codigoEstado: 5 },
-    Anulado: { estado: "anulado", codigoEstado: 6 },
   } as const;
   const estado = estados[pedido.estadoFacturacion];
 
@@ -400,6 +416,19 @@ export const facturacionService = {
       {
         params: { idEstadoFacturacion },
       },
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result;
+  },
+
+  anular: async (payload: AnularFacturaRequest): Promise<unknown> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.anular,
+      payload,
     );
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {

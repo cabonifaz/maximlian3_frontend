@@ -16,6 +16,7 @@ import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useListadoFacturasCliente } from "@maximilian/hooks/useListadoFacturasCliente";
 import {
+  CODIGOS_ESTADO_FACTURA_EDITABLES,
   CODIGOS_ESTADO_FACTURA_MODIFICABLE,
   CODIGOS_ESTADO_FACTURA_SOLO_LECTURA,
   ESTILOS_ESTADO_FACTURA_CLIENTE,
@@ -100,7 +101,9 @@ export function CustomModalFacturasCliente({
     const rectangulo = event.currentTarget.getBoundingClientRect();
     const puedeModificarEstado =
       CODIGOS_ESTADO_FACTURA_MODIFICABLE.includes(factura.codigoEstado);
-    const puedeEditar = factura.estado === "borrador-factura";
+    const puedeEditar = CODIGOS_ESTADO_FACTURA_EDITABLES.includes(
+      factura.codigoEstado,
+    );
     const anchoMenu = 176;
     const anchoSubmenu = puedeModificarEstado ? 224 : 0;
     const altoMenu = puedeModificarEstado || puedeEditar ? 84 : 44;
@@ -272,7 +275,9 @@ export function CustomModalFacturasCliente({
           </button>
           {!facturaMenuSoloLectura ? (
             <>
-              {facturaMenuActivo.estado === "borrador-factura" ? (
+              {CODIGOS_ESTADO_FACTURA_EDITABLES.includes(
+                facturaMenuActivo.codigoEstado,
+              ) ? (
                 <button
                   type="button"
                   onClick={() => {

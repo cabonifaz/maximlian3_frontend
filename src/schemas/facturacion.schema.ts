@@ -40,3 +40,12 @@ export const esquemaCuotaFactura = z.object({
 });
 
 export type DatosFormularioCuotaFactura = z.infer<typeof esquemaCuotaFactura>;
+
+export const esquemaAnulacionFactura = z.object({
+  fechaReferencia: z.date({ error: "La fecha de referencia es requerida" }),
+  motivoDescripcion: z.string().trim().min(1, "El motivo es requerido"),
+});
+
+export type DatosFormularioAnulacionFactura = z.infer<
+  typeof esquemaAnulacionFactura
+>;

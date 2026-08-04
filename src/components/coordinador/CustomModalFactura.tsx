@@ -5,6 +5,7 @@ import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomModalCuotaFactura } from "@maximilian/components/coordinador/CustomModalCuotaFactura";
+import { CustomModalAnularFactura } from "@maximilian/components/coordinador/CustomModalAnularFactura";
 import { CustomModalProductosFactura } from "@maximilian/components/coordinador/CustomModalProductosFactura";
 import { useFormularioFactura } from "@maximilian/hooks/useFormularioFactura";
 import type {
@@ -240,18 +241,18 @@ export function CustomModalFactura({
                 ) : null}
               </div>
               <div className="overflow-x-auto rounded-lg border border-slate-200">
-                <table className="w-full min-w-[1400px] text-left text-sm">
+                <table className="w-full min-w-[1400px] text-center text-sm">
                   <thead className="bg-slate-50 text-xs font-bold text-slate-500">
                     <tr>
-                      <th className="px-4 py-3">Cantidad</th>
-                      <th className="px-4 py-3">Descripción</th>
-                      <th className="w-48 min-w-48 max-w-48 px-4 py-3">Unidad de medida</th>
+                      <th className="px-4 py-3 text-center">Cantidad</th>
+                      <th className="px-4 py-3 text-center">Descripción</th>
+                      <th className="w-48 min-w-48 max-w-48 px-4 py-3 text-center">Unidad de medida</th>
                       <th className="px-4 py-3 text-center">Dscto. %</th>
-                      <th className="px-4 py-3 text-right">Valor U.</th>
-                      <th className="px-4 py-3 text-right">Precio U.</th>
-                      <th className="w-48 min-w-48 max-w-48 px-4 py-3">Afectacion IGV</th>
-                      <th className="px-4 py-3 text-right">IGV %</th>
-                      <th className="px-4 py-3 text-right">Total</th>
+                      <th className="px-4 py-3 text-center">Valor U.</th>
+                      <th className="px-4 py-3 text-center">Precio U.</th>
+                      <th className="w-48 min-w-48 max-w-48 px-4 py-3 text-center">Afectacion IGV</th>
+                      <th className="px-4 py-3 text-center">IGV %</th>
+                      <th className="px-4 py-3 text-center">Total</th>
                       {!soloLectura ? <th className="px-4 py-3 text-center">Acciones</th> : null}
                     </tr>
                   </thead>
@@ -266,8 +267,8 @@ export function CustomModalFactura({
 
                       return (
                       <tr key={producto.idProductoFactura}>
-                        <td className="px-4 py-3 text-slate-600">{producto.cantidad}</td>
-                        <td className="px-4 py-3 font-medium text-slate-700">{producto.descripcion}</td>
+                        <td className="px-4 py-3 text-center text-slate-600">{producto.cantidad}</td>
+                        <td className="px-4 py-3 text-center font-medium text-slate-700">{producto.descripcion}</td>
                         <td className="w-48 min-w-48 max-w-48 px-4 py-3">
                           {soloLectura ? (
                             <span className="text-slate-600">
@@ -362,8 +363,8 @@ export function CustomModalFactura({
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right text-slate-600">{formatearMonto(producto.valorUnitario)}</td>
-                        <td className="px-4 py-3 text-right text-slate-600">
+                        <td className="px-4 py-3 text-center text-slate-600">{formatearMonto(producto.valorUnitario)}</td>
+                        <td className="px-4 py-3 text-center text-slate-600">
                           {formatearMonto(obtenerPrecioUnitario(producto))}
                         </td>
                         <td className="w-48 min-w-48 max-w-48 px-4 py-3">
@@ -464,7 +465,7 @@ export function CustomModalFactura({
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right font-medium text-slate-700">
+                        <td className="px-4 py-3 text-center font-medium text-slate-700">
                           {formatearMonto(soloLectura ? producto.total : obtenerTotalProducto(producto))}
                         </td>
                         {!soloLectura ? (
@@ -560,6 +561,11 @@ export function CustomModalFactura({
                   </tbody>
                 </table>
               </div>
+              {erroresFormulario.root?.cuotas?.message ? (
+                <p className="text-xs font-medium text-red-500">
+                  {erroresFormulario.root.cuotas.message}
+                </p>
+              ) : null}
             </section>
             ) : null}
           </div>
@@ -573,7 +579,7 @@ export function CustomModalFactura({
             {puedeAnularFactura ? (
               <CustomButton
                 type="button"
-                variant="danger"
+                variant="wine"
                 size="compact"
                 onClick={() => setConfirmacionAnulacionAbierta(true)}
               >
@@ -636,23 +642,12 @@ export function CustomModalFactura({
         onCerrar={() => setConfiguracionModalCuota(null)}
         onGuardar={guardarCuotaFactura}
       />
-      <CustomModalConfirmacionAccion
-        isOpen={confirmacionAnulacionAbierta}
-        onClose={() => setConfirmacionAnulacionAbierta(false)}
-        onConfirm={anularFactura}
-        title="Anular factura"
-        descripcion="La factura aprobada cambiará al estado Anulado. ¿Desea continuar?"
-        isSubmitting={anularFacturaMutation.isPending}
-        textoConfirmar="Anular factura"
-        textoCargandoConfirmar="Anulando..."
-        varianteConfirmar="danger"
-        anchoMaximoClassName="max-w-sm"
-        zIndexClassName="z-[95]"
-      >
-        <p className="text-sm text-slate-700">
-          Esta acción no se puede deshacer.
-        </p>
-      </CustomModalConfirmacionAccion>
+      <CustomModalAnularFactura
+        abierto={confirmacionAnulacionAbierta}
+        cargando={anularFacturaMutation.isPending}
+        onCerrar={() => setConfirmacionAnulacionAbierta(false)}
+        onConfirmar={anularFactura}
+      />
 
       <CustomModalConfirmacionAccion
         isOpen={confirmacionSunatAbierta}
