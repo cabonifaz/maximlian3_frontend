@@ -18,6 +18,7 @@ import {
   construirPayloadGuardarBorradorFactura,
   construirPayloadGuardarCambiosFactura,
 } from "@maximilian/shared/utils/facturacion.util";
+import { ID_ESTADO_FACTURA_ANULADA } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
 function obtenerDescuentosIniciales(factura: DetalleFactura | null) {
   return Object.fromEntries(
@@ -164,6 +165,20 @@ export function useFormularioFactura(
       }
 
       await facturacionService.emitir(idDocumentoElectronico);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["facturacion"] });
+      onGuardado?.();
+    },
+  });
+
+  const anularFacturaMutation = useMutation({
+    mutationFn: () => {
+      if (!detalle?.idFactura) return Promise.resolve();
+      return facturacionService.actualizarEstado(
+        detalle.idFactura,
+        ID_ESTADO_FACTURA_ANULADA,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["facturacion"] });
@@ -446,6 +461,8 @@ export function useFormularioFactura(
   return {
     afectacionesIgv,
     agregarProductos,
+    anularFactura: () => anularFacturaMutation.mutate(),
+    anularFacturaMutation,
     actualizarCampoFactura,
     cancelarEdicionDescuento,
     cancelarEdicionIgv,
