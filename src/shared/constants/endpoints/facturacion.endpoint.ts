@@ -6,6 +6,10 @@ export const ENDPOINTS_FACTURACION = {
   guardarBorrador: "/api/PedidoFactura/guardarBorrador",
   resumen: "/api/PedidoFactura/resumen",
   obtenerFactura: (idPedido: number) => `/api/PedidoFactura/factura/${idPedido}`,
+  obtenerFacturaPorId: (idDocumentoElectronico: number) =>
+    `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}`,
+  obtenerUrlDescargaFactura: (idDocumentoElectronico: number) =>
+    `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/urlDescarga`,
   guardarCambios: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/guardarCambios/${idDocumentoElectronico}`,
   actualizarEstado: (idPedido: number) =>

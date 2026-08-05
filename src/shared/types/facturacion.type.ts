@@ -48,6 +48,7 @@ export interface EntradaListaFactura {
   fechaEmision: string;
   formaPago: string;
   moneda?: string;
+  monedaIcono: string;
   totalImporte: number;
   estado: string;
   colorLetra?: string;
@@ -61,6 +62,7 @@ export interface EntradaListaFacturaApi {
   fechaEmision: string;
   formaPagoCodigo: string;
   totalImporte: number;
+  monedaIcono: string;
   estadoCodigo: string;
   colorLetra: string;
   colorFondo: string;

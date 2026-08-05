@@ -2,6 +2,7 @@ import { Search } from "lucide-react";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomFilaListadoFactura } from "@maximilian/components/coordinador/CustomFilaListadoFactura";
 import { CustomFiltroColumnaFactura } from "@maximilian/components/coordinador/CustomFiltroColumnaFactura";
+import { CustomModalCamposPdfFactura } from "@maximilian/components/coordinador/CustomModalCamposPdfFactura";
 import { CustomModalEnlaceFactura } from "@maximilian/components/coordinador/CustomModalEnlaceFactura";
 import { useListadoFacturas } from "@maximilian/hooks/useListadoFacturas";
 import { COLUMNAS_LISTADO_FACTURAS } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
@@ -27,6 +28,7 @@ export function CustomListadoFacturas({
             titulo="Fecha de emisión"
             fechaDesde={listado.fechaDesde}
             fechaHasta={listado.fechaHasta}
+            fechasInvalidas={listado.fechasInvalidas}
             onCambiarFechaDesde={listado.cambiarFechaDesde}
             onCambiarFechaHasta={listado.cambiarFechaHasta}
           />
@@ -54,9 +56,9 @@ export function CustomListadoFacturas({
         label: (
           <CustomFiltroColumnaFactura
             titulo="Estado"
-            valor={listado.estadoSeleccionado}
-            opciones={listado.opcionesEstado}
-            onChange={listado.cambiarEstado}
+            idMaster={TablaMaestraId.ESTADO_DOCUMENTO_ELECTRONICO}
+            valorId={listado.idEstadoSeleccionado}
+            onCambiarId={listado.cambiarEstado}
           />
         ),
       };
@@ -99,6 +101,9 @@ export function CustomListadoFacturas({
             submenuDescargaActivo={
               listado.idSubmenuDescargaActivo === factura.idDocumentoElectronico
             }
+            submenuPdfActivo={
+              listado.idSubmenuPdfActivo === factura.idDocumentoElectronico
+            }
             estiloMenu={listado.estiloMenu}
             onAlternarMenu={listado.alternarMenu}
             onCerrarMenu={listado.cerrarMenu}
@@ -106,7 +111,9 @@ export function CustomListadoFacturas({
             onVer={verFactura}
             onAnular={anularFactura}
             onAlternarDescarga={listado.alternarSubmenuDescarga}
+            onAlternarSubmenuPdf={listado.alternarSubmenuPdf}
             onDescargar={listado.descargarFactura}
+            onAgregarCamposPdf={listado.abrirCamposPdf}
           />
         )}
         isLoading={listado.isLoading}
@@ -127,6 +134,14 @@ export function CustomListadoFacturas({
         factura={listado.facturaEnlace}
         enlace={listado.enlaceFactura}
         onCerrar={listado.cerrarEnlace}
+      />
+
+      <CustomModalCamposPdfFactura
+        key={listado.facturaCamposPdf?.idDocumentoElectronico ?? "cerrado"}
+        abierto={listado.facturaCamposPdf !== null}
+        factura={listado.facturaCamposPdf}
+        onCerrar={listado.cerrarCamposPdf}
+        onConfirmar={listado.confirmarCamposPdf}
       />
     </div>
   );

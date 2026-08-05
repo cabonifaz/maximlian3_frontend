@@ -8,6 +8,7 @@ import type {
   EntradaPedidoFacturacionApi,
   EntradaProductoFacturable,
   EntradaProductoFacturableApi,
+  FormatoDescargaFactura,
   GuardarBorradorFacturaRequest,
   GuardarCambiosFacturaRequest,
   IdEstadoFacturacionActualizable,
@@ -46,6 +47,15 @@ import {
 import { servicioCliente } from "./cliente.service";
 import { servicioTablaMaestra } from "./tabla-maestra.service";
 import { concatenarCodigosOrdenCompra } from "@maximilian/shared/utils/facturacion.util";
+import {
+  obtenerRegistro,
+  obtenerTexto,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
+
+const TIPO_ARCHIVO_DESCARGA_FACTURA: Record<FormatoDescargaFactura, "Pdf" | "Xml"> = {
+  pdf: "Pdf",
+  xml: "Xml",
+};
 
 function mapearFacturacion(
   facturacion: EntradaFacturacionApi,
@@ -80,6 +90,7 @@ function mapearListaFactura(
     fechaEmision: factura.fechaEmision,
     formaPago: factura.formaPagoCodigo,
     totalImporte: factura.totalImporte,
+    monedaIcono: factura.monedaIcono,
     estado: factura.estadoCodigo,
     colorLetra: factura.colorLetra,
     colorFondo: factura.colorFondo,
@@ -196,10 +207,13 @@ async function obtenerFacturaRegistrada(
   idReferencia: number,
   idCliente: number | null,
   codigoEstadoFacturacion: number | null,
+  obtenerEndpointFactura: (
+    idReferencia: number,
+  ) => string = ENDPOINTS_FACTURACION.obtenerFactura,
 ): Promise<DetalleFactura> {
   const [{ data }, opcionesPorMaestro, detalleCliente] = await Promise.all([
     maximilianService.get<ApiResponse<ResultadoObtenerFacturaApi>>(
-      ENDPOINTS_FACTURACION.obtenerFactura(idReferencia),
+      obtenerEndpointFactura(idReferencia),
     ),
     servicioTablaMaestra.listarPorIds([
       TablaMaestraId.TIPO_DOCUMENTO_COMPROBANTE,
@@ -446,6 +460,7 @@ export const facturacionService = {
       idDocumentoElectronico,
       null,
       codigoEstadoFacturacion,
+      ENDPOINTS_FACTURACION.obtenerFacturaPorId,
     ),
 
   listarProductosFacturables: async (
@@ -583,5 +598,32 @@ export const facturacionService = {
     }
 
     return data.result;
+  },
+
+  obtenerUrlDescargaFactura: async (
+    idDocumentoElectronico: number,
+    formato: FormatoDescargaFactura,
+  ): Promise<string> => {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.obtenerUrlDescargaFactura(idDocumentoElectronico),
+      { params: { tipoArchivo: TIPO_ARCHIVO_DESCARGA_FACTURA[formato] } },
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    const registro = obtenerRegistro(data.result);
+    const urlDescarga = obtenerTexto(
+      typeof data.result === "string" ? data.result : undefined,
+      registro.downloadUrl,
+      registro.DownloadUrl,
+      registro.url,
+      registro.Url,
+    );
+
+    if (!urlDescarga) throw new Error("La respuesta de descarga es invalida");
+
+    return urlDescarga;
   },
 };

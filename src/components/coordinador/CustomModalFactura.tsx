@@ -22,7 +22,6 @@ import {
 import {
   ID_ESTADO_FACTURA_APROBADA,
   ID_FORMA_PAGO_CONTADO,
-  LIMITE_CARACTERES_ORDEN_COMPRA,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
 interface CustomModalFacturaProps {
@@ -220,14 +219,6 @@ export function CustomModalFactura({
                 displayValue={detalle.formaPagoDescripcion}
                 disabled={soloLectura}
                 error={erroresFormulario.idFormaPago?.message}
-              />
-              <CampoFactura
-                etiqueta="OC/OS"
-                valor={detalle.ordenCompra}
-                soloLectura={soloLectura}
-                opcional
-                maxLength={LIMITE_CARACTERES_ORDEN_COMPRA}
-                onChange={(valor) => actualizarCampoFactura("ordenCompra", valor)}
               />
               <CampoFactura
                 etiqueta="Emisión"

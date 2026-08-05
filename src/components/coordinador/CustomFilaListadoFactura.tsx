@@ -5,6 +5,7 @@ import {
   Download,
   Eye,
   FileCode2,
+  FileEdit,
   FileText,
   Link,
   MoreHorizontal,
@@ -22,6 +23,7 @@ interface PropsCustomFilaListadoFactura {
   factura: EntradaListaFactura;
   menuActivo: boolean;
   submenuDescargaActivo: boolean;
+  submenuPdfActivo: boolean;
   estiloMenu: CSSProperties;
   onAlternarMenu: (
     evento: MouseEvent<HTMLButtonElement>,
@@ -32,16 +34,19 @@ interface PropsCustomFilaListadoFactura {
   onVer: (factura: EntradaListaFactura) => void;
   onAnular: (factura: EntradaListaFactura) => void;
   onAlternarDescarga: (factura: EntradaListaFactura) => void;
+  onAlternarSubmenuPdf: (factura: EntradaListaFactura) => void;
   onDescargar: (
     factura: EntradaListaFactura,
     formato: FormatoDescargaFactura,
   ) => void;
+  onAgregarCamposPdf: (factura: EntradaListaFactura) => void;
 }
 
 export function CustomFilaListadoFactura({
   factura,
   menuActivo,
   submenuDescargaActivo,
+  submenuPdfActivo,
   estiloMenu,
   onAlternarMenu,
   onCerrarMenu,
@@ -49,7 +54,9 @@ export function CustomFilaListadoFactura({
   onVer,
   onAnular,
   onAlternarDescarga,
+  onAlternarSubmenuPdf,
   onDescargar,
+  onAgregarCamposPdf,
 }: PropsCustomFilaListadoFactura) {
   return (
     <>
@@ -71,7 +78,7 @@ export function CustomFilaListadoFactura({
         {factura.formaPago}
       </td>
       <td className='px-6 py-4 text-right text-sm font-semibold text-brand-black'>
-        {formatearImporteFactura(factura.totalImporte)}
+        {factura.monedaIcono} {formatearImporteFactura(factura.totalImporte)}
       </td>
       <td className='px-6 py-4 text-center'>
         <span
@@ -143,19 +150,44 @@ export function CustomFilaListadoFactura({
                 >
                   <Download size={14} />
                   <span className='flex-1 text-left'>Descargar</span>
-                  <ChevronRight size={14} />
+                  <ChevronRight size={14} className='rotate-180' />
                 </CustomButton>
                 {submenuDescargaActivo ? (
-                  <div className='absolute left-full top-0 ml-1 w-32 rounded-xl border border-slate-200 bg-white p-1 shadow-xl'>
-                    <CustomButton
-                      variant='ghost'
-                      size='sm'
-                      className='w-full justify-start px-3 text-slate-700'
-                      onClick={() => onDescargar(factura, 'pdf')}
-                    >
-                      <FileText size={14} />
-                      PDF
-                    </CustomButton>
+                  <div className='absolute right-full top-0 mr-1 w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-xl'>
+                    <div className='relative'>
+                      <CustomButton
+                        variant='ghost'
+                        size='sm'
+                        className='w-full justify-start px-3 text-slate-700'
+                        onClick={() => onAlternarSubmenuPdf(factura)}
+                      >
+                        <FileText size={14} />
+                        <span className='flex-1 text-left'>PDF</span>
+                        <ChevronRight size={14} className='rotate-180' />
+                      </CustomButton>
+                      {submenuPdfActivo ? (
+                        <div className='absolute right-full top-0 mr-1 w-40 rounded-xl border border-slate-200 bg-white p-1 shadow-xl'>
+                          <CustomButton
+                            variant='ghost'
+                            size='sm'
+                            className='w-full justify-start px-3 text-slate-700'
+                            onClick={() => onDescargar(factura, 'pdf')}
+                          >
+                            <Download size={14} />
+                            Descargar
+                          </CustomButton>
+                          <CustomButton
+                            variant='ghost'
+                            size='sm'
+                            className='w-full justify-start px-3 text-slate-700'
+                            onClick={() => onAgregarCamposPdf(factura)}
+                          >
+                            <FileEdit size={14} />
+                            Añadir campos
+                          </CustomButton>
+                        </div>
+                      ) : null}
+                    </div>
                     <CustomButton
                       variant='ghost'
                       size='sm'

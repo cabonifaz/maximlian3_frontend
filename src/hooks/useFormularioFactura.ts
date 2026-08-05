@@ -30,10 +30,14 @@ import {
 } from "@maximilian/shared/utils/tabla-maestra.util";
 import {
   DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA,
+  ID_AFECTACION_IGV_EXTRANJERO,
+  ID_AFECTACION_IGV_PERU,
   ID_FORMA_PAGO_CONTADO,
   ID_TIPO_COMPROBANTE_BOLETA,
   ID_TIPO_DOCUMENTO_SUNAT_RUC,
+  ID_TIPO_OPERACION_SUNAT_EXPORTACION_SERVICIOS,
   ID_UNIDAD_MEDIDA_PREDETERMINADA,
+  IDS_AFECTACION_IGV_DISPONIBLES,
   IDS_TIPO_COMPROBANTE_CLIENTE_RUC,
   PORCENTAJE_IGV_PREDETERMINADO,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
@@ -134,7 +138,9 @@ export function useFormularioFactura(
     defaultValues: {
       idTipoDocumentoMaestro: detalle?.idTipoDocumentoMaestro ?? 0,
       idMonedaMaestro: detalle?.idMonedaMaestro ?? 0,
-      idTipoOperacionMaestro: detalle?.idTipoOperacionMaestro ?? 0,
+      idTipoOperacionMaestro:
+        detalle?.idTipoOperacionMaestro
+        || ID_TIPO_OPERACION_SUNAT_EXPORTACION_SERVICIOS,
       idFormaPago: detalle?.idFormaPago ?? 0,
       descuentos: obtenerDescuentosIniciales(detalle),
 
@@ -195,19 +201,34 @@ export function useFormularioFactura(
     enabled: detalle !== null,
     staleTime: Infinity,
   });
-  const { data: opcionesAfectacionIgv } = useQuery({
+  const { data: opcionesAfectacionIgvBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.AFECTACION_IGV_SUNAT],
     queryFn: () =>
       servicioTablaMaestra.list(TablaMaestraId.AFECTACION_IGV_SUNAT),
     enabled: detalle !== null,
     staleTime: Infinity,
   });
-  const primeraOpcionAfectacionIgv = opcionesAfectacionIgv?.find(
-    (opcion) => opcion.num1 != null,
+  const opcionesAfectacionIgv = useMemo(
+    () =>
+      opcionesAfectacionIgvBase?.filter(
+        (opcion) =>
+          opcion.num1 != null
+          && (IDS_AFECTACION_IGV_DISPONIBLES as readonly number[]).includes(
+            opcion.num1,
+          ),
+      ),
+    [opcionesAfectacionIgvBase],
+  );
+  const idAfectacionIgvPredeterminada = detalle
+    ? detalle.idTipoDocumentoSunat === ID_TIPO_DOCUMENTO_SUNAT_RUC
+      ? ID_AFECTACION_IGV_PERU
+      : ID_AFECTACION_IGV_EXTRANJERO
+    : undefined;
+  const opcionAfectacionIgvPredeterminada = opcionesAfectacionIgv?.find(
+    (opcion) => opcion.num1 === idAfectacionIgvPredeterminada,
   );
   useEffect(() => {
-    const idPrimeraOpcion = primeraOpcionAfectacionIgv?.num1;
-    if (!idPrimeraOpcion || !detalle) return;
+    if (!idAfectacionIgvPredeterminada || !detalle) return;
 
     const afectacionesActuales = getValues("afectacionesIgv");
     const afectacionesCompletadas = { ...afectacionesActuales };
@@ -217,7 +238,7 @@ export function useFormularioFactura(
       const claveProducto = String(producto.idProductoFactura);
       if (afectacionesCompletadas[claveProducto]) return;
 
-      afectacionesCompletadas[claveProducto] = idPrimeraOpcion;
+      afectacionesCompletadas[claveProducto] = idAfectacionIgvPredeterminada;
       hayProductosSinAfectacion = true;
     });
 
@@ -226,7 +247,7 @@ export function useFormularioFactura(
     setValue("afectacionesIgv", afectacionesCompletadas, {
       shouldValidate: true,
     });
-  }, [detalle, getValues, primeraOpcionAfectacionIgv?.num1, setValue]);
+  }, [detalle, getValues, idAfectacionIgvPredeterminada, setValue]);
   const opcionesTipoDocumento = useMemo(() => {
     const idsPermitidos = new Set<number>(
       detalle?.idTipoDocumentoSunat === ID_TIPO_DOCUMENTO_SUNAT_RUC
@@ -663,8 +684,8 @@ export function useFormularioFactura(
     detalle,
     erroresFormulario: formulario.formState.errors,
     afectacionIgvPredeterminadaDescripcion:
-      primeraOpcionAfectacionIgv
-        ? obtenerEtiquetaPrincipalSecundaria(primeraOpcionAfectacionIgv)
+      opcionAfectacionIgvPredeterminada
+        ? obtenerEtiquetaPrincipalSecundaria(opcionAfectacionIgvPredeterminada)
         : "",
     emitirFactura: formulario.handleSubmit((datos) => {
       if (!validarTotalCuotas(datos)) return Promise.resolve();

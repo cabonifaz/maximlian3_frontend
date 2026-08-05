@@ -49,3 +49,11 @@ export const esquemaAnulacionFactura = z.object({
 export type DatosFormularioAnulacionFactura = z.infer<
   typeof esquemaAnulacionFactura
 >;
+
+export const esquemaCamposPdfFactura = z.object({
+  razonSocial: z.string().trim().min(1, "La razón social es requerida"),
+});
+
+export type DatosFormularioCamposPdfFactura = z.infer<
+  typeof esquemaCamposPdfFactura
+>;

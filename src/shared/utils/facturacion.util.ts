@@ -76,7 +76,7 @@ export function construirPayloadGuardarBorradorFactura(
 ): GuardarBorradorFacturaRequest {
   return {
     idTipoDocumentoMaestro: datos.idTipoDocumentoMaestro,
-    numeroReferencia: detalle.ordenCompra,
+    numeroReferencia: "",
     idMonedaMaestro: datos.idMonedaMaestro,
     idTipoOperacionMaestro: datos.idTipoOperacionMaestro,
     idFormaPago: datos.idFormaPago,
@@ -112,7 +112,7 @@ export function construirPayloadGuardarCambiosFactura(
 ): GuardarCambiosFacturaRequest {
   return {
     idFormaPago: datos.idFormaPago,
-    numeroReferencia: detalle.ordenCompra,
+    numeroReferencia: "",
     idMonedaMaestro: datos.idMonedaMaestro,
     idTipoOperacionMaestro: datos.idTipoOperacionMaestro,
     lineas: detalle.productos.map((producto, indice) => {
