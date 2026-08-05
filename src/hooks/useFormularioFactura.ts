@@ -21,7 +21,9 @@ import {
 } from "@maximilian/shared/utils/facturacion.util";
 import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
 import {
+  DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA,
   ID_FORMA_PAGO_CONTADO,
+  ID_UNIDAD_MEDIDA_PREDETERMINADA,
   PORCENTAJE_IGV_PREDETERMINADO,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
@@ -73,8 +75,8 @@ function crearProductoFactura(
     numeroLinea: 0,
     idLineaDocumentoElectronico: 0,
     productoSunatCodigo: null,
-    idUnidadMedidaMaestro: 0,
-    unidadMedidaDescripcion: "",
+    idUnidadMedidaMaestro: ID_UNIDAD_MEDIDA_PREDETERMINADA,
+    unidadMedidaDescripcion: DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA,
     cantidad: 1,
     descripcion: `${producto.codigo} - ${producto.tipo === "express" ? "Express" : producto.tipo === "normal" ? "Normal" : "Super Flash"}`,
     descuentoPorcentaje,
@@ -90,9 +92,20 @@ function crearProductoFactura(
 export function useFormularioFactura(
   factura: DetalleFactura | null,
   onGuardado?: () => void,
+  productosIniciales: EntradaProductoFacturable[] = [],
 ) {
   const queryClient = useQueryClient();
-  const [detalle, setDetalle] = useState<DetalleFactura | null>(factura);
+  const [detalle, setDetalle] = useState<DetalleFactura | null>(() =>
+    factura
+      ? {
+          ...factura,
+          productos: [
+            ...factura.productos,
+            ...productosIniciales.map(crearProductoFactura),
+          ],
+        }
+      : factura,
+  );
   const [idProductoDescuentoEdicion, setIdProductoDescuentoEdicion] = useState<
     number | null
   >(null);
@@ -103,15 +116,15 @@ export function useFormularioFactura(
     resolver: zodResolver(esquemaFormularioFactura),
     mode: "onTouched",
     defaultValues: {
-      idTipoDocumentoMaestro: factura?.idTipoDocumentoMaestro ?? 0,
-      idMonedaMaestro: factura?.idMonedaMaestro ?? 0,
-      idTipoOperacionMaestro: factura?.idTipoOperacionMaestro ?? 0,
-      idFormaPago: factura?.idFormaPago ?? 0,
-      descuentos: obtenerDescuentosIniciales(factura),
+      idTipoDocumentoMaestro: detalle?.idTipoDocumentoMaestro ?? 0,
+      idMonedaMaestro: detalle?.idMonedaMaestro ?? 0,
+      idTipoOperacionMaestro: detalle?.idTipoOperacionMaestro ?? 0,
+      idFormaPago: detalle?.idFormaPago ?? 0,
+      descuentos: obtenerDescuentosIniciales(detalle),
 
-      porcentajesIgv: obtenerPorcentajesIgvIniciales(factura),
-      afectacionesIgv: obtenerAfectacionesIgvIniciales(factura),
-      unidadesMedida: obtenerUnidadesMedidaIniciales(factura),
+      porcentajesIgv: obtenerPorcentajesIgvIniciales(detalle),
+      afectacionesIgv: obtenerAfectacionesIgvIniciales(detalle),
+      unidadesMedida: obtenerUnidadesMedidaIniciales(detalle),
     },
   });
   const {

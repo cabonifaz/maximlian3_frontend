@@ -17,6 +17,7 @@ import type {
   DetalleFactura,
   EntradaFacturaCliente,
   EntradaFacturacion,
+  EntradaProductoFacturable,
   EstadoFacturacionPrincipal,
 } from "@maximilian/shared/types/facturacion.type";
 
@@ -40,6 +41,7 @@ export default function GestionFacturacion() {
   const [modalFactura, setModalFactura] = useState<{
     modo: "emitir" | "detalle";
     detalle: DetalleFactura | null;
+    productosIniciales: EntradaProductoFacturable[];
   } | null>(null);
 
   const busquedaConRetardo = useRetardo(terminoBusqueda);
@@ -163,7 +165,7 @@ export default function GestionFacturacion() {
         facturacion.cliente,
         factura,
       );
-      setModalFactura({ modo: "detalle", detalle });
+      setModalFactura({ modo: "detalle", detalle, productosIniciales: [] });
     } catch {
       return;
     } finally {
@@ -179,7 +181,37 @@ export default function GestionFacturacion() {
         facturacion.cliente,
         factura,
       );
-      setModalFactura({ modo: "emitir", detalle });
+      setModalFactura({ modo: "emitir", detalle, productosIniciales: [] });
+    } catch {
+      return;
+    } finally {
+      setEstaCargandoModalFactura(false);
+    }
+  };
+
+  const abrirEmisionFacturaConPedido = async (
+    facturacion: EntradaFacturacion,
+    factura: EntradaFacturaCliente,
+  ) => {
+    setEstaCargandoModalFactura(true);
+    try {
+      const [detalle, producto] = await Promise.all([
+        facturacionService.obtenerDetalleFactura(
+          facturacion.idFacturacion,
+          facturacion.cliente,
+        ),
+        facturacionService.obtenerProductoFacturable(
+          facturacion.idFacturacion,
+          factura.idFactura,
+        ),
+      ]);
+
+      if (!producto) return;
+      setModalFactura({
+        modo: "emitir",
+        detalle,
+        productosIniciales: [producto],
+      });
     } catch {
       return;
     } finally {
@@ -306,6 +338,8 @@ export default function GestionFacturacion() {
           onAgregarFactura={() => abrirEmisionFactura(clienteSeleccionado)}
           onVerFactura={(factura) => abrirDetalleFactura(clienteSeleccionado, factura)}
           onEditarFactura={(factura) => abrirEmisionFactura(clienteSeleccionado, factura)}
+          onEmitirFactura={(factura) =>
+            abrirEmisionFacturaConPedido(clienteSeleccionado, factura)}
           cargandoAccion={estaCargandoModalFactura}
         />
       ) : null}
@@ -316,6 +350,7 @@ export default function GestionFacturacion() {
         abierto={modalFactura !== null}
         modo={modalFactura?.modo ?? "detalle"}
         factura={modalFactura?.detalle ?? null}
+        productosIniciales={modalFactura?.productosIniciales ?? []}
         onCerrar={() => setModalFactura(null)}
       />
     </div>

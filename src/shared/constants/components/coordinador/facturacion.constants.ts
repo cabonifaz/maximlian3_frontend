@@ -92,11 +92,15 @@ export const CODIGOS_ESTADO_FACTURA_SOLO_LECTURA = [
   ID_ESTADO_FACTURA_PENDIENTE_ANULACION,
   9,
 ];
-export const CODIGOS_ESTADO_FACTURA_EDITABLES = [3, 6, 8, 10];
+export const CODIGOS_ESTADO_FACTURA_EDITABLES = [6, 8, 10];
+export const CODIGOS_ESTADO_FACTURA_EMITIBLES = [1, 3];
 export const CODIGOS_ESTADO_FACTURA_MODIFICABLE: number[] = [2, 3, 4];
 
 export const ID_FORMA_PAGO_CONTADO = 1;
 export const PORCENTAJE_IGV_PREDETERMINADO = 18;
+export const ID_UNIDAD_MEDIDA_PREDETERMINADA = 1;
+export const DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA =
+  "ZZ - Unidad de medida acordada entre las partes (servicios)";
 
 export const ESTILOS_TIPO_PRODUCTO_FACTURABLE: Record<
   EntradaProductoFacturable["tipo"],
