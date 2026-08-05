@@ -86,6 +86,7 @@ export function CustomModalFactura({
     opcionesTipoDocumento,
     quitarCuota,
     quitarProducto,
+    registrarDescripcion,
     registrarDescuento,
     registrarPorcentajeIgv,
 
@@ -270,11 +271,35 @@ export function CustomModalFactura({
                       const errorPorcentajeIgv = erroresFormulario.porcentajesIgv?.[claveProducto];
                       const errorAfectacionIgv = erroresFormulario.afectacionesIgv?.[claveProducto];
                       const errorUnidadMedida = erroresFormulario.unidadesMedida?.[claveProducto];
+                      const errorDescripcion = erroresFormulario.descripciones?.[claveProducto];
 
                       return (
                       <tr key={producto.idProductoFactura}>
                         <td className="px-4 py-3 text-center text-slate-600">{producto.cantidad}</td>
-                        <td className="px-4 py-3 text-center font-medium text-slate-700">{producto.descripcion}</td>
+                        <td className="px-4 py-3 text-left">
+                          {soloLectura ? (
+                            <span className="font-medium text-slate-700">
+                              {producto.descripcion}
+                            </span>
+                          ) : (
+                            <>
+                              <input
+                                {...registrarDescripcion(
+                                  `descripciones.${producto.idProductoFactura}`,
+                                )}
+                                aria-label={`Descripción de ${producto.descripcion}`}
+                                className={`w-full rounded-md border px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-brand-wine ${
+                                  errorDescripcion ? "border-red-500" : "border-slate-200"
+                                }`}
+                              />
+                              {errorDescripcion ? (
+                                <p className="mt-1 text-left text-[10px] text-red-500">
+                                  {errorDescripcion.message}
+                                </p>
+                              ) : null}
+                            </>
+                          )}
+                        </td>
                         <td className="w-48 min-w-48 max-w-48 px-4 py-3">
                           {soloLectura ? (
                             <span className="text-slate-600">

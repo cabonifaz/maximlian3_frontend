@@ -96,6 +96,7 @@ export function construirPayloadGuardarBorradorFactura(
       return {
         idPedido: producto.idPedido,
         productoSunatCodigo: producto.productoSunatCodigo,
+        descripcion: datos.descripciones[claveProducto] ?? producto.descripcion,
         idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
         cantidad: producto.cantidad,
 
@@ -123,6 +124,7 @@ export function construirPayloadGuardarCambiosFactura(
       return {
         idPedido: producto.idPedido,
         productoSunatCodigo: producto.productoSunatCodigo,
+        descripcion: datos.descripciones[claveProducto] ?? producto.descripcion,
         idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
         cantidad: producto.cantidad,
 

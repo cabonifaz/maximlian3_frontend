@@ -78,6 +78,15 @@ function obtenerUnidadesMedidaIniciales(factura: DetalleFactura | null) {
   );
 }
 
+function obtenerDescripcionesIniciales(factura: DetalleFactura | null) {
+  return Object.fromEntries(
+    (factura?.productos ?? []).map((producto) => [
+      String(producto.idProductoFactura),
+      producto.descripcion,
+    ]),
+  );
+}
+
 function crearProductoFactura(
   producto: EntradaProductoFacturable,
 ): EntradaProductoFactura {
@@ -147,6 +156,7 @@ export function useFormularioFactura(
       porcentajesIgv: obtenerPorcentajesIgvIniciales(detalle),
       afectacionesIgv: obtenerAfectacionesIgvIniciales(detalle),
       unidadesMedida: obtenerUnidadesMedidaIniciales(detalle),
+      descripciones: obtenerDescripcionesIniciales(detalle),
     },
   });
   const {
@@ -168,6 +178,10 @@ export function useFormularioFactura(
   const unidadesMedida = useWatch({
     control: formulario.control,
     name: "unidadesMedida",
+  });
+  const descripciones = useWatch({
+    control: formulario.control,
+    name: "descripciones",
   });
   const porcentajesIgv = useWatch({
     control: formulario.control,
@@ -424,6 +438,12 @@ export function useFormularioFactura(
         Number(producto.idUnidadMedidaMaestro) || 0,
       ]),
     );
+    const descripcionesNuevas = Object.fromEntries(
+      productosNuevos.map((producto) => [
+        String(producto.idProductoFactura),
+        producto.descripcion,
+      ]),
+    );
 
     setValue("descuentos", {
       ...getValues("descuentos"),
@@ -441,6 +461,10 @@ export function useFormularioFactura(
     setValue("unidadesMedida", {
       ...getValues("unidadesMedida"),
       ...unidadesMedidaNuevas,
+    });
+    setValue("descripciones", {
+      ...getValues("descripciones"),
+      ...descripcionesNuevas,
     });
     setDetalle((actual) =>
       actual
@@ -463,6 +487,7 @@ export function useFormularioFactura(
     unregister(`porcentajesIgv.${producto.idProductoFactura}`);
     unregister(`afectacionesIgv.${producto.idProductoFactura}`);
     unregister(`unidadesMedida.${producto.idProductoFactura}`);
+    unregister(`descripciones.${producto.idProductoFactura}`);
     setIdProductoDescuentoEdicion((idActual) =>
       idActual === producto.idProductoFactura ? null : idActual,
     );
@@ -712,6 +737,8 @@ export function useFormularioFactura(
     opcionesTipoDocumento,
     quitarCuota,
     quitarProducto,
+    descripciones,
+    registrarDescripcion: formulario.register,
     registrarDescuento: formulario.register,
     registrarPorcentajeIgv: formulario.register,
 

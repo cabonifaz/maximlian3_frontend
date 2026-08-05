@@ -28,6 +28,12 @@ export const esquemaFormularioFactura = z.object({
     z.number({ error: "La unidad de medida es requerida" })
       .positive("La unidad de medida es requerida"),
   ),
+  descripciones: z.record(
+    z.string(),
+    z.string({ error: "La descripción es requerida" })
+      .trim()
+      .min(1, "La descripción es requerida"),
+  ),
 });
 
 export type DatosFormularioFactura = z.infer<typeof esquemaFormularioFactura>;

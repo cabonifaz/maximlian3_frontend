@@ -267,6 +267,7 @@ export interface LineaGuardarBorradorFactura {
   productoSunatCodigo: string | null;
   idUnidadMedidaMaestro: number;
   cantidad: number;
+  descripcion: string;
   montoDescuento: number;
   idAfectacionIgvMaestro: number;
   porcentajeIgv: number;
