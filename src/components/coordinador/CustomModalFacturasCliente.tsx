@@ -19,6 +19,7 @@ import {
   CODIGOS_ESTADO_FACTURA_EDITABLES,
   CODIGOS_ESTADO_FACTURA_EMITIBLES,
   CODIGOS_ESTADO_FACTURA_MODIFICABLE,
+  CODIGOS_ESTADO_FACTURA_SIN_VISUALIZACION,
   CODIGOS_ESTADO_FACTURA_SOLO_LECTURA,
   ESTILOS_ESTADO_FACTURA_CLIENTE,
   OPCIONES_MODIFICAR_ESTADO_FACTURA,
@@ -95,6 +96,11 @@ export function CustomModalFacturasCliente({
         facturaMenuActivo.codigoEstado,
       )
     : false;
+  const facturaMenuPuedeVer = facturaMenuActivo
+    ? !CODIGOS_ESTADO_FACTURA_SIN_VISUALIZACION.includes(
+        facturaMenuActivo.codigoEstado,
+      )
+    : false;
 
   const alternarMenu = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -115,13 +121,15 @@ export function CustomModalFacturasCliente({
     const puedeEmitir = CODIGOS_ESTADO_FACTURA_EMITIBLES.includes(
       factura.codigoEstado,
     );
+    const puedeVer = !CODIGOS_ESTADO_FACTURA_SIN_VISUALIZACION.includes(
+      factura.codigoEstado,
+    );
     const anchoMenu = 176;
     const anchoSubmenu = puedeModificarEstado && !puedeEmitir ? 224 : 0;
-    const altoMenu = puedeEmitir
-      ? 44
-      : puedeModificarEstado || puedeEditar
-        ? 84
-        : 44;
+    const cantidadAcciones = Number(puedeEmitir || puedeVer)
+      + Number(puedeEditar)
+      + Number(puedeModificarEstado && !puedeEmitir);
+    const altoMenu = Math.max(1, cantidadAcciones) * 44;
     const espacioInferior = window.innerHeight - rectangulo.bottom;
     setEstiloMenu({
       left: Math.max(
@@ -277,19 +285,7 @@ export function CustomModalFacturasCliente({
           className="fixed z-[100] w-44 rounded-lg border border-slate-200 bg-white py-1 text-left shadow-xl"
           style={estiloMenu}
         >
-          {!facturaMenuPuedeEmitir ? (
-          <button
-            type="button"
-            onClick={() => {
-              cerrarMenu();
-              onVerFactura(facturaMenuActivo);
-            }}
-            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-          >
-            <Eye size={14} />
-            Ver factura
-          </button>
-          ) : (
+          {facturaMenuPuedeEmitir ? (
             <button
               type="button"
               onClick={() => {
@@ -301,7 +297,19 @@ export function CustomModalFacturasCliente({
               <ReceiptText size={14} />
               Emitir factura
             </button>
-          )}
+          ) : facturaMenuPuedeVer ? (
+          <button
+            type="button"
+            onClick={() => {
+              cerrarMenu();
+              onVerFactura(facturaMenuActivo);
+            }}
+            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          >
+            <Eye size={14} />
+            Ver factura
+          </button>
+          ) : null}
           {!facturaMenuSoloLectura && !facturaMenuPuedeEmitir ? (
             <>
               {CODIGOS_ESTADO_FACTURA_EDITABLES.includes(

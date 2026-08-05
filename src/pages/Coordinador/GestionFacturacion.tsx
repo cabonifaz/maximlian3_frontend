@@ -10,7 +10,10 @@ import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { facturacionService } from "@maximilian/services/facturacion.service";
 import {
   COLUMNAS_FACTURACION,
+  CONFIGURACION_CONSULTA_FACTURACION,
+  ESTADO_CODIGO_FACTURA_ACEPTADA,
   ESTILOS_ESTADO_FACTURACION_PRINCIPAL,
+  ID_ESTADO_FACTURA_APROBADA,
   PESTANAS_GESTION_FACTURACION,
   type PestanaGestionFacturacion,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
@@ -19,6 +22,7 @@ import type {
   DetalleFactura,
   EntradaFacturaCliente,
   EntradaFacturacion,
+  EntradaListaFactura,
   EntradaProductoFacturable,
   EstadoFacturacionPrincipal,
 } from "@maximilian/shared/types/facturacion.type";
@@ -48,6 +52,7 @@ export default function GestionFacturacion() {
     modo: "emitir" | "detalle";
     detalle: DetalleFactura | null;
     productosIniciales: EntradaProductoFacturable[];
+    abrirAnulacionInicial?: boolean;
   } | null>(null);
 
   const busquedaConRetardo = useRetardo(terminoBusqueda);
@@ -69,6 +74,7 @@ export default function GestionFacturacion() {
     isError,
     refetch,
   } = useQuery({
+    ...CONFIGURACION_CONSULTA_FACTURACION,
     queryKey: [
       "facturacion",
       paginaActual,
@@ -173,6 +179,32 @@ export default function GestionFacturacion() {
         factura,
       );
       setModalFactura({ modo: "detalle", detalle, productosIniciales: [] });
+    } catch {
+      return;
+    } finally {
+      setEstaCargandoModalFactura(false);
+    }
+  };
+
+  const abrirDetalleFacturaListado = async (
+    factura: EntradaListaFactura,
+    abrirAnulacionInicial = false,
+  ) => {
+    setEstaCargandoModalFactura(true);
+    try {
+      const detalle =
+        await facturacionService.obtenerDetalleFacturaPorDocumento(
+          factura.idDocumentoElectronico,
+          factura.estado === ESTADO_CODIGO_FACTURA_ACEPTADA
+            ? ID_ESTADO_FACTURA_APROBADA
+            : null,
+        );
+      setModalFactura({
+        modo: "detalle",
+        detalle,
+        productosIniciales: [],
+        abrirAnulacionInicial,
+      });
     } catch {
       return;
     } finally {
@@ -346,7 +378,14 @@ export default function GestionFacturacion() {
       </div>
 
       {pestanaActiva === "facturas" ? (
-        <CustomListadoFacturas />
+        <CustomListadoFacturas
+          onVerFactura={(factura) => {
+            void abrirDetalleFacturaListado(factura);
+          }}
+          onAnularFactura={(factura) => {
+            void abrirDetalleFacturaListado(factura, true);
+          }}
+        />
       ) : (
         <>
       <CustomTabla
@@ -379,18 +418,19 @@ export default function GestionFacturacion() {
           cargandoAccion={estaCargandoModalFactura}
         />
       ) : null}
+        </>
+      )}
       <CustomModalFactura
         key={modalFactura
-          ? `${modalFactura.modo}-${modalFactura.detalle?.idFactura ?? "nueva"}`
+          ? `${modalFactura.modo}-${modalFactura.detalle?.idDocumentoElectronico ?? modalFactura.detalle?.idFactura ?? "nueva"}`
           : "cerrada"}
         abierto={modalFactura !== null}
         modo={modalFactura?.modo ?? "detalle"}
         factura={modalFactura?.detalle ?? null}
         productosIniciales={modalFactura?.productosIniciales ?? []}
+        abrirAnulacionInicial={modalFactura?.abrirAnulacionInicial}
         onCerrar={() => setModalFactura(null)}
       />
-        </>
-      )}
     </div>
   );
 }

@@ -10,7 +10,7 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import { CustomButton } from '@maximilian/components/common/CustomButton';
-import { CLASES_ESTADO_LISTADO_FACTURA } from '@maximilian/shared/constants/components/coordinador/facturacion.constants';
+import { ESTADO_CODIGO_FACTURA_ACEPTADA } from '@maximilian/shared/constants/components/coordinador/facturacion.constants';
 import type {
   EntradaListaFactura,
   FormatoDescargaFactura,
@@ -71,18 +71,15 @@ export function CustomFilaListadoFactura({
         {factura.formaPago}
       </td>
       <td className='px-6 py-4 text-right text-sm font-semibold text-brand-black'>
-        {formatearImporteFactura(
-          factura.totalImporte,
-          factura.moneda,
-        )}
+        {formatearImporteFactura(factura.totalImporte)}
       </td>
       <td className='px-6 py-4 text-center'>
         <span
-          className={
-            'inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ' +
-            (CLASES_ESTADO_LISTADO_FACTURA[factura.estado] ??
-              'bg-slate-100 text-slate-600')
-          }
+          className='inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold'
+          style={{
+            color: factura.colorLetra,
+            backgroundColor: factura.colorFondo,
+          }}
         >
           {factura.estado}
         </span>
@@ -130,7 +127,9 @@ export function CustomFilaListadoFactura({
                 size='sm'
                 className='w-full justify-start px-3 text-red-600'
                 onClick={() => onAnular(factura)}
-                disabled={factura.estado === 'Anulada'}
+                disabled={
+                  factura.estado !== ESTADO_CODIGO_FACTURA_ACEPTADA
+                }
               >
                 <Ban size={14} />
                 Anular

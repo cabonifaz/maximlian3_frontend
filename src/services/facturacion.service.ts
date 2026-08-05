@@ -4,6 +4,7 @@ import type {
   EntradaFacturaCliente,
   EntradaFacturacion,
   EntradaFacturacionApi,
+  EntradaListaFacturaApi,
   EntradaPedidoFacturacionApi,
   EntradaProductoFacturable,
   EntradaProductoFacturableApi,
@@ -11,14 +12,17 @@ import type {
   GuardarCambiosFacturaRequest,
   IdEstadoFacturacionActualizable,
   ParametrosListaFacturacion,
+  ParametrosListaFacturas,
   ParametrosListaPedidosFacturacion,
   ParametrosListaProductosFacturables,
   ParametrosResumenFacturacion,
   RespuestaListaFacturasCliente,
   RespuestaListaFacturacion,
+  RespuestaListaFacturas,
   RespuestaListaProductosFacturables,
   ResumenFacturacion,
   ResultadoListaFacturacionApi,
+  ResultadoListaFacturasApi,
   ResultadoListaPedidosFacturacionApi,
   ResultadoListaProductosFacturablesApi,
   ResultadoGuardarBorradorFactura,
@@ -63,6 +67,22 @@ function mapearFacturacion(
     totalFacturados: facturacion.pedidosFacturados,
     idioma: facturacion.idIdiomaFacturacion,
     estado: estados[facturacion.estadoFacturacion],
+  };
+}
+
+function mapearListaFactura(
+  factura: EntradaListaFacturaApi,
+): RespuestaListaFacturas["items"][number] {
+  return {
+    idDocumentoElectronico: factura.idDocumentoElectronico,
+    numeroFactura: factura.numeroFactura,
+    cliente: factura.clienteNombre,
+    fechaEmision: factura.fechaEmision,
+    formaPago: factura.formaPagoCodigo,
+    totalImporte: factura.totalImporte,
+    estado: factura.estadoCodigo,
+    colorLetra: factura.colorLetra,
+    colorFondo: factura.colorFondo,
   };
 }
 
@@ -173,13 +193,13 @@ function obtenerIdPedidoLinea(
 }
 
 async function obtenerFacturaRegistrada(
-  idPedido: number,
-  idCliente: number,
-  codigoEstadoFacturacion: number,
+  idReferencia: number,
+  idCliente: number | null,
+  codigoEstadoFacturacion: number | null,
 ): Promise<DetalleFactura> {
   const [{ data }, opcionesPorMaestro, detalleCliente] = await Promise.all([
     maximilianService.get<ApiResponse<ResultadoObtenerFacturaApi>>(
-      ENDPOINTS_FACTURACION.obtenerFactura(idPedido),
+      ENDPOINTS_FACTURACION.obtenerFactura(idReferencia),
     ),
     servicioTablaMaestra.listarPorIds([
       TablaMaestraId.TIPO_DOCUMENTO_COMPROBANTE,
@@ -189,7 +209,9 @@ async function obtenerFacturaRegistrada(
       TablaMaestraId.AFECTACION_IGV_SUNAT,
       TablaMaestraId.UNIDAD_MEDIDA_SUNAT,
     ]),
-    servicioCliente.getById(idCliente),
+    idCliente === null
+      ? Promise.resolve(null)
+      : servicioCliente.getById(idCliente),
   ]);
 
   if (data.idTipoMensaje !== MessageType.SUCCESS) {
@@ -219,11 +241,11 @@ async function obtenerFacturaRegistrada(
     opcionesPorMaestro[TablaMaestraId.UNIDAD_MEDIDA_SUNAT] ?? [];
 
   return {
-    idFactura: idPedido,
+    idFactura: idReferencia,
     codigoEstadoFacturacion,
     idDocumentoElectronico: cabecera.idDocumentoElectronico,
-    idCliente,
-    idTipoDocumentoSunat: detalleCliente.idTipoDocumentoSunat,
+    idCliente: idCliente ?? 0,
+    idTipoDocumentoSunat: detalleCliente?.idTipoDocumentoSunat ?? 0,
     idTipoDocumentoMaestro: opcionTipoDocumento?.num1 ?? 0,
     idMonedaMaestro: opcionMoneda?.num1 ?? 0,
     idTipoOperacionMaestro: opcionTipoOperacion?.num1 ?? 0,
@@ -325,6 +347,24 @@ function crearDetalleFactura(
 }
 
 export const facturacionService = {
+  listarFacturas: async (
+    parametros: ParametrosListaFacturas,
+  ): Promise<RespuestaListaFacturas> => {
+    const { data } = await maximilianService.get<
+      ApiResponse<ResultadoListaFacturasApi>
+    >(ENDPOINTS_FACTURACION.listarFacturas, { params: parametros });
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return {
+      totalRegistros: data.result.totalRegistros,
+      totalPaginas: data.result.totalPaginas,
+      items: data.result.items.map(mapearListaFactura),
+    };
+  },
+
   list: async (
     params: ParametrosListaFacturacion,
   ): Promise<RespuestaListaFacturacion> => {
@@ -397,6 +437,16 @@ export const facturacionService = {
       factura,
     );
   },
+
+  obtenerDetalleFacturaPorDocumento: async (
+    idDocumentoElectronico: number,
+    codigoEstadoFacturacion: number | null = null,
+  ): Promise<DetalleFactura> =>
+    obtenerFacturaRegistrada(
+      idDocumentoElectronico,
+      null,
+      codigoEstadoFacturacion,
+    ),
 
   listarProductosFacturables: async (
     parametros: ParametrosListaProductosFacturables,

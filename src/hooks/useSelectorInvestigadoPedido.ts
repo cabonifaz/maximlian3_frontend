@@ -10,6 +10,7 @@ interface ParametrosSelectorInvestigadoPedido {
   investigado: string;
   alCambiarInvestigado: (investigado: string) => void;
   alCambiarNumeroDocumento: (numeroDocumento: string) => void;
+  alCambiarTipoPersona: (tipoPersona: string) => void;
   alCambiarCompania: (idCompania: number) => void;
 }
 
@@ -19,6 +20,7 @@ export function useSelectorInvestigadoPedido({
   investigado,
   alCambiarInvestigado,
   alCambiarNumeroDocumento,
+  alCambiarTipoPersona,
   alCambiarCompania,
 }: ParametrosSelectorInvestigadoPedido) {
   const [busquedaHabilitada, setBusquedaHabilitada] = useState(false);
@@ -53,12 +55,15 @@ export function useSelectorInvestigadoPedido({
   );
 
   const seleccionarCompania = (idCompania: number) => {
-    const compania = opciones.find((opcion) => opcion.num1 === idCompania);
-    if (!compania?.string1) return;
+    const compania = data?.lstCompania.find(
+      (registro) => registro.idCompania === idCompania,
+    );
+    if (!compania?.nombreCompleto) return;
 
     setIdCompaniaSeleccionada(idCompania);
-    alCambiarInvestigado(compania.string1);
-    alCambiarNumeroDocumento(compania.string2 ?? "");
+    alCambiarInvestigado(compania.nombreCompleto);
+    alCambiarNumeroDocumento(compania.numeroDocumento);
+    alCambiarTipoPersona(compania.tipoPersona ?? "");
     alCambiarCompania(idCompania);
   };
 
@@ -66,6 +71,7 @@ export function useSelectorInvestigadoPedido({
     setIdCompaniaSeleccionada(0);
     alCambiarInvestigado(nombre);
     alCambiarNumeroDocumento("");
+    alCambiarTipoPersona("");
     alCambiarCompania(0);
   };
 

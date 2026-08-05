@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { facturacionService } from "@maximilian/services/facturacion.service";
 import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
+import { CONFIGURACION_CONSULTA_FACTURACION } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
 export function useProductosFacturables(idCliente: number, abierto: boolean) {
   const [idTipoTramite, setIdTipoTramite] = useState<number | undefined>();
@@ -15,7 +16,9 @@ export function useProductosFacturables(idCliente: number, abierto: boolean) {
   );
 
   const consulta = useQuery({
+    ...CONFIGURACION_CONSULTA_FACTURACION,
     queryKey: [
+      "facturacion",
       "pedidos-facturables",
       idCliente,
       idTipoTramite,
@@ -31,7 +34,6 @@ export function useProductosFacturables(idCliente: number, abierto: boolean) {
       numPag: paginaActual,
     }),
     enabled: abierto && idCliente > 0 && !fechasInvalidas,
-    placeholderData: keepPreviousData,
   });
 
   const cambiarTipoTramite = (valor?: number) => {

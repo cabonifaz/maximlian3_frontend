@@ -28,8 +28,15 @@ export function concatenarCodigosOrdenCompra(
 
 export function formatearImporteFactura(
   importe: number,
-  moneda: string,
+  moneda?: string,
 ) {
+  if (!moneda) {
+    return new Intl.NumberFormat("es-PE", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(importe);
+  }
+
   return new Intl.NumberFormat('es-PE', {
     style: 'currency',
     currency: moneda,
