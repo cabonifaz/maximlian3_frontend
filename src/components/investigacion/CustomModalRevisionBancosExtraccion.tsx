@@ -25,7 +25,7 @@ export function CustomModalRevisionBancosExtraccion({
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">Extracción</p>
             <h2 className="mt-2 text-xl font-bold text-slate-900">Cuentas bancarias detectadas</h2>
             <p className="mt-2 text-sm text-slate-500">
-              Se identificaron cuentas bancarias nuevas. Revisa cada registro antes de agregarlo al informe.
+              {bancos.length} pendiente{bancos.length === 1 ? "" : "s"}. Continúa para crear o completar el banco y confirmar los datos de la cuenta.
             </p>
           </div>
           <CustomButton variant="ghost" size="icon" onClick={onCerrar}>
@@ -58,7 +58,7 @@ export function CustomModalRevisionBancosExtraccion({
                         </CustomButton>
                         <CustomButton variant="primary" size="sm" onClick={() => onAprobar(indice)}>
                           <Check size={14} />
-                          Aprobar
+                          Continuar
                         </CustomButton>
                       </div>
                     </td>

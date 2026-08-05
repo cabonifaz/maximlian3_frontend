@@ -29,7 +29,7 @@ export function CustomModalRevisionEjecutivosExtraccion({
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">Extracción</p>
             <h2 className="mt-2 text-xl font-bold text-slate-900">Ejecutivos detectados</h2>
             <p className="mt-2 text-sm text-slate-500">
-              Se identificaron ejecutivos nuevos. Revisa cada registro antes de agregarlo al informe.
+              {ejecutivos.length} pendiente{ejecutivos.length === 1 ? "" : "s"}. Continúa para vincular cada ejecutivo con una persona registrada.
             </p>
           </div>
           <CustomButton variant="ghost" size="icon" onClick={onCerrar}>
@@ -68,7 +68,7 @@ export function CustomModalRevisionEjecutivosExtraccion({
                         </CustomButton>
                         <CustomButton variant="primary" size="sm" onClick={() => onAprobar(indice)}>
                           <Check size={14} />
-                          Aprobar
+                          Vincular
                         </CustomButton>
                       </div>
                     </td>

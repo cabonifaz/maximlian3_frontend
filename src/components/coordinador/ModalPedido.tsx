@@ -324,12 +324,20 @@ function InfoPedidoTab({
   const idTipoPlazoCredito = watch("idTipoPlazoCredito");
   const autogenerarCodigo = watch("autogenerarCodigo");
   const investigado = watch("investigado");
+  const idPais = watch("idPais");
 
   const selectorInvestigado = useSelectorInvestigadoPedido({
     abierto,
+    idPais,
     investigado,
     alCambiarInvestigado: (nombre) => {
       setValue("investigado", nombre, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    },
+    alCambiarNumeroDocumento: (numeroDocumento) => {
+      setValue("nroDocumento", numeroDocumento, {
         shouldValidate: true,
         shouldDirty: true,
       });
@@ -392,36 +400,6 @@ function InfoPedidoTab({
           error={errors.idTipoPersona?.message}
         />
         <div className="flex flex-col gap-1.5">
-          <CustomLabel optional>Nro. Documento</CustomLabel>
-          <input
-            type="text"
-            placeholder="Nro. Documento"
-            {...register("nroDocumento")}
-            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <CustomLabel optional>Nro. de Referencia</CustomLabel>
-          <input
-            type="text"
-            placeholder="Nro. de Referencia"
-            {...register("nroReferencia")}
-            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5 flex-1">
-          <CustomLabel optional>Comentario</CustomLabel>
-          <textarea
-            placeholder="Comentario"
-            {...register("comentario")}
-            className="w-full flex-1 px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all resize-none"
-          />
-        </div>
-      </div>
-
-      {/* Right column */}
-      <div className="flex-1 flex flex-col gap-5">
-        <div className="flex flex-col gap-1.5">
           <CustomLabel required={!autogenerarCodigo}>Código</CustomLabel>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <input
@@ -444,6 +422,34 @@ function InfoPedidoTab({
           </div>
           {errors.codigo && <p className="text-xs text-red-500">{errors.codigo.message}</p>}
         </div>
+        <CustomSelectorFecha
+          label="Desde"
+          required
+          value={fechaDesde}
+          onChange={(date) => { setValue("fechaDesde", date as Date, { shouldValidate: true, shouldDirty: true }); if (errors.fechaHasta) trigger("fechaHasta"); }}
+          error={errors.fechaDesde?.message}
+        />
+        <div className="flex flex-col gap-1.5 flex-1">
+          <CustomLabel optional>Comentario</CustomLabel>
+          <textarea
+            placeholder="Comentario"
+            {...register("comentario")}
+            className="w-full flex-1 px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all resize-none"
+          />
+        </div>
+      </div>
+
+      {/* Right column */}
+      <div className="flex-1 flex flex-col gap-5">
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel optional>Nro. Documento</CustomLabel>
+          <input
+            type="text"
+            placeholder="Nro. Documento"
+            {...register("nroDocumento")}
+            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+          />
+        </div>
         <CustomSelectorBuscable
           label="Atendido por"
           options={empresasAtencion}
@@ -454,13 +460,15 @@ function InfoPedidoTab({
           required
           error={errors.idEmpresaAtencion?.message}
         />
-        <CustomSelectorFecha
-          label="Desde"
-          required
-          value={fechaDesde}
-          onChange={(date) => { setValue("fechaDesde", date as Date, { shouldValidate: true, shouldDirty: true }); if (errors.fechaHasta) trigger("fechaHasta"); }}
-          error={errors.fechaDesde?.message}
-        />
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel optional>Nro. de Referencia</CustomLabel>
+          <input
+            type="text"
+            placeholder="Nro. de Referencia"
+            {...register("nroReferencia")}
+            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
+          />
+        </div>
         <CustomSelectorFecha
           label="Hasta"
           required

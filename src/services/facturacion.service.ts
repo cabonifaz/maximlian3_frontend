@@ -406,6 +406,30 @@ export const facturacionService = {
     };
   },
 
+  obtenerProductoFacturable: async (
+    idCliente: number,
+    idPedido: number,
+  ): Promise<EntradaProductoFacturable | null> => {
+    let paginaActual = 1;
+    let totalPaginas = 1;
+
+    do {
+      const respuesta = await facturacionService.listarProductosFacturables({
+        idCliente,
+        numPag: paginaActual,
+      });
+      const producto = respuesta.productos.find(
+        (productoActual) => productoActual.idProductoFacturable === idPedido,
+      );
+
+      if (producto) return producto;
+      totalPaginas = respuesta.totalPaginas;
+      paginaActual += 1;
+    } while (paginaActual <= totalPaginas);
+
+    return null;
+  },
+
   actualizarEstado: async (
     idPedido: number,
     idEstadoFacturacion: IdEstadoFacturacionActualizable,

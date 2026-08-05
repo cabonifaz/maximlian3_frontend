@@ -23,6 +23,7 @@ interface CustomModalFacturaProps {
   abierto: boolean;
   modo: "emitir" | "detalle";
   factura: DetalleFactura | null;
+  productosIniciales?: EntradaProductoFacturable[];
   onCerrar: () => void;
 }
 
@@ -41,6 +42,7 @@ export function CustomModalFactura({
   abierto,
   modo,
   factura,
+  productosIniciales = [],
   onCerrar,
 }: CustomModalFacturaProps) {
   const [modalProductosAbierto, setModalProductosAbierto] = useState(false);
@@ -88,7 +90,7 @@ export function CustomModalFactura({
     totalFactura,
     unidadesMedida,
     valoresMaestros,
-  } = useFormularioFactura(factura, onCerrar);
+  } = useFormularioFactura(factura, onCerrar, productosIniciales);
 
   const soloLectura = modo === "detalle";
 

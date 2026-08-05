@@ -17,6 +17,7 @@ import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { useListadoFacturasCliente } from "@maximilian/hooks/useListadoFacturasCliente";
 import {
   CODIGOS_ESTADO_FACTURA_EDITABLES,
+  CODIGOS_ESTADO_FACTURA_EMITIBLES,
   CODIGOS_ESTADO_FACTURA_MODIFICABLE,
   CODIGOS_ESTADO_FACTURA_SOLO_LECTURA,
   ESTILOS_ESTADO_FACTURA_CLIENTE,
@@ -35,6 +36,7 @@ interface CustomModalFacturasClienteProps {
   onAgregarFactura: () => void;
   onVerFactura: (factura: EntradaFacturaCliente) => void;
   onEditarFactura: (factura: EntradaFacturaCliente) => void;
+  onEmitirFactura: (factura: EntradaFacturaCliente) => void;
   cargandoAccion?: boolean;
 }
 
@@ -56,6 +58,7 @@ export function CustomModalFacturasCliente({
   onAgregarFactura,
   onVerFactura,
   onEditarFactura,
+  onEmitirFactura,
   cargandoAccion = false,
 }: CustomModalFacturasClienteProps) {
   const [idMenuActivo, setIdMenuActivo] = useState<number | null>(null);
@@ -87,6 +90,11 @@ export function CustomModalFacturasCliente({
         facturaMenuActivo.codigoEstado,
       )
     : false;
+  const facturaMenuPuedeEmitir = facturaMenuActivo
+    ? CODIGOS_ESTADO_FACTURA_EMITIBLES.includes(
+        facturaMenuActivo.codigoEstado,
+      )
+    : false;
 
   const alternarMenu = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -104,9 +112,16 @@ export function CustomModalFacturasCliente({
     const puedeEditar = CODIGOS_ESTADO_FACTURA_EDITABLES.includes(
       factura.codigoEstado,
     );
+    const puedeEmitir = CODIGOS_ESTADO_FACTURA_EMITIBLES.includes(
+      factura.codigoEstado,
+    );
     const anchoMenu = 176;
-    const anchoSubmenu = puedeModificarEstado ? 224 : 0;
-    const altoMenu = puedeModificarEstado || puedeEditar ? 84 : 44;
+    const anchoSubmenu = puedeModificarEstado && !puedeEmitir ? 224 : 0;
+    const altoMenu = puedeEmitir
+      ? 44
+      : puedeModificarEstado || puedeEditar
+        ? 84
+        : 44;
     const espacioInferior = window.innerHeight - rectangulo.bottom;
     setEstiloMenu({
       left: Math.max(
@@ -262,6 +277,7 @@ export function CustomModalFacturasCliente({
           className="fixed z-[100] w-44 rounded-lg border border-slate-200 bg-white py-1 text-left shadow-xl"
           style={estiloMenu}
         >
+          {!facturaMenuPuedeEmitir ? (
           <button
             type="button"
             onClick={() => {
@@ -273,7 +289,20 @@ export function CustomModalFacturasCliente({
             <Eye size={14} />
             Ver factura
           </button>
-          {!facturaMenuSoloLectura ? (
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                cerrarMenu();
+                onEmitirFactura(facturaMenuActivo);
+              }}
+              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              <ReceiptText size={14} />
+              Emitir factura
+            </button>
+          )}
+          {!facturaMenuSoloLectura && !facturaMenuPuedeEmitir ? (
             <>
               {CODIGOS_ESTADO_FACTURA_EDITABLES.includes(
                 facturaMenuActivo.codigoEstado,
