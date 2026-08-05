@@ -23,6 +23,7 @@ import { ModalAgregarContacto } from "./ModalAgregarContacto";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { obtenerEtiquetaPrincipalSecundaria } from "@maximilian/shared/utils/tabla-maestra.util";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   TarifarioListEntry,
@@ -549,6 +550,7 @@ export function ModalDetalleCliente({
                     required
                     options={opcionesMonedaCliente}
                     value={watchedMoneda}
+                    obtenerEtiquetaOpcion={obtenerEtiquetaPrincipalSecundaria}
                     onChange={(val) =>
                       setInfoValue("moneda", val, { shouldValidate: true, shouldDirty: true })
                     }

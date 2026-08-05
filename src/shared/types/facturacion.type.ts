@@ -41,6 +41,19 @@ export interface RespuestaListaFacturacion {
   totalPaginas: number;
 }
 
+export interface EntradaListaFactura {
+  idDocumentoElectronico: number;
+  numeroFactura: string;
+  cliente: string;
+  fechaEmision: string;
+  formaPago: string;
+  moneda: string;
+  totalImporte: number;
+  estado: string;
+}
+
+export type FormatoDescargaFactura = 'pdf' | 'xml';
+
 export interface EntradaFacturacionApi {
   idCliente: number;
   nombre: string;
@@ -105,6 +118,7 @@ export interface RespuestaListaFacturasCliente {
 export interface EntradaProductoFactura {
   idProductoFactura: number;
   idPedido: number;
+  codigo: string;
   numeroLinea: number;
   idLineaDocumentoElectronico: number;
   productoSunatCodigo: string | null;
@@ -136,6 +150,7 @@ export interface DetalleFactura {
   codigoEstadoFacturacion: number | null;
   idDocumentoElectronico: number | null;
   idCliente: number;
+  idTipoDocumentoSunat: number;
   idTipoDocumentoMaestro: number;
   idMonedaMaestro: number;
   idTipoOperacionMaestro: number;

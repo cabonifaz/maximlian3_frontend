@@ -5,6 +5,7 @@ import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSele
 import { useModalAgregarTarifa } from "@maximilian/hooks/useModalAgregarTarifa";
 import type { DatosFormularioTarifa } from "@maximilian/schemas";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { obtenerEtiquetaPrincipalSecundaria } from "@maximilian/shared/utils/tabla-maestra.util";
 
 interface ModalAgregarTarifaProps {
   isOpen: boolean;
@@ -82,6 +83,7 @@ export function ModalAgregarTarifa({
               required
               idMaster={TablaMaestraId.MONEDA_SUNAT}
               value={valores.moneda as number | undefined}
+              obtenerEtiquetaOpcion={obtenerEtiquetaPrincipalSecundaria}
               onChange={(valor) =>
                 setValue("moneda", valor, { shouldValidate: true })
               }
