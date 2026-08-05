@@ -1,83 +1,75 @@
-import { useMemo, useState } from 'react';
-import { useRetardo } from '@maximilian/hooks/useRetardo';
+import { useMemo, useState, type CSSProperties, type MouseEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useRetardo } from "@maximilian/hooks/useRetardo";
+import { facturacionService } from "@maximilian/services/facturacion.service";
 import {
-  CANTIDAD_FACTURAS_POR_PAGINA_MOCK,
-  FACTURAS_MOCK,
+  CONFIGURACION_CONSULTA_FACTURACION,
+  TAMANO_PAGINA_LISTADO_FACTURAS,
   URL_PUBLICA_FACTURA_MOCK,
-} from '@maximilian/shared/constants/components/coordinador/facturacion.constants';
+} from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import type {
   EntradaListaFactura,
   FormatoDescargaFactura,
-} from '@maximilian/shared/types/facturacion.type';
+} from "@maximilian/shared/types/facturacion.type";
 
 export function useListadoFacturas() {
-  const [facturas, setFacturas] =
-    useState<EntradaListaFactura[]>(FACTURAS_MOCK);
-  const [terminoBusqueda, setTerminoBusqueda] = useState('');
+  const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
-  const [estadoSeleccionado, setEstadoSeleccionado] = useState('');
-  const [formaPagoSeleccionada, setFormaPagoSeleccionada] = useState('');
-  const [fechaDesde, setFechaDesde] = useState('');
-  const [fechaHasta, setFechaHasta] = useState('');
+  const [estadoSeleccionado, setEstadoSeleccionado] = useState("");
+  const [idFormaPagoSeleccionada, setIdFormaPagoSeleccionada] = useState<
+    number | undefined
+  >();
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
   const [idMenuActivo, setIdMenuActivo] = useState<number | null>(null);
-  const [estiloMenu, setEstiloMenu] = useState<React.CSSProperties>({});
+  const [estiloMenu, setEstiloMenu] = useState<CSSProperties>({});
   const [facturaEnlace, setFacturaEnlace] =
-    useState<EntradaListaFactura | null>(null);
-  const [facturaDetalle, setFacturaDetalle] =
-    useState<EntradaListaFactura | null>(null);
-  const [facturaAAnular, setFacturaAAnular] =
     useState<EntradaListaFactura | null>(null);
   const [idSubmenuDescargaActivo, setIdSubmenuDescargaActivo] =
     useState<number | null>(null);
   const terminoConRetardo = useRetardo(terminoBusqueda);
 
-  const facturasFiltradas = useMemo(() => {
-    const termino = terminoConRetardo.toLocaleLowerCase();
+  const {
+    data: respuesta,
+    isError,
+    isLoading,
+    refetch,
+  } = useQuery({
+    ...CONFIGURACION_CONSULTA_FACTURACION,
+    queryKey: [
+      "facturacion",
+      "facturas",
+      paginaActual,
+      TAMANO_PAGINA_LISTADO_FACTURAS,
+      terminoConRetardo,
+      estadoSeleccionado,
+      idFormaPagoSeleccionada,
+      fechaDesde,
+      fechaHasta,
+    ],
+    queryFn: () =>
+      facturacionService.listarFacturas({
+        estadoCodigo: estadoSeleccionado || undefined,
+        idFormaPago: idFormaPagoSeleccionada,
+        fechaDesde: fechaDesde || undefined,
+        fechaHasta: fechaHasta || undefined,
+        busqueda: terminoConRetardo || undefined,
+        pagina: paginaActual,
+        tamanoPagina: TAMANO_PAGINA_LISTADO_FACTURAS,
+      }),
+  });
 
-    return facturas.filter((factura) => {
-      const coincideBusqueda =
-        !termino ||
-        factura.numeroFactura.toLocaleLowerCase().includes(termino) ||
-        factura.cliente.toLocaleLowerCase().includes(termino) ||
-        factura.formaPago.toLocaleLowerCase().includes(termino) ||
-        factura.estado.toLocaleLowerCase().includes(termino);
-      const coincideEstado =
-        !estadoSeleccionado || factura.estado === estadoSeleccionado;
-      const coincideFormaPago =
-        !formaPagoSeleccionada ||
-        factura.formaPago === formaPagoSeleccionada;
-      const coincideFechaDesde =
-        !fechaDesde || factura.fechaEmision >= fechaDesde;
-      const coincideFechaHasta =
-        !fechaHasta || factura.fechaEmision <= fechaHasta;
+  const opcionesEstado = useMemo(() => {
+    const estados = new Set(
+      respuesta?.items.map((factura) => factura.estado) ?? [],
+    );
+    if (estadoSeleccionado) estados.add(estadoSeleccionado);
 
-      return (
-        coincideBusqueda &&
-        coincideEstado &&
-        coincideFormaPago &&
-        coincideFechaDesde &&
-        coincideFechaHasta
-      );
-    });
-  }, [
-    estadoSeleccionado,
-    fechaDesde,
-    fechaHasta,
-    facturas,
-    formaPagoSeleccionada,
-    terminoConRetardo,
-  ]);
-
-  const totalPaginas = Math.max(
-    1,
-    Math.ceil(
-      facturasFiltradas.length / CANTIDAD_FACTURAS_POR_PAGINA_MOCK,
-    ),
-  );
-  const facturasPagina = facturasFiltradas.slice(
-    (paginaActual - 1) * CANTIDAD_FACTURAS_POR_PAGINA_MOCK,
-    paginaActual * CANTIDAD_FACTURAS_POR_PAGINA_MOCK,
-  );
+    return Array.from(estados).map((estado) => ({
+      valor: estado,
+      etiqueta: estado,
+    }));
+  }, [estadoSeleccionado, respuesta?.items]);
 
   const reiniciarPagina = () => setPaginaActual(1);
 
@@ -91,8 +83,8 @@ export function useListadoFacturas() {
     reiniciarPagina();
   };
 
-  const cambiarFormaPago = (valor: string) => {
-    setFormaPagoSeleccionada(valor);
+  const cambiarFormaPago = (valor: number | undefined) => {
+    setIdFormaPagoSeleccionada(valor);
     reiniciarPagina();
   };
 
@@ -107,7 +99,7 @@ export function useListadoFacturas() {
   };
 
   const alternarMenu = (
-    evento: React.MouseEvent<HTMLButtonElement>,
+    evento: MouseEvent<HTMLButtonElement>,
     factura: EntradaListaFactura,
   ) => {
     if (idMenuActivo === factura.idDocumentoElectronico) {
@@ -130,30 +122,6 @@ export function useListadoFacturas() {
     setIdMenuActivo(null);
   };
 
-  const abrirDetalle = (factura: EntradaListaFactura) => {
-    setFacturaDetalle(factura);
-    setIdMenuActivo(null);
-  };
-
-  const solicitarAnulacion = (factura: EntradaListaFactura) => {
-    setFacturaAAnular(factura);
-    setIdMenuActivo(null);
-  };
-
-  const confirmarAnulacion = () => {
-    if (!facturaAAnular) return;
-
-    setFacturas((facturasActuales) =>
-      facturasActuales.map((factura) =>
-        factura.idDocumentoElectronico ===
-        facturaAAnular.idDocumentoElectronico
-          ? { ...factura, estado: 'Anulada' }
-          : factura,
-      ),
-    );
-    setFacturaAAnular(null);
-  };
-
   const alternarSubmenuDescarga = (factura: EntradaListaFactura) => {
     setIdSubmenuDescargaActivo((idActual) =>
       idActual === factura.idDocumentoElectronico
@@ -166,30 +134,16 @@ export function useListadoFacturas() {
     factura: EntradaListaFactura,
     formato: FormatoDescargaFactura,
   ) => {
-    const contenido =
-      formato === 'xml'
-        ? '<factura>\n' +
-          '  <numero>' + factura.numeroFactura + '</numero>\n' +
-          '  <cliente>' + factura.cliente + '</cliente>\n' +
-          '  <fechaEmision>' + factura.fechaEmision + '</fechaEmision>\n' +
-          '  <formaPago>' + factura.formaPago + '</formaPago>\n' +
-          '  <moneda>' + factura.moneda + '</moneda>\n' +
-          '  <total>' + factura.totalImporte + '</total>\n' +
-          '  <estado>' + factura.estado + '</estado>\n' +
-          '</factura>'
-        : 'FACTURA ' + factura.numeroFactura + '\n\n' +
-          'Cliente: ' + factura.cliente + '\n' +
-          'Fecha de emision: ' + factura.fechaEmision + '\n' +
-          'Forma de pago: ' + factura.formaPago + '\n' +
-          'Total: ' + factura.moneda + ' ' + factura.totalImporte + '\n' +
-          'Estado: ' + factura.estado;
+    const contenido = formato === "xml"
+      ? `<factura><numero>${factura.numeroFactura}</numero></factura>`
+      : `FACTURA ${factura.numeroFactura}`;
     const archivo = new Blob([contenido], {
-      type: formato === 'xml' ? 'application/xml' : 'application/pdf',
+      type: formato === "xml" ? "application/xml" : "application/pdf",
     });
     const url = URL.createObjectURL(archivo);
-    const enlace = document.createElement('a');
+    const enlace = document.createElement("a");
     enlace.href = url;
-    enlace.download = factura.numeroFactura + '.' + formato;
+    enlace.download = `${factura.numeroFactura}.${formato}`;
     document.body.appendChild(enlace);
     enlace.click();
     enlace.remove();
@@ -199,7 +153,6 @@ export function useListadoFacturas() {
   };
 
   return {
-    abrirDetalle,
     abrirEnlace,
     alternarMenu,
     alternarSubmenuDescarga,
@@ -208,35 +161,33 @@ export function useListadoFacturas() {
     cambiarFechaDesde,
     cambiarFechaHasta,
     cambiarFormaPago,
-    cerrarAnulacion: () => setFacturaAAnular(null),
-    cerrarDetalle: () => setFacturaDetalle(null),
+    cambiarPagina: setPaginaActual,
     cerrarEnlace: () => setFacturaEnlace(null),
     cerrarMenu: () => {
       setIdMenuActivo(null);
       setIdSubmenuDescargaActivo(null);
     },
-    confirmarAnulacion,
     descargarFactura,
     enlaceFactura: facturaEnlace
-      ? URL_PUBLICA_FACTURA_MOCK +
-        encodeURIComponent(facturaEnlace.numeroFactura)
-      : '',
+      ? URL_PUBLICA_FACTURA_MOCK
+        + encodeURIComponent(facturaEnlace.numeroFactura)
+      : "",
     estadoSeleccionado,
     estiloMenu,
-    facturaAAnular,
-    facturaDetalle,
     facturaEnlace,
-    facturasPagina,
+    facturasPagina: respuesta?.items ?? [],
     fechaDesde,
     fechaHasta,
-    formaPagoSeleccionada,
+    idFormaPagoSeleccionada,
     idMenuActivo,
     idSubmenuDescargaActivo,
+    isError,
+    isLoading,
+    opcionesEstado,
     paginaActual,
+    refetch,
     terminoBusqueda,
-    totalPaginas,
-    totalRegistros: facturasFiltradas.length,
-    solicitarAnulacion,
-    cambiarPagina: setPaginaActual,
+    totalPaginas: respuesta?.totalPaginas ?? 1,
+    totalRegistros: respuesta?.totalRegistros ?? 0,
   };
 }

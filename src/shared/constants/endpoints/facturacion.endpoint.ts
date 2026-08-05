@@ -2,6 +2,7 @@ export const ENDPOINTS_FACTURACION = {
   listar: "/api/Cliente/listarFacturacion",
   listarPedidos: "/api/Cliente/listarPedidosFacturacion",
   listarPedidosFacturables: "/api/PedidoFactura/listarPedidos",
+  listarFacturas: "/api/PedidoFactura/listarFacturas",
   guardarBorrador: "/api/PedidoFactura/guardarBorrador",
   resumen: "/api/PedidoFactura/resumen",
   obtenerFactura: (idPedido: number) => `/api/PedidoFactura/factura/${idPedido}`,

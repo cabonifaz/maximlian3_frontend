@@ -48,6 +48,8 @@ export const OPCIONES_FORMA_PAGO_FACTURA_MOCK = [
 ];
 
 export const CANTIDAD_FACTURAS_POR_PAGINA_MOCK = 5;
+export const TAMANO_PAGINA_LISTADO_FACTURAS = 10;
+export const ESTADO_CODIGO_FACTURA_ACEPTADA = "Aceptado";
 
 export const FACTURAS_MOCK = [
   {
@@ -221,6 +223,13 @@ export const CODIGOS_ESTADO_FACTURA_SOLO_LECTURA = [
 export const CODIGOS_ESTADO_FACTURA_EDITABLES = [6, 8, 10];
 export const CODIGOS_ESTADO_FACTURA_EMITIBLES = [1, 3];
 export const CODIGOS_ESTADO_FACTURA_MODIFICABLE: number[] = [2, 3, 4];
+export const CODIGOS_ESTADO_FACTURA_SIN_VISUALIZACION = [1, 2, 3, 4];
+
+export const CONFIGURACION_CONSULTA_FACTURACION = {
+  staleTime: 0,
+  gcTime: 0,
+  refetchOnMount: "always",
+} as const;
 
 export const ID_FORMA_PAGO_CONTADO = 1;
 export const ID_TIPO_DOCUMENTO_SUNAT_RUC = 4;

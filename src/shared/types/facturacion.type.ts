@@ -47,9 +47,45 @@ export interface EntradaListaFactura {
   cliente: string;
   fechaEmision: string;
   formaPago: string;
-  moneda: string;
+  moneda?: string;
   totalImporte: number;
   estado: string;
+  colorLetra?: string;
+  colorFondo?: string;
+}
+
+export interface EntradaListaFacturaApi {
+  idDocumentoElectronico: number;
+  numeroFactura: string;
+  clienteNombre: string;
+  fechaEmision: string;
+  formaPagoCodigo: string;
+  totalImporte: number;
+  estadoCodigo: string;
+  colorLetra: string;
+  colorFondo: string;
+}
+
+export interface ParametrosListaFacturas {
+  estadoCodigo?: string;
+  idFormaPago?: number;
+  fechaDesde?: string;
+  fechaHasta?: string;
+  busqueda?: string;
+  pagina: number;
+  tamanoPagina: number;
+}
+
+export interface ResultadoListaFacturasApi {
+  totalRegistros: number;
+  totalPaginas: number;
+  items: EntradaListaFacturaApi[];
+}
+
+export interface RespuestaListaFacturas {
+  totalRegistros: number;
+  totalPaginas: number;
+  items: EntradaListaFactura[];
 }
 
 export type FormatoDescargaFactura = 'pdf' | 'xml';
