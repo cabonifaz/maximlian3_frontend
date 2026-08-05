@@ -4,7 +4,37 @@ import type {
   GuardarBorradorFacturaRequest,
   GuardarCambiosFacturaRequest,
 } from "@maximilian/shared/types/facturacion.type";
-import { ID_FORMA_PAGO_CONTADO } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
+import {
+  ID_FORMA_PAGO_CONTADO,
+  LIMITE_CARACTERES_ORDEN_COMPRA,
+} from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
+
+export function limitarOrdenCompra(valor: string) {
+  return valor.slice(0, LIMITE_CARACTERES_ORDEN_COMPRA);
+}
+
+export function concatenarCodigosOrdenCompra(
+  valorActual: string,
+  codigos: string[],
+) {
+  const valoresUnicos = [...valorActual.split(","), ...codigos]
+    .map((valor) => valor.trim())
+    .filter((valor, indice, valores) =>
+      valor.length > 0 && valores.indexOf(valor) === indice
+    );
+
+  return limitarOrdenCompra(valoresUnicos.join(","));
+}
+
+export function formatearImporteFactura(
+  importe: number,
+  moneda: string,
+) {
+  return new Intl.NumberFormat('es-PE', {
+    style: 'currency',
+    currency: moneda,
+  }).format(importe);
+}
 
 function convertirFechaAIso(fecha: string) {
   const coincidenciaIso = fecha.match(/^(\d{4})-(\d{2})-(\d{2})/);

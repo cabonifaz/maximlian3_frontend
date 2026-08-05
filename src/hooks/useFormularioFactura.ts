@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -8,6 +8,7 @@ import {
   type DatosFormularioFactura,
 } from "@maximilian/schemas";
 import { facturacionService } from "@maximilian/services/facturacion.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type {
   DetalleFactura,
   EntradaCuotaFactura,
@@ -16,14 +17,24 @@ import type {
 } from "@maximilian/shared/types/facturacion.type";
 import {
   calcularPrecioUnitarioFactura,
+  concatenarCodigosOrdenCompra,
   construirPayloadGuardarBorradorFactura,
   construirPayloadGuardarCambiosFactura,
+  limitarOrdenCompra,
 } from "@maximilian/shared/utils/facturacion.util";
 import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import {
+  obtenerEtiquetaPrincipalSecundaria,
+  obtenerSimboloTablaMaestra,
+} from "@maximilian/shared/utils/tabla-maestra.util";
 import {
   DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA,
   ID_FORMA_PAGO_CONTADO,
+  ID_TIPO_COMPROBANTE_BOLETA,
+  ID_TIPO_DOCUMENTO_SUNAT_RUC,
   ID_UNIDAD_MEDIDA_PREDETERMINADA,
+  IDS_TIPO_COMPROBANTE_CLIENTE_RUC,
   PORCENTAJE_IGV_PREDETERMINADO,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
@@ -72,6 +83,7 @@ function crearProductoFactura(
   return {
     idProductoFactura: Date.now() + producto.idProductoFacturable,
     idPedido: producto.idProductoFacturable,
+    codigo: producto.codigo,
     numeroLinea: 0,
     idLineaDocumentoElectronico: 0,
     productoSunatCodigo: null,
@@ -99,6 +111,10 @@ export function useFormularioFactura(
     factura
       ? {
           ...factura,
+          ordenCompra: concatenarCodigosOrdenCompra(
+            factura.ordenCompra,
+            productosIniciales.map((producto) => producto.codigo),
+          ),
           productos: [
             ...factura.productos,
             ...productosIniciales.map(crearProductoFactura),
@@ -167,6 +183,65 @@ export function useFormularioFactura(
     control: formulario.control,
     name: "idFormaPago",
   });
+  const { data: opcionesMoneda } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.MONEDA_SUNAT],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA_SUNAT),
+    enabled: detalle !== null,
+    staleTime: Infinity,
+  });
+  const { data: opcionesTipoDocumentoBase } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_DOCUMENTO_COMPROBANTE],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_DOCUMENTO_COMPROBANTE),
+    enabled: detalle !== null,
+    staleTime: Infinity,
+  });
+  const { data: opcionesAfectacionIgv } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.AFECTACION_IGV_SUNAT],
+    queryFn: () =>
+      servicioTablaMaestra.list(TablaMaestraId.AFECTACION_IGV_SUNAT),
+    enabled: detalle !== null,
+    staleTime: Infinity,
+  });
+  const primeraOpcionAfectacionIgv = opcionesAfectacionIgv?.find(
+    (opcion) => opcion.num1 != null,
+  );
+  useEffect(() => {
+    const idPrimeraOpcion = primeraOpcionAfectacionIgv?.num1;
+    if (!idPrimeraOpcion || !detalle) return;
+
+    const afectacionesActuales = getValues("afectacionesIgv");
+    const afectacionesCompletadas = { ...afectacionesActuales };
+    let hayProductosSinAfectacion = false;
+
+    detalle.productos.forEach((producto) => {
+      const claveProducto = String(producto.idProductoFactura);
+      if (afectacionesCompletadas[claveProducto]) return;
+
+      afectacionesCompletadas[claveProducto] = idPrimeraOpcion;
+      hayProductosSinAfectacion = true;
+    });
+
+    if (!hayProductosSinAfectacion) return;
+
+    setValue("afectacionesIgv", afectacionesCompletadas, {
+      shouldValidate: true,
+    });
+  }, [detalle, getValues, primeraOpcionAfectacionIgv?.num1, setValue]);
+  const opcionesTipoDocumento = useMemo(() => {
+    const idsPermitidos = new Set<number>(
+      detalle?.idTipoDocumentoSunat === ID_TIPO_DOCUMENTO_SUNAT_RUC
+        ? IDS_TIPO_COMPROBANTE_CLIENTE_RUC
+        : [ID_TIPO_COMPROBANTE_BOLETA],
+    );
+
+    return opcionesTipoDocumentoBase?.filter(
+      (opcion) => opcion.num1 != null && idsPermitidos.has(opcion.num1),
+    );
+  }, [detalle?.idTipoDocumentoSunat, opcionesTipoDocumentoBase]);
+  const simboloMoneda = obtenerSimboloTablaMaestra(
+    opcionesMoneda,
+    idMonedaMaestro || undefined,
+  );
   const guardarFacturaMutation = useMutation({
     mutationFn: (datos: DatosFormularioFactura) => {
       if (!detalle) return Promise.resolve();
@@ -350,6 +425,10 @@ export function useFormularioFactura(
       actual
         ? {
             ...actual,
+            ordenCompra: concatenarCodigosOrdenCompra(
+              actual.ordenCompra,
+              productosNuevos.map((producto) => producto.codigo),
+            ),
             productos: [...actual.productos, ...productosNuevos],
           }
         : actual,
@@ -474,7 +553,12 @@ export function useFormularioFactura(
     campo: "cliente" | "ni" | "ordenCompra",
     valor: string,
   ) => {
-    setDetalle((actual) => (actual ? { ...actual, [campo]: valor } : actual));
+    const valorActualizado = campo === "ordenCompra"
+      ? limitarOrdenCompra(valor)
+      : valor;
+    setDetalle((actual) =>
+      actual ? { ...actual, [campo]: valorActualizado } : actual
+    );
   };
 
   const iniciarEdicionDescuento = (producto: EntradaProductoFactura) => {
@@ -578,6 +662,10 @@ export function useFormularioFactura(
       }),
     detalle,
     erroresFormulario: formulario.formState.errors,
+    afectacionIgvPredeterminadaDescripcion:
+      primeraOpcionAfectacionIgv
+        ? obtenerEtiquetaPrincipalSecundaria(primeraOpcionAfectacionIgv)
+        : "",
     emitirFactura: formulario.handleSubmit((datos) => {
       if (!validarTotalCuotas(datos)) return Promise.resolve();
       return emitirFacturaMutation.mutateAsync(datos);
@@ -598,6 +686,9 @@ export function useFormularioFactura(
     iniciarEdicionIgv,
     obtenerPrecioUnitario,
     obtenerTotalProducto,
+    opcionesAfectacionIgv,
+    opcionesMoneda,
+    opcionesTipoDocumento,
     quitarCuota,
     quitarProducto,
     registrarDescuento: formulario.register,
@@ -634,6 +725,7 @@ export function useFormularioFactura(
       idTipoOperacionMaestro,
     },
     totalFactura,
+    simboloMoneda,
     unidadesMedida,
   };
 }

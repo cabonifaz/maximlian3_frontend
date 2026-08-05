@@ -15,6 +15,7 @@ import {
 import { ModalAgregarTarifa } from "./ModalAgregarTarifa";
 import { ModalAgregarContacto } from "./ModalAgregarContacto";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { obtenerEtiquetaPrincipalSecundaria } from "@maximilian/shared/utils/tabla-maestra.util";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -443,6 +444,7 @@ export function ModalAgregarCliente({
                     required
                     idMaster={TablaMaestraId.MONEDA_SUNAT}
                     value={watchedMoneda}
+                    obtenerEtiquetaOpcion={obtenerEtiquetaPrincipalSecundaria}
                     onChange={(val) =>
                       setInfoValue("moneda", val, { shouldValidate: true })
                     }
