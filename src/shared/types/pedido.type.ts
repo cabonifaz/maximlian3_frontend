@@ -69,6 +69,7 @@ export interface CreatePedidoRequest {
   idEmpresaAtencion: number;
   numeroDocumentoInvestigado: string;
   investigarRazonSocialNombres: string;
+  idCompania: number;
   idTarifario: number;
   idPlantilla: number;
   idIdioma: number;
@@ -133,6 +134,7 @@ export interface UpdatePedidoRequest {
   idTipoPersona: number;
   numeroDocumentoInvestigado: string;
   investigarRazonSocialNombres: string;
+  idCompania: number;
   idTarifario: number;
   idPlantilla: number;
   idIdioma: number;

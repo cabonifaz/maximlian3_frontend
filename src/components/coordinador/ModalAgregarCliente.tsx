@@ -152,7 +152,7 @@ export function ModalAgregarCliente({
       paisId,
       paisLabel: getLabel(TablaMaestraId.PAIS, paisId),
       monedaId,
-      monedaLabel: getLabel(TablaMaestraId.MONEDA, monedaId),
+      monedaLabel: getLabel(TablaMaestraId.MONEDA_SUNAT, monedaId),
       tramiteId,
       tramiteLabel: getLabel(TablaMaestraId.TIPO_TRAMITE, tramiteId),
       diasMin: data.diasMin,
@@ -441,7 +441,7 @@ export function ModalAgregarCliente({
                   <CustomSelectorBuscable
                     label="Moneda"
                     required
-                    idMaster={TablaMaestraId.MONEDA}
+                    idMaster={TablaMaestraId.MONEDA_SUNAT}
                     value={watchedMoneda}
                     onChange={(val) =>
                       setInfoValue("moneda", val, { shouldValidate: true })

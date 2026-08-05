@@ -10,6 +10,7 @@ interface ParametrosSelectorInvestigadoPedido {
   investigado: string;
   alCambiarInvestigado: (investigado: string) => void;
   alCambiarNumeroDocumento: (numeroDocumento: string) => void;
+  alCambiarCompania: (idCompania: number) => void;
 }
 
 export function useSelectorInvestigadoPedido({
@@ -18,6 +19,7 @@ export function useSelectorInvestigadoPedido({
   investigado,
   alCambiarInvestigado,
   alCambiarNumeroDocumento,
+  alCambiarCompania,
 }: ParametrosSelectorInvestigadoPedido) {
   const [busquedaHabilitada, setBusquedaHabilitada] = useState(false);
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
@@ -57,12 +59,14 @@ export function useSelectorInvestigadoPedido({
     setIdCompaniaSeleccionada(idCompania);
     alCambiarInvestigado(compania.string1);
     alCambiarNumeroDocumento(compania.string2 ?? "");
+    alCambiarCompania(idCompania);
   };
 
   const agregarInvestigado = (nombre: string) => {
     setIdCompaniaSeleccionada(0);
     alCambiarInvestigado(nombre);
     alCambiarNumeroDocumento("");
+    alCambiarCompania(0);
   };
 
   return {

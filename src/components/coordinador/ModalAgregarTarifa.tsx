@@ -80,7 +80,7 @@ export function ModalAgregarTarifa({
             <CustomSelectorBuscable
               label="Moneda"
               required
-              idMaster={TablaMaestraId.MONEDA}
+              idMaster={TablaMaestraId.MONEDA_SUNAT}
               value={valores.moneda as number | undefined}
               onChange={(valor) =>
                 setValue("moneda", valor, { shouldValidate: true })
