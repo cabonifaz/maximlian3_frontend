@@ -342,6 +342,18 @@ function InfoPedidoTab({
         shouldDirty: true,
       });
     },
+    alCambiarTipoPersona: (tipoPersona) => {
+      const tipoPersonaNormalizado = tipoPersona.trim().toLocaleLowerCase();
+      const idTipoPersonaEncontrado = tiposPersona?.find(
+        (opcion) =>
+          opcion.string1?.trim().toLocaleLowerCase() === tipoPersonaNormalizado,
+      )?.num1;
+
+      setValue("idTipoPersona", idTipoPersonaEncontrado as number, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    },
     alCambiarCompania: (idCompania) => {
       setValue("idCompania", idCompania, { shouldDirty: true });
     },

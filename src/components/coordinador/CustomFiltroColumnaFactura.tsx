@@ -1,5 +1,6 @@
 import { CustomButton } from '@maximilian/components/common/CustomButton';
 import { CustomLabel } from '@maximilian/components/common/CustomLabel';
+import { CustomSelectorBuscable } from '@maximilian/components/common/CustomSelectorBuscable';
 import { CustomEncabezadoFiltroFactura } from '@maximilian/components/coordinador/CustomEncabezadoFiltroFactura';
 
 interface OpcionFiltroFactura {
@@ -12,6 +13,9 @@ interface PropsCustomFiltroColumnaFactura {
   valor?: string;
   opciones?: OpcionFiltroFactura[];
   onChange?: (valor: string) => void;
+  idMaster?: number;
+  valorId?: number;
+  onCambiarId?: (valor: number | undefined) => void;
   fechaDesde?: string;
   fechaHasta?: string;
   onCambiarFechaDesde?: (valor: string) => void;
@@ -23,6 +27,9 @@ export function CustomFiltroColumnaFactura({
   valor = '',
   opciones,
   onChange,
+  idMaster,
+  valorId,
+  onCambiarId,
   fechaDesde = '',
   fechaHasta = '',
   onCambiarFechaDesde,
@@ -79,6 +86,26 @@ export function CustomFiltroColumnaFactura({
             Limpiar periodo
           </CustomButton>
         </div>
+      </CustomEncabezadoFiltroFactura>
+    );
+  }
+
+  if (idMaster !== undefined && onCambiarId) {
+    return (
+      <CustomEncabezadoFiltroFactura
+        titulo={titulo}
+        activo={valorId !== undefined}
+      >
+        <CustomSelectorBuscable
+          label={titulo}
+          idMaster={idMaster}
+          value={valorId}
+          onChange={(idSeleccionado) => onCambiarId(idSeleccionado)}
+          onClear={() => onCambiarId(undefined)}
+          optional
+          mostrarTextoOpcionalEnLabel={false}
+          etiquetaOpcionVacia="Todos"
+        />
       </CustomEncabezadoFiltroFactura>
     );
   }

@@ -10,6 +10,7 @@ import type {
   EntradaFacturaCliente,
   IdEstadoFacturacionActualizable,
 } from "@maximilian/shared/types/facturacion.type";
+import { CONFIGURACION_CONSULTA_FACTURACION } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
 export function useListadoFacturasCliente(idCliente: number) {
   const queryClient = useQueryClient();
@@ -31,6 +32,7 @@ export function useListadoFacturasCliente(idCliente: number) {
     isError,
     refetch,
   } = useQuery({
+    ...CONFIGURACION_CONSULTA_FACTURACION,
     queryKey: claveConsulta,
     queryFn: () => facturacionService.listarFacturasCliente({
       idCliente,

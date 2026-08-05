@@ -30,6 +30,7 @@ interface CustomModalFacturaProps {
   modo: "emitir" | "detalle";
   factura: DetalleFactura | null;
   productosIniciales?: EntradaProductoFacturable[];
+  abrirAnulacionInicial?: boolean;
   onCerrar: () => void;
 }
 
@@ -45,6 +46,7 @@ export function CustomModalFactura({
   modo,
   factura,
   productosIniciales = [],
+  abrirAnulacionInicial = false,
   onCerrar,
 }: CustomModalFacturaProps) {
   const [modalProductosAbierto, setModalProductosAbierto] = useState(false);
@@ -52,7 +54,8 @@ export function CustomModalFactura({
     cuota?: EntradaCuotaFactura;
   } | null>(null);
   const [confirmacionSunatAbierta, setConfirmacionSunatAbierta] = useState(false);
-  const [confirmacionAnulacionAbierta, setConfirmacionAnulacionAbierta] = useState(false);
+  const [confirmacionAnulacionAbierta, setConfirmacionAnulacionAbierta] =
+    useState(abrirAnulacionInicial);
   const {
     afectacionIgvPredeterminadaDescripcion,
     afectacionesIgv,
