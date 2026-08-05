@@ -16,6 +16,7 @@ import { OPCIONES_ESTADO_CUOTA } from "@maximilian/shared/constants/components/c
 import type { EntradaCuotaFactura } from "@maximilian/shared/types/facturacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { convertirTextoAFecha, formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
+import { obtenerEtiquetaPrincipalSecundaria } from "@maximilian/shared/utils/tabla-maestra.util";
 
 interface CustomModalCuotaFacturaProps {
   abierto: boolean;
@@ -119,6 +120,7 @@ export function CustomModalCuotaFactura({
               required
               options={opcionesMoneda}
               value={idMoneda || undefined}
+              obtenerEtiquetaOpcion={obtenerEtiquetaPrincipalSecundaria}
               onChange={(valor) => setValue("idMoneda", valor, {
                 shouldDirty: true,
                 shouldValidate: true,

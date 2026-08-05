@@ -11,14 +11,19 @@ import { facturacionService } from "@maximilian/services/facturacion.service";
 import {
   COLUMNAS_FACTURACION,
   ESTILOS_ESTADO_FACTURACION_PRINCIPAL,
+  PESTANAS_GESTION_FACTURACION,
+  type PestanaGestionFacturacion,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   DetalleFactura,
   EntradaFacturaCliente,
   EntradaFacturacion,
+  EntradaProductoFacturable,
   EstadoFacturacionPrincipal,
 } from "@maximilian/shared/types/facturacion.type";
+
+import { CustomListadoFacturas } from '@maximilian/components/coordinador/CustomListadoFacturas';
 
 function EstadoBadge({ estado }: { estado: EstadoFacturacionPrincipal }) {
   const configuracion = ESTILOS_ESTADO_FACTURACION_PRINCIPAL[estado];
@@ -31,6 +36,8 @@ function EstadoBadge({ estado }: { estado: EstadoFacturacionPrincipal }) {
 }
 
 export default function GestionFacturacion() {
+  const [pestanaActiva, setPestanaActiva] =
+    useState<PestanaGestionFacturacion>('facturas');
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
   const [idMenuActivo, setIdMenuActivo] = useState<number | null>(null);
@@ -40,6 +47,7 @@ export default function GestionFacturacion() {
   const [modalFactura, setModalFactura] = useState<{
     modo: "emitir" | "detalle";
     detalle: DetalleFactura | null;
+    productosIniciales: EntradaProductoFacturable[];
   } | null>(null);
 
   const busquedaConRetardo = useRetardo(terminoBusqueda);
@@ -69,6 +77,7 @@ export default function GestionFacturacion() {
       idIdiomaFacturacion,
       estadoFacturacion,
     ],
+    enabled: pestanaActiva === 'clientes',
     queryFn: () =>
       facturacionService.list({
         numPag: paginaActual,
@@ -163,7 +172,7 @@ export default function GestionFacturacion() {
         facturacion.cliente,
         factura,
       );
-      setModalFactura({ modo: "detalle", detalle });
+      setModalFactura({ modo: "detalle", detalle, productosIniciales: [] });
     } catch {
       return;
     } finally {
@@ -179,7 +188,37 @@ export default function GestionFacturacion() {
         facturacion.cliente,
         factura,
       );
-      setModalFactura({ modo: "emitir", detalle });
+      setModalFactura({ modo: "emitir", detalle, productosIniciales: [] });
+    } catch {
+      return;
+    } finally {
+      setEstaCargandoModalFactura(false);
+    }
+  };
+
+  const abrirEmisionFacturaConPedido = async (
+    facturacion: EntradaFacturacion,
+    factura: EntradaFacturaCliente,
+  ) => {
+    setEstaCargandoModalFactura(true);
+    try {
+      const [detalle, producto] = await Promise.all([
+        facturacionService.obtenerDetalleFactura(
+          facturacion.idFacturacion,
+          facturacion.cliente,
+        ),
+        facturacionService.obtenerProductoFacturable(
+          facturacion.idFacturacion,
+          factura.idFactura,
+        ),
+      ]);
+
+      if (!producto) return;
+      setModalFactura({
+        modo: "emitir",
+        detalle,
+        productosIniciales: [producto],
+      });
     } catch {
       return;
     } finally {
@@ -269,6 +308,30 @@ export default function GestionFacturacion() {
     <div className="space-y-5">
       <div className="space-y-3">
         <h1 className="text-2xl font-bold text-brand-black">Facturación</h1>
+        <div
+          className="flex gap-6 border-b border-slate-200"
+          role="tablist"
+          aria-label="Secciones de facturación"
+        >
+          {PESTANAS_GESTION_FACTURACION.map((pestana) => (
+            <button
+              key={pestana.id}
+              type="button"
+              role="tab"
+              aria-selected={pestanaActiva === pestana.id}
+              onClick={() => setPestanaActiva(pestana.id)}
+              className={
+                "relative px-1 pb-3 text-sm font-semibold transition-colors " +
+                (pestanaActiva === pestana.id
+                  ? "text-brand-wine after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-brand-wine"
+                  : "text-slate-400 hover:text-slate-700")
+              }
+            >
+              {pestana.etiqueta}
+            </button>
+          ))}
+        </div>
+        {pestanaActiva === "clientes" ? (
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -279,8 +342,13 @@ export default function GestionFacturacion() {
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
           />
         </div>
+        ) : null}
       </div>
 
+      {pestanaActiva === "facturas" ? (
+        <CustomListadoFacturas />
+      ) : (
+        <>
       <CustomTabla
         columns={columnas}
         data={facturaciones}
@@ -306,6 +374,8 @@ export default function GestionFacturacion() {
           onAgregarFactura={() => abrirEmisionFactura(clienteSeleccionado)}
           onVerFactura={(factura) => abrirDetalleFactura(clienteSeleccionado, factura)}
           onEditarFactura={(factura) => abrirEmisionFactura(clienteSeleccionado, factura)}
+          onEmitirFactura={(factura) =>
+            abrirEmisionFacturaConPedido(clienteSeleccionado, factura)}
           cargandoAccion={estaCargandoModalFactura}
         />
       ) : null}
@@ -316,8 +386,11 @@ export default function GestionFacturacion() {
         abierto={modalFactura !== null}
         modo={modalFactura?.modo ?? "detalle"}
         factura={modalFactura?.detalle ?? null}
+        productosIniciales={modalFactura?.productosIniciales ?? []}
         onCerrar={() => setModalFactura(null)}
       />
+        </>
+      )}
     </div>
   );
 }

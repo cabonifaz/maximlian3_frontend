@@ -41,6 +41,7 @@ import {
 } from "@maximilian/shared/types/tabla-maestra.type";
 import { servicioCliente } from "./cliente.service";
 import { servicioTablaMaestra } from "./tabla-maestra.service";
+import { concatenarCodigosOrdenCompra } from "@maximilian/shared/utils/facturacion.util";
 
 function mapearFacturacion(
   facturacion: EntradaFacturacionApi,
@@ -176,7 +177,7 @@ async function obtenerFacturaRegistrada(
   idCliente: number,
   codigoEstadoFacturacion: number,
 ): Promise<DetalleFactura> {
-  const [{ data }, opcionesPorMaestro] = await Promise.all([
+  const [{ data }, opcionesPorMaestro, detalleCliente] = await Promise.all([
     maximilianService.get<ApiResponse<ResultadoObtenerFacturaApi>>(
       ENDPOINTS_FACTURACION.obtenerFactura(idPedido),
     ),
@@ -188,6 +189,7 @@ async function obtenerFacturaRegistrada(
       TablaMaestraId.AFECTACION_IGV_SUNAT,
       TablaMaestraId.UNIDAD_MEDIDA_SUNAT,
     ]),
+    servicioCliente.getById(idCliente),
   ]);
 
   if (data.idTipoMensaje !== MessageType.SUCCESS) {
@@ -221,6 +223,7 @@ async function obtenerFacturaRegistrada(
     codigoEstadoFacturacion,
     idDocumentoElectronico: cabecera.idDocumentoElectronico,
     idCliente,
+    idTipoDocumentoSunat: detalleCliente.idTipoDocumentoSunat,
     idTipoDocumentoMaestro: opcionTipoDocumento?.num1 ?? 0,
     idMonedaMaestro: opcionMoneda?.num1 ?? 0,
     idTipoOperacionMaestro: opcionTipoOperacion?.num1 ?? 0,
@@ -233,7 +236,10 @@ async function obtenerFacturaRegistrada(
     formaPagoDescripcion: obtenerEtiquetaTablaMaestra(opcionFormaPago),
     cliente: cabecera.clienteNombre,
     ni: cabecera.clienteNumeroDocumento,
-    ordenCompra: cabecera.numeroReferencia ?? "",
+    ordenCompra: concatenarCodigosOrdenCompra(
+      cabecera.numeroReferencia ?? "",
+      lineas.map((linea) => linea.productoCodigo),
+    ),
     fechaEmision: formatearFechaIsoADdMmYyyy(cabecera.fechaEmision),
     productos: lineas.map((linea) => {
       const subtotal = linea.cantidad * linea.valorUnitario;
@@ -252,6 +258,7 @@ async function obtenerFacturaRegistrada(
           linea.productoCodigo,
           cabecera.idExterno,
         ),
+        codigo: linea.productoCodigo,
         numeroLinea: linea.numeroLinea,
         idLineaDocumentoElectronico:
           linea.idLineaDocumentoElectronico,
@@ -291,6 +298,7 @@ function crearDetalleFactura(
   idCliente: number,
   cliente: string,
   numeroIdentificacion: string,
+  idTipoDocumentoSunat: number,
   factura?: EntradaFacturaCliente | null,
 ): DetalleFactura {
   return {
@@ -298,6 +306,7 @@ function crearDetalleFactura(
     codigoEstadoFacturacion: factura?.codigoEstado ?? null,
     idDocumentoElectronico: null,
     idCliente,
+    idTipoDocumentoSunat,
     idTipoDocumentoMaestro: 0,
     idMonedaMaestro: 0,
     idTipoOperacionMaestro: 0,
@@ -384,6 +393,7 @@ export const facturacionService = {
       idCliente,
       cliente,
       detalleCliente.numRegistroTributario ?? "",
+      detalleCliente.idTipoDocumentoSunat,
       factura,
     );
   },
@@ -404,6 +414,30 @@ export const facturacionService = {
       totalRegistros: data.result.totalRegistros,
       totalPaginas: data.result.totalPaginas,
     };
+  },
+
+  obtenerProductoFacturable: async (
+    idCliente: number,
+    idPedido: number,
+  ): Promise<EntradaProductoFacturable | null> => {
+    let paginaActual = 1;
+    let totalPaginas = 1;
+
+    do {
+      const respuesta = await facturacionService.listarProductosFacturables({
+        idCliente,
+        numPag: paginaActual,
+      });
+      const producto = respuesta.productos.find(
+        (productoActual) => productoActual.idProductoFacturable === idPedido,
+      );
+
+      if (producto) return producto;
+      totalPaginas = respuesta.totalPaginas;
+      paginaActual += 1;
+    } while (paginaActual <= totalPaginas);
+
+    return null;
   },
 
   actualizarEstado: async (

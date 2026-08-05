@@ -420,6 +420,7 @@ interface PropsContenedorSeccionInvestigacionAnalista {
 interface PropsMenuSeccionesInvestigacionAnalista {
   idSeccionActiva: IdSeccionInvestigacionAnalista;
   onSeleccionar: (id: IdSeccionInvestigacionAnalista) => void;
+  pendientesRevision?: Partial<Record<IdSeccionInvestigacionAnalista, number>>;
   estadoSecciones?: Partial<Record<IdSeccionInvestigacionAnalista, "borrador" | "completado">>;
   secciones: Array<{
     id: IdSeccionInvestigacionAnalista;
@@ -649,7 +650,7 @@ export function ContenedorSeccionInvestigacionAnalista({
 export function MenuSeccionesInvestigacionAnalista({
   idSeccionActiva,
   onSeleccionar,
-  estadoSecciones,
+  pendientesRevision,
   secciones,
 }: PropsMenuSeccionesInvestigacionAnalista) {
   const iconos = {
@@ -671,7 +672,7 @@ export function MenuSeccionesInvestigacionAnalista({
       <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 xl:mx-0 xl:block xl:space-y-3 xl:overflow-visible xl:px-0 xl:pb-0">
         {secciones.map((seccion) => {
           const estaActiva = seccion.id === idSeccionActiva;
-          const estadoSeccion = estadoSecciones?.[seccion.id];
+          const cantidadPendientes = pendientesRevision?.[seccion.id] ?? 0;
 
           return (
             <div key={seccion.id} className="group relative min-w-52 shrink-0 xl:min-w-0">
@@ -686,12 +687,19 @@ export function MenuSeccionesInvestigacionAnalista({
               >
                 {iconos[seccion.id]}
                 <span className="flex-1">{seccion.titulo}</span>
+                {cantidadPendientes > 0 ? (
+                  <span
+                    className={`inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      estaActiva
+                        ? "bg-white text-[#eb5b53]"
+                        : "bg-brand-wine/10 text-brand-wine"
+                    }`}
+                    title={`${cantidadPendientes} resultado${cantidadPendientes === 1 ? "" : "s"} por revisar`}
+                  >
+                    {cantidadPendientes}
+                  </span>
+                ) : null}
               </button>
-              {estadoSeccion === "borrador" ? (
-                <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-52 -translate-x-1/2 rounded-lg bg-brand-black px-3 py-2 text-center text-xs font-medium text-white shadow-lg group-hover:block">
-                  Te quedaste aquí. Guardamos esta sección como borrador para que la retomes cuando quieras.
-                </div>
-              ) : null}
             </div>
           );
         })}

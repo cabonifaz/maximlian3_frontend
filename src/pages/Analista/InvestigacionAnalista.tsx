@@ -249,6 +249,7 @@ function PantallaInvestigacionAnalista({
   const esSoloLectura = modo === "detalle" || esPendienteAprobacionInformacion;
   const contenedorPantallaRef = useRef<HTMLDivElement>(null);
   const paisExtraccionRef = useRef<{ idPais?: number; pais?: string; aplicado: boolean }>({ aplicado: false });
+  const bancoExtraccionCreadoRef = useRef(false);
   const ciudadExtraccionPendienteRef = useRef<CiudadExtraccionPendiente | null>(null);
 
   const [datosInvestigacion, setDatosInvestigacion] = useState<DatosInvestigacionAnalista>(() =>
@@ -334,6 +335,7 @@ function PantallaInvestigacionAnalista({
   const [bancosExtraccionPendientes, setBancosExtraccionPendientes] = useState<RegistroBancoAnalista[]>([]);
   const [colaExistentesExtraccion, setColaExistentesExtraccion] = useState<RegistroBancoAnalista[]>([]);
   const [indiceBancoExtraccionEdicion, setIndiceBancoExtraccionEdicion] = useState<number | null>(null);
+  const [indiceBancoExtraccionCuenta, setIndiceBancoExtraccionCuenta] = useState<number | null>(null);
   const [bancoRecienCreado, setBancoRecienCreado] = useState<BancoListaItem | null>(null);
   const [estaAbiertoModalRevisionBancosExtraccion, setEstaAbiertoModalRevisionBancosExtraccion] = useState(false);
   const [estaAbiertoModalOperacion, setEstaAbiertoModalOperacion] = useState(false);
@@ -1928,7 +1930,6 @@ function PantallaInvestigacionAnalista({
     });
     if (companiasNuevas.length > 0) {
       setCompaniasExtraccionPendientes((anteriores) => [...anteriores, ...companiasNuevas]);
-      setEstaAbiertoModalRevisionCompaniasExtraccion(true);
     }
   };
 
@@ -2326,7 +2327,6 @@ function PantallaInvestigacionAnalista({
 
     if (nuevos.length > 0) {
       setEjecutivosExtraccionPendientes((anteriores) => [...anteriores, ...nuevos]);
-      setEstaAbiertoModalRevisionEjecutivosExtraccion(true);
     }
   };
 
@@ -2373,7 +2373,6 @@ function PantallaInvestigacionAnalista({
     }
     if (resultado.nuevos.length > 0) {
       setBancosExtraccionPendientes((anteriores) => [...anteriores, ...resultado.nuevos]);
-      setEstaAbiertoModalRevisionBancosExtraccion(true);
     }
   };
 
@@ -2417,8 +2416,24 @@ function PantallaInvestigacionAnalista({
   };
 
   const iniciarCreacionBancoExtraccion = (indice: number) => {
-    if (!bancosExtraccionPendientes[indice]) return;
+    const bancoPendiente = bancosExtraccionPendientes[indice];
+    if (!bancoPendiente) return;
     setEstaAbiertoModalRevisionBancosExtraccion(false);
+
+    if (bancoPendiente.idBanco) {
+      setIndiceBancoExtraccionCuenta(indice);
+      setBancoRecienCreado({
+        idBanco: bancoPendiente.idBanco,
+        idPais: bancoPendiente.idPais,
+        idSector: bancoPendiente.idSector,
+        nombre: bancoPendiente.banco,
+        telefono: bancoPendiente.telefono,
+        pais: bancoPendiente.pais ?? "",
+        sector: bancoPendiente.sector,
+      });
+      return;
+    }
+
     setIndiceBancoExtraccionEdicion(indice);
   };
 
@@ -2430,7 +2445,21 @@ function PantallaInvestigacionAnalista({
 
   const onBancoExtraccionCreado = (banco: BancoListaItem) => {
     if (indiceBancoExtraccionEdicion == null) return;
-    setBancosExtraccionPendientes((anteriores) => anteriores.filter((_, i) => i !== indiceBancoExtraccionEdicion));
+    const indiceCuenta = indiceBancoExtraccionEdicion;
+    bancoExtraccionCreadoRef.current = true;
+    setBancosExtraccionPendientes((anteriores) => anteriores.map((registro, indice) => (
+      indice === indiceCuenta
+        ? {
+            ...registro,
+            idBanco: banco.idBanco,
+            idPais: banco.idPais,
+            pais: banco.pais,
+            banco: banco.nombre,
+            telefono: registro.telefono || banco.telefono,
+          }
+        : registro
+    )));
+    setIndiceBancoExtraccionCuenta(indiceCuenta);
     setIndiceBancoExtraccionEdicion(null);
     setBancoRecienCreado(banco);
   };
@@ -2441,11 +2470,13 @@ function PantallaInvestigacionAnalista({
       bancos: [registro, ...anterior.bancos],
     }));
     setBancosExtraccionPendientes((anteriores) => {
-      if (anteriores.length > 0) {
+      const siguientes = anteriores.filter((_, indice) => indice !== indiceBancoExtraccionCuenta);
+      if (siguientes.length > 0) {
         setEstaAbiertoModalRevisionBancosExtraccion(true);
       }
-      return anteriores;
+      return siguientes;
     });
+    setIndiceBancoExtraccionCuenta(null);
     setBancoRecienCreado(null);
   };
 
@@ -2989,6 +3020,7 @@ function PantallaInvestigacionAnalista({
       setBancosExtraccionPendientes([]);
       setColaExistentesExtraccion([]);
       setIndiceBancoExtraccionEdicion(null);
+      setIndiceBancoExtraccionCuenta(null);
       setBancoRecienCreado(null);
       setEstaAbiertoModalRevisionBancosExtraccion(false);
     }
@@ -3095,16 +3127,56 @@ function PantallaInvestigacionAnalista({
 
   const permiteExtraccionSeccion = idSeccionActiva !== "balances";
 
-  const botonExtraSeccion = !esSoloLectura && permiteExtraccionSeccion ? (
-    <CustomButton
-      variant="secondary"
-      size="sm"
-      className="border-blue-300 text-blue-600"
-      onClick={() => abrirModalExtraccionInformacion(idSeccionActiva, seccionActual.titulo)}
-    >
-      <Sparkles size={14} />
-      Extraer Información
-    </CustomButton>
+  const pendientesRevisionPorSeccion: Partial<Record<IdSeccionInvestigacionAnalista, number>> = {
+    "aspectos-legales": companiasExtraccionPendientes.length,
+    "bancos-proveedores": bancosExtraccionPendientes.length,
+    "directorio-ejecutivo": ejecutivosExtraccionPendientes.length,
+  };
+
+  const abrirRevisionPendientesSeccion = (idSeccion: IdSeccionInvestigacionAnalista) => {
+    if (idSeccion === "aspectos-legales" && companiasExtraccionPendientes.length > 0) {
+      setPestanaAspectosLegales("companias");
+      setEstaAbiertoModalRevisionCompaniasExtraccion(true);
+      return;
+    }
+
+    if (idSeccion === "bancos-proveedores" && bancosExtraccionPendientes.length > 0) {
+      setPestanaBancosProveedores("bancos");
+      setEstaAbiertoModalRevisionBancosExtraccion(true);
+      return;
+    }
+
+    if (idSeccion === "directorio-ejecutivo" && ejecutivosExtraccionPendientes.length > 0) {
+      setEstaAbiertoModalRevisionEjecutivosExtraccion(true);
+    }
+  };
+
+  const cantidadPendientesSeccionActiva = pendientesRevisionPorSeccion[idSeccionActiva] ?? 0;
+
+  const botonExtraSeccion = !esSoloLectura ? (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      {cantidadPendientesSeccionActiva > 0 ? (
+        <CustomButton
+          variant="wine"
+          size="sm"
+          onClick={() => abrirRevisionPendientesSeccion(idSeccionActiva)}
+        >
+          <Sparkles size={14} />
+          {cantidadPendientesSeccionActiva} resultado{cantidadPendientesSeccionActiva === 1 ? "" : "s"} por revisar
+        </CustomButton>
+      ) : null}
+      {permiteExtraccionSeccion ? (
+        <CustomButton
+          variant="secondary"
+          size="sm"
+          className="border-blue-300 text-blue-600"
+          onClick={() => abrirModalExtraccionInformacion(idSeccionActiva, seccionActual.titulo)}
+        >
+          <Sparkles size={14} />
+          Extraer Información
+        </CustomButton>
+      ) : null}
+    </div>
   ) : undefined;
 
   const renderizarIdentificacion = () => (
@@ -3215,15 +3287,6 @@ function PantallaInvestigacionAnalista({
               <input className="h-10 w-full rounded-xl border border-gray-200 pl-9 pr-3 text-sm text-slate-500 outline-none" placeholder="Buscar compañía..." />
             </label>
             <div className="flex flex-wrap gap-2">
-              {!esSoloLectura && companiasExtraccionPendientes.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setEstaAbiertoModalRevisionCompaniasExtraccion(true)}
-                  className="rounded-xl border border-brand-wine/30 px-4 py-2 text-sm font-bold text-brand-wine transition-all hover:bg-brand-wine/5"
-                >
-                  Revisar detectadas ({companiasExtraccionPendientes.length})
-                </button>
-              ) : null}
               <button
                 type="button"
                 disabled={esSoloLectura}
@@ -4336,15 +4399,6 @@ function PantallaInvestigacionAnalista({
                 
               </div>
               <div className="flex flex-wrap gap-2">
-                {bancosExtraccionPendientes.length > 0 ? (
-                  <button
-                    type="button"
-                    onClick={() => setEstaAbiertoModalRevisionBancosExtraccion(true)}
-                    className="rounded-xl border border-brand-wine/30 px-4 py-2 text-sm font-bold text-brand-wine transition-all hover:bg-brand-wine/5"
-                  >
-                    Revisar detectados ({bancosExtraccionPendientes.length})
-                  </button>
-                ) : null}
                 <CustomButton
                   variant="secondary"
                   size="sm"
@@ -4494,15 +4548,6 @@ function PantallaInvestigacionAnalista({
           />
         </label>
         <div className="flex flex-wrap gap-3">
-          {!esSoloLectura && ejecutivosExtraccionPendientes.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => setEstaAbiertoModalRevisionEjecutivosExtraccion(true)}
-              className="rounded-xl border border-brand-wine/30 px-4 py-2 text-sm font-bold text-brand-wine transition-all hover:bg-brand-wine/5"
-            >
-              Revisar detectados ({ejecutivosExtraccionPendientes.length})
-            </button>
-          ) : null}
           <CustomButton
             variant="secondary"
             size="sm"
@@ -4691,6 +4736,7 @@ function PantallaInvestigacionAnalista({
         <MenuSeccionesInvestigacionAnalista
           idSeccionActiva={idSeccionActiva}
           onSeleccionar={setIdSeccionActiva}
+          pendientesRevision={pendientesRevisionPorSeccion}
           estadoSecciones={estadoSecciones}
           secciones={seccionesInvestigacionAnalista}
         />
@@ -4948,7 +4994,11 @@ function PantallaInvestigacionAnalista({
       {estaAbiertoModalRevisionCompaniasExtraccion ? (
         <CustomModalRevisionCompaniasExtraccion
           companias={companiasExtraccionPendientes}
-          indiceAprobando={crearCompaniaExtraccionMutation.variables?.indice ?? null}
+          indiceAprobando={
+            crearCompaniaExtraccionMutation.isPending
+              ? crearCompaniaExtraccionMutation.variables?.indice ?? null
+              : null
+          }
           onEditar={setIndiceCompaniaExtraccionEdicion}
           onAprobar={aprobarCompaniaExtraccion}
           onRechazar={rechazarCompaniaExtraccion}
@@ -5030,8 +5080,10 @@ function PantallaInvestigacionAnalista({
           idPais: opcionesPais?.find((op) => op.string1 === bancosExtraccionPendientes[indiceBancoExtraccionEdicion]?.pais)?.num1 ?? undefined,
         } : null}
         onCerrar={() => {
+          const debeContinuarConCuenta = bancoExtraccionCreadoRef.current;
+          bancoExtraccionCreadoRef.current = false;
           setIndiceBancoExtraccionEdicion(null);
-          if (bancosExtraccionPendientes.length > 0) {
+          if (!debeContinuarConCuenta && bancosExtraccionPendientes.length > 0) {
             setEstaAbiertoModalRevisionBancosExtraccion(true);
           }
         }}
@@ -5046,11 +5098,19 @@ function PantallaInvestigacionAnalista({
           idPais: bancoRecienCreado.idPais,
           pais: bancoRecienCreado.pais,
           banco: bancoRecienCreado.nombre,
-          telefono: bancoRecienCreado.telefono,
-          numeroCuenta: "",
-          sector: "",
+          telefono: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.telefono || bancoRecienCreado.telefono,
+          numeroCuenta: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.numeroCuenta ?? "",
+          idSector: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.idSector,
+          sector: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.sector ?? "",
+          sectoristaJefeCuenta: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.sectoristaJefeCuenta,
         } : null}
-        onCerrar={() => setBancoRecienCreado(null)}
+        onCerrar={() => {
+          setBancoRecienCreado(null);
+          setIndiceBancoExtraccionCuenta(null);
+          if (bancosExtraccionPendientes.length > 0) {
+            setEstaAbiertoModalRevisionBancosExtraccion(true);
+          }
+        }}
         onGuardar={guardarCuentaBancariaExtraccion}
       />
 

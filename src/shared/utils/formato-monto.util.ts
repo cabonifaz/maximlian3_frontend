@@ -23,6 +23,12 @@ export function formatearMontoDosDecimales(valor: string | number) {
   return formatearMontoDecimales(valor, 2);
 }
 
+export function formatearMontoConSimbolo(valor: string | number, simbolo: string) {
+  return [simbolo.trim(), formatearMontoDosDecimales(valor)]
+    .filter(Boolean)
+    .join(" ");
+}
+
 export function formatearMontoDecimales(valor: string | number, decimales: number) {
   const numero = typeof valor === "number" ? valor : obtenerNumeroDesdeMonto(valor);
   if (!Number.isFinite(numero)) return typeof valor === "string" ? valor : "";

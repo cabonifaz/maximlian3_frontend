@@ -14,20 +14,23 @@ import type {
   EntradaProductoFacturable,
 } from "@maximilian/shared/types/facturacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { formatearMontoConSimbolo } from "@maximilian/shared/utils/formato-monto.util";
+import {
+  obtenerEtiquetaPrincipalSecundaria,
+  obtenerSimboloTablaMaestra,
+} from "@maximilian/shared/utils/tabla-maestra.util";
 import {
   ID_ESTADO_FACTURA_APROBADA,
   ID_FORMA_PAGO_CONTADO,
+  LIMITE_CARACTERES_ORDEN_COMPRA,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
 interface CustomModalFacturaProps {
   abierto: boolean;
   modo: "emitir" | "detalle";
   factura: DetalleFactura | null;
+  productosIniciales?: EntradaProductoFacturable[];
   onCerrar: () => void;
-}
-
-function formatearMonto(valor: number) {
-  return `S/ ${valor.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function EstadoCuotaBadge({ estado }: { estado: EntradaCuotaFactura["estado"] }) {
@@ -41,6 +44,7 @@ export function CustomModalFactura({
   abierto,
   modo,
   factura,
+  productosIniciales = [],
   onCerrar,
 }: CustomModalFacturaProps) {
   const [modalProductosAbierto, setModalProductosAbierto] = useState(false);
@@ -50,6 +54,7 @@ export function CustomModalFactura({
   const [confirmacionSunatAbierta, setConfirmacionSunatAbierta] = useState(false);
   const [confirmacionAnulacionAbierta, setConfirmacionAnulacionAbierta] = useState(false);
   const {
+    afectacionIgvPredeterminadaDescripcion,
     afectacionesIgv,
     agregarProductos: agregarProductosFormulario,
     anularFactura,
@@ -74,6 +79,9 @@ export function CustomModalFactura({
     iniciarEdicionIgv,
     obtenerPrecioUnitario,
     obtenerTotalProducto,
+    opcionesAfectacionIgv,
+    opcionesMoneda,
+    opcionesTipoDocumento,
     quitarCuota,
     quitarProducto,
     registrarDescuento,
@@ -85,10 +93,11 @@ export function CustomModalFactura({
     seleccionarMoneda,
     seleccionarTipoDocumento,
     seleccionarTipoOperacion,
+    simboloMoneda,
     totalFactura,
     unidadesMedida,
     valoresMaestros,
-  } = useFormularioFactura(factura, onCerrar);
+  } = useFormularioFactura(factura, onCerrar, productosIniciales);
 
   const soloLectura = modo === "detalle";
 
@@ -162,9 +171,10 @@ export function CustomModalFactura({
               <CustomSelectorBuscable
                 label="Tipo de comprobante"
                 required
-                idMaster={TablaMaestraId.TIPO_DOCUMENTO_COMPROBANTE}
+                options={opcionesTipoDocumento}
                 value={valoresMaestros.idTipoDocumentoMaestro || undefined}
                 onChange={seleccionarTipoDocumento}
+                autoSeleccionarOpcionUnica={!soloLectura}
                 obtenerEtiquetaOpcion={(opcion) => [opcion.string1, opcion.string2]
                   .filter(Boolean)
                   .join(" - ")}
@@ -190,9 +200,10 @@ export function CustomModalFactura({
               <CustomSelectorBuscable
                 label="Moneda"
                 required
-                idMaster={TablaMaestraId.MONEDA_SUNAT}
+                options={opcionesMoneda}
                 value={valoresMaestros.idMonedaMaestro || undefined}
                 onChange={seleccionarMoneda}
+                obtenerEtiquetaOpcion={obtenerEtiquetaPrincipalSecundaria}
                 displayValue={detalle.monedaDescripcion}
                 disabled={soloLectura}
                 error={erroresFormulario.idMonedaMaestro?.message}
@@ -212,6 +223,7 @@ export function CustomModalFactura({
                 valor={detalle.ordenCompra}
                 soloLectura={soloLectura}
                 opcional
+                maxLength={LIMITE_CARACTERES_ORDEN_COMPRA}
                 onChange={(valor) => actualizarCampoFactura("ordenCompra", valor)}
               />
               <CampoFactura
@@ -363,19 +375,20 @@ export function CustomModalFactura({
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-center text-slate-600">{formatearMonto(producto.valorUnitario)}</td>
+                        <td className="px-4 py-3 text-center text-slate-600">{formatearMontoConSimbolo(producto.valorUnitario, simboloMoneda)}</td>
                         <td className="px-4 py-3 text-center text-slate-600">
-                          {formatearMonto(obtenerPrecioUnitario(producto))}
+                          {formatearMontoConSimbolo(obtenerPrecioUnitario(producto), simboloMoneda)}
                         </td>
                         <td className="w-48 min-w-48 max-w-48 px-4 py-3">
                           {soloLectura ? (
                             <span className="text-slate-600">
                               {producto.afectacionIgvDescripcion
+                                || afectacionIgvPredeterminadaDescripcion
                                 || producto.idAfectacionIgvMaestro}
                             </span>
                           ) : (
                             <CustomSelectorBuscable
-                              idMaster={TablaMaestraId.AFECTACION_IGV_SUNAT}
+                              options={opcionesAfectacionIgv}
                               value={afectacionesIgv?.[claveProducto] || undefined}
                               displayValue={producto.afectacionIgvDescripcion}
                               onChange={(valor) =>
@@ -389,6 +402,7 @@ export function CustomModalFactura({
                                 [opcion.string1, opcion.string2]
                                   .filter(Boolean)
                                   .join(" - ")}
+                              ordenarOpciones={false}
                               error={errorAfectacionIgv?.message}
                             />
                           )}
@@ -466,7 +480,7 @@ export function CustomModalFactura({
                           )}
                         </td>
                         <td className="px-4 py-3 text-center font-medium text-slate-700">
-                          {formatearMonto(soloLectura ? producto.total : obtenerTotalProducto(producto))}
+                          {formatearMontoConSimbolo(soloLectura ? producto.total : obtenerTotalProducto(producto), simboloMoneda)}
                         </td>
                         {!soloLectura ? (
                           <td className="px-4 py-3 text-center">
@@ -525,7 +539,12 @@ export function CustomModalFactura({
                     {detalle.cuotas.map((cuota) => (
                       <tr key={cuota.idCuotaFactura}>
                         <td className="px-4 py-3 text-slate-600">{cuota.numeroCuota}</td>
-                        <td className="px-4 py-3 text-right font-medium text-slate-700">{formatearMonto(cuota.monto)}</td>
+                        <td className="px-4 py-3 text-right font-medium text-slate-700">
+                          {formatearMontoConSimbolo(
+                            cuota.monto,
+                            obtenerSimboloTablaMaestra(opcionesMoneda, cuota.idMoneda),
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-center text-slate-600">{cuota.vencimiento}</td>
                         <td className="px-4 py-3 text-center"><EstadoCuotaBadge estado={cuota.estado} /></td>
                         {!soloLectura ? (
@@ -573,7 +592,7 @@ export function CustomModalFactura({
           <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-white px-8 py-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total de la factura</p>
-              <p className="text-lg font-black text-brand-black">{formatearMonto(totalFactura)}</p>
+              <p className="text-lg font-black text-brand-black">{formatearMontoConSimbolo(totalFactura, simboloMoneda)}</p>
             </div>
             <div className="flex items-center gap-3">
             {puedeAnularFactura ? (
@@ -662,7 +681,7 @@ export function CustomModalFactura({
         anchoMaximoClassName="max-w-sm"
         zIndexClassName="z-[95]"
       >
-        <p className="text-sm text-slate-700">Total: {formatearMonto(totalFactura)}</p>
+        <p className="text-sm text-slate-700">Total: {formatearMontoConSimbolo(totalFactura, simboloMoneda)}</p>
       </CustomModalConfirmacionAccion>
     </>
   );
@@ -673,12 +692,14 @@ function CampoFactura({
   valor,
   soloLectura,
   opcional = false,
+  maxLength,
   onChange,
 }: {
   etiqueta: string;
   valor: string;
   soloLectura: boolean;
   opcional?: boolean;
+  maxLength?: number;
   onChange: (valor: string) => void;
 }) {
   const idCampo = `factura-${etiqueta.toLowerCase().replaceAll("/", "-")}`;
@@ -691,6 +712,7 @@ function CampoFactura({
       <input
         id={idCampo}
         value={valor}
+        maxLength={maxLength}
         readOnly={soloLectura}
         onChange={(event) => onChange(event.target.value)}
         className={`w-full rounded-xl border border-gray-200 bg-brand-white px-4 py-2.5 text-sm outline-none transition-all ${

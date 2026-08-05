@@ -23,6 +23,7 @@ import { ModalAgregarContacto } from "./ModalAgregarContacto";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { obtenerEtiquetaPrincipalSecundaria } from "@maximilian/shared/utils/tabla-maestra.util";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   TarifarioListEntry,
@@ -249,9 +250,9 @@ export function ModalDetalleCliente({
     staleTime: Infinity,
   });
 
-  const { data: rateMonedas } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.MONEDA],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA),
+  const { data: opcionesMonedaCliente } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.MONEDA_SUNAT],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA_SUNAT),
     enabled: isOpen,
     staleTime: Infinity,
   });
@@ -335,7 +336,7 @@ export function ModalDetalleCliente({
     validarSelector("tipoPersona", watchedTipoPersona, tipoPersonaData);
     validarSelector("pais", watchedPais, paisData);
     validarSelector("tipoRegistroTributario", tipoRegistroTributarioSeleccionado, tipoRegTributarioData);
-    validarSelector("moneda", watchedMoneda, rateMonedas);
+    validarSelector("moneda", watchedMoneda, opcionesMonedaCliente);
     validarSelector("atendidoPor", watchedAtendidoPor, empresaAtencionData);
     validarSelector("idioma", watchedIdioma, idiomaData);
     validarSelector("idiomaFacturacion", watchedIdiomaFacturacion, idiomaData);
@@ -352,7 +353,7 @@ export function ModalDetalleCliente({
     isOpen,
     paisData,
     plantillaOptions,
-    rateMonedas,
+    opcionesMonedaCliente,
     setInfoValue,
     tipoPersonaData,
     tipoRegTributarioData,
@@ -547,8 +548,9 @@ export function ModalDetalleCliente({
                   <CustomSelectorBuscable
                     label="Moneda"
                     required
-                    options={rateMonedas}
+                    options={opcionesMonedaCliente}
                     value={watchedMoneda}
+                    obtenerEtiquetaOpcion={obtenerEtiquetaPrincipalSecundaria}
                     onChange={(val) =>
                       setInfoValue("moneda", val, { shouldValidate: true, shouldDirty: true })
                     }

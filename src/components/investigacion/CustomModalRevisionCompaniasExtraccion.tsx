@@ -32,6 +32,7 @@ export function CustomModalRevisionCompaniasExtraccion({
   onCerrar,
 }: PropsCustomModalRevisionCompaniasExtraccion) {
   if (companias.length === 0) return null;
+  const estaProcesando = indiceAprobando != null;
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
@@ -41,10 +42,10 @@ export function CustomModalRevisionCompaniasExtraccion({
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">Extracción</p>
             <h2 className="mt-2 text-xl font-bold text-slate-900">Compañías relacionadas detectadas</h2>
             <p className="mt-2 text-sm text-slate-500">
-              Se identificaron compañías nuevas. Revisa cada registro antes de agregarlo al informe.
+              {companias.length} pendiente{companias.length === 1 ? "" : "s"}. Edita los datos si es necesario y agrega cada compañía al informe.
             </p>
           </div>
-          <CustomButton variant="ghost" size="icon" onClick={onCerrar}>
+          <CustomButton variant="ghost" size="icon" onClick={onCerrar} disabled={estaProcesando}>
             <X size={18} />
           </CustomButton>
         </div>
@@ -70,17 +71,17 @@ export function CustomModalRevisionCompaniasExtraccion({
                     <td className="px-4 py-4 text-sm text-slate-500">{compania.telefono || "-"}</td>
                     <td className="px-4 py-4">
                       <div className="flex justify-end gap-2">
-                        <CustomButton variant="secondary" size="sm" onClick={() => onEditar(indice)} disabled={indiceAprobando === indice}>
+                        <CustomButton variant="secondary" size="sm" onClick={() => onEditar(indice)} disabled={estaProcesando}>
                           <Pencil size={14} />
                           Editar
                         </CustomButton>
-                        <CustomButton variant="secondary" size="sm" onClick={() => onRechazar(indice)}>
+                        <CustomButton variant="secondary" size="sm" onClick={() => onRechazar(indice)} disabled={estaProcesando}>
                           <X size={14} />
                           Rechazar
                         </CustomButton>
-                        <CustomButton variant="primary" size="sm" onClick={() => onAprobar(indice)} loading={indiceAprobando === indice} loadingText="Creando...">
+                        <CustomButton variant="primary" size="sm" onClick={() => onAprobar(indice)} disabled={estaProcesando} loading={indiceAprobando === indice} loadingText="Agregando...">
                           <Check size={14} />
-                          Aprobar
+                          Agregar
                         </CustomButton>
                       </div>
                     </td>

@@ -62,6 +62,7 @@ export type ClientDetail = {
   nombreCorto: string | null;
   idPais: number;
   idRegistroTributario: number;
+  idTipoDocumentoSunat: number;
   numRegistroTributario: string | null;
   correo: string | null;
   webSite: string | null;
