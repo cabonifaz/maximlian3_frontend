@@ -6,14 +6,18 @@ import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra
 
 interface ParametrosSelectorInvestigadoPedido {
   abierto: boolean;
+  idPais?: number;
   investigado: string;
   alCambiarInvestigado: (investigado: string) => void;
+  alCambiarNumeroDocumento: (numeroDocumento: string) => void;
 }
 
 export function useSelectorInvestigadoPedido({
   abierto,
+  idPais,
   investigado,
   alCambiarInvestigado,
+  alCambiarNumeroDocumento,
 }: ParametrosSelectorInvestigadoPedido) {
   const [busquedaHabilitada, setBusquedaHabilitada] = useState(false);
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
@@ -21,8 +25,8 @@ export function useSelectorInvestigadoPedido({
   const busquedaConRetardo = useRetardo(terminoBusqueda.trim());
 
   const { data, isFetching } = useQuery({
-    queryKey: ["companias", "buscar", busquedaConRetardo],
-    queryFn: () => servicioCompania.buscar(busquedaConRetardo),
+    queryKey: ["companias", "buscar", busquedaConRetardo, idPais],
+    queryFn: () => servicioCompania.buscar(busquedaConRetardo, idPais),
     enabled: abierto && busquedaHabilitada,
   });
 
@@ -52,11 +56,13 @@ export function useSelectorInvestigadoPedido({
 
     setIdCompaniaSeleccionada(idCompania);
     alCambiarInvestigado(compania.string1);
+    alCambiarNumeroDocumento(compania.string2 ?? "");
   };
 
   const agregarInvestigado = (nombre: string) => {
     setIdCompaniaSeleccionada(0);
     alCambiarInvestigado(nombre);
+    alCambiarNumeroDocumento("");
   };
 
   return {

@@ -3157,9 +3157,8 @@ function PantallaInvestigacionAnalista({
     <div className="flex flex-wrap items-center justify-end gap-2">
       {cantidadPendientesSeccionActiva > 0 ? (
         <CustomButton
-          variant="secondary"
+          variant="wine"
           size="sm"
-          className="border-brand-wine/30 text-brand-wine"
           onClick={() => abrirRevisionPendientesSeccion(idSeccionActiva)}
         >
           <Sparkles size={14} />
