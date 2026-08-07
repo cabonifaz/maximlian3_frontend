@@ -14,6 +14,7 @@ interface PropsCustomVisorDocumentoInforme {
   tituloBarra?: string;
   subtituloBarra?: string;
   onEstadoRenderizacionChange?: (estaRenderizando: boolean) => void;
+  onReintentar?: () => void;
   encabezado?: {
     pais: string;
     fecha: string;
@@ -29,6 +30,7 @@ export function CustomVisorDocumentoInforme({
   tituloBarra,
   subtituloBarra,
   onEstadoRenderizacionChange,
+  onReintentar,
 }: PropsCustomVisorDocumentoInforme) {
   const anchoPaginaPx = useMemo(
     () => convertirLongitudCssAPx(documento.document?.pageSize?.width),
@@ -188,17 +190,34 @@ export function CustomVisorDocumentoInforme({
         {error && (
           <div className="mx-3 mt-3 flex items-center justify-between gap-3 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
             <span>{error}</span>
-            <CustomButton
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 shrink-0 text-red-500 hover:bg-red-100"
-              onClick={limpiarError}
-              aria-label="Cerrar alerta"
-              title="Cerrar alerta"
-            >
-              <X size={14} />
-            </CustomButton>
+            <div className="flex shrink-0 items-center gap-2">
+              {onReintentar && (
+                <CustomButton
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-7 px-3 text-xs"
+                  onClick={() => {
+                    limpiarError();
+                    onReintentar();
+                  }}
+                >
+                  <RotateCcw size={14} />
+                  Reintentar
+                </CustomButton>
+              )}
+              <CustomButton
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-red-500 hover:bg-red-100"
+                onClick={limpiarError}
+                aria-label="Cerrar alerta"
+                title="Cerrar alerta"
+              >
+                <X size={14} />
+              </CustomButton>
+            </div>
           </div>
         )}
         <div

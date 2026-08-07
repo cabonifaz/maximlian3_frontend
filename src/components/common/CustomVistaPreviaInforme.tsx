@@ -1,14 +1,14 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FileText } from "lucide-react";
+import { FileText, RotateCcw } from "lucide-react";
 import type { DatosInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
-import type { DocumentoInformeGenerado } from "@maximilian/shared/types/informe.type";
 import { seccionesInvestigacionAnalista } from "@maximilian/shared/utils/investigacion.util";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
-import { informeService } from "@maximilian/services/informe.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { CustomVisorDocumentoInforme } from "@maximilian/components/common/CustomVisorDocumentoInforme";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
+import { useDocumentoVistaPreviaInforme } from "@maximilian/hooks/useDocumentoVistaPreviaInforme";
 
 interface FilaVistaPreviaInforme {
   etiqueta: string;
@@ -1052,10 +1052,6 @@ export function CustomVistaPreviaInformeComparado({
   contenidoEntreTabsYTarjetas,
 }: PropsVistaPreviaInformeComparado) {
   const [idTabActiva, setIdTabActiva] = useState<IdTabVistaPreviaInforme>("vista-general");
-  const [documentoGenerado, setDocumentoGenerado] = useState<DocumentoInformeGenerado | null>(null);
-  const [estaCargandoDocumento, setEstaCargandoDocumento] = useState(false);
-  const [estaRenderizandoDocumento, setEstaRenderizandoDocumento] = useState(false);
-  const [errorDocumento, setErrorDocumento] = useState(false);
   const idInformeDocumento = Number(idInforme);
   const idPedidoDocumento = Number(idPedido);
   const puedeMostrarDocumento = Number.isFinite(idInformeDocumento) && idInformeDocumento > 0
@@ -1068,43 +1064,14 @@ export function CustomVistaPreviaInformeComparado({
     staleTime: Infinity,
   });
 
-  useEffect(() => {
-    let estaCancelado = false;
-
-    if (!puedeMostrarDocumento) {
-      setDocumentoGenerado(null);
-      setEstaCargandoDocumento(false);
-      setEstaRenderizandoDocumento(false);
-      setErrorDocumento(false);
-      return;
-    }
-
-    setDocumentoGenerado(null);
-    setEstaCargandoDocumento(true);
-    setEstaRenderizandoDocumento(false);
-    setErrorDocumento(false);
-
-    void informeService
-      .previsualizarDocumento(idInformeDocumento, idPedidoDocumento)
-      .then((documento) => {
-        if (estaCancelado) return;
-        setEstaRenderizandoDocumento(true);
-        setDocumentoGenerado(documento);
-      })
-      .catch(() => {
-        if (estaCancelado) return;
-        setEstaRenderizandoDocumento(false);
-        setErrorDocumento(true);
-      })
-      .finally(() => {
-        if (estaCancelado) return;
-        setEstaCargandoDocumento(false);
-      });
-
-    return () => {
-      estaCancelado = true;
-    };
-  }, [idInformeDocumento, idPedidoDocumento, puedeMostrarDocumento]);
+  const {
+    documentoGenerado,
+    estaCargandoDocumento,
+    estaRenderizandoDocumento,
+    setEstaRenderizandoDocumento,
+    errorDocumento,
+    reintentarCargaDocumento,
+  } = useDocumentoVistaPreviaInforme(idInformeDocumento, idPedidoDocumento, puedeMostrarDocumento);
 
   const seccionesVistaPrevia = useMemo(
     () => datosInvestigacion
@@ -1139,11 +1106,24 @@ export function CustomVistaPreviaInformeComparado({
               tituloBarra={tituloBarraDocumento}
               subtituloBarra={subtituloBarraDocumento}
               onEstadoRenderizacionChange={setEstaRenderizandoDocumento}
+              onReintentar={reintentarCargaDocumento}
             />
           </div>
         ) : (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500 shadow-sm">
-            {errorDocumento ? "No se pudo generar la vista previa del documento." : "No hay documento disponible para mostrar."}
+            <p>{errorDocumento ? "No se pudo generar la vista previa del documento." : "No hay documento disponible para mostrar."}</p>
+            {errorDocumento ? (
+              <CustomButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="mx-auto mt-4 h-9 px-4 text-xs"
+                onClick={reintentarCargaDocumento}
+              >
+                <RotateCcw size={14} />
+                Reintentar
+              </CustomButton>
+            ) : null}
           </div>
         )}
       </div>
