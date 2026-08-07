@@ -17,6 +17,7 @@ import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/Custo
 import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
+import { CustomTarjetaResumenSkeleton } from "@maximilian/components/common/CustomTarjetaResumenSkeleton";
 import { ModalPedido } from "@maximilian/components/coordinador/ModalPedido";
 import { ModalFlujoAsignacion } from "@maximilian/components/coordinador/ModalFlujoAsignacion";
 import { CustomModalDetallePedido } from "@maximilian/components/coordinador/CustomModalDetallePedido";
@@ -445,27 +446,31 @@ export default function PedidoManagement() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-3">
-        {TARJETAS_ESTADO_PEDIDO.map((tarjeta) => {
-          const Icono = tarjeta.Icono;
-          const total = pedidosData?.[tarjeta.clave] ?? 0;
+        {isLoading
+          ? TARJETAS_ESTADO_PEDIDO.map((tarjeta) => (
+              <CustomTarjetaResumenSkeleton key={tarjeta.clave} />
+            ))
+          : TARJETAS_ESTADO_PEDIDO.map((tarjeta) => {
+              const Icono = tarjeta.Icono;
+              const total = pedidosData?.[tarjeta.clave] ?? 0;
 
-          return (
-            <article
-              key={tarjeta.clave}
-              className="rounded-2xl border border-gray-100 bg-white px-6 py-5 shadow-sm"
-            >
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50">
-                  <Icono size={18} className={tarjeta.colorIcono} />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                  {tarjeta.titulo}
-                </span>
-              </div>
-              <p className="text-3xl font-bold text-brand-black">{total}</p>
-            </article>
-          );
-        })}
+              return (
+                <article
+                  key={tarjeta.clave}
+                  className="rounded-2xl border border-gray-100 bg-white px-6 py-5 shadow-sm"
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50">
+                      <Icono size={18} className={tarjeta.colorIcono} />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                      {tarjeta.titulo}
+                    </span>
+                  </div>
+                  <p className="text-3xl font-bold text-brand-black">{total}</p>
+                </article>
+              );
+            })}
       </div>
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

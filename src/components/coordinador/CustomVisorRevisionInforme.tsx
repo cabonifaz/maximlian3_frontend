@@ -16,6 +16,7 @@ interface PropsCustomVisorRevisionInforme {
   puedeDescargar: boolean;
   puedeDescargarXml?: boolean;
   puedeEditar: boolean;
+  informeYaAprobado?: boolean;
   tituloInforme?: string;
   idiomaInforme?: string;
   tipoPlantilla?: string;
@@ -41,6 +42,7 @@ export function CustomVisorRevisionInforme({
   puedeDescargar,
   puedeDescargarXml = false,
   puedeEditar,
+  informeYaAprobado = false,
   tituloInforme = "Informe original",
   idiomaInforme = "Espa\u00f1ol",
   tipoPlantilla,
@@ -70,7 +72,8 @@ export function CustomVisorRevisionInforme({
             variant="secondary"
             size="sm"
             className="border-green-400 text-green-600"
-            disabled={!puedeEditar}
+            disabled={!puedeEditar || informeYaAprobado}
+            title={informeYaAprobado ? "El informe ya fue aprobado." : undefined}
             onClick={onAprobar}
           >
             <CheckCircle2 size={14} />
