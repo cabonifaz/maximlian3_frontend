@@ -36,6 +36,7 @@ interface PropsCustomFilaListadoFactura {
     factura: EntradaListaFactura,
     formato: FormatoDescargaFactura,
   ) => void;
+  onVerErrores: (factura: EntradaListaFactura) => void;
 }
 
 export function CustomFilaListadoFactura({
@@ -50,6 +51,7 @@ export function CustomFilaListadoFactura({
   onAnular,
   onAlternarDescarga,
   onDescargar,
+  onVerErrores,
 }: PropsCustomFilaListadoFactura) {
   return (
     <>
@@ -71,18 +73,21 @@ export function CustomFilaListadoFactura({
         {factura.formaPago}
       </td>
       <td className='px-6 py-4 text-right text-sm font-semibold text-brand-black'>
-        {formatearImporteFactura(factura.totalImporte)}
+        {factura.monedaIcono} {formatearImporteFactura(factura.totalImporte)}
       </td>
       <td className='px-6 py-4 text-center'>
-        <span
-          className='inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold'
+        <button
+          type='button'
+          onClick={() => onVerErrores(factura)}
+          className='inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold transition-transform hover:scale-105 cursor-pointer'
           style={{
             color: factura.colorLetra,
             backgroundColor: factura.colorFondo,
           }}
+          title='Ver errores del último envío'
         >
           {factura.estado}
-        </span>
+        </button>
       </td>
       <td className='px-6 py-4 text-right'>
         <CustomButton
@@ -143,10 +148,10 @@ export function CustomFilaListadoFactura({
                 >
                   <Download size={14} />
                   <span className='flex-1 text-left'>Descargar</span>
-                  <ChevronRight size={14} />
+                  <ChevronRight size={14} className='rotate-180' />
                 </CustomButton>
                 {submenuDescargaActivo ? (
-                  <div className='absolute left-full top-0 ml-1 w-32 rounded-xl border border-slate-200 bg-white p-1 shadow-xl'>
+                  <div className='absolute right-full top-0 mr-1 w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-xl'>
                     <CustomButton
                       variant='ghost'
                       size='sm'

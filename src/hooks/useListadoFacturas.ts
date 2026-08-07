@@ -2,32 +2,67 @@ import { useMemo, useState, type CSSProperties, type MouseEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { facturacionService } from "@maximilian/services/facturacion.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import {
   CONFIGURACION_CONSULTA_FACTURACION,
   TAMANO_PAGINA_LISTADO_FACTURAS,
-  URL_PUBLICA_FACTURA_MOCK,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
+import type { DatosFormularioExportarLibroVentas } from "@maximilian/schemas";
 import type {
   EntradaListaFactura,
+  ErrorDocumentoFactura,
   FormatoDescargaFactura,
 } from "@maximilian/shared/types/facturacion.type";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
 
 export function useListadoFacturas() {
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
-  const [estadoSeleccionado, setEstadoSeleccionado] = useState("");
+  const [idEstadoSeleccionado, setIdEstadoSeleccionado] = useState<
+    number | undefined
+  >();
   const [idFormaPagoSeleccionada, setIdFormaPagoSeleccionada] = useState<
     number | undefined
   >();
-  const [fechaDesde, setFechaDesde] = useState("");
-  const [fechaHasta, setFechaHasta] = useState("");
+  const [fechaDesde, setFechaDesde] = useState<Date | undefined>();
+  const [fechaHasta, setFechaHasta] = useState<Date | undefined>();
   const [idMenuActivo, setIdMenuActivo] = useState<number | null>(null);
   const [estiloMenu, setEstiloMenu] = useState<CSSProperties>({});
   const [facturaEnlace, setFacturaEnlace] =
     useState<EntradaListaFactura | null>(null);
+  const [enlaceFactura, setEnlaceFactura] = useState("");
+  const [cargandoEnlace, setCargandoEnlace] = useState(false);
+  const [facturaErrores, setFacturaErrores] =
+    useState<EntradaListaFactura | null>(null);
+  const [erroresFactura, setErroresFactura] = useState<ErrorDocumentoFactura[]>([]);
+  const [cargandoErrores, setCargandoErrores] = useState(false);
   const [idSubmenuDescargaActivo, setIdSubmenuDescargaActivo] =
     useState<number | null>(null);
+  const [modalExportarLibroAbierto, setModalExportarLibroAbierto] =
+    useState(false);
+  const [exportandoLibro, setExportandoLibro] = useState(false);
   const terminoConRetardo = useRetardo(terminoBusqueda);
+  const fechaDesdeIso = fechaDesde ? formatearFechaIsoLocal(fechaDesde) : undefined;
+  const fechaHastaIso = fechaHasta ? formatearFechaIsoLocal(fechaHasta) : undefined;
+  const fechasInvalidas = Boolean(
+    fechaDesde && fechaHasta && fechaDesde > fechaHasta,
+  );
+
+  const { data: opcionesEstadoMaestro } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.ESTADO_DOCUMENTO_ELECTRONICO],
+    queryFn: () =>
+      servicioTablaMaestra.list(TablaMaestraId.ESTADO_DOCUMENTO_ELECTRONICO),
+    staleTime: Infinity,
+  });
+
+  const estadoCodigoSeleccionado = useMemo(
+    () =>
+      opcionesEstadoMaestro?.find(
+        (opcion) => opcion.num1 === idEstadoSeleccionado,
+      )?.string1?.trim(),
+    [idEstadoSeleccionado, opcionesEstadoMaestro],
+  );
 
   const {
     data: respuesta,
@@ -42,34 +77,23 @@ export function useListadoFacturas() {
       paginaActual,
       TAMANO_PAGINA_LISTADO_FACTURAS,
       terminoConRetardo,
-      estadoSeleccionado,
+      estadoCodigoSeleccionado,
       idFormaPagoSeleccionada,
-      fechaDesde,
-      fechaHasta,
+      fechaDesdeIso,
+      fechaHastaIso,
     ],
     queryFn: () =>
       facturacionService.listarFacturas({
-        estadoCodigo: estadoSeleccionado || undefined,
+        estadoCodigo: estadoCodigoSeleccionado || undefined,
         idFormaPago: idFormaPagoSeleccionada,
-        fechaDesde: fechaDesde || undefined,
-        fechaHasta: fechaHasta || undefined,
+        fechaDesde: fechaDesdeIso,
+        fechaHasta: fechaHastaIso,
         busqueda: terminoConRetardo || undefined,
         pagina: paginaActual,
         tamanoPagina: TAMANO_PAGINA_LISTADO_FACTURAS,
       }),
+    enabled: !fechasInvalidas,
   });
-
-  const opcionesEstado = useMemo(() => {
-    const estados = new Set(
-      respuesta?.items.map((factura) => factura.estado) ?? [],
-    );
-    if (estadoSeleccionado) estados.add(estadoSeleccionado);
-
-    return Array.from(estados).map((estado) => ({
-      valor: estado,
-      etiqueta: estado,
-    }));
-  }, [estadoSeleccionado, respuesta?.items]);
 
   const reiniciarPagina = () => setPaginaActual(1);
 
@@ -78,8 +102,8 @@ export function useListadoFacturas() {
     reiniciarPagina();
   };
 
-  const cambiarEstado = (valor: string) => {
-    setEstadoSeleccionado(valor);
+  const cambiarEstado = (valor: number | undefined) => {
+    setIdEstadoSeleccionado(valor);
     reiniciarPagina();
   };
 
@@ -88,12 +112,12 @@ export function useListadoFacturas() {
     reiniciarPagina();
   };
 
-  const cambiarFechaDesde = (valor: string) => {
+  const cambiarFechaDesde = (valor: Date | undefined) => {
     setFechaDesde(valor);
     reiniciarPagina();
   };
 
-  const cambiarFechaHasta = (valor: string) => {
+  const cambiarFechaHasta = (valor: Date | undefined) => {
     setFechaHasta(valor);
     reiniciarPagina();
   };
@@ -117,9 +141,38 @@ export function useListadoFacturas() {
     setIdSubmenuDescargaActivo(null);
   };
 
-  const abrirEnlace = (factura: EntradaListaFactura) => {
+  const abrirEnlace = async (factura: EntradaListaFactura) => {
     setFacturaEnlace(factura);
+    setEnlaceFactura("");
     setIdMenuActivo(null);
+    setCargandoEnlace(true);
+    try {
+      const url = await facturacionService.obtenerUrlVerificacionFactura(
+        factura.idDocumentoElectronico,
+      );
+      setEnlaceFactura(url);
+    } catch {
+      // manejado por el interceptor
+    } finally {
+      setCargandoEnlace(false);
+    }
+  };
+
+  const abrirErrores = async (factura: EntradaListaFactura) => {
+    setFacturaErrores(factura);
+    setErroresFactura([]);
+    setIdMenuActivo(null);
+    setCargandoErrores(true);
+    try {
+      const errores = await facturacionService.obtenerErroresUltimoEnvio(
+        factura.idDocumentoElectronico,
+      );
+      setErroresFactura(errores);
+    } catch {
+      setFacturaErrores(null);
+    } finally {
+      setCargandoErrores(false);
+    }
   };
 
   const alternarSubmenuDescarga = (factura: EntradaListaFactura) => {
@@ -130,30 +183,55 @@ export function useListadoFacturas() {
     );
   };
 
-  const descargarFactura = (
+  const descargarFactura = async (
     factura: EntradaListaFactura,
     formato: FormatoDescargaFactura,
   ) => {
-    const contenido = formato === "xml"
-      ? `<factura><numero>${factura.numeroFactura}</numero></factura>`
-      : `FACTURA ${factura.numeroFactura}`;
-    const archivo = new Blob([contenido], {
-      type: formato === "xml" ? "application/xml" : "application/pdf",
-    });
-    const url = URL.createObjectURL(archivo);
-    const enlace = document.createElement("a");
-    enlace.href = url;
-    enlace.download = `${factura.numeroFactura}.${formato}`;
-    document.body.appendChild(enlace);
-    enlace.click();
-    enlace.remove();
-    URL.revokeObjectURL(url);
     setIdMenuActivo(null);
     setIdSubmenuDescargaActivo(null);
+    try {
+      const urlDescarga = await facturacionService.obtenerUrlDescargaFactura(
+        factura.idDocumentoElectronico,
+        formato,
+      );
+      window.open(urlDescarga, "_blank", "noopener,noreferrer");
+    } catch {
+      // manejado por el interceptor
+    }
+  };
+
+  const abrirModalExportarLibro = () => setModalExportarLibroAbierto(true);
+
+  const cerrarModalExportarLibro = () => setModalExportarLibroAbierto(false);
+
+  const exportarLibroVentas = async (
+    datos: DatosFormularioExportarLibroVentas,
+  ) => {
+    setExportandoLibro(true);
+    try {
+      const periodo = formatearFechaIsoLocal(datos.mes);
+      const { archivo, nombreArchivo } =
+        await facturacionService.exportarLibroVentas(periodo);
+      const url = URL.createObjectURL(archivo);
+      const enlace = document.createElement("a");
+      enlace.href = url;
+      enlace.download = nombreArchivo;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setModalExportarLibroAbierto(false);
+    } catch {
+      // manejado por el interceptor
+    } finally {
+      setExportandoLibro(false);
+    }
   };
 
   return {
     abrirEnlace,
+    abrirErrores,
+    abrirModalExportarLibro,
     alternarMenu,
     alternarSubmenuDescarga,
     cambiarBusqueda,
@@ -162,28 +240,40 @@ export function useListadoFacturas() {
     cambiarFechaHasta,
     cambiarFormaPago,
     cambiarPagina: setPaginaActual,
-    cerrarEnlace: () => setFacturaEnlace(null),
+    cargandoEnlace,
+    cargandoErrores,
+    cerrarEnlace: () => {
+      setFacturaEnlace(null);
+      setEnlaceFactura("");
+    },
+    cerrarErrores: () => {
+      setFacturaErrores(null);
+      setErroresFactura([]);
+    },
     cerrarMenu: () => {
       setIdMenuActivo(null);
       setIdSubmenuDescargaActivo(null);
     },
+    cerrarModalExportarLibro,
     descargarFactura,
-    enlaceFactura: facturaEnlace
-      ? URL_PUBLICA_FACTURA_MOCK
-        + encodeURIComponent(facturaEnlace.numeroFactura)
-      : "",
-    estadoSeleccionado,
+    enlaceFactura,
+    erroresFactura,
     estiloMenu,
+    exportandoLibro,
+    exportarLibroVentas,
     facturaEnlace,
+    facturaErrores,
     facturasPagina: respuesta?.items ?? [],
     fechaDesde,
     fechaHasta,
+    fechasInvalidas,
+    idEstadoSeleccionado,
     idFormaPagoSeleccionada,
     idMenuActivo,
     idSubmenuDescargaActivo,
     isError,
     isLoading,
-    opcionesEstado,
+    modalExportarLibroAbierto,
     paginaActual,
     refetch,
     terminoBusqueda,

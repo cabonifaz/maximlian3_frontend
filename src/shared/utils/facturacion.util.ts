@@ -76,8 +76,9 @@ export function construirPayloadGuardarBorradorFactura(
 ): GuardarBorradorFacturaRequest {
   return {
     idTipoDocumentoMaestro: datos.idTipoDocumentoMaestro,
-    numeroReferencia: detalle.ordenCompra,
+    numeroReferencia: "",
     idMonedaMaestro: datos.idMonedaMaestro,
+    tipoCambio: datos.tipoCambio ?? 0,
     idTipoOperacionMaestro: datos.idTipoOperacionMaestro,
     idFormaPago: datos.idFormaPago,
     cuotas: datos.idFormaPago === ID_FORMA_PAGO_CONTADO
@@ -96,6 +97,7 @@ export function construirPayloadGuardarBorradorFactura(
       return {
         idPedido: producto.idPedido,
         productoSunatCodigo: producto.productoSunatCodigo,
+        descripcion: datos.descripciones[claveProducto] ?? producto.descripcion,
         idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
         cantidad: producto.cantidad,
 
@@ -104,6 +106,10 @@ export function construirPayloadGuardarBorradorFactura(
         porcentajeIgv: datos.porcentajesIgv[claveProducto],
       };
     }),
+    camposExtra: detalle.camposExtra
+      .map((campoExtra) => campoExtra.texto.trim())
+      .filter(Boolean)
+      .map((texto) => ({ texto })),
   };
 }
 export function construirPayloadGuardarCambiosFactura(
@@ -112,8 +118,9 @@ export function construirPayloadGuardarCambiosFactura(
 ): GuardarCambiosFacturaRequest {
   return {
     idFormaPago: datos.idFormaPago,
-    numeroReferencia: detalle.ordenCompra,
+    numeroReferencia: "",
     idMonedaMaestro: datos.idMonedaMaestro,
+    tipoCambio: datos.tipoCambio ?? 0,
     idTipoOperacionMaestro: datos.idTipoOperacionMaestro,
     lineas: detalle.productos.map((producto, indice) => {
       const claveProducto = String(producto.idProductoFactura);
@@ -123,6 +130,7 @@ export function construirPayloadGuardarCambiosFactura(
       return {
         idPedido: producto.idPedido,
         productoSunatCodigo: producto.productoSunatCodigo,
+        descripcion: datos.descripciones[claveProducto] ?? producto.descripcion,
         idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
         cantidad: producto.cantidad,
 
@@ -147,5 +155,12 @@ export function construirPayloadGuardarCambiosFactura(
           idCuotaDocumentoElectronico:
             cuota.idCuotaDocumentoElectronico,
         })),
+    camposExtra: detalle.camposExtra
+      .filter((campoExtra) => campoExtra.texto.trim())
+      .map((campoExtra) => ({
+        texto: campoExtra.texto.trim(),
+        idCampoExtraDocumentoElectronico:
+          campoExtra.idCampoExtraDocumentoElectronico,
+      })),
   };
 }

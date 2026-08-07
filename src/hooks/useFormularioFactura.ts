@@ -10,6 +10,7 @@ import {
 import { facturacionService } from "@maximilian/services/facturacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type {
+  CampoExtraLineaFactura,
   DetalleFactura,
   EntradaCuotaFactura,
   EntradaProductoFacturable,
@@ -29,11 +30,15 @@ import {
   obtenerSimboloTablaMaestra,
 } from "@maximilian/shared/utils/tabla-maestra.util";
 import {
+  CODIGO_MONEDA_SUNAT_SOLES,
   DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA,
+  ID_AFECTACION_IGV_EXTRANJERO,
+  ID_AFECTACION_IGV_PERU,
   ID_FORMA_PAGO_CONTADO,
-  ID_TIPO_COMPROBANTE_BOLETA,
   ID_TIPO_DOCUMENTO_SUNAT_RUC,
+  ID_TIPO_OPERACION_SUNAT_EXPORTACION_SERVICIOS,
   ID_UNIDAD_MEDIDA_PREDETERMINADA,
+  IDS_AFECTACION_IGV_DISPONIBLES,
   IDS_TIPO_COMPROBANTE_CLIENTE_RUC,
   PORCENTAJE_IGV_PREDETERMINADO,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
@@ -70,6 +75,15 @@ function obtenerUnidadesMedidaIniciales(factura: DetalleFactura | null) {
     (factura?.productos ?? []).map((producto) => [
       String(producto.idProductoFactura),
       Number(producto.idUnidadMedidaMaestro) || 0,
+    ]),
+  );
+}
+
+function obtenerDescripcionesIniciales(factura: DetalleFactura | null) {
+  return Object.fromEntries(
+    (factura?.productos ?? []).map((producto) => [
+      String(producto.idProductoFactura),
+      producto.descripcion,
     ]),
   );
 }
@@ -134,13 +148,17 @@ export function useFormularioFactura(
     defaultValues: {
       idTipoDocumentoMaestro: detalle?.idTipoDocumentoMaestro ?? 0,
       idMonedaMaestro: detalle?.idMonedaMaestro ?? 0,
-      idTipoOperacionMaestro: detalle?.idTipoOperacionMaestro ?? 0,
+      tipoCambio: detalle?.tipoCambio || undefined,
+      idTipoOperacionMaestro:
+        detalle?.idTipoOperacionMaestro
+        || ID_TIPO_OPERACION_SUNAT_EXPORTACION_SERVICIOS,
       idFormaPago: detalle?.idFormaPago ?? 0,
       descuentos: obtenerDescuentosIniciales(detalle),
 
       porcentajesIgv: obtenerPorcentajesIgvIniciales(detalle),
       afectacionesIgv: obtenerAfectacionesIgvIniciales(detalle),
       unidadesMedida: obtenerUnidadesMedidaIniciales(detalle),
+      descripciones: obtenerDescripcionesIniciales(detalle),
     },
   });
   const {
@@ -162,6 +180,10 @@ export function useFormularioFactura(
   const unidadesMedida = useWatch({
     control: formulario.control,
     name: "unidadesMedida",
+  });
+  const descripciones = useWatch({
+    control: formulario.control,
+    name: "descripciones",
   });
   const porcentajesIgv = useWatch({
     control: formulario.control,
@@ -195,19 +217,34 @@ export function useFormularioFactura(
     enabled: detalle !== null,
     staleTime: Infinity,
   });
-  const { data: opcionesAfectacionIgv } = useQuery({
+  const { data: opcionesAfectacionIgvBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.AFECTACION_IGV_SUNAT],
     queryFn: () =>
       servicioTablaMaestra.list(TablaMaestraId.AFECTACION_IGV_SUNAT),
     enabled: detalle !== null,
     staleTime: Infinity,
   });
-  const primeraOpcionAfectacionIgv = opcionesAfectacionIgv?.find(
-    (opcion) => opcion.num1 != null,
+  const opcionesAfectacionIgv = useMemo(
+    () =>
+      opcionesAfectacionIgvBase?.filter(
+        (opcion) =>
+          opcion.num1 != null
+          && (IDS_AFECTACION_IGV_DISPONIBLES as readonly number[]).includes(
+            opcion.num1,
+          ),
+      ),
+    [opcionesAfectacionIgvBase],
+  );
+  const idAfectacionIgvPredeterminada = detalle
+    ? detalle.idTipoDocumentoSunat === ID_TIPO_DOCUMENTO_SUNAT_RUC
+      ? ID_AFECTACION_IGV_PERU
+      : ID_AFECTACION_IGV_EXTRANJERO
+    : undefined;
+  const opcionAfectacionIgvPredeterminada = opcionesAfectacionIgv?.find(
+    (opcion) => opcion.num1 === idAfectacionIgvPredeterminada,
   );
   useEffect(() => {
-    const idPrimeraOpcion = primeraOpcionAfectacionIgv?.num1;
-    if (!idPrimeraOpcion || !detalle) return;
+    if (!idAfectacionIgvPredeterminada || !detalle) return;
 
     const afectacionesActuales = getValues("afectacionesIgv");
     const afectacionesCompletadas = { ...afectacionesActuales };
@@ -217,7 +254,7 @@ export function useFormularioFactura(
       const claveProducto = String(producto.idProductoFactura);
       if (afectacionesCompletadas[claveProducto]) return;
 
-      afectacionesCompletadas[claveProducto] = idPrimeraOpcion;
+      afectacionesCompletadas[claveProducto] = idAfectacionIgvPredeterminada;
       hayProductosSinAfectacion = true;
     });
 
@@ -226,22 +263,34 @@ export function useFormularioFactura(
     setValue("afectacionesIgv", afectacionesCompletadas, {
       shouldValidate: true,
     });
-  }, [detalle, getValues, primeraOpcionAfectacionIgv?.num1, setValue]);
+  }, [detalle, getValues, idAfectacionIgvPredeterminada, setValue]);
   const opcionesTipoDocumento = useMemo(() => {
-    const idsPermitidos = new Set<number>(
-      detalle?.idTipoDocumentoSunat === ID_TIPO_DOCUMENTO_SUNAT_RUC
-        ? IDS_TIPO_COMPROBANTE_CLIENTE_RUC
-        : [ID_TIPO_COMPROBANTE_BOLETA],
-    );
+    const idsPermitidos = new Set<number>(IDS_TIPO_COMPROBANTE_CLIENTE_RUC);
 
     return opcionesTipoDocumentoBase?.filter(
       (opcion) => opcion.num1 != null && idsPermitidos.has(opcion.num1),
     );
-  }, [detalle?.idTipoDocumentoSunat, opcionesTipoDocumentoBase]);
+  }, [opcionesTipoDocumentoBase]);
   const simboloMoneda = obtenerSimboloTablaMaestra(
     opcionesMoneda,
     idMonedaMaestro || undefined,
   );
+  const monedaSeleccionada = opcionesMoneda?.find(
+    (opcion) => opcion.num1 === idMonedaMaestro,
+  );
+  const requiereTipoCambio = Boolean(
+    monedaSeleccionada
+    && monedaSeleccionada.string1?.trim().toUpperCase() !== CODIGO_MONEDA_SUNAT_SOLES,
+  );
+  const simboloSoles = opcionesMoneda?.find(
+    (opcion) => opcion.string1?.trim().toUpperCase() === CODIGO_MONEDA_SUNAT_SOLES,
+  )?.string3?.trim() ?? "";
+  useEffect(() => {
+    if (!opcionesMoneda || requiereTipoCambio) return;
+
+    setValue("tipoCambio", undefined);
+    clearErrors("tipoCambio");
+  }, [clearErrors, opcionesMoneda, requiereTipoCambio, setValue]);
   const guardarFacturaMutation = useMutation({
     mutationFn: (datos: DatosFormularioFactura) => {
       if (!detalle) return Promise.resolve();
@@ -375,6 +424,24 @@ export function useFormularioFactura(
     return true;
   };
 
+  const validarTipoCambio = (datos: DatosFormularioFactura) => {
+    if (!requiereTipoCambio) {
+      clearErrors("tipoCambio");
+      return true;
+    }
+
+    if (!datos.tipoCambio || datos.tipoCambio <= 0) {
+      setError("tipoCambio", {
+        type: "custom",
+        message: "El tipo de cambio es requerido",
+      });
+      return false;
+    }
+
+    clearErrors("tipoCambio");
+    return true;
+  };
+
   const agregarProductos = (productos: EntradaProductoFacturable[]) => {
     clearErrors("root.cuotas");
     const productosNuevos = productos.map(crearProductoFactura);
@@ -403,6 +470,12 @@ export function useFormularioFactura(
         Number(producto.idUnidadMedidaMaestro) || 0,
       ]),
     );
+    const descripcionesNuevas = Object.fromEntries(
+      productosNuevos.map((producto) => [
+        String(producto.idProductoFactura),
+        producto.descripcion,
+      ]),
+    );
 
     setValue("descuentos", {
       ...getValues("descuentos"),
@@ -420,6 +493,10 @@ export function useFormularioFactura(
     setValue("unidadesMedida", {
       ...getValues("unidadesMedida"),
       ...unidadesMedidaNuevas,
+    });
+    setValue("descripciones", {
+      ...getValues("descripciones"),
+      ...descripcionesNuevas,
     });
     setDetalle((actual) =>
       actual
@@ -442,6 +519,7 @@ export function useFormularioFactura(
     unregister(`porcentajesIgv.${producto.idProductoFactura}`);
     unregister(`afectacionesIgv.${producto.idProductoFactura}`);
     unregister(`unidadesMedida.${producto.idProductoFactura}`);
+    unregister(`descripciones.${producto.idProductoFactura}`);
     setIdProductoDescuentoEdicion((idActual) =>
       idActual === producto.idProductoFactura ? null : idActual,
     );
@@ -561,6 +639,10 @@ export function useFormularioFactura(
     );
   };
 
+  const actualizarCamposExtra = (camposExtra: CampoExtraLineaFactura[]) => {
+    setDetalle((actual) => (actual ? { ...actual, camposExtra } : actual));
+  };
+
   const iniciarEdicionDescuento = (producto: EntradaProductoFactura) => {
     if (
       idProductoDescuentoEdicion !== null
@@ -654,25 +736,28 @@ export function useFormularioFactura(
       anularFacturaMutation.mutate(datos),
     anularFacturaMutation,
     actualizarCampoFactura,
+    actualizarCamposExtra,
     cancelarEdicionDescuento,
     cancelarEdicionIgv,
     confirmarFormulario: (alConfirmar: () => void) =>
       formulario.handleSubmit((datos) => {
-        if (validarTotalCuotas(datos)) alConfirmar();
+        const cuotasValidas = validarTotalCuotas(datos);
+        const tipoCambioValido = validarTipoCambio(datos);
+        if (cuotasValidas && tipoCambioValido) alConfirmar();
       }),
     detalle,
     erroresFormulario: formulario.formState.errors,
     afectacionIgvPredeterminadaDescripcion:
-      primeraOpcionAfectacionIgv
-        ? obtenerEtiquetaPrincipalSecundaria(primeraOpcionAfectacionIgv)
+      opcionAfectacionIgvPredeterminada
+        ? obtenerEtiquetaPrincipalSecundaria(opcionAfectacionIgvPredeterminada)
         : "",
     emitirFactura: formulario.handleSubmit((datos) => {
-      if (!validarTotalCuotas(datos)) return Promise.resolve();
+      if (!validarTotalCuotas(datos) || !validarTipoCambio(datos)) return Promise.resolve();
       return emitirFacturaMutation.mutateAsync(datos);
     }),
     emitirFacturaMutation,
     guardarFactura: formulario.handleSubmit((datos) => {
-      if (!validarTotalCuotas(datos)) return Promise.resolve();
+      if (!validarTotalCuotas(datos) || !validarTipoCambio(datos)) return Promise.resolve();
       return guardarFacturaMutation.mutateAsync(datos);
     }),
     guardarFacturaMutation,
@@ -691,8 +776,12 @@ export function useFormularioFactura(
     opcionesTipoDocumento,
     quitarCuota,
     quitarProducto,
+    requiereTipoCambio,
+    descripciones,
+    registrarDescripcion: formulario.register,
     registrarDescuento: formulario.register,
     registrarPorcentajeIgv: formulario.register,
+    registrarTipoCambio: formulario.register,
 
     seleccionarAfectacionIgv,
     seleccionarUnidadMedida,
@@ -718,6 +807,7 @@ export function useFormularioFactura(
         shouldDirty: true,
         shouldValidate: true,
       }),
+    simboloSoles,
     valoresMaestros: {
       idFormaPago,
       idMonedaMaestro,
