@@ -88,6 +88,7 @@ export function ModalFlujoAsignacion({
     pedidoDetalleId,
     pedidosActivos,
     pedidosData,
+    puedeAsignarTraductor,
     puedeGuardar,
     refetchPedidos,
     rolActivo,
@@ -310,13 +311,18 @@ export function ModalFlujoAsignacion({
           <tbody className="divide-y divide-gray-50">
             {asignacionesBorrador.map((assignment, index) => {
               const isAssigned = !!assignment.assignee;
+              const esTraductorNoRequerido = assignment.role === "translator" && !puedeAsignarTraductor;
 
               return (
                 <tr key={assignment.role}>
                   <td className="px-6 py-5 text-center text-sm text-slate-500">{index + 1}</td>
                   <td className="px-6 py-5 text-xl font-bold text-brand-black">{ETIQUETAS_ROL[assignment.role]}</td>
                   <td className="px-6 py-5">
-                    {isAssigned ? (
+                    {esTraductorNoRequerido ? (
+                      <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-500">
+                        No requiere traducción
+                      </span>
+                    ) : isAssigned ? (
                       <span className="text-sm text-slate-600">{assignment.assignee?.nombre}</span>
                     ) : (
                       <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-500">Sin asignar</span>
@@ -329,6 +335,8 @@ export function ModalFlujoAsignacion({
                         size="compact"
                         className="min-w-28"
                         onClick={() => setRolActivo(assignment.role)}
+                        disabled={esTraductorNoRequerido}
+                        title={esTraductorNoRequerido ? "El idioma del informe es Español, no requiere traductor" : undefined}
                       >
                         {isAssigned ? "Reasignar" : "Asignar"}
                       </CustomButton>

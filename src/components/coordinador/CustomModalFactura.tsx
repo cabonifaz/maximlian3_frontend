@@ -5,6 +5,7 @@ import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomModalCuotaFactura } from "@maximilian/components/coordinador/CustomModalCuotaFactura";
+import { CustomListaCamposExtraFactura } from "@maximilian/components/coordinador/CustomListaCamposExtraFactura";
 import { CustomModalAnularFactura } from "@maximilian/components/coordinador/CustomModalAnularFactura";
 import { CustomModalProductosFactura } from "@maximilian/components/coordinador/CustomModalProductosFactura";
 import { useFormularioFactura } from "@maximilian/hooks/useFormularioFactura";
@@ -22,7 +23,6 @@ import {
 import {
   ID_ESTADO_FACTURA_APROBADA,
   ID_FORMA_PAGO_CONTADO,
-  LIMITE_CARACTERES_ORDEN_COMPRA,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
 interface CustomModalFacturaProps {
@@ -63,6 +63,7 @@ export function CustomModalFactura({
     anularFactura,
     anularFacturaMutation,
     actualizarCampoFactura,
+    actualizarCamposExtra,
     cancelarEdicionDescuento,
     cancelarEdicionIgv,
     confirmarFormulario,
@@ -87,8 +88,11 @@ export function CustomModalFactura({
     opcionesTipoDocumento,
     quitarCuota,
     quitarProducto,
+    registrarDescripcion,
     registrarDescuento,
     registrarPorcentajeIgv,
+    registrarTipoCambio,
+    requiereTipoCambio,
 
     seleccionarAfectacionIgv,
     seleccionarUnidadMedida,
@@ -97,6 +101,7 @@ export function CustomModalFactura({
     seleccionarTipoDocumento,
     seleccionarTipoOperacion,
     simboloMoneda,
+    simboloSoles,
     totalFactura,
     unidadesMedida,
     valoresMaestros,
@@ -211,6 +216,40 @@ export function CustomModalFactura({
                 disabled={soloLectura}
                 error={erroresFormulario.idMonedaMaestro?.message}
               />
+              {requiereTipoCambio ? (
+                <div className="space-y-1.5">
+                  <CustomLabel htmlFor="factura-tipo-cambio" required>
+                    Tipo de cambio
+                  </CustomLabel>
+                  <div
+                    className={`flex items-center gap-2 rounded-xl border bg-brand-white px-4 transition-all ${
+                      soloLectura
+                        ? "cursor-not-allowed bg-slate-50"
+                        : "focus-within:border-brand-wine focus-within:ring-4 focus-within:ring-brand-wine/10"
+                    } ${erroresFormulario.tipoCambio ? "border-red-500" : "border-gray-200"}`}
+                  >
+                    <span className="shrink-0 whitespace-nowrap text-sm font-semibold text-slate-500">
+                      {simboloMoneda || "?"} 1 = {simboloSoles || "?"}
+                    </span>
+                    <input
+                      id="factura-tipo-cambio"
+                      type="number"
+                      min="0"
+                      step="0.001"
+                      readOnly={soloLectura}
+                      {...registrarTipoCambio("tipoCambio", { valueAsNumber: true })}
+                      className={`w-full border-0 bg-transparent py-2.5 text-sm outline-none ${
+                        soloLectura ? "cursor-not-allowed text-slate-500" : "text-slate-700"
+                      }`}
+                    />
+                  </div>
+                  {erroresFormulario.tipoCambio ? (
+                    <p className="text-xs font-medium text-red-500">
+                      {erroresFormulario.tipoCambio.message}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
               <CustomSelectorBuscable
                 label="Forma de pago"
                 required
@@ -222,18 +261,15 @@ export function CustomModalFactura({
                 error={erroresFormulario.idFormaPago?.message}
               />
               <CampoFactura
-                etiqueta="OC/OS"
-                valor={detalle.ordenCompra}
-                soloLectura={soloLectura}
-                opcional
-                maxLength={LIMITE_CARACTERES_ORDEN_COMPRA}
-                onChange={(valor) => actualizarCampoFactura("ordenCompra", valor)}
-              />
-              <CampoFactura
                 etiqueta="Emisión"
                 valor={detalle.fechaEmision}
                 soloLectura
                 onChange={() => undefined}
+              />
+              <CustomListaCamposExtraFactura
+                camposExtra={detalle.camposExtra}
+                soloLectura={soloLectura}
+                onChange={actualizarCamposExtra}
               />
             </div>
 
@@ -279,11 +315,35 @@ export function CustomModalFactura({
                       const errorPorcentajeIgv = erroresFormulario.porcentajesIgv?.[claveProducto];
                       const errorAfectacionIgv = erroresFormulario.afectacionesIgv?.[claveProducto];
                       const errorUnidadMedida = erroresFormulario.unidadesMedida?.[claveProducto];
+                      const errorDescripcion = erroresFormulario.descripciones?.[claveProducto];
 
                       return (
                       <tr key={producto.idProductoFactura}>
                         <td className="px-4 py-3 text-center text-slate-600">{producto.cantidad}</td>
-                        <td className="px-4 py-3 text-center font-medium text-slate-700">{producto.descripcion}</td>
+                        <td className="px-4 py-3 text-left">
+                          {soloLectura ? (
+                            <span className="font-medium text-slate-700">
+                              {producto.descripcion}
+                            </span>
+                          ) : (
+                            <>
+                              <input
+                                {...registrarDescripcion(
+                                  `descripciones.${producto.idProductoFactura}`,
+                                )}
+                                aria-label={`Descripción de ${producto.descripcion}`}
+                                className={`w-full rounded-md border px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-brand-wine ${
+                                  errorDescripcion ? "border-red-500" : "border-slate-200"
+                                }`}
+                              />
+                              {errorDescripcion ? (
+                                <p className="mt-1 text-left text-[10px] text-red-500">
+                                  {errorDescripcion.message}
+                                </p>
+                              ) : null}
+                            </>
+                          )}
+                        </td>
                         <td className="w-48 min-w-48 max-w-48 px-4 py-3">
                           {soloLectura ? (
                             <span className="text-slate-600">

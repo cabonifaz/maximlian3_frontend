@@ -8,6 +8,8 @@ import type {
   EntradaPedidoFacturacionApi,
   EntradaProductoFacturable,
   EntradaProductoFacturableApi,
+  ErrorDocumentoFactura,
+  FormatoDescargaFactura,
   GuardarBorradorFacturaRequest,
   GuardarCambiosFacturaRequest,
   IdEstadoFacturacionActualizable,
@@ -16,6 +18,7 @@ import type {
   ParametrosListaPedidosFacturacion,
   ParametrosListaProductosFacturables,
   ParametrosResumenFacturacion,
+  RespuestaExportarLibroVentas,
   RespuestaListaFacturasCliente,
   RespuestaListaFacturacion,
   RespuestaListaFacturas,
@@ -46,6 +49,25 @@ import {
 import { servicioCliente } from "./cliente.service";
 import { servicioTablaMaestra } from "./tabla-maestra.service";
 import { concatenarCodigosOrdenCompra } from "@maximilian/shared/utils/facturacion.util";
+import {
+  obtenerRegistro,
+  obtenerTexto,
+} from "@maximilian/shared/utils/normalizacion-respuesta.util";
+
+const TIPO_ARCHIVO_DESCARGA_FACTURA: Record<FormatoDescargaFactura, "Pdf" | "Xml"> = {
+  pdf: "Pdf",
+  xml: "Xml",
+};
+
+function obtenerNombreArchivoDesdeCabecera(cabecera?: string) {
+  if (!cabecera) return "";
+
+  const coincidenciaUtf = /filename\*=UTF-8''([^;]+)/i.exec(cabecera);
+  if (coincidenciaUtf?.[1]) return decodeURIComponent(coincidenciaUtf[1]);
+
+  const coincidencia = /filename="?([^";]+)"?/i.exec(cabecera);
+  return coincidencia?.[1] ?? "";
+}
 
 function mapearFacturacion(
   facturacion: EntradaFacturacionApi,
@@ -80,6 +102,7 @@ function mapearListaFactura(
     fechaEmision: factura.fechaEmision,
     formaPago: factura.formaPagoCodigo,
     totalImporte: factura.totalImporte,
+    monedaIcono: factura.monedaIcono,
     estado: factura.estadoCodigo,
     colorLetra: factura.colorLetra,
     colorFondo: factura.colorFondo,
@@ -196,10 +219,13 @@ async function obtenerFacturaRegistrada(
   idReferencia: number,
   idCliente: number | null,
   codigoEstadoFacturacion: number | null,
+  obtenerEndpointFactura: (
+    idReferencia: number,
+  ) => string = ENDPOINTS_FACTURACION.obtenerFactura,
 ): Promise<DetalleFactura> {
   const [{ data }, opcionesPorMaestro, detalleCliente] = await Promise.all([
     maximilianService.get<ApiResponse<ResultadoObtenerFacturaApi>>(
-      ENDPOINTS_FACTURACION.obtenerFactura(idReferencia),
+      obtenerEndpointFactura(idReferencia),
     ),
     servicioTablaMaestra.listarPorIds([
       TablaMaestraId.TIPO_DOCUMENTO_COMPROBANTE,
@@ -218,7 +244,7 @@ async function obtenerFacturaRegistrada(
     throw new ErrorRespuestaApi(data);
   }
 
-  const { cabecera, lineas, cuotas } = data.result;
+  const { cabecera, lineas, cuotas, camposExtra } = data.result;
   const opcionTipoDocumento = buscarOpcionTablaMaestra(
     opcionesPorMaestro[TablaMaestraId.TIPO_DOCUMENTO_COMPROBANTE] ?? [],
     cabecera.tipoDocumentoCodigo,
@@ -248,6 +274,7 @@ async function obtenerFacturaRegistrada(
     idTipoDocumentoSunat: detalleCliente?.idTipoDocumentoSunat ?? 0,
     idTipoDocumentoMaestro: opcionTipoDocumento?.num1 ?? 0,
     idMonedaMaestro: opcionMoneda?.num1 ?? 0,
+    tipoCambio: cabecera.tipoCambio ?? 0,
     idTipoOperacionMaestro: opcionTipoOperacion?.num1 ?? 0,
     idFormaPago: opcionFormaPago?.num1 ?? 0,
     tipoDocumentoDescripcion:
@@ -263,6 +290,10 @@ async function obtenerFacturaRegistrada(
       lineas.map((linea) => linea.productoCodigo),
     ),
     fechaEmision: formatearFechaIsoADdMmYyyy(cabecera.fechaEmision),
+    camposExtra: (camposExtra ?? []).map((campoExtra) => ({
+      idCampoExtraDocumentoElectronico: campoExtra.idCampoExtraDocumentoElectronico,
+      texto: campoExtra.texto,
+    })),
     productos: lineas.map((linea) => {
       const subtotal = linea.cantidad * linea.valorUnitario;
       const opcionAfectacionIgv = buscarOpcionTablaMaestra(
@@ -331,6 +362,7 @@ function crearDetalleFactura(
     idTipoDocumentoSunat,
     idTipoDocumentoMaestro: 0,
     idMonedaMaestro: 0,
+    tipoCambio: 0,
     idTipoOperacionMaestro: 0,
     idFormaPago: 0,
     tipoDocumentoDescripcion: "",
@@ -341,6 +373,7 @@ function crearDetalleFactura(
     ni: numeroIdentificacion,
     ordenCompra: "",
     fechaEmision: formatearFechaDdMmYyyy(new Date()),
+    camposExtra: [],
     productos: [],
     cuotas: [],
   };
@@ -446,6 +479,7 @@ export const facturacionService = {
       idDocumentoElectronico,
       null,
       codigoEstadoFacturacion,
+      ENDPOINTS_FACTURACION.obtenerFacturaPorId,
     ),
 
   listarProductosFacturables: async (
@@ -583,5 +617,101 @@ export const facturacionService = {
     }
 
     return data.result;
+  },
+
+  obtenerUrlDescargaFactura: async (
+    idDocumentoElectronico: number,
+    formato: FormatoDescargaFactura,
+  ): Promise<string> => {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.obtenerUrlDescargaFactura(idDocumentoElectronico),
+      { params: { tipoArchivo: TIPO_ARCHIVO_DESCARGA_FACTURA[formato] } },
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    const registro = obtenerRegistro(data.result);
+    const urlDescarga = obtenerTexto(
+      typeof data.result === "string" ? data.result : undefined,
+      registro.downloadUrl,
+      registro.DownloadUrl,
+      registro.url,
+      registro.Url,
+    );
+
+    if (!urlDescarga) throw new Error("La respuesta de descarga es invalida");
+
+    return urlDescarga;
+  },
+
+  obtenerUrlVerificacionFactura: async (
+    idDocumentoElectronico: number,
+  ): Promise<string> => {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.obtenerUrlVerificacionFactura(
+        idDocumentoElectronico,
+      ),
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    const registro = obtenerRegistro(data.result);
+    const urlVerificacion = obtenerTexto(
+      typeof data.result === "string" ? data.result : undefined,
+      registro.verificationUrl,
+      registro.VerificationUrl,
+      registro.url,
+      registro.Url,
+    );
+
+    if (!urlVerificacion) {
+      throw new Error("La respuesta de verificacion es invalida");
+    }
+
+    return urlVerificacion;
+  },
+
+  obtenerErroresUltimoEnvio: async (
+    idDocumentoElectronico: number,
+  ): Promise<ErrorDocumentoFactura[]> => {
+    const { data } = await maximilianService.get<ApiResponse<ErrorDocumentoFactura[] | null>>(
+      ENDPOINTS_FACTURACION.erroresUltimoEnvio(idDocumentoElectronico),
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result ?? [];
+  },
+
+  exportarLibroVentas: async (
+    periodo: string,
+  ): Promise<RespuestaExportarLibroVentas> => {
+    const respuesta = await maximilianService.get<Blob>(
+      ENDPOINTS_FACTURACION.sireRvieTxt,
+      { params: { periodo }, responseType: "blob" },
+    );
+
+    const tipoContenido = respuesta.headers["content-type"] ?? "";
+
+    if (tipoContenido.includes("application/json")) {
+      const texto = await respuesta.data.text();
+      const data = JSON.parse(texto) as ApiResponse<unknown>;
+      throw new ErrorRespuestaApi(data);
+    }
+
+    const nombreArchivo = obtenerNombreArchivoDesdeCabecera(
+      respuesta.headers["content-disposition"],
+    );
+
+    return {
+      archivo: respuesta.data,
+      nombreArchivo,
+    };
   },
 };

@@ -26,13 +26,13 @@ export type PestanaGestionFacturacion =
   (typeof PESTANAS_GESTION_FACTURACION)[number]['id'];
 
 export const COLUMNAS_LISTADO_FACTURAS = [
-  { label: 'Número de factura' },
-  { label: 'Cliente' },
-  { label: 'Fecha de emisión', className: 'text-center' },
-  { label: 'Forma de pago', className: 'text-center' },
-  { label: 'Importe total', className: 'text-right' },
-  { label: 'Estado', className: 'text-center' },
-  { label: '', className: 'w-16 text-right' },
+  { label: 'Número de factura', width: '16%' },
+  { label: 'Cliente', width: '24%' },
+  { label: 'Fecha de emisión', className: 'text-center', width: '13%' },
+  { label: 'Forma de pago', className: 'text-center', width: '13%' },
+  { label: 'Importe total', className: 'text-right', width: '13%' },
+  { label: 'Estado', className: 'text-center', width: '12%' },
+  { label: '', className: 'text-right', width: '9%' },
 ];
 
 export const OPCIONES_ESTADO_FACTURA_MOCK = [
@@ -59,6 +59,7 @@ export const FACTURAS_MOCK = [
     fechaEmision: '2026-08-04',
     formaPago: 'Contado',
     moneda: 'PEN',
+    monedaIcono: 'S/',
     totalImporte: 2450,
     estado: 'Aceptada',
   },
@@ -69,6 +70,7 @@ export const FACTURAS_MOCK = [
     fechaEmision: '2026-08-02',
     formaPago: 'Crédito',
     moneda: 'USD',
+    monedaIcono: '$',
     totalImporte: 1860.5,
     estado: 'Pendiente',
   },
@@ -79,6 +81,7 @@ export const FACTURAS_MOCK = [
     fechaEmision: '2026-07-30',
     formaPago: 'Contado',
     moneda: 'PEN',
+    monedaIcono: 'S/',
     totalImporte: 980,
     estado: 'Aceptada',
   },
@@ -89,6 +92,7 @@ export const FACTURAS_MOCK = [
     fechaEmision: '2026-07-28',
     formaPago: 'Crédito',
     moneda: 'PEN',
+    monedaIcono: 'S/',
     totalImporte: 3720,
     estado: 'Rechazada',
   },
@@ -99,6 +103,7 @@ export const FACTURAS_MOCK = [
     fechaEmision: '2026-07-25',
     formaPago: 'Contado',
     moneda: 'USD',
+    monedaIcono: '$',
     totalImporte: 1250,
     estado: 'Anulada',
   },
@@ -109,6 +114,7 @@ export const FACTURAS_MOCK = [
     fechaEmision: '2026-07-21',
     formaPago: 'Crédito',
     moneda: 'PEN',
+    monedaIcono: 'S/',
     totalImporte: 4610.75,
     estado: 'Aceptada',
   },
@@ -119,6 +125,7 @@ export const FACTURAS_MOCK = [
     fechaEmision: '2026-07-18',
     formaPago: 'Contado',
     moneda: 'PEN',
+    monedaIcono: 'S/',
     totalImporte: 730,
     estado: 'Pendiente',
   },
@@ -129,6 +136,7 @@ export const FACTURAS_MOCK = [
     fechaEmision: '2026-07-15',
     formaPago: 'Crédito',
     moneda: 'USD',
+    monedaIcono: '$',
     totalImporte: 2195,
     estado: 'Aceptada',
   },
@@ -140,9 +148,6 @@ export const CLASES_ESTADO_LISTADO_FACTURA: Record<string, string> = {
   Rechazada: 'bg-red-100 text-red-700',
   Anulada: 'bg-slate-200 text-slate-600',
 };
-
-export const URL_PUBLICA_FACTURA_MOCK =
-  'https://facturacion.maximilian.pe/comprobante/';
 
 export const ESTILOS_ESTADO_FACTURACION_PRINCIPAL: Record<
   EstadoFacturacionPrincipal,
@@ -231,12 +236,21 @@ export const CONFIGURACION_CONSULTA_FACTURACION = {
   refetchOnMount: "always",
 } as const;
 
+export const CODIGO_MONEDA_SUNAT_SOLES = "PEN";
 export const ID_FORMA_PAGO_CONTADO = 1;
 export const ID_TIPO_DOCUMENTO_SUNAT_RUC = 4;
 export const IDS_TIPO_COMPROBANTE_CLIENTE_RUC = [1, 3] as const;
 export const ID_TIPO_COMPROBANTE_BOLETA = 3;
+export const ID_TIPO_OPERACION_SUNAT_EXPORTACION_SERVICIOS = 5;
+export const ID_AFECTACION_IGV_PERU = 10;
+export const ID_AFECTACION_IGV_EXTRANJERO = 40;
+export const IDS_AFECTACION_IGV_DISPONIBLES = [
+  ID_AFECTACION_IGV_PERU,
+  ID_AFECTACION_IGV_EXTRANJERO,
+] as const;
 export const PORCENTAJE_IGV_PREDETERMINADO = 18;
 export const LIMITE_CARACTERES_ORDEN_COMPRA = 20;
+export const LIMITE_CARACTERES_CAMPO_EXTRA_FACTURA = 500;
 export const ID_UNIDAD_MEDIDA_PREDETERMINADA = 1;
 export const DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA =
   "ZZ - Unidad de medida acordada entre las partes (servicios)";
