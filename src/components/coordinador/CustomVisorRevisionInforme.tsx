@@ -44,7 +44,7 @@ export function CustomVisorRevisionInforme({
   puedeEditar,
   informeYaAprobado = false,
   tituloInforme = "Informe original",
-  idiomaInforme = "Espa\u00f1ol",
+  idiomaInforme = "Español",
   tipoPlantilla,
   mostrarAccionesRevision = true,
   mostrarInformeTraducido = false,
@@ -123,7 +123,7 @@ export function CustomVisorRevisionInforme({
                 </div>
                 <div className="min-w-0">
                   <h1 className="truncate text-xl font-bold text-brand-black">
-                    {"Revisi\u00f3n y Aprobaci\u00f3n"}
+                    {"Revisión y Aprobación"}
                   </h1>
                   <p className="truncate text-sm text-slate-500">
                     {`Revision de ${tituloInforme.toLowerCase()}.`}
@@ -155,7 +155,7 @@ export function CustomVisorRevisionInforme({
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-500">
             {
-              "No se encontr\u00f3 informaci\u00f3n para generar la vista previa."
+              "No se encontró información para generar la vista previa."
             }
           </div>
         )}

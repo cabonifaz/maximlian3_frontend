@@ -84,7 +84,7 @@ export default function RevisionInformeCoordinador() {
   const idiomaInformeTraducido = idIdiomaPedido
     ? opcionIdioma?.string1
       || opcionIdioma?.descripcion
-      || (idIdiomaPedido === 2 ? "Ingl\u00e9s" : idIdiomaPedido === 3 ? "Portugu\u00e9s" : "Traducido")
+      || (idIdiomaPedido === 2 ? "Inglés" : idIdiomaPedido === 3 ? "Portugués" : "Traducido")
     : "Traducido";
 
   const {
@@ -290,7 +290,7 @@ export default function RevisionInformeCoordinador() {
                   puedeDescargarXml={puedeDescargarXml}
                   puedeEditar={false}
                   tituloInforme="Informe original"
-                  idiomaInforme={"Espa\u00f1ol"}
+                  idiomaInforme={"Español"}
                   tipoPlantilla={nombrePlantillaInforme}
                   mostrarAccionesRevision={false}
                   mostrarPie={false}
@@ -394,7 +394,7 @@ export default function RevisionInformeCoordinador() {
         puedeEditar={puedeEditarRevision}
         informeYaAprobado={informeYaAprobado}
         tituloInforme={idIdiomaPedido && idIdiomaPedido !== 1 ? "Informe traducido" : "Informe original"}
-        idiomaInforme={idIdiomaPedido && idIdiomaPedido !== 1 ? idiomaInformeTraducido : "Espa\u00f1ol"}
+        idiomaInforme={idIdiomaPedido && idIdiomaPedido !== 1 ? idiomaInformeTraducido : "Español"}
         tipoPlantilla={nombrePlantillaInforme}
         mostrarInformeTraducido={Boolean(idIdiomaPedido && idIdiomaPedido !== 1)}
         mostrarPie
@@ -426,13 +426,13 @@ export default function RevisionInformeCoordinador() {
         onClose={cerrarModalAprobar}
         onConfirm={confirmarAprobacion}
         title="Aprobar informe"
-        descripcion="\u00bfEst\u00e1s seguro de que deseas aprobar este informe? Esta acci\u00f3n no se puede deshacer."
+        descripcion="¿Estás seguro de que deseas aprobar este informe? Esta acción no se puede deshacer."
         textoConfirmar="Aprobar"
         textoCargandoConfirmar="Aprobando..."
         varianteConfirmar="primary"
         isSubmitting={mutationRevision.isPending}
       >
-        <p>El informe pasar\u00e1 al estado <span className="font-semibold">Aprobado</span>.</p>
+        <p>El informe pasará al estado <span className="font-semibold">Aprobado</span>.</p>
       </CustomModalConfirmacionAccion>
     </>
   );
