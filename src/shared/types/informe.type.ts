@@ -27,6 +27,7 @@ export interface InformeListEntry {
   plantilla?: string;
   codigoPedido: string;
   codigo: string;
+  cliente: string;
   investigado: string;
   pais: string;
   fecha: string;

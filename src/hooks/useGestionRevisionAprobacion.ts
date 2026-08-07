@@ -129,6 +129,9 @@ export function useGestionRevisionAprobacion() {
     if (registro.idInformeOriginal != null && registro.idInformeOriginal > 0) {
       parametros.set("idInformeOriginal", String(registro.idInformeOriginal));
     }
+    if (registro.estado) {
+      parametros.set("estado", registro.estado);
+    }
     navigate(
       `/coordinador/revision/${registro.idPedido}?${parametros.toString()}`,
     );

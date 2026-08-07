@@ -14,6 +14,7 @@ import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado
 import { CustomChipVigencia } from "@maximilian/components/common/CustomChipVigencia";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
+import { CustomTarjetaResumenSkeleton } from "@maximilian/components/common/CustomTarjetaResumenSkeleton";
 import { useGestionRevisionAprobacion } from "@maximilian/hooks/useGestionRevisionAprobacion";
 import type { InformeListEntry } from "@maximilian/shared/types/informe.type";
 import {
@@ -121,9 +122,10 @@ export default function GestionRevisionAprobacion() {
   } = useGestionRevisionAprobacion();
 
   const columnas = [
-    { label: "Código Pedido", width: "12%" },
-    { label: "Investigado", width: "21%" },
-    { label: "Vigencia", width: "11%" },
+    { label: "Código Pedido", width: "10%" },
+    { label: "Cliente", width: "15%" },
+    { label: "Investigado", width: "17%" },
+    { label: "Vigencia", width: "9%" },
     {
       label: (
         <CustomEncabezadoFiltroTabla
@@ -134,7 +136,7 @@ export default function GestionRevisionAprobacion() {
           onFiltroCambiado={reiniciarPagina}
         />
       ),
-      width: "10%",
+      width: "8%",
     },
     {
       label: (
@@ -147,7 +149,7 @@ export default function GestionRevisionAprobacion() {
         />
       ),
       className: "text-center",
-      width: "13%",
+      width: "11%",
     },
     {
       label: (
@@ -160,7 +162,7 @@ export default function GestionRevisionAprobacion() {
         />
       ),
       className: "text-center",
-      width: "15%",
+      width: "12%",
     },
     {
       label: (
@@ -184,26 +186,30 @@ export default function GestionRevisionAprobacion() {
   return (
     <div className="space-y-8">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        {resumenTarjetas.map((tarjeta) => (
-          <article
-            key={tarjeta.id}
-            className="rounded-2xl border border-gray-100 bg-white px-6 py-5 shadow-sm"
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50">
-                {obtenerIconoTarjeta(tarjeta.id)}
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                {tarjeta.titulo}
-              </span>
-            </div>
-            <p
-              className={`text-3xl font-bold ${tarjeta.id === "vencido" ? "text-red-500" : "text-brand-black"}`}
-            >
-              {tarjeta.valor}
-            </p>
-          </article>
-        ))}
+        {isLoading
+          ? resumenTarjetas.map((tarjeta) => (
+              <CustomTarjetaResumenSkeleton key={tarjeta.id} />
+            ))
+          : resumenTarjetas.map((tarjeta) => (
+              <article
+                key={tarjeta.id}
+                className="rounded-2xl border border-gray-100 bg-white px-6 py-5 shadow-sm"
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50">
+                    {obtenerIconoTarjeta(tarjeta.id)}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                    {tarjeta.titulo}
+                  </span>
+                </div>
+                <p
+                  className={`text-3xl font-bold ${tarjeta.id === "vencido" ? "text-red-500" : "text-brand-black"}`}
+                >
+                  {tarjeta.valor}
+                </p>
+              </article>
+            ))}
       </div>
 
       <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -250,6 +256,11 @@ export default function GestionRevisionAprobacion() {
             <>
               <td className="px-6 py-4 text-sm font-medium text-slate-400">
                 {registro.codigoPedido || "-"}
+              </td>
+              <td className="max-w-40 px-6 py-4 text-sm text-slate-500">
+                <span className="block truncate" title={registro.cliente}>
+                  {registro.cliente}
+                </span>
               </td>
               <td className="max-w-48 px-6 py-4 text-sm font-semibold text-slate-700">
                 <span className="block truncate" title={registro.investigado}>

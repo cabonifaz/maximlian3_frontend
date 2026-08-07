@@ -16,7 +16,7 @@ function SkeletonRow() {
   return (
     <tr>
       <td className="py-3 px-3 w-10" />
-      {[1, 2, 3].map((indice) => (
+      {[1, 2, 3, 4].map((indice) => (
         <td key={indice} className="py-3 px-4">
           <div className="h-3.5 bg-gray-200 rounded animate-pulse w-3/4" />
         </td>
@@ -61,6 +61,9 @@ export function TablaTarifarioCorta({
                   Precio
                 </th>
                 <th className="text-left py-2.5 px-4 text-xs font-bold text-gray-400 uppercase tracking-wide">
+                  País
+                </th>
+                <th className="text-left py-2.5 px-4 text-xs font-bold text-gray-400 uppercase tracking-wide">
                   Moneda
                 </th>
               </tr>
@@ -69,7 +72,7 @@ export function TablaTarifarioCorta({
               {!idCliente ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="py-4 px-4 text-center text-sm text-gray-400"
                   >
                     Seleccione un cliente para ver las tarifas
@@ -84,7 +87,7 @@ export function TablaTarifarioCorta({
               ) : entries.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="py-4 px-4 text-center text-sm text-gray-400"
                   >
                     Sin tarifas para los filtros seleccionados
@@ -119,6 +122,9 @@ export function TablaTarifarioCorta({
                       </td>
                       <td className="py-3 px-4 font-semibold text-gray-800">
                         {entry.precio}
+                      </td>
+                      <td className="py-3 px-4 text-gray-600">
+                        {entry.pais}
                       </td>
                       <td className="py-3 px-4 text-gray-600">
                         {entry.moneda}
