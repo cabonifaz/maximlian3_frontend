@@ -257,6 +257,12 @@ function normalizarFilaInforme(fila: unknown): InformeListEntry {
     ) || undefined,
     codigoPedido: obtenerTexto(registro.codigoPedido, registro.CodigoPedido),
     codigo: obtenerTexto(registro.codigo, registro.Codigo) || "-",
+    cliente: obtenerTexto(
+      registro.cliente,
+      registro.Cliente,
+      registro.nombreCliente,
+      registro.NombreCliente,
+    ) || "-",
     vigencia: obtenerTexto(registro.vigencia, registro.Vigencia, registro.porVencerTexto, registro.PorVencerTexto) || "-",
     vigenciaColor: obtenerTexto(
       registro.porVencerColor,

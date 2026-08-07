@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
+import { CustomTarjetaResumenSkeleton } from "@maximilian/components/common/CustomTarjetaResumenSkeleton";
 import { useBandejaInvestigacion } from "@maximilian/hooks/useBandejaInvestigacion";
 import type {
   AccionBandejaAnalista,
@@ -111,22 +112,26 @@ export default function BandejaAnalista() {
   return (
     <div className="space-y-8">
       <div className="grid gap-4 md:grid-cols-4">
-        {tarjetasResumen.map((tarjeta) => (
-          <article
-            key={tarjeta.id}
-            className="rounded-2xl border border-gray-100 bg-white px-6 py-5 shadow-sm"
-          >
-            <div className="mb-3 flex items-center justify-between">
-              {obtenerIconoTarjeta(tarjeta.id)}
-              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-400">
-                {tarjeta.titulo}
-              </span>
-            </div>
-            <p className="text-3xl font-bold text-brand-black">
-              {tarjeta.valor}
-            </p>
-          </article>
-        ))}
+        {isLoading
+          ? tarjetasResumen.map((tarjeta) => (
+              <CustomTarjetaResumenSkeleton key={tarjeta.id} />
+            ))
+          : tarjetasResumen.map((tarjeta) => (
+              <article
+                key={tarjeta.id}
+                className="rounded-2xl border border-gray-100 bg-white px-6 py-5 shadow-sm"
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  {obtenerIconoTarjeta(tarjeta.id)}
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-400">
+                    {tarjeta.titulo}
+                  </span>
+                </div>
+                <p className="text-3xl font-bold text-brand-black">
+                  {tarjeta.valor}
+                </p>
+              </article>
+            ))}
       </div>
 
       <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">

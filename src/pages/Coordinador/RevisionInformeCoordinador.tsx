@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/CustomModalRechazoInforme";
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
 import { informeService } from "@maximilian/services/informe.service";
@@ -29,7 +30,9 @@ export default function RevisionInformeCoordinador() {
   const idInformeOriginal = Number(parametrosBusqueda.get("idInformeOriginal"));
   const idIdioma = Number(parametrosBusqueda.get("idIdioma"));
   const tieneInformeOriginal = Number.isFinite(idInformeOriginal) && idInformeOriginal > 0;
+  const informeYaAprobado = parametrosBusqueda.get("estado") === "aprobado";
   const [estaAbiertoModalRechazo, setEstaAbiertoModalRechazo] = useState(false);
+  const [estaAbiertoModalAprobar, setEstaAbiertoModalAprobar] = useState(false);
   const [observacionesRechazo, setObservacionesRechazo] = useState<InformeObservacion[]>([]);
   const [tabInformeComparado, setTabInformeComparado] = useState<TabInformeComparado>("original");
   const datosInvestigacion = undefined;
@@ -99,6 +102,7 @@ export default function RevisionInformeCoordinador() {
     },
     onSuccess: async () => {
       setEstaAbiertoModalRechazo(false);
+      setEstaAbiertoModalAprobar(false);
       setObservacionesRechazo([]);
       await queryClient.invalidateQueries({
         queryKey: ["informes-bandeja-coordinador-revision"],
@@ -193,6 +197,18 @@ export default function RevisionInformeCoordinador() {
       setObservacionesRechazo(observacionesGuardadas);
     }
     setEstaAbiertoModalRechazo(true);
+  };
+
+  const cerrarModalAprobar = () => {
+    if (mutationRevision.isPending) return;
+    setEstaAbiertoModalAprobar(false);
+  };
+
+  const confirmarAprobacion = () => {
+    mutationRevision.mutate({
+      idInforme: idInformeSeguro,
+      idEstadoInforme: ID_ESTADO_INFORME_APROBADO,
+    });
   };
 
   const confirmarRechazo = () => {
@@ -301,6 +317,7 @@ export default function RevisionInformeCoordinador() {
                   puedeDescargar={puedeDescargar}
                   puedeDescargarXml={puedeDescargarXml}
                   puedeEditar={puedeEditarRevision}
+                  informeYaAprobado={informeYaAprobado}
                   tituloInforme="Informe traducido"
                   idiomaInforme={idiomaInformeTraducido}
                   tipoPlantilla={nombrePlantillaInforme}
@@ -314,10 +331,7 @@ export default function RevisionInformeCoordinador() {
                   onDescargar={(formato) => {
                     void descargarDocumento(formato);
                   }}
-                  onAprobar={() => mutationRevision.mutate({
-                    idInforme: idInformeSeguro,
-                    idEstadoInforme: ID_ESTADO_INFORME_APROBADO,
-                  })}
+                  onAprobar={() => setEstaAbiertoModalAprobar(true)}
                   onRechazar={abrirModalRechazo}
                   onVolver={() => navigate("/coordinador/revision")}
                 />
@@ -350,6 +364,20 @@ export default function RevisionInformeCoordinador() {
           idObservacionEliminando={mutationEliminarObservacion.variables}
           cargando={mutationRechazo.isPending}
         />
+
+        <CustomModalConfirmacionAccion
+          isOpen={estaAbiertoModalAprobar}
+          onClose={cerrarModalAprobar}
+          onConfirm={confirmarAprobacion}
+          title="Aprobar informe"
+          descripcion="¿Estás seguro de que deseas aprobar este informe? Esta acción no se puede deshacer."
+          textoConfirmar="Aprobar"
+          textoCargandoConfirmar="Aprobando..."
+          varianteConfirmar="primary"
+          isSubmitting={mutationRevision.isPending}
+        >
+          <p>El informe pasará al estado <span className="font-semibold">Aprobado</span>.</p>
+        </CustomModalConfirmacionAccion>
       </>
     );
   }
@@ -364,6 +392,7 @@ export default function RevisionInformeCoordinador() {
         puedeDescargar={puedeDescargar}
         puedeDescargarXml={puedeDescargarXml}
         puedeEditar={puedeEditarRevision}
+        informeYaAprobado={informeYaAprobado}
         tituloInforme={idIdiomaPedido && idIdiomaPedido !== 1 ? "Informe traducido" : "Informe original"}
         idiomaInforme={idIdiomaPedido && idIdiomaPedido !== 1 ? idiomaInformeTraducido : "Espa\u00f1ol"}
         tipoPlantilla={nombrePlantillaInforme}
@@ -374,10 +403,7 @@ export default function RevisionInformeCoordinador() {
         onDescargar={(formato) => {
           void descargarDocumento(formato);
         }}
-        onAprobar={() => mutationRevision.mutate({
-          idInforme: idInformeSeguro,
-          idEstadoInforme: ID_ESTADO_INFORME_APROBADO,
-        })}
+        onAprobar={() => setEstaAbiertoModalAprobar(true)}
         onRechazar={abrirModalRechazo}
         onVolver={() => navigate("/coordinador/revision")}
       />
@@ -394,6 +420,20 @@ export default function RevisionInformeCoordinador() {
         idObservacionEliminando={mutationEliminarObservacion.variables}
         cargando={mutationRechazo.isPending}
       />
+
+      <CustomModalConfirmacionAccion
+        isOpen={estaAbiertoModalAprobar}
+        onClose={cerrarModalAprobar}
+        onConfirm={confirmarAprobacion}
+        title="Aprobar informe"
+        descripcion="\u00bfEst\u00e1s seguro de que deseas aprobar este informe? Esta acci\u00f3n no se puede deshacer."
+        textoConfirmar="Aprobar"
+        textoCargandoConfirmar="Aprobando..."
+        varianteConfirmar="primary"
+        isSubmitting={mutationRevision.isPending}
+      >
+        <p>El informe pasar\u00e1 al estado <span className="font-semibold">Aprobado</span>.</p>
+      </CustomModalConfirmacionAccion>
     </>
   );
 }
