@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import pagedJsUrl from "@pagedjs-polyfill";
 import type { DocumentoInformeGenerado } from "@maximilian/shared/types/informe.type";
 import { construirCss } from "@maximilian/shared/utils/visor-documento-informe/construirCss";
@@ -52,16 +52,8 @@ export function useRenderizadoDocumentoPaginado(
     finalizarRenderizadoDocumento();
   }, [finalizarRenderizadoDocumento]);
 
-  const documentoKey = useMemo(
-    () =>
-      documento.sections && documento.document
-        ? JSON.stringify(documento)
-        : null,
-    [documento],
-  );
-
   useEffect(() => {
-    if (!documentoKey || !documento.sections || !documento.document) return;
+    if (!documento.sections || !documento.document) return;
     let estaActivo = true;
 
     const tokenRender = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -189,7 +181,7 @@ ${contenido}
     return () => {
       estaActivo = false;
     };
-  }, [documentoKey, documento.document, documento.sections, onEstadoRenderizacionChange]);
+  }, [documento, onEstadoRenderizacionChange]);
 
   const manejarCargaIframe = useCallback(() => {
     setTimeout(ajustarAltura, 2500);
