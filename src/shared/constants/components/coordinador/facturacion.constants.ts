@@ -3,7 +3,6 @@ import type {
   EntradaProductoFacturable,
   EstadoFacturaCliente,
   IdEstadoFacturacionActualizable,
-  EstadoFacturacionPrincipal,
 } from "@maximilian/shared/types/facturacion.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
@@ -147,15 +146,6 @@ export const CLASES_ESTADO_LISTADO_FACTURA: Record<string, string> = {
   Pendiente: 'bg-amber-100 text-amber-700',
   Rechazada: 'bg-red-100 text-red-700',
   Anulada: 'bg-slate-200 text-slate-600',
-};
-
-export const ESTILOS_ESTADO_FACTURACION_PRINCIPAL: Record<
-  EstadoFacturacionPrincipal,
-  { texto: string; clase: string }
-> = {
-  finalizado: { texto: "Finalizado", clase: "bg-emerald-100 text-emerald-600" },
-  pendiente: { texto: "Pendiente", clase: "bg-orange-100 text-orange-600" },
-  "en-pre-factura": { texto: "En pre-factura", clase: "bg-blue-100 text-blue-600" },
 };
 
 export const ESTILOS_ESTADO_FACTURA_CLIENTE: Record<

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Eye, FileText, MoreHorizontal, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
+import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomModalFactura } from "@maximilian/components/coordinador/CustomModalFactura";
 import { CustomModalFacturasCliente } from "@maximilian/components/coordinador/CustomModalFacturasCliente";
@@ -12,7 +13,6 @@ import {
   COLUMNAS_FACTURACION,
   CONFIGURACION_CONSULTA_FACTURACION,
   ESTADO_CODIGO_FACTURA_ACEPTADA,
-  ESTILOS_ESTADO_FACTURACION_PRINCIPAL,
   ID_ESTADO_FACTURA_APROBADA,
   PESTANAS_GESTION_FACTURACION,
   type PestanaGestionFacturacion,
@@ -24,20 +24,9 @@ import type {
   EntradaFacturacion,
   EntradaListaFactura,
   EntradaProductoFacturable,
-  EstadoFacturacionPrincipal,
 } from "@maximilian/shared/types/facturacion.type";
 
 import { CustomListadoFacturas } from '@maximilian/components/coordinador/CustomListadoFacturas';
-
-function EstadoBadge({ estado }: { estado: EstadoFacturacionPrincipal }) {
-  const configuracion = ESTILOS_ESTADO_FACTURACION_PRINCIPAL[estado];
-
-  return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${configuracion.clase}`}>
-      {configuracion.texto}
-    </span>
-  );
-}
 
 export default function GestionFacturacion() {
   const [pestanaActiva, setPestanaActiva] =
@@ -288,7 +277,12 @@ export default function GestionFacturacion() {
         {facturacion.idioma}
       </td>
       <td className="px-6 py-4 text-center">
-        <EstadoBadge estado={facturacion.estado} />
+        <CustomChipEstado
+          colorTexto={facturacion.colorTexto}
+          colorFondo={facturacion.colorFondo}
+        >
+          {facturacion.estado}
+        </CustomChipEstado>
       </td>
       <td className="px-6 py-4 text-right">
         <button

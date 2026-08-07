@@ -72,12 +72,6 @@ function obtenerNombreArchivoDesdeCabecera(cabecera?: string) {
 function mapearFacturacion(
   facturacion: EntradaFacturacionApi,
 ): EntradaFacturacion {
-  const estados = {
-    Finalizado: "finalizado",
-    Pendiente: "pendiente",
-    "En pre-factura": "en-pre-factura",
-  } as const;
-
   return {
     idFacturacion: facturacion.idCliente,
     cliente: facturacion.nombre,
@@ -88,7 +82,9 @@ function mapearFacturacion(
     totalPedidos: facturacion.totalPedidos,
     totalFacturados: facturacion.pedidosFacturados,
     idioma: facturacion.idIdiomaFacturacion,
-    estado: estados[facturacion.estadoFacturacion],
+    estado: facturacion.estadoFacturacion,
+    colorTexto: facturacion.colorTexto,
+    colorFondo: facturacion.colorFondo,
   };
 }
 

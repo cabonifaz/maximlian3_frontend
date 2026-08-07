@@ -1,8 +1,3 @@
-export type EstadoFacturacionPrincipal =
-  | "finalizado"
-  | "pendiente"
-  | "en-pre-factura";
-
 export type IdEstadoFacturacionActualizable = 2 | 3 | 4 | 7;
 
 export type EstadoFacturaCliente =
@@ -32,7 +27,9 @@ export interface EntradaFacturacion {
   totalPedidos: number;
   totalFacturados: number;
   idioma: string;
-  estado: EstadoFacturacionPrincipal;
+  estado: string;
+  colorTexto: string;
+  colorFondo: string;
 }
 
 export interface RespuestaListaFacturacion {
@@ -109,7 +106,9 @@ export interface EntradaFacturacionApi {
   totalPedidos: number;
   pedidosFacturados: number;
   idIdiomaFacturacion: string;
-  estadoFacturacion: "Finalizado" | "Pendiente" | "En pre-factura";
+  estadoFacturacion: string;
+  colorTexto: string;
+  colorFondo: string;
 }
 
 export interface ResultadoListaFacturacionApi {
