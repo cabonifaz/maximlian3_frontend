@@ -6,11 +6,11 @@ import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service
 import {
   CONFIGURACION_CONSULTA_FACTURACION,
   TAMANO_PAGINA_LISTADO_FACTURAS,
-  URL_PUBLICA_FACTURA_MOCK,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
-import type { DatosFormularioCamposPdfFactura } from "@maximilian/schemas";
+import type { DatosFormularioExportarLibroVentas } from "@maximilian/schemas";
 import type {
   EntradaListaFactura,
+  ErrorDocumentoFactura,
   FormatoDescargaFactura,
 } from "@maximilian/shared/types/facturacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
@@ -31,12 +31,17 @@ export function useListadoFacturas() {
   const [estiloMenu, setEstiloMenu] = useState<CSSProperties>({});
   const [facturaEnlace, setFacturaEnlace] =
     useState<EntradaListaFactura | null>(null);
+  const [enlaceFactura, setEnlaceFactura] = useState("");
+  const [cargandoEnlace, setCargandoEnlace] = useState(false);
+  const [facturaErrores, setFacturaErrores] =
+    useState<EntradaListaFactura | null>(null);
+  const [erroresFactura, setErroresFactura] = useState<ErrorDocumentoFactura[]>([]);
+  const [cargandoErrores, setCargandoErrores] = useState(false);
   const [idSubmenuDescargaActivo, setIdSubmenuDescargaActivo] =
     useState<number | null>(null);
-  const [idSubmenuPdfActivo, setIdSubmenuPdfActivo] =
-    useState<number | null>(null);
-  const [facturaCamposPdf, setFacturaCamposPdf] =
-    useState<EntradaListaFactura | null>(null);
+  const [modalExportarLibroAbierto, setModalExportarLibroAbierto] =
+    useState(false);
+  const [exportandoLibro, setExportandoLibro] = useState(false);
   const terminoConRetardo = useRetardo(terminoBusqueda);
   const fechaDesdeIso = fechaDesde ? formatearFechaIsoLocal(fechaDesde) : undefined;
   const fechaHastaIso = fechaHasta ? formatearFechaIsoLocal(fechaHasta) : undefined;
@@ -124,7 +129,6 @@ export function useListadoFacturas() {
     if (idMenuActivo === factura.idDocumentoElectronico) {
       setIdMenuActivo(null);
       setIdSubmenuDescargaActivo(null);
-      setIdSubmenuPdfActivo(null);
       return;
     }
 
@@ -135,25 +139,44 @@ export function useListadoFacturas() {
     });
     setIdMenuActivo(factura.idDocumentoElectronico);
     setIdSubmenuDescargaActivo(null);
-    setIdSubmenuPdfActivo(null);
   };
 
-  const abrirEnlace = (factura: EntradaListaFactura) => {
+  const abrirEnlace = async (factura: EntradaListaFactura) => {
     setFacturaEnlace(factura);
+    setEnlaceFactura("");
     setIdMenuActivo(null);
+    setCargandoEnlace(true);
+    try {
+      const url = await facturacionService.obtenerUrlVerificacionFactura(
+        factura.idDocumentoElectronico,
+      );
+      setEnlaceFactura(url);
+    } catch {
+      // manejado por el interceptor
+    } finally {
+      setCargandoEnlace(false);
+    }
+  };
+
+  const abrirErrores = async (factura: EntradaListaFactura) => {
+    setFacturaErrores(factura);
+    setErroresFactura([]);
+    setIdMenuActivo(null);
+    setCargandoErrores(true);
+    try {
+      const errores = await facturacionService.obtenerErroresUltimoEnvio(
+        factura.idDocumentoElectronico,
+      );
+      setErroresFactura(errores);
+    } catch {
+      setFacturaErrores(null);
+    } finally {
+      setCargandoErrores(false);
+    }
   };
 
   const alternarSubmenuDescarga = (factura: EntradaListaFactura) => {
     setIdSubmenuDescargaActivo((idActual) =>
-      idActual === factura.idDocumentoElectronico
-        ? null
-        : factura.idDocumentoElectronico,
-    );
-    setIdSubmenuPdfActivo(null);
-  };
-
-  const alternarSubmenuPdf = (factura: EntradaListaFactura) => {
-    setIdSubmenuPdfActivo((idActual) =>
       idActual === factura.idDocumentoElectronico
         ? null
         : factura.idDocumentoElectronico,
@@ -166,7 +189,6 @@ export function useListadoFacturas() {
   ) => {
     setIdMenuActivo(null);
     setIdSubmenuDescargaActivo(null);
-    setIdSubmenuPdfActivo(null);
     try {
       const urlDescarga = await facturacionService.obtenerUrlDescargaFactura(
         factura.idDocumentoElectronico,
@@ -178,61 +200,69 @@ export function useListadoFacturas() {
     }
   };
 
-  const abrirCamposPdf = (factura: EntradaListaFactura) => {
-    setFacturaCamposPdf(factura);
-    setIdMenuActivo(null);
-    setIdSubmenuDescargaActivo(null);
-    setIdSubmenuPdfActivo(null);
-  };
+  const abrirModalExportarLibro = () => setModalExportarLibroAbierto(true);
 
-  const cerrarCamposPdf = () => setFacturaCamposPdf(null);
+  const cerrarModalExportarLibro = () => setModalExportarLibroAbierto(false);
 
-  const confirmarCamposPdf = async (datos: DatosFormularioCamposPdfFactura) => {
-    if (!facturaCamposPdf) return;
-    // TODO: la razón social capturada aún no se envía al backend; la
-    // API de descarga (facturaPorId/{id}/urlDescarga) no expone ese campo.
-    void datos;
+  const exportarLibroVentas = async (
+    datos: DatosFormularioExportarLibroVentas,
+  ) => {
+    setExportandoLibro(true);
     try {
-      const urlDescarga = await facturacionService.obtenerUrlDescargaFactura(
-        facturaCamposPdf.idDocumentoElectronico,
-        "pdf",
-      );
-      window.open(urlDescarga, "_blank", "noopener,noreferrer");
+      const periodo = formatearFechaIsoLocal(datos.mes);
+      const { archivo, nombreArchivo } =
+        await facturacionService.exportarLibroVentas(periodo);
+      const url = URL.createObjectURL(archivo);
+      const enlace = document.createElement("a");
+      enlace.href = url;
+      enlace.download = nombreArchivo;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setModalExportarLibroAbierto(false);
     } catch {
       // manejado por el interceptor
     } finally {
-      setFacturaCamposPdf(null);
+      setExportandoLibro(false);
     }
   };
 
   return {
-    abrirCamposPdf,
     abrirEnlace,
+    abrirErrores,
+    abrirModalExportarLibro,
     alternarMenu,
     alternarSubmenuDescarga,
-    alternarSubmenuPdf,
     cambiarBusqueda,
     cambiarEstado,
     cambiarFechaDesde,
     cambiarFechaHasta,
     cambiarFormaPago,
     cambiarPagina: setPaginaActual,
-    cerrarCamposPdf,
-    cerrarEnlace: () => setFacturaEnlace(null),
+    cargandoEnlace,
+    cargandoErrores,
+    cerrarEnlace: () => {
+      setFacturaEnlace(null);
+      setEnlaceFactura("");
+    },
+    cerrarErrores: () => {
+      setFacturaErrores(null);
+      setErroresFactura([]);
+    },
     cerrarMenu: () => {
       setIdMenuActivo(null);
       setIdSubmenuDescargaActivo(null);
-      setIdSubmenuPdfActivo(null);
     },
-    confirmarCamposPdf,
+    cerrarModalExportarLibro,
     descargarFactura,
-    enlaceFactura: facturaEnlace
-      ? URL_PUBLICA_FACTURA_MOCK
-        + encodeURIComponent(facturaEnlace.numeroFactura)
-      : "",
+    enlaceFactura,
+    erroresFactura,
     estiloMenu,
-    facturaCamposPdf,
+    exportandoLibro,
+    exportarLibroVentas,
     facturaEnlace,
+    facturaErrores,
     facturasPagina: respuesta?.items ?? [],
     fechaDesde,
     fechaHasta,
@@ -241,9 +271,9 @@ export function useListadoFacturas() {
     idFormaPagoSeleccionada,
     idMenuActivo,
     idSubmenuDescargaActivo,
-    idSubmenuPdfActivo,
     isError,
     isLoading,
+    modalExportarLibroAbierto,
     paginaActual,
     refetch,
     terminoBusqueda,

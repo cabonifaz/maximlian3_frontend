@@ -149,9 +149,6 @@ export const CLASES_ESTADO_LISTADO_FACTURA: Record<string, string> = {
   Anulada: 'bg-slate-200 text-slate-600',
 };
 
-export const URL_PUBLICA_FACTURA_MOCK =
-  'https://facturacion.maximilian.pe/comprobante/';
-
 export const ESTILOS_ESTADO_FACTURACION_PRINCIPAL: Record<
   EstadoFacturacionPrincipal,
   { texto: string; clase: string }
@@ -239,6 +236,7 @@ export const CONFIGURACION_CONSULTA_FACTURACION = {
   refetchOnMount: "always",
 } as const;
 
+export const CODIGO_MONEDA_SUNAT_SOLES = "PEN";
 export const ID_FORMA_PAGO_CONTADO = 1;
 export const ID_TIPO_DOCUMENTO_SUNAT_RUC = 4;
 export const IDS_TIPO_COMPROBANTE_CLIENTE_RUC = [1, 3] as const;
@@ -252,6 +250,7 @@ export const IDS_AFECTACION_IGV_DISPONIBLES = [
 ] as const;
 export const PORCENTAJE_IGV_PREDETERMINADO = 18;
 export const LIMITE_CARACTERES_ORDEN_COMPRA = 20;
+export const LIMITE_CARACTERES_CAMPO_EXTRA_FACTURA = 500;
 export const ID_UNIDAD_MEDIDA_PREDETERMINADA = 1;
 export const DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA =
   "ZZ - Unidad de medida acordada entre las partes (servicios)";

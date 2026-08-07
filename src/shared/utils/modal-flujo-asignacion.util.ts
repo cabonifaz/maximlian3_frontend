@@ -1,5 +1,7 @@
 import type { AssignmentRoleSelection } from "@maximilian/shared/types/asignacion.type";
 import type { PedidoListEntry } from "@maximilian/shared/types/pedido.type";
+import { ID_IDIOMA_ESPANOL_TABLA_MAESTRA } from "@maximilian/shared/constants/tabla-maestra.constants";
+import { normalizarTextoBusqueda } from "@maximilian/shared/utils/texto.util";
 
 export function normalizarPedidoAsignacion(pedido: PedidoListEntry): PedidoListEntry {
   return {
@@ -55,6 +57,12 @@ export function convertirPedidoAAsignacionesIniciales(pedido: PedidoListEntry): 
         : null,
     },
   ];
+}
+
+export function esPedidoEnEspanol(pedido: PedidoListEntry) {
+  if (pedido.idIdioma === ID_IDIOMA_ESPANOL_TABLA_MAESTRA) return true;
+
+  return normalizarTextoBusqueda(pedido.idioma || "") === "espanol";
 }
 
 export function tieneAsignacionesEnPedido(pedido: PedidoListEntry) {

@@ -5,6 +5,7 @@ import { rutasAutenticacion } from "@maximilian/router/rutas-autenticacion";
 import { rutasCoordinador } from "@maximilian/router/rutas-coordinador";
 import { rutasTraductor } from "@maximilian/router/rutas-traductor";
 import { rutasGerente } from "@maximilian/router/rutas-gerente";
+import { rutasPublicas } from "@maximilian/router/rutas-publicas";
 import { CustomLimiteErrorRuta } from "@maximilian/components/common/CustomLimiteErrorRuta";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
       ...rutasCoordinador,
       ...rutasTraductor,
       ...rutasGerente,
+      ...rutasPublicas,
       {
         path: "*",
         element: (

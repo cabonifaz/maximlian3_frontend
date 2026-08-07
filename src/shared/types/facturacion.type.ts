@@ -92,6 +92,16 @@ export interface RespuestaListaFacturas {
 
 export type FormatoDescargaFactura = 'pdf' | 'xml';
 
+export interface ErrorDocumentoFactura {
+  idErrorDocumento: number;
+  origenErrorCodigo: string;
+  codigoError: string;
+  mensajeError: string;
+  campo: string | null;
+  severidadCodigo: string;
+  fchCre: string;
+}
+
 export interface EntradaFacturacionApi {
   idCliente: number;
   nombre: string;
@@ -183,6 +193,11 @@ export interface EntradaCuotaFactura {
   estado: "pendiente" | "pagado";
 }
 
+export interface CampoExtraLineaFactura {
+  idCampoExtraDocumentoElectronico: number;
+  texto: string;
+}
+
 export interface DetalleFactura {
   idFactura: number | null;
   codigoEstadoFacturacion: number | null;
@@ -191,6 +206,7 @@ export interface DetalleFactura {
   idTipoDocumentoSunat: number;
   idTipoDocumentoMaestro: number;
   idMonedaMaestro: number;
+  tipoCambio: number;
   idTipoOperacionMaestro: number;
   idFormaPago: number;
   tipoDocumentoDescripcion: string;
@@ -201,6 +217,7 @@ export interface DetalleFactura {
   ni: string;
   ordenCompra: string;
   fechaEmision: string;
+  camposExtra: CampoExtraLineaFactura[];
   productos: EntradaProductoFactura[];
   cuotas: EntradaCuotaFactura[];
 }
@@ -285,6 +302,7 @@ export interface CabeceraFacturaApi {
   fechaEmision: string;
   horaEmision: string;
   monedaCodigo: string;
+  tipoCambio: number | null;
   tipoOperacionCodigo: string;
   formaPagoCodigo: string;
   empresaRuc: string;
@@ -337,11 +355,17 @@ export interface CuotaFacturaApi {
   monto: number;
 }
 
+export interface CampoExtraFacturaApi {
+  idCampoExtraDocumentoElectronico: number;
+  texto: string;
+}
+
 export interface ResultadoObtenerFacturaApi {
   cabecera: CabeceraFacturaApi;
   lineas: LineaFacturaApi[];
   referencia: unknown | null;
   cuotas: CuotaFacturaApi[];
+  camposExtra: CampoExtraFacturaApi[];
 }
 
 export interface LineaGuardarCambiosFactura
@@ -355,13 +379,24 @@ export interface CuotaGuardarCambiosFactura
   idCuotaDocumentoElectronico: number;
 }
 
+export interface CampoExtraGuardarBorradorFactura {
+  texto: string;
+}
+
+export interface CampoExtraGuardarCambiosFactura {
+  texto: string;
+  idCampoExtraDocumentoElectronico: number;
+}
+
 export interface GuardarCambiosFacturaRequest {
   idFormaPago: number;
   numeroReferencia: string;
   idMonedaMaestro: number;
+  tipoCambio: number;
   idTipoOperacionMaestro: number;
   lineas: LineaGuardarCambiosFactura[];
   cuotas: CuotaGuardarCambiosFactura[];
+  camposExtra: CampoExtraGuardarCambiosFactura[];
 }
 
 export interface AnularFacturaRequest {
@@ -393,10 +428,17 @@ export interface GuardarBorradorFacturaRequest {
   idTipoDocumentoMaestro: number;
   numeroReferencia: string;
   idMonedaMaestro: number;
+  tipoCambio: number;
   idTipoOperacionMaestro: number;
   idFormaPago: number;
   cuotas: CuotaGuardarBorradorFactura[];
   idCliente: number;
   documentoAfectado: DocumentoAfectadoGuardarBorradorFactura | null;
   lineas: LineaGuardarBorradorFactura[];
+  camposExtra: CampoExtraGuardarBorradorFactura[];
+}
+
+export interface RespuestaExportarLibroVentas {
+  archivo: Blob;
+  nombreArchivo: string;
 }

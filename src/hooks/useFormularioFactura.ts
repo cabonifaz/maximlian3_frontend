@@ -10,6 +10,7 @@ import {
 import { facturacionService } from "@maximilian/services/facturacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type {
+  CampoExtraLineaFactura,
   DetalleFactura,
   EntradaCuotaFactura,
   EntradaProductoFacturable,
@@ -29,11 +30,11 @@ import {
   obtenerSimboloTablaMaestra,
 } from "@maximilian/shared/utils/tabla-maestra.util";
 import {
+  CODIGO_MONEDA_SUNAT_SOLES,
   DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA,
   ID_AFECTACION_IGV_EXTRANJERO,
   ID_AFECTACION_IGV_PERU,
   ID_FORMA_PAGO_CONTADO,
-  ID_TIPO_COMPROBANTE_BOLETA,
   ID_TIPO_DOCUMENTO_SUNAT_RUC,
   ID_TIPO_OPERACION_SUNAT_EXPORTACION_SERVICIOS,
   ID_UNIDAD_MEDIDA_PREDETERMINADA,
@@ -147,6 +148,7 @@ export function useFormularioFactura(
     defaultValues: {
       idTipoDocumentoMaestro: detalle?.idTipoDocumentoMaestro ?? 0,
       idMonedaMaestro: detalle?.idMonedaMaestro ?? 0,
+      tipoCambio: detalle?.tipoCambio || undefined,
       idTipoOperacionMaestro:
         detalle?.idTipoOperacionMaestro
         || ID_TIPO_OPERACION_SUNAT_EXPORTACION_SERVICIOS,
@@ -263,20 +265,32 @@ export function useFormularioFactura(
     });
   }, [detalle, getValues, idAfectacionIgvPredeterminada, setValue]);
   const opcionesTipoDocumento = useMemo(() => {
-    const idsPermitidos = new Set<number>(
-      detalle?.idTipoDocumentoSunat === ID_TIPO_DOCUMENTO_SUNAT_RUC
-        ? IDS_TIPO_COMPROBANTE_CLIENTE_RUC
-        : [ID_TIPO_COMPROBANTE_BOLETA],
-    );
+    const idsPermitidos = new Set<number>(IDS_TIPO_COMPROBANTE_CLIENTE_RUC);
 
     return opcionesTipoDocumentoBase?.filter(
       (opcion) => opcion.num1 != null && idsPermitidos.has(opcion.num1),
     );
-  }, [detalle?.idTipoDocumentoSunat, opcionesTipoDocumentoBase]);
+  }, [opcionesTipoDocumentoBase]);
   const simboloMoneda = obtenerSimboloTablaMaestra(
     opcionesMoneda,
     idMonedaMaestro || undefined,
   );
+  const monedaSeleccionada = opcionesMoneda?.find(
+    (opcion) => opcion.num1 === idMonedaMaestro,
+  );
+  const requiereTipoCambio = Boolean(
+    monedaSeleccionada
+    && monedaSeleccionada.string1?.trim().toUpperCase() !== CODIGO_MONEDA_SUNAT_SOLES,
+  );
+  const simboloSoles = opcionesMoneda?.find(
+    (opcion) => opcion.string1?.trim().toUpperCase() === CODIGO_MONEDA_SUNAT_SOLES,
+  )?.string3?.trim() ?? "";
+  useEffect(() => {
+    if (!opcionesMoneda || requiereTipoCambio) return;
+
+    setValue("tipoCambio", undefined);
+    clearErrors("tipoCambio");
+  }, [clearErrors, opcionesMoneda, requiereTipoCambio, setValue]);
   const guardarFacturaMutation = useMutation({
     mutationFn: (datos: DatosFormularioFactura) => {
       if (!detalle) return Promise.resolve();
@@ -407,6 +421,24 @@ export function useFormularioFactura(
     }
 
     clearErrors("root.cuotas");
+    return true;
+  };
+
+  const validarTipoCambio = (datos: DatosFormularioFactura) => {
+    if (!requiereTipoCambio) {
+      clearErrors("tipoCambio");
+      return true;
+    }
+
+    if (!datos.tipoCambio || datos.tipoCambio <= 0) {
+      setError("tipoCambio", {
+        type: "custom",
+        message: "El tipo de cambio es requerido",
+      });
+      return false;
+    }
+
+    clearErrors("tipoCambio");
     return true;
   };
 
@@ -607,6 +639,10 @@ export function useFormularioFactura(
     );
   };
 
+  const actualizarCamposExtra = (camposExtra: CampoExtraLineaFactura[]) => {
+    setDetalle((actual) => (actual ? { ...actual, camposExtra } : actual));
+  };
+
   const iniciarEdicionDescuento = (producto: EntradaProductoFactura) => {
     if (
       idProductoDescuentoEdicion !== null
@@ -700,11 +736,14 @@ export function useFormularioFactura(
       anularFacturaMutation.mutate(datos),
     anularFacturaMutation,
     actualizarCampoFactura,
+    actualizarCamposExtra,
     cancelarEdicionDescuento,
     cancelarEdicionIgv,
     confirmarFormulario: (alConfirmar: () => void) =>
       formulario.handleSubmit((datos) => {
-        if (validarTotalCuotas(datos)) alConfirmar();
+        const cuotasValidas = validarTotalCuotas(datos);
+        const tipoCambioValido = validarTipoCambio(datos);
+        if (cuotasValidas && tipoCambioValido) alConfirmar();
       }),
     detalle,
     erroresFormulario: formulario.formState.errors,
@@ -713,12 +752,12 @@ export function useFormularioFactura(
         ? obtenerEtiquetaPrincipalSecundaria(opcionAfectacionIgvPredeterminada)
         : "",
     emitirFactura: formulario.handleSubmit((datos) => {
-      if (!validarTotalCuotas(datos)) return Promise.resolve();
+      if (!validarTotalCuotas(datos) || !validarTipoCambio(datos)) return Promise.resolve();
       return emitirFacturaMutation.mutateAsync(datos);
     }),
     emitirFacturaMutation,
     guardarFactura: formulario.handleSubmit((datos) => {
-      if (!validarTotalCuotas(datos)) return Promise.resolve();
+      if (!validarTotalCuotas(datos) || !validarTipoCambio(datos)) return Promise.resolve();
       return guardarFacturaMutation.mutateAsync(datos);
     }),
     guardarFacturaMutation,
@@ -737,10 +776,12 @@ export function useFormularioFactura(
     opcionesTipoDocumento,
     quitarCuota,
     quitarProducto,
+    requiereTipoCambio,
     descripciones,
     registrarDescripcion: formulario.register,
     registrarDescuento: formulario.register,
     registrarPorcentajeIgv: formulario.register,
+    registrarTipoCambio: formulario.register,
 
     seleccionarAfectacionIgv,
     seleccionarUnidadMedida,
@@ -766,6 +807,7 @@ export function useFormularioFactura(
         shouldDirty: true,
         shouldValidate: true,
       }),
+    simboloSoles,
     valoresMaestros: {
       idFormaPago,
       idMonedaMaestro,

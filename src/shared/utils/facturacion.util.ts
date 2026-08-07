@@ -78,6 +78,7 @@ export function construirPayloadGuardarBorradorFactura(
     idTipoDocumentoMaestro: datos.idTipoDocumentoMaestro,
     numeroReferencia: "",
     idMonedaMaestro: datos.idMonedaMaestro,
+    tipoCambio: datos.tipoCambio ?? 0,
     idTipoOperacionMaestro: datos.idTipoOperacionMaestro,
     idFormaPago: datos.idFormaPago,
     cuotas: datos.idFormaPago === ID_FORMA_PAGO_CONTADO
@@ -105,6 +106,10 @@ export function construirPayloadGuardarBorradorFactura(
         porcentajeIgv: datos.porcentajesIgv[claveProducto],
       };
     }),
+    camposExtra: detalle.camposExtra
+      .map((campoExtra) => campoExtra.texto.trim())
+      .filter(Boolean)
+      .map((texto) => ({ texto })),
   };
 }
 export function construirPayloadGuardarCambiosFactura(
@@ -115,6 +120,7 @@ export function construirPayloadGuardarCambiosFactura(
     idFormaPago: datos.idFormaPago,
     numeroReferencia: "",
     idMonedaMaestro: datos.idMonedaMaestro,
+    tipoCambio: datos.tipoCambio ?? 0,
     idTipoOperacionMaestro: datos.idTipoOperacionMaestro,
     lineas: detalle.productos.map((producto, indice) => {
       const claveProducto = String(producto.idProductoFactura);
@@ -149,5 +155,12 @@ export function construirPayloadGuardarCambiosFactura(
           idCuotaDocumentoElectronico:
             cuota.idCuotaDocumentoElectronico,
         })),
+    camposExtra: detalle.camposExtra
+      .filter((campoExtra) => campoExtra.texto.trim())
+      .map((campoExtra) => ({
+        texto: campoExtra.texto.trim(),
+        idCampoExtraDocumentoElectronico:
+          campoExtra.idCampoExtraDocumentoElectronico,
+      })),
   };
 }

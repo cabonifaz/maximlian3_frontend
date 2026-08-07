@@ -10,6 +10,10 @@ export const ENDPOINTS_FACTURACION = {
     `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}`,
   obtenerUrlDescargaFactura: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/urlDescarga`,
+  obtenerUrlVerificacionFactura: (idDocumentoElectronico: number) =>
+    `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/urlVerificacion`,
+  erroresUltimoEnvio: (idDocumentoElectronico: number) =>
+    `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/erroresUltimoEnvio`,
   guardarCambios: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/guardarCambios/${idDocumentoElectronico}`,
   actualizarEstado: (idPedido: number) =>
@@ -17,4 +21,5 @@ export const ENDPOINTS_FACTURACION = {
   anular: "/api/PedidoFactura/anular",
   emitir: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/emitir/${idDocumentoElectronico}`,
+  sireRvieTxt: "/api/PedidoFactura/sireRvie/txt",
 } as const;

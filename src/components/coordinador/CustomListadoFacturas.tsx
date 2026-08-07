@@ -1,9 +1,11 @@
-import { Search } from "lucide-react";
+import { FileDown, Search } from "lucide-react";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomFilaListadoFactura } from "@maximilian/components/coordinador/CustomFilaListadoFactura";
 import { CustomFiltroColumnaFactura } from "@maximilian/components/coordinador/CustomFiltroColumnaFactura";
-import { CustomModalCamposPdfFactura } from "@maximilian/components/coordinador/CustomModalCamposPdfFactura";
 import { CustomModalEnlaceFactura } from "@maximilian/components/coordinador/CustomModalEnlaceFactura";
+import { CustomModalErroresFactura } from "@maximilian/components/coordinador/CustomModalErroresFactura";
+import { CustomModalExportarLibroVentas } from "@maximilian/components/coordinador/CustomModalExportarLibroVentas";
 import { useListadoFacturas } from "@maximilian/hooks/useListadoFacturas";
 import { COLUMNAS_LISTADO_FACTURAS } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import type { EntradaListaFactura } from "@maximilian/shared/types/facturacion.type";
@@ -79,15 +81,25 @@ export function CustomListadoFacturas({
 
   return (
     <div className="space-y-5">
-      <div className="relative w-full max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Buscar por factura o cliente"
-          value={listado.terminoBusqueda}
-          onChange={(evento) => listado.cambiarBusqueda(evento.target.value)}
-          className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
-        />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="relative w-full max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar por factura o cliente"
+            value={listado.terminoBusqueda}
+            onChange={(evento) => listado.cambiarBusqueda(evento.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
+          />
+        </div>
+        <CustomButton
+          variant="wine"
+          size="sm"
+          onClick={listado.abrirModalExportarLibro}
+        >
+          <FileDown size={14} />
+          Exportar Libro electrónico de ventas
+        </CustomButton>
       </div>
 
       <CustomTabla
@@ -101,9 +113,6 @@ export function CustomListadoFacturas({
             submenuDescargaActivo={
               listado.idSubmenuDescargaActivo === factura.idDocumentoElectronico
             }
-            submenuPdfActivo={
-              listado.idSubmenuPdfActivo === factura.idDocumentoElectronico
-            }
             estiloMenu={listado.estiloMenu}
             onAlternarMenu={listado.alternarMenu}
             onCerrarMenu={listado.cerrarMenu}
@@ -111,9 +120,8 @@ export function CustomListadoFacturas({
             onVer={verFactura}
             onAnular={anularFactura}
             onAlternarDescarga={listado.alternarSubmenuDescarga}
-            onAlternarSubmenuPdf={listado.alternarSubmenuPdf}
             onDescargar={listado.descargarFactura}
-            onAgregarCamposPdf={listado.abrirCamposPdf}
+            onVerErrores={listado.abrirErrores}
           />
         )}
         isLoading={listado.isLoading}
@@ -133,15 +141,24 @@ export function CustomListadoFacturas({
         abierto={listado.facturaEnlace !== null}
         factura={listado.facturaEnlace}
         enlace={listado.enlaceFactura}
+        cargando={listado.cargandoEnlace}
         onCerrar={listado.cerrarEnlace}
       />
 
-      <CustomModalCamposPdfFactura
-        key={listado.facturaCamposPdf?.idDocumentoElectronico ?? "cerrado"}
-        abierto={listado.facturaCamposPdf !== null}
-        factura={listado.facturaCamposPdf}
-        onCerrar={listado.cerrarCamposPdf}
-        onConfirmar={listado.confirmarCamposPdf}
+      <CustomModalErroresFactura
+        key={listado.facturaErrores?.idDocumentoElectronico ?? "cerrado"}
+        abierto={listado.facturaErrores !== null}
+        factura={listado.facturaErrores}
+        errores={listado.erroresFactura}
+        cargando={listado.cargandoErrores}
+        onCerrar={listado.cerrarErrores}
+      />
+
+      <CustomModalExportarLibroVentas
+        abierto={listado.modalExportarLibroAbierto}
+        cargando={listado.exportandoLibro}
+        onCerrar={listado.cerrarModalExportarLibro}
+        onConfirmar={listado.exportarLibroVentas}
       />
     </div>
   );

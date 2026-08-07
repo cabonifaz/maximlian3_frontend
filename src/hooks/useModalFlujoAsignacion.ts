@@ -13,6 +13,7 @@ import type { PedidoListEntry } from "@maximilian/shared/types/pedido.type";
 import type { TabAsignacion } from "@maximilian/shared/types/modal-flujo-asignacion.type";
 import {
   convertirPedidoAAsignacionesIniciales,
+  esPedidoEnEspanol,
   normalizarPedidoAsignacion,
   tieneAsignacionesEnPedido,
 } from "@maximilian/shared/utils/modal-flujo-asignacion.util";
@@ -125,6 +126,9 @@ export function useModalFlujoAsignacion({
     [pedidosElegidos],
   );
 
+  const puedeAsignarTraductor = pedidosElegidos.length === 0
+    || pedidosElegidos.some((pedido) => !esPedidoEnEspanol(pedido));
+
   const { data: candidatos, isLoading: isLoadingCandidatos, isFetching: isFetchingCandidatos } = useQuery({
     queryKey: ["assignment-candidates-inline", rolActivo, idiomasPedido],
     queryFn: () =>
@@ -175,6 +179,19 @@ export function useModalFlujoAsignacion({
   useEffect(() => {
     setAsignacionesBorrador(asignacionesIniciales);
   }, [asignacionesIniciales]);
+
+  useEffect(() => {
+    if (puedeAsignarTraductor) return;
+
+    setAsignacionesBorrador((actual) =>
+      actual.map((asignacion) =>
+        asignacion.role === "translator" && asignacion.assignee
+          ? { ...asignacion, assignee: null }
+          : asignacion,
+      ),
+    );
+    setRolActivo((rolActual) => (rolActual === "translator" ? null : rolActual));
+  }, [puedeAsignarTraductor]);
 
   useEffect(() => {
     if (!esModoEdicion || !pedidoEdicion) return;
@@ -298,6 +315,7 @@ export function useModalFlujoAsignacion({
     pedidoDetalleId,
     pedidosActivos,
     pedidosData,
+    puedeAsignarTraductor,
     puedeGuardar,
     refetchPedidos,
     rolActivo,

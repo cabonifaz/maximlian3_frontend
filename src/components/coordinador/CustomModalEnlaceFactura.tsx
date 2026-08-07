@@ -8,6 +8,7 @@ interface PropsCustomModalEnlaceFactura {
   abierto: boolean;
   factura: EntradaListaFactura | null;
   enlace: string;
+  cargando: boolean;
   onCerrar: () => void;
 }
 
@@ -15,6 +16,7 @@ export function CustomModalEnlaceFactura({
   abierto,
   factura,
   enlace,
+  cargando,
   onCerrar,
 }: PropsCustomModalEnlaceFactura) {
   const [estaCopiado, setEstaCopiado] = useState(false);
@@ -73,13 +75,15 @@ export function CustomModalEnlaceFactura({
               id='enlace-factura'
               type='text'
               readOnly
-              value={enlace}
+              value={cargando ? '' : enlace}
+              placeholder={cargando ? 'Generando enlace...' : ''}
               className='min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-600 outline-none'
             />
             <CustomButton
               variant='wine'
               size='md'
               onClick={copiarEnlace}
+              disabled={cargando || !enlace}
             >
               {estaCopiado ? <Check size={16} /> : <Copy size={16} />}
               {estaCopiado ? 'Copiado' : 'Copiar'}

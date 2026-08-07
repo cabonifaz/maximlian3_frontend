@@ -5,6 +5,9 @@ export const esquemaFormularioFactura = z.object({
   idMonedaMaestro: z.number().positive("La moneda es requerida"),
   idTipoOperacionMaestro: z.number().positive("El tipo de operación es requerido"),
   idFormaPago: z.number().positive("La forma de pago es requerida"),
+  tipoCambio: z.number({ error: "Ingrese un tipo de cambio válido" })
+    .positive("El tipo de cambio debe ser mayor a 0")
+    .optional(),
   descuentos: z.record(
     z.string(),
     z.number({ error: "El descuento es requerido" })
@@ -56,10 +59,10 @@ export type DatosFormularioAnulacionFactura = z.infer<
   typeof esquemaAnulacionFactura
 >;
 
-export const esquemaCamposPdfFactura = z.object({
-  razonSocial: z.string().trim().min(1, "La razón social es requerida"),
+export const esquemaExportarLibroVentas = z.object({
+  mes: z.date({ error: "El mes es requerido" }),
 });
 
-export type DatosFormularioCamposPdfFactura = z.infer<
-  typeof esquemaCamposPdfFactura
+export type DatosFormularioExportarLibroVentas = z.infer<
+  typeof esquemaExportarLibroVentas
 >;
