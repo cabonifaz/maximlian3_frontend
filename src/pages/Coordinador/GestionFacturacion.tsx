@@ -255,17 +255,11 @@ export default function GestionFacturacion() {
         </span>
       </td>
       <td className="px-6 py-4 text-center text-sm font-medium text-slate-600">
-        {facturacion.prefacturable === null ? (
-          <span className="text-slate-400">-</span>
-        ) : (
-          <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${
-            facturacion.prefacturable
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-red-100 text-red-700"
-          }`}>
-            {facturacion.prefacturable ? "Sí" : "No"}
-          </span>
-        )}
+        {facturacion.prefacturable === null
+          ? "-"
+          : facturacion.prefacturable
+            ? "Sí"
+            : "No"}
       </td>
       <td className="px-6 py-4 text-center text-sm font-medium text-slate-600">
         {facturacion.totalPedidos}
