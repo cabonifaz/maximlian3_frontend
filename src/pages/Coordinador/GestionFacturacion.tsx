@@ -8,6 +8,7 @@ import { CustomModalFactura } from "@maximilian/components/coordinador/CustomMod
 import { CustomModalFacturasCliente } from "@maximilian/components/coordinador/CustomModalFacturasCliente";
 import { useFiltrosFacturacion } from "@maximilian/hooks/useFiltrosFacturacion";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
+import type { ModoFormularioFactura } from "@maximilian/hooks/useFormularioFactura";
 import { facturacionService } from "@maximilian/services/facturacion.service";
 import {
   COLUMNAS_FACTURACION,
@@ -38,7 +39,7 @@ export default function GestionFacturacion() {
   const [clienteSeleccionado, setClienteSeleccionado] = useState<EntradaFacturacion | null>(null);
   const [estaCargandoModalFactura, setEstaCargandoModalFactura] = useState(false);
   const [modalFactura, setModalFactura] = useState<{
-    modo: "emitir" | "detalle";
+    modo: ModoFormularioFactura;
     detalle: DetalleFactura | null;
     productosIniciales: EntradaProductoFacturable[];
     abrirAnulacionInicial?: boolean;
@@ -193,6 +194,43 @@ export default function GestionFacturacion() {
         detalle,
         productosIniciales: [],
         abrirAnulacionInicial,
+      });
+    } catch {
+      return;
+    } finally {
+      setEstaCargandoModalFactura(false);
+    }
+  };
+
+  const abrirNotaCreditoDebito = async (factura: EntradaListaFactura) => {
+    setEstaCargandoModalFactura(true);
+    try {
+      const detalle = await facturacionService.obtenerDetalleFacturaPorDocumento(
+        factura.idDocumentoElectronico,
+        ID_ESTADO_FACTURA_APROBADA,
+      );
+      setModalFactura({
+        modo: "notaCreditoDebito",
+        detalle,
+        productosIniciales: [],
+      });
+    } catch {
+      return;
+    } finally {
+      setEstaCargandoModalFactura(false);
+    }
+  };
+
+  const abrirEdicionFacturaListado = async (factura: EntradaListaFactura) => {
+    setEstaCargandoModalFactura(true);
+    try {
+      const detalle = await facturacionService.obtenerDetalleFacturaPorDocumento(
+        factura.idDocumentoElectronico,
+      );
+      setModalFactura({
+        modo: detalle.esNotaCreditoDebito ? "editarNotaCreditoDebito" : "emitir",
+        detalle,
+        productosIniciales: [],
       });
     } catch {
       return;
@@ -372,6 +410,12 @@ export default function GestionFacturacion() {
           }}
           onAnularFactura={(factura) => {
             void abrirDetalleFacturaListado(factura, true);
+          }}
+          onCrearNotaCreditoDebito={(factura) => {
+            void abrirNotaCreditoDebito(factura);
+          }}
+          onEditarFactura={(factura) => {
+            void abrirEdicionFacturaListado(factura);
           }}
         />
       ) : (

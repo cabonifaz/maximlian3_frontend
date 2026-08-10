@@ -8,6 +8,8 @@ export const ENDPOINTS_FACTURACION = {
   obtenerFactura: (idPedido: number) => `/api/PedidoFactura/factura/${idPedido}`,
   obtenerFacturaPorId: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}`,
+  obtenerDatosParaNota: (idDocumentoElectronico: number) =>
+    `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/paraNota`,
   obtenerUrlDescargaFactura: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/urlDescarga`,
   obtenerUrlVerificacionFactura: (idDocumentoElectronico: number) =>
@@ -21,5 +23,8 @@ export const ENDPOINTS_FACTURACION = {
   anular: "/api/PedidoFactura/anular",
   emitir: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/emitir/${idDocumentoElectronico}`,
+  notaCreditoDebito: "/api/PedidoFactura/notaCreditoDebito",
+  editarNotaCreditoDebito: (idDocumentoElectronico: number) =>
+    `/api/PedidoFactura/notaCreditoDebito/${idDocumentoElectronico}`,
   sireRvieTxt: "/api/PedidoFactura/sireRvie/txt",
 } as const;

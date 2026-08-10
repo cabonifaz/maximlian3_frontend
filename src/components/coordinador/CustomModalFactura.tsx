@@ -8,7 +8,10 @@ import { CustomModalCuotaFactura } from "@maximilian/components/coordinador/Cust
 import { CustomListaCamposExtraFactura } from "@maximilian/components/coordinador/CustomListaCamposExtraFactura";
 import { CustomModalAnularFactura } from "@maximilian/components/coordinador/CustomModalAnularFactura";
 import { CustomModalProductosFactura } from "@maximilian/components/coordinador/CustomModalProductosFactura";
-import { useFormularioFactura } from "@maximilian/hooks/useFormularioFactura";
+import {
+  useFormularioFactura,
+  type ModoFormularioFactura,
+} from "@maximilian/hooks/useFormularioFactura";
 import type {
   DetalleFactura,
   EntradaCuotaFactura,
@@ -27,7 +30,7 @@ import {
 
 interface CustomModalFacturaProps {
   abierto: boolean;
-  modo: "emitir" | "detalle";
+  modo: ModoFormularioFactura;
   factura: DetalleFactura | null;
   productosIniciales?: EntradaProductoFacturable[];
   abrirAnulacionInicial?: boolean;
@@ -66,6 +69,7 @@ export function CustomModalFactura({
     actualizarCamposExtra,
     cancelarEdicionDescuento,
     cancelarEdicionIgv,
+    cargandoClienteNotaCreditoDebito,
     confirmarFormulario,
     detalle,
     emitirFactura,
@@ -85,19 +89,26 @@ export function CustomModalFactura({
     obtenerTotalProducto,
     opcionesAfectacionIgv,
     opcionesMoneda,
+    opcionesMotivo,
     opcionesTipoDocumento,
+    idsProductosNotaSeleccionados,
+    alternarProductoNota,
+    productosTabla,
+    requiereSeleccionProducto,
     quitarCuota,
     quitarProducto,
     registrarDescripcion,
     registrarDescuento,
     registrarPorcentajeIgv,
     registrarTipoCambio,
+    registrarValorUnitario,
     requiereTipoCambio,
 
     seleccionarAfectacionIgv,
     seleccionarUnidadMedida,
     seleccionarFormaPago,
     seleccionarMoneda,
+    seleccionarMotivo,
     seleccionarTipoDocumento,
     seleccionarTipoOperacion,
     simboloMoneda,
@@ -105,9 +116,13 @@ export function CustomModalFactura({
     totalFactura,
     unidadesMedida,
     valoresMaestros,
-  } = useFormularioFactura(factura, onCerrar, productosIniciales);
+  } = useFormularioFactura(factura, modo, onCerrar, productosIniciales);
 
   const soloLectura = modo === "detalle";
+  const esNotaCreditoDebito =
+    modo === "notaCreditoDebito" || modo === "editarNotaCreditoDebito";
+  const puedeEditarTipoComprobante =
+    modo === "notaCreditoDebito" || detalle?.idDocumentoElectronico === null;
 
   if (!abierto || !detalle) return null;
 
@@ -142,16 +157,22 @@ export function CustomModalFactura({
               </div>
               <div>
                 <h2 className="text-lg font-bold text-brand-black">
-                  {soloLectura
-                    ? "Detalle de Factura"
-                    : detalle.idFactura
-                      ? "Editar Factura"
-                      : "Emitir Factura"}
+                  {modo === "editarNotaCreditoDebito"
+                    ? "Editar Nota de Crédito o Débito"
+                    : modo === "notaCreditoDebito"
+                      ? "Crear Nota de Crédito o Débito"
+                      : soloLectura
+                        ? "Detalle de Factura"
+                        : detalle.idFactura
+                          ? "Editar Factura"
+                          : "Emitir Factura"}
                 </h2>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  {soloLectura
-                    ? "Consulta los productos, descuentos y cuotas registradas."
-                    : "Completa la información y revisa los importes antes de confirmar."}
+                  {esNotaCreditoDebito
+                    ? "Selecciona el tipo de nota, el motivo y revisa las líneas antes de emitir."
+                    : soloLectura
+                      ? "Consulta los productos, descuentos y cuotas registradas."
+                      : "Completa la información y revisa los importes antes de confirmar."}
                 </p>
               </div>
             </div>
@@ -182,14 +203,14 @@ export function CustomModalFactura({
                 options={opcionesTipoDocumento}
                 value={valoresMaestros.idTipoDocumentoMaestro || undefined}
                 onChange={seleccionarTipoDocumento}
-                autoSeleccionarOpcionUnica={!soloLectura}
+                autoSeleccionarOpcionUnica={!soloLectura && !esNotaCreditoDebito}
                 obtenerEtiquetaOpcion={(opcion) => [opcion.string1, opcion.string2]
                   .filter(Boolean)
                   .join(" - ")}
-                displayValue={detalle.tipoDocumentoDescripcion}
-                disabled={
-                  soloLectura || detalle.idDocumentoElectronico !== null
+                displayValue={
+                  modo === "notaCreditoDebito" ? undefined : detalle.tipoDocumentoDescripcion
                 }
+                disabled={soloLectura || !puedeEditarTipoComprobante}
                 error={erroresFormulario.idTipoDocumentoMaestro?.message}
               />
               <CustomSelectorBuscable
@@ -266,20 +287,38 @@ export function CustomModalFactura({
                 soloLectura
                 onChange={() => undefined}
               />
-              <CustomListaCamposExtraFactura
-                camposExtra={detalle.camposExtra}
-                soloLectura={soloLectura}
-                onChange={actualizarCamposExtra}
-              />
+              {esNotaCreditoDebito ? (
+                <CustomSelectorBuscable
+                  label="Código de motivo"
+                  required
+                  options={opcionesMotivo}
+                  value={valoresMaestros.idMotivoMaestro || undefined}
+                  onChange={seleccionarMotivo}
+                  obtenerEtiquetaOpcion={(opcion) => [opcion.string1, opcion.string2]
+                    .filter(Boolean)
+                    .join(" - ")}
+                  error={erroresFormulario.idMotivoMaestro?.message}
+                />
+              ) : (
+                <CustomListaCamposExtraFactura
+                  camposExtra={detalle.camposExtra}
+                  soloLectura={soloLectura}
+                  onChange={actualizarCamposExtra}
+                />
+              )}
             </div>
 
             <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-brand-black">Productos y servicios</h3>
-                  <p className="mt-0.5 text-xs text-slate-400">Detalle de conceptos incluidos en la factura.</p>
+                  <p className="mt-0.5 text-xs text-slate-400">
+                    {modo === "notaCreditoDebito"
+                      ? "Marca en “Afectar” los productos que deseas incluir en la nota."
+                      : "Detalle de conceptos incluidos en la factura."}
+                  </p>
                 </div>
-                {!soloLectura ? (
+                {!soloLectura && !esNotaCreditoDebito ? (
                   <CustomButton
                     type="button"
                     variant="secondary"
@@ -295,6 +334,9 @@ export function CustomModalFactura({
                 <table className="w-full min-w-[1400px] text-center text-sm">
                   <thead className="bg-slate-50 text-xs font-bold text-slate-500">
                     <tr>
+                      {modo === "notaCreditoDebito" ? (
+                        <th className="px-4 py-3 text-center">Afectar</th>
+                      ) : null}
                       <th className="px-4 py-3 text-center">Cantidad</th>
                       <th className="px-4 py-3 text-center">Descripción</th>
                       <th className="w-48 min-w-48 max-w-48 px-4 py-3 text-center">Unidad de medida</th>
@@ -308,7 +350,7 @@ export function CustomModalFactura({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {detalle.productos.map((producto) => {
+                    {productosTabla.map((producto) => {
                       const claveProducto = String(producto.idProductoFactura);
                       const errorDescuento = erroresFormulario.descuentos?.[claveProducto];
 
@@ -316,9 +358,21 @@ export function CustomModalFactura({
                       const errorAfectacionIgv = erroresFormulario.afectacionesIgv?.[claveProducto];
                       const errorUnidadMedida = erroresFormulario.unidadesMedida?.[claveProducto];
                       const errorDescripcion = erroresFormulario.descripciones?.[claveProducto];
+                      const errorValorUnitario = erroresFormulario.valoresUnitarios?.[claveProducto];
 
                       return (
                       <tr key={producto.idProductoFactura}>
+                        {modo === "notaCreditoDebito" ? (
+                          <td className="px-4 py-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={idsProductosNotaSeleccionados.has(producto.idProductoFactura)}
+                              onChange={() => alternarProductoNota(producto.idProductoFactura)}
+                              aria-label={`Afectar ${producto.descripcion}`}
+                              className="h-4 w-4 rounded border-slate-300 text-brand-wine focus:ring-brand-wine"
+                            />
+                          </td>
+                        ) : null}
                         <td className="px-4 py-3 text-center text-slate-600">{producto.cantidad}</td>
                         <td className="px-4 py-3 text-left">
                           {soloLectura ? (
@@ -438,7 +492,32 @@ export function CustomModalFactura({
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-center text-slate-600">{formatearMontoConSimbolo(producto.valorUnitario, simboloMoneda)}</td>
+                        <td className="px-4 py-3 text-center text-slate-600">
+                          {!soloLectura && esNotaCreditoDebito ? (
+                            <>
+                              <input
+                                {...registrarValorUnitario(
+                                  `valoresUnitarios.${producto.idProductoFactura}`,
+                                  { valueAsNumber: true },
+                                )}
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                aria-label={`Valor unitario de ${producto.descripcion}`}
+                                className={`w-24 rounded-md border px-2 py-1.5 text-right text-sm text-slate-700 outline-none focus:border-brand-wine ${
+                                  errorValorUnitario ? "border-red-500" : "border-slate-200"
+                                }`}
+                              />
+                              {errorValorUnitario ? (
+                                <p className="mt-1 text-left text-[10px] text-red-500">
+                                  {errorValorUnitario.message}
+                                </p>
+                              ) : null}
+                            </>
+                          ) : (
+                            formatearMontoConSimbolo(producto.valorUnitario, simboloMoneda)
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-center text-slate-600">
                           {formatearMontoConSimbolo(obtenerPrecioUnitario(producto), simboloMoneda)}
                         </td>
@@ -654,11 +733,13 @@ export function CustomModalFactura({
 
           <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-white px-8 py-4">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total de la factura</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                {esNotaCreditoDebito ? "Total de la nota" : "Total de la factura"}
+              </p>
               <p className="text-lg font-black text-brand-black">{formatearMontoConSimbolo(totalFactura, simboloMoneda)}</p>
             </div>
             <div className="flex items-center gap-3">
-            {puedeAnularFactura ? (
+            {puedeAnularFactura && !esNotaCreditoDebito ? (
               <CustomButton
                 type="button"
                 variant="wine"
@@ -682,6 +763,8 @@ export function CustomModalFactura({
                   disabled={
                     hayEdicionProductoPendiente
                     || emitirFacturaMutation.isPending
+                    || cargandoClienteNotaCreditoDebito
+                    || requiereSeleccionProducto
                   }
                   loading={guardarFacturaMutation.isPending}
                   loadingText="Guardando..."
@@ -697,9 +780,11 @@ export function CustomModalFactura({
                     hayEdicionProductoPendiente
                     || guardarFacturaMutation.isPending
                     || emitirFacturaMutation.isPending
+                    || cargandoClienteNotaCreditoDebito
+                    || requiereSeleccionProducto
                   }
                 >
-                  Emitir Factura
+                  {esNotaCreditoDebito ? "Emitir Nota" : "Emitir Factura"}
                 </CustomButton>
               </>
             )}
@@ -736,7 +821,11 @@ export function CustomModalFactura({
         onClose={() => setConfirmacionSunatAbierta(false)}
         onConfirm={() => void emitirFactura()}
         title="Confirmar emisión"
-        descripcion="Está a punto de emitir la factura a SUNAT. ¿Desea continuar el proceso?"
+        descripcion={
+          esNotaCreditoDebito
+            ? "Está a punto de emitir la nota de crédito o débito a SUNAT. ¿Desea continuar el proceso?"
+            : "Está a punto de emitir la factura a SUNAT. ¿Desea continuar el proceso?"
+        }
         isSubmitting={emitirFacturaMutation.isPending}
         textoConfirmar="Emitir"
         textoCargandoConfirmar="Emitiendo..."

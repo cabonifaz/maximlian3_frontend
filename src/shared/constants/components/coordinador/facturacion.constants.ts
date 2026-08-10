@@ -49,6 +49,7 @@ export const OPCIONES_FORMA_PAGO_FACTURA_MOCK = [
 export const CANTIDAD_FACTURAS_POR_PAGINA_MOCK = 5;
 export const TAMANO_PAGINA_LISTADO_FACTURAS = 10;
 export const ESTADO_CODIGO_FACTURA_ACEPTADA = "Aceptado";
+export const ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO = "Pendiente Envio";
 
 export const FACTURAS_MOCK = [
   {
@@ -231,6 +232,10 @@ export const ID_FORMA_PAGO_CONTADO = 1;
 export const ID_TIPO_DOCUMENTO_SUNAT_RUC = 4;
 export const IDS_TIPO_COMPROBANTE_CLIENTE_RUC = [1, 3] as const;
 export const ID_TIPO_COMPROBANTE_BOLETA = 3;
+export const ID_TIPO_NOTA_CREDITO = 7;
+export const ID_TIPO_NOTA_DEBITO = 8;
+export const CODIGO_SUNAT_NOTA_CREDITO = "07";
+export const CODIGO_SUNAT_NOTA_DEBITO = "08";
 export const ID_TIPO_OPERACION_SUNAT_EXPORTACION_SERVICIOS = 5;
 export const ID_AFECTACION_IGV_PERU = 10;
 export const ID_AFECTACION_IGV_EXTRANJERO = 40;

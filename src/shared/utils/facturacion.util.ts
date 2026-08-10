@@ -1,8 +1,13 @@
 import type { DatosFormularioFactura } from "@maximilian/schemas";
 import type {
+  ClienteNotaCreditoDebito,
+  CuotaGuardarBorradorFactura,
+  CuotaGuardarCambiosFactura,
   DetalleFactura,
+  EditarNotaCreditoDebitoRequest,
   GuardarBorradorFacturaRequest,
   GuardarCambiosFacturaRequest,
+  NotaCreditoDebitoRequest,
 } from "@maximilian/shared/types/facturacion.type";
 import {
   ID_FORMA_PAGO_CONTADO,
@@ -70,6 +75,49 @@ export function calcularPrecioUnitarioFactura(
     : valorUnitarioConDescuento;
 }
 
+function construirCuotasBorrador(
+  detalle: DetalleFactura,
+  datos: DatosFormularioFactura,
+): CuotaGuardarBorradorFactura[] {
+  return datos.idFormaPago === ID_FORMA_PAGO_CONTADO
+    ? []
+    : detalle.cuotas.map((cuota) => ({
+        numeroCuota: cuota.numeroCuota,
+        fechaVencimiento: convertirFechaAIso(cuota.vencimiento),
+        monto: cuota.monto,
+      }));
+}
+
+function construirCamposExtraBorrador(detalle: DetalleFactura) {
+  return detalle.camposExtra
+    .map((campoExtra) => campoExtra.texto.trim())
+    .filter(Boolean)
+    .map((texto) => ({ texto }));
+}
+
+function construirCuotasCambios(
+  detalle: DetalleFactura,
+  datos: DatosFormularioFactura,
+): CuotaGuardarCambiosFactura[] {
+  return datos.idFormaPago === ID_FORMA_PAGO_CONTADO
+    ? []
+    : detalle.cuotas.map((cuota) => ({
+        numeroCuota: cuota.numeroCuota,
+        fechaVencimiento: convertirFechaAIso(cuota.vencimiento),
+        monto: cuota.monto,
+        idCuotaDocumentoElectronico: cuota.idCuotaDocumentoElectronico,
+      }));
+}
+
+function construirCamposExtraCambios(detalle: DetalleFactura) {
+  return detalle.camposExtra
+    .filter((campoExtra) => campoExtra.texto.trim())
+    .map((campoExtra) => ({
+      texto: campoExtra.texto.trim(),
+      idCampoExtraDocumentoElectronico: campoExtra.idCampoExtraDocumentoElectronico,
+    }));
+}
+
 export function construirPayloadGuardarBorradorFactura(
   detalle: DetalleFactura,
   datos: DatosFormularioFactura,
@@ -81,13 +129,7 @@ export function construirPayloadGuardarBorradorFactura(
     tipoCambio: datos.tipoCambio ?? 0,
     idTipoOperacionMaestro: datos.idTipoOperacionMaestro,
     idFormaPago: datos.idFormaPago,
-    cuotas: datos.idFormaPago === ID_FORMA_PAGO_CONTADO
-      ? []
-      : detalle.cuotas.map((cuota) => ({
-          numeroCuota: cuota.numeroCuota,
-          fechaVencimiento: convertirFechaAIso(cuota.vencimiento),
-          monto: cuota.monto,
-        })),
+    cuotas: construirCuotasBorrador(detalle, datos),
     idCliente: detalle.idCliente,
     documentoAfectado: null,
     lineas: detalle.productos.map((producto) => {
@@ -106,12 +148,49 @@ export function construirPayloadGuardarBorradorFactura(
         porcentajeIgv: datos.porcentajesIgv[claveProducto],
       };
     }),
-    camposExtra: detalle.camposExtra
-      .map((campoExtra) => campoExtra.texto.trim())
-      .filter(Boolean)
-      .map((texto) => ({ texto })),
+    camposExtra: construirCamposExtraBorrador(detalle),
   };
 }
+
+export function construirPayloadNotaCreditoDebito(
+  detalle: DetalleFactura,
+  datos: DatosFormularioFactura,
+  cliente: ClienteNotaCreditoDebito,
+): NotaCreditoDebitoRequest {
+  return {
+    idTipoDocumentoMaestro: datos.idTipoDocumentoMaestro,
+    numeroReferencia: "",
+    idMonedaMaestro: datos.idMonedaMaestro,
+    tipoCambio: datos.tipoCambio ?? 0,
+    idTipoOperacionMaestro: datos.idTipoOperacionMaestro,
+    idFormaPago: datos.idFormaPago,
+    cuotas: construirCuotasBorrador(detalle, datos),
+    cliente,
+    documentoAfectado: {
+      idDocumentoElectronicoRelacionado: detalle.idDocumentoElectronico ?? 0,
+      idMotivoMaestro: datos.idMotivoMaestro ?? 0,
+    },
+    lineas: detalle.productos.map((producto) => {
+      const claveProducto = String(producto.idProductoFactura);
+      const descuentoPorcentaje = datos.descuentos[claveProducto] ?? producto.descuentoPorcentaje;
+      const valorUnitario = datos.valoresUnitarios[claveProducto] ?? producto.valorUnitario;
+
+      return {
+        productoCodigo: producto.codigo,
+        productoSunatCodigo: producto.productoSunatCodigo,
+        descripcion: datos.descripciones[claveProducto] ?? producto.descripcion,
+        idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
+        cantidad: producto.cantidad,
+        valorUnitario,
+        montoDescuento: producto.cantidad * valorUnitario * descuentoPorcentaje / 100,
+        idAfectacionIgvMaestro: datos.afectacionesIgv[claveProducto],
+        porcentajeIgv: datos.porcentajesIgv[claveProducto],
+      };
+    }),
+    camposExtra: construirCamposExtraBorrador(detalle),
+  };
+}
+
 export function construirPayloadGuardarCambiosFactura(
   detalle: DetalleFactura,
   datos: DatosFormularioFactura,
@@ -146,21 +225,41 @@ export function construirPayloadGuardarCambiosFactura(
           producto.idLineaDocumentoElectronico,
       };
     }),
-    cuotas: datos.idFormaPago === ID_FORMA_PAGO_CONTADO
-      ? []
-      : detalle.cuotas.map((cuota) => ({
-          numeroCuota: cuota.numeroCuota,
-          fechaVencimiento: convertirFechaAIso(cuota.vencimiento),
-          monto: cuota.monto,
-          idCuotaDocumentoElectronico:
-            cuota.idCuotaDocumentoElectronico,
-        })),
-    camposExtra: detalle.camposExtra
-      .filter((campoExtra) => campoExtra.texto.trim())
-      .map((campoExtra) => ({
-        texto: campoExtra.texto.trim(),
-        idCampoExtraDocumentoElectronico:
-          campoExtra.idCampoExtraDocumentoElectronico,
-      })),
+    cuotas: construirCuotasCambios(detalle, datos),
+    camposExtra: construirCamposExtraCambios(detalle),
+  };
+}
+
+export function construirPayloadEditarNotaCreditoDebito(
+  detalle: DetalleFactura,
+  datos: DatosFormularioFactura,
+): EditarNotaCreditoDebitoRequest {
+  return {
+    idFormaPago: datos.idFormaPago,
+    numeroReferencia: "",
+    idMonedaMaestro: datos.idMonedaMaestro,
+    tipoCambio: datos.tipoCambio ?? 0,
+    idTipoOperacionMaestro: datos.idTipoOperacionMaestro,
+    idMotivoMaestro: datos.idMotivoMaestro ?? 0,
+    lineas: detalle.productos.map((producto) => {
+      const claveProducto = String(producto.idProductoFactura);
+      const descuentoPorcentaje = datos.descuentos[claveProducto] ?? producto.descuentoPorcentaje;
+      const valorUnitario = datos.valoresUnitarios[claveProducto] ?? producto.valorUnitario;
+
+      return {
+        productoCodigo: producto.codigo,
+        productoSunatCodigo: producto.productoSunatCodigo,
+        descripcion: datos.descripciones[claveProducto] ?? producto.descripcion,
+        idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
+        cantidad: producto.cantidad,
+        valorUnitario,
+        montoDescuento: producto.cantidad * valorUnitario * descuentoPorcentaje / 100,
+        idAfectacionIgvMaestro: datos.afectacionesIgv[claveProducto],
+        porcentajeIgv: datos.porcentajesIgv[claveProducto],
+        idLineaDocumentoElectronico: producto.idLineaDocumentoElectronico,
+      };
+    }),
+    cuotas: construirCuotasCambios(detalle, datos),
+    camposExtra: construirCamposExtraCambios(detalle),
   };
 }

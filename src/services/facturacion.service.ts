@@ -1,6 +1,7 @@
 import type {
   DetalleFactura,
   AnularFacturaRequest,
+  EditarNotaCreditoDebitoRequest,
   EntradaFacturaCliente,
   EntradaFacturacion,
   EntradaFacturacionApi,
@@ -13,6 +14,7 @@ import type {
   GuardarBorradorFacturaRequest,
   GuardarCambiosFacturaRequest,
   IdEstadoFacturacionActualizable,
+  NotaCreditoDebitoRequest,
   ParametrosListaFacturacion,
   ParametrosListaFacturas,
   ParametrosListaPedidosFacturacion,
@@ -30,6 +32,7 @@ import type {
   ResultadoListaProductosFacturablesApi,
   ResultadoGuardarBorradorFactura,
   ResultadoObtenerFacturaApi,
+  ResultadoParaNotaApi,
 } from "@maximilian/shared/types/facturacion.type";
 import { ENDPOINTS_FACTURACION } from "@maximilian/shared/constants/endpoints/facturacion.endpoint";
 import {
@@ -49,6 +52,10 @@ import {
 import { servicioCliente } from "./cliente.service";
 import { servicioTablaMaestra } from "./tabla-maestra.service";
 import { concatenarCodigosOrdenCompra } from "@maximilian/shared/utils/facturacion.util";
+import {
+  CODIGO_SUNAT_NOTA_CREDITO,
+  CODIGO_SUNAT_NOTA_DEBITO,
+} from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import {
   obtenerRegistro,
   obtenerTexto,
@@ -225,6 +232,9 @@ async function obtenerFacturaRegistrada(
     ),
     servicioTablaMaestra.listarPorIds([
       TablaMaestraId.TIPO_DOCUMENTO_COMPROBANTE,
+      TablaMaestraId.TIPO_NOTA_CREDITO_DEBITO,
+      TablaMaestraId.SUNAT_MOTIVO_NOTA_CREDITO,
+      TablaMaestraId.SUNAT_MOTIVO_NOTA_DEBITO,
       TablaMaestraId.TIPO_OPERACION_SUNAT,
       TablaMaestraId.MONEDA_SUNAT,
       TablaMaestraId.FORMA_PAGO_SUNAT,
@@ -240,11 +250,26 @@ async function obtenerFacturaRegistrada(
     throw new ErrorRespuestaApi(data);
   }
 
-  const { cabecera, lineas, cuotas, camposExtra } = data.result;
+  const { cabecera, lineas, cuotas, camposExtra, referencia } = data.result;
+  const esNotaCreditoDebito =
+    cabecera.tipoDocumentoCodigo === CODIGO_SUNAT_NOTA_CREDITO
+    || cabecera.tipoDocumentoCodigo === CODIGO_SUNAT_NOTA_DEBITO;
+  const idMaestroTipoDocumento = esNotaCreditoDebito
+    ? TablaMaestraId.TIPO_NOTA_CREDITO_DEBITO
+    : TablaMaestraId.TIPO_DOCUMENTO_COMPROBANTE;
+  const idMaestroMotivo = cabecera.tipoDocumentoCodigo === CODIGO_SUNAT_NOTA_DEBITO
+    ? TablaMaestraId.SUNAT_MOTIVO_NOTA_DEBITO
+    : TablaMaestraId.SUNAT_MOTIVO_NOTA_CREDITO;
   const opcionTipoDocumento = buscarOpcionTablaMaestra(
-    opcionesPorMaestro[TablaMaestraId.TIPO_DOCUMENTO_COMPROBANTE] ?? [],
+    opcionesPorMaestro[idMaestroTipoDocumento] ?? [],
     cabecera.tipoDocumentoCodigo,
   );
+  const opcionMotivo = esNotaCreditoDebito && referencia
+    ? buscarOpcionTablaMaestra(
+        opcionesPorMaestro[idMaestroMotivo] ?? [],
+        referencia.motivoCodigo,
+      )
+    : undefined;
   const opcionTipoOperacion = buscarOpcionTablaMaestra(
     opcionesPorMaestro[TablaMaestraId.TIPO_OPERACION_SUNAT] ?? [],
     cabecera.tipoOperacionCodigo,
@@ -273,6 +298,8 @@ async function obtenerFacturaRegistrada(
     tipoCambio: cabecera.tipoCambio ?? 0,
     idTipoOperacionMaestro: opcionTipoOperacion?.num1 ?? 0,
     idFormaPago: opcionFormaPago?.num1 ?? 0,
+    idMotivoMaestro: opcionMotivo?.num1 ?? 0,
+    esNotaCreditoDebito,
     tipoDocumentoDescripcion:
       obtenerEtiquetaTablaMaestra(opcionTipoDocumento),
     monedaDescripcion: obtenerEtiquetaTablaMaestra(opcionMoneda),
@@ -316,9 +343,7 @@ async function obtenerFacturaRegistrada(
         unidadMedidaDescripcion:
           obtenerEtiquetaTablaMaestra(opcionUnidadMedida),
         cantidad: linea.cantidad,
-        descripcion: [linea.productoCodigo, linea.descripcion]
-          .filter(Boolean)
-          .join(" - "),
+        descripcion: linea.descripcion,
         descuentoPorcentaje:
           subtotal > 0 ? linea.montoDescuento / subtotal * 100 : 0,
         valorUnitario: linea.valorUnitario,
@@ -361,6 +386,8 @@ function crearDetalleFactura(
     tipoCambio: 0,
     idTipoOperacionMaestro: 0,
     idFormaPago: 0,
+    idMotivoMaestro: 0,
+    esNotaCreditoDebito: false,
     tipoDocumentoDescripcion: "",
     monedaDescripcion: "",
     tipoOperacionDescripcion: "",
@@ -606,6 +633,50 @@ export const facturacionService = {
   emitir: async (idDocumentoElectronico: number): Promise<unknown> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
       ENDPOINTS_FACTURACION.emitir(idDocumentoElectronico),
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result;
+  },
+
+  obtenerDatosParaNota: async (
+    idDocumentoElectronico: number,
+  ): Promise<ResultadoParaNotaApi> => {
+    const { data } = await maximilianService.get<
+      ApiResponse<ResultadoParaNotaApi>
+    >(ENDPOINTS_FACTURACION.obtenerDatosParaNota(idDocumentoElectronico));
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result;
+  },
+
+  guardarBorradorNotaCreditoDebito: async (
+    solicitud: NotaCreditoDebitoRequest,
+  ): Promise<number> => {
+    const { data } = await maximilianService.post<
+      ApiResponse<ResultadoGuardarBorradorFactura>
+    >(ENDPOINTS_FACTURACION.notaCreditoDebito, solicitud);
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result.idDocumentoElectronico;
+  },
+
+  guardarCambiosNotaCreditoDebito: async (
+    idDocumentoElectronico: number,
+    solicitud: EditarNotaCreditoDebitoRequest,
+  ): Promise<unknown> => {
+    const { data } = await maximilianService.put<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.editarNotaCreditoDebito(idDocumentoElectronico),
+      solicitud,
     );
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {

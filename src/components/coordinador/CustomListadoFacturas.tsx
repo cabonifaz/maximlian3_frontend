@@ -14,11 +14,15 @@ import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 interface PropsCustomListadoFacturas {
   onVerFactura: (factura: EntradaListaFactura) => void;
   onAnularFactura: (factura: EntradaListaFactura) => void;
+  onCrearNotaCreditoDebito: (factura: EntradaListaFactura) => void;
+  onEditarFactura: (factura: EntradaListaFactura) => void;
 }
 
 export function CustomListadoFacturas({
   onVerFactura,
   onAnularFactura,
+  onCrearNotaCreditoDebito,
+  onEditarFactura,
 }: PropsCustomListadoFacturas) {
   const listado = useListadoFacturas();
   const columnas = COLUMNAS_LISTADO_FACTURAS.map((columna, indice) => {
@@ -79,6 +83,16 @@ export function CustomListadoFacturas({
     onAnularFactura(factura);
   };
 
+  const crearNotaCreditoDebito = (factura: EntradaListaFactura) => {
+    listado.cerrarMenu();
+    onCrearNotaCreditoDebito(factura);
+  };
+
+  const editarFactura = (factura: EntradaListaFactura) => {
+    listado.cerrarMenu();
+    onEditarFactura(factura);
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -119,6 +133,8 @@ export function CustomListadoFacturas({
             onGenerarUrl={listado.abrirEnlace}
             onVer={verFactura}
             onAnular={anularFactura}
+            onCrearNotaCreditoDebito={crearNotaCreditoDebito}
+            onEditar={editarFactura}
             onAlternarDescarga={listado.alternarSubmenuDescarga}
             onDescargar={listado.descargarFactura}
             onVerErrores={listado.abrirErrores}

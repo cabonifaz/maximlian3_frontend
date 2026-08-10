@@ -5,12 +5,17 @@ import {
   Download,
   Eye,
   FileCode2,
+  FilePlus2,
   FileText,
   Link,
   MoreHorizontal,
+  Pencil,
 } from 'lucide-react';
 import { CustomButton } from '@maximilian/components/common/CustomButton';
-import { ESTADO_CODIGO_FACTURA_ACEPTADA } from '@maximilian/shared/constants/components/coordinador/facturacion.constants';
+import {
+  ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO,
+  ESTADO_CODIGO_FACTURA_ACEPTADA,
+} from '@maximilian/shared/constants/components/coordinador/facturacion.constants';
 import type {
   EntradaListaFactura,
   FormatoDescargaFactura,
@@ -31,6 +36,8 @@ interface PropsCustomFilaListadoFactura {
   onGenerarUrl: (factura: EntradaListaFactura) => void;
   onVer: (factura: EntradaListaFactura) => void;
   onAnular: (factura: EntradaListaFactura) => void;
+  onCrearNotaCreditoDebito: (factura: EntradaListaFactura) => void;
+  onEditar: (factura: EntradaListaFactura) => void;
   onAlternarDescarga: (factura: EntradaListaFactura) => void;
   onDescargar: (
     factura: EntradaListaFactura,
@@ -49,6 +56,8 @@ export function CustomFilaListadoFactura({
   onGenerarUrl,
   onVer,
   onAnular,
+  onCrearNotaCreditoDebito,
+  onEditar,
   onAlternarDescarga,
   onDescargar,
   onVerErrores,
@@ -130,6 +139,18 @@ export function CustomFilaListadoFactura({
               <CustomButton
                 variant='ghost'
                 size='sm'
+                className='w-full justify-start px-3 text-slate-700'
+                onClick={() => onEditar(factura)}
+                disabled={
+                  factura.estado !== ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO
+                }
+              >
+                <Pencil size={14} />
+                Editar
+              </CustomButton>
+              <CustomButton
+                variant='ghost'
+                size='sm'
                 className='w-full justify-start px-3 text-red-600'
                 onClick={() => onAnular(factura)}
                 disabled={
@@ -138,6 +159,18 @@ export function CustomFilaListadoFactura({
               >
                 <Ban size={14} />
                 Anular
+              </CustomButton>
+              <CustomButton
+                variant='ghost'
+                size='sm'
+                className='w-full justify-start px-3 text-slate-700'
+                onClick={() => onCrearNotaCreditoDebito(factura)}
+                disabled={
+                  factura.estado !== ESTADO_CODIGO_FACTURA_ACEPTADA
+                }
+              >
+                <FilePlus2 size={14} />
+                Crear Nota de Crédito/Débito
               </CustomButton>
               <div className='relative'>
                 <CustomButton

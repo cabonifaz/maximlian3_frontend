@@ -37,6 +37,12 @@ export const esquemaFormularioFactura = z.object({
       .trim()
       .min(1, "La descripción es requerida"),
   ),
+  valoresUnitarios: z.record(
+    z.string(),
+    z.number({ error: "El valor unitario es requerido" })
+      .min(0, "El valor unitario debe ser mayor o igual a 0"),
+  ),
+  idMotivoMaestro: z.number().optional(),
 });
 
 export type DatosFormularioFactura = z.infer<typeof esquemaFormularioFactura>;
