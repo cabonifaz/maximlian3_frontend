@@ -101,6 +101,7 @@ function mapearListaFactura(
   return {
     idDocumentoElectronico: factura.idDocumentoElectronico,
     numeroFactura: factura.numeroFactura,
+    tipoDocumentoTexto: factura.tipoDocumentoTexto,
     cliente: factura.clienteNombre,
     fechaEmision: factura.fechaEmision,
     formaPago: factura.formaPagoCodigo,

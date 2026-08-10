@@ -26,7 +26,7 @@ export function CustomListadoFacturas({
 }: PropsCustomListadoFacturas) {
   const listado = useListadoFacturas();
   const columnas = COLUMNAS_LISTADO_FACTURAS.map((columna, indice) => {
-    if (indice === 2) {
+    if (indice === 3) {
       return {
         ...columna,
         label: (
@@ -42,7 +42,7 @@ export function CustomListadoFacturas({
       };
     }
 
-    if (indice === 3) {
+    if (indice === 4) {
       return {
         ...columna,
         label: (
@@ -56,7 +56,7 @@ export function CustomListadoFacturas({
       };
     }
 
-    if (indice === 5) {
+    if (indice === 6) {
       return {
         ...columna,
         label: (

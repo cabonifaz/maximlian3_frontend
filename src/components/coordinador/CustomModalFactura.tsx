@@ -62,6 +62,7 @@ export function CustomModalFactura({
   const {
     afectacionIgvPredeterminadaDescripcion,
     afectacionesIgv,
+    agregarLineaNota,
     agregarProductos: agregarProductosFormulario,
     anularFactura,
     anularFacturaMutation,
@@ -69,7 +70,9 @@ export function CustomModalFactura({
     actualizarCamposExtra,
     cancelarEdicionDescuento,
     cancelarEdicionIgv,
+    agregarCodigoPersonalizadoNota,
     cargandoClienteNotaCreditoDebito,
+    codigosProducto,
     confirmarFormulario,
     detalle,
     emitirFactura,
@@ -88,12 +91,10 @@ export function CustomModalFactura({
     obtenerPrecioUnitario,
     obtenerTotalProducto,
     opcionesAfectacionIgv,
+    opcionesCodigoNota,
     opcionesMoneda,
     opcionesMotivo,
     opcionesTipoDocumento,
-    idsProductosNotaSeleccionados,
-    alternarProductoNota,
-    productosTabla,
     requiereSeleccionProducto,
     quitarCuota,
     quitarProducto,
@@ -105,6 +106,7 @@ export function CustomModalFactura({
     requiereTipoCambio,
 
     seleccionarAfectacionIgv,
+    seleccionarCodigoProducto,
     seleccionarUnidadMedida,
     seleccionarFormaPago,
     seleccionarMoneda,
@@ -271,16 +273,18 @@ export function CustomModalFactura({
                   ) : null}
                 </div>
               ) : null}
-              <CustomSelectorBuscable
-                label="Forma de pago"
-                required
-                idMaster={TablaMaestraId.FORMA_PAGO_SUNAT}
-                value={valoresMaestros.idFormaPago || undefined}
-                onChange={seleccionarFormaPago}
-                displayValue={detalle.formaPagoDescripcion}
-                disabled={soloLectura}
-                error={erroresFormulario.idFormaPago?.message}
-              />
+              {!esNotaCreditoDebito ? (
+                <CustomSelectorBuscable
+                  label="Forma de pago"
+                  required
+                  idMaster={TablaMaestraId.FORMA_PAGO_SUNAT}
+                  value={valoresMaestros.idFormaPago || undefined}
+                  onChange={seleccionarFormaPago}
+                  displayValue={detalle.formaPagoDescripcion}
+                  disabled={soloLectura}
+                  error={erroresFormulario.idFormaPago?.message}
+                />
+              ) : null}
               <CampoFactura
                 etiqueta="Emisión"
                 valor={detalle.fechaEmision}
@@ -314,10 +318,21 @@ export function CustomModalFactura({
                   <h3 className="text-sm font-bold text-brand-black">Productos y servicios</h3>
                   <p className="mt-0.5 text-xs text-slate-400">
                     {modo === "notaCreditoDebito"
-                      ? "Marca en “Afectar” los productos que deseas incluir en la nota."
+                      ? "Agrega manualmente las líneas que deseas incluir en la nota."
                       : "Detalle de conceptos incluidos en la factura."}
                   </p>
                 </div>
+                {!soloLectura && modo === "notaCreditoDebito" ? (
+                  <CustomButton
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={agregarLineaNota}
+                  >
+                    <Plus size={14} />
+                    Agregar línea
+                  </CustomButton>
+                ) : null}
                 {!soloLectura && !esNotaCreditoDebito ? (
                   <CustomButton
                     type="button"
@@ -334,10 +349,10 @@ export function CustomModalFactura({
                 <table className="w-full min-w-[1400px] text-center text-sm">
                   <thead className="bg-slate-50 text-xs font-bold text-slate-500">
                     <tr>
-                      {modo === "notaCreditoDebito" ? (
-                        <th className="px-4 py-3 text-center">Afectar</th>
-                      ) : null}
                       <th className="px-4 py-3 text-center">Cantidad</th>
+                      {esNotaCreditoDebito ? (
+                        <th className="w-40 min-w-40 max-w-40 px-4 py-3 text-center">Código</th>
+                      ) : null}
                       <th className="px-4 py-3 text-center">Descripción</th>
                       <th className="w-48 min-w-48 max-w-48 px-4 py-3 text-center">Unidad de medida</th>
                       <th className="px-4 py-3 text-center">Dscto. %</th>
@@ -350,7 +365,7 @@ export function CustomModalFactura({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {productosTabla.map((producto) => {
+                    {detalle.productos.map((producto) => {
                       const claveProducto = String(producto.idProductoFactura);
                       const errorDescuento = erroresFormulario.descuentos?.[claveProducto];
 
@@ -359,21 +374,32 @@ export function CustomModalFactura({
                       const errorUnidadMedida = erroresFormulario.unidadesMedida?.[claveProducto];
                       const errorDescripcion = erroresFormulario.descripciones?.[claveProducto];
                       const errorValorUnitario = erroresFormulario.valoresUnitarios?.[claveProducto];
+                      const errorCodigoProducto = erroresFormulario.codigosProducto?.[claveProducto];
 
                       return (
                       <tr key={producto.idProductoFactura}>
-                        {modo === "notaCreditoDebito" ? (
-                          <td className="px-4 py-3 text-center">
-                            <input
-                              type="checkbox"
-                              checked={idsProductosNotaSeleccionados.has(producto.idProductoFactura)}
-                              onChange={() => alternarProductoNota(producto.idProductoFactura)}
-                              aria-label={`Afectar ${producto.descripcion}`}
-                              className="h-4 w-4 rounded border-slate-300 text-brand-wine focus:ring-brand-wine"
+                        <td className="px-4 py-3 text-center text-slate-600">{producto.cantidad}</td>
+                        {esNotaCreditoDebito ? (
+                          <td className="w-48 min-w-48 max-w-48 px-4 py-3">
+                            <CustomSelectorBuscable
+                              options={opcionesCodigoNota}
+                              value={
+                                opcionesCodigoNota.find(
+                                  (opcion) => opcion.string1 === codigosProducto?.[claveProducto],
+                                )?.num1 ?? undefined
+                              }
+                              displayValue={codigosProducto?.[claveProducto] || producto.codigo}
+                              onChange={(valor) =>
+                                seleccionarCodigoProducto(producto.idProductoFactura, valor)}
+                              onAddNew={(texto) =>
+                                agregarCodigoPersonalizadoNota(producto.idProductoFactura, texto)}
+                              placeholder="Seleccione código"
+                              required
+                              obtenerEtiquetaOpcion={(opcion) => opcion.string1 ?? ""}
+                              error={errorCodigoProducto?.message}
                             />
                           </td>
                         ) : null}
-                        <td className="px-4 py-3 text-center text-slate-600">{producto.cantidad}</td>
                         <td className="px-4 py-3 text-left">
                           {soloLectura ? (
                             <span className="font-medium text-slate-700">
@@ -399,7 +425,7 @@ export function CustomModalFactura({
                           )}
                         </td>
                         <td className="w-48 min-w-48 max-w-48 px-4 py-3">
-                          {soloLectura ? (
+                          {soloLectura || modo === "notaCreditoDebito" ? (
                             <span className="text-slate-600">
                               {producto.unidadMedidaDescripcion
                                 || producto.idUnidadMedidaMaestro}
@@ -550,7 +576,7 @@ export function CustomModalFactura({
                           )}
                         </td>
                         <td className="px-4 py-3 text-center text-slate-600">
-                          {soloLectura ? (
+                          {soloLectura || modo === "notaCreditoDebito" ? (
                             `${producto.porcentajeIgv}%`
                           ) : idProductoIgvEdicion !== producto.idProductoFactura ? (
                             <div className="flex items-center justify-center gap-1">
@@ -647,7 +673,7 @@ export function CustomModalFactura({
               </div>
             </section>
 
-            {valoresMaestros.idFormaPago !== ID_FORMA_PAGO_CONTADO ? (
+            {!esNotaCreditoDebito && valoresMaestros.idFormaPago !== ID_FORMA_PAGO_CONTADO ? (
             <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>

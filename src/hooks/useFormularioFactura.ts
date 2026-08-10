@@ -26,7 +26,10 @@ import {
   limitarOrdenCompra,
 } from "@maximilian/shared/utils/facturacion.util";
 import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import {
+  TablaMaestraId,
+  type EntradaTablaMaestra,
+} from "@maximilian/shared/types/tabla-maestra.type";
 import {
   obtenerEtiquetaPrincipalSecundaria,
   obtenerSimboloTablaMaestra,
@@ -65,6 +68,10 @@ const resolverFormularioFactura = (
         idMotivoMaestro: { type: "custom", message: "El código de motivo es requerido" },
       };
     }
+
+    const erroresSinFormaPago = { ...resultado.errors };
+    delete erroresSinFormaPago.idFormaPago;
+    resultado.errors = erroresSinFormaPago;
   }
 
   return resultado;
@@ -124,6 +131,39 @@ function obtenerValoresUnitariosIniciales(factura: DetalleFactura | null) {
   );
 }
 
+function obtenerCodigosProductoIniciales(factura: DetalleFactura | null) {
+  return Object.fromEntries(
+    (factura?.productos ?? []).map((producto) => [
+      String(producto.idProductoFactura),
+      producto.codigo,
+    ]),
+  );
+}
+
+let contadorLineaNota = 0;
+
+function crearLineaNotaVacia(): EntradaProductoFactura {
+  return {
+    idProductoFactura: Date.now() + contadorLineaNota++,
+    idPedido: 0,
+    codigo: "",
+    numeroLinea: 0,
+    idLineaDocumentoElectronico: 0,
+    productoSunatCodigo: null,
+    idUnidadMedidaMaestro: ID_UNIDAD_MEDIDA_PREDETERMINADA,
+    unidadMedidaDescripcion: DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA,
+    cantidad: 1,
+    descripcion: "",
+    descuentoPorcentaje: 0,
+    valorUnitario: 0,
+    precioUnitario: 0,
+    porcentajeIgv: PORCENTAJE_IGV_PREDETERMINADO,
+    idAfectacionIgvMaestro: 0,
+    afectacionIgvDescripcion: "",
+    total: 0,
+  };
+}
+
 function crearProductoFactura(
   producto: EntradaProductoFacturable,
 ): EntradaProductoFactura {
@@ -169,10 +209,12 @@ export function useFormularioFactura(
             factura.ordenCompra,
             productosIniciales.map((producto) => producto.codigo),
           ),
-          productos: [
-            ...factura.productos,
-            ...productosIniciales.map(crearProductoFactura),
-          ],
+          productos: esCreacionNotaCreditoDebito
+            ? []
+            : [
+                ...factura.productos,
+                ...productosIniciales.map(crearProductoFactura),
+              ],
         }
       : factura,
   );
@@ -202,6 +244,7 @@ export function useFormularioFactura(
       unidadesMedida: obtenerUnidadesMedidaIniciales(detalle),
       descripciones: obtenerDescripcionesIniciales(detalle),
       valoresUnitarios: obtenerValoresUnitariosIniciales(detalle),
+      codigosProducto: obtenerCodigosProductoIniciales(detalle),
       idMotivoMaestro: esEdicionNotaCreditoDebito
         ? detalle?.idMotivoMaestro ?? 0
         : 0,
@@ -238,6 +281,10 @@ export function useFormularioFactura(
   const valoresUnitarios = useWatch({
     control: formulario.control,
     name: "valoresUnitarios",
+  });
+  const codigosProducto = useWatch({
+    control: formulario.control,
+    name: "codigosProducto",
   });
   const idTipoDocumentoMaestro = useWatch({
     control: formulario.control,
@@ -281,49 +328,74 @@ export function useFormularioFactura(
     enabled: esCreacionNotaCreditoDebito && Boolean(detalle?.idDocumentoElectronico),
   });
   const clienteNotaCreditoDebito = datosParaNota?.cliente;
-  const productosCandidatosNota = useMemo(() => {
-    if (!datosParaNota || !detalle) return [];
+  const [opcionesCodigoPersonalizadas, setOpcionesCodigoPersonalizadas] =
+    useState<EntradaTablaMaestra[]>([]);
+  const contadorOpcionCodigoRef = useRef(0);
+  const crearOpcionCodigoNota = (numero1: number, codigo: string): EntradaTablaMaestra => ({
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: codigo,
+    num1: numero1,
+    num2: null,
+    num3: null,
+    string1: codigo,
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  });
+  const opcionesCodigoNota = useMemo(() => {
+    const opcionesBase = (datosParaNota?.productos ?? []).map((producto, indice) =>
+      crearOpcionCodigoNota(indice + 1, producto.productoCodigo));
 
-    const codigosDisponibles = new Set(
-      datosParaNota.productos.map((producto) => producto.productoCodigo),
-    );
-
-    return detalle.productos.filter((producto) =>
-      codigosDisponibles.has(producto.codigo));
-  }, [datosParaNota, detalle]);
-  const [idsProductosNotaManual, setIdsProductosNotaManual] = useState<
-    Set<number> | null
-  >(null);
-  const idsProductosNotaSeleccionados = useMemo(() => {
-    if (idsProductosNotaManual !== null) return idsProductosNotaManual;
-    if (productosCandidatosNota.length === 1) {
-      return new Set([productosCandidatosNota[0].idProductoFactura]);
-    }
-    return new Set<number>();
-  }, [idsProductosNotaManual, productosCandidatosNota]);
-  const alternarProductoNota = (idProductoFactura: number) => {
-    const base = idsProductosNotaManual ?? idsProductosNotaSeleccionados;
-    const nuevo = new Set(base);
-    if (nuevo.has(idProductoFactura)) nuevo.delete(idProductoFactura);
-    else nuevo.add(idProductoFactura);
-    setIdsProductosNotaManual(nuevo);
+    return [...opcionesBase, ...opcionesCodigoPersonalizadas];
+  }, [datosParaNota, opcionesCodigoPersonalizadas]);
+  const agregarCodigoPersonalizadoNota = (
+    idProductoFactura: number,
+    codigo: string,
+  ) => {
+    const nuevoId = 1000000 + contadorOpcionCodigoRef.current++;
+    setOpcionesCodigoPersonalizadas((actual) => [
+      ...actual,
+      crearOpcionCodigoNota(nuevoId, codigo),
+    ]);
+    setValue(`codigosProducto.${idProductoFactura}`, codigo, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
-  const productosTabla = esCreacionNotaCreditoDebito
-    ? productosCandidatosNota
-    : detalle?.productos ?? [];
-  const productosNota = useMemo(
-    () =>
-      esCreacionNotaCreditoDebito
-        ? productosCandidatosNota.filter((producto) =>
-            idsProductosNotaSeleccionados.has(producto.idProductoFactura))
-        : detalle?.productos ?? [],
-    [
-      detalle?.productos,
-      esCreacionNotaCreditoDebito,
-      idsProductosNotaSeleccionados,
-      productosCandidatosNota,
-    ],
-  );
+  const seleccionarCodigoProducto = (
+    idProductoFactura: number,
+    valor: number,
+  ) => {
+    const opcion = opcionesCodigoNota.find((opcionCodigo) => opcionCodigo.num1 === valor);
+    setValue(`codigosProducto.${idProductoFactura}`, opcion?.string1 ?? "", {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+  const agregarLineaNota = () => {
+    const lineaNueva = crearLineaNotaVacia();
+    const clave = String(lineaNueva.idProductoFactura);
+
+    setValue("descuentos", { ...getValues("descuentos"), [clave]: 0 });
+    setValue("porcentajesIgv", {
+      ...getValues("porcentajesIgv"),
+      [clave]: PORCENTAJE_IGV_PREDETERMINADO,
+    });
+    setValue("afectacionesIgv", { ...getValues("afectacionesIgv"), [clave]: 0 });
+    setValue("unidadesMedida", {
+      ...getValues("unidadesMedida"),
+      [clave]: ID_UNIDAD_MEDIDA_PREDETERMINADA,
+    });
+    setValue("descripciones", { ...getValues("descripciones"), [clave]: "" });
+    setValue("valoresUnitarios", { ...getValues("valoresUnitarios"), [clave]: 0 });
+    setValue("codigosProducto", { ...getValues("codigosProducto"), [clave]: "" });
+    setDetalle((actual) =>
+      actual ? { ...actual, productos: [...actual.productos, lineaNueva] } : actual);
+  };
   const { data: opcionesAfectacionIgvBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.AFECTACION_IGV_SUNAT],
     queryFn: () =>
@@ -479,16 +551,12 @@ export function useFormularioFactura(
           .then(() => detalle.idDocumentoElectronico ?? undefined);
       }
 
-      if (!clienteNotaCreditoDebito || idsProductosNotaSeleccionados.size === 0) {
+      if (!clienteNotaCreditoDebito || detalle.productos.length === 0) {
         return Promise.resolve(undefined);
       }
 
       return facturacionService.guardarBorradorNotaCreditoDebito(
-        construirPayloadNotaCreditoDebito(
-          { ...detalle, productos: productosNota },
-          datos,
-          clienteNotaCreditoDebito,
-        ),
+        construirPayloadNotaCreditoDebito(detalle, datos, clienteNotaCreditoDebito),
       );
     },
     onSuccess: async () => {
@@ -511,15 +579,11 @@ export function useFormularioFactura(
           construirPayloadEditarNotaCreditoDebito(detalle, datos),
         );
       } else {
-        if (!clienteNotaCreditoDebito || idsProductosNotaSeleccionados.size === 0) return;
+        if (!clienteNotaCreditoDebito || detalle.productos.length === 0) return;
 
         idDocumentoElectronicoNota =
           await facturacionService.guardarBorradorNotaCreditoDebito(
-            construirPayloadNotaCreditoDebito(
-              { ...detalle, productos: productosNota },
-              datos,
-              clienteNotaCreditoDebito,
-            ),
+            construirPayloadNotaCreditoDebito(detalle, datos, clienteNotaCreditoDebito),
           );
       }
 
@@ -576,7 +640,7 @@ export function useFormularioFactura(
 
   const totalFactura = useMemo(
     () =>
-      productosNota.reduce((total, producto) => {
+      detalle?.productos.reduce((total, producto) => {
         const claveProducto = String(producto.idProductoFactura);
         const descuento =
           descuentos?.[claveProducto] ?? producto.descuentoPorcentaje;
@@ -591,18 +655,18 @@ export function useFormularioFactura(
         );
 
         return total + producto.cantidad * precioUnitario;
-      }, 0),
+      }, 0) ?? 0,
     [
       afectacionesIgv,
       descuentos,
-      productosNota,
+      detalle?.productos,
       porcentajesIgv,
       valoresUnitarios,
     ],
   );
 
   const validarTotalCuotas = (datos: DatosFormularioFactura) => {
-    if (!detalle || datos.idFormaPago === ID_FORMA_PAGO_CONTADO) {
+    if (!detalle || esNotaCreditoDebito || datos.idFormaPago === ID_FORMA_PAGO_CONTADO) {
       clearErrors("root.cuotas");
       return true;
     }
@@ -977,7 +1041,7 @@ export function useFormularioFactura(
     cargandoClienteNotaCreditoDebito:
       esCreacionNotaCreditoDebito && !clienteNotaCreditoDebito,
     requiereSeleccionProducto:
-      esCreacionNotaCreditoDebito && idsProductosNotaSeleccionados.size === 0,
+      esCreacionNotaCreditoDebito && (detalle?.productos.length ?? 0) === 0,
     guardarFactura: formulario.handleSubmit((datos) => {
       if (esNotaCreditoDebito) {
         return guardarNotaCreditoDebitoMutation.mutateAsync(datos);
@@ -1002,14 +1066,15 @@ export function useFormularioFactura(
     opcionesMoneda,
     opcionesMotivo,
     opcionesTipoDocumento,
-    idsProductosNotaSeleccionados,
-    alternarProductoNota,
-    productosNota,
-    productosTabla,
+    opcionesCodigoNota,
+    agregarCodigoPersonalizadoNota,
+    seleccionarCodigoProducto,
+    agregarLineaNota,
     quitarCuota,
     quitarProducto,
     requiereTipoCambio,
     descripciones,
+    codigosProducto,
     esNotaCreditoDebito,
     registrarDescripcion: formulario.register,
     registrarDescuento: formulario.register,

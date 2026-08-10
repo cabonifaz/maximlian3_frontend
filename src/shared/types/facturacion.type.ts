@@ -41,6 +41,7 @@ export interface RespuestaListaFacturacion {
 export interface EntradaListaFactura {
   idDocumentoElectronico: number;
   numeroFactura: string;
+  tipoDocumentoTexto: string;
   cliente: string;
   fechaEmision: string;
   formaPago: string;
@@ -55,6 +56,7 @@ export interface EntradaListaFactura {
 export interface EntradaListaFacturaApi {
   idDocumentoElectronico: number;
   numeroFactura: string;
+  tipoDocumentoTexto: string;
   clienteNombre: string;
   fechaEmision: string;
   formaPagoCodigo: string;
@@ -488,8 +490,6 @@ export interface NotaCreditoDebitoRequest {
   idMonedaMaestro: number;
   tipoCambio: number;
   idTipoOperacionMaestro: number;
-  idFormaPago: number;
-  cuotas: CuotaGuardarBorradorFactura[];
   cliente: ClienteNotaCreditoDebito;
   documentoAfectado: DocumentoAfectadoGuardarBorradorFactura;
   lineas: LineaNotaCreditoDebito[];
@@ -501,13 +501,11 @@ export interface LineaEditarNotaCreditoDebito extends LineaNotaCreditoDebito {
 }
 
 export interface EditarNotaCreditoDebitoRequest {
-  idFormaPago: number;
   numeroReferencia: string;
   idMonedaMaestro: number;
   tipoCambio: number;
   idTipoOperacionMaestro: number;
   idMotivoMaestro: number;
   lineas: LineaEditarNotaCreditoDebito[];
-  cuotas: CuotaGuardarCambiosFactura[];
   camposExtra: CampoExtraGuardarCambiosFactura[];
 }

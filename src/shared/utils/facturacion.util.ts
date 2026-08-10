@@ -163,8 +163,6 @@ export function construirPayloadNotaCreditoDebito(
     idMonedaMaestro: datos.idMonedaMaestro,
     tipoCambio: datos.tipoCambio ?? 0,
     idTipoOperacionMaestro: datos.idTipoOperacionMaestro,
-    idFormaPago: datos.idFormaPago,
-    cuotas: construirCuotasBorrador(detalle, datos),
     cliente,
     documentoAfectado: {
       idDocumentoElectronicoRelacionado: detalle.idDocumentoElectronico ?? 0,
@@ -176,7 +174,7 @@ export function construirPayloadNotaCreditoDebito(
       const valorUnitario = datos.valoresUnitarios[claveProducto] ?? producto.valorUnitario;
 
       return {
-        productoCodigo: producto.codigo,
+        productoCodigo: datos.codigosProducto[claveProducto] ?? producto.codigo,
         productoSunatCodigo: producto.productoSunatCodigo,
         descripcion: datos.descripciones[claveProducto] ?? producto.descripcion,
         idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
@@ -235,7 +233,6 @@ export function construirPayloadEditarNotaCreditoDebito(
   datos: DatosFormularioFactura,
 ): EditarNotaCreditoDebitoRequest {
   return {
-    idFormaPago: datos.idFormaPago,
     numeroReferencia: "",
     idMonedaMaestro: datos.idMonedaMaestro,
     tipoCambio: datos.tipoCambio ?? 0,
@@ -247,7 +244,7 @@ export function construirPayloadEditarNotaCreditoDebito(
       const valorUnitario = datos.valoresUnitarios[claveProducto] ?? producto.valorUnitario;
 
       return {
-        productoCodigo: producto.codigo,
+        productoCodigo: datos.codigosProducto[claveProducto] ?? producto.codigo,
         productoSunatCodigo: producto.productoSunatCodigo,
         descripcion: datos.descripciones[claveProducto] ?? producto.descripcion,
         idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
@@ -259,7 +256,6 @@ export function construirPayloadEditarNotaCreditoDebito(
         idLineaDocumentoElectronico: producto.idLineaDocumentoElectronico,
       };
     }),
-    cuotas: construirCuotasCambios(detalle, datos),
     camposExtra: construirCamposExtraCambios(detalle),
   };
 }

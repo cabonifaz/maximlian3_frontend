@@ -68,6 +68,11 @@ export function CustomFilaListadoFactura({
         {factura.numeroFactura}
       </td>
       <td className='px-6 py-4'>
+        <span className='block whitespace-normal break-words text-sm text-slate-600'>
+          {factura.tipoDocumentoTexto}
+        </span>
+      </td>
+      <td className='px-6 py-4'>
         <span
           className='block truncate text-sm text-slate-600'
           title={factura.cliente}
