@@ -41,6 +41,7 @@ export interface RespuestaListaFacturacion {
 export interface EntradaListaFactura {
   idDocumentoElectronico: number;
   numeroFactura: string;
+  tipoDocumentoTexto: string;
   cliente: string;
   fechaEmision: string;
   formaPago: string;
@@ -55,6 +56,7 @@ export interface EntradaListaFactura {
 export interface EntradaListaFacturaApi {
   idDocumentoElectronico: number;
   numeroFactura: string;
+  tipoDocumentoTexto: string;
   clienteNombre: string;
   fechaEmision: string;
   formaPagoCodigo: string;
@@ -208,6 +210,8 @@ export interface DetalleFactura {
   tipoCambio: number;
   idTipoOperacionMaestro: number;
   idFormaPago: number;
+  idMotivoMaestro: number;
+  esNotaCreditoDebito: boolean;
   tipoDocumentoDescripcion: string;
   monedaDescripcion: string;
   tipoOperacionDescripcion: string;
@@ -273,9 +277,7 @@ export interface CuotaGuardarBorradorFactura {
 
 export interface DocumentoAfectadoGuardarBorradorFactura {
   idDocumentoElectronicoRelacionado: number;
-  tipoReferenciaCodigo: string | null;
-  motivoCodigo: string | null;
-  motivoDescripcion: string | null;
+  idMotivoMaestro: number;
 }
 
 export interface LineaGuardarBorradorFactura {
@@ -359,10 +361,19 @@ export interface CampoExtraFacturaApi {
   texto: string;
 }
 
+export interface ReferenciaDocumentoElectronicoApi {
+  idDocumentoElectronicoRelacionado: number;
+  tipoDocumentoRelacionadoCodigo: string;
+  serieRelacionada: string;
+  correlativoRelacionado: number;
+  motivoCodigo: string;
+  motivoDescripcion: string;
+}
+
 export interface ResultadoObtenerFacturaApi {
   cabecera: CabeceraFacturaApi;
   lineas: LineaFacturaApi[];
-  referencia: unknown | null;
+  referencia: ReferenciaDocumentoElectronicoApi | null;
   cuotas: CuotaFacturaApi[];
   camposExtra: CampoExtraFacturaApi[];
 }
@@ -440,4 +451,61 @@ export interface GuardarBorradorFacturaRequest {
 export interface RespuestaExportarLibroVentas {
   archivo: Blob;
   nombreArchivo: string;
+}
+
+export interface ClienteNotaCreditoDebito {
+  idTipoDocumentoSunat: number;
+  numeroDocumento: string;
+  nombre: string;
+  correo: string;
+  direccion: string;
+  paisCodigo: number;
+}
+
+export interface ProductoParaNotaApi {
+  numeroLinea: number;
+  productoCodigo: string;
+}
+
+export interface ResultadoParaNotaApi {
+  cliente: ClienteNotaCreditoDebito;
+  productos: ProductoParaNotaApi[];
+}
+
+export interface LineaNotaCreditoDebito {
+  productoCodigo: string;
+  productoSunatCodigo: string | null;
+  descripcion: string;
+  idUnidadMedidaMaestro: number;
+  cantidad: number;
+  valorUnitario: number;
+  montoDescuento: number;
+  idAfectacionIgvMaestro: number;
+  porcentajeIgv: number;
+}
+
+export interface NotaCreditoDebitoRequest {
+  idTipoDocumentoMaestro: number;
+  numeroReferencia: string;
+  idMonedaMaestro: number;
+  tipoCambio: number;
+  idTipoOperacionMaestro: number;
+  cliente: ClienteNotaCreditoDebito;
+  documentoAfectado: DocumentoAfectadoGuardarBorradorFactura;
+  lineas: LineaNotaCreditoDebito[];
+  camposExtra: CampoExtraGuardarBorradorFactura[];
+}
+
+export interface LineaEditarNotaCreditoDebito extends LineaNotaCreditoDebito {
+  idLineaDocumentoElectronico: number;
+}
+
+export interface EditarNotaCreditoDebitoRequest {
+  numeroReferencia: string;
+  idMonedaMaestro: number;
+  tipoCambio: number;
+  idTipoOperacionMaestro: number;
+  idMotivoMaestro: number;
+  lineas: LineaEditarNotaCreditoDebito[];
+  camposExtra: CampoExtraGuardarCambiosFactura[];
 }

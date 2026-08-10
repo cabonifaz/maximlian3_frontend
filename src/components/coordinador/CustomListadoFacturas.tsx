@@ -14,15 +14,19 @@ import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 interface PropsCustomListadoFacturas {
   onVerFactura: (factura: EntradaListaFactura) => void;
   onAnularFactura: (factura: EntradaListaFactura) => void;
+  onCrearNotaCreditoDebito: (factura: EntradaListaFactura) => void;
+  onEditarFactura: (factura: EntradaListaFactura) => void;
 }
 
 export function CustomListadoFacturas({
   onVerFactura,
   onAnularFactura,
+  onCrearNotaCreditoDebito,
+  onEditarFactura,
 }: PropsCustomListadoFacturas) {
   const listado = useListadoFacturas();
   const columnas = COLUMNAS_LISTADO_FACTURAS.map((columna, indice) => {
-    if (indice === 2) {
+    if (indice === 3) {
       return {
         ...columna,
         label: (
@@ -38,7 +42,7 @@ export function CustomListadoFacturas({
       };
     }
 
-    if (indice === 3) {
+    if (indice === 4) {
       return {
         ...columna,
         label: (
@@ -52,7 +56,7 @@ export function CustomListadoFacturas({
       };
     }
 
-    if (indice === 5) {
+    if (indice === 6) {
       return {
         ...columna,
         label: (
@@ -77,6 +81,16 @@ export function CustomListadoFacturas({
   const anularFactura = (factura: EntradaListaFactura) => {
     listado.cerrarMenu();
     onAnularFactura(factura);
+  };
+
+  const crearNotaCreditoDebito = (factura: EntradaListaFactura) => {
+    listado.cerrarMenu();
+    onCrearNotaCreditoDebito(factura);
+  };
+
+  const editarFactura = (factura: EntradaListaFactura) => {
+    listado.cerrarMenu();
+    onEditarFactura(factura);
   };
 
   return (
@@ -119,6 +133,8 @@ export function CustomListadoFacturas({
             onGenerarUrl={listado.abrirEnlace}
             onVer={verFactura}
             onAnular={anularFactura}
+            onCrearNotaCreditoDebito={crearNotaCreditoDebito}
+            onEditar={editarFactura}
             onAlternarDescarga={listado.alternarSubmenuDescarga}
             onDescargar={listado.descargarFactura}
             onVerErrores={listado.abrirErrores}
