@@ -133,8 +133,13 @@ export function useListadoFacturas() {
     }
 
     const rectangulo = evento.currentTarget.getBoundingClientRect();
+    const altoMenu = 260;
+    const espacioInferior = window.innerHeight - rectangulo.bottom;
+    const top = espacioInferior < altoMenu
+      ? rectangulo.top - altoMenu - 4
+      : rectangulo.bottom + 4;
     setEstiloMenu({
-      top: rectangulo.bottom + 4,
+      top,
       right: window.innerWidth - rectangulo.right,
     });
     setIdMenuActivo(factura.idDocumentoElectronico);

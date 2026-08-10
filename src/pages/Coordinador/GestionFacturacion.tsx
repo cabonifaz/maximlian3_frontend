@@ -8,6 +8,7 @@ import { CustomModalFactura } from "@maximilian/components/coordinador/CustomMod
 import { CustomModalFacturasCliente } from "@maximilian/components/coordinador/CustomModalFacturasCliente";
 import { useFiltrosFacturacion } from "@maximilian/hooks/useFiltrosFacturacion";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
+import type { ModoFormularioFactura } from "@maximilian/hooks/useFormularioFactura";
 import { facturacionService } from "@maximilian/services/facturacion.service";
 import {
   COLUMNAS_FACTURACION,
@@ -38,7 +39,7 @@ export default function GestionFacturacion() {
   const [clienteSeleccionado, setClienteSeleccionado] = useState<EntradaFacturacion | null>(null);
   const [estaCargandoModalFactura, setEstaCargandoModalFactura] = useState(false);
   const [modalFactura, setModalFactura] = useState<{
-    modo: "emitir" | "detalle";
+    modo: ModoFormularioFactura;
     detalle: DetalleFactura | null;
     productosIniciales: EntradaProductoFacturable[];
     abrirAnulacionInicial?: boolean;
@@ -201,6 +202,43 @@ export default function GestionFacturacion() {
     }
   };
 
+  const abrirNotaCreditoDebito = async (factura: EntradaListaFactura) => {
+    setEstaCargandoModalFactura(true);
+    try {
+      const detalle = await facturacionService.obtenerDetalleFacturaPorDocumento(
+        factura.idDocumentoElectronico,
+        ID_ESTADO_FACTURA_APROBADA,
+      );
+      setModalFactura({
+        modo: "notaCreditoDebito",
+        detalle,
+        productosIniciales: [],
+      });
+    } catch {
+      return;
+    } finally {
+      setEstaCargandoModalFactura(false);
+    }
+  };
+
+  const abrirEdicionFacturaListado = async (factura: EntradaListaFactura) => {
+    setEstaCargandoModalFactura(true);
+    try {
+      const detalle = await facturacionService.obtenerDetalleFacturaPorDocumento(
+        factura.idDocumentoElectronico,
+      );
+      setModalFactura({
+        modo: detalle.esNotaCreditoDebito ? "editarNotaCreditoDebito" : "emitir",
+        detalle,
+        productosIniciales: [],
+      });
+    } catch {
+      return;
+    } finally {
+      setEstaCargandoModalFactura(false);
+    }
+  };
+
   const abrirEmisionFactura = async (facturacion: EntradaFacturacion, factura?: EntradaFacturaCliente | null) => {
     setEstaCargandoModalFactura(true);
     try {
@@ -255,17 +293,11 @@ export default function GestionFacturacion() {
         </span>
       </td>
       <td className="px-6 py-4 text-center text-sm font-medium text-slate-600">
-        {facturacion.prefacturable === null ? (
-          <span className="text-slate-400">-</span>
-        ) : (
-          <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${
-            facturacion.prefacturable
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-red-100 text-red-700"
-          }`}>
-            {facturacion.prefacturable ? "Sí" : "No"}
-          </span>
-        )}
+        {facturacion.prefacturable === null
+          ? "-"
+          : facturacion.prefacturable
+            ? "Sí"
+            : "No"}
       </td>
       <td className="px-6 py-4 text-center text-sm font-medium text-slate-600">
         {facturacion.totalPedidos}
@@ -378,6 +410,12 @@ export default function GestionFacturacion() {
           }}
           onAnularFactura={(factura) => {
             void abrirDetalleFacturaListado(factura, true);
+          }}
+          onCrearNotaCreditoDebito={(factura) => {
+            void abrirNotaCreditoDebito(factura);
+          }}
+          onEditarFactura={(factura) => {
+            void abrirEdicionFacturaListado(factura);
           }}
         />
       ) : (

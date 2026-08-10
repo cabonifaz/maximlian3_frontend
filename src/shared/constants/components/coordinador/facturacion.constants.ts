@@ -1,5 +1,4 @@
 import type {
-  EntradaListaFactura,
   EntradaProductoFacturable,
   EstadoFacturaCliente,
   IdEstadoFacturacionActualizable,
@@ -25,13 +24,14 @@ export type PestanaGestionFacturacion =
   (typeof PESTANAS_GESTION_FACTURACION)[number]['id'];
 
 export const COLUMNAS_LISTADO_FACTURAS = [
-  { label: 'Número de factura', width: '16%' },
-  { label: 'Cliente', width: '24%' },
-  { label: 'Fecha de emisión', className: 'text-center', width: '13%' },
-  { label: 'Forma de pago', className: 'text-center', width: '13%' },
-  { label: 'Importe total', className: 'text-right', width: '13%' },
-  { label: 'Estado', className: 'text-center', width: '12%' },
-  { label: '', className: 'text-right', width: '9%' },
+  { label: 'Número de documento', width: '15%' },
+  { label: 'Tipo', width: '15%' },
+  { label: 'Cliente', width: '19%' },
+  { label: 'Fecha de emisión', className: 'text-center', width: '12%' },
+  { label: 'Forma de pago', className: 'text-center', width: '12%' },
+  { label: 'Importe total', className: 'text-right', width: '12%' },
+  { label: 'Estado', className: 'text-center', width: '10%' },
+  { label: '', className: 'text-right', width: '5%' },
 ];
 
 export const OPCIONES_ESTADO_FACTURA_MOCK = [
@@ -49,104 +49,7 @@ export const OPCIONES_FORMA_PAGO_FACTURA_MOCK = [
 export const CANTIDAD_FACTURAS_POR_PAGINA_MOCK = 5;
 export const TAMANO_PAGINA_LISTADO_FACTURAS = 10;
 export const ESTADO_CODIGO_FACTURA_ACEPTADA = "Aceptado";
-
-export const FACTURAS_MOCK = [
-  {
-    idDocumentoElectronico: 101,
-    numeroFactura: 'F001-00001234',
-    cliente: 'Corporacion Andina S.A.C.',
-    fechaEmision: '2026-08-04',
-    formaPago: 'Contado',
-    moneda: 'PEN',
-    monedaIcono: 'S/',
-    totalImporte: 2450,
-    estado: 'Aceptada',
-  },
-  {
-    idDocumentoElectronico: 102,
-    numeroFactura: 'F001-00001233',
-    cliente: 'Inversiones del Pacifico S.R.L.',
-    fechaEmision: '2026-08-02',
-    formaPago: 'Crédito',
-    moneda: 'USD',
-    monedaIcono: '$',
-    totalImporte: 1860.5,
-    estado: 'Pendiente',
-  },
-  {
-    idDocumentoElectronico: 103,
-    numeroFactura: 'F001-00001232',
-    cliente: 'Servicios Integrales del Sur S.A.',
-    fechaEmision: '2026-07-30',
-    formaPago: 'Contado',
-    moneda: 'PEN',
-    monedaIcono: 'S/',
-    totalImporte: 980,
-    estado: 'Aceptada',
-  },
-  {
-    idDocumentoElectronico: 104,
-    numeroFactura: 'F001-00001231',
-    cliente: 'Comercializadora Norte E.I.R.L.',
-    fechaEmision: '2026-07-28',
-    formaPago: 'Crédito',
-    moneda: 'PEN',
-    monedaIcono: 'S/',
-    totalImporte: 3720,
-    estado: 'Rechazada',
-  },
-  {
-    idDocumentoElectronico: 105,
-    numeroFactura: 'F001-00001230',
-    cliente: 'Grupo Empresarial Los Andes',
-    fechaEmision: '2026-07-25',
-    formaPago: 'Contado',
-    moneda: 'USD',
-    monedaIcono: '$',
-    totalImporte: 1250,
-    estado: 'Anulada',
-  },
-  {
-    idDocumentoElectronico: 106,
-    numeroFactura: 'F001-00001229',
-    cliente: 'Tecnologia y Gestion S.A.C.',
-    fechaEmision: '2026-07-21',
-    formaPago: 'Crédito',
-    moneda: 'PEN',
-    monedaIcono: 'S/',
-    totalImporte: 4610.75,
-    estado: 'Aceptada',
-  },
-  {
-    idDocumentoElectronico: 107,
-    numeroFactura: 'F001-00001228',
-    cliente: 'Consultores Asociados del Peru',
-    fechaEmision: '2026-07-18',
-    formaPago: 'Contado',
-    moneda: 'PEN',
-    monedaIcono: 'S/',
-    totalImporte: 730,
-    estado: 'Pendiente',
-  },
-  {
-    idDocumentoElectronico: 108,
-    numeroFactura: 'F001-00001227',
-    cliente: 'Distribuidora Central S.A.C.',
-    fechaEmision: '2026-07-15',
-    formaPago: 'Crédito',
-    moneda: 'USD',
-    monedaIcono: '$',
-    totalImporte: 2195,
-    estado: 'Aceptada',
-  },
-] satisfies EntradaListaFactura[];
-
-export const CLASES_ESTADO_LISTADO_FACTURA: Record<string, string> = {
-  Aceptada: 'bg-emerald-100 text-emerald-700',
-  Pendiente: 'bg-amber-100 text-amber-700',
-  Rechazada: 'bg-red-100 text-red-700',
-  Anulada: 'bg-slate-200 text-slate-600',
-};
+export const ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO = "Pendiente Envio";
 
 export const ESTILOS_ESTADO_FACTURA_CLIENTE: Record<
   EstadoFacturaCliente,
@@ -231,6 +134,10 @@ export const ID_FORMA_PAGO_CONTADO = 1;
 export const ID_TIPO_DOCUMENTO_SUNAT_RUC = 4;
 export const IDS_TIPO_COMPROBANTE_CLIENTE_RUC = [1, 3] as const;
 export const ID_TIPO_COMPROBANTE_BOLETA = 3;
+export const ID_TIPO_NOTA_CREDITO = 7;
+export const ID_TIPO_NOTA_DEBITO = 8;
+export const CODIGO_SUNAT_NOTA_CREDITO = "07";
+export const CODIGO_SUNAT_NOTA_DEBITO = "08";
 export const ID_TIPO_OPERACION_SUNAT_EXPORTACION_SERVICIOS = 5;
 export const ID_AFECTACION_IGV_PERU = 10;
 export const ID_AFECTACION_IGV_EXTRANJERO = 40;
