@@ -4,7 +4,7 @@ export const esquemaFormularioFactura = z.object({
   idTipoDocumentoMaestro: z.number().positive("El tipo de comprobante es requerido"),
   idMonedaMaestro: z.number().positive("La moneda es requerida"),
   idTipoOperacionMaestro: z.number().positive("El tipo de operación es requerido"),
-  idFormaPago: z.number().positive("La forma de pago es requerida"),
+  idFormaPago: z.number().optional(),
   tipoCambio: z.number({ error: "Ingrese un tipo de cambio válido" })
     .positive("El tipo de cambio debe ser mayor a 0")
     .optional(),
