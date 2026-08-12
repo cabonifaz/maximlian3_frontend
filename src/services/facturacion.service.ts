@@ -188,8 +188,10 @@ function mapearProductoFacturable(
 
 function buscarOpcionTablaMaestra(
   opciones: EntradaTablaMaestra[],
-  codigo: string,
+  codigo: string | null | undefined,
 ) {
+  if (!codigo) return undefined;
+
   const codigoNormalizado = codigo.trim().toLowerCase();
 
   return opciones.find((opcion) => {
@@ -356,7 +358,7 @@ async function obtenerFacturaRegistrada(
         total: linea.totalLinea,
       };
     }),
-    cuotas: cuotas.map((cuota) => ({
+    cuotas: (cuotas ?? []).map((cuota) => ({
       idCuotaFactura: cuota.idCuotaDocumentoElectronico,
       idCuotaDocumentoElectronico:
         cuota.idCuotaDocumentoElectronico,
