@@ -61,7 +61,10 @@ import {
   obtenerTexto,
 } from "@maximilian/shared/utils/normalizacion-respuesta.util";
 
-const TIPO_ARCHIVO_DESCARGA_FACTURA: Record<FormatoDescargaFactura, "Pdf" | "Xml"> = {
+const TIPO_ARCHIVO_DESCARGA_FACTURA: Record<
+  FormatoDescargaFactura,
+  "Pdf" | "Xml"
+> = {
   pdf: "Pdf",
   xml: "Xml",
 };
@@ -161,7 +164,6 @@ function mapearPedidoFacturacion(
   };
 }
 
-
 function mapearProductoFacturable(
   pedido: EntradaProductoFacturableApi,
 ): EntradaProductoFacturable {
@@ -169,9 +171,10 @@ function mapearProductoFacturable(
     .trim()
     .toLowerCase()
     .replaceAll(" ", "-");
-  const tipo = tipoNormalizado === "express" || tipoNormalizado === "super-flash"
-    ? tipoNormalizado
-    : "normal";
+  const tipo =
+    tipoNormalizado === "express" || tipoNormalizado === "super-flash"
+      ? tipoNormalizado
+      : "normal";
 
   return {
     idProductoFacturable: pedido.idPedido,
@@ -188,6 +191,7 @@ function mapearProductoFacturable(
 
 function buscarOpcionTablaMaestra(
   opciones: EntradaTablaMaestra[],
+
   codigo: string | null | undefined,
 ) {
   if (!codigo) return undefined;
@@ -201,9 +205,11 @@ function buscarOpcionTablaMaestra(
       .trim()
       .toLowerCase();
 
-    return opcion.string1?.trim().toLowerCase() === codigoNormalizado
-      || opcion.string2?.trim().toLowerCase() === codigoNormalizado
-      || etiqueta === codigoNormalizado;
+    return (
+      opcion.string1?.trim().toLowerCase() === codigoNormalizado ||
+      opcion.string2?.trim().toLowerCase() === codigoNormalizado ||
+      etiqueta === codigoNormalizado
+    );
   });
 }
 
@@ -255,24 +261,26 @@ async function obtenerFacturaRegistrada(
 
   const { cabecera, lineas, cuotas, camposExtra, referencia } = data.result;
   const esNotaCreditoDebito =
-    cabecera.tipoDocumentoCodigo === CODIGO_SUNAT_NOTA_CREDITO
-    || cabecera.tipoDocumentoCodigo === CODIGO_SUNAT_NOTA_DEBITO;
+    cabecera.tipoDocumentoCodigo === CODIGO_SUNAT_NOTA_CREDITO ||
+    cabecera.tipoDocumentoCodigo === CODIGO_SUNAT_NOTA_DEBITO;
   const idMaestroTipoDocumento = esNotaCreditoDebito
     ? TablaMaestraId.TIPO_NOTA_CREDITO_DEBITO
     : TablaMaestraId.TIPO_DOCUMENTO_COMPROBANTE;
-  const idMaestroMotivo = cabecera.tipoDocumentoCodigo === CODIGO_SUNAT_NOTA_DEBITO
-    ? TablaMaestraId.SUNAT_MOTIVO_NOTA_DEBITO
-    : TablaMaestraId.SUNAT_MOTIVO_NOTA_CREDITO;
+  const idMaestroMotivo =
+    cabecera.tipoDocumentoCodigo === CODIGO_SUNAT_NOTA_DEBITO
+      ? TablaMaestraId.SUNAT_MOTIVO_NOTA_DEBITO
+      : TablaMaestraId.SUNAT_MOTIVO_NOTA_CREDITO;
   const opcionTipoDocumento = buscarOpcionTablaMaestra(
     opcionesPorMaestro[idMaestroTipoDocumento] ?? [],
     cabecera.tipoDocumentoCodigo,
   );
-  const opcionMotivo = esNotaCreditoDebito && referencia
-    ? buscarOpcionTablaMaestra(
-        opcionesPorMaestro[idMaestroMotivo] ?? [],
-        referencia.motivoCodigo,
-      )
-    : undefined;
+  const opcionMotivo =
+    esNotaCreditoDebito && referencia
+      ? buscarOpcionTablaMaestra(
+          opcionesPorMaestro[idMaestroMotivo] ?? [],
+          referencia.motivoCodigo,
+        )
+      : undefined;
   const opcionTipoOperacion = buscarOpcionTablaMaestra(
     opcionesPorMaestro[TablaMaestraId.TIPO_OPERACION_SUNAT] ?? [],
     cabecera.tipoOperacionCodigo,
@@ -303,11 +311,9 @@ async function obtenerFacturaRegistrada(
     idFormaPago: opcionFormaPago?.num1 ?? 0,
     idMotivoMaestro: opcionMotivo?.num1 ?? 0,
     esNotaCreditoDebito,
-    tipoDocumentoDescripcion:
-      obtenerEtiquetaTablaMaestra(opcionTipoDocumento),
+    tipoDocumentoDescripcion: obtenerEtiquetaTablaMaestra(opcionTipoDocumento),
     monedaDescripcion: obtenerEtiquetaTablaMaestra(opcionMoneda),
-    tipoOperacionDescripcion:
-      obtenerEtiquetaTablaMaestra(opcionTipoOperacion),
+    tipoOperacionDescripcion: obtenerEtiquetaTablaMaestra(opcionTipoOperacion),
     formaPagoDescripcion: obtenerEtiquetaTablaMaestra(opcionFormaPago),
     cliente: cabecera.clienteNombre,
     ni: cabecera.clienteNumeroDocumento,
@@ -317,7 +323,8 @@ async function obtenerFacturaRegistrada(
     ),
     fechaEmision: formatearFechaIsoADdMmYyyy(cabecera.fechaEmision),
     camposExtra: (camposExtra ?? []).map((campoExtra) => ({
-      idCampoExtraDocumentoElectronico: campoExtra.idCampoExtraDocumentoElectronico,
+      idCampoExtraDocumentoElectronico:
+        campoExtra.idCampoExtraDocumentoElectronico,
       texto: campoExtra.texto,
     })),
     productos: lineas.map((linea) => {
@@ -339,8 +346,7 @@ async function obtenerFacturaRegistrada(
         ),
         codigo: linea.productoCodigo,
         numeroLinea: linea.numeroLinea,
-        idLineaDocumentoElectronico:
-          linea.idLineaDocumentoElectronico,
+        idLineaDocumentoElectronico: linea.idLineaDocumentoElectronico,
         productoSunatCodigo: linea.productoSunatCodigo,
         idUnidadMedidaMaestro: opcionUnidadMedida?.num1 ?? 0,
         unidadMedidaDescripcion:
@@ -348,7 +354,7 @@ async function obtenerFacturaRegistrada(
         cantidad: linea.cantidad,
         descripcion: linea.descripcion,
         descuentoPorcentaje:
-          subtotal > 0 ? linea.montoDescuento / subtotal * 100 : 0,
+          subtotal > 0 ? (linea.montoDescuento / subtotal) * 100 : 0,
         valorUnitario: linea.valorUnitario,
         precioUnitario: linea.precioUnitario,
         porcentajeIgv: linea.porcentajeIgv,
@@ -360,8 +366,7 @@ async function obtenerFacturaRegistrada(
     }),
     cuotas: (cuotas ?? []).map((cuota) => ({
       idCuotaFactura: cuota.idCuotaDocumentoElectronico,
-      idCuotaDocumentoElectronico:
-        cuota.idCuotaDocumentoElectronico,
+      idCuotaDocumentoElectronico: cuota.idCuotaDocumentoElectronico,
       numeroCuota: cuota.numeroCuota,
       idMoneda: opcionMoneda?.num1 ?? 0,
       monto: cuota.monto,
@@ -621,10 +626,7 @@ export const facturacionService = {
   ): Promise<number> => {
     const { data } = await maximilianService.post<
       ApiResponse<ResultadoGuardarBorradorFactura>
-    >(
-      ENDPOINTS_FACTURACION.guardarBorrador,
-      solicitud,
-    );
+    >(ENDPOINTS_FACTURACION.guardarBorrador, solicitud);
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
       throw new ErrorRespuestaApi(data);
@@ -748,9 +750,9 @@ export const facturacionService = {
   obtenerErroresUltimoEnvio: async (
     idDocumentoElectronico: number,
   ): Promise<ErrorDocumentoFactura[]> => {
-    const { data } = await maximilianService.get<ApiResponse<ErrorDocumentoFactura[] | null>>(
-      ENDPOINTS_FACTURACION.erroresUltimoEnvio(idDocumentoElectronico),
-    );
+    const { data } = await maximilianService.get<
+      ApiResponse<ErrorDocumentoFactura[] | null>
+    >(ENDPOINTS_FACTURACION.erroresUltimoEnvio(idDocumentoElectronico));
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
       throw new ErrorRespuestaApi(data);
