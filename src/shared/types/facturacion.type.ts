@@ -305,7 +305,7 @@ export interface CabeceraFacturaApi {
   monedaCodigo: string;
   tipoCambio: number | null;
   tipoOperacionCodigo: string;
-  formaPagoCodigo: string;
+  formaPagoCodigo: string | null;
   empresaRuc: string;
   empresaRazonSocial: string;
   empresaNombreComercial: string;
@@ -366,15 +366,15 @@ export interface ReferenciaDocumentoElectronicoApi {
   tipoDocumentoRelacionadoCodigo: string;
   serieRelacionada: string;
   correlativoRelacionado: number;
-  motivoCodigo: string;
-  motivoDescripcion: string;
+  motivoCodigo: string | null;
+  motivoDescripcion: string | null;
 }
 
 export interface ResultadoObtenerFacturaApi {
   cabecera: CabeceraFacturaApi;
   lineas: LineaFacturaApi[];
   referencia: ReferenciaDocumentoElectronicoApi | null;
-  cuotas: CuotaFacturaApi[];
+  cuotas: CuotaFacturaApi[] | null;
   camposExtra: CampoExtraFacturaApi[];
 }
 

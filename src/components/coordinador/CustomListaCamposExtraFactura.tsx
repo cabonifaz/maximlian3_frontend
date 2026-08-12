@@ -51,35 +51,6 @@ export function CustomListaCamposExtraFactura({
         Campos extra
       </CustomLabel>
 
-      {!soloLectura ? (
-        <div className="flex gap-2">
-          <input
-            id="factura-campos-extra-nuevo"
-            value={textoNuevo}
-            maxLength={LIMITE_CARACTERES_CAMPO_EXTRA_FACTURA}
-            onChange={(evento) => setTextoNuevo(evento.target.value)}
-            onKeyDown={(evento) => {
-              if (evento.key === "Enter") {
-                evento.preventDefault();
-                agregarCampoExtra();
-              }
-            }}
-            placeholder="Ej. Información adicional para la factura"
-            className="w-full rounded-xl border border-gray-200 bg-brand-white px-4 py-2.5 text-sm text-slate-700 outline-none transition-all focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
-          />
-          <CustomButton
-            type="button"
-            variant="secondary"
-            size="compact"
-            disabled={!textoNuevo.trim()}
-            onClick={agregarCampoExtra}
-          >
-            <Plus size={14} />
-            Agregar
-          </CustomButton>
-        </div>
-      ) : null}
-
       {camposExtra.length > 0 ? (
         <ul className="space-y-2">
           {camposExtra.map((campoExtra, indice) => {
@@ -144,6 +115,34 @@ export function CustomListaCamposExtraFactura({
             : "Agrega líneas de información adicional para la factura."}
         </p>
       )}
+      {!soloLectura ? (
+        <div className="flex gap-2">
+          <input
+            id="factura-campos-extra-nuevo"
+            value={textoNuevo}
+            maxLength={LIMITE_CARACTERES_CAMPO_EXTRA_FACTURA}
+            onChange={(evento) => setTextoNuevo(evento.target.value)}
+            onKeyDown={(evento) => {
+              if (evento.key === "Enter") {
+                evento.preventDefault();
+                agregarCampoExtra();
+              }
+            }}
+            placeholder="Ej. Información adicional para la factura"
+            className="w-full rounded-xl border border-gray-200 bg-brand-white px-4 py-2.5 text-sm text-slate-700 outline-none transition-all focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10"
+          />
+          <CustomButton
+            type="button"
+            variant="secondary"
+            size="compact"
+            disabled={!textoNuevo.trim()}
+            onClick={agregarCampoExtra}
+          >
+            <Plus size={14} />
+            Agregar
+          </CustomButton>
+        </div>
+      ) : null}
     </div>
   );
 }
