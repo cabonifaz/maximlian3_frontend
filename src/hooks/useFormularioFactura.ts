@@ -59,19 +59,20 @@ const resolverFormularioFactura = (
   esNotaCreditoDebito: boolean,
 ): Resolver<DatosFormularioFactura> => async (...args) => {
   const resultado = await zodResolver(esquemaFormularioFactura)(...args);
+  const [datos] = args;
 
   if (esNotaCreditoDebito) {
-    const [datos] = args;
     if (!datos.idMotivoMaestro || datos.idMotivoMaestro <= 0) {
       resultado.errors = {
         ...resultado.errors,
         idMotivoMaestro: { type: "custom", message: "El código de motivo es requerido" },
       };
     }
-
-    const erroresSinFormaPago = { ...resultado.errors };
-    delete erroresSinFormaPago.idFormaPago;
-    resultado.errors = erroresSinFormaPago;
+  } else if (!datos.idFormaPago || datos.idFormaPago <= 0) {
+    resultado.errors = {
+      ...resultado.errors,
+      idFormaPago: { type: "custom", message: "La forma de pago es requerida" },
+    };
   }
 
   return resultado;

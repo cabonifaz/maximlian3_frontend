@@ -303,13 +303,12 @@ export function CustomModalFactura({
                     .join(" - ")}
                   error={erroresFormulario.idMotivoMaestro?.message}
                 />
-              ) : (
-                <CustomListaCamposExtraFactura
-                  camposExtra={detalle.camposExtra}
-                  soloLectura={soloLectura}
-                  onChange={actualizarCamposExtra}
-                />
-              )}
+              ) : null}
+              <CustomListaCamposExtraFactura
+                camposExtra={detalle.camposExtra}
+                soloLectura={soloLectura}
+                onChange={actualizarCamposExtra}
+              />
             </div>
 
             <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -317,12 +316,12 @@ export function CustomModalFactura({
                 <div>
                   <h3 className="text-sm font-bold text-brand-black">Productos y servicios</h3>
                   <p className="mt-0.5 text-xs text-slate-400">
-                    {modo === "notaCreditoDebito"
+                    {esNotaCreditoDebito
                       ? "Agrega manualmente las líneas que deseas incluir en la nota."
                       : "Detalle de conceptos incluidos en la factura."}
                   </p>
                 </div>
-                {!soloLectura && modo === "notaCreditoDebito" ? (
+                {!soloLectura && esNotaCreditoDebito ? (
                   <CustomButton
                     type="button"
                     variant="secondary"
@@ -425,7 +424,7 @@ export function CustomModalFactura({
                           )}
                         </td>
                         <td className="w-48 min-w-48 max-w-48 px-4 py-3">
-                          {soloLectura || modo === "notaCreditoDebito" ? (
+                          {soloLectura || esNotaCreditoDebito ? (
                             <span className="text-slate-600">
                               {producto.unidadMedidaDescripcion
                                 || producto.idUnidadMedidaMaestro}

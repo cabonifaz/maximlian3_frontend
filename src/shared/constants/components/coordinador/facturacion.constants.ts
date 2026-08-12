@@ -24,13 +24,13 @@ export type PestanaGestionFacturacion =
   (typeof PESTANAS_GESTION_FACTURACION)[number]['id'];
 
 export const COLUMNAS_LISTADO_FACTURAS = [
-  { label: 'Número de documento', width: '15%' },
-  { label: 'Tipo', width: '15%' },
+  { label: 'Número de documento', width: '14%' },
+  { label: 'Tipo', width: '14%' },
   { label: 'Cliente', width: '19%' },
-  { label: 'Fecha de emisión', className: 'text-center', width: '12%' },
-  { label: 'Forma de pago', className: 'text-center', width: '12%' },
-  { label: 'Importe total', className: 'text-right', width: '12%' },
-  { label: 'Estado', className: 'text-center', width: '10%' },
+  { label: 'Fecha de emisión', className: 'text-center', width: '11%' },
+  { label: 'Forma de pago', className: 'text-center', width: '11%' },
+  { label: 'Importe total', className: 'text-right', width: '11%' },
+  { label: 'Estado', className: 'text-center', width: '15%' },
   { label: '', className: 'text-right', width: '5%' },
 ];
 

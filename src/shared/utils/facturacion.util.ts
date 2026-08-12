@@ -128,7 +128,7 @@ export function construirPayloadGuardarBorradorFactura(
     idMonedaMaestro: datos.idMonedaMaestro,
     tipoCambio: datos.tipoCambio ?? 0,
     idTipoOperacionMaestro: datos.idTipoOperacionMaestro,
-    idFormaPago: datos.idFormaPago,
+    idFormaPago: datos.idFormaPago ?? 0,
     cuotas: construirCuotasBorrador(detalle, datos),
     idCliente: detalle.idCliente,
     documentoAfectado: null,
@@ -194,7 +194,7 @@ export function construirPayloadGuardarCambiosFactura(
   datos: DatosFormularioFactura,
 ): GuardarCambiosFacturaRequest {
   return {
-    idFormaPago: datos.idFormaPago,
+    idFormaPago: datos.idFormaPago ?? 0,
     numeroReferencia: "",
     idMonedaMaestro: datos.idMonedaMaestro,
     tipoCambio: datos.tipoCambio ?? 0,
