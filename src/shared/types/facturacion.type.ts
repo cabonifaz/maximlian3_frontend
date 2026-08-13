@@ -42,6 +42,7 @@ export interface EntradaListaFactura {
   idDocumentoElectronico: number;
   numeroFactura: string;
   tipoDocumentoTexto: string;
+  documentoAfectado: string | null;
   cliente: string;
   fechaEmision: string;
   formaPago: string;
@@ -57,6 +58,7 @@ export interface EntradaListaFacturaApi {
   idDocumentoElectronico: number;
   numeroFactura: string;
   tipoDocumentoTexto: string;
+  documentoAfectado: string | null;
   clienteNombre: string;
   fechaEmision: string;
   formaPagoCodigo: string;
