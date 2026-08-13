@@ -200,7 +200,10 @@ export function useFormularioFactura(
 ) {
   const esCreacionNotaCreditoDebito = modo === "notaCreditoDebito";
   const esEdicionNotaCreditoDebito = modo === "editarNotaCreditoDebito";
-  const esNotaCreditoDebito = esCreacionNotaCreditoDebito || esEdicionNotaCreditoDebito;
+  const esVistaNotaCreditoDebito =
+    modo === "detalle" && Boolean(factura?.esNotaCreditoDebito);
+  const esNotaCreditoDebito =
+    esCreacionNotaCreditoDebito || esEdicionNotaCreditoDebito || esVistaNotaCreditoDebito;
   const queryClient = useQueryClient();
   const [detalle, setDetalle] = useState<DetalleFactura | null>(() =>
     factura
@@ -246,9 +249,9 @@ export function useFormularioFactura(
       descripciones: obtenerDescripcionesIniciales(detalle),
       valoresUnitarios: obtenerValoresUnitariosIniciales(detalle),
       codigosProducto: obtenerCodigosProductoIniciales(detalle),
-      idMotivoMaestro: esEdicionNotaCreditoDebito
-        ? detalle?.idMotivoMaestro ?? 0
-        : 0,
+      idMotivoMaestro: esCreacionNotaCreditoDebito
+        ? 0
+        : detalle?.idMotivoMaestro ?? 0,
     },
   });
   const {
@@ -326,7 +329,9 @@ export function useFormularioFactura(
     queryKey: ["facturaParaNota", detalle?.idDocumentoElectronico],
     queryFn: () =>
       facturacionService.obtenerDatosParaNota(detalle!.idDocumentoElectronico!),
-    enabled: esNotaCreditoDebito && Boolean(detalle?.idDocumentoElectronico),
+    enabled:
+      (esCreacionNotaCreditoDebito || esEdicionNotaCreditoDebito)
+      && Boolean(detalle?.idDocumentoElectronico),
   });
   const clienteNotaCreditoDebito = datosParaNota?.cliente;
   const [opcionesCodigoPersonalizadas, setOpcionesCodigoPersonalizadas] =

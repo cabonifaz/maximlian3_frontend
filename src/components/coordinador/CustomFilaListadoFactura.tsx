@@ -71,6 +71,11 @@ export function CustomFilaListadoFactura({
         <span className='block whitespace-normal break-words text-sm text-slate-600'>
           {factura.tipoDocumentoTexto}
         </span>
+        {factura.documentoAfectado ? (
+          <span className='block text-xs text-slate-400'>
+            Ref: {factura.documentoAfectado}
+          </span>
+        ) : null}
       </td>
       <td className='px-6 py-4'>
         <span
@@ -167,18 +172,20 @@ export function CustomFilaListadoFactura({
                 <Ban size={14} />
                 Anular
               </CustomButton>
-              <CustomButton
-                variant='ghost'
-                size='sm'
-                className='w-full justify-start px-3 text-slate-700'
-                onClick={() => onCrearNotaCreditoDebito(factura)}
-                disabled={
-                  factura.estado !== ESTADO_CODIGO_FACTURA_ACEPTADA
-                }
-              >
-                <FilePlus2 size={14} />
-                Crear Nota de Crédito/Débito
-              </CustomButton>
+              {factura.documentoAfectado === null ? (
+                <CustomButton
+                  variant='ghost'
+                  size='sm'
+                  className='w-full justify-start px-3 text-slate-700'
+                  onClick={() => onCrearNotaCreditoDebito(factura)}
+                  disabled={
+                    factura.estado !== ESTADO_CODIGO_FACTURA_ACEPTADA
+                  }
+                >
+                  <FilePlus2 size={14} />
+                  Crear Nota de Crédito/Débito
+                </CustomButton>
+              ) : null}
               <div className='relative'>
                 <CustomButton
                   variant='ghost'
