@@ -326,7 +326,7 @@ export function useFormularioFactura(
     queryKey: ["facturaParaNota", detalle?.idDocumentoElectronico],
     queryFn: () =>
       facturacionService.obtenerDatosParaNota(detalle!.idDocumentoElectronico!),
-    enabled: esCreacionNotaCreditoDebito && Boolean(detalle?.idDocumentoElectronico),
+    enabled: esNotaCreditoDebito && Boolean(detalle?.idDocumentoElectronico),
   });
   const clienteNotaCreditoDebito = datosParaNota?.cliente;
   const [opcionesCodigoPersonalizadas, setOpcionesCodigoPersonalizadas] =
@@ -353,6 +353,18 @@ export function useFormularioFactura(
 
     return [...opcionesBase, ...opcionesCodigoPersonalizadas];
   }, [datosParaNota, opcionesCodigoPersonalizadas]);
+  const obtenerOpcionesCodigoDisponibles = (idProductoFactura: number) => {
+    const claveLineaActual = String(idProductoFactura);
+    const codigosUsadosEnOtrasLineas = new Set(
+      Object.entries(codigosProducto ?? {})
+        .filter(([claveLinea, codigo]) => claveLinea !== claveLineaActual && codigo)
+        .map(([, codigo]) => codigo),
+    );
+
+    return opcionesCodigoNota.filter(
+      (opcion) => !codigosUsadosEnOtrasLineas.has(opcion.string1 ?? ""),
+    );
+  };
   const agregarCodigoPersonalizadoNota = (
     idProductoFactura: number,
     codigo: string,
@@ -798,6 +810,7 @@ export function useFormularioFactura(
     unregister(`unidadesMedida.${producto.idProductoFactura}`);
     unregister(`descripciones.${producto.idProductoFactura}`);
     unregister(`valoresUnitarios.${producto.idProductoFactura}`);
+    unregister(`codigosProducto.${producto.idProductoFactura}`);
     setIdProductoDescuentoEdicion((idActual) =>
       idActual === producto.idProductoFactura ? null : idActual,
     );
@@ -1025,6 +1038,7 @@ export function useFormularioFactura(
       }),
     detalle,
     erroresFormulario: formulario.formState.errors,
+    envioIntentado: formulario.formState.isSubmitted,
     afectacionIgvPredeterminadaDescripcion:
       opcionAfectacionIgvPredeterminada
         ? obtenerEtiquetaPrincipalSecundaria(opcionAfectacionIgvPredeterminada)
@@ -1068,6 +1082,7 @@ export function useFormularioFactura(
     opcionesMotivo,
     opcionesTipoDocumento,
     opcionesCodigoNota,
+    obtenerOpcionesCodigoDisponibles,
     agregarCodigoPersonalizadoNota,
     seleccionarCodigoProducto,
     agregarLineaNota,

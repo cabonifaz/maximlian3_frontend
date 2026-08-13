@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { CircleX, FilePenLine, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { AlertTriangle, CircleX, FilePenLine, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
@@ -20,6 +20,7 @@ import type {
 } from "@maximilian/shared/types/facturacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { formatearMontoConSimbolo } from "@maximilian/shared/utils/formato-monto.util";
+import { extraerMensajesError } from "@maximilian/shared/utils/formulario.util";
 import {
   obtenerEtiquetaPrincipalSecundaria,
   obtenerSimboloTablaMaestra,
@@ -79,6 +80,7 @@ export function CustomModalFactura({
     detalle,
     emitirFactura,
     emitirFacturaMutation,
+    envioIntentado,
     erroresFormulario,
     guardarFactura,
     guardarFacturaMutation,
@@ -90,6 +92,7 @@ export function CustomModalFactura({
     idProductoIgvEdicion,
     iniciarEdicionDescuento,
     iniciarEdicionIgv,
+    obtenerOpcionesCodigoDisponibles,
     obtenerPrecioUnitario,
     obtenerTotalProducto,
     opcionesAfectacionIgv,
@@ -130,6 +133,11 @@ export function CustomModalFactura({
     modo === "notaCreditoDebito" || modo === "editarNotaCreditoDebito";
   const puedeEditarTipoComprobante =
     modo === "notaCreditoDebito" || detalle?.idDocumentoElectronico === null;
+
+  const mensajesError = useMemo(
+    () => (envioIntentado ? extraerMensajesError(erroresFormulario) : []),
+    [envioIntentado, erroresFormulario],
+  );
 
   if (!abierto || !detalle) return null;
 
@@ -386,7 +394,7 @@ export function CustomModalFactura({
                         {esNotaCreditoDebito ? (
                           <td className="w-48 min-w-48 max-w-48 px-4 py-3">
                             <CustomSelectorBuscable
-                              options={opcionesCodigoNota}
+                              options={obtenerOpcionesCodigoDisponibles(producto.idProductoFactura)}
                               value={
                                 opcionesCodigoNota.find(
                                   (opcion) => opcion.string1 === codigosProducto?.[claveProducto],
@@ -761,69 +769,84 @@ export function CustomModalFactura({
             ) : null}
           </div>
 
-          <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-white px-8 py-4">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                {esNotaCreditoDebito ? "Total de la nota" : "Total de la factura"}
-              </p>
-              <p className="text-lg font-black text-brand-black">{formatearMontoConSimbolo(totalFactura, simboloMoneda)}</p>
-            </div>
-            <div className="flex items-center gap-3">
-            {puedeAnularFactura && !esNotaCreditoDebito ? (
-              <CustomButton
-                type="button"
-                variant="wine"
-                size="compact"
-                onClick={() => setConfirmacionAnulacionAbierta(true)}
-                disabled={!puedeAnularDentroDePlazo}
-                title={
-                  puedeAnularDentroDePlazo
-                    ? undefined
-                    : `Venció el plazo máximo de ${PLAZO_MAXIMO_DIAS_ANULACION_FACTURA} días desde la emisión`
-                }
-              >
-                <CircleX size={14} />
-                Anular factura
-              </CustomButton>
+          <div className="border-t border-slate-100 bg-white px-8 py-4">
+            {mensajesError.length > 0 ? (
+              <div className="mb-3 flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-red-700">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <div className="space-y-1 text-xs">
+                  <p className="font-semibold">No se puede guardar. Revisa lo siguiente:</p>
+                  <ul className="list-disc space-y-0.5 pl-4">
+                    {mensajesError.map((mensaje) => (
+                      <li key={mensaje}>{mensaje}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             ) : null}
-            {soloLectura ? (
-              <CustomButton variant="secondary" size="compact" onClick={onCerrar}>
-                Cerrar
-              </CustomButton>
-            ) : (
-              <>
-                <CustomButton
-                  type="submit"
-                  variant="secondary"
-                  size="compact"
-                  disabled={
-                    hayEdicionProductoPendiente
-                    || emitirFacturaMutation.isPending
-                    || cargandoClienteNotaCreditoDebito
-                    || requiereSeleccionProducto
-                  }
-                  loading={guardarFacturaMutation.isPending}
-                  loadingText="Guardando..."
-                >
-                  Guardar
-                </CustomButton>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  {esNotaCreditoDebito ? "Total de la nota" : "Total de la factura"}
+                </p>
+                <p className="text-lg font-black text-brand-black">{formatearMontoConSimbolo(totalFactura, simboloMoneda)}</p>
+              </div>
+              <div className="flex items-center gap-3">
+              {puedeAnularFactura && !esNotaCreditoDebito ? (
                 <CustomButton
                   type="button"
-                  variant="primary"
+                  variant="wine"
                   size="compact"
-                  onClick={confirmarFormulario(() => setConfirmacionSunatAbierta(true))}
-                  disabled={
-                    hayEdicionProductoPendiente
-                    || guardarFacturaMutation.isPending
-                    || emitirFacturaMutation.isPending
-                    || cargandoClienteNotaCreditoDebito
-                    || requiereSeleccionProducto
+                  onClick={() => setConfirmacionAnulacionAbierta(true)}
+                  disabled={!puedeAnularDentroDePlazo}
+                  title={
+                    puedeAnularDentroDePlazo
+                      ? undefined
+                      : `Venció el plazo máximo de ${PLAZO_MAXIMO_DIAS_ANULACION_FACTURA} días desde la emisión`
                   }
                 >
-                  {esNotaCreditoDebito ? "Emitir Nota" : "Emitir Factura"}
+                  <CircleX size={14} />
+                  Anular factura
                 </CustomButton>
-              </>
-            )}
+              ) : null}
+              {soloLectura ? (
+                <CustomButton variant="secondary" size="compact" onClick={onCerrar}>
+                  Cerrar
+                </CustomButton>
+              ) : (
+                <>
+                  <CustomButton
+                    type="submit"
+                    variant="secondary"
+                    size="compact"
+                    disabled={
+                      hayEdicionProductoPendiente
+                      || emitirFacturaMutation.isPending
+                      || cargandoClienteNotaCreditoDebito
+                      || requiereSeleccionProducto
+                    }
+                    loading={guardarFacturaMutation.isPending}
+                    loadingText="Guardando..."
+                  >
+                    Guardar
+                  </CustomButton>
+                  <CustomButton
+                    type="button"
+                    variant="primary"
+                    size="compact"
+                    onClick={confirmarFormulario(() => setConfirmacionSunatAbierta(true))}
+                    disabled={
+                      hayEdicionProductoPendiente
+                      || guardarFacturaMutation.isPending
+                      || emitirFacturaMutation.isPending
+                      || cargandoClienteNotaCreditoDebito
+                      || requiereSeleccionProducto
+                    }
+                  >
+                    {esNotaCreditoDebito ? "Emitir Nota" : "Emitir Factura"}
+                  </CustomButton>
+                </>
+              )}
+              </div>
             </div>
           </div>
         </form>
