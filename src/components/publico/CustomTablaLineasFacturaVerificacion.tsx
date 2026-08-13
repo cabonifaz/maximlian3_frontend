@@ -56,10 +56,11 @@ export function CustomTablaLineasFacturaVerificacion({
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-slate-200">
-        <table className="w-full min-w-[840px] text-sm">
+        <table className="w-full min-w-[960px] text-sm">
           <thead className="bg-slate-50 text-xs font-bold text-slate-500">
             <tr>
               <th className="px-4 py-3 text-center">Cant.</th>
+              <th className="px-4 py-3 text-left">Código</th>
               <th className="px-4 py-3 text-left">Descripción</th>
               <th className="px-4 py-3 text-center">U.M.</th>
               <th className="px-4 py-3 text-center">Valor U.</th>
@@ -73,6 +74,9 @@ export function CustomTablaLineasFacturaVerificacion({
             {lineas.map((linea) => (
               <tr key={linea.numeroLinea}>
                 <td className="px-4 py-3 text-center text-slate-600">{linea.cantidad}</td>
+                <td className="px-4 py-3 text-left text-slate-600">
+                  {linea.productoCodigo}
+                </td>
                 <td className="px-4 py-3 text-left font-medium text-slate-700">
                   {linea.descripcion}
                 </td>
