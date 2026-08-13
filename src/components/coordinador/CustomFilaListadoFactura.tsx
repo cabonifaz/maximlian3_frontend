@@ -123,15 +123,17 @@ export function CustomFilaListadoFactura({
               className='fixed z-20 w-48 rounded-xl border border-slate-200 bg-white p-1 shadow-xl'
               style={estiloMenu}
             >
-              <CustomButton
-                variant='ghost'
-                size='sm'
-                className='w-full justify-start px-3 text-slate-700'
-                onClick={() => onGenerarUrl(factura)}
-              >
-                <Link size={14} />
-                Generar URL
-              </CustomButton>
+              {factura.estado !== ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO ? (
+                <CustomButton
+                  variant='ghost'
+                  size='sm'
+                  className='w-full justify-start px-3 text-slate-700'
+                  onClick={() => onGenerarUrl(factura)}
+                >
+                  <Link size={14} />
+                  Generar URL
+                </CustomButton>
+              ) : null}
               <CustomButton
                 variant='ghost'
                 size='sm'
