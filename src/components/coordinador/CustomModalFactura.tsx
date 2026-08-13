@@ -12,6 +12,7 @@ import {
   useFormularioFactura,
   type ModoFormularioFactura,
 } from "@maximilian/hooks/useFormularioFactura";
+import { usePlazoAnulacionFactura } from "@maximilian/hooks/usePlazoAnulacionFactura";
 import type {
   DetalleFactura,
   EntradaCuotaFactura,
@@ -26,6 +27,7 @@ import {
 import {
   ID_ESTADO_FACTURA_APROBADA,
   ID_FORMA_PAGO_CONTADO,
+  PLAZO_MAXIMO_DIAS_ANULACION_FACTURA,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
 interface CustomModalFacturaProps {
@@ -119,6 +121,9 @@ export function CustomModalFactura({
     unidadesMedida,
     valoresMaestros,
   } = useFormularioFactura(factura, modo, onCerrar, productosIniciales);
+  const { puedeAnular: puedeAnularDentroDePlazo } = usePlazoAnulacionFactura(
+    detalle?.fechaEmision,
+  );
 
   const soloLectura = modo === "detalle";
   const esNotaCreditoDebito =
@@ -770,6 +775,12 @@ export function CustomModalFactura({
                 variant="wine"
                 size="compact"
                 onClick={() => setConfirmacionAnulacionAbierta(true)}
+                disabled={!puedeAnularDentroDePlazo}
+                title={
+                  puedeAnularDentroDePlazo
+                    ? undefined
+                    : `Venció el plazo máximo de ${PLAZO_MAXIMO_DIAS_ANULACION_FACTURA} días desde la emisión`
+                }
               >
                 <CircleX size={14} />
                 Anular factura
@@ -837,6 +848,7 @@ export function CustomModalFactura({
       <CustomModalAnularFactura
         abierto={confirmacionAnulacionAbierta}
         cargando={anularFacturaMutation.isPending}
+        fechaEmision={detalle.fechaEmision}
         onCerrar={() => setConfirmacionAnulacionAbierta(false)}
         onConfirmar={anularFactura}
       />
