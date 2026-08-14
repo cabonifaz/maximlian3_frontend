@@ -334,6 +334,16 @@ export function useFormularioFactura(
       && Boolean(detalle?.idDocumentoElectronico),
   });
   const clienteNotaCreditoDebito = datosParaNota?.cliente;
+  useEffect(() => {
+    if (!esNotaCreditoDebito || !datosParaNota) return;
+
+    setValue("idMonedaMaestro", datosParaNota.idMonedaMaestro, {
+      shouldValidate: true,
+    });
+    setValue("tipoCambio", datosParaNota.tipoCambio, {
+      shouldValidate: true,
+    });
+  }, [datosParaNota, esNotaCreditoDebito, setValue]);
   const [opcionesCodigoPersonalizadas, setOpcionesCodigoPersonalizadas] =
     useState<EntradaTablaMaestra[]>([]);
   const contadorOpcionCodigoRef = useRef(0);

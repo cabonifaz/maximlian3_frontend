@@ -471,6 +471,8 @@ export interface ProductoParaNotaApi {
 
 export interface ResultadoParaNotaApi {
   cliente: ClienteNotaCreditoDebito;
+  idMonedaMaestro: number;
+  tipoCambio: number;
   productos: ProductoParaNotaApi[];
 }
 
