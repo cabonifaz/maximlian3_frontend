@@ -340,9 +340,6 @@ export function useFormularioFactura(
     setValue("idMonedaMaestro", datosParaNota.idMonedaMaestro, {
       shouldValidate: true,
     });
-    setValue("tipoCambio", datosParaNota.tipoCambio, {
-      shouldValidate: true,
-    });
   }, [datosParaNota, esNotaCreditoDebito, setValue]);
   const [opcionesCodigoPersonalizadas, setOpcionesCodigoPersonalizadas] =
     useState<EntradaTablaMaestra[]>([]);
@@ -519,6 +516,13 @@ export function useFormularioFactura(
     setValue("tipoCambio", undefined);
     clearErrors("tipoCambio");
   }, [clearErrors, opcionesMoneda, requiereTipoCambio, setValue]);
+  useEffect(() => {
+    if (!esNotaCreditoDebito || !datosParaNota || !requiereTipoCambio) return;
+
+    setValue("tipoCambio", datosParaNota.tipoCambio, {
+      shouldValidate: true,
+    });
+  }, [datosParaNota, esNotaCreditoDebito, requiereTipoCambio, setValue]);
   const guardarFacturaMutation = useMutation({
     mutationFn: (datos: DatosFormularioFactura) => {
       if (!detalle) return Promise.resolve();
@@ -1060,6 +1064,7 @@ export function useFormularioFactura(
         : "",
     emitirFactura: formulario.handleSubmit((datos) => {
       if (esNotaCreditoDebito) {
+        if (!validarTipoCambio(datos)) return Promise.resolve();
         return emitirNotaCreditoDebitoMutation.mutateAsync(datos);
       }
       if (!validarTotalCuotas(datos) || !validarTipoCambio(datos)) return Promise.resolve();
@@ -1074,6 +1079,7 @@ export function useFormularioFactura(
       esCreacionNotaCreditoDebito && (detalle?.productos.length ?? 0) === 0,
     guardarFactura: formulario.handleSubmit((datos) => {
       if (esNotaCreditoDebito) {
+        if (!validarTipoCambio(datos)) return Promise.resolve();
         return guardarNotaCreditoDebitoMutation.mutateAsync(datos);
       }
       if (!validarTotalCuotas(datos) || !validarTipoCambio(datos)) return Promise.resolve();

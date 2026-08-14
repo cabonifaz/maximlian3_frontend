@@ -434,6 +434,7 @@ export interface ResumenFacturacion {
   montoTotalMensual: number;
   cantidadFacturasEmitidas: number;
   promedioIngresoMensual: number | null;
+  monedaIcono: string;
 }
 
 export interface GuardarBorradorFacturaRequest {
