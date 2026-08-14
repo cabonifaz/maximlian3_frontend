@@ -222,6 +222,7 @@ export interface DetalleFactura {
   ni: string;
   ordenCompra: string;
   fechaEmision: string;
+  fechaAceptacion: string | null;
   camposExtra: CampoExtraLineaFactura[];
   productos: EntradaProductoFactura[];
   cuotas: EntradaCuotaFactura[];
@@ -304,6 +305,7 @@ export interface CabeceraFacturaApi {
   estadoCodigo: string;
   fechaEmision: string;
   horaEmision: string;
+  fechaAceptacion: string | null;
   monedaCodigo: string;
   tipoCambio: number | null;
   tipoOperacionCodigo: string;

@@ -324,6 +324,9 @@ async function obtenerFacturaRegistrada(
       lineas.map((linea) => linea.productoCodigo),
     ),
     fechaEmision: formatearFechaIsoADdMmYyyy(cabecera.fechaEmision),
+    fechaAceptacion: cabecera.fechaAceptacion
+      ? formatearFechaIsoADdMmYyyy(cabecera.fechaAceptacion)
+      : null,
     camposExtra: (camposExtra ?? []).map((campoExtra) => ({
       idCampoExtraDocumentoElectronico:
         campoExtra.idCampoExtraDocumentoElectronico,
@@ -406,6 +409,7 @@ function crearDetalleFactura(
     ni: numeroIdentificacion,
     ordenCompra: "",
     fechaEmision: formatearFechaDdMmYyyy(new Date()),
+    fechaAceptacion: null,
     camposExtra: [],
     productos: [],
     cuotas: [],
