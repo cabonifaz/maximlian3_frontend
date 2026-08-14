@@ -126,7 +126,7 @@ export function CustomModalFactura({
     valoresMaestros,
   } = useFormularioFactura(factura, modo, onCerrar, productosIniciales);
   const { puedeAnular: puedeAnularDentroDePlazo } = usePlazoAnulacionFactura(
-    detalle?.fechaEmision,
+    detalle?.fechaAceptacion,
   );
 
   const soloLectura = modo === "detalle";
@@ -813,7 +813,7 @@ export function CustomModalFactura({
                   title={
                     puedeAnularDentroDePlazo
                       ? undefined
-                      : `Venció el plazo máximo de ${PLAZO_MAXIMO_DIAS_ANULACION_FACTURA} días desde la emisión`
+                      : `Venció el plazo máximo de ${PLAZO_MAXIMO_DIAS_ANULACION_FACTURA} días desde la aceptación por SUNAT`
                   }
                 >
                   <CircleX size={14} />
@@ -884,7 +884,7 @@ export function CustomModalFactura({
         abierto={confirmacionAnulacionAbierta}
         cargando={anularFacturaMutation.isPending}
         esNotaCreditoDebito={esNotaCreditoDebito}
-        fechaEmision={detalle.fechaEmision}
+        fechaAceptacion={detalle.fechaAceptacion}
         onCerrar={() => setConfirmacionAnulacionAbierta(false)}
         onConfirmar={anularFactura}
       />
