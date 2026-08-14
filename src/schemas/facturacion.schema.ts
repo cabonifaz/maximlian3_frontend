@@ -6,7 +6,6 @@ export const esquemaFormularioFactura = z.object({
   idTipoOperacionMaestro: z.number().positive("El tipo de operación es requerido"),
   idFormaPago: z.number().optional(),
   tipoCambio: z.number({ error: "Ingrese un tipo de cambio válido" })
-    .positive("El tipo de cambio debe ser mayor a 0")
     .optional(),
   descuentos: z.record(
     z.string(),

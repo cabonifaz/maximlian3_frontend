@@ -60,7 +60,7 @@ export function CustomFacturacionGerente() {
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl bg-slate-50 p-4">
           <strong className="block text-2xl font-bold text-slate-800">
-            $
+            {resumenFacturacion?.monedaIcono}
             <NumberTicker
               value={resumenFacturacion?.montoTotalMensual ?? 0}
               rigidez={260}
@@ -86,7 +86,7 @@ export function CustomFacturacionGerente() {
 
         <div className="rounded-xl bg-slate-50 p-4">
           <strong className="block text-2xl font-bold text-slate-800">
-            $
+            {resumenFacturacion?.monedaIcono}
             <NumberTicker
               value={resumenFacturacion?.promedioIngresoMensual ?? 0}
               rigidez={260}
