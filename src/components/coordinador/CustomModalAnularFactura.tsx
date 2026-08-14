@@ -17,7 +17,7 @@ interface CustomModalAnularFacturaProps {
   abierto: boolean;
   cargando: boolean;
   esNotaCreditoDebito?: boolean;
-  fechaEmision: string;
+  fechaAceptacion: string | null;
   onCerrar: () => void;
   onConfirmar: (datos: DatosFormularioAnulacionFactura) => void;
 }
@@ -33,7 +33,7 @@ export function CustomModalAnularFactura({
   abierto,
   cargando,
   esNotaCreditoDebito = false,
-  fechaEmision,
+  fechaAceptacion,
   onCerrar,
   onConfirmar,
 }: CustomModalAnularFacturaProps) {
@@ -50,7 +50,7 @@ export function CustomModalAnularFactura({
     defaultValues: obtenerValoresIniciales(),
   });
   const fechaReferencia = useWatch({ control, name: "fechaReferencia" });
-  const { puedeAnular, fechaLimiteAnulacion } = usePlazoAnulacionFactura(fechaEmision);
+  const { puedeAnular, fechaLimiteAnulacion } = usePlazoAnulacionFactura(fechaAceptacion);
 
   useEffect(() => {
     if (abierto) reset(obtenerValoresIniciales());
@@ -121,7 +121,7 @@ export function CustomModalAnularFactura({
               <AlertTriangle size={18} className="mt-0.5 shrink-0" />
               <p className="text-sm leading-snug">
                 No es posible anular este documento: el plazo máximo de{" "}
-                {PLAZO_MAXIMO_DIAS_ANULACION_FACTURA} días desde su emisión venció
+                {PLAZO_MAXIMO_DIAS_ANULACION_FACTURA} días desde su aceptación por SUNAT venció
                 {fechaLimiteAnulacion
                   ? ` el ${formatearFechaDdMmYyyy(fechaLimiteAnulacion)}`
                   : ""}
