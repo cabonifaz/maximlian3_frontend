@@ -35,6 +35,7 @@ import type {
   ResultadoParaNotaApi,
 } from "@maximilian/shared/types/facturacion.type";
 import { ENDPOINTS_FACTURACION } from "@maximilian/shared/constants/endpoints/facturacion.endpoint";
+import { TIMEOUT_EMISION_ANULACION_FACTURA_MS } from "@maximilian/shared/constants/services/facturacion.service.constants";
 import {
   ErrorRespuestaApi,
   MessageType,
@@ -579,6 +580,7 @@ export const facturacionService = {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
       ENDPOINTS_FACTURACION.anular,
       payload,
+      { timeout: TIMEOUT_EMISION_ANULACION_FACTURA_MS },
     );
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
@@ -639,6 +641,8 @@ export const facturacionService = {
   emitir: async (idDocumentoElectronico: number): Promise<unknown> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
       ENDPOINTS_FACTURACION.emitir(idDocumentoElectronico),
+      undefined,
+      { timeout: TIMEOUT_EMISION_ANULACION_FACTURA_MS },
     );
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
