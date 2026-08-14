@@ -16,6 +16,7 @@ import {
 interface CustomModalAnularFacturaProps {
   abierto: boolean;
   cargando: boolean;
+  esNotaCreditoDebito?: boolean;
   fechaEmision: string;
   onCerrar: () => void;
   onConfirmar: (datos: DatosFormularioAnulacionFactura) => void;
@@ -31,6 +32,7 @@ function obtenerValoresIniciales(): DatosFormularioAnulacionFactura {
 export function CustomModalAnularFactura({
   abierto,
   cargando,
+  esNotaCreditoDebito = false,
   fechaEmision,
   onCerrar,
   onConfirmar,
@@ -73,7 +75,9 @@ export function CustomModalAnularFactura({
               <CircleX size={19} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-brand-black">Anular factura</h2>
+              <h2 className="text-lg font-bold text-brand-black">
+                {esNotaCreditoDebito ? "Anular nota" : "Anular factura"}
+              </h2>
               <p className="text-xs text-slate-500">Ingresa los datos requeridos para solicitar la anulación.</p>
             </div>
           </div>
@@ -133,7 +137,7 @@ export function CustomModalAnularFactura({
           </CustomButton>
           {puedeAnular ? (
             <CustomButton type="submit" variant="wine" size="compact" loading={cargando} loadingText="Anulando...">
-              Anular factura
+              {esNotaCreditoDebito ? "Anular nota" : "Anular factura"}
             </CustomButton>
           ) : null}
         </div>

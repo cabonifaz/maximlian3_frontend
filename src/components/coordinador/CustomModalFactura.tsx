@@ -252,7 +252,7 @@ export function CustomModalFactura({
                 onChange={seleccionarMoneda}
                 obtenerEtiquetaOpcion={obtenerEtiquetaPrincipalSecundaria}
                 displayValue={detalle.monedaDescripcion}
-                disabled={soloLectura}
+                disabled={soloLectura || esNotaCreditoDebito}
                 error={erroresFormulario.idMonedaMaestro?.message}
               />
               {requiereTipoCambio ? (
@@ -262,7 +262,7 @@ export function CustomModalFactura({
                   </CustomLabel>
                   <div
                     className={`flex items-center gap-2 rounded-xl border bg-brand-white px-4 transition-all ${
-                      soloLectura
+                      soloLectura || esNotaCreditoDebito
                         ? "cursor-not-allowed bg-slate-50"
                         : "focus-within:border-brand-wine focus-within:ring-4 focus-within:ring-brand-wine/10"
                     } ${erroresFormulario.tipoCambio ? "border-red-500" : "border-gray-200"}`}
@@ -275,10 +275,10 @@ export function CustomModalFactura({
                       type="number"
                       min="0"
                       step="0.001"
-                      readOnly={soloLectura}
+                      readOnly={soloLectura || esNotaCreditoDebito}
                       {...registrarTipoCambio("tipoCambio", { valueAsNumber: true })}
                       className={`w-full border-0 bg-transparent py-2.5 text-sm outline-none ${
-                        soloLectura ? "cursor-not-allowed text-slate-500" : "text-slate-700"
+                        soloLectura || esNotaCreditoDebito ? "cursor-not-allowed text-slate-500" : "text-slate-700"
                       }`}
                     />
                   </div>
@@ -883,6 +883,7 @@ export function CustomModalFactura({
       <CustomModalAnularFactura
         abierto={confirmacionAnulacionAbierta}
         cargando={anularFacturaMutation.isPending}
+        esNotaCreditoDebito={esNotaCreditoDebito}
         fechaEmision={detalle.fechaEmision}
         onCerrar={() => setConfirmacionAnulacionAbierta(false)}
         onConfirmar={anularFactura}
