@@ -5,6 +5,7 @@ import { facturacionService } from "@maximilian/services/facturacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import {
   CONFIGURACION_CONSULTA_FACTURACION,
+  INTERVALO_RECARGA_LISTADO_FACTURAS_MS,
   TAMANO_PAGINA_LISTADO_FACTURAS,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import type { DatosFormularioExportarLibroVentas } from "@maximilian/schemas";
@@ -71,6 +72,7 @@ export function useListadoFacturas() {
     refetch,
   } = useQuery({
     ...CONFIGURACION_CONSULTA_FACTURACION,
+    refetchInterval: INTERVALO_RECARGA_LISTADO_FACTURAS_MS,
     queryKey: [
       "facturacion",
       "facturas",

@@ -129,6 +129,8 @@ export const CONFIGURACION_CONSULTA_FACTURACION = {
   refetchOnMount: "always",
 } as const;
 
+export const INTERVALO_RECARGA_LISTADO_FACTURAS_MS = 5 * 60 * 1000;
+
 export const CODIGO_MONEDA_SUNAT_SOLES = "PEN";
 export const ID_FORMA_PAGO_CONTADO = 1;
 export const ID_TIPO_DOCUMENTO_SUNAT_RUC = 4;
