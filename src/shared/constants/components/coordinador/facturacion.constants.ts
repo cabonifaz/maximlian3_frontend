@@ -49,7 +49,9 @@ export const OPCIONES_FORMA_PAGO_FACTURA_MOCK = [
 export const CANTIDAD_FACTURAS_POR_PAGINA_MOCK = 5;
 export const TAMANO_PAGINA_LISTADO_FACTURAS = 10;
 export const ESTADO_CODIGO_FACTURA_ACEPTADA = "Aceptado";
+export const ESTADO_CODIGO_FACTURA_ACEPTADA_CON_OBSERVACIONES = "Aceptado Con Observaciones";
 export const ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO = "Pendiente Envio";
+export const ESTADO_CUOTA_CODIGO_PAGADO = "Pagado";
 
 export const ESTILOS_ESTADO_FACTURA_CLIENTE: Record<
   EstadoFacturaCliente,
@@ -133,6 +135,7 @@ export const INTERVALO_RECARGA_LISTADO_FACTURAS_MS = 5 * 60 * 1000;
 
 export const CODIGO_MONEDA_SUNAT_SOLES = "PEN";
 export const ID_FORMA_PAGO_CONTADO = 1;
+export const ID_FORMA_PAGO_CREDITO = 2;
 export const ID_TIPO_DOCUMENTO_SUNAT_RUC = 4;
 export const IDS_TIPO_COMPROBANTE_CLIENTE_RUC = [1, 3] as const;
 export const ID_TIPO_COMPROBANTE_BOLETA = 3;
@@ -164,13 +167,16 @@ export const ESTILOS_TIPO_PRODUCTO_FACTURABLE: Record<
   "super-flash": { texto: "SUPER FLASH", clase: "bg-red-100 text-red-700" },
 };
 
+export const ID_ESTADO_CUOTA_PENDIENTE = 1;
+export const ID_ESTADO_CUOTA_PAGADO = 2;
+
 export const OPCIONES_ESTADO_CUOTA: EntradaTablaMaestra[] = [
   {
     idEmpresa: 0,
     idTablaMaestra: null,
     idMaestro: 0,
     descripcion: "PENDIENTE",
-    num1: 1,
+    num1: ID_ESTADO_CUOTA_PENDIENTE,
     num2: null,
     num3: null,
     string1: "Pendiente",
@@ -185,7 +191,7 @@ export const OPCIONES_ESTADO_CUOTA: EntradaTablaMaestra[] = [
     idTablaMaestra: null,
     idMaestro: 0,
     descripcion: "PAGADO",
-    num1: 2,
+    num1: ID_ESTADO_CUOTA_PAGADO,
     num2: null,
     num3: null,
     string1: "Pagado",

@@ -1,6 +1,8 @@
 import type {
   DetalleFactura,
+  ActualizarEstadoCuotaRequest,
   AnularFacturaRequest,
+  AnularManualmenteFacturaRequest,
   EditarNotaCreditoDebitoRequest,
   EntradaFacturaCliente,
   EntradaFacturacion,
@@ -56,6 +58,7 @@ import { concatenarCodigosOrdenCompra } from "@maximilian/shared/utils/facturaci
 import {
   CODIGO_SUNAT_NOTA_CREDITO,
   CODIGO_SUNAT_NOTA_DEBITO,
+  ESTADO_CUOTA_CODIGO_PAGADO,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import {
   obtenerRegistro,
@@ -376,7 +379,10 @@ async function obtenerFacturaRegistrada(
       idMoneda: opcionMoneda?.num1 ?? 0,
       monto: cuota.monto,
       vencimiento: cuota.fechaVencimiento,
-      estado: "pendiente",
+      estado: cuota.estadoCuotaCodigo?.trim() === ESTADO_CUOTA_CODIGO_PAGADO
+        ? "pagado"
+        : "pendiente",
+      fechaPago: cuota.fechaPago,
     })),
   };
 }
@@ -594,6 +600,22 @@ export const facturacionService = {
     return data.result;
   },
 
+  anularManualmente: async (
+    idDocumentoElectronico: number,
+    payload: AnularManualmenteFacturaRequest,
+  ): Promise<unknown> => {
+    const { data } = await maximilianService.put<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.anularManualmente(idDocumentoElectronico),
+      payload,
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result;
+  },
+
   obtenerResumen: async (
     parametros: ParametrosResumenFacturacion = {},
     senal?: AbortSignal,
@@ -618,6 +640,26 @@ export const facturacionService = {
   ): Promise<unknown> => {
     const { data } = await maximilianService.put<ApiResponse<unknown>>(
       ENDPOINTS_FACTURACION.guardarCambios(idDocumentoElectronico),
+      solicitud,
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result;
+  },
+
+  actualizarEstadoCuota: async (
+    idDocumentoElectronico: number,
+    idCuotaDocumentoElectronico: number,
+    solicitud: ActualizarEstadoCuotaRequest,
+  ): Promise<unknown> => {
+    const { data } = await maximilianService.put<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.actualizarEstadoCuota(
+        idDocumentoElectronico,
+        idCuotaDocumentoElectronico,
+      ),
       solicitud,
     );
 
