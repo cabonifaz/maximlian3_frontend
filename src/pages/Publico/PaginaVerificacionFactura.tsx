@@ -1,6 +1,7 @@
 import { useParams } from "react-router";
 import { Download, FileWarning } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomCuotasFacturaVerificacion } from "@maximilian/components/publico/CustomCuotasFacturaVerificacion";
 import { CustomEncabezadoFacturaVerificacion } from "@maximilian/components/publico/CustomEncabezadoFacturaVerificacion";
 import { CustomTablaLineasFacturaVerificacion } from "@maximilian/components/publico/CustomTablaLineasFacturaVerificacion";
 import { useVerificacionFactura } from "@maximilian/hooks/useVerificacionFactura";
@@ -46,6 +47,12 @@ export default function PaginaVerificacionFactura() {
               cabecera={factura.cabecera}
               lineas={factura.lineas}
             />
+            {factura.cuotas.length > 0 ? (
+              <CustomCuotasFacturaVerificacion
+                cabecera={factura.cabecera}
+                cuotas={factura.cuotas}
+              />
+            ) : null}
 
             <div className="flex flex-col items-end gap-2">
               <div className="flex flex-wrap justify-end gap-3">

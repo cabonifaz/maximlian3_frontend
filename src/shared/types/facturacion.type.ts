@@ -194,6 +194,7 @@ export interface EntradaCuotaFactura {
   monto: number;
   vencimiento: string;
   estado: "pendiente" | "pagado";
+  fechaPago: string | null;
 }
 
 export interface CampoExtraLineaFactura {
@@ -276,6 +277,8 @@ export interface CuotaGuardarBorradorFactura {
   numeroCuota: number;
   fechaVencimiento: string;
   monto: number;
+  idEstadoCuotaMaestro: number;
+  fechaPago: string | null;
 }
 
 export interface DocumentoAfectadoGuardarBorradorFactura {
@@ -358,6 +361,8 @@ export interface CuotaFacturaApi {
   numeroCuota: number;
   fechaVencimiento: string;
   monto: number;
+  estadoCuotaCodigo: string;
+  fechaPago: string | null;
 }
 
 export interface CampoExtraFacturaApi {
@@ -413,12 +418,22 @@ export interface GuardarCambiosFacturaRequest {
   camposExtra: CampoExtraGuardarCambiosFactura[];
 }
 
+export interface ActualizarEstadoCuotaRequest {
+  idEstadoCuotaMaestro: number;
+  fechaPago: string | null;
+}
+
 export interface AnularFacturaRequest {
   fechaReferencia: string;
   items: Array<{
     idDocumentoElectronico: number;
     motivoDescripcion: string;
   }>;
+}
+
+export interface AnularManualmenteFacturaRequest {
+  motivo: string;
+  fechaAnulacion: string;
 }
 
 export interface ResultadoGuardarBorradorFactura {

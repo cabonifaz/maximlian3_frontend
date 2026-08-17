@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties, type MouseEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { facturacionService } from "@maximilian/services/facturacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
@@ -8,7 +8,10 @@ import {
   INTERVALO_RECARGA_LISTADO_FACTURAS_MS,
   TAMANO_PAGINA_LISTADO_FACTURAS,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
-import type { DatosFormularioExportarLibroVentas } from "@maximilian/schemas";
+import type {
+  DatosFormularioAnulacionManualFactura,
+  DatosFormularioExportarLibroVentas,
+} from "@maximilian/schemas";
 import type {
   EntradaListaFactura,
   ErrorDocumentoFactura,
@@ -43,6 +46,12 @@ export function useListadoFacturas() {
   const [modalExportarLibroAbierto, setModalExportarLibroAbierto] =
     useState(false);
   const [exportandoLibro, setExportandoLibro] = useState(false);
+  const [facturaAdvertenciaAnulacionManual, setFacturaAdvertenciaAnulacionManual] =
+    useState<EntradaListaFactura | null>(null);
+  const [facturaFormularioAnulacionManual, setFacturaFormularioAnulacionManual] =
+    useState<EntradaListaFactura | null>(null);
+  const [enviandoAnulacionManual, setEnviandoAnulacionManual] = useState(false);
+  const queryClient = useQueryClient();
   const terminoConRetardo = useRetardo(terminoBusqueda);
   const fechaDesdeIso = fechaDesde ? formatearFechaIsoLocal(fechaDesde) : undefined;
   const fechaHastaIso = fechaHasta ? formatearFechaIsoLocal(fechaHasta) : undefined;
@@ -207,6 +216,45 @@ export function useListadoFacturas() {
     }
   };
 
+  const abrirAnulacionManual = (factura: EntradaListaFactura) => {
+    setFacturaAdvertenciaAnulacionManual(factura);
+    setIdMenuActivo(null);
+  };
+
+  const cerrarAdvertenciaAnulacionManual = () =>
+    setFacturaAdvertenciaAnulacionManual(null);
+
+  const confirmarAdvertenciaAnulacionManual = () => {
+    setFacturaFormularioAnulacionManual(facturaAdvertenciaAnulacionManual);
+    setFacturaAdvertenciaAnulacionManual(null);
+  };
+
+  const cerrarFormularioAnulacionManual = () =>
+    setFacturaFormularioAnulacionManual(null);
+
+  const confirmarFormularioAnulacionManual = async (
+    datos: DatosFormularioAnulacionManualFactura,
+  ) => {
+    if (!facturaFormularioAnulacionManual) return;
+
+    setEnviandoAnulacionManual(true);
+    try {
+      await facturacionService.anularManualmente(
+        facturaFormularioAnulacionManual.idDocumentoElectronico,
+        {
+          motivo: datos.motivo,
+          fechaAnulacion: formatearFechaIsoLocal(datos.fechaAnulacion),
+        },
+      );
+      await queryClient.invalidateQueries({ queryKey: ["facturacion"] });
+      setFacturaFormularioAnulacionManual(null);
+    } catch {
+      // manejado por el interceptor
+    } finally {
+      setEnviandoAnulacionManual(false);
+    }
+  };
+
   const abrirModalExportarLibro = () => setModalExportarLibroAbierto(true);
 
   const cerrarModalExportarLibro = () => setModalExportarLibroAbierto(false);
@@ -236,6 +284,7 @@ export function useListadoFacturas() {
   };
 
   return {
+    abrirAnulacionManual,
     abrirEnlace,
     abrirErrores,
     abrirModalExportarLibro,
@@ -249,6 +298,7 @@ export function useListadoFacturas() {
     cambiarPagina: setPaginaActual,
     cargandoEnlace,
     cargandoErrores,
+    cerrarAdvertenciaAnulacionManual,
     cerrarEnlace: () => {
       setFacturaEnlace(null);
       setEnlaceFactura("");
@@ -257,19 +307,25 @@ export function useListadoFacturas() {
       setFacturaErrores(null);
       setErroresFactura([]);
     },
+    cerrarFormularioAnulacionManual,
     cerrarMenu: () => {
       setIdMenuActivo(null);
       setIdSubmenuDescargaActivo(null);
     },
     cerrarModalExportarLibro,
+    confirmarAdvertenciaAnulacionManual,
+    confirmarFormularioAnulacionManual,
     descargarFactura,
     enlaceFactura,
+    enviandoAnulacionManual,
     erroresFactura,
     estiloMenu,
     exportandoLibro,
     exportarLibroVentas,
+    facturaAdvertenciaAnulacionManual,
     facturaEnlace,
     facturaErrores,
+    facturaFormularioAnulacionManual,
     facturasPagina: respuesta?.items ?? [],
     fechaDesde,
     fechaHasta,

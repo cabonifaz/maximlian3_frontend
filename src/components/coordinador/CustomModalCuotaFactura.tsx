@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 import { WalletCards, X } from "lucide-react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
@@ -11,68 +10,96 @@ import {
   esquemaCuotaFactura,
   type DatosFormularioCuotaFactura,
 } from "@maximilian/schemas";
-import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
-import { OPCIONES_ESTADO_CUOTA } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
+import {
+  ID_ESTADO_CUOTA_PAGADO,
+  ID_ESTADO_CUOTA_PENDIENTE,
+  OPCIONES_ESTADO_CUOTA,
+} from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import type { EntradaCuotaFactura } from "@maximilian/shared/types/facturacion.type";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { convertirTextoAFecha, formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
-import { obtenerEtiquetaPrincipalSecundaria } from "@maximilian/shared/utils/tabla-maestra.util";
+
+const resolverCuotaFactura: Resolver<DatosFormularioCuotaFactura> = async (...args) => {
+  const resultado = await zodResolver(esquemaCuotaFactura)(...args);
+  const [datos] = args;
+
+  if (datos.estado === "pagado" && !datos.fechaPago) {
+    resultado.errors = {
+      ...resultado.errors,
+      fechaPago: { type: "custom", message: "La fecha de pago es requerida" },
+    };
+  }
+
+  return resultado;
+};
 
 interface CustomModalCuotaFacturaProps {
   abierto: boolean;
   numeroCuota: number;
+  idMoneda: number;
+  simboloMoneda: string;
   cuota?: EntradaCuotaFactura | null;
+  soloEstado?: boolean;
+  guardando?: boolean;
   onCerrar: () => void;
   onGuardar: (cuota: EntradaCuotaFactura) => void;
 }
 
-function obtenerValoresIniciales(cuota?: EntradaCuotaFactura | null): DatosFormularioCuotaFactura {
+function obtenerValoresIniciales(
+  idMoneda: number,
+  cuota?: EntradaCuotaFactura | null,
+): DatosFormularioCuotaFactura {
   return {
-    idMoneda: cuota?.idMoneda ?? 0,
+    idMoneda: cuota?.idMoneda ?? idMoneda,
     monto: cuota?.monto ?? 0,
     vencimiento: convertirTextoAFecha(cuota?.vencimiento ?? ""),
     estado: cuota?.estado ?? "pendiente",
+    fechaPago: convertirTextoAFecha(cuota?.fechaPago ?? ""),
   } as DatosFormularioCuotaFactura;
 }
 
 export function CustomModalCuotaFactura({
   abierto,
   numeroCuota,
+  idMoneda,
+  simboloMoneda,
   cuota,
+  soloEstado = false,
+  guardando = false,
   onCerrar,
   onGuardar,
 }: CustomModalCuotaFacturaProps) {
   const {
+    clearErrors,
     control,
     formState: { errors },
     handleSubmit,
     register,
     reset,
     setValue,
-    trigger,
   } = useForm<DatosFormularioCuotaFactura>({
-    resolver: zodResolver(esquemaCuotaFactura),
+    resolver: resolverCuotaFactura,
     mode: "onTouched",
-    defaultValues: obtenerValoresIniciales(cuota),
+    defaultValues: obtenerValoresIniciales(idMoneda, cuota),
   });
-  const idMoneda = useWatch({ control, name: "idMoneda" });
   const vencimiento = useWatch({ control, name: "vencimiento" });
   const estado = useWatch({ control, name: "estado" });
-  const { data: opcionesMoneda } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.MONEDA_SUNAT],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.MONEDA_SUNAT),
-    enabled: abierto,
-    staleTime: Infinity,
-  });
+  const fechaPago = useWatch({ control, name: "fechaPago" });
 
   useEffect(() => {
-    reset(obtenerValoresIniciales(cuota));
-  }, [abierto, cuota, reset]);
+    reset(obtenerValoresIniciales(idMoneda, cuota));
+  }, [abierto, cuota, idMoneda, reset]);
+
+  useEffect(() => {
+    if (estado === "pagado") return;
+
+    setValue("fechaPago", undefined);
+    clearErrors("fechaPago");
+  }, [clearErrors, estado, setValue]);
 
   if (!abierto) return null;
 
   const cerrar = () => {
-    reset(obtenerValoresIniciales(cuota));
+    reset(obtenerValoresIniciales(idMoneda, cuota));
     onCerrar();
   };
 
@@ -84,6 +111,10 @@ export function CustomModalCuotaFactura({
       numeroCuota: cuota?.numeroCuota ?? numeroCuota,
       ...datos,
       vencimiento: formatearFechaIsoLocal(datos.vencimiento),
+      fechaPago:
+        datos.estado === "pagado" && datos.fechaPago
+          ? datos.fechaPago.toISOString()
+          : null,
     });
     reset();
   };
@@ -101,10 +132,14 @@ export function CustomModalCuotaFactura({
             </div>
             <div>
               <h2 className="text-lg font-bold text-brand-black">
-                {cuota ? "Editar cuota" : "Nueva cuota"}
+                {soloEstado ? "Actualizar estado de cuota" : cuota ? "Editar cuota" : "Nueva cuota"}
               </h2>
               <p className="mt-0.5 text-xs text-slate-500">
-                {cuota ? "Actualiza las condiciones de esta cuota." : "Define moneda, monto y fecha de vencimiento."}
+                {soloEstado
+                  ? "Marca esta cuota como pagada o pendiente."
+                  : cuota
+                    ? "Actualiza las condiciones de esta cuota."
+                    : "Define el monto y la fecha de vencimiento."}
               </p>
             </div>
           </div>
@@ -115,36 +150,29 @@ export function CustomModalCuotaFactura({
 
         <div className="grid gap-5 bg-slate-50/60 px-7 py-6 md:grid-cols-2">
           <div className="space-y-1.5">
-            <CustomSelectorBuscable
-              label="Moneda"
-              required
-              options={opcionesMoneda}
-              value={idMoneda || undefined}
-              obtenerEtiquetaOpcion={obtenerEtiquetaPrincipalSecundaria}
-              onChange={(valor) => setValue("idMoneda", valor, {
-                shouldDirty: true,
-                shouldValidate: true,
-              })}
-              onBlur={() => void trigger("idMoneda")}
-              error={errors.idMoneda?.message}
-              placeholder="Seleccione una moneda"
-              dropdownZIndexClassName="z-[111]"
-              overlayZIndexClassName="z-[110]"
-            />
-          </div>
-
-          <div className="space-y-1.5">
             <CustomLabel htmlFor="monto-cuota" required>Monto</CustomLabel>
-            <input
-              id="monto-cuota"
-              {...register("monto", { valueAsNumber: true })}
-              type="number"
-              min="0"
-              step="0.01"
-              className={`w-full border-b py-2 text-sm text-slate-600 outline-none ${
-                errors.monto ? "border-red-500" : "border-slate-200"
-              }`}
-            />
+            <div
+              className={`flex items-center gap-2 rounded-xl border bg-brand-white px-4 transition-all ${
+                soloEstado
+                  ? "cursor-not-allowed bg-slate-50"
+                  : "focus-within:border-brand-wine focus-within:ring-4 focus-within:ring-brand-wine/10"
+              } ${errors.monto ? "border-red-500" : "border-gray-200"}`}
+            >
+              <span className="shrink-0 whitespace-nowrap text-sm font-semibold text-slate-500">
+                {simboloMoneda || "?"}
+              </span>
+              <input
+                id="monto-cuota"
+                {...register("monto", { valueAsNumber: true })}
+                type="number"
+                min="0"
+                step="0.01"
+                readOnly={soloEstado}
+                className={`w-full border-0 bg-transparent py-2.5 text-sm outline-none ${
+                  soloEstado ? "cursor-not-allowed text-slate-500" : "text-slate-700"
+                }`}
+              />
+            </div>
             {errors.monto ? <p className="text-xs text-red-500">{errors.monto.message}</p> : null}
           </div>
 
@@ -153,6 +181,7 @@ export function CustomModalCuotaFactura({
               label="Fecha Vencimiento"
               required
               value={vencimiento}
+              disabled={soloEstado}
               onChange={(fecha) => setValue("vencimiento", fecha as Date, {
                 shouldDirty: true,
                 shouldValidate: true,
@@ -166,10 +195,10 @@ export function CustomModalCuotaFactura({
               label="Estado"
               required
               options={OPCIONES_ESTADO_CUOTA}
-              value={estado === "pagado" ? 2 : 1}
+              value={estado === "pagado" ? ID_ESTADO_CUOTA_PAGADO : ID_ESTADO_CUOTA_PENDIENTE}
               onChange={(valor) => setValue(
                 "estado",
-                valor === 2 ? "pagado" : "pendiente",
+                valor === ID_ESTADO_CUOTA_PAGADO ? "pagado" : "pendiente",
                 { shouldDirty: true, shouldValidate: true },
               )}
               placeholder="Seleccione un estado"
@@ -177,10 +206,31 @@ export function CustomModalCuotaFactura({
               overlayZIndexClassName="z-[110]"
             />
           </div>
+
+          {estado === "pagado" ? (
+            <div className="space-y-1.5">
+              <CustomSelectorFecha
+                label="Fecha de pago"
+                required
+                value={fechaPago}
+                onChange={(fecha) => setValue("fechaPago", fecha as Date, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })}
+                error={errors.fechaPago?.message}
+              />
+            </div>
+          ) : null}
         </div>
 
         <div className="flex justify-end border-t border-slate-100 bg-white px-7 py-4">
-          <CustomButton type="submit" variant="primary" size="compact">
+          <CustomButton
+            type="submit"
+            variant="primary"
+            size="compact"
+            loading={guardando}
+            loadingText="Guardando..."
+          >
             {cuota ? "Guardar" : "Agregar"}
           </CustomButton>
         </div>

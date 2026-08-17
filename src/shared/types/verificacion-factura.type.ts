@@ -63,9 +63,17 @@ export interface LineaVerificacionFacturaApi {
   totalLinea: number;
 }
 
+export interface CuotaVerificacionFacturaApi {
+  numeroCuota: number;
+  fechaVencimiento: string;
+  monto: number;
+  estadoCuotaCodigo: string;
+  fechaPago: string | null;
+}
+
 export interface ResultadoVerificacionFacturaApi {
   cabecera: CabeceraVerificacionFacturaApi;
   lineas: LineaVerificacionFacturaApi[];
   referencia: unknown | null;
-  cuotas: unknown[];
+  cuotas: CuotaVerificacionFacturaApi[];
 }

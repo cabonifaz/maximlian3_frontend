@@ -10,6 +10,8 @@ import type {
   NotaCreditoDebitoRequest,
 } from "@maximilian/shared/types/facturacion.type";
 import {
+  ID_ESTADO_CUOTA_PAGADO,
+  ID_ESTADO_CUOTA_PENDIENTE,
   ID_FORMA_PAGO_CONTADO,
   LIMITE_CARACTERES_ORDEN_COMPRA,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
@@ -75,6 +77,10 @@ export function calcularPrecioUnitarioFactura(
     : valorUnitarioConDescuento;
 }
 
+export function obtenerIdEstadoCuotaMaestro(estado: DetalleFactura["cuotas"][number]["estado"]) {
+  return estado === "pagado" ? ID_ESTADO_CUOTA_PAGADO : ID_ESTADO_CUOTA_PENDIENTE;
+}
+
 function construirCuotasBorrador(
   detalle: DetalleFactura,
   datos: DatosFormularioFactura,
@@ -85,6 +91,8 @@ function construirCuotasBorrador(
         numeroCuota: cuota.numeroCuota,
         fechaVencimiento: convertirFechaAIso(cuota.vencimiento),
         monto: cuota.monto,
+        idEstadoCuotaMaestro: obtenerIdEstadoCuotaMaestro(cuota.estado),
+        fechaPago: cuota.fechaPago,
       }));
 }
 
@@ -105,6 +113,8 @@ function construirCuotasCambios(
         numeroCuota: cuota.numeroCuota,
         fechaVencimiento: convertirFechaAIso(cuota.vencimiento),
         monto: cuota.monto,
+        idEstadoCuotaMaestro: obtenerIdEstadoCuotaMaestro(cuota.estado),
+        fechaPago: cuota.fechaPago,
         idCuotaDocumentoElectronico: cuota.idCuotaDocumentoElectronico,
       }));
 }
