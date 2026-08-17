@@ -24,6 +24,7 @@ import {
   construirPayloadGuardarCambiosFactura,
   construirPayloadNotaCreditoDebito,
   limitarOrdenCompra,
+  obtenerIdEstadoCuotaMaestro,
 } from "@maximilian/shared/utils/facturacion.util";
 import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
 import {
@@ -882,6 +883,38 @@ export function useFormularioFactura(
     });
   };
 
+  const actualizarEstadoCuotaMutation = useMutation({
+    mutationFn: (cuota: EntradaCuotaFactura) => {
+      if (!detalle?.idDocumentoElectronico) return Promise.resolve();
+
+      return facturacionService.actualizarEstadoCuota(
+        detalle.idDocumentoElectronico,
+        cuota.idCuotaDocumentoElectronico,
+        {
+          idEstadoCuotaMaestro: obtenerIdEstadoCuotaMaestro(cuota.estado),
+          fechaPago: cuota.fechaPago,
+        },
+      );
+    },
+    onSuccess: (_resultado, cuota) => {
+      setDetalle((actual) =>
+        actual
+          ? {
+              ...actual,
+              cuotas: actual.cuotas.map((cuotaActual) =>
+                cuotaActual.idCuotaFactura === cuota.idCuotaFactura
+                  ? { ...cuotaActual, estado: cuota.estado, fechaPago: cuota.fechaPago }
+                  : cuotaActual,
+              ),
+            }
+          : actual,
+      );
+    },
+  });
+
+  const actualizarEstadoCuota = (cuota: EntradaCuotaFactura) =>
+    actualizarEstadoCuotaMutation.mutateAsync(cuota);
+
   const quitarCuota = (idCuotaFactura: number) => {
     clearErrors("root.cuotas");
     setDetalle((actual) =>
@@ -1091,6 +1124,8 @@ export function useFormularioFactura(
     guardarEdicionDescuento,
     guardarEdicionIgv,
     guardarCuota,
+    actualizarEstadoCuota,
+    actualizarEstadoCuotaMutation,
     hayEdicionProductoPendiente,
     idProductoDescuentoEdicion,
     idProductoIgvEdicion,

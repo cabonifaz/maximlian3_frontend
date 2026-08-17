@@ -1,11 +1,13 @@
-import { FileDown, Search } from "lucide-react";
+import { AlertTriangle, FileDown, Search } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomFilaListadoFactura } from "@maximilian/components/coordinador/CustomFilaListadoFactura";
 import { CustomFiltroColumnaFactura } from "@maximilian/components/coordinador/CustomFiltroColumnaFactura";
 import { CustomModalEnlaceFactura } from "@maximilian/components/coordinador/CustomModalEnlaceFactura";
 import { CustomModalErroresFactura } from "@maximilian/components/coordinador/CustomModalErroresFactura";
 import { CustomModalExportarLibroVentas } from "@maximilian/components/coordinador/CustomModalExportarLibroVentas";
+import { CustomModalFormularioAnulacionManual } from "@maximilian/components/coordinador/CustomModalFormularioAnulacionManual";
 import { useListadoFacturas } from "@maximilian/hooks/useListadoFacturas";
 import { COLUMNAS_LISTADO_FACTURAS } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import type { EntradaListaFactura } from "@maximilian/shared/types/facturacion.type";
@@ -83,6 +85,10 @@ export function CustomListadoFacturas({
     onAnularFactura(factura);
   };
 
+  const anularFacturaManualmente = (factura: EntradaListaFactura) => {
+    listado.abrirAnulacionManual(factura);
+  };
+
   const crearNotaCreditoDebito = (factura: EntradaListaFactura) => {
     listado.cerrarMenu();
     onCrearNotaCreditoDebito(factura);
@@ -133,6 +139,7 @@ export function CustomListadoFacturas({
             onGenerarUrl={listado.abrirEnlace}
             onVer={verFactura}
             onAnular={anularFactura}
+            onAnularManualmente={anularFacturaManualmente}
             onCrearNotaCreditoDebito={crearNotaCreditoDebito}
             onEditar={editarFactura}
             onAlternarDescarga={listado.alternarSubmenuDescarga}
@@ -168,6 +175,38 @@ export function CustomListadoFacturas({
         errores={listado.erroresFactura}
         cargando={listado.cargandoErrores}
         onCerrar={listado.cerrarErrores}
+      />
+
+      <CustomModalConfirmacionAccion
+        isOpen={listado.facturaAdvertenciaAnulacionManual !== null}
+        onClose={listado.cerrarAdvertenciaAnulacionManual}
+        onConfirm={listado.confirmarAdvertenciaAnulacionManual}
+        title="Anular manualmente"
+        descripcion="Vas a marcar este comprobante como anulado solo en Safety Report. Verifica los datos antes de continuar."
+        textoConfirmar="Sí, ya fue anulado en SUNAT"
+        varianteConfirmar="danger"
+        anchoMaximoClassName="max-w-md"
+        zIndexClassName="z-[95]"
+      >
+        <p className="text-sm font-semibold text-slate-700">
+          {listado.facturaAdvertenciaAnulacionManual?.numeroFactura} · {listado.facturaAdvertenciaAnulacionManual?.cliente}
+        </p>
+        <div className="mt-3 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-red-700">
+          <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+          <p className="text-sm font-medium leading-snug">
+            Acción crítica: úsala únicamente si este comprobante <span className="font-bold">ya fue anulado en SUNAT</span>.
+            Esta opción solo actualiza el estado aquí en Safety Report y <span className="font-bold">no envía ninguna solicitud de anulación a SUNAT</span>.
+          </p>
+        </div>
+      </CustomModalConfirmacionAccion>
+
+      <CustomModalFormularioAnulacionManual
+        key={listado.facturaFormularioAnulacionManual?.idDocumentoElectronico ?? "cerrado"}
+        abierto={listado.facturaFormularioAnulacionManual !== null}
+        cargando={listado.enviandoAnulacionManual}
+        numeroFactura={listado.facturaFormularioAnulacionManual?.numeroFactura}
+        onCerrar={listado.cerrarFormularioAnulacionManual}
+        onConfirmar={listado.confirmarFormularioAnulacionManual}
       />
 
       <CustomModalExportarLibroVentas

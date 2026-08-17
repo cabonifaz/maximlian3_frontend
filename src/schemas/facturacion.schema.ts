@@ -57,6 +57,7 @@ export const esquemaCuotaFactura = z.object({
   monto: z.number({ error: "El monto es requerido" }).min(0, "El monto debe ser mayor o igual a 0"),
   vencimiento: z.date({ error: "La fecha de vencimiento es requerida" }),
   estado: z.enum(["pendiente", "pagado"]),
+  fechaPago: z.date().optional(),
 });
 
 export type DatosFormularioCuotaFactura = z.infer<typeof esquemaCuotaFactura>;
@@ -68,6 +69,15 @@ export const esquemaAnulacionFactura = z.object({
 
 export type DatosFormularioAnulacionFactura = z.infer<
   typeof esquemaAnulacionFactura
+>;
+
+export const esquemaAnulacionManualFactura = z.object({
+  fechaAnulacion: z.date({ error: "La fecha de anulación es requerida" }),
+  motivo: z.string().trim().min(1, "El motivo es requerido"),
+});
+
+export type DatosFormularioAnulacionManualFactura = z.infer<
+  typeof esquemaAnulacionManualFactura
 >;
 
 export const esquemaExportarLibroVentas = z.object({

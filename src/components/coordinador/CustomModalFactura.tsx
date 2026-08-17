@@ -28,6 +28,7 @@ import {
 import {
   ID_ESTADO_FACTURA_APROBADA,
   ID_FORMA_PAGO_CONTADO,
+  ID_FORMA_PAGO_CREDITO,
   PLAZO_MAXIMO_DIAS_ANULACION_FACTURA,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
@@ -41,7 +42,7 @@ interface CustomModalFacturaProps {
 }
 
 function EstadoCuotaBadge({ estado }: { estado: EntradaCuotaFactura["estado"] }) {
-  const clase = estado === "pagado" ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-600";
+  const clase = estado === "pagado" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700";
   const texto = estado === "pagado" ? "Pagado" : "Pendiente";
 
   return <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${clase}`}>{texto}</span>;
@@ -88,6 +89,8 @@ export function CustomModalFactura({
     guardarEdicionDescuento,
     guardarEdicionIgv,
     guardarCuota,
+    actualizarEstadoCuota,
+    actualizarEstadoCuotaMutation,
     hayEdicionProductoPendiente,
     idProductoDescuentoEdicion,
     idProductoIgvEdicion,
@@ -132,6 +135,9 @@ export function CustomModalFactura({
   const soloLectura = modo === "detalle";
   const puedeEditarTipoComprobante =
     modo === "notaCreditoDebito" || detalle?.idDocumentoElectronico === null;
+  const puedeEditarCuotasEnDetalle =
+    !esNotaCreditoDebito && valoresMaestros.idFormaPago === ID_FORMA_PAGO_CREDITO;
+  const cuotasEditables = !soloLectura || puedeEditarCuotasEnDetalle;
 
   const mensajesError = useMemo(
     () => (envioIntentado ? extraerMensajesError(erroresFormulario) : []),
@@ -148,8 +154,18 @@ export function CustomModalFactura({
     setModalProductosAbierto(false);
   };
 
-  const guardarCuotaFactura = (cuota: EntradaCuotaFactura) => {
-    guardarCuota(cuota);
+  const soloEstadoCuota = soloLectura && Boolean(configuracionModalCuota?.cuota);
+
+  const guardarCuotaFactura = async (cuota: EntradaCuotaFactura) => {
+    if (soloEstadoCuota) {
+      try {
+        await actualizarEstadoCuota(cuota);
+      } catch {
+        return;
+      }
+    } else {
+      guardarCuota(cuota);
+    }
     setConfiguracionModalCuota(null);
   };
 
@@ -724,7 +740,7 @@ export function CustomModalFactura({
                       <th className="px-4 py-3 text-right">Monto</th>
                       <th className="px-4 py-3 text-center">Venc.</th>
                       <th className="px-4 py-3 text-center">Estado</th>
-                      {!soloLectura ? <th className="px-4 py-3 text-center">Acciones</th> : null}
+                      {cuotasEditables ? <th className="px-4 py-3 text-center">Acciones</th> : null}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -739,7 +755,7 @@ export function CustomModalFactura({
                         </td>
                         <td className="px-4 py-3 text-center text-slate-600">{cuota.vencimiento}</td>
                         <td className="px-4 py-3 text-center"><EstadoCuotaBadge estado={cuota.estado} /></td>
-                        {!soloLectura ? (
+                        {cuotasEditables ? (
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-center gap-1">
                               <CustomButton
@@ -753,17 +769,19 @@ export function CustomModalFactura({
                               >
                                 <Pencil size={14} />
                               </CustomButton>
-                              <CustomButton
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-red-500"
-                                onClick={() => quitarCuota(cuota.idCuotaFactura)}
-                                aria-label={`Quitar cuota ${cuota.numeroCuota}`}
-                                title="Quitar de la lista"
-                              >
-                                <Trash2 size={14} />
-                              </CustomButton>
+                              {!soloLectura ? (
+                                <CustomButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-red-500"
+                                  onClick={() => quitarCuota(cuota.idCuotaFactura)}
+                                  aria-label={`Quitar cuota ${cuota.numeroCuota}`}
+                                  title="Quitar de la lista"
+                                >
+                                  <Trash2 size={14} />
+                                </CustomButton>
+                              ) : null}
                             </div>
                           </td>
                         ) : null}
@@ -876,7 +894,11 @@ export function CustomModalFactura({
       <CustomModalCuotaFactura
         abierto={configuracionModalCuota !== null}
         numeroCuota={detalle.cuotas.length + 1}
+        idMoneda={valoresMaestros.idMonedaMaestro}
+        simboloMoneda={simboloMoneda}
         cuota={configuracionModalCuota?.cuota}
+        soloEstado={soloEstadoCuota}
+        guardando={actualizarEstadoCuotaMutation.isPending}
         onCerrar={() => setConfiguracionModalCuota(null)}
         onGuardar={guardarCuotaFactura}
       />
