@@ -88,6 +88,24 @@ export const servicioCliente = {
     return data.result[0];
   },
 
+  /**
+   * Resolve the client behind an already-issued electronic document (invoice/note).
+   * Used when a factura is loaded by idDocumentoElectronico and the caller does not
+   * already know its idCliente (e.g. editing/viewing/anulando from the Facturas tab).
+   */
+  obtenerPorDocumentoElectronico: async (
+    idDocumentoElectronico: number,
+  ): Promise<ClientDetail | null> => {
+    const { data } = await maximilianService.get<ApiResponse<ClientDetail[]>>(
+      ENDPOINTS_CLIENTE.obtenerPorDocumentoElectronico,
+      { params: { idDocumentoElectronico } }
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+    return data.result[0] ?? null;
+  },
+
   eliminate: async (data: DeleteClientRequest) => {
     try {
       const { data: responseData } = await maximilianService.post<ApiResponse<{ idCliente: number }[]>>(
