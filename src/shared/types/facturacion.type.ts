@@ -339,6 +339,7 @@ export interface CabeceraFacturaApi {
 export interface LineaFacturaApi {
   idLineaDocumentoElectronico: number;
   numeroLinea: number;
+  idPedido: number;
   productoCodigo: string;
   productoSunatCodigo: string | null;
   descripcion: string;
