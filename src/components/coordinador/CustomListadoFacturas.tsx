@@ -8,6 +8,7 @@ import { CustomModalEnlaceFactura } from "@maximilian/components/coordinador/Cus
 import { CustomModalErroresFactura } from "@maximilian/components/coordinador/CustomModalErroresFactura";
 import { CustomModalExportarLibroVentas } from "@maximilian/components/coordinador/CustomModalExportarLibroVentas";
 import { CustomModalFormularioAnulacionManual } from "@maximilian/components/coordinador/CustomModalFormularioAnulacionManual";
+import { CustomListaNotasDependientesFactura } from "@maximilian/components/coordinador/CustomListaNotasDependientesFactura";
 import { useListadoFacturas } from "@maximilian/hooks/useListadoFacturas";
 import { COLUMNAS_LISTADO_FACTURAS } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import type { EntradaListaFactura } from "@maximilian/shared/types/facturacion.type";
@@ -185,8 +186,18 @@ export function CustomListadoFacturas({
         descripcion="Vas a marcar este comprobante como anulado solo en Safety Report. Verifica los datos antes de continuar."
         textoConfirmar="Sí, ya fue anulado en SUNAT"
         varianteConfirmar="danger"
-        anchoMaximoClassName="max-w-md"
+        anchoMaximoClassName="max-w-2xl"
         zIndexClassName="z-[95]"
+        contenidoAdicional={
+          listado.facturaAdvertenciaAnulacionManual?.documentoAfectado === null ? (
+            <CustomListaNotasDependientesFactura
+              idDocumentoElectronico={
+                listado.facturaAdvertenciaAnulacionManual?.idDocumentoElectronico ?? null
+              }
+              modo="manual"
+            />
+          ) : undefined
+        }
       >
         <p className="text-sm font-semibold text-slate-700">
           {listado.facturaAdvertenciaAnulacionManual?.numeroFactura} · {listado.facturaAdvertenciaAnulacionManual?.cliente}
@@ -204,6 +215,7 @@ export function CustomListadoFacturas({
         key={listado.facturaFormularioAnulacionManual?.idDocumentoElectronico ?? "cerrado"}
         abierto={listado.facturaFormularioAnulacionManual !== null}
         cargando={listado.enviandoAnulacionManual}
+        fechaEmision={listado.facturaFormularioAnulacionManual?.fechaEmision}
         numeroFactura={listado.facturaFormularioAnulacionManual?.numeroFactura}
         onCerrar={listado.cerrarFormularioAnulacionManual}
         onConfirmar={listado.confirmarFormularioAnulacionManual}

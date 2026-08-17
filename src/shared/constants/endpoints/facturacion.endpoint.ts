@@ -26,8 +26,11 @@ export const ENDPOINTS_FACTURACION = {
   ) =>
     `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/cuotas/${idCuotaDocumentoElectronico}/estado`,
   anular: "/api/PedidoFactura/anular",
+  anularPreview: "/api/PedidoFactura/anular/preview",
   anularManualmente: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/anularManualmente`,
+  anularManualmentePreview: (idDocumentoElectronico: number) =>
+    `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/anularManualmente/preview`,
   emitir: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/emitir/${idDocumentoElectronico}`,
   notaCreditoDebito: "/api/PedidoFactura/notaCreditoDebito",

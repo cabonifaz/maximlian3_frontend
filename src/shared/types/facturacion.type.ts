@@ -531,3 +531,19 @@ export interface EditarNotaCreditoDebitoRequest {
   lineas: LineaEditarNotaCreditoDebito[];
   camposExtra: CampoExtraGuardarCambiosFactura[];
 }
+
+export interface DocumentoAnulacionPreviewApi {
+  idDocumentoElectronico: number;
+  tipoDocumentoCodigo: string;
+  numeroDocumento: string;
+  fechaEmision: string;
+  estadoCodigo: string;
+}
+
+export interface DocumentoAfectadoAnulacion {
+  idDocumentoElectronico: number;
+  tipoDocumentoTexto: string;
+  numeroDocumento: string;
+  fechaEmision: string;
+  estadoCodigo: string;
+}

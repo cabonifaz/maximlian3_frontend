@@ -5,8 +5,9 @@ import { useForm, useWatch } from "react-hook-form";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
+import { CustomListaNotasDependientesFactura } from "@maximilian/components/coordinador/CustomListaNotasDependientesFactura";
 import { usePlazoAnulacionFactura } from "@maximilian/hooks/usePlazoAnulacionFactura";
-import { formatearFechaDdMmYyyy } from "@maximilian/shared/utils/fecha.util";
+import { convertirTextoAFecha, formatearFechaDdMmYyyy } from "@maximilian/shared/utils/fecha.util";
 import { PLAZO_MAXIMO_DIAS_ANULACION_FACTURA } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import {
   esquemaAnulacionFactura,
@@ -18,13 +19,17 @@ interface CustomModalAnularFacturaProps {
   cargando: boolean;
   esNotaCreditoDebito?: boolean;
   fechaAceptacion: string | null;
+  fechaEmision: string | null;
+  idDocumentoElectronico: number | null;
   onCerrar: () => void;
   onConfirmar: (datos: DatosFormularioAnulacionFactura) => void;
 }
 
-function obtenerValoresIniciales(): DatosFormularioAnulacionFactura {
+function obtenerValoresIniciales(
+  fechaEmision: string | null,
+): DatosFormularioAnulacionFactura {
   return {
-    fechaReferencia: new Date(),
+    fechaReferencia: convertirTextoAFecha(fechaEmision ?? "") ?? new Date(),
     motivoDescripcion: "",
   };
 }
@@ -34,6 +39,8 @@ export function CustomModalAnularFactura({
   cargando,
   esNotaCreditoDebito = false,
   fechaAceptacion,
+  fechaEmision,
+  idDocumentoElectronico,
   onCerrar,
   onConfirmar,
 }: CustomModalAnularFacturaProps) {
@@ -47,19 +54,19 @@ export function CustomModalAnularFactura({
   } = useForm<DatosFormularioAnulacionFactura>({
     resolver: zodResolver(esquemaAnulacionFactura),
     mode: "onTouched",
-    defaultValues: obtenerValoresIniciales(),
+    defaultValues: obtenerValoresIniciales(fechaEmision),
   });
   const fechaReferencia = useWatch({ control, name: "fechaReferencia" });
   const { puedeAnular, fechaLimiteAnulacion } = usePlazoAnulacionFactura(fechaAceptacion);
 
   useEffect(() => {
-    if (abierto) reset(obtenerValoresIniciales());
-  }, [abierto, reset]);
+    if (abierto) reset(obtenerValoresIniciales(fechaEmision));
+  }, [abierto, fechaEmision, reset]);
 
   if (!abierto) return null;
 
   const cerrar = () => {
-    reset(obtenerValoresIniciales());
+    reset(obtenerValoresIniciales(fechaEmision));
     onCerrar();
   };
 
@@ -88,6 +95,13 @@ export function CustomModalAnularFactura({
 
         {puedeAnular ? (
           <div className="space-y-5 px-7 py-6">
+            {!esNotaCreditoDebito ? (
+              <CustomListaNotasDependientesFactura
+                idDocumentoElectronico={idDocumentoElectronico}
+                modo="normal"
+              />
+            ) : null}
+
             <CustomSelectorFecha
               label="Fecha de referencia"
               required

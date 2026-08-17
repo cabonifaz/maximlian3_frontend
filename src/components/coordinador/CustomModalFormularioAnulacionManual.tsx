@@ -9,18 +9,22 @@ import {
   esquemaAnulacionManualFactura,
   type DatosFormularioAnulacionManualFactura,
 } from "@maximilian/schemas";
+import { convertirTextoAFecha } from "@maximilian/shared/utils/fecha.util";
 
 interface CustomModalFormularioAnulacionManualProps {
   abierto: boolean;
   cargando: boolean;
+  fechaEmision?: string | null;
   numeroFactura?: string;
   onCerrar: () => void;
   onConfirmar: (datos: DatosFormularioAnulacionManualFactura) => void;
 }
 
-function obtenerValoresIniciales(): DatosFormularioAnulacionManualFactura {
+function obtenerValoresIniciales(
+  fechaEmision?: string | null,
+): DatosFormularioAnulacionManualFactura {
   return {
-    fechaAnulacion: new Date(),
+    fechaAnulacion: convertirTextoAFecha(fechaEmision ?? "") ?? new Date(),
     motivo: "",
   };
 }
@@ -28,6 +32,7 @@ function obtenerValoresIniciales(): DatosFormularioAnulacionManualFactura {
 export function CustomModalFormularioAnulacionManual({
   abierto,
   cargando,
+  fechaEmision,
   numeroFactura,
   onCerrar,
   onConfirmar,
@@ -42,18 +47,18 @@ export function CustomModalFormularioAnulacionManual({
   } = useForm<DatosFormularioAnulacionManualFactura>({
     resolver: zodResolver(esquemaAnulacionManualFactura),
     mode: "onTouched",
-    defaultValues: obtenerValoresIniciales(),
+    defaultValues: obtenerValoresIniciales(fechaEmision),
   });
   const fechaAnulacion = useWatch({ control, name: "fechaAnulacion" });
 
   useEffect(() => {
-    if (abierto) reset(obtenerValoresIniciales());
-  }, [abierto, reset]);
+    if (abierto) reset(obtenerValoresIniciales(fechaEmision));
+  }, [abierto, fechaEmision, reset]);
 
   if (!abierto) return null;
 
   const cerrar = () => {
-    reset(obtenerValoresIniciales());
+    reset(obtenerValoresIniciales(fechaEmision));
     onCerrar();
   };
 

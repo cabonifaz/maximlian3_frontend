@@ -3,6 +3,8 @@ import type {
   ActualizarEstadoCuotaRequest,
   AnularFacturaRequest,
   AnularManualmenteFacturaRequest,
+  DocumentoAfectadoAnulacion,
+  DocumentoAnulacionPreviewApi,
   EditarNotaCreditoDebitoRequest,
   EntradaFacturaCliente,
   EntradaFacturacion,
@@ -118,6 +120,18 @@ function mapearListaFactura(
     estado: factura.estadoCodigo,
     colorLetra: factura.colorLetra,
     colorFondo: factura.colorFondo,
+  };
+}
+
+function mapearDocumentoAfectadoAnulacion(
+  documento: DocumentoAnulacionPreviewApi,
+): DocumentoAfectadoAnulacion {
+  return {
+    idDocumentoElectronico: documento.idDocumentoElectronico,
+    tipoDocumentoTexto: documento.tipoDocumentoCodigo,
+    numeroDocumento: documento.numeroDocumento,
+    fechaEmision: documento.fechaEmision,
+    estadoCodigo: documento.estadoCodigo,
   };
 }
 
@@ -614,6 +628,39 @@ export const facturacionService = {
     }
 
     return data.result;
+  },
+
+  obtenerDocumentosAfectadosPorAnulacion: async (
+    idsDocumentoElectronico: number[],
+  ): Promise<DocumentoAfectadoAnulacion[]> => {
+    const parametros = new URLSearchParams();
+    idsDocumentoElectronico.forEach((idDocumentoElectronico) =>
+      parametros.append("idsDocumentoElectronico", String(idDocumentoElectronico)),
+    );
+
+    const { data } = await maximilianService.get<
+      ApiResponse<DocumentoAnulacionPreviewApi[]>
+    >(ENDPOINTS_FACTURACION.anularPreview, { params: parametros });
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return (data.result ?? []).map(mapearDocumentoAfectadoAnulacion);
+  },
+
+  obtenerDocumentosAfectadosPorAnulacionManual: async (
+    idDocumentoElectronico: number,
+  ): Promise<DocumentoAfectadoAnulacion[]> => {
+    const { data } = await maximilianService.get<
+      ApiResponse<DocumentoAnulacionPreviewApi[]>
+    >(ENDPOINTS_FACTURACION.anularManualmentePreview(idDocumentoElectronico));
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return (data.result ?? []).map(mapearDocumentoAfectadoAnulacion);
   },
 
   obtenerResumen: async (
