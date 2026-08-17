@@ -9,6 +9,7 @@ interface CustomModalConfirmacionAccionProps {
   isSubmitting?: boolean;
   confirmDisabled?: boolean;
   children: React.ReactNode;
+  contenidoAdicional?: React.ReactNode;
   descripcion?: string;
   textoConfirmar?: string;
   textoCargandoConfirmar?: string;
@@ -25,6 +26,7 @@ export function CustomModalConfirmacionAccion({
   isSubmitting = false,
   confirmDisabled = false,
   children,
+  contenidoAdicional,
   descripcion = "¿Estás seguro de que deseas continuar? Esta acción no se puede deshacer.",
   textoConfirmar = "Confirmar",
   textoCargandoConfirmar = "Confirmando...",
@@ -51,6 +53,7 @@ export function CustomModalConfirmacionAccion({
           <div className="space-y-1 rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-700">
             {children}
           </div>
+          {contenidoAdicional}
         </div>
 
         <div className="flex justify-end gap-3 border-t border-gray-100 px-8 py-6">
