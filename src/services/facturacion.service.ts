@@ -238,14 +238,6 @@ function obtenerEtiquetaTablaMaestra(opcion?: EntradaTablaMaestra) {
     : "";
 }
 
-function obtenerIdPedidoLinea(
-  codigoProducto: string,
-  idPedidoCabecera: string,
-) {
-  const coincidencia = codigoProducto.match(/(d+)$/);
-  return Number(coincidencia?.[1] ?? idPedidoCabecera);
-}
-
 async function obtenerFacturaRegistrada(
   idReferencia: number,
   idCliente: number | null,
@@ -270,7 +262,7 @@ async function obtenerFacturaRegistrada(
       TablaMaestraId.UNIDAD_MEDIDA_SUNAT,
     ]),
     idCliente === null
-      ? Promise.resolve(null)
+      ? servicioCliente.obtenerPorDocumentoElectronico(idReferencia)
       : servicioCliente.getById(idCliente),
   ]);
 
@@ -321,7 +313,7 @@ async function obtenerFacturaRegistrada(
     idFactura: idReferencia,
     codigoEstadoFacturacion,
     idDocumentoElectronico: cabecera.idDocumentoElectronico,
-    idCliente: idCliente ?? 0,
+    idCliente: idCliente ?? detalleCliente?.idCliente ?? 0,
     idTipoDocumentoSunat: detalleCliente?.idTipoDocumentoSunat ?? 0,
     idTipoDocumentoMaestro: opcionTipoDocumento?.num1 ?? 0,
     idMonedaMaestro: opcionMoneda?.num1 ?? 0,
@@ -362,10 +354,7 @@ async function obtenerFacturaRegistrada(
 
       return {
         idProductoFactura: linea.idLineaDocumentoElectronico,
-        idPedido: obtenerIdPedidoLinea(
-          linea.productoCodigo,
-          cabecera.idExterno,
-        ),
+        idPedido: linea.idPedido,
         codigo: linea.productoCodigo,
         numeroLinea: linea.numeroLinea,
         idLineaDocumentoElectronico: linea.idLineaDocumentoElectronico,

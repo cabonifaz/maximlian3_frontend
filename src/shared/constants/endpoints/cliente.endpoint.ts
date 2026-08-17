@@ -2,6 +2,7 @@ export const ENDPOINTS_CLIENTE = {
   listar: "/api/Cliente/listar",
   crear: "/api/Cliente/crear",
   obtener: "/api/Cliente/obtener",
+  obtenerPorDocumentoElectronico: "/api/Cliente/obtenerPorDocumentoElectronico",
   eliminar: "/api/Cliente/eliminar",
   editar: "/api/Cliente/editar",
   listaCorta: "/api/Cliente/listaCorta",
