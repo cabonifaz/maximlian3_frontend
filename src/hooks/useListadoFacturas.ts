@@ -43,6 +43,10 @@ export function useListadoFacturas() {
   const [cargandoErrores, setCargandoErrores] = useState(false);
   const [idSubmenuDescargaActivo, setIdSubmenuDescargaActivo] =
     useState<number | null>(null);
+  const [idSubmenuOperacionesActivo, setIdSubmenuOperacionesActivo] =
+    useState<number | null>(null);
+  const [idSubmenuEstadoActivo, setIdSubmenuEstadoActivo] =
+    useState<number | null>(null);
   const [modalExportarLibroAbierto, setModalExportarLibroAbierto] =
     useState(false);
   const [exportandoLibro, setExportandoLibro] = useState(false);
@@ -136,13 +140,19 @@ export function useListadoFacturas() {
     reiniciarPagina();
   };
 
+  const cerrarSubmenus = () => {
+    setIdSubmenuDescargaActivo(null);
+    setIdSubmenuOperacionesActivo(null);
+    setIdSubmenuEstadoActivo(null);
+  };
+
   const alternarMenu = (
     evento: MouseEvent<HTMLButtonElement>,
     factura: EntradaListaFactura,
   ) => {
     if (idMenuActivo === factura.idDocumentoElectronico) {
       setIdMenuActivo(null);
-      setIdSubmenuDescargaActivo(null);
+      cerrarSubmenus();
       return;
     }
 
@@ -157,7 +167,7 @@ export function useListadoFacturas() {
       right: window.innerWidth - rectangulo.right,
     });
     setIdMenuActivo(factura.idDocumentoElectronico);
-    setIdSubmenuDescargaActivo(null);
+    cerrarSubmenus();
   };
 
   const abrirEnlace = async (factura: EntradaListaFactura) => {
@@ -194,20 +204,33 @@ export function useListadoFacturas() {
     }
   };
 
-  const alternarSubmenuDescarga = (factura: EntradaListaFactura) => {
-    setIdSubmenuDescargaActivo((idActual) =>
-      idActual === factura.idDocumentoElectronico
-        ? null
-        : factura.idDocumentoElectronico,
-    );
+  const abrirSubmenuDescarga = (factura: EntradaListaFactura) => {
+    cerrarSubmenus();
+    setIdSubmenuDescargaActivo(factura.idDocumentoElectronico);
   };
+
+  const cerrarSubmenuDescarga = () => setIdSubmenuDescargaActivo(null);
+
+  const abrirSubmenuOperaciones = (factura: EntradaListaFactura) => {
+    cerrarSubmenus();
+    setIdSubmenuOperacionesActivo(factura.idDocumentoElectronico);
+  };
+
+  const cerrarSubmenuOperaciones = () => setIdSubmenuOperacionesActivo(null);
+
+  const abrirSubmenuEstado = (factura: EntradaListaFactura) => {
+    cerrarSubmenus();
+    setIdSubmenuEstadoActivo(factura.idDocumentoElectronico);
+  };
+
+  const cerrarSubmenuEstado = () => setIdSubmenuEstadoActivo(null);
 
   const descargarFactura = async (
     factura: EntradaListaFactura,
     formato: FormatoDescargaFactura,
   ) => {
     setIdMenuActivo(null);
-    setIdSubmenuDescargaActivo(null);
+    cerrarSubmenus();
     try {
       const urlDescarga = await facturacionService.obtenerUrlDescargaFactura(
         factura.idDocumentoElectronico,
@@ -316,8 +339,10 @@ export function useListadoFacturas() {
     abrirEnlace,
     abrirErrores,
     abrirModalExportarLibro,
+    abrirSubmenuDescarga,
+    abrirSubmenuEstado,
+    abrirSubmenuOperaciones,
     alternarMenu,
-    alternarSubmenuDescarga,
     cambiarBusqueda,
     cambiarEstado,
     cambiarFechaDesde,
@@ -339,9 +364,12 @@ export function useListadoFacturas() {
     cerrarFormularioAnulacionManual,
     cerrarMenu: () => {
       setIdMenuActivo(null);
-      setIdSubmenuDescargaActivo(null);
+      cerrarSubmenus();
     },
     cerrarModalExportarLibro,
+    cerrarSubmenuDescarga,
+    cerrarSubmenuEstado,
+    cerrarSubmenuOperaciones,
     confirmarAdvertenciaAnulacionManual,
     confirmarEliminarBorrador,
     confirmarFormularioAnulacionManual,
@@ -366,6 +394,8 @@ export function useListadoFacturas() {
     idFormaPagoSeleccionada,
     idMenuActivo,
     idSubmenuDescargaActivo,
+    idSubmenuEstadoActivo,
+    idSubmenuOperacionesActivo,
     isError,
     isLoading,
     modalExportarLibroAbierto,
