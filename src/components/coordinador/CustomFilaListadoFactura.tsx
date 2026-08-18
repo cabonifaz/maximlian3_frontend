@@ -1,24 +1,7 @@
 import type { CSSProperties, MouseEvent } from 'react';
-import {
-  Ban,
-  ChevronRight,
-  Download,
-  Eye,
-  FileCode2,
-  FilePlus2,
-  FileText,
-  Link,
-  MoreHorizontal,
-  Pencil,
-  ShieldAlert,
-  Trash2,
-} from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import { CustomButton } from '@maximilian/components/common/CustomButton';
-import {
-  ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO,
-  ESTADO_CODIGO_FACTURA_ACEPTADA,
-  ESTADO_CODIGO_FACTURA_ACEPTADA_CON_OBSERVACIONES,
-} from '@maximilian/shared/constants/components/coordinador/facturacion.constants';
+import { CustomMenuAccionesFactura } from '@maximilian/components/coordinador/CustomMenuAccionesFactura';
 import type {
   EntradaListaFactura,
   FormatoDescargaFactura,
@@ -30,6 +13,8 @@ interface PropsCustomFilaListadoFactura {
   factura: EntradaListaFactura;
   menuActivo: boolean;
   submenuDescargaActivo: boolean;
+  submenuOperacionesActivo: boolean;
+  submenuEstadoActivo: boolean;
   estiloMenu: CSSProperties;
   onAlternarMenu: (
     evento: MouseEvent<HTMLButtonElement>,
@@ -43,7 +28,12 @@ interface PropsCustomFilaListadoFactura {
   onCrearNotaCreditoDebito: (factura: EntradaListaFactura) => void;
   onEditar: (factura: EntradaListaFactura) => void;
   onEliminarBorrador: (factura: EntradaListaFactura) => void;
-  onAlternarDescarga: (factura: EntradaListaFactura) => void;
+  onAbrirSubmenuDescarga: (factura: EntradaListaFactura) => void;
+  onCerrarSubmenuDescarga: () => void;
+  onAbrirSubmenuOperaciones: (factura: EntradaListaFactura) => void;
+  onCerrarSubmenuOperaciones: () => void;
+  onAbrirSubmenuEstado: (factura: EntradaListaFactura) => void;
+  onCerrarSubmenuEstado: () => void;
   onDescargar: (
     factura: EntradaListaFactura,
     formato: FormatoDescargaFactura,
@@ -55,6 +45,8 @@ export function CustomFilaListadoFactura({
   factura,
   menuActivo,
   submenuDescargaActivo,
+  submenuOperacionesActivo,
+  submenuEstadoActivo,
   estiloMenu,
   onAlternarMenu,
   onCerrarMenu,
@@ -65,7 +57,12 @@ export function CustomFilaListadoFactura({
   onCrearNotaCreditoDebito,
   onEditar,
   onEliminarBorrador,
-  onAlternarDescarga,
+  onAbrirSubmenuDescarga,
+  onCerrarSubmenuDescarga,
+  onAbrirSubmenuOperaciones,
+  onCerrarSubmenuOperaciones,
+  onAbrirSubmenuEstado,
+  onCerrarSubmenuEstado,
   onDescargar,
   onVerErrores,
 }: PropsCustomFilaListadoFactura) {
@@ -131,122 +128,27 @@ export function CustomFilaListadoFactura({
               className='fixed inset-0 z-10'
               onClick={onCerrarMenu}
             />
-            <div
-              className='fixed z-20 w-48 rounded-xl border border-slate-200 bg-white p-1 shadow-xl'
-              style={estiloMenu}
-            >
-              {factura.estado !== ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO ? (
-                <CustomButton
-                  variant='ghost'
-                  size='sm'
-                  className='w-full justify-start px-3 text-slate-700'
-                  onClick={() => onGenerarUrl(factura)}
-                >
-                  <Link size={14} />
-                  Generar URL
-                </CustomButton>
-              ) : null}
-              <CustomButton
-                variant='ghost'
-                size='sm'
-                className='w-full justify-start px-3 text-slate-700'
-                onClick={() => onVer(factura)}
-              >
-                <Eye size={14} />
-                Ver
-              </CustomButton>
-              {factura.estado === ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO ? (
-                <CustomButton
-                  variant='ghost'
-                  size='sm'
-                  className='w-full justify-start px-3 text-slate-700'
-                  onClick={() => onEditar(factura)}
-                >
-                  <Pencil size={14} />
-                  Editar
-                </CustomButton>
-              ) : null}
-              {factura.estado === ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO ? (
-                <CustomButton
-                  variant='ghost'
-                  size='sm'
-                  className='w-full justify-start px-3 text-red-600'
-                  onClick={() => onEliminarBorrador(factura)}
-                >
-                  <Trash2 size={14} />
-                  Eliminar borrador
-                </CustomButton>
-              ) : null}
-              {factura.estado === ESTADO_CODIGO_FACTURA_ACEPTADA ? (
-                <CustomButton
-                  variant='ghost'
-                  size='sm'
-                  className='w-full justify-start px-3 text-red-600'
-                  onClick={() => onAnular(factura)}
-                >
-                  <Ban size={14} />
-                  Anular
-                </CustomButton>
-              ) : null}
-              {factura.estado === ESTADO_CODIGO_FACTURA_ACEPTADA
-              || factura.estado === ESTADO_CODIGO_FACTURA_ACEPTADA_CON_OBSERVACIONES ? (
-                <CustomButton
-                  variant='ghost'
-                  size='sm'
-                  className='w-full justify-start px-3 text-red-600'
-                  onClick={() => onAnularManualmente(factura)}
-                >
-                  <ShieldAlert size={14} />
-                  Anular Manualmente
-                </CustomButton>
-              ) : null}
-              {factura.documentoAfectado === null
-              && factura.estado === ESTADO_CODIGO_FACTURA_ACEPTADA ? (
-                <CustomButton
-                  variant='ghost'
-                  size='sm'
-                  className='w-full justify-start px-3 text-slate-700'
-                  onClick={() => onCrearNotaCreditoDebito(factura)}
-                >
-                  <FilePlus2 size={14} />
-                  Crear Nota de Crédito/Débito
-                </CustomButton>
-              ) : null}
-              <div className='relative'>
-                <CustomButton
-                  variant='ghost'
-                  size='sm'
-                  className='w-full justify-start px-3 text-slate-700'
-                  onClick={() => onAlternarDescarga(factura)}
-                >
-                  <Download size={14} />
-                  <span className='flex-1 text-left'>Descargar</span>
-                  <ChevronRight size={14} className='rotate-180' />
-                </CustomButton>
-                {submenuDescargaActivo ? (
-                  <div className='absolute right-full top-0 mr-1 w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-xl'>
-                    <CustomButton
-                      variant='ghost'
-                      size='sm'
-                      className='w-full justify-start px-3 text-slate-700'
-                      onClick={() => onDescargar(factura, 'pdf')}
-                    >
-                      <FileText size={14} />
-                      PDF
-                    </CustomButton>
-                    <CustomButton
-                      variant='ghost'
-                      size='sm'
-                      className='w-full justify-start px-3 text-slate-700'
-                      onClick={() => onDescargar(factura, 'xml')}
-                    >
-                      <FileCode2 size={14} />
-                      XML
-                    </CustomButton>
-                  </div>
-                ) : null}
-              </div>
-            </div>
+            <CustomMenuAccionesFactura
+              factura={factura}
+              estiloMenu={estiloMenu}
+              submenuDescargaActivo={submenuDescargaActivo}
+              submenuOperacionesActivo={submenuOperacionesActivo}
+              submenuEstadoActivo={submenuEstadoActivo}
+              onGenerarUrl={onGenerarUrl}
+              onVer={onVer}
+              onEditar={onEditar}
+              onEliminarBorrador={onEliminarBorrador}
+              onAnular={onAnular}
+              onAnularManualmente={onAnularManualmente}
+              onCrearNotaCreditoDebito={onCrearNotaCreditoDebito}
+              onAbrirSubmenuDescarga={onAbrirSubmenuDescarga}
+              onCerrarSubmenuDescarga={onCerrarSubmenuDescarga}
+              onAbrirSubmenuOperaciones={onAbrirSubmenuOperaciones}
+              onCerrarSubmenuOperaciones={onCerrarSubmenuOperaciones}
+              onAbrirSubmenuEstado={onAbrirSubmenuEstado}
+              onCerrarSubmenuEstado={onCerrarSubmenuEstado}
+              onDescargar={onDescargar}
+            />
           </>
         ) : null}
       </td>

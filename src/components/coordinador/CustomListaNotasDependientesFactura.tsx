@@ -1,23 +1,24 @@
 import { FileWarning } from "lucide-react";
 import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
-import {
-  useDocumentosAfectadosPorAnulacion,
-  type ModoConsultaAnulacion,
-} from "@maximilian/hooks/useDocumentosAfectadosPorAnulacion";
+import type { ModoConsultaAnulacion } from "@maximilian/hooks/useDocumentosAfectadosPorAnulacion";
+import type { DocumentoAfectadoAnulacion } from "@maximilian/shared/types/facturacion.type";
 import { formatearFechaIsoADdMmYyyy } from "@maximilian/shared/utils/fecha.util";
 
 interface CustomListaNotasDependientesFacturaProps {
+  cargandoNotasDependientes: boolean;
+  errorNotasDependientes: boolean;
   idDocumentoElectronico: number | null;
   modo: ModoConsultaAnulacion;
+  notasDependientes: DocumentoAfectadoAnulacion[];
 }
 
 export function CustomListaNotasDependientesFactura({
+  cargandoNotasDependientes,
+  errorNotasDependientes,
   idDocumentoElectronico,
   modo,
+  notasDependientes,
 }: CustomListaNotasDependientesFacturaProps) {
-  const { notasDependientes, cargandoNotasDependientes, errorNotasDependientes } =
-    useDocumentosAfectadosPorAnulacion(idDocumentoElectronico, modo);
-
   if (idDocumentoElectronico === null) return null;
 
   const hayNotas = !cargandoNotasDependientes && !errorNotasDependientes

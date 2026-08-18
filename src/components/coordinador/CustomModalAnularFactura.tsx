@@ -5,7 +5,6 @@ import { useForm, useWatch } from "react-hook-form";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
-import { CustomListaNotasDependientesFactura } from "@maximilian/components/coordinador/CustomListaNotasDependientesFactura";
 import { usePlazoAnulacionFactura } from "@maximilian/hooks/usePlazoAnulacionFactura";
 import { convertirTextoAFecha, formatearFechaDdMmYyyy } from "@maximilian/shared/utils/fecha.util";
 import { PLAZO_MAXIMO_DIAS_ANULACION_FACTURA } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
@@ -20,7 +19,6 @@ interface CustomModalAnularFacturaProps {
   esNotaCreditoDebito?: boolean;
   fechaAceptacion: string | null;
   fechaEmision: string | null;
-  idDocumentoElectronico: number | null;
   onCerrar: () => void;
   onConfirmar: (datos: DatosFormularioAnulacionFactura) => void;
 }
@@ -40,7 +38,6 @@ export function CustomModalAnularFactura({
   esNotaCreditoDebito = false,
   fechaAceptacion,
   fechaEmision,
-  idDocumentoElectronico,
   onCerrar,
   onConfirmar,
 }: CustomModalAnularFacturaProps) {
@@ -95,13 +92,6 @@ export function CustomModalAnularFactura({
 
         {puedeAnular ? (
           <div className="space-y-5 px-7 py-6">
-            {!esNotaCreditoDebito ? (
-              <CustomListaNotasDependientesFactura
-                idDocumentoElectronico={idDocumentoElectronico}
-                modo="normal"
-              />
-            ) : null}
-
             <CustomSelectorFecha
               label="Fecha de referencia"
               required
@@ -150,7 +140,13 @@ export function CustomModalAnularFactura({
             {puedeAnular ? "Cancelar" : "Cerrar"}
           </CustomButton>
           {puedeAnular ? (
-            <CustomButton type="submit" variant="wine" size="compact" loading={cargando} loadingText="Anulando...">
+            <CustomButton
+              type="submit"
+              variant="wine"
+              size="compact"
+              loading={cargando}
+              loadingText="Anulando..."
+            >
               {esNotaCreditoDebito ? "Anular nota" : "Anular factura"}
             </CustomButton>
           ) : null}
