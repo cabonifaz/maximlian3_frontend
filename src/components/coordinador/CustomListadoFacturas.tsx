@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, FileDown, Search } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
@@ -9,8 +10,14 @@ import { CustomModalErroresFactura } from "@maximilian/components/coordinador/Cu
 import { CustomModalExportarLibroVentas } from "@maximilian/components/coordinador/CustomModalExportarLibroVentas";
 import { CustomModalFormularioAnulacionManual } from "@maximilian/components/coordinador/CustomModalFormularioAnulacionManual";
 import { CustomListaNotasDependientesFactura } from "@maximilian/components/coordinador/CustomListaNotasDependientesFactura";
+import { useDocumentosAfectadosPorAnulacion } from "@maximilian/hooks/useDocumentosAfectadosPorAnulacion";
 import { useListadoFacturas } from "@maximilian/hooks/useListadoFacturas";
-import { COLUMNAS_LISTADO_FACTURAS } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
+import {
+  COLUMNAS_LISTADO_FACTURAS,
+  NUM_MENSAJE_ADVERTENCIA_ANULACION_MANUAL,
+  NUM_MENSAJE_CONFIRMACION_ANULACION_MANUAL,
+} from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import type { EntradaListaFactura } from "@maximilian/shared/types/facturacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 
@@ -28,6 +35,30 @@ export function CustomListadoFacturas({
   onEditarFactura,
 }: PropsCustomListadoFacturas) {
   const listado = useListadoFacturas();
+  const { data: mensajesAnulacionManual } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.MENSAJE_ANULACION_MANUAL_FACTURA],
+    queryFn: () =>
+      servicioTablaMaestra.list(TablaMaestraId.MENSAJE_ANULACION_MANUAL_FACTURA),
+    staleTime: Infinity,
+  });
+  const mensajeAdvertenciaAnulacionManual = mensajesAnulacionManual?.find(
+    (mensaje) => mensaje.num1 === NUM_MENSAJE_ADVERTENCIA_ANULACION_MANUAL,
+  )?.string1 ?? undefined;
+  const mensajeConfirmacionAnulacionManual = mensajesAnulacionManual?.find(
+    (mensaje) => mensaje.num1 === NUM_MENSAJE_CONFIRMACION_ANULACION_MANUAL,
+  )?.string1 ?? undefined;
+  const mostrarNotasAdvertenciaAnulacionManual =
+    listado.facturaAdvertenciaAnulacionManual?.documentoAfectado === null;
+  const {
+    notasDependientes: notasAdvertenciaAnulacionManual,
+    cargandoNotasDependientes: cargandoNotasAdvertenciaAnulacionManual,
+    errorNotasDependientes: errorNotasAdvertenciaAnulacionManual,
+  } = useDocumentosAfectadosPorAnulacion(
+    mostrarNotasAdvertenciaAnulacionManual
+      ? listado.facturaAdvertenciaAnulacionManual?.idDocumentoElectronico ?? null
+      : null,
+    "manual",
+  );
   const columnas = COLUMNAS_LISTADO_FACTURAS.map((columna, indice) => {
     if (indice === 3) {
       return {
@@ -138,6 +169,12 @@ export function CustomListadoFacturas({
             submenuDescargaActivo={
               listado.idSubmenuDescargaActivo === factura.idDocumentoElectronico
             }
+            submenuOperacionesActivo={
+              listado.idSubmenuOperacionesActivo === factura.idDocumentoElectronico
+            }
+            submenuEstadoActivo={
+              listado.idSubmenuEstadoActivo === factura.idDocumentoElectronico
+            }
             estiloMenu={listado.estiloMenu}
             onAlternarMenu={listado.alternarMenu}
             onCerrarMenu={listado.cerrarMenu}
@@ -148,7 +185,12 @@ export function CustomListadoFacturas({
             onCrearNotaCreditoDebito={crearNotaCreditoDebito}
             onEditar={editarFactura}
             onEliminarBorrador={eliminarBorrador}
-            onAlternarDescarga={listado.alternarSubmenuDescarga}
+            onAbrirSubmenuDescarga={listado.abrirSubmenuDescarga}
+            onCerrarSubmenuDescarga={listado.cerrarSubmenuDescarga}
+            onAbrirSubmenuOperaciones={listado.abrirSubmenuOperaciones}
+            onCerrarSubmenuOperaciones={listado.cerrarSubmenuOperaciones}
+            onAbrirSubmenuEstado={listado.abrirSubmenuEstado}
+            onCerrarSubmenuEstado={listado.cerrarSubmenuEstado}
             onDescargar={listado.descargarFactura}
             onVerErrores={listado.abrirErrores}
           />
@@ -187,19 +229,25 @@ export function CustomListadoFacturas({
         isOpen={listado.facturaAdvertenciaAnulacionManual !== null}
         onClose={listado.cerrarAdvertenciaAnulacionManual}
         onConfirm={listado.confirmarAdvertenciaAnulacionManual}
+        confirmDisabled={
+          mostrarNotasAdvertenciaAnulacionManual && cargandoNotasAdvertenciaAnulacionManual
+        }
         title="Anular manualmente"
-        descripcion="Vas a marcar este comprobante como anulado solo en Safety Report. Verifica los datos antes de continuar."
+        descripcion={mensajeConfirmacionAnulacionManual}
         textoConfirmar="Sí, ya fue anulado en SUNAT"
         varianteConfirmar="danger"
         anchoMaximoClassName="max-w-2xl"
         zIndexClassName="z-[95]"
         contenidoAdicional={
-          listado.facturaAdvertenciaAnulacionManual?.documentoAfectado === null ? (
+          mostrarNotasAdvertenciaAnulacionManual ? (
             <CustomListaNotasDependientesFactura
+              cargandoNotasDependientes={cargandoNotasAdvertenciaAnulacionManual}
+              errorNotasDependientes={errorNotasAdvertenciaAnulacionManual}
               idDocumentoElectronico={
                 listado.facturaAdvertenciaAnulacionManual?.idDocumentoElectronico ?? null
               }
               modo="manual"
+              notasDependientes={notasAdvertenciaAnulacionManual}
             />
           ) : undefined
         }
@@ -210,8 +258,7 @@ export function CustomListadoFacturas({
         <div className="mt-3 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-red-700">
           <AlertTriangle size={18} className="mt-0.5 shrink-0" />
           <p className="text-sm font-medium leading-snug">
-            Acción crítica: úsala únicamente si este comprobante <span className="font-bold">ya fue anulado en SUNAT</span>.
-            Esta opción solo actualiza el estado aquí en Safety Report y <span className="font-bold">no envía ninguna solicitud de anulación a SUNAT</span>.
+            {mensajeAdvertenciaAnulacionManual}
           </p>
         </div>
       </CustomModalConfirmacionAccion>

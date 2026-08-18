@@ -909,7 +909,6 @@ export function CustomModalFactura({
         esNotaCreditoDebito={esNotaCreditoDebito}
         fechaAceptacion={detalle.fechaAceptacion}
         fechaEmision={detalle.fechaEmision}
-        idDocumentoElectronico={detalle.idDocumentoElectronico}
         onCerrar={() => setConfirmacionAnulacionAbierta(false)}
         onConfirmar={anularFactura}
       />
