@@ -4,6 +4,8 @@ export const ENDPOINTS_FACTURACION = {
   listarPedidosFacturables: "/api/PedidoFactura/listarPedidos",
   listarFacturas: "/api/PedidoFactura/listarFacturas",
   guardarBorrador: "/api/PedidoFactura/guardarBorrador",
+  eliminarBorrador: (idDocumentoElectronico: number) =>
+    `/api/PedidoFactura/borrador/${idDocumentoElectronico}`,
   resumen: "/api/PedidoFactura/resumen",
   obtenerFactura: (idPedido: number) => `/api/PedidoFactura/factura/${idPedido}`,
   obtenerFacturaPorId: (idDocumentoElectronico: number) =>

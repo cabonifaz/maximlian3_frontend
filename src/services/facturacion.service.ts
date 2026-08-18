@@ -720,6 +720,18 @@ export const facturacionService = {
     return data.result.idDocumentoElectronico;
   },
 
+  eliminarBorrador: async (idDocumentoElectronico: number): Promise<unknown> => {
+    const { data } = await maximilianService.delete<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.eliminarBorrador(idDocumentoElectronico),
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result;
+  },
+
   emitir: async (idDocumentoElectronico: number): Promise<unknown> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
       ENDPOINTS_FACTURACION.emitir(idDocumentoElectronico),

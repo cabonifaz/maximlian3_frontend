@@ -14,6 +14,7 @@ import { formatearMontoDosDecimales } from "@maximilian/shared/utils/formato-mon
 interface CustomModalProductosFacturaProps {
   abierto: boolean;
   idCliente: number;
+  idDocumentoElectronico: number | null;
   idsProductosAgregados: number[];
   onCerrar: () => void;
   onConfirmar: (productos: EntradaProductoFacturable[]) => void;
@@ -22,6 +23,7 @@ interface CustomModalProductosFacturaProps {
 export function CustomModalProductosFactura({
   abierto,
   idCliente,
+  idDocumentoElectronico,
   idsProductosAgregados,
   onCerrar,
   onConfirmar,
@@ -46,7 +48,7 @@ export function CustomModalProductosFactura({
     reiniciarFiltros,
     totalPaginas,
     totalRegistros,
-  } = useProductosFacturables(idCliente, abierto);
+  } = useProductosFacturables(idCliente, idDocumentoElectronico, abierto);
   const estaProductoAgregado = (idProductoFacturable: number) =>
     idsProductosAgregados.includes(idProductoFacturable);
   const estaProductoSeleccionado = (idProductoFacturable: number) =>

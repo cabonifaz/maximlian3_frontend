@@ -11,6 +11,7 @@ import {
   MoreHorizontal,
   Pencil,
   ShieldAlert,
+  Trash2,
 } from 'lucide-react';
 import { CustomButton } from '@maximilian/components/common/CustomButton';
 import {
@@ -41,6 +42,7 @@ interface PropsCustomFilaListadoFactura {
   onAnularManualmente: (factura: EntradaListaFactura) => void;
   onCrearNotaCreditoDebito: (factura: EntradaListaFactura) => void;
   onEditar: (factura: EntradaListaFactura) => void;
+  onEliminarBorrador: (factura: EntradaListaFactura) => void;
   onAlternarDescarga: (factura: EntradaListaFactura) => void;
   onDescargar: (
     factura: EntradaListaFactura,
@@ -62,6 +64,7 @@ export function CustomFilaListadoFactura({
   onAnularManualmente,
   onCrearNotaCreditoDebito,
   onEditar,
+  onEliminarBorrador,
   onAlternarDescarga,
   onDescargar,
   onVerErrores,
@@ -152,52 +155,58 @@ export function CustomFilaListadoFactura({
                 <Eye size={14} />
                 Ver
               </CustomButton>
-              <CustomButton
-                variant='ghost'
-                size='sm'
-                className='w-full justify-start px-3 text-slate-700'
-                onClick={() => onEditar(factura)}
-                disabled={
-                  factura.estado !== ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO
-                }
-              >
-                <Pencil size={14} />
-                Editar
-              </CustomButton>
-              <CustomButton
-                variant='ghost'
-                size='sm'
-                className='w-full justify-start px-3 text-red-600'
-                onClick={() => onAnular(factura)}
-                disabled={
-                  factura.estado !== ESTADO_CODIGO_FACTURA_ACEPTADA
-                }
-              >
-                <Ban size={14} />
-                Anular
-              </CustomButton>
-              <CustomButton
-                variant='ghost'
-                size='sm'
-                className='w-full justify-start px-3 text-red-600'
-                onClick={() => onAnularManualmente(factura)}
-                disabled={
-                  factura.estado !== ESTADO_CODIGO_FACTURA_ACEPTADA
-                  && factura.estado !== ESTADO_CODIGO_FACTURA_ACEPTADA_CON_OBSERVACIONES
-                }
-              >
-                <ShieldAlert size={14} />
-                Anular Manualmente
-              </CustomButton>
-              {factura.documentoAfectado === null ? (
+              {factura.estado === ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO ? (
+                <CustomButton
+                  variant='ghost'
+                  size='sm'
+                  className='w-full justify-start px-3 text-slate-700'
+                  onClick={() => onEditar(factura)}
+                >
+                  <Pencil size={14} />
+                  Editar
+                </CustomButton>
+              ) : null}
+              {factura.estado === ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO ? (
+                <CustomButton
+                  variant='ghost'
+                  size='sm'
+                  className='w-full justify-start px-3 text-red-600'
+                  onClick={() => onEliminarBorrador(factura)}
+                >
+                  <Trash2 size={14} />
+                  Eliminar borrador
+                </CustomButton>
+              ) : null}
+              {factura.estado === ESTADO_CODIGO_FACTURA_ACEPTADA ? (
+                <CustomButton
+                  variant='ghost'
+                  size='sm'
+                  className='w-full justify-start px-3 text-red-600'
+                  onClick={() => onAnular(factura)}
+                >
+                  <Ban size={14} />
+                  Anular
+                </CustomButton>
+              ) : null}
+              {factura.estado === ESTADO_CODIGO_FACTURA_ACEPTADA
+              || factura.estado === ESTADO_CODIGO_FACTURA_ACEPTADA_CON_OBSERVACIONES ? (
+                <CustomButton
+                  variant='ghost'
+                  size='sm'
+                  className='w-full justify-start px-3 text-red-600'
+                  onClick={() => onAnularManualmente(factura)}
+                >
+                  <ShieldAlert size={14} />
+                  Anular Manualmente
+                </CustomButton>
+              ) : null}
+              {factura.documentoAfectado === null
+              && factura.estado === ESTADO_CODIGO_FACTURA_ACEPTADA ? (
                 <CustomButton
                   variant='ghost'
                   size='sm'
                   className='w-full justify-start px-3 text-slate-700'
                   onClick={() => onCrearNotaCreditoDebito(factura)}
-                  disabled={
-                    factura.estado !== ESTADO_CODIGO_FACTURA_ACEPTADA
-                  }
                 >
                   <FilePlus2 size={14} />
                   Crear Nota de Crédito/Débito

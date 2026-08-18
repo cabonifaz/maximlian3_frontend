@@ -100,6 +100,10 @@ export function CustomListadoFacturas({
     onEditarFactura(factura);
   };
 
+  const eliminarBorrador = (factura: EntradaListaFactura) => {
+    listado.abrirEliminarBorrador(factura);
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -143,6 +147,7 @@ export function CustomListadoFacturas({
             onAnularManualmente={anularFacturaManualmente}
             onCrearNotaCreditoDebito={crearNotaCreditoDebito}
             onEditar={editarFactura}
+            onEliminarBorrador={eliminarBorrador}
             onAlternarDescarga={listado.alternarSubmenuDescarga}
             onDescargar={listado.descargarFactura}
             onVerErrores={listado.abrirErrores}
@@ -209,6 +214,22 @@ export function CustomListadoFacturas({
             Esta opción solo actualiza el estado aquí en Safety Report y <span className="font-bold">no envía ninguna solicitud de anulación a SUNAT</span>.
           </p>
         </div>
+      </CustomModalConfirmacionAccion>
+
+      <CustomModalConfirmacionAccion
+        isOpen={listado.facturaEliminarBorrador !== null}
+        onClose={listado.cerrarEliminarBorrador}
+        onConfirm={() => void listado.confirmarEliminarBorrador()}
+        isSubmitting={listado.eliminandoBorrador}
+        title="Eliminar borrador"
+        descripcion="Vas a eliminar este borrador de forma permanente. Esta acción no se puede deshacer."
+        textoConfirmar="Sí, eliminar"
+        textoCargandoConfirmar="Eliminando..."
+        varianteConfirmar="danger"
+      >
+        <p className="text-sm font-semibold text-slate-700">
+          {listado.facturaEliminarBorrador?.numeroFactura} · {listado.facturaEliminarBorrador?.cliente}
+        </p>
       </CustomModalConfirmacionAccion>
 
       <CustomModalFormularioAnulacionManual
