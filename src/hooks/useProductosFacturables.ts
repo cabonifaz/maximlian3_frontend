@@ -4,7 +4,11 @@ import { facturacionService } from "@maximilian/services/facturacion.service";
 import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
 import { CONFIGURACION_CONSULTA_FACTURACION } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
-export function useProductosFacturables(idCliente: number, abierto: boolean) {
+export function useProductosFacturables(
+  idCliente: number,
+  idDocumentoElectronico: number | null,
+  abierto: boolean,
+) {
   const [idTipoTramite, setIdTipoTramite] = useState<number | undefined>();
   const [fechaInicio, setFechaInicio] = useState<Date | undefined>();
   const [fechaFin, setFechaFin] = useState<Date | undefined>();
@@ -21,6 +25,7 @@ export function useProductosFacturables(idCliente: number, abierto: boolean) {
       "facturacion",
       "pedidos-facturables",
       idCliente,
+      idDocumentoElectronico,
       idTipoTramite,
       fechaInicioIso,
       fechaFinIso,
@@ -31,6 +36,7 @@ export function useProductosFacturables(idCliente: number, abierto: boolean) {
       idTipoTramite,
       fechaInicio: fechaInicioIso,
       fechaFin: fechaFinIso,
+      idDocumentoElectronico,
       numPag: paginaActual,
     }),
     enabled: abierto && idCliente > 0 && !fechasInvalidas,

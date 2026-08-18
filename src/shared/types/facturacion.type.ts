@@ -246,6 +246,7 @@ export interface ParametrosListaProductosFacturables {
   idTipoTramite?: number;
   fechaInicio?: string;
   fechaFin?: string;
+  idDocumentoElectronico?: number | null;
   numPag: number;
 }
 

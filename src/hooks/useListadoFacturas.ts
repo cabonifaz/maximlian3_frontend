@@ -51,6 +51,9 @@ export function useListadoFacturas() {
   const [facturaFormularioAnulacionManual, setFacturaFormularioAnulacionManual] =
     useState<EntradaListaFactura | null>(null);
   const [enviandoAnulacionManual, setEnviandoAnulacionManual] = useState(false);
+  const [facturaEliminarBorrador, setFacturaEliminarBorrador] =
+    useState<EntradaListaFactura | null>(null);
+  const [eliminandoBorrador, setEliminandoBorrador] = useState(false);
   const queryClient = useQueryClient();
   const terminoConRetardo = useRetardo(terminoBusqueda);
   const fechaDesdeIso = fechaDesde ? formatearFechaIsoLocal(fechaDesde) : undefined;
@@ -255,6 +258,30 @@ export function useListadoFacturas() {
     }
   };
 
+  const abrirEliminarBorrador = (factura: EntradaListaFactura) => {
+    setFacturaEliminarBorrador(factura);
+    setIdMenuActivo(null);
+  };
+
+  const cerrarEliminarBorrador = () => setFacturaEliminarBorrador(null);
+
+  const confirmarEliminarBorrador = async () => {
+    if (!facturaEliminarBorrador) return;
+
+    setEliminandoBorrador(true);
+    try {
+      await facturacionService.eliminarBorrador(
+        facturaEliminarBorrador.idDocumentoElectronico,
+      );
+      await queryClient.invalidateQueries({ queryKey: ["facturacion"] });
+      setFacturaEliminarBorrador(null);
+    } catch {
+      // manejado por el interceptor
+    } finally {
+      setEliminandoBorrador(false);
+    }
+  };
+
   const abrirModalExportarLibro = () => setModalExportarLibroAbierto(true);
 
   const cerrarModalExportarLibro = () => setModalExportarLibroAbierto(false);
@@ -285,6 +312,7 @@ export function useListadoFacturas() {
 
   return {
     abrirAnulacionManual,
+    abrirEliminarBorrador,
     abrirEnlace,
     abrirErrores,
     abrirModalExportarLibro,
@@ -307,6 +335,7 @@ export function useListadoFacturas() {
       setFacturaErrores(null);
       setErroresFactura([]);
     },
+    cerrarEliminarBorrador,
     cerrarFormularioAnulacionManual,
     cerrarMenu: () => {
       setIdMenuActivo(null);
@@ -314,8 +343,10 @@ export function useListadoFacturas() {
     },
     cerrarModalExportarLibro,
     confirmarAdvertenciaAnulacionManual,
+    confirmarEliminarBorrador,
     confirmarFormularioAnulacionManual,
     descargarFactura,
+    eliminandoBorrador,
     enlaceFactura,
     enviandoAnulacionManual,
     erroresFactura,
@@ -323,6 +354,7 @@ export function useListadoFacturas() {
     exportandoLibro,
     exportarLibroVentas,
     facturaAdvertenciaAnulacionManual,
+    facturaEliminarBorrador,
     facturaEnlace,
     facturaErrores,
     facturaFormularioAnulacionManual,
