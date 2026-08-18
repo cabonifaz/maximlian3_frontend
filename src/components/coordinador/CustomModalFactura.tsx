@@ -885,6 +885,7 @@ export function CustomModalFactura({
       <CustomModalProductosFactura
         abierto={modalProductosAbierto}
         idCliente={detalle.idCliente}
+        idDocumentoElectronico={detalle.idDocumentoElectronico}
         idsProductosAgregados={detalle.productos.map(
           (producto) => producto.idPedido,
         )}
