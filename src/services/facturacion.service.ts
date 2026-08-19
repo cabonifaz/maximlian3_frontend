@@ -60,6 +60,7 @@ import { concatenarCodigosOrdenCompra } from "@maximilian/shared/utils/facturaci
 import {
   CODIGO_SUNAT_NOTA_CREDITO,
   CODIGO_SUNAT_NOTA_DEBITO,
+  ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO,
   ESTADO_CUOTA_CODIGO_PAGADO,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import {
@@ -245,7 +246,11 @@ async function obtenerFacturaRegistrada(
   obtenerEndpointFactura: (
     idReferencia: number,
   ) => string = ENDPOINTS_FACTURACION.obtenerFactura,
+  estadoFactura: string | null = null,
 ): Promise<DetalleFactura> {
+  const esPendienteEnvio =
+    estadoFactura === ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO;
+
   const [{ data }, opcionesPorMaestro, detalleCliente] = await Promise.all([
     maximilianService.get<ApiResponse<ResultadoObtenerFacturaApi>>(
       obtenerEndpointFactura(idReferencia),
@@ -261,9 +266,11 @@ async function obtenerFacturaRegistrada(
       TablaMaestraId.AFECTACION_IGV_SUNAT,
       TablaMaestraId.UNIDAD_MEDIDA_SUNAT,
     ]),
-    idCliente === null
-      ? servicioCliente.obtenerPorDocumentoElectronico(idReferencia)
-      : servicioCliente.getById(idCliente),
+    idCliente !== null
+      ? servicioCliente.getById(idCliente)
+      : esPendienteEnvio
+        ? servicioCliente.obtenerPorDocumentoElectronico(idReferencia)
+        : Promise.resolve(null),
   ]);
 
   if (data.idTipoMensaje !== MessageType.SUCCESS) {
@@ -520,12 +527,14 @@ export const facturacionService = {
   obtenerDetalleFacturaPorDocumento: async (
     idDocumentoElectronico: number,
     codigoEstadoFacturacion: number | null = null,
+    estadoFactura: string | null = null,
   ): Promise<DetalleFactura> =>
     obtenerFacturaRegistrada(
       idDocumentoElectronico,
       null,
       codigoEstadoFacturacion,
       ENDPOINTS_FACTURACION.obtenerFacturaPorId,
+      estadoFactura,
     ),
 
   listarProductosFacturables: async (
