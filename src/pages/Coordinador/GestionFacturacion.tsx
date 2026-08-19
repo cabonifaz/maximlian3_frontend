@@ -188,6 +188,7 @@ export default function GestionFacturacion() {
           factura.estado === ESTADO_CODIGO_FACTURA_ACEPTADA
             ? ID_ESTADO_FACTURA_APROBADA
             : null,
+          factura.estado,
         );
       setModalFactura({
         modo: "detalle",
@@ -208,6 +209,7 @@ export default function GestionFacturacion() {
       const detalle = await facturacionService.obtenerDetalleFacturaPorDocumento(
         factura.idDocumentoElectronico,
         ID_ESTADO_FACTURA_APROBADA,
+        factura.estado,
       );
       setModalFactura({
         modo: "notaCreditoDebito",
@@ -226,6 +228,8 @@ export default function GestionFacturacion() {
     try {
       const detalle = await facturacionService.obtenerDetalleFacturaPorDocumento(
         factura.idDocumentoElectronico,
+        null,
+        factura.estado,
       );
       setModalFactura({
         modo: detalle.esNotaCreditoDebito ? "editarNotaCreditoDebito" : "emitir",
