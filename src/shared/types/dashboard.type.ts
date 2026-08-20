@@ -54,3 +54,92 @@ export interface PropsCargadorTarjetaDashboard {
 export interface PropsTarjetaDashboard {
   estaCargando?: boolean;
 }
+
+export type EstadoFacturaAnaliticaDashboard =
+  | "borrador"
+  | "aprobada"
+  | "rechazada"
+  | "aceptada"
+  | "anulada"
+  | "dada-de-baja";
+
+export type TramiteFacturacionAnaliticaDashboard =
+  | "normal"
+  | "expres"
+  | "super-flash";
+
+export type TipoComprobanteFacturacionAnaliticaDashboard =
+  | "Factura"
+  | "Boleta"
+  | "Nota de Crédito"
+  | "Nota de Débito";
+
+export interface DetalleFacturacionAnaliticaDashboard {
+  id: number;
+  idCliente: number;
+  cliente: string;
+  fechaEmision: string;
+  pais: string;
+  tramite: TramiteFacturacionAnaliticaDashboard;
+  tipoComprobante: TipoComprobanteFacturacionAnaliticaDashboard;
+  estado: EstadoFacturaAnaliticaDashboard;
+  cantidadPedidos: number;
+  montoFacturado: number;
+  monedaIcono: string;
+}
+
+export interface ClientePendienteFacturacionAnaliticaDashboard {
+  idCliente: number;
+  cliente: string;
+  montoPendienteFacturar: number;
+  cantidadPedidosPendientes: number;
+  monedaIcono: string;
+}
+
+export interface FiltrosFacturacionAnaliticaDashboard {
+  fechaDesde?: Date;
+  fechaHasta?: Date;
+  idCliente?: number;
+  estado?: EstadoFacturaAnaliticaDashboard;
+  pais?: string;
+  tramite?: TramiteFacturacionAnaliticaDashboard;
+  tipoComprobante?: TipoComprobanteFacturacionAnaliticaDashboard;
+}
+
+export interface IndicadoresFacturacionAnaliticaDashboard {
+  totalFacturado: number;
+  montoPendienteFacturar: number;
+  cantidadPedidosFacturados: number;
+  cantidadPedidosPendientes: number;
+  totalNotasCredito: number;
+  totalNotasDebito: number;
+  monedaIcono: string;
+}
+
+export interface GrupoFacturacionAnaliticaDashboard {
+  clave: string;
+  etiqueta: string;
+  cantidadPedidos: number;
+  montoFacturado: number;
+}
+
+export interface GrupoEstadoFacturacionAnaliticaDashboard {
+  estado: EstadoFacturaAnaliticaDashboard;
+  cantidadFacturas: number;
+  montoFacturado: number;
+}
+
+export interface EvolucionMensualFacturacionAnaliticaDashboard {
+  mes: string;
+  etiqueta: string;
+  montoFacturado: number;
+}
+
+export interface ResumenClienteFacturacionAnaliticaDashboard {
+  idCliente: number;
+  cliente: string;
+  totalFacturado: number;
+  cantidadPedidos: number;
+  montoPendienteFacturar: number;
+  monedaIcono: string;
+}
