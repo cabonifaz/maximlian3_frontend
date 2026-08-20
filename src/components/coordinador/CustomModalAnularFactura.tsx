@@ -5,9 +5,11 @@ import { useForm, useWatch } from "react-hook-form";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
+import { CustomListaNotasDependientesFactura } from "@maximilian/components/coordinador/CustomListaNotasDependientesFactura";
 import { usePlazoAnulacionFactura } from "@maximilian/hooks/usePlazoAnulacionFactura";
 import { convertirTextoAFecha, formatearFechaDdMmYyyy } from "@maximilian/shared/utils/fecha.util";
 import { PLAZO_MAXIMO_DIAS_ANULACION_FACTURA } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
+import type { DocumentoAfectadoAnulacion } from "@maximilian/shared/types/facturacion.type";
 import {
   esquemaAnulacionFactura,
   type DatosFormularioAnulacionFactura,
@@ -16,9 +18,13 @@ import {
 interface CustomModalAnularFacturaProps {
   abierto: boolean;
   cargando: boolean;
+  cargandoNotasDependientes: boolean;
+  errorNotasDependientes: boolean;
   esNotaCreditoDebito?: boolean;
   fechaAceptacion: string | null;
   fechaEmision: string | null;
+  idDocumentoElectronico: number | null;
+  notasDependientes: DocumentoAfectadoAnulacion[];
   onCerrar: () => void;
   onConfirmar: (datos: DatosFormularioAnulacionFactura) => void;
 }
@@ -35,9 +41,13 @@ function obtenerValoresIniciales(
 export function CustomModalAnularFactura({
   abierto,
   cargando,
+  cargandoNotasDependientes,
+  errorNotasDependientes,
   esNotaCreditoDebito = false,
   fechaAceptacion,
   fechaEmision,
+  idDocumentoElectronico,
+  notasDependientes,
   onCerrar,
   onConfirmar,
 }: CustomModalAnularFacturaProps) {
@@ -71,7 +81,7 @@ export function CustomModalAnularFactura({
     <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
       <form
         onSubmit={puedeAnular ? handleSubmit(onConfirmar) : (evento) => evento.preventDefault()}
-        className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl"
+        className="flex max-h-[85dvh] w-full max-w-lg flex-col rounded-3xl bg-white shadow-2xl"
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-7 py-5">
           <div className="flex items-center gap-3">
@@ -91,7 +101,17 @@ export function CustomModalAnularFactura({
         </div>
 
         {puedeAnular ? (
-          <div className="space-y-5 px-7 py-6">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-7 py-6">
+            {!esNotaCreditoDebito ? (
+              <CustomListaNotasDependientesFactura
+                cargandoNotasDependientes={cargandoNotasDependientes}
+                errorNotasDependientes={errorNotasDependientes}
+                idDocumentoElectronico={idDocumentoElectronico}
+                modo="normal"
+                notasDependientes={notasDependientes}
+              />
+            ) : null}
+
             <CustomSelectorFecha
               label="Fecha de referencia"
               required
