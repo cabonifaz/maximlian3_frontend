@@ -28,10 +28,10 @@ export function CustomLimiteErrorRuta() {
       <p className="mb-8 max-w-md text-sm font-medium text-gray-500">{mensaje}</p>
       <button
         type="button"
-        onClick={() => window.location.assign("/iniciar-sesion")}
+        onClick={() => window.location.assign("/seleccionar-rol")}
         className="rounded-xl bg-brand-black px-6 py-3 text-sm font-bold text-brand-white shadow-lg transition-all hover:bg-brand-black/90"
       >
-        Volver al login
+        Volver a seleccionar rol
       </button>
     </div>
   );

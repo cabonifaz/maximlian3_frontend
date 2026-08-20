@@ -312,6 +312,17 @@ body {
   }
 }
 
+@property --progreso-torta-dashboard {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@keyframes crecer-torta-dashboard {
+  from { --progreso-torta-dashboard: 0; }
+  to { --progreso-torta-dashboard: 100; }
+}
+
 .animacion-crecer-horizontal-dashboard {
   animation: crecer-horizontal-dashboard 1100ms cubic-bezier(0.22, 1, 0.36, 1) both;
   transform-origin: left;
@@ -324,6 +335,14 @@ body {
 
 .animacion-aparecer-grafica-dashboard {
   animation: aparecer-grafica-dashboard 1000ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animacion-crecer-torta-dashboard {
+  animation: crecer-torta-dashboard 1700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  background-image: conic-gradient(
+    transparent calc(var(--progreso-torta-dashboard) * 1%),
+    var(--color-fondo-crecer-torta-dashboard, #fff) calc(var(--progreso-torta-dashboard) * 1%) 100%
+  );
 }
 
 .grafica-circular-dashboard {
@@ -340,5 +359,10 @@ body {
   .animacion-aparecer-grafica-dashboard,
   .grafica-circular-dashboard {
     animation: none;
+  }
+
+  .animacion-crecer-torta-dashboard {
+    animation: none;
+    --progreso-torta-dashboard: 100;
   }
 }

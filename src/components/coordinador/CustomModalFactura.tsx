@@ -8,6 +8,7 @@ import { CustomModalCuotaFactura } from "@maximilian/components/coordinador/Cust
 import { CustomListaCamposExtraFactura } from "@maximilian/components/coordinador/CustomListaCamposExtraFactura";
 import { CustomModalAnularFactura } from "@maximilian/components/coordinador/CustomModalAnularFactura";
 import { CustomModalProductosFactura } from "@maximilian/components/coordinador/CustomModalProductosFactura";
+import { useDocumentosAfectadosPorAnulacion } from "@maximilian/hooks/useDocumentosAfectadosPorAnulacion";
 import {
   useFormularioFactura,
   type ModoFormularioFactura,
@@ -130,6 +131,19 @@ export function CustomModalFactura({
   } = useFormularioFactura(factura, modo, onCerrar, productosIniciales);
   const { puedeAnular: puedeAnularDentroDePlazo } = usePlazoAnulacionFactura(
     detalle?.fechaAceptacion,
+  );
+  const {
+    notasDependientes: notasDependientesAnulacion,
+    cargandoNotasDependientes: cargandoNotasDependientesAnulacion,
+    errorNotasDependientes: errorNotasDependientesAnulacion,
+  } = useDocumentosAfectadosPorAnulacion(
+    confirmacionAnulacionAbierta
+      && !esNotaCreditoDebito
+      && !anularFacturaMutation.isPending
+      && !anularFacturaMutation.isSuccess
+      ? detalle?.idDocumentoElectronico ?? null
+      : null,
+    "normal",
   );
 
   const soloLectura = modo === "detalle";
@@ -906,9 +920,13 @@ export function CustomModalFactura({
       <CustomModalAnularFactura
         abierto={confirmacionAnulacionAbierta}
         cargando={anularFacturaMutation.isPending}
+        cargandoNotasDependientes={cargandoNotasDependientesAnulacion}
+        errorNotasDependientes={errorNotasDependientesAnulacion}
         esNotaCreditoDebito={esNotaCreditoDebito}
         fechaAceptacion={detalle.fechaAceptacion}
         fechaEmision={detalle.fechaEmision}
+        idDocumentoElectronico={detalle.idDocumentoElectronico}
+        notasDependientes={notasDependientesAnulacion}
         onCerrar={() => setConfirmacionAnulacionAbierta(false)}
         onConfirmar={anularFactura}
       />

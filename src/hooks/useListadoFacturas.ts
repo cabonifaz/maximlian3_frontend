@@ -1,4 +1,11 @@
-import { useMemo, useState, type CSSProperties, type MouseEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+} from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { facturacionService } from "@maximilian/services/facturacion.service";
@@ -6,6 +13,7 @@ import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service
 import {
   CONFIGURACION_CONSULTA_FACTURACION,
   INTERVALO_RECARGA_LISTADO_FACTURAS_MS,
+  RETARDO_CIERRE_SUBMENU_ACCIONES_FACTURA_MS,
   TAMANO_PAGINA_LISTADO_FACTURAS,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 import type {
@@ -47,6 +55,7 @@ export function useListadoFacturas() {
     useState<number | null>(null);
   const [idSubmenuEstadoActivo, setIdSubmenuEstadoActivo] =
     useState<number | null>(null);
+  const temporizadorCierreSubmenuRef = useRef<number | null>(null);
   const [modalExportarLibroAbierto, setModalExportarLibroAbierto] =
     useState(false);
   const [exportandoLibro, setExportandoLibro] = useState(false);
@@ -140,10 +149,28 @@ export function useListadoFacturas() {
     reiniciarPagina();
   };
 
+  const cancelarCierreSubmenuProgramado = () => {
+    if (temporizadorCierreSubmenuRef.current !== null) {
+      window.clearTimeout(temporizadorCierreSubmenuRef.current);
+      temporizadorCierreSubmenuRef.current = null;
+    }
+  };
+
+  useEffect(() => cancelarCierreSubmenuProgramado, []);
+
   const cerrarSubmenus = () => {
+    cancelarCierreSubmenuProgramado();
     setIdSubmenuDescargaActivo(null);
     setIdSubmenuOperacionesActivo(null);
     setIdSubmenuEstadoActivo(null);
+  };
+
+  const programarCierreSubmenu = (cerrar: () => void) => {
+    cancelarCierreSubmenuProgramado();
+    temporizadorCierreSubmenuRef.current = window.setTimeout(() => {
+      temporizadorCierreSubmenuRef.current = null;
+      cerrar();
+    }, RETARDO_CIERRE_SUBMENU_ACCIONES_FACTURA_MS);
   };
 
   const alternarMenu = (
@@ -209,21 +236,24 @@ export function useListadoFacturas() {
     setIdSubmenuDescargaActivo(factura.idDocumentoElectronico);
   };
 
-  const cerrarSubmenuDescarga = () => setIdSubmenuDescargaActivo(null);
+  const cerrarSubmenuDescarga = () =>
+    programarCierreSubmenu(() => setIdSubmenuDescargaActivo(null));
 
   const abrirSubmenuOperaciones = (factura: EntradaListaFactura) => {
     cerrarSubmenus();
     setIdSubmenuOperacionesActivo(factura.idDocumentoElectronico);
   };
 
-  const cerrarSubmenuOperaciones = () => setIdSubmenuOperacionesActivo(null);
+  const cerrarSubmenuOperaciones = () =>
+    programarCierreSubmenu(() => setIdSubmenuOperacionesActivo(null));
 
   const abrirSubmenuEstado = (factura: EntradaListaFactura) => {
     cerrarSubmenus();
     setIdSubmenuEstadoActivo(factura.idDocumentoElectronico);
   };
 
-  const cerrarSubmenuEstado = () => setIdSubmenuEstadoActivo(null);
+  const cerrarSubmenuEstado = () =>
+    programarCierreSubmenu(() => setIdSubmenuEstadoActivo(null));
 
   const descargarFactura = async (
     factura: EntradaListaFactura,
