@@ -475,6 +475,23 @@ export interface RespuestaExportarLibroVentas {
   nombreArchivo: string;
 }
 
+export interface AnioMesPrefactura {
+  anio: number;
+  mes: number;
+}
+
+export interface FiltroExportarPrefactura {
+  idCliente: number;
+  fchInicio?: string;
+  fchFin?: string;
+  meses?: AnioMesPrefactura[];
+}
+
+export interface RespuestaExportarPrefactura {
+  archivo: Blob;
+  nombreArchivo: string;
+}
+
 export interface ClienteNotaCreditoDebito {
   idTipoDocumentoSunat: number;
   numeroDocumento: string;

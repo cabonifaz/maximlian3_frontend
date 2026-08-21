@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { Eye, FileText, MoreHorizontal, Search } from "lucide-react";
+import { Eye, FileSpreadsheet, FileText, MoreHorizontal, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomModalFactura } from "@maximilian/components/coordinador/CustomModalFactura";
 import { CustomModalFacturasCliente } from "@maximilian/components/coordinador/CustomModalFacturasCliente";
+import { CustomModalGenerarPrefactura } from "@maximilian/components/coordinador/CustomModalGenerarPrefactura";
 import { useFiltrosFacturacion } from "@maximilian/hooks/useFiltrosFacturacion";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import type { ModoFormularioFactura } from "@maximilian/hooks/useFormularioFactura";
@@ -37,6 +38,7 @@ export default function GestionFacturacion() {
   const [idMenuActivo, setIdMenuActivo] = useState<number | null>(null);
   const [menuDropdownStyle, setMenuDropdownStyle] = useState<React.CSSProperties>({});
   const [clienteSeleccionado, setClienteSeleccionado] = useState<EntradaFacturacion | null>(null);
+  const [clienteParaPrefactura, setClienteParaPrefactura] = useState<EntradaFacturacion | null>(null);
   const [estaCargandoModalFactura, setEstaCargandoModalFactura] = useState(false);
   const [modalFactura, setModalFactura] = useState<{
     modo: ModoFormularioFactura;
@@ -153,7 +155,7 @@ export default function GestionFacturacion() {
     }
 
     const rect = event.currentTarget.getBoundingClientRect();
-    const altoMenu = 92;
+    const altoMenu = 136;
     const espacioInferior = window.innerHeight - rect.bottom;
     const top = espacioInferior < altoMenu ? rect.top - altoMenu - 4 : rect.bottom + 4;
     setMenuDropdownStyle({ top, right: window.innerWidth - rect.right });
@@ -359,6 +361,17 @@ export default function GestionFacturacion() {
                 <FileText size={14} />
                 <span>Emitir Factura</span>
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setClienteParaPrefactura(facturacion);
+                  setIdMenuActivo(null);
+                }}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                <FileSpreadsheet size={14} />
+                <span>Generar Prefactura</span>
+              </button>
             </div>
           </>
         ) : null}
@@ -467,6 +480,14 @@ export default function GestionFacturacion() {
         abrirAnulacionInicial={modalFactura?.abrirAnulacionInicial}
         onCerrar={() => setModalFactura(null)}
       />
+      {clienteParaPrefactura ? (
+        <CustomModalGenerarPrefactura
+          abierto={clienteParaPrefactura !== null}
+          idCliente={clienteParaPrefactura.idFacturacion}
+          cliente={clienteParaPrefactura.cliente}
+          onCerrar={() => setClienteParaPrefactura(null)}
+        />
+      ) : null}
     </div>
   );
 }

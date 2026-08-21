@@ -39,4 +39,5 @@ export const ENDPOINTS_FACTURACION = {
   editarNotaCreditoDebito: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/notaCreditoDebito/${idDocumentoElectronico}`,
   sireRvieTxt: "/api/PedidoFactura/sireRvie/txt",
+  exportarPrefactura: "/api/PedidoFactura/listarPedidos/exportarExcel",
 } as const;

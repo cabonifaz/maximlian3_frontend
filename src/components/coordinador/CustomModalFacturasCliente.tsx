@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Edit,
   Eye,
+  FileSpreadsheet,
   Loader2,
   MoreHorizontal,
   Plus,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
+import { CustomModalGenerarPrefactura } from "@maximilian/components/coordinador/CustomModalGenerarPrefactura";
 import { useListadoFacturasCliente } from "@maximilian/hooks/useListadoFacturasCliente";
 import {
   CODIGOS_ESTADO_FACTURA_EDITABLES,
@@ -66,6 +68,7 @@ export function CustomModalFacturasCliente({
   const [idSubmenuEstadoActivo, setIdSubmenuEstadoActivo] = useState<number | null>(null);
   const [estiloMenu, setEstiloMenu] = useState<React.CSSProperties>({});
   const [submenuEstadoHaciaArriba, setSubmenuEstadoHaciaArriba] = useState(false);
+  const [prefacturaAbierta, setPrefacturaAbierta] = useState(false);
   const {
     terminoBusqueda,
     paginaActual,
@@ -259,7 +262,15 @@ export function CustomModalFacturasCliente({
           />
         </div>
 
-        <div className="flex justify-end border-t border-slate-100 bg-slate-50/60 px-8 py-4">
+        <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50/60 px-8 py-4">
+          <CustomButton
+            variant="secondary"
+            size="compact"
+            onClick={() => setPrefacturaAbierta(true)}
+          >
+            <FileSpreadsheet size={14} />
+            Generar Prefactura
+          </CustomButton>
           <CustomButton
             variant="primary"
             size="compact"
@@ -273,6 +284,12 @@ export function CustomModalFacturasCliente({
         </div>
       </div>
     </div>
+    <CustomModalGenerarPrefactura
+      abierto={prefacturaAbierta}
+      idCliente={idCliente}
+      cliente={cliente}
+      onCerrar={() => setPrefacturaAbierta(false)}
+    />
     {facturaMenuActivo ? createPortal(
       <>
         <button

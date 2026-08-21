@@ -14,6 +14,7 @@ import type {
   EntradaProductoFacturable,
   EntradaProductoFacturableApi,
   ErrorDocumentoFactura,
+  FiltroExportarPrefactura,
   FormatoDescargaFactura,
   GuardarBorradorFacturaRequest,
   GuardarCambiosFacturaRequest,
@@ -25,6 +26,7 @@ import type {
   ParametrosListaProductosFacturables,
   ParametrosResumenFacturacion,
   RespuestaExportarLibroVentas,
+  RespuestaExportarPrefactura,
   RespuestaListaFacturasCliente,
   RespuestaListaFacturacion,
   RespuestaListaFacturas,
@@ -875,6 +877,33 @@ export const facturacionService = {
     const respuesta = await maximilianService.get<Blob>(
       ENDPOINTS_FACTURACION.sireRvieTxt,
       { params: { periodo }, responseType: "blob" },
+    );
+
+    const tipoContenido = respuesta.headers["content-type"] ?? "";
+
+    if (tipoContenido.includes("application/json")) {
+      const texto = await respuesta.data.text();
+      const data = JSON.parse(texto) as ApiResponse<unknown>;
+      throw new ErrorRespuestaApi(data);
+    }
+
+    const nombreArchivo = obtenerNombreArchivoDesdeCabecera(
+      respuesta.headers["content-disposition"],
+    );
+
+    return {
+      archivo: respuesta.data,
+      nombreArchivo,
+    };
+  },
+
+  exportarPrefactura: async (
+    filtro: FiltroExportarPrefactura,
+  ): Promise<RespuestaExportarPrefactura> => {
+    const respuesta = await maximilianService.post<Blob>(
+      ENDPOINTS_FACTURACION.exportarPrefactura,
+      filtro,
+      { responseType: "blob" },
     );
 
     const tipoContenido = respuesta.headers["content-type"] ?? "";

@@ -87,3 +87,14 @@ export const esquemaExportarLibroVentas = z.object({
 export type DatosFormularioExportarLibroVentas = z.infer<
   typeof esquemaExportarLibroVentas
 >;
+
+export const esquemaGenerarPrefactura = z.object({
+  modo: z.enum(["rango", "meses"]),
+  fechaInicio: z.date().optional(),
+  fechaFin: z.date().optional(),
+  meses: z.array(z.date()),
+});
+
+export type DatosFormularioGenerarPrefactura = z.infer<
+  typeof esquemaGenerarPrefactura
+>;

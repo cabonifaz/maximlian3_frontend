@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, CircleX, FilePenLine, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { AlertTriangle, CircleX, FilePenLine, FileSpreadsheet, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
@@ -7,6 +7,7 @@ import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSele
 import { CustomModalCuotaFactura } from "@maximilian/components/coordinador/CustomModalCuotaFactura";
 import { CustomListaCamposExtraFactura } from "@maximilian/components/coordinador/CustomListaCamposExtraFactura";
 import { CustomModalAnularFactura } from "@maximilian/components/coordinador/CustomModalAnularFactura";
+import { CustomModalGenerarPrefactura } from "@maximilian/components/coordinador/CustomModalGenerarPrefactura";
 import { CustomModalProductosFactura } from "@maximilian/components/coordinador/CustomModalProductosFactura";
 import { useDocumentosAfectadosPorAnulacion } from "@maximilian/hooks/useDocumentosAfectadosPorAnulacion";
 import {
@@ -64,6 +65,7 @@ export function CustomModalFactura({
   const [confirmacionSunatAbierta, setConfirmacionSunatAbierta] = useState(false);
   const [confirmacionAnulacionAbierta, setConfirmacionAnulacionAbierta] =
     useState(abrirAnulacionInicial);
+  const [prefacturaAbierta, setPrefacturaAbierta] = useState(false);
   const {
     afectacionIgvPredeterminadaDescripcion,
     afectacionesIgv,
@@ -858,6 +860,17 @@ export function CustomModalFactura({
                 </CustomButton>
               ) : (
                 <>
+                  {modo === "emitir" && !esNotaCreditoDebito ? (
+                    <CustomButton
+                      type="button"
+                      variant="secondary"
+                      size="compact"
+                      onClick={() => setPrefacturaAbierta(true)}
+                    >
+                      <FileSpreadsheet size={14} />
+                      Generar Prefactura
+                    </CustomButton>
+                  ) : null}
                   <CustomButton
                     type="submit"
                     variant="secondary"
@@ -916,6 +929,12 @@ export function CustomModalFactura({
         guardando={actualizarEstadoCuotaMutation.isPending}
         onCerrar={() => setConfiguracionModalCuota(null)}
         onGuardar={guardarCuotaFactura}
+      />
+      <CustomModalGenerarPrefactura
+        abierto={prefacturaAbierta}
+        idCliente={detalle.idCliente}
+        cliente={detalle.cliente}
+        onCerrar={() => setPrefacturaAbierta(false)}
       />
       <CustomModalAnularFactura
         abierto={confirmacionAnulacionAbierta}
