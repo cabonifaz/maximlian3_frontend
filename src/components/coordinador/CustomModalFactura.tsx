@@ -8,7 +8,7 @@ import { CustomModalCuotaFactura } from "@maximilian/components/coordinador/Cust
 import { CustomListaCamposExtraFactura } from "@maximilian/components/coordinador/CustomListaCamposExtraFactura";
 import { CustomModalAnularFactura } from "@maximilian/components/coordinador/CustomModalAnularFactura";
 import { CustomModalGenerarPrefactura } from "@maximilian/components/coordinador/CustomModalGenerarPrefactura";
-import { CustomModalProductosFactura } from "@maximilian/components/coordinador/CustomModalProductosFactura";
+import { CustomModalLineasPendientesFactura } from "@maximilian/components/coordinador/CustomModalLineasPendientesFactura";
 import { useDocumentosAfectadosPorAnulacion } from "@maximilian/hooks/useDocumentosAfectadosPorAnulacion";
 import {
   useFormularioFactura,
@@ -18,6 +18,7 @@ import { usePlazoAnulacionFactura } from "@maximilian/hooks/usePlazoAnulacionFac
 import type {
   DetalleFactura,
   EntradaCuotaFactura,
+  EntradaLineaAgrupadaPendiente,
   EntradaProductoFacturable,
 } from "@maximilian/shared/types/facturacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
@@ -69,8 +70,8 @@ export function CustomModalFactura({
   const {
     afectacionIgvPredeterminadaDescripcion,
     afectacionesIgv,
+    agregarLineaAgrupada,
     agregarLineaNota,
-    agregarProductos: agregarProductosFormulario,
     anularFactura,
     anularFacturaMutation,
     actualizarCampoFactura,
@@ -165,8 +166,8 @@ export function CustomModalFactura({
   const puedeAnularFactura =
     detalle.codigoEstadoFacturacion === ID_ESTADO_FACTURA_APROBADA;
 
-  const agregarProductos = (productos: EntradaProductoFacturable[]) => {
-    agregarProductosFormulario(productos);
+  const lineasAgregadas = (lineas: EntradaLineaAgrupadaPendiente[]) => {
+    lineas.forEach((linea) => agregarLineaAgrupada(linea));
     setModalProductosAbierto(false);
   };
 
@@ -402,9 +403,7 @@ export function CustomModalFactura({
                   <thead className="bg-slate-50 text-xs font-bold text-slate-500">
                     <tr>
                       <th className="px-4 py-3 text-center">Cantidad</th>
-                      {esNotaCreditoDebito ? (
-                        <th className="w-40 min-w-40 max-w-40 px-4 py-3 text-center">Código</th>
-                      ) : null}
+                      <th className="w-40 min-w-40 max-w-40 px-4 py-3 text-center">Código</th>
                       <th className="px-4 py-3 text-center">Descripción</th>
                       <th className="w-48 min-w-48 max-w-48 px-4 py-3 text-center">Unidad de medida</th>
                       <th className="px-4 py-3 text-center">Dscto. %</th>
@@ -431,31 +430,46 @@ export function CustomModalFactura({
                       return (
                       <tr key={producto.idProductoFactura}>
                         <td className="px-4 py-3 text-center text-slate-600">{producto.cantidad}</td>
-                        {esNotaCreditoDebito ? (
-                          <td className="w-48 min-w-48 max-w-48 px-4 py-3">
-                            {soloLectura ? (
-                              <span className="text-slate-600">{producto.codigo}</span>
-                            ) : (
-                              <CustomSelectorBuscable
-                                options={obtenerOpcionesCodigoDisponibles(producto.idProductoFactura)}
-                                value={
-                                  opcionesCodigoNota.find(
-                                    (opcion) => opcion.string1 === codigosProducto?.[claveProducto],
-                                  )?.num1 ?? undefined
-                                }
-                                displayValue={codigosProducto?.[claveProducto] || producto.codigo}
-                                onChange={(valor) =>
-                                  seleccionarCodigoProducto(producto.idProductoFactura, valor)}
-                                onAddNew={(texto) =>
-                                  agregarCodigoPersonalizadoNota(producto.idProductoFactura, texto)}
-                                placeholder="Seleccione código"
-                                required
-                                obtenerEtiquetaOpcion={(opcion) => opcion.string1 ?? ""}
-                                error={errorCodigoProducto?.message}
+                        <td className="w-48 min-w-48 max-w-48 px-4 py-3">
+                          {soloLectura ? (
+                            <span className="text-slate-600">{producto.codigo}</span>
+                          ) : esNotaCreditoDebito ? (
+                            <CustomSelectorBuscable
+                              options={obtenerOpcionesCodigoDisponibles(producto.idProductoFactura)}
+                              value={
+                                opcionesCodigoNota.find(
+                                  (opcion) => opcion.string1 === codigosProducto?.[claveProducto],
+                                )?.num1 ?? undefined
+                              }
+                              displayValue={codigosProducto?.[claveProducto] || producto.codigo}
+                              onChange={(valor) =>
+                                seleccionarCodigoProducto(producto.idProductoFactura, valor)}
+                              onAddNew={(texto) =>
+                                agregarCodigoPersonalizadoNota(producto.idProductoFactura, texto)}
+                              placeholder="Seleccione código"
+                              required
+                              obtenerEtiquetaOpcion={(opcion) => opcion.string1 ?? ""}
+                              error={errorCodigoProducto?.message}
+                            />
+                          ) : (
+                            <>
+                              <input
+                                {...registrarDescripcion(
+                                  `codigosProducto.${producto.idProductoFactura}`,
+                                )}
+                                aria-label={`Código de ${producto.descripcion}`}
+                                className={`w-full rounded-md border px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-brand-wine ${
+                                  errorCodigoProducto ? "border-red-500" : "border-slate-200"
+                                }`}
                               />
-                            )}
-                          </td>
-                        ) : null}
+                              {errorCodigoProducto ? (
+                                <p className="mt-1 text-left text-[10px] text-red-500">
+                                  {errorCodigoProducto.message}
+                                </p>
+                              ) : null}
+                            </>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-left">
                           {soloLectura ? (
                             <span className="font-medium text-slate-700">
@@ -909,15 +923,14 @@ export function CustomModalFactura({
         </form>
       </div>
 
-      <CustomModalProductosFactura
+      <CustomModalLineasPendientesFactura
         abierto={modalProductosAbierto}
         idCliente={detalle.idCliente}
-        idDocumentoElectronico={detalle.idDocumentoElectronico}
-        idsProductosAgregados={detalle.productos.map(
-          (producto) => producto.idPedido,
-        )}
+        idsLineasAgregadas={detalle.productos
+          .map((producto) => producto.idLineaDocumentoElectronico)
+          .filter((id): id is number => Boolean(id))}
         onCerrar={() => setModalProductosAbierto(false)}
-        onConfirmar={agregarProductos}
+        onAgregar={lineasAgregadas}
       />
       <CustomModalCuotaFactura
         abierto={configuracionModalCuota !== null}

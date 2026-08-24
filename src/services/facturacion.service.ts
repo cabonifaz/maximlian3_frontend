@@ -3,9 +3,13 @@ import type {
   ActualizarEstadoCuotaRequest,
   AnularFacturaRequest,
   AnularManualmenteFacturaRequest,
+  CrearLineaAgrupadaFacturaRequest,
   DocumentoAfectadoAnulacion,
   DocumentoAnulacionPreviewApi,
+  EditarLineaAgrupadaFacturaRequest,
   EditarNotaCreditoDebitoRequest,
+  EntradaLineaAgrupadaFacturaApi,
+  EntradaLineaAgrupadaPendiente,
   EntradaFacturaCliente,
   EntradaFacturacion,
   EntradaFacturacionApi,
@@ -22,6 +26,7 @@ import type {
   NotaCreditoDebitoRequest,
   ParametrosListaFacturacion,
   ParametrosListaFacturas,
+  ParametrosListaLineasPendientes,
   ParametrosListaPedidosFacturacion,
   ParametrosListaProductosFacturables,
   ParametrosResumenFacturacion,
@@ -34,6 +39,7 @@ import type {
   ResumenFacturacion,
   ResultadoListaFacturacionApi,
   ResultadoListaFacturasApi,
+  ResultadoListaLineasPendientesApi,
   ResultadoListaPedidosFacturacionApi,
   ResultadoListaProductosFacturablesApi,
   ResultadoGuardarBorradorFactura,
@@ -201,13 +207,17 @@ function mapearProductoFacturable(
   return {
     idProductoFacturable: pedido.idPedido,
     codigo: pedido.codigo,
-    investigado: pedido.investigado,
+    numReferencia: pedido.numReferencia,
+    investigado: pedido.investigado ?? "",
+    pais: pedido.pais,
     aplicaPenalidad: pedido.aplicaPenalidad === "Si",
     tipo,
     fecha: pedido.fecha,
     penalidad: pedido.penalidad,
     precio: pedido.precio,
     descuentoPorcentaje: pedido.descuentoPorcentaje,
+    idMoneda: pedido.idMoneda,
+    moneda: pedido.moneda,
   };
 }
 
@@ -339,7 +349,7 @@ async function obtenerFacturaRegistrada(
     ni: cabecera.clienteNumeroDocumento,
     ordenCompra: concatenarCodigosOrdenCompra(
       cabecera.numeroReferencia ?? "",
-      lineas.map((linea) => linea.productoCodigo),
+      lineas.map((linea) => linea.productoCodigo ?? ""),
     ),
     fechaEmision: formatearFechaIsoADdMmYyyy(cabecera.fechaEmision),
     fechaAceptacion: cabecera.fechaAceptacion
@@ -364,7 +374,7 @@ async function obtenerFacturaRegistrada(
       return {
         idProductoFactura: linea.idLineaDocumentoElectronico,
         idPedido: linea.idPedido,
-        codigo: linea.productoCodigo,
+        codigo: linea.productoCodigo ?? "",
         numeroLinea: linea.numeroLinea,
         idLineaDocumentoElectronico: linea.idLineaDocumentoElectronico,
         productoSunatCodigo: linea.productoSunatCodigo,
@@ -552,8 +562,6 @@ export const facturacionService = {
 
     return {
       productos: data.result.pedidos.map(mapearProductoFacturable),
-      totalRegistros: data.result.totalRegistros,
-      totalPaginas: data.result.totalPaginas,
     };
   },
 
@@ -561,24 +569,71 @@ export const facturacionService = {
     idCliente: number,
     idPedido: number,
   ): Promise<EntradaProductoFacturable | null> => {
-    let paginaActual = 1;
-    let totalPaginas = 1;
+    const respuesta = await facturacionService.listarProductosFacturables({
+      idCliente,
+    });
 
-    do {
-      const respuesta = await facturacionService.listarProductosFacturables({
-        idCliente,
-        numPag: paginaActual,
-      });
-      const producto = respuesta.productos.find(
+    return (
+      respuesta.productos.find(
         (productoActual) => productoActual.idProductoFacturable === idPedido,
-      );
+      ) ?? null
+    );
+  },
 
-      if (producto) return producto;
-      totalPaginas = respuesta.totalPaginas;
-      paginaActual += 1;
-    } while (paginaActual <= totalPaginas);
+  crearLineaAgrupada: async (
+    solicitud: CrearLineaAgrupadaFacturaRequest,
+  ): Promise<EntradaLineaAgrupadaFacturaApi> => {
+    const { data } = await maximilianService.post<
+      ApiResponse<EntradaLineaAgrupadaFacturaApi>
+    >(ENDPOINTS_FACTURACION.lineas, solicitud);
 
-    return null;
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result;
+  },
+
+  editarLineaAgrupada: async (
+    idPedidoFacturaLinea: number,
+    solicitud: EditarLineaAgrupadaFacturaRequest,
+  ): Promise<unknown> => {
+    const { data } = await maximilianService.put<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.editarLinea(idPedidoFacturaLinea),
+      solicitud,
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result;
+  },
+
+  eliminarLinea: async (idPedidoFacturaLinea: number): Promise<unknown> => {
+    const { data } = await maximilianService.delete<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.eliminarLinea(idPedidoFacturaLinea),
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result;
+  },
+
+  listarLineasPendientes: async (
+    parametros: ParametrosListaLineasPendientes,
+  ): Promise<EntradaLineaAgrupadaPendiente[]> => {
+    const { data } = await maximilianService.get<
+      ApiResponse<ResultadoListaLineasPendientesApi>
+    >(ENDPOINTS_FACTURACION.lineas, { params: parametros });
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result.lineas;
   },
 
   actualizarEstado: async (

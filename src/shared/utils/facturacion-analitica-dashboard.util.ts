@@ -1,8 +1,9 @@
 import type {
   ClientePendienteFacturacionAnaliticaDashboard,
   DetalleFacturacionAnaliticaDashboard,
-  EvolucionMensualFacturacionAnaliticaDashboard,
+  EvolucionFacturacionAnaliticaDashboard,
   FiltrosFacturacionAnaliticaDashboard,
+  GranularidadTiempoDashboard,
   GrupoEstadoFacturacionAnaliticaDashboard,
   GrupoFacturacionAnaliticaDashboard,
   IndicadoresFacturacionAnaliticaDashboard,
@@ -11,10 +12,10 @@ import type {
 import {
   CANTIDAD_MAXIMA_SEGMENTOS_TORTA_PAIS,
   CLAVE_OTROS_PAISES_FACTURACION_ANALITICA_DASHBOARD,
-  ETIQUETAS_MES_CORTO_ES,
   ETIQUETA_OTROS_PAISES_FACTURACION_ANALITICA_DASHBOARD,
 } from "@maximilian/shared/constants/components/gerente/facturacion-analitica-dashboard.constants";
 import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
+import { obtenerClavePeriodo, obtenerEtiquetaPeriodo } from "@maximilian/shared/utils/dashboard-tiempo.util";
 
 const TIPOS_COMPROBANTE_VENTA = ["Factura", "Boleta"] as const;
 const TIPOS_COMPROBANTE_NOTA_CREDITO = ["Nota de Crédito"] as const;
@@ -117,22 +118,27 @@ export function agruparFacturacionPorEstado(
   return [...grupos.values()].sort((a, b) => b.cantidadFacturas - a.cantidadFacturas);
 }
 
-export function agruparEvolucionMensualFacturacion(
+export function agruparEvolucionFacturacion(
   filas: DetalleFacturacionAnaliticaDashboard[],
-): EvolucionMensualFacturacionAnaliticaDashboard[] {
-  const totalesPorMes = new Map<string, number>();
+  granularidad: GranularidadTiempoDashboard,
+): EvolucionFacturacionAnaliticaDashboard[] {
+  const totalesPorPeriodo = new Map<string, { montoFacturado: number; cantidadPedidos: number }>();
 
   filas.forEach((fila) => {
-    const mes = fila.fechaEmision.slice(0, 7);
-    totalesPorMes.set(mes, (totalesPorMes.get(mes) ?? 0) + fila.montoFacturado);
+    const periodo = obtenerClavePeriodo(fila.fechaEmision, granularidad);
+    const acumulado = totalesPorPeriodo.get(periodo) ?? { montoFacturado: 0, cantidadPedidos: 0 };
+    totalesPorPeriodo.set(periodo, {
+      montoFacturado: acumulado.montoFacturado + fila.montoFacturado,
+      cantidadPedidos: acumulado.cantidadPedidos + fila.cantidadPedidos,
+    });
   });
 
-  return [...totalesPorMes.entries()]
-    .sort(([mesA], [mesB]) => mesA.localeCompare(mesB))
-    .map(([mes, montoFacturado]) => ({
-      mes,
-      etiqueta: ETIQUETAS_MES_CORTO_ES[Number(mes.slice(5, 7)) - 1] ?? mes,
-      montoFacturado,
+  return [...totalesPorPeriodo.entries()]
+    .sort(([periodoA], [periodoB]) => periodoA.localeCompare(periodoB))
+    .map(([periodo, totales]) => ({
+      periodo,
+      etiqueta: obtenerEtiquetaPeriodo(periodo, granularidad),
+      ...totales,
     }));
 }
 

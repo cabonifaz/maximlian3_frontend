@@ -13,6 +13,7 @@ import type {
   CampoExtraLineaFactura,
   DetalleFactura,
   EntradaCuotaFactura,
+  EntradaLineaAgrupadaFacturaApi,
   EntradaProductoFacturable,
   EntradaProductoFactura,
 } from "@maximilian/shared/types/facturacion.type";
@@ -67,6 +68,23 @@ const resolverFormularioFactura = (
       resultado.errors = {
         ...resultado.errors,
         idMotivoMaestro: { type: "custom", message: "El código de motivo es requerido" },
+      };
+    }
+
+    const codigosProductoFaltantes = Object.entries(datos.codigosProducto ?? {})
+      .filter(([, codigo]) => !codigo.trim());
+    if (codigosProductoFaltantes.length > 0) {
+      resultado.errors = {
+        ...resultado.errors,
+        codigosProducto: {
+          ...resultado.errors.codigosProducto,
+          ...Object.fromEntries(
+            codigosProductoFaltantes.map(([clave]) => [
+              clave,
+              { type: "custom", message: "El código es requerido" },
+            ]),
+          ),
+        },
       };
     }
   } else if (!datos.idFormaPago || datos.idFormaPago <= 0) {
@@ -821,6 +839,75 @@ export function useFormularioFactura(
     );
   };
 
+  const agregarLineaAgrupada = (linea: EntradaLineaAgrupadaFacturaApi) => {
+    clearErrors("root.cuotas");
+    const idAfectacionIgvLinea = idAfectacionIgvPredeterminada ?? 0;
+    const precioUnitario = calcularPrecioUnitarioFactura(
+      linea.valorUnitario,
+      idAfectacionIgvLinea,
+      PORCENTAJE_IGV_PREDETERMINADO,
+      linea.descuentoPorcentaje,
+    );
+    const productoNuevo: EntradaProductoFactura = {
+      idProductoFactura: linea.idPedidoFacturaLinea,
+      idPedido: 0,
+      codigo: linea.codigo,
+      numeroLinea: 0,
+      idLineaDocumentoElectronico: linea.idPedidoFacturaLinea,
+      productoSunatCodigo: null,
+      idUnidadMedidaMaestro: ID_UNIDAD_MEDIDA_PREDETERMINADA,
+      unidadMedidaDescripcion: DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA,
+      cantidad: linea.cantidad,
+      descripcion: linea.descripcion,
+      descuentoPorcentaje: linea.descuentoPorcentaje,
+      valorUnitario: linea.valorUnitario,
+      precioUnitario,
+      porcentajeIgv: PORCENTAJE_IGV_PREDETERMINADO,
+      idAfectacionIgvMaestro: idAfectacionIgvLinea,
+      afectacionIgvDescripcion: opcionAfectacionIgvPredeterminada
+        ? obtenerEtiquetaPrincipalSecundaria(opcionAfectacionIgvPredeterminada)
+        : "",
+      total: linea.cantidad * precioUnitario,
+    };
+    const claveProducto = String(productoNuevo.idProductoFactura);
+
+    setValue("descuentos", {
+      ...getValues("descuentos"),
+      [claveProducto]: productoNuevo.descuentoPorcentaje,
+    });
+    setValue("porcentajesIgv", {
+      ...getValues("porcentajesIgv"),
+      [claveProducto]: productoNuevo.porcentajeIgv,
+    });
+    setValue("afectacionesIgv", {
+      ...getValues("afectacionesIgv"),
+      [claveProducto]: productoNuevo.idAfectacionIgvMaestro,
+    });
+    setValue("unidadesMedida", {
+      ...getValues("unidadesMedida"),
+      [claveProducto]: productoNuevo.idUnidadMedidaMaestro,
+    });
+    setValue("descripciones", {
+      ...getValues("descripciones"),
+      [claveProducto]: productoNuevo.descripcion,
+    });
+    setValue("valoresUnitarios", {
+      ...getValues("valoresUnitarios"),
+      [claveProducto]: productoNuevo.valorUnitario,
+    });
+    setDetalle((actual) =>
+      actual
+        ? {
+            ...actual,
+            ordenCompra: concatenarCodigosOrdenCompra(actual.ordenCompra, [
+              productoNuevo.codigo,
+            ]),
+            productos: [...actual.productos, productoNuevo],
+          }
+        : actual,
+    );
+  };
+
   const quitarProducto = (producto: EntradaProductoFactura) => {
     clearErrors("root.cuotas");
     unregister(`descuentos.${producto.idProductoFactura}`);
@@ -1074,6 +1161,7 @@ export function useFormularioFactura(
 
   return {
     afectacionesIgv,
+    agregarLineaAgrupada,
     agregarProductos,
     anularFactura: (datos: DatosFormularioAnulacionFactura) =>
       anularFacturaMutation.mutate(datos),

@@ -1,4 +1,5 @@
 import { useFacturacionAnaliticaDashboard } from "@maximilian/hooks/useFacturacionAnaliticaDashboard";
+import { OPCIONES_METRICA_DESGLOSE_FACTURACION_DASHBOARD } from "@maximilian/shared/constants/pages/Gerente/dashboard-tiempo.constants";
 import { CustomFiltrosFacturacionAnaliticaGerente } from "./CustomFiltrosFacturacionAnaliticaGerente";
 import { CustomIndicadoresFacturacionAnaliticaGerente } from "./CustomIndicadoresFacturacionAnaliticaGerente";
 import { CustomEvolucionFacturacionAnaliticaGerente } from "./CustomEvolucionFacturacionAnaliticaGerente";
@@ -12,11 +13,15 @@ export function CustomFacturacionAnaliticaGerente() {
     actualizarFiltros,
     limpiarFiltros,
     fechasInvalidas,
+    granularidad,
+    cambiarGranularidad,
+    metricaDesglose,
+    cambiarMetricaDesglose,
     indicadores,
     desglosePorTramite,
     desglosePorPais,
     desglosePorEstado,
-    evolucionMensual,
+    evolucion,
     resumenClientes,
   } = useFacturacionAnaliticaDashboard();
 
@@ -45,10 +50,33 @@ export function CustomFacturacionAnaliticaGerente() {
         fechaHasta={filtros.fechaHasta}
       />
 
+      <div className="mb-5 flex items-center justify-end gap-2">
+        <span className="text-[10px] font-semibold uppercase text-slate-400">Ver por:</span>
+        <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+          {OPCIONES_METRICA_DESGLOSE_FACTURACION_DASHBOARD.map((opcion) => (
+            <button
+              key={opcion.valor}
+              type="button"
+              onClick={() => cambiarMetricaDesglose(opcion.valor)}
+              className={`rounded-md px-2.5 py-1 text-[10px] font-semibold transition ${
+                metricaDesglose === opcion.valor
+                  ? "bg-white text-brand-wine shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              {opcion.etiqueta}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="mb-5 grid gap-5 xl:grid-cols-2">
         <CustomEvolucionFacturacionAnaliticaGerente
-          evolucionMensual={evolucionMensual}
+          evolucion={evolucion}
           monedaIcono={indicadores.monedaIcono}
+          granularidad={granularidad}
+          onCambiarGranularidad={cambiarGranularidad}
+          metricaDesglose={metricaDesglose}
         />
         <CustomEstadoFacturasAnaliticaGerente
           desglosePorEstado={desglosePorEstado}
@@ -61,6 +89,7 @@ export function CustomFacturacionAnaliticaGerente() {
           desglosePorTramite={desglosePorTramite}
           desglosePorPais={desglosePorPais}
           monedaIcono={indicadores.monedaIcono}
+          metricaDesglose={metricaDesglose}
         />
       </div>
 

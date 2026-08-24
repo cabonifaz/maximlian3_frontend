@@ -10,11 +10,22 @@ import type {
   NotaCreditoDebitoRequest,
 } from "@maximilian/shared/types/facturacion.type";
 import {
+  ESTILOS_TIPO_PRODUCTO_FACTURABLE,
   ID_ESTADO_CUOTA_PAGADO,
   ID_ESTADO_CUOTA_PENDIENTE,
   ID_FORMA_PAGO_CONTADO,
   LIMITE_CARACTERES_ORDEN_COMPRA,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
+
+export function obtenerEstiloTipoTramiteAgrupado(tipoTramite: string) {
+  const normalizado = tipoTramite.trim().toLowerCase().replaceAll(" ", "-");
+  const clave =
+    normalizado === "express" || normalizado === "super-flash"
+      ? normalizado
+      : "normal";
+
+  return ESTILOS_TIPO_PRODUCTO_FACTURABLE[clave];
+}
 
 export function limitarOrdenCompra(valor: string) {
   return valor.slice(0, LIMITE_CARACTERES_ORDEN_COMPRA);
@@ -144,16 +155,11 @@ export function construirPayloadGuardarBorradorFactura(
     documentoAfectado: null,
     lineas: detalle.productos.map((producto) => {
       const claveProducto = String(producto.idProductoFactura);
-      const descuentoPorcentaje = datos.descuentos[claveProducto] ?? producto.descuentoPorcentaje;
 
       return {
-        idPedido: producto.idPedido,
+        idPedidoFacturaLinea: producto.idLineaDocumentoElectronico,
         productoSunatCodigo: producto.productoSunatCodigo,
-        descripcion: datos.descripciones[claveProducto] ?? producto.descripcion,
         idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
-        cantidad: producto.cantidad,
-
-        montoDescuento: producto.cantidad * producto.valorUnitario * descuentoPorcentaje / 100,
         idAfectacionIgvMaestro: datos.afectacionesIgv[claveProducto],
         porcentajeIgv: datos.porcentajesIgv[claveProducto],
       };
@@ -211,21 +217,11 @@ export function construirPayloadGuardarCambiosFactura(
     idTipoOperacionMaestro: datos.idTipoOperacionMaestro,
     lineas: detalle.productos.map((producto, indice) => {
       const claveProducto = String(producto.idProductoFactura);
-      const descuentoPorcentaje =
-        datos.descuentos[claveProducto] ?? producto.descuentoPorcentaje;
 
       return {
-        idPedido: producto.idPedido,
+        idPedidoFacturaLinea: producto.idLineaDocumentoElectronico,
         productoSunatCodigo: producto.productoSunatCodigo,
-        descripcion: datos.descripciones[claveProducto] ?? producto.descripcion,
         idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
-        cantidad: producto.cantidad,
-
-        montoDescuento:
-          producto.cantidad
-          * producto.valorUnitario
-          * descuentoPorcentaje
-          / 100,
         idAfectacionIgvMaestro: datos.afectacionesIgv[claveProducto],
         porcentajeIgv: datos.porcentajesIgv[claveProducto],
         numeroLinea: producto.numeroLinea || indice + 1,

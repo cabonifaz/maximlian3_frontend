@@ -7,6 +7,7 @@ import {
 } from "@maximilian/shared/constants/components/gerente/facturacion-analitica-dashboard.constants";
 import type {
   GrupoFacturacionAnaliticaDashboard,
+  MetricaDesgloseFacturacionAnaliticaDashboard,
   TramiteFacturacionAnaliticaDashboard,
 } from "@maximilian/shared/types/dashboard.type";
 
@@ -14,16 +15,20 @@ interface PropsCustomDesglosesFacturacionAnaliticaGerente {
   desglosePorTramite: GrupoFacturacionAnaliticaDashboard[];
   desglosePorPais: GrupoFacturacionAnaliticaDashboard[];
   monedaIcono: string;
+  metricaDesglose: MetricaDesgloseFacturacionAnaliticaDashboard;
 }
 
 export function CustomDesglosesFacturacionAnaliticaGerente({
   desglosePorTramite,
   desglosePorPais,
   monedaIcono,
+  metricaDesglose,
 }: PropsCustomDesglosesFacturacionAnaliticaGerente) {
   return (
     <section className="h-full rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h3 className="mb-5 text-sm font-bold text-slate-800">Facturación por trámite y país</h3>
+      <h3 className="mb-5 text-sm font-bold text-slate-800">
+        {metricaDesglose === "monto" ? "Facturación" : "Pedidos"} por trámite y país
+      </h3>
 
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
@@ -31,6 +36,7 @@ export function CustomDesglosesFacturacionAnaliticaGerente({
           <CustomTortaFacturacionAnaliticaGerente
             grupos={desglosePorTramite}
             monedaIcono={monedaIcono}
+            metrica={metricaDesglose}
             obtenerColor={(grupo) =>
               ESTILOS_TRAMITE_FACTURACION_ANALITICA_DASHBOARD[
                 grupo.clave as TramiteFacturacionAnaliticaDashboard
@@ -49,6 +55,7 @@ export function CustomDesglosesFacturacionAnaliticaGerente({
           <CustomTortaFacturacionAnaliticaGerente
             grupos={desglosePorPais}
             monedaIcono={monedaIcono}
+            metrica={metricaDesglose}
             obtenerColor={(grupo, indice) =>
               grupo.clave === CLAVE_OTROS_PAISES_FACTURACION_ANALITICA_DASHBOARD
                 ? COLOR_OTROS_PAISES_FACTURACION_ANALITICA_DASHBOARD

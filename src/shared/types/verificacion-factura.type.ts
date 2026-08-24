@@ -77,3 +77,17 @@ export interface ResultadoVerificacionFacturaApi {
   referencia: unknown | null;
   cuotas: CuotaVerificacionFacturaApi[];
 }
+
+export type TipoPedidoDetalleFacturaVerificacion = "normal" | "express" | "super-flash";
+
+export interface PedidoDetalleFacturaVerificacion {
+  idPedido: number;
+  tipo: TipoPedidoDetalleFacturaVerificacion;
+  investigarRazonSocialNombres: string;
+  numeroReferencia: string;
+  pais: string;
+  fechaSolicitud: string;
+  fechaEnvio: string;
+  tipoServicio: string;
+  precio: number;
+}

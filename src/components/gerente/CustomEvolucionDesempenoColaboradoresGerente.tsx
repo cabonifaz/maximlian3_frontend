@@ -1,41 +1,33 @@
 import { CustomBarrasEvolucionDashboardGerente } from "./CustomBarrasEvolucionDashboardGerente";
-import { OPCIONES_GRANULARIDAD_FACTURACION_DASHBOARD } from "@maximilian/shared/constants/pages/Gerente/dashboard-tiempo.constants";
+import { OPCIONES_GRANULARIDAD_ANALISTAS_DASHBOARD } from "@maximilian/shared/constants/pages/Gerente/dashboard-tiempo.constants";
 import type {
-  EvolucionFacturacionAnaliticaDashboard,
+  EvolucionInformesColaboradoresDashboard,
   GranularidadTiempoDashboard,
-  MetricaDesgloseFacturacionAnaliticaDashboard,
 } from "@maximilian/shared/types/dashboard.type";
 
-interface PropsCustomEvolucionFacturacionAnaliticaGerente {
-  evolucion: EvolucionFacturacionAnaliticaDashboard[];
-  monedaIcono: string;
+interface PropsCustomEvolucionDesempenoColaboradoresGerente {
+  evolucion: EvolucionInformesColaboradoresDashboard[];
   granularidad: GranularidadTiempoDashboard;
   onCambiarGranularidad: (granularidad: GranularidadTiempoDashboard) => void;
-  metricaDesglose: MetricaDesgloseFacturacionAnaliticaDashboard;
 }
 
-export function CustomEvolucionFacturacionAnaliticaGerente({
+export function CustomEvolucionDesempenoColaboradoresGerente({
   evolucion,
-  monedaIcono,
   granularidad,
   onCambiarGranularidad,
-  metricaDesglose,
-}: PropsCustomEvolucionFacturacionAnaliticaGerente) {
-  const esMonto = metricaDesglose === "monto";
+}: PropsCustomEvolucionDesempenoColaboradoresGerente) {
   const datos = evolucion.map((punto) => ({
     periodo: punto.periodo,
     etiqueta: punto.etiqueta,
-    valor: esMonto ? punto.montoFacturado : punto.cantidadPedidos,
+    valor: punto.cantidadInformes,
   }));
 
   return (
-    <section className="h-full rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="mb-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-sm font-bold text-slate-800">
-          Evolución de {esMonto ? "facturación" : "pedidos"} por {granularidad === "dia" ? "día" : granularidad === "semana" ? "semana" : "mes"}
-        </h3>
+        <h3 className="text-sm font-bold text-slate-800">Producción de informes</h3>
         <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
-          {OPCIONES_GRANULARIDAD_FACTURACION_DASHBOARD.map((opcion) => (
+          {OPCIONES_GRANULARIDAD_ANALISTAS_DASHBOARD.map((opcion) => (
             <button
               key={opcion.valor}
               type="button"
@@ -52,7 +44,10 @@ export function CustomEvolucionFacturacionAnaliticaGerente({
         </div>
       </div>
 
-      <CustomBarrasEvolucionDashboardGerente datos={datos} prefijo={esMonto ? monedaIcono : ""} />
+      <CustomBarrasEvolucionDashboardGerente
+        datos={datos}
+        mensajeVacio="No hay informes en el período seleccionado."
+      />
     </section>
   );
 }

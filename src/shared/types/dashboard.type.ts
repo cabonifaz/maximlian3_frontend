@@ -55,6 +55,10 @@ export interface PropsTarjetaDashboard {
   estaCargando?: boolean;
 }
 
+export type GranularidadTiempoDashboard = "dia" | "semana" | "mes" | "ano";
+
+export type MetricaDesgloseFacturacionAnaliticaDashboard = "monto" | "pedidos";
+
 export type EstadoFacturaAnaliticaDashboard =
   | "borrador"
   | "aprobada"
@@ -129,10 +133,11 @@ export interface GrupoEstadoFacturacionAnaliticaDashboard {
   montoFacturado: number;
 }
 
-export interface EvolucionMensualFacturacionAnaliticaDashboard {
-  mes: string;
+export interface EvolucionFacturacionAnaliticaDashboard {
+  periodo: string;
   etiqueta: string;
   montoFacturado: number;
+  cantidadPedidos: number;
 }
 
 export interface ResumenClienteFacturacionAnaliticaDashboard {
@@ -142,4 +147,52 @@ export interface ResumenClienteFacturacionAnaliticaDashboard {
   cantidadPedidos: number;
   montoPendienteFacturar: number;
   monedaIcono: string;
+}
+
+export type RolColaboradorDesempenoDashboard = "Analista" | "Traductor";
+
+export interface ColaboradorDesempenoDashboard {
+  idColaborador: number;
+  colaborador: string;
+  rol: RolColaboradorDesempenoDashboard;
+  iniciales: string;
+  colorLetra: string;
+  colorFondo: string;
+}
+
+export interface InformeColaboradorDesempenoDashboard {
+  id: number;
+  idColaborador: number;
+  fechaEntrega: string;
+  esTardio: boolean;
+  tieneObservaciones: boolean;
+  tieneInformacionFinanciera: boolean;
+}
+
+export interface FiltrosDesempenoColaboradoresDashboard {
+  fechaDesde?: Date;
+  fechaHasta?: Date;
+  idColaborador?: number;
+  rol?: RolColaboradorDesempenoDashboard;
+}
+
+export interface EvolucionInformesColaboradoresDashboard {
+  periodo: string;
+  etiqueta: string;
+  cantidadInformes: number;
+}
+
+export interface ResumenColaboradorDesempenoDashboard {
+  idColaborador: number;
+  colaborador: string;
+  rol: RolColaboradorDesempenoDashboard;
+  iniciales: string;
+  colorLetra: string;
+  colorFondo: string;
+  cantidadOrdenes: number;
+  porcentajeCumplimiento: number;
+  cantidadInformes: number;
+  cantidadTardios: number;
+  cantidadObservados: number;
+  cantidadConInformacionFinanciera: number;
 }

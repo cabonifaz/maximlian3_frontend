@@ -41,12 +41,7 @@ export const esquemaFormularioFactura = z.object({
     z.number({ error: "El valor unitario es requerido" })
       .min(0, "El valor unitario debe ser mayor o igual a 0"),
   ),
-  codigosProducto: z.record(
-    z.string(),
-    z.string({ error: "El código es requerido" })
-      .trim()
-      .min(1, "El código es requerido"),
-  ),
+  codigosProducto: z.record(z.string(), z.string().trim()),
   idMotivoMaestro: z.number().optional(),
 });
 
@@ -97,4 +92,17 @@ export const esquemaGenerarPrefactura = z.object({
 
 export type DatosFormularioGenerarPrefactura = z.infer<
   typeof esquemaGenerarPrefactura
+>;
+
+export const esquemaLineaAgrupadaFactura = z.object({
+  codigo: z.string().trim().max(30, "El código no puede superar los 30 caracteres"),
+  descripcion: z
+    .string()
+    .trim()
+    .min(1, "La descripción es requerida")
+    .max(500, "La descripción no puede superar los 500 caracteres"),
+});
+
+export type DatosFormularioLineaAgrupadaFactura = z.infer<
+  typeof esquemaLineaAgrupadaFactura
 >;

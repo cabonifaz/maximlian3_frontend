@@ -124,10 +124,6 @@ export const PALETA_COLORES_PAIS_FACTURACION_ANALITICA_DASHBOARD = [
   "#6366f1",
 ];
 
-export const ETIQUETAS_MES_CORTO_ES = [
-  "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
-] as const;
-
 export const COLUMNAS_TABLA_CLIENTES_FACTURACION_ANALITICA_DASHBOARD: TableColumn[] = [
   { label: "Cliente", width: "34%" },
   { label: "Total facturado", className: "text-right", width: "22%" },
