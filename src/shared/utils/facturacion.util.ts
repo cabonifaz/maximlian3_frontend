@@ -157,7 +157,7 @@ export function construirPayloadGuardarBorradorFactura(
       const claveProducto = String(producto.idProductoFactura);
 
       return {
-        idPedidoFacturaLinea: producto.idLineaDocumentoElectronico,
+        idPedidoFacturaLinea: producto.idPedidoFacturaLinea,
         productoSunatCodigo: producto.productoSunatCodigo,
         idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
         idAfectacionIgvMaestro: datos.afectacionesIgv[claveProducto],
@@ -219,7 +219,7 @@ export function construirPayloadGuardarCambiosFactura(
       const claveProducto = String(producto.idProductoFactura);
 
       return {
-        idPedidoFacturaLinea: producto.idLineaDocumentoElectronico,
+        idPedidoFacturaLinea: producto.idPedidoFacturaLinea,
         productoSunatCodigo: producto.productoSunatCodigo,
         idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
         idAfectacionIgvMaestro: datos.afectacionesIgv[claveProducto],

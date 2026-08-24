@@ -175,6 +175,7 @@ export default function GestionFacturacion() {
             ? ID_ESTADO_FACTURA_APROBADA
             : null,
           factura.estado,
+          factura.documentoAfectado !== null,
         );
       setModalFactura({
         modo: "detalle",
@@ -210,6 +211,7 @@ export default function GestionFacturacion() {
         factura.idDocumentoElectronico,
         null,
         factura.estado,
+        factura.documentoAfectado !== null,
       );
       setModalFactura({
         modo: detalle.esNotaCreditoDebito ? "editarNotaCreditoDebito" : "emitir",

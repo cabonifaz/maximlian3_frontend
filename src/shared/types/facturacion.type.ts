@@ -168,7 +168,7 @@ export interface RespuestaListaFacturasCliente {
 
 export interface EntradaProductoFactura {
   idProductoFactura: number;
-  idPedido: number;
+  idPedidoFacturaLinea: number;
   codigo: string;
   numeroLinea: number;
   idLineaDocumentoElectronico: number;
@@ -308,6 +308,8 @@ export interface ParametrosListaLineasPendientes {
   idCliente: number;
   anio?: number;
   mes?: number;
+  idDocumentoElectronico?: number;
+  idMoneda?: number;
 }
 
 export interface EntradaLineaAgrupadaPendiente {
@@ -391,7 +393,7 @@ export interface CabeceraFacturaApi {
 export interface LineaFacturaApi {
   idLineaDocumentoElectronico: number;
   numeroLinea: number;
-  idPedido: number;
+  idPedidoFacturaLinea: number;
   productoCodigo: string | null;
   productoSunatCodigo: string | null;
   descripcion: string;

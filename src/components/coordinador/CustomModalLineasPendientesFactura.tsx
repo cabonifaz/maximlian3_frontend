@@ -14,76 +14,117 @@ import { formatearMontoDosDecimales } from "@maximilian/shared/utils/formato-mon
 interface CustomModalLineasPendientesFacturaProps {
   abierto: boolean;
   idCliente: number;
+  idDocumentoElectronico?: number | null;
+  idMonedaFactura?: number;
   idsLineasAgregadas: number[];
   onCerrar: () => void;
-  onAgregar: (lineas: EntradaLineaAgrupadaPendiente[]) => void;
+  onConfirmar: (
+    paraAgregar: EntradaLineaAgrupadaPendiente[],
+    paraQuitar: EntradaLineaAgrupadaPendiente[],
+  ) => void;
 }
 
 export function CustomModalLineasPendientesFactura({
   abierto,
   idCliente,
+  idDocumentoElectronico = null,
+  idMonedaFactura,
   idsLineasAgregadas,
   onCerrar,
-  onAgregar,
+  onConfirmar,
 }: CustomModalLineasPendientesFacturaProps) {
   const {
     cambiarMes,
+    cambiarMoneda,
     cambiarTipoTramite,
     estaCargando,
     hayError,
+    idMoneda,
     idTipoTramite,
-    lineas: lineasFiltradas,
+    lineas,
     mesSeleccionado,
     recargar,
     reiniciarFiltros,
-  } = useLineasPendientesFactura(idCliente, abierto);
-  const [seleccionadas, setSeleccionadas] = useState<Set<number>>(new Set());
-  const [crearLineaAbierta, setCrearLineaAbierta] = useState(false);
-
-  const lineas = lineasFiltradas.filter(
-    (linea) => !idsLineasAgregadas.includes(linea.idPedidoFacturaLinea),
+  } = useLineasPendientesFactura(
+    idCliente,
+    abierto,
+    idDocumentoElectronico,
+    idMonedaFactura,
   );
+  const [crearLineaAbierta, setCrearLineaAbierta] = useState(false);
+  // Ids cuyo estado de selección se movió respecto al valor por defecto
+  // (ya agregada = seleccionada por defecto), para no perder la selección
+  // inicial de las líneas que ya están en la factura al listarlas de nuevo.
+  const [togglados, setTogglados] = useState<Set<number>>(new Set());
+
+  const estaSeleccionada = (idPedidoFacturaLinea: number) =>
+    idsLineasAgregadas.includes(idPedidoFacturaLinea)
+      !== togglados.has(idPedidoFacturaLinea);
+
+  const establecerSeleccion = (
+    siguiente: Set<number>,
+    idPedidoFacturaLinea: number,
+    seleccionada: boolean,
+  ) => {
+    const yaAgregada = idsLineasAgregadas.includes(idPedidoFacturaLinea);
+    if (yaAgregada !== seleccionada) {
+      siguiente.add(idPedidoFacturaLinea);
+    } else {
+      siguiente.delete(idPedidoFacturaLinea);
+    }
+  };
 
   const alternarLinea = (idPedidoFacturaLinea: number) => {
-    setSeleccionadas((actual) => {
+    setTogglados((actual) => {
       const siguiente = new Set(actual);
-      if (siguiente.has(idPedidoFacturaLinea)) {
-        siguiente.delete(idPedidoFacturaLinea);
-      } else {
-        siguiente.add(idPedidoFacturaLinea);
-      }
+      establecerSeleccion(
+        siguiente,
+        idPedidoFacturaLinea,
+        !estaSeleccionada(idPedidoFacturaLinea),
+      );
       return siguiente;
     });
   };
 
   const todosSeleccionados =
     lineas.length > 0
-    && lineas.every((linea) => seleccionadas.has(linea.idPedidoFacturaLinea));
+    && lineas.every((linea) => estaSeleccionada(linea.idPedidoFacturaLinea));
 
   const alternarTodos = () => {
-    setSeleccionadas((actual) => {
+    const objetivo = !todosSeleccionados;
+    setTogglados((actual) => {
       const siguiente = new Set(actual);
-      if (todosSeleccionados) {
-        lineas.forEach((linea) => siguiente.delete(linea.idPedidoFacturaLinea));
-      } else {
-        lineas.forEach((linea) => siguiente.add(linea.idPedidoFacturaLinea));
-      }
+      lineas.forEach((linea) =>
+        establecerSeleccion(siguiente, linea.idPedidoFacturaLinea, objetivo),
+      );
       return siguiente;
     });
   };
 
   const cerrar = () => {
-    setSeleccionadas(new Set());
+    setTogglados(new Set());
     reiniciarFiltros();
     onCerrar();
   };
 
+  const paraAgregar = lineas.filter(
+    (linea) =>
+      estaSeleccionada(linea.idPedidoFacturaLinea)
+      && !idsLineasAgregadas.includes(linea.idPedidoFacturaLinea),
+  );
+  const paraQuitar = lineas.filter(
+    (linea) =>
+      !estaSeleccionada(linea.idPedidoFacturaLinea)
+      && idsLineasAgregadas.includes(linea.idPedidoFacturaLinea),
+  );
+  const cantidadSeleccionadas = lineas.filter((linea) =>
+    estaSeleccionada(linea.idPedidoFacturaLinea),
+  ).length;
+  const hayCambiosPendientes = paraAgregar.length > 0 || paraQuitar.length > 0;
+
   const confirmar = () => {
-    const elegidas = lineas.filter((linea) =>
-      seleccionadas.has(linea.idPedidoFacturaLinea),
-    );
-    onAgregar(elegidas);
-    setSeleccionadas(new Set());
+    onConfirmar(paraAgregar, paraQuitar);
+    setTogglados(new Set());
     reiniciarFiltros();
   };
 
@@ -152,6 +193,14 @@ export function CustomModalLineasPendientesFactura({
               value={mesSeleccionado}
               onChange={cambiarMes}
             />
+            <CustomSelectorBuscable
+              label="Moneda"
+              optional
+              idMaster={TablaMaestraId.MONEDA_SUNAT}
+              value={idMoneda}
+              onChange={cambiarMoneda}
+              onClear={() => cambiarMoneda(undefined)}
+            />
           </div>
 
           <div className="max-h-[280px] max-w-full overflow-x-auto overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -206,7 +255,7 @@ export function CustomModalLineasPendientesFactura({
                     </td>
                   </tr>
                 ) : lineas.map((linea) => {
-                  const estaSeleccionada = seleccionadas.has(linea.idPedidoFacturaLinea);
+                  const seleccionada = estaSeleccionada(linea.idPedidoFacturaLinea);
                   const total = linea.cantidad * linea.valorUnitario - linea.descuento;
                   const estiloTipo = obtenerEstiloTipoTramiteAgrupado(linea.tipoTramite);
 
@@ -219,12 +268,12 @@ export function CustomModalLineasPendientesFactura({
                       <td className="px-3 py-2">
                         <span
                           className={`flex h-4 w-4 items-center justify-center rounded-full border ${
-                            estaSeleccionada
+                            seleccionada
                               ? "border-brand-black bg-brand-black text-white"
                               : "border-slate-300"
                           }`}
                         >
-                          {estaSeleccionada ? <Check size={10} /> : null}
+                          {seleccionada ? <Check size={10} /> : null}
                         </span>
                       </td>
                       <td className="px-3 py-2 font-bold text-slate-700">{linea.codigo}</td>
@@ -253,18 +302,18 @@ export function CustomModalLineasPendientesFactura({
 
         <div className="flex items-center justify-between border-t border-slate-100 bg-white px-6 py-3">
           <p className="text-xs font-medium text-slate-400">
-            {seleccionadas.size} línea{seleccionadas.size === 1 ? "" : "s"} seleccionada
-            {seleccionadas.size === 1 ? "" : "s"}
+            {cantidadSeleccionadas} línea{cantidadSeleccionadas === 1 ? "" : "s"} seleccionada
+            {cantidadSeleccionadas === 1 ? "" : "s"}
           </p>
           <CustomButton
             type="button"
             variant="primary"
             size="compact"
             onClick={confirmar}
-            disabled={seleccionadas.size === 0}
+            disabled={!hayCambiosPendientes}
           >
             <Plus size={14} />
-            Agregar seleccionadas
+            Aplicar selección
           </CustomButton>
         </div>
       </div>

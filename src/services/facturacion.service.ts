@@ -259,6 +259,7 @@ async function obtenerFacturaRegistrada(
     idReferencia: number,
   ) => string = ENDPOINTS_FACTURACION.obtenerFactura,
   estadoFactura: string | null = null,
+  esNota = false,
 ): Promise<DetalleFactura> {
   const esPendienteEnvio =
     estadoFactura === ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO;
@@ -280,7 +281,7 @@ async function obtenerFacturaRegistrada(
     ]),
     idCliente !== null
       ? servicioCliente.getById(idCliente)
-      : esPendienteEnvio
+      : esPendienteEnvio && !esNota
         ? servicioCliente.obtenerPorDocumentoElectronico(idReferencia)
         : Promise.resolve(null),
   ]);
@@ -373,7 +374,7 @@ async function obtenerFacturaRegistrada(
 
       return {
         idProductoFactura: linea.idLineaDocumentoElectronico,
-        idPedido: linea.idPedido,
+        idPedidoFacturaLinea: linea.idPedidoFacturaLinea,
         codigo: linea.productoCodigo ?? "",
         numeroLinea: linea.numeroLinea,
         idLineaDocumentoElectronico: linea.idLineaDocumentoElectronico,
@@ -540,6 +541,7 @@ export const facturacionService = {
     idDocumentoElectronico: number,
     codigoEstadoFacturacion: number | null = null,
     estadoFactura: string | null = null,
+    esNota = false,
   ): Promise<DetalleFactura> =>
     obtenerFacturaRegistrada(
       idDocumentoElectronico,
@@ -547,6 +549,7 @@ export const facturacionService = {
       codigoEstadoFacturacion,
       ENDPOINTS_FACTURACION.obtenerFacturaPorId,
       estadoFactura,
+      esNota,
     ),
 
   listarProductosFacturables: async (

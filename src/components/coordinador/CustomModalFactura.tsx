@@ -166,8 +166,18 @@ export function CustomModalFactura({
   const puedeAnularFactura =
     detalle.codigoEstadoFacturacion === ID_ESTADO_FACTURA_APROBADA;
 
-  const lineasAgregadas = (lineas: EntradaLineaAgrupadaPendiente[]) => {
-    lineas.forEach((linea) => agregarLineaAgrupada(linea));
+  const confirmarSeleccionLineasPendientes = (
+    paraAgregar: EntradaLineaAgrupadaPendiente[],
+    paraQuitar: EntradaLineaAgrupadaPendiente[],
+  ) => {
+    paraAgregar.forEach((linea) => agregarLineaAgrupada(linea));
+    paraQuitar.forEach((linea) => {
+      const producto = detalle.productos.find(
+        (productoActual) =>
+          productoActual.idPedidoFacturaLinea === linea.idPedidoFacturaLinea,
+      );
+      if (producto) quitarProducto(producto);
+    });
     setModalProductosAbierto(false);
   };
 
@@ -926,11 +936,13 @@ export function CustomModalFactura({
       <CustomModalLineasPendientesFactura
         abierto={modalProductosAbierto}
         idCliente={detalle.idCliente}
+        idDocumentoElectronico={detalle.idDocumentoElectronico}
+        idMonedaFactura={valoresMaestros.idMonedaMaestro || undefined}
         idsLineasAgregadas={detalle.productos
-          .map((producto) => producto.idLineaDocumentoElectronico)
+          .map((producto) => producto.idPedidoFacturaLinea)
           .filter((id): id is number => Boolean(id))}
         onCerrar={() => setModalProductosAbierto(false)}
-        onAgregar={lineasAgregadas}
+        onConfirmar={confirmarSeleccionLineasPendientes}
       />
       <CustomModalCuotaFactura
         abierto={configuracionModalCuota !== null}

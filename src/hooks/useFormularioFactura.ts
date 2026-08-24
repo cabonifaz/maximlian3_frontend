@@ -165,7 +165,7 @@ let contadorLineaNota = 0;
 function crearLineaNotaVacia(): EntradaProductoFactura {
   return {
     idProductoFactura: Date.now() + contadorLineaNota++,
-    idPedido: 0,
+    idPedidoFacturaLinea: 0,
     codigo: "",
     numeroLinea: 0,
     idLineaDocumentoElectronico: 0,
@@ -192,7 +192,7 @@ function crearProductoFactura(
 
   return {
     idProductoFactura: Date.now() + producto.idProductoFacturable,
-    idPedido: producto.idProductoFacturable,
+    idPedidoFacturaLinea: producto.idProductoFacturable,
     codigo: producto.codigo,
     numeroLinea: 0,
     idLineaDocumentoElectronico: 0,
@@ -458,8 +458,15 @@ export function useFormularioFactura(
       ),
     [opcionesAfectacionIgvBase],
   );
+  // Al editar una nota, servicioCliente.obtenerPorDocumentoElectronico ya no se
+  // consulta (no reconoce el idDocumentoElectronico de una nota), así que el
+  // idTipoDocumentoSunat de detalle queda en 0; se usa el de /paraNota en su lugar.
+  const idTipoDocumentoSunatEfectivo =
+    esEdicionNotaCreditoDebito && datosParaNota
+      ? datosParaNota.cliente.idTipoDocumentoSunat
+      : detalle?.idTipoDocumentoSunat;
   const idAfectacionIgvPredeterminada = detalle
-    ? detalle.idTipoDocumentoSunat === ID_TIPO_DOCUMENTO_SUNAT_RUC
+    ? idTipoDocumentoSunatEfectivo === ID_TIPO_DOCUMENTO_SUNAT_RUC
       ? ID_AFECTACION_IGV_PERU
       : ID_AFECTACION_IGV_EXTRANJERO
     : undefined;
@@ -850,10 +857,10 @@ export function useFormularioFactura(
     );
     const productoNuevo: EntradaProductoFactura = {
       idProductoFactura: linea.idPedidoFacturaLinea,
-      idPedido: 0,
+      idPedidoFacturaLinea: linea.idPedidoFacturaLinea,
       codigo: linea.codigo,
       numeroLinea: 0,
-      idLineaDocumentoElectronico: linea.idPedidoFacturaLinea,
+      idLineaDocumentoElectronico: 0,
       productoSunatCodigo: null,
       idUnidadMedidaMaestro: ID_UNIDAD_MEDIDA_PREDETERMINADA,
       unidadMedidaDescripcion: DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA,
@@ -894,6 +901,10 @@ export function useFormularioFactura(
     setValue("valoresUnitarios", {
       ...getValues("valoresUnitarios"),
       [claveProducto]: productoNuevo.valorUnitario,
+    });
+    setValue("codigosProducto", {
+      ...getValues("codigosProducto"),
+      [claveProducto]: productoNuevo.codigo,
     });
     setDetalle((actual) =>
       actual
