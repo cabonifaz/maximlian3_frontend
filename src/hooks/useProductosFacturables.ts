@@ -10,7 +10,7 @@ export function useProductosFacturables(
 ) {
   const [idTipoTramite, setIdTipoTramite] = useState<number | undefined>();
   const [mesSeleccionado, setMesSeleccionado] = useState<Date | undefined>();
-  const [idPais, setIdPais] = useState<number | undefined>();
+  const [idsPais, setIdsPais] = useState<number[]>([]);
   const [idMoneda, setIdMoneda] = useState<number | undefined>();
   const anio = mesSeleccionado?.getFullYear();
   const mes = mesSeleccionado ? mesSeleccionado.getMonth() + 1 : undefined;
@@ -25,7 +25,7 @@ export function useProductosFacturables(
       idTipoTramite,
       anio,
       mes,
-      idPais,
+      idsPais,
       idMoneda,
     ],
     queryFn: () =>
@@ -34,7 +34,7 @@ export function useProductosFacturables(
         idTipoTramite,
         anio,
         mes,
-        idPais,
+        idsPais: idsPais.length > 0 ? idsPais : undefined,
         idMoneda,
       }),
     enabled: abierto && idCliente > 0 && filtrosCompletos,
@@ -67,8 +67,8 @@ export function useProductosFacturables(
     setMesSeleccionado(fecha);
   };
 
-  const cambiarPais = (valor?: number) => {
-    setIdPais(valor);
+  const cambiarPais = (valores: number[]) => {
+    setIdsPais(valores);
   };
 
   const cambiarMoneda = (valor?: number) => {
@@ -78,7 +78,7 @@ export function useProductosFacturables(
   const reiniciarFiltros = () => {
     setIdTipoTramite(undefined);
     setMesSeleccionado(undefined);
-    setIdPais(undefined);
+    setIdsPais([]);
     setIdMoneda(undefined);
     crearLineaMutation.reset();
   };
@@ -94,7 +94,7 @@ export function useProductosFacturables(
     filtrosCompletos,
     hayError: consulta.isError,
     idMoneda,
-    idPais,
+    idsPais,
     idTipoTramite,
     mesSeleccionado,
     productos: consulta.data?.productos ?? [],

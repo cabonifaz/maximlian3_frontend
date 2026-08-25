@@ -177,7 +177,7 @@ export interface EntradaProductoFactura {
   unidadMedidaDescripcion: string;
   cantidad: number;
   descripcion: string;
-  descuentoPorcentaje: number;
+  montoDescuento: number;
   valorUnitario: number;
   precioUnitario: number;
   porcentajeIgv: number;
@@ -229,6 +229,20 @@ export interface DetalleFactura {
   cuotas: EntradaCuotaFactura[];
 }
 
+export interface PedidoRelacionadoFacturaApi {
+  codigo: string;
+  numReferencia: string;
+  investigado: string;
+  tipoTramite: string;
+  pais: string;
+  valorUnitario: string;
+  descuento: string;
+}
+
+export interface ResultadoPedidosRelacionadosFacturaApi {
+  pedidos: PedidoRelacionadoFacturaApi[];
+}
+
 export interface EntradaProductoFacturable {
   idProductoFacturable: number;
   codigo: string;
@@ -250,7 +264,7 @@ export interface ParametrosListaProductosFacturables {
   idTipoTramite?: number;
   anio?: number;
   mes?: number;
-  idPais?: number;
+  idsPais?: number[];
   idMoneda?: number;
 }
 
@@ -292,6 +306,8 @@ export interface CrearLineaAgrupadaFacturaRequest {
 export interface EditarLineaAgrupadaFacturaRequest {
   codigo: string;
   descripcion: string;
+  valorUnitario: number;
+  descuento: number;
 }
 
 export interface EntradaLineaAgrupadaFacturaApi {
@@ -301,7 +317,6 @@ export interface EntradaLineaAgrupadaFacturaApi {
   cantidad: number;
   valorUnitario: number;
   descuento: number;
-  descuentoPorcentaje: number;
 }
 
 export interface ParametrosListaLineasPendientes {
@@ -323,7 +338,6 @@ export interface EntradaLineaAgrupadaPendiente {
   cantidad: number;
   valorUnitario: number;
   descuento: number;
-  descuentoPorcentaje: number;
 }
 
 export interface ResultadoListaLineasPendientesApi {

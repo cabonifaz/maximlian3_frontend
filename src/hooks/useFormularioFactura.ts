@@ -12,6 +12,7 @@ import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service
 import type {
   CampoExtraLineaFactura,
   DetalleFactura,
+  EditarLineaAgrupadaFacturaRequest,
   EntradaCuotaFactura,
   EntradaLineaAgrupadaFacturaApi,
   EntradaProductoFacturable,
@@ -101,7 +102,7 @@ function obtenerDescuentosIniciales(factura: DetalleFactura | null) {
   return Object.fromEntries(
     (factura?.productos ?? []).map((producto) => [
       String(producto.idProductoFactura),
-      producto.descuentoPorcentaje,
+      producto.montoDescuento,
     ]),
   );
 }
@@ -174,7 +175,7 @@ function crearLineaNotaVacia(): EntradaProductoFactura {
     unidadMedidaDescripcion: DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA,
     cantidad: 1,
     descripcion: "",
-    descuentoPorcentaje: 0,
+    montoDescuento: 0,
     valorUnitario: 0,
     precioUnitario: 0,
     porcentajeIgv: PORCENTAJE_IGV_PREDETERMINADO,
@@ -188,7 +189,7 @@ function crearProductoFactura(
   producto: EntradaProductoFacturable,
 ): EntradaProductoFactura {
   const valorUnitario = producto.precio;
-  const descuentoPorcentaje = producto.descuentoPorcentaje;
+  const montoDescuento = valorUnitario * producto.descuentoPorcentaje / 100;
 
   return {
     idProductoFactura: Date.now() + producto.idProductoFacturable,
@@ -201,13 +202,13 @@ function crearProductoFactura(
     unidadMedidaDescripcion: DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA,
     cantidad: 1,
     descripcion: `${producto.codigo} - ${producto.tipo === "express" ? "Express" : producto.tipo === "normal" ? "Normal" : "Super Flash"}`,
-    descuentoPorcentaje,
+    montoDescuento,
     valorUnitario,
     precioUnitario: producto.precio,
     porcentajeIgv: PORCENTAJE_IGV_PREDETERMINADO,
     idAfectacionIgvMaestro: 0,
     afectacionIgvDescripcion: "",
-    total: valorUnitario * (1 - descuentoPorcentaje / 100),
+    total: valorUnitario - montoDescuento,
   };
 }
 
@@ -247,6 +248,13 @@ export function useFormularioFactura(
   const [idProductoIgvEdicion, setIdProductoIgvEdicion] = useState<
     number | null
   >(null);
+  const [idProductoCodigoEdicion, setIdProductoCodigoEdicion] = useState<
+    number | null
+  >(null);
+  const [idProductoDescripcionEdicion, setIdProductoDescripcionEdicion] =
+    useState<number | null>(null);
+  const [idProductoValorUnitarioEdicion, setIdProductoValorUnitarioEdicion] =
+    useState<number | null>(null);
   const formulario = useForm<DatosFormularioFactura>({
     resolver: resolverFormularioFactura(esNotaCreditoDebito),
     mode: "onTouched",
@@ -673,9 +681,64 @@ export function useFormularioFactura(
     },
   });
 
+  const editarLineaAgrupadaMutation = useMutation({
+    mutationFn: ({
+      idPedidoFacturaLinea,
+      datos,
+    }: {
+      idPedidoFacturaLinea: number;
+      datos: EditarLineaAgrupadaFacturaRequest;
+    }) => facturacionService.editarLineaAgrupada(idPedidoFacturaLinea, datos),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["facturacion", "lineas-pendientes"],
+      }),
+  });
+
+  const construirDatosEdicionLineaAgrupada = (
+    producto: EntradaProductoFactura,
+    overrides: Partial<EditarLineaAgrupadaFacturaRequest> = {},
+  ): EditarLineaAgrupadaFacturaRequest => {
+    const claveProducto = String(producto.idProductoFactura);
+
+    return {
+      codigo: codigosProducto?.[claveProducto] ?? producto.codigo,
+      descripcion: descripciones?.[claveProducto] ?? producto.descripcion,
+      valorUnitario: valoresUnitarios?.[claveProducto] ?? producto.valorUnitario,
+      descuento: descuentos?.[claveProducto] ?? producto.montoDescuento,
+      ...overrides,
+    };
+  };
+
+  // La edición inline de código/descripción/valor unitario/descuento persiste de inmediato
+  // contra /api/PedidoFacturaLinea/{id} (no aplica a notas, que no representan esa línea).
+  const guardarEdicionLineaAgrupada = async (
+    producto: EntradaProductoFactura,
+    overrides: Partial<EditarLineaAgrupadaFacturaRequest>,
+  ) => {
+    if (esNotaCreditoDebito) return true;
+
+    try {
+      await editarLineaAgrupadaMutation.mutateAsync({
+        idPedidoFacturaLinea: producto.idPedidoFacturaLinea,
+        datos: construirDatosEdicionLineaAgrupada(producto, overrides),
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const hayEdicionEnCurso = () =>
+    idProductoDescuentoEdicion !== null
+    || idProductoIgvEdicion !== null
+    || idProductoCodigoEdicion !== null
+    || idProductoDescripcionEdicion !== null
+    || idProductoValorUnitarioEdicion !== null;
+
   const obtenerDescuento = (producto: EntradaProductoFactura) =>
     descuentos?.[String(producto.idProductoFactura)] ??
-    producto.descuentoPorcentaje;
+    producto.montoDescuento;
 
   const obtenerValorUnitario = (producto: EntradaProductoFactura) =>
     valoresUnitarios?.[String(producto.idProductoFactura)] ??
@@ -689,6 +752,7 @@ export function useFormularioFactura(
       afectacionesIgv?.[claveProducto] ?? producto.idAfectacionIgvMaestro,
       porcentajesIgv?.[claveProducto] ?? producto.porcentajeIgv,
       obtenerDescuento(producto),
+      producto.cantidad,
     );
   };
 
@@ -700,8 +764,8 @@ export function useFormularioFactura(
     () =>
       detalle?.productos.reduce((total, producto) => {
         const claveProducto = String(producto.idProductoFactura);
-        const descuento =
-          descuentos?.[claveProducto] ?? producto.descuentoPorcentaje;
+        const montoDescuento =
+          descuentos?.[claveProducto] ?? producto.montoDescuento;
         const valorUnitario =
           valoresUnitarios?.[claveProducto] ?? producto.valorUnitario;
         const precioUnitario = calcularPrecioUnitarioFactura(
@@ -709,7 +773,8 @@ export function useFormularioFactura(
           afectacionesIgv?.[claveProducto] ??
             producto.idAfectacionIgvMaestro,
           porcentajesIgv?.[claveProducto] ?? producto.porcentajeIgv,
-          descuento,
+          montoDescuento,
+          producto.cantidad,
         );
 
         return total + producto.cantidad * precioUnitario;
@@ -772,7 +837,7 @@ export function useFormularioFactura(
     const descuentosNuevos = Object.fromEntries(
       productosNuevos.map((producto) => [
         String(producto.idProductoFactura),
-        producto.descuentoPorcentaje,
+        producto.montoDescuento,
       ]),
     );
 
@@ -853,7 +918,8 @@ export function useFormularioFactura(
       linea.valorUnitario,
       idAfectacionIgvLinea,
       PORCENTAJE_IGV_PREDETERMINADO,
-      linea.descuentoPorcentaje,
+      linea.descuento,
+      linea.cantidad,
     );
     const productoNuevo: EntradaProductoFactura = {
       idProductoFactura: linea.idPedidoFacturaLinea,
@@ -866,7 +932,7 @@ export function useFormularioFactura(
       unidadMedidaDescripcion: DESCRIPCION_UNIDAD_MEDIDA_PREDETERMINADA,
       cantidad: linea.cantidad,
       descripcion: linea.descripcion,
-      descuentoPorcentaje: linea.descuentoPorcentaje,
+      montoDescuento: linea.descuento,
       valorUnitario: linea.valorUnitario,
       precioUnitario,
       porcentajeIgv: PORCENTAJE_IGV_PREDETERMINADO,
@@ -880,7 +946,7 @@ export function useFormularioFactura(
 
     setValue("descuentos", {
       ...getValues("descuentos"),
-      [claveProducto]: productoNuevo.descuentoPorcentaje,
+      [claveProducto]: productoNuevo.montoDescuento,
     });
     setValue("porcentajesIgv", {
       ...getValues("porcentajesIgv"),
@@ -1085,16 +1151,13 @@ export function useFormularioFactura(
   };
 
   const iniciarEdicionDescuento = (producto: EntradaProductoFactura) => {
-    if (
-      idProductoDescuentoEdicion !== null
-      || idProductoIgvEdicion !== null
-    ) return;
+    if (hayEdicionEnCurso()) return;
     setIdProductoDescuentoEdicion(producto.idProductoFactura);
   };
 
   const cancelarEdicionDescuento = (producto: EntradaProductoFactura) => {
     const rutaDescuento = `descuentos.${producto.idProductoFactura}` as const;
-    setValue(rutaDescuento, producto.descuentoPorcentaje);
+    setValue(rutaDescuento, producto.montoDescuento);
     clearErrors(rutaDescuento);
     setIdProductoDescuentoEdicion(null);
   };
@@ -1104,11 +1167,14 @@ export function useFormularioFactura(
     const esValido = await trigger(rutaDescuento);
     if (!esValido) return;
 
-    const descuentoPorcentaje = getValues(rutaDescuento);
+    const montoDescuento = getValues(rutaDescuento);
+    const guardadoRemoto = await guardarEdicionLineaAgrupada(producto, {
+      descuento: montoDescuento,
+    });
+    if (!guardadoRemoto) return;
+
     const total =
-      producto.cantidad *
-      producto.valorUnitario *
-      (1 - descuentoPorcentaje / 100);
+      producto.cantidad * producto.valorUnitario - montoDescuento;
 
     clearErrors("root.cuotas");
 
@@ -1118,7 +1184,7 @@ export function useFormularioFactura(
             ...actual,
             productos: actual.productos.map((productoActual) =>
               productoActual.idProductoFactura === producto.idProductoFactura
-                ? { ...productoActual, descuentoPorcentaje, total }
+                ? { ...productoActual, montoDescuento, total }
                 : productoActual,
             ),
           }
@@ -1127,11 +1193,119 @@ export function useFormularioFactura(
     setIdProductoDescuentoEdicion(null);
   };
 
+  const iniciarEdicionCodigo = (producto: EntradaProductoFactura) => {
+    if (hayEdicionEnCurso()) return;
+    setIdProductoCodigoEdicion(producto.idProductoFactura);
+  };
+
+  const cancelarEdicionCodigo = (producto: EntradaProductoFactura) => {
+    const rutaCodigo = `codigosProducto.${producto.idProductoFactura}` as const;
+    setValue(rutaCodigo, producto.codigo);
+    clearErrors(rutaCodigo);
+    setIdProductoCodigoEdicion(null);
+  };
+
+  const guardarEdicionCodigo = async (producto: EntradaProductoFactura) => {
+    const rutaCodigo = `codigosProducto.${producto.idProductoFactura}` as const;
+    const esValido = await trigger(rutaCodigo);
+    if (!esValido) return;
+
+    const codigo = getValues(rutaCodigo);
+    const guardadoRemoto = await guardarEdicionLineaAgrupada(producto, { codigo });
+    if (!guardadoRemoto) return;
+
+    clearErrors("root.cuotas");
+    setDetalle((actual) =>
+      actual
+        ? {
+            ...actual,
+            productos: actual.productos.map((productoActual) =>
+              productoActual.idProductoFactura === producto.idProductoFactura
+                ? { ...productoActual, codigo }
+                : productoActual,
+            ),
+          }
+        : actual,
+    );
+    setIdProductoCodigoEdicion(null);
+  };
+
+  const iniciarEdicionDescripcion = (producto: EntradaProductoFactura) => {
+    if (hayEdicionEnCurso()) return;
+    setIdProductoDescripcionEdicion(producto.idProductoFactura);
+  };
+
+  const cancelarEdicionDescripcion = (producto: EntradaProductoFactura) => {
+    const rutaDescripcion = `descripciones.${producto.idProductoFactura}` as const;
+    setValue(rutaDescripcion, producto.descripcion);
+    clearErrors(rutaDescripcion);
+    setIdProductoDescripcionEdicion(null);
+  };
+
+  const guardarEdicionDescripcion = async (producto: EntradaProductoFactura) => {
+    const rutaDescripcion = `descripciones.${producto.idProductoFactura}` as const;
+    const esValido = await trigger(rutaDescripcion);
+    if (!esValido) return;
+
+    const descripcion = getValues(rutaDescripcion);
+    const guardadoRemoto = await guardarEdicionLineaAgrupada(producto, { descripcion });
+    if (!guardadoRemoto) return;
+
+    clearErrors("root.cuotas");
+    setDetalle((actual) =>
+      actual
+        ? {
+            ...actual,
+            productos: actual.productos.map((productoActual) =>
+              productoActual.idProductoFactura === producto.idProductoFactura
+                ? { ...productoActual, descripcion }
+                : productoActual,
+            ),
+          }
+        : actual,
+    );
+    setIdProductoDescripcionEdicion(null);
+  };
+
+  const iniciarEdicionValorUnitario = (producto: EntradaProductoFactura) => {
+    if (hayEdicionEnCurso()) return;
+    setIdProductoValorUnitarioEdicion(producto.idProductoFactura);
+  };
+
+  const cancelarEdicionValorUnitario = (producto: EntradaProductoFactura) => {
+    const rutaValorUnitario = `valoresUnitarios.${producto.idProductoFactura}` as const;
+    setValue(rutaValorUnitario, producto.valorUnitario);
+    clearErrors(rutaValorUnitario);
+    setIdProductoValorUnitarioEdicion(null);
+  };
+
+  const guardarEdicionValorUnitario = async (producto: EntradaProductoFactura) => {
+    const rutaValorUnitario = `valoresUnitarios.${producto.idProductoFactura}` as const;
+    const esValido = await trigger(rutaValorUnitario);
+    if (!esValido) return;
+
+    const valorUnitario = getValues(rutaValorUnitario);
+    const guardadoRemoto = await guardarEdicionLineaAgrupada(producto, { valorUnitario });
+    if (!guardadoRemoto) return;
+
+    clearErrors("root.cuotas");
+    setDetalle((actual) =>
+      actual
+        ? {
+            ...actual,
+            productos: actual.productos.map((productoActual) =>
+              productoActual.idProductoFactura === producto.idProductoFactura
+                ? { ...productoActual, valorUnitario }
+                : productoActual,
+            ),
+          }
+        : actual,
+    );
+    setIdProductoValorUnitarioEdicion(null);
+  };
+
   const iniciarEdicionIgv = (producto: EntradaProductoFactura) => {
-    if (
-      idProductoDescuentoEdicion !== null
-      || idProductoIgvEdicion !== null
-    ) return;
+    if (hayEdicionEnCurso()) return;
     setIdProductoIgvEdicion(producto.idProductoFactura);
   };
 
@@ -1166,9 +1340,7 @@ export function useFormularioFactura(
     setIdProductoIgvEdicion(null);
   };
 
-  const hayEdicionProductoPendiente =
-    idProductoDescuentoEdicion !== null
-    || idProductoIgvEdicion !== null;
+  const hayEdicionProductoPendiente = hayEdicionEnCurso();
 
   return {
     afectacionesIgv,
@@ -1179,8 +1351,11 @@ export function useFormularioFactura(
     anularFacturaMutation,
     actualizarCampoFactura,
     actualizarCamposExtra,
+    cancelarEdicionCodigo,
+    cancelarEdicionDescripcion,
     cancelarEdicionDescuento,
     cancelarEdicionIgv,
+    cancelarEdicionValorUnitario,
     confirmarFormulario: (alConfirmar: () => void) =>
       formulario.handleSubmit((datos) => {
         const cuotasValidas = validarTotalCuotas(datos);
@@ -1220,16 +1395,26 @@ export function useFormularioFactura(
     guardarFacturaMutation: esNotaCreditoDebito
       ? guardarNotaCreditoDebitoMutation
       : guardarFacturaMutation,
+    guardandoLineaAgrupada: editarLineaAgrupadaMutation.isPending,
+    guardarEdicionCodigo,
+    guardarEdicionDescripcion,
     guardarEdicionDescuento,
     guardarEdicionIgv,
+    guardarEdicionValorUnitario,
     guardarCuota,
     actualizarEstadoCuota,
     actualizarEstadoCuotaMutation,
     hayEdicionProductoPendiente,
+    idProductoCodigoEdicion,
+    idProductoDescripcionEdicion,
     idProductoDescuentoEdicion,
     idProductoIgvEdicion,
+    idProductoValorUnitarioEdicion,
+    iniciarEdicionCodigo,
+    iniciarEdicionDescripcion,
     iniciarEdicionDescuento,
     iniciarEdicionIgv,
+    iniciarEdicionValorUnitario,
     obtenerPrecioUnitario,
     obtenerTotalProducto,
     opcionesAfectacionIgv,

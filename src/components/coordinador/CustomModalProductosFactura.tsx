@@ -7,6 +7,7 @@ import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import { CustomSelectorMes } from "@maximilian/components/common/CustomSelectorMes";
 import { useProductosFacturables } from "@maximilian/hooks/useProductosFacturables";
 import {
@@ -45,7 +46,7 @@ export function CustomModalProductosFactura({
     filtrosCompletos,
     hayError,
     idMoneda,
-    idPais,
+    idsPais,
     idTipoTramite,
     mesSeleccionado,
     productos,
@@ -123,13 +124,13 @@ export function CustomModalProductosFactura({
               value={mesSeleccionado}
               onChange={cambiarMes}
             />
-            <CustomSelectorBuscable
+            <MultiCustomSelectorBuscable
               label="País"
               optional
               idMaster={TablaMaestraId.PAIS}
-              value={idPais}
+              value={idsPais}
               onChange={cambiarPais}
-              onClear={() => cambiarPais(undefined)}
+              resumirSelecciones
             />
             <CustomSelectorBuscable
               label="Moneda"
@@ -213,7 +214,7 @@ export function CustomModalProductosFactura({
             </table>
           </div>
 
-          <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-2">
+          <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-3">
             <div className="space-y-1.5">
               <CustomLabel htmlFor="linea-agrupada-codigo" optional>
                 Código
@@ -230,7 +231,7 @@ export function CustomModalProductosFactura({
                 <p className="text-xs font-medium text-red-500">{errors.codigo.message}</p>
               ) : null}
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 sm:col-span-2">
               <CustomLabel htmlFor="linea-agrupada-descripcion" required>
                 Descripción
               </CustomLabel>

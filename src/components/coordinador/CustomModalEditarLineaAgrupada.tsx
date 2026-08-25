@@ -5,8 +5,8 @@ import { Pencil, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import {
-  esquemaLineaAgrupadaFactura,
-  type DatosFormularioLineaAgrupadaFactura,
+  esquemaEditarLineaAgrupadaFactura,
+  type DatosFormularioEditarLineaAgrupadaFactura,
 } from "@maximilian/schemas";
 import type { EntradaLineaAgrupadaPendiente } from "@maximilian/shared/types/facturacion.type";
 
@@ -14,8 +14,15 @@ interface CustomModalEditarLineaAgrupadaProps {
   linea: EntradaLineaAgrupadaPendiente | null;
   guardando: boolean;
   onCerrar: () => void;
-  onGuardar: (datos: DatosFormularioLineaAgrupadaFactura) => void;
+  onGuardar: (datos: DatosFormularioEditarLineaAgrupadaFactura) => void;
 }
+
+const VALORES_VACIOS: DatosFormularioEditarLineaAgrupadaFactura = {
+  codigo: "",
+  descripcion: "",
+  valorUnitario: 0,
+  descuento: 0,
+};
 
 export function CustomModalEditarLineaAgrupada({
   linea,
@@ -28,14 +35,21 @@ export function CustomModalEditarLineaAgrupada({
     handleSubmit,
     register,
     reset,
-  } = useForm<DatosFormularioLineaAgrupadaFactura>({
-    resolver: zodResolver(esquemaLineaAgrupadaFactura),
+  } = useForm<DatosFormularioEditarLineaAgrupadaFactura>({
+    resolver: zodResolver(esquemaEditarLineaAgrupadaFactura),
     mode: "onTouched",
-    values: { codigo: linea?.codigo ?? "", descripcion: linea?.descripcion ?? "" },
+    values: linea
+      ? {
+          codigo: linea.codigo,
+          descripcion: linea.descripcion,
+          valorUnitario: linea.valorUnitario,
+          descuento: linea.descuento,
+        }
+      : VALORES_VACIOS,
   });
 
   const cerrar = () => {
-    reset({ codigo: "", descripcion: "" });
+    reset(VALORES_VACIOS);
     onCerrar();
   };
 
@@ -92,6 +106,44 @@ export function CustomModalEditarLineaAgrupada({
             {errors.descripcion ? (
               <p className="text-xs font-medium text-red-500">{errors.descripcion.message}</p>
             ) : null}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <CustomLabel htmlFor="editar-linea-valor-unitario" required>
+                Valor unitario
+              </CustomLabel>
+              <input
+                id="editar-linea-valor-unitario"
+                type="number"
+                min="0"
+                step="0.01"
+                {...register("valorUnitario", { valueAsNumber: true })}
+                className={`w-full rounded-xl border bg-brand-white px-3 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10 ${
+                  errors.valorUnitario ? "border-red-500" : "border-gray-200"
+                }`}
+              />
+              {errors.valorUnitario ? (
+                <p className="text-xs font-medium text-red-500">{errors.valorUnitario.message}</p>
+              ) : null}
+            </div>
+            <div className="space-y-1.5">
+              <CustomLabel htmlFor="editar-linea-descuento" required>
+                Descuento
+              </CustomLabel>
+              <input
+                id="editar-linea-descuento"
+                type="number"
+                min="0"
+                step="0.01"
+                {...register("descuento", { valueAsNumber: true })}
+                className={`w-full rounded-xl border bg-brand-white px-3 py-2 text-sm outline-none transition-all focus:border-brand-wine focus:ring-4 focus:ring-brand-wine/10 ${
+                  errors.descuento ? "border-red-500" : "border-gray-200"
+                }`}
+              />
+              {errors.descuento ? (
+                <p className="text-xs font-medium text-red-500">{errors.descuento.message}</p>
+              ) : null}
+            </div>
           </div>
         </div>
 

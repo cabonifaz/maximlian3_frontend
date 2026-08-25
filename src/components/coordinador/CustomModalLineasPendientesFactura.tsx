@@ -228,7 +228,7 @@ export function CustomModalLineasPendientesFactura({
                   <th className="px-3 py-2 text-center">Moneda</th>
                   <th className="px-3 py-2 text-center">Cantidad</th>
                   <th className="px-3 py-2 text-right">Valor U.</th>
-                  <th className="px-3 py-2 text-center">Dscto. %</th>
+                  <th className="px-3 py-2 text-center">Dscto.</th>
                   <th className="px-3 py-2 text-right">Total</th>
                 </tr>
               </thead>
@@ -288,7 +288,9 @@ export function CustomModalLineasPendientesFactura({
                       <td className="px-3 py-2 text-right text-slate-600">
                         {formatearMontoDosDecimales(linea.valorUnitario)}
                       </td>
-                      <td className="px-3 py-2 text-center text-slate-600">{linea.descuentoPorcentaje}%</td>
+                      <td className="px-3 py-2 text-center text-slate-600">
+                        {formatearMontoDosDecimales(linea.descuento)}
+                      </td>
                       <td className="px-3 py-2 text-right font-medium text-slate-700">
                         {formatearMontoDosDecimales(total)}
                       </td>

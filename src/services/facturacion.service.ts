@@ -30,6 +30,7 @@ import type {
   ParametrosListaPedidosFacturacion,
   ParametrosListaProductosFacturables,
   ParametrosResumenFacturacion,
+  PedidoRelacionadoFacturaApi,
   RespuestaExportarLibroVentas,
   RespuestaExportarPrefactura,
   RespuestaListaFacturasCliente,
@@ -45,6 +46,7 @@ import type {
   ResultadoGuardarBorradorFactura,
   ResultadoObtenerFacturaApi,
   ResultadoParaNotaApi,
+  ResultadoPedidosRelacionadosFacturaApi,
 } from "@maximilian/shared/types/facturacion.type";
 import { ENDPOINTS_FACTURACION } from "@maximilian/shared/constants/endpoints/facturacion.endpoint";
 import { TIMEOUT_EMISION_ANULACION_FACTURA_MS } from "@maximilian/shared/constants/services/facturacion.service.constants";
@@ -362,7 +364,6 @@ async function obtenerFacturaRegistrada(
       texto: campoExtra.texto,
     })),
     productos: lineas.map((linea) => {
-      const subtotal = linea.cantidad * linea.valorUnitario;
       const opcionAfectacionIgv = buscarOpcionTablaMaestra(
         opcionesAfectacionIgv,
         linea.afectacionIgvCodigo,
@@ -384,8 +385,7 @@ async function obtenerFacturaRegistrada(
           obtenerEtiquetaTablaMaestra(opcionUnidadMedida),
         cantidad: linea.cantidad,
         descripcion: linea.descripcion,
-        descuentoPorcentaje:
-          subtotal > 0 ? (linea.montoDescuento / subtotal) * 100 : 0,
+        montoDescuento: linea.montoDescuento,
         valorUnitario: linea.valorUnitario,
         precioUnitario: linea.precioUnitario,
         porcentajeIgv: linea.porcentajeIgv,
@@ -557,7 +557,10 @@ export const facturacionService = {
   ): Promise<RespuestaListaProductosFacturables> => {
     const { data } = await maximilianService.get<
       ApiResponse<ResultadoListaProductosFacturablesApi>
-    >(ENDPOINTS_FACTURACION.listarPedidosFacturables, { params: parametros });
+    >(ENDPOINTS_FACTURACION.listarPedidosFacturables, {
+      params: parametros,
+      paramsSerializer: { indexes: null },
+    });
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
       throw new ErrorRespuestaApi(data);
@@ -927,6 +930,20 @@ export const facturacionService = {
     }
 
     return data.result ?? [];
+  },
+
+  obtenerPedidosRelacionados: async (
+    idDocumentoElectronico: number,
+  ): Promise<PedidoRelacionadoFacturaApi[]> => {
+    const { data } = await maximilianService.get<
+      ApiResponse<ResultadoPedidosRelacionadosFacturaApi>
+    >(ENDPOINTS_FACTURACION.obtenerPedidosRelacionados(idDocumentoElectronico));
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result.pedidos;
   },
 
   exportarLibroVentas: async (

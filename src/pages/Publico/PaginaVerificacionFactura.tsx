@@ -23,9 +23,7 @@ export default function PaginaVerificacionFactura() {
   const {
     abierto: modalDetallePedidosAbierto,
     abrir: abrirDetallePedidos,
-    abrirDesdeLinea: abrirDetallePedidosDesdeLinea,
     cerrar: cerrarDetallePedidos,
-    pestanaInicial: pestanaInicialDetallePedidos,
   } = useModalDetallePedidosFacturaVerificacion();
 
   return (
@@ -56,7 +54,7 @@ export default function PaginaVerificacionFactura() {
               cabecera={factura.cabecera}
               lineas={factura.lineas}
               onVerDetallePedidos={() => abrirDetallePedidos()}
-              onVerDetalleLinea={abrirDetallePedidosDesdeLinea}
+              onVerDetalleLinea={() => abrirDetallePedidos()}
             />
             {factura.cuotas.length > 0 ? (
               <CustomCuotasFacturaVerificacion
@@ -98,7 +96,7 @@ export default function PaginaVerificacionFactura() {
 
       <CustomModalDetallePedidosFacturaVerificacion
         abierto={modalDetallePedidosAbierto}
-        pestanaInicial={pestanaInicialDetallePedidos}
+        token={token}
         onCerrar={cerrarDetallePedidos}
       />
     </div>

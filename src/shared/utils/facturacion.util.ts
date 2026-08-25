@@ -17,14 +17,16 @@ import {
   LIMITE_CARACTERES_ORDEN_COMPRA,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
-export function obtenerEstiloTipoTramiteAgrupado(tipoTramite: string) {
+export function normalizarTipoTramite(tipoTramite: string) {
   const normalizado = tipoTramite.trim().toLowerCase().replaceAll(" ", "-");
-  const clave =
-    normalizado === "express" || normalizado === "super-flash"
-      ? normalizado
-      : "normal";
 
-  return ESTILOS_TIPO_PRODUCTO_FACTURABLE[clave];
+  return normalizado === "express" || normalizado === "super-flash"
+    ? normalizado
+    : "normal";
+}
+
+export function obtenerEstiloTipoTramiteAgrupado(tipoTramite: string) {
+  return ESTILOS_TIPO_PRODUCTO_FACTURABLE[normalizarTipoTramite(tipoTramite)];
 }
 
 export function limitarOrdenCompra(valor: string) {
@@ -70,18 +72,20 @@ function convertirFechaAIso(fecha: string) {
 }
 
 // Refleja el mismo cálculo que el backend (SP_DocumentoElectronico_Insertar/GuardarCambios):
-// PrecioUnitario = (ValorLinea + MontoIgv) / Cantidad = valorUnitario * (1 - descuento%) * (1 + IGV%).
-// Antes no incluía el descuento, mostrando un precio unitario distinto al que realmente se factura a SUNAT.
+// ValorLinea = ValorUnitario * Cantidad - MontoDescuento
+// PrecioUnitario = (ValorLinea + MontoIgv) / Cantidad.
 export function calcularPrecioUnitarioFactura(
   valorUnitario: number,
   idAfectacionIgvMaestro: number,
   porcentajeIgv: number,
-  descuentoPorcentaje: number,
+  montoDescuento: number,
+  cantidad: number,
 ) {
   const esGravado = idAfectacionIgvMaestro >= 10
     && idAfectacionIgvMaestro <= 17;
 
-  const valorUnitarioConDescuento = valorUnitario * (1 - descuentoPorcentaje / 100);
+  const descuentoPorUnidad = cantidad > 0 ? montoDescuento / cantidad : 0;
+  const valorUnitarioConDescuento = valorUnitario - descuentoPorUnidad;
 
   return esGravado
     ? valorUnitarioConDescuento * (1 + porcentajeIgv / 100)
@@ -186,7 +190,7 @@ export function construirPayloadNotaCreditoDebito(
     },
     lineas: detalle.productos.map((producto) => {
       const claveProducto = String(producto.idProductoFactura);
-      const descuentoPorcentaje = datos.descuentos[claveProducto] ?? producto.descuentoPorcentaje;
+      const montoDescuento = datos.descuentos[claveProducto] ?? producto.montoDescuento;
       const valorUnitario = datos.valoresUnitarios[claveProducto] ?? producto.valorUnitario;
 
       return {
@@ -196,7 +200,7 @@ export function construirPayloadNotaCreditoDebito(
         idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
         cantidad: producto.cantidad,
         valorUnitario,
-        montoDescuento: producto.cantidad * valorUnitario * descuentoPorcentaje / 100,
+        montoDescuento,
         idAfectacionIgvMaestro: datos.afectacionesIgv[claveProducto],
         porcentajeIgv: datos.porcentajesIgv[claveProducto],
       };
@@ -246,7 +250,7 @@ export function construirPayloadEditarNotaCreditoDebito(
     idMotivoMaestro: datos.idMotivoMaestro ?? 0,
     lineas: detalle.productos.map((producto) => {
       const claveProducto = String(producto.idProductoFactura);
-      const descuentoPorcentaje = datos.descuentos[claveProducto] ?? producto.descuentoPorcentaje;
+      const montoDescuento = datos.descuentos[claveProducto] ?? producto.montoDescuento;
       const valorUnitario = datos.valoresUnitarios[claveProducto] ?? producto.valorUnitario;
 
       return {
@@ -256,7 +260,7 @@ export function construirPayloadEditarNotaCreditoDebito(
         idUnidadMedidaMaestro: datos.unidadesMedida[claveProducto],
         cantidad: producto.cantidad,
         valorUnitario,
-        montoDescuento: producto.cantidad * valorUnitario * descuentoPorcentaje / 100,
+        montoDescuento,
         idAfectacionIgvMaestro: datos.afectacionesIgv[claveProducto],
         porcentajeIgv: datos.porcentajesIgv[claveProducto],
         idLineaDocumentoElectronico: producto.idLineaDocumentoElectronico,

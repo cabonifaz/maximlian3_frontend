@@ -10,8 +10,7 @@ export const esquemaFormularioFactura = z.object({
   descuentos: z.record(
     z.string(),
     z.number({ error: "El descuento es requerido" })
-      .min(0, "El descuento debe ser mayor o igual a 0")
-      .max(100, "El descuento debe ser menor o igual a 100"),
+      .min(0, "El descuento debe ser mayor o igual a 0"),
   ),
 
   porcentajesIgv: z.record(
@@ -105,4 +104,21 @@ export const esquemaLineaAgrupadaFactura = z.object({
 
 export type DatosFormularioLineaAgrupadaFactura = z.infer<
   typeof esquemaLineaAgrupadaFactura
+>;
+
+export const esquemaEditarLineaAgrupadaFactura = z.object({
+  codigo: z.string().trim().max(30, "El código no puede superar los 30 caracteres"),
+  descripcion: z
+    .string()
+    .trim()
+    .min(1, "La descripción es requerida")
+    .max(500, "La descripción no puede superar los 500 caracteres"),
+  valorUnitario: z.number({ error: "El valor unitario es requerido" })
+    .min(0, "El valor unitario debe ser mayor o igual a 0"),
+  descuento: z.number({ error: "El descuento es requerido" })
+    .min(0, "El descuento debe ser mayor o igual a 0"),
+});
+
+export type DatosFormularioEditarLineaAgrupadaFactura = z.infer<
+  typeof esquemaEditarLineaAgrupadaFactura
 >;

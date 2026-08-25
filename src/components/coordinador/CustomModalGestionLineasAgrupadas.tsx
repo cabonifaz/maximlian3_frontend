@@ -8,7 +8,10 @@ import { CustomModalEditarLineaAgrupada } from "@maximilian/components/coordinad
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomSelectorMes } from "@maximilian/components/common/CustomSelectorMes";
 import { useGestionLineasAgrupadas } from "@maximilian/hooks/useGestionLineasAgrupadas";
-import type { EntradaLineaAgrupadaPendiente } from "@maximilian/shared/types/facturacion.type";
+import type {
+  EditarLineaAgrupadaFacturaRequest,
+  EntradaLineaAgrupadaPendiente,
+} from "@maximilian/shared/types/facturacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 
 interface CustomModalGestionLineasAgrupadasProps {
@@ -47,7 +50,7 @@ export function CustomModalGestionLineasAgrupadas({
     onCerrar();
   };
 
-  const guardarEdicion = async (datos: { codigo: string; descripcion: string }) => {
+  const guardarEdicion = async (datos: EditarLineaAgrupadaFacturaRequest) => {
     if (!lineaAEditar) return;
     await editarLinea({ idPedidoFacturaLinea: lineaAEditar.idPedidoFacturaLinea, datos });
     setLineaAEditar(null);
@@ -110,7 +113,7 @@ export function CustomModalGestionLineasAgrupadas({
                   <th className="px-3 py-2 text-center">Moneda</th>
                   <th className="px-3 py-2 text-center">Cantidad</th>
                   <th className="px-3 py-2 text-right">Valor U.</th>
-                  <th className="px-3 py-2 text-center">Dscto. %</th>
+                  <th className="px-3 py-2 text-center">Dscto.</th>
                   <th className="px-3 py-2 text-right">Total</th>
                   <th className="px-3 py-2 text-right">Acciones</th>
                 </tr>

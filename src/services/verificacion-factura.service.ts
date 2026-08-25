@@ -5,7 +5,11 @@ import {
   MessageType,
   type ApiResponse,
 } from "@maximilian/shared/types/api.type";
-import type { FormatoDescargaFactura } from "@maximilian/shared/types/facturacion.type";
+import type {
+  FormatoDescargaFactura,
+  PedidoRelacionadoFacturaApi,
+  ResultadoPedidosRelacionadosFacturaApi,
+} from "@maximilian/shared/types/facturacion.type";
 import type { ResultadoVerificacionFacturaApi } from "@maximilian/shared/types/verificacion-factura.type";
 import {
   obtenerRegistro,
@@ -67,5 +71,19 @@ export const verificacionFacturaService = {
     if (!urlDescarga) throw new Error("La respuesta de descarga es invalida");
 
     return urlDescarga;
+  },
+
+  obtenerPedidosRelacionados: async (
+    token: string,
+  ): Promise<PedidoRelacionadoFacturaApi[]> => {
+    const { data } = await clienteVerificacionFactura.get<
+      ApiResponse<ResultadoPedidosRelacionadosFacturaApi>
+    >(ENDPOINTS_VERIFICACION_FACTURA.obtenerPedidosRelacionados(token));
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result.pedidos;
   },
 };

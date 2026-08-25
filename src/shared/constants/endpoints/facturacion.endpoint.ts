@@ -18,6 +18,8 @@ export const ENDPOINTS_FACTURACION = {
     `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/urlVerificacion`,
   erroresUltimoEnvio: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/erroresUltimoEnvio`,
+  obtenerPedidosRelacionados: (idDocumentoElectronico: number) =>
+    `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/pedidos`,
   guardarCambios: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/guardarCambios/${idDocumentoElectronico}`,
   actualizarEstado: (idPedido: number) =>
