@@ -3,7 +3,9 @@ import { Download, FileWarning } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomCuotasFacturaVerificacion } from "@maximilian/components/publico/CustomCuotasFacturaVerificacion";
 import { CustomEncabezadoFacturaVerificacion } from "@maximilian/components/publico/CustomEncabezadoFacturaVerificacion";
+import { CustomModalDetallePedidosFacturaVerificacion } from "@maximilian/components/publico/CustomModalDetallePedidosFacturaVerificacion";
 import { CustomTablaLineasFacturaVerificacion } from "@maximilian/components/publico/CustomTablaLineasFacturaVerificacion";
+import { useModalDetallePedidosFacturaVerificacion } from "@maximilian/hooks/useModalDetallePedidosFacturaVerificacion";
 import { useVerificacionFactura } from "@maximilian/hooks/useVerificacionFactura";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 
@@ -18,6 +20,11 @@ export default function PaginaVerificacionFactura() {
     isLoading,
     mensajeError,
   } = useVerificacionFactura(token);
+  const {
+    abierto: modalDetallePedidosAbierto,
+    abrir: abrirDetallePedidos,
+    cerrar: cerrarDetallePedidos,
+  } = useModalDetallePedidosFacturaVerificacion();
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-10">
@@ -46,6 +53,8 @@ export default function PaginaVerificacionFactura() {
             <CustomTablaLineasFacturaVerificacion
               cabecera={factura.cabecera}
               lineas={factura.lineas}
+              onVerDetallePedidos={() => abrirDetallePedidos()}
+              onVerDetalleLinea={() => abrirDetallePedidos()}
             />
             {factura.cuotas.length > 0 ? (
               <CustomCuotasFacturaVerificacion
@@ -84,6 +93,12 @@ export default function PaginaVerificacionFactura() {
           </div>
         )}
       </div>
+
+      <CustomModalDetallePedidosFacturaVerificacion
+        abierto={modalDetallePedidosAbierto}
+        token={token}
+        onCerrar={cerrarDetallePedidos}
+      />
     </div>
   );
 }

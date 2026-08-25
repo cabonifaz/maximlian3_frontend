@@ -3,9 +3,13 @@ import type {
   ActualizarEstadoCuotaRequest,
   AnularFacturaRequest,
   AnularManualmenteFacturaRequest,
+  CrearLineaAgrupadaFacturaRequest,
   DocumentoAfectadoAnulacion,
   DocumentoAnulacionPreviewApi,
+  EditarLineaAgrupadaFacturaRequest,
   EditarNotaCreditoDebitoRequest,
+  EntradaLineaAgrupadaFacturaApi,
+  EntradaLineaAgrupadaPendiente,
   EntradaFacturaCliente,
   EntradaFacturacion,
   EntradaFacturacionApi,
@@ -14,6 +18,7 @@ import type {
   EntradaProductoFacturable,
   EntradaProductoFacturableApi,
   ErrorDocumentoFactura,
+  FiltroExportarPrefactura,
   FormatoDescargaFactura,
   GuardarBorradorFacturaRequest,
   GuardarCambiosFacturaRequest,
@@ -21,10 +26,13 @@ import type {
   NotaCreditoDebitoRequest,
   ParametrosListaFacturacion,
   ParametrosListaFacturas,
+  ParametrosListaLineasPendientes,
   ParametrosListaPedidosFacturacion,
   ParametrosListaProductosFacturables,
   ParametrosResumenFacturacion,
+  PedidoRelacionadoFacturaApi,
   RespuestaExportarLibroVentas,
+  RespuestaExportarPrefactura,
   RespuestaListaFacturasCliente,
   RespuestaListaFacturacion,
   RespuestaListaFacturas,
@@ -32,11 +40,13 @@ import type {
   ResumenFacturacion,
   ResultadoListaFacturacionApi,
   ResultadoListaFacturasApi,
+  ResultadoListaLineasPendientesApi,
   ResultadoListaPedidosFacturacionApi,
   ResultadoListaProductosFacturablesApi,
   ResultadoGuardarBorradorFactura,
   ResultadoObtenerFacturaApi,
   ResultadoParaNotaApi,
+  ResultadoPedidosRelacionadosFacturaApi,
 } from "@maximilian/shared/types/facturacion.type";
 import { ENDPOINTS_FACTURACION } from "@maximilian/shared/constants/endpoints/facturacion.endpoint";
 import { TIMEOUT_EMISION_ANULACION_FACTURA_MS } from "@maximilian/shared/constants/services/facturacion.service.constants";
@@ -199,13 +209,17 @@ function mapearProductoFacturable(
   return {
     idProductoFacturable: pedido.idPedido,
     codigo: pedido.codigo,
-    investigado: pedido.investigado,
+    numReferencia: pedido.numReferencia,
+    investigado: pedido.investigado ?? "",
+    pais: pedido.pais,
     aplicaPenalidad: pedido.aplicaPenalidad === "Si",
     tipo,
     fecha: pedido.fecha,
     penalidad: pedido.penalidad,
     precio: pedido.precio,
     descuentoPorcentaje: pedido.descuentoPorcentaje,
+    idMoneda: pedido.idMoneda,
+    moneda: pedido.moneda,
   };
 }
 
@@ -247,6 +261,7 @@ async function obtenerFacturaRegistrada(
     idReferencia: number,
   ) => string = ENDPOINTS_FACTURACION.obtenerFactura,
   estadoFactura: string | null = null,
+  esNota = false,
 ): Promise<DetalleFactura> {
   const esPendienteEnvio =
     estadoFactura === ESTADO_CODIGO_DOCUMENTO_PENDIENTE_ENVIO;
@@ -268,7 +283,7 @@ async function obtenerFacturaRegistrada(
     ]),
     idCliente !== null
       ? servicioCliente.getById(idCliente)
-      : esPendienteEnvio
+      : esPendienteEnvio && !esNota
         ? servicioCliente.obtenerPorDocumentoElectronico(idReferencia)
         : Promise.resolve(null),
   ]);
@@ -337,7 +352,7 @@ async function obtenerFacturaRegistrada(
     ni: cabecera.clienteNumeroDocumento,
     ordenCompra: concatenarCodigosOrdenCompra(
       cabecera.numeroReferencia ?? "",
-      lineas.map((linea) => linea.productoCodigo),
+      lineas.map((linea) => linea.productoCodigo ?? ""),
     ),
     fechaEmision: formatearFechaIsoADdMmYyyy(cabecera.fechaEmision),
     fechaAceptacion: cabecera.fechaAceptacion
@@ -349,7 +364,6 @@ async function obtenerFacturaRegistrada(
       texto: campoExtra.texto,
     })),
     productos: lineas.map((linea) => {
-      const subtotal = linea.cantidad * linea.valorUnitario;
       const opcionAfectacionIgv = buscarOpcionTablaMaestra(
         opcionesAfectacionIgv,
         linea.afectacionIgvCodigo,
@@ -361,8 +375,8 @@ async function obtenerFacturaRegistrada(
 
       return {
         idProductoFactura: linea.idLineaDocumentoElectronico,
-        idPedido: linea.idPedido,
-        codigo: linea.productoCodigo,
+        idPedidoFacturaLinea: linea.idPedidoFacturaLinea,
+        codigo: linea.productoCodigo ?? "",
         numeroLinea: linea.numeroLinea,
         idLineaDocumentoElectronico: linea.idLineaDocumentoElectronico,
         productoSunatCodigo: linea.productoSunatCodigo,
@@ -371,8 +385,7 @@ async function obtenerFacturaRegistrada(
           obtenerEtiquetaTablaMaestra(opcionUnidadMedida),
         cantidad: linea.cantidad,
         descripcion: linea.descripcion,
-        descuentoPorcentaje:
-          subtotal > 0 ? (linea.montoDescuento / subtotal) * 100 : 0,
+        montoDescuento: linea.montoDescuento,
         valorUnitario: linea.valorUnitario,
         precioUnitario: linea.precioUnitario,
         porcentajeIgv: linea.porcentajeIgv,
@@ -528,6 +541,7 @@ export const facturacionService = {
     idDocumentoElectronico: number,
     codigoEstadoFacturacion: number | null = null,
     estadoFactura: string | null = null,
+    esNota = false,
   ): Promise<DetalleFactura> =>
     obtenerFacturaRegistrada(
       idDocumentoElectronico,
@@ -535,6 +549,7 @@ export const facturacionService = {
       codigoEstadoFacturacion,
       ENDPOINTS_FACTURACION.obtenerFacturaPorId,
       estadoFactura,
+      esNota,
     ),
 
   listarProductosFacturables: async (
@@ -542,7 +557,10 @@ export const facturacionService = {
   ): Promise<RespuestaListaProductosFacturables> => {
     const { data } = await maximilianService.get<
       ApiResponse<ResultadoListaProductosFacturablesApi>
-    >(ENDPOINTS_FACTURACION.listarPedidosFacturables, { params: parametros });
+    >(ENDPOINTS_FACTURACION.listarPedidosFacturables, {
+      params: parametros,
+      paramsSerializer: { indexes: null },
+    });
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
       throw new ErrorRespuestaApi(data);
@@ -550,8 +568,6 @@ export const facturacionService = {
 
     return {
       productos: data.result.pedidos.map(mapearProductoFacturable),
-      totalRegistros: data.result.totalRegistros,
-      totalPaginas: data.result.totalPaginas,
     };
   },
 
@@ -559,24 +575,71 @@ export const facturacionService = {
     idCliente: number,
     idPedido: number,
   ): Promise<EntradaProductoFacturable | null> => {
-    let paginaActual = 1;
-    let totalPaginas = 1;
+    const respuesta = await facturacionService.listarProductosFacturables({
+      idCliente,
+    });
 
-    do {
-      const respuesta = await facturacionService.listarProductosFacturables({
-        idCliente,
-        numPag: paginaActual,
-      });
-      const producto = respuesta.productos.find(
+    return (
+      respuesta.productos.find(
         (productoActual) => productoActual.idProductoFacturable === idPedido,
-      );
+      ) ?? null
+    );
+  },
 
-      if (producto) return producto;
-      totalPaginas = respuesta.totalPaginas;
-      paginaActual += 1;
-    } while (paginaActual <= totalPaginas);
+  crearLineaAgrupada: async (
+    solicitud: CrearLineaAgrupadaFacturaRequest,
+  ): Promise<EntradaLineaAgrupadaFacturaApi> => {
+    const { data } = await maximilianService.post<
+      ApiResponse<EntradaLineaAgrupadaFacturaApi>
+    >(ENDPOINTS_FACTURACION.lineas, solicitud);
 
-    return null;
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result;
+  },
+
+  editarLineaAgrupada: async (
+    idPedidoFacturaLinea: number,
+    solicitud: EditarLineaAgrupadaFacturaRequest,
+  ): Promise<unknown> => {
+    const { data } = await maximilianService.put<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.editarLinea(idPedidoFacturaLinea),
+      solicitud,
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result;
+  },
+
+  eliminarLinea: async (idPedidoFacturaLinea: number): Promise<unknown> => {
+    const { data } = await maximilianService.delete<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.eliminarLinea(idPedidoFacturaLinea),
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result;
+  },
+
+  listarLineasPendientes: async (
+    parametros: ParametrosListaLineasPendientes,
+  ): Promise<EntradaLineaAgrupadaPendiente[]> => {
+    const { data } = await maximilianService.get<
+      ApiResponse<ResultadoListaLineasPendientesApi>
+    >(ENDPOINTS_FACTURACION.lineas, { params: parametros });
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result.lineas;
   },
 
   actualizarEstado: async (
@@ -869,12 +932,53 @@ export const facturacionService = {
     return data.result ?? [];
   },
 
+  obtenerPedidosRelacionados: async (
+    idDocumentoElectronico: number,
+  ): Promise<PedidoRelacionadoFacturaApi[]> => {
+    const { data } = await maximilianService.get<
+      ApiResponse<ResultadoPedidosRelacionadosFacturaApi>
+    >(ENDPOINTS_FACTURACION.obtenerPedidosRelacionados(idDocumentoElectronico));
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result.pedidos;
+  },
+
   exportarLibroVentas: async (
     periodo: string,
   ): Promise<RespuestaExportarLibroVentas> => {
     const respuesta = await maximilianService.get<Blob>(
       ENDPOINTS_FACTURACION.sireRvieTxt,
       { params: { periodo }, responseType: "blob" },
+    );
+
+    const tipoContenido = respuesta.headers["content-type"] ?? "";
+
+    if (tipoContenido.includes("application/json")) {
+      const texto = await respuesta.data.text();
+      const data = JSON.parse(texto) as ApiResponse<unknown>;
+      throw new ErrorRespuestaApi(data);
+    }
+
+    const nombreArchivo = obtenerNombreArchivoDesdeCabecera(
+      respuesta.headers["content-disposition"],
+    );
+
+    return {
+      archivo: respuesta.data,
+      nombreArchivo,
+    };
+  },
+
+  exportarPrefactura: async (
+    filtro: FiltroExportarPrefactura,
+  ): Promise<RespuestaExportarPrefactura> => {
+    const respuesta = await maximilianService.post<Blob>(
+      ENDPOINTS_FACTURACION.exportarPrefactura,
+      filtro,
+      { responseType: "blob" },
     );
 
     const tipoContenido = respuesta.headers["content-type"] ?? "";

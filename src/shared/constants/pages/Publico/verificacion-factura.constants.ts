@@ -1,3 +1,5 @@
+export const ESTADO_CODIGO_VERIFICACION_FACTURA_ACEPTADO = "Aceptado";
+
 export const CLASES_ESTADO_VERIFICACION_FACTURA: Record<string, string> = {
   Aceptado: "bg-emerald-100 text-emerald-700",
   Pendiente: "bg-amber-100 text-amber-700",

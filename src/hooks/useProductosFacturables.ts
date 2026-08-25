@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { facturacionService } from "@maximilian/services/facturacion.service";
-import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
 import { CONFIGURACION_CONSULTA_FACTURACION } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
 
 export function useProductosFacturables(
@@ -10,14 +9,12 @@ export function useProductosFacturables(
   abierto: boolean,
 ) {
   const [idTipoTramite, setIdTipoTramite] = useState<number | undefined>();
-  const [fechaInicio, setFechaInicio] = useState<Date | undefined>();
-  const [fechaFin, setFechaFin] = useState<Date | undefined>();
-  const [paginaActual, setPaginaActual] = useState(1);
-  const fechaInicioIso = fechaInicio ? formatearFechaIsoLocal(fechaInicio) : undefined;
-  const fechaFinIso = fechaFin ? formatearFechaIsoLocal(fechaFin) : undefined;
-  const fechasInvalidas = Boolean(
-    fechaInicio && fechaFin && fechaInicio > fechaFin,
-  );
+  const [mesSeleccionado, setMesSeleccionado] = useState<Date | undefined>();
+  const [idsPais, setIdsPais] = useState<number[]>([]);
+  const [idMoneda, setIdMoneda] = useState<number | undefined>();
+  const anio = mesSeleccionado?.getFullYear();
+  const mes = mesSeleccionado ? mesSeleccionado.getMonth() + 1 : undefined;
+  const filtrosCompletos = Boolean(idTipoTramite && anio && mes);
 
   const consulta = useQuery({
     ...CONFIGURACION_CONSULTA_FACTURACION,
@@ -25,61 +22,83 @@ export function useProductosFacturables(
       "facturacion",
       "pedidos-facturables",
       idCliente,
-      idDocumentoElectronico,
       idTipoTramite,
-      fechaInicioIso,
-      fechaFinIso,
-      paginaActual,
+      anio,
+      mes,
+      idsPais,
+      idMoneda,
     ],
-    queryFn: () => facturacionService.listarProductosFacturables({
-      idCliente,
-      idTipoTramite,
-      fechaInicio: fechaInicioIso,
-      fechaFin: fechaFinIso,
-      idDocumentoElectronico,
-      numPag: paginaActual,
-    }),
-    enabled: abierto && idCliente > 0 && !fechasInvalidas,
+    queryFn: () =>
+      facturacionService.listarProductosFacturables({
+        idCliente,
+        idTipoTramite,
+        anio,
+        mes,
+        idsPais: idsPais.length > 0 ? idsPais : undefined,
+        idMoneda,
+      }),
+    enabled: abierto && idCliente > 0 && filtrosCompletos,
+  });
+
+  const crearLineaMutation = useMutation({
+    mutationFn: ({
+      codigo,
+      descripcion,
+    }: {
+      codigo: string;
+      descripcion: string;
+    }) =>
+      facturacionService.crearLineaAgrupada({
+        idCliente,
+        idsPedido: (consulta.data?.productos ?? []).map(
+          (producto) => producto.idProductoFacturable,
+        ),
+        codigo,
+        descripcion,
+        idDocumentoElectronico,
+      }),
   });
 
   const cambiarTipoTramite = (valor?: number) => {
     setIdTipoTramite(valor);
-    setPaginaActual(1);
   };
 
-  const cambiarFechaInicio = (fecha?: Date) => {
-    setFechaInicio(fecha);
-    setPaginaActual(1);
+  const cambiarMes = (fecha?: Date) => {
+    setMesSeleccionado(fecha);
   };
 
-  const cambiarFechaFin = (fecha?: Date) => {
-    setFechaFin(fecha);
-    setPaginaActual(1);
+  const cambiarPais = (valores: number[]) => {
+    setIdsPais(valores);
+  };
+
+  const cambiarMoneda = (valor?: number) => {
+    setIdMoneda(valor);
   };
 
   const reiniciarFiltros = () => {
     setIdTipoTramite(undefined);
-    setFechaInicio(undefined);
-    setFechaFin(undefined);
-    setPaginaActual(1);
+    setMesSeleccionado(undefined);
+    setIdsPais([]);
+    setIdMoneda(undefined);
+    crearLineaMutation.reset();
   };
 
   return {
-    cambiarFechaFin,
-    cambiarFechaInicio,
-    cambiarPagina: setPaginaActual,
+    cambiarMes,
+    cambiarMoneda,
+    cambiarPais,
     cambiarTipoTramite,
+    crearLinea: crearLineaMutation.mutateAsync,
+    creandoLinea: crearLineaMutation.isPending,
     estaCargando: consulta.isLoading,
-    fechaFin,
-    fechaInicio,
-    fechasInvalidas,
+    filtrosCompletos,
     hayError: consulta.isError,
+    idMoneda,
+    idsPais,
     idTipoTramite,
-    paginaActual,
+    mesSeleccionado,
     productos: consulta.data?.productos ?? [],
     recargar: consulta.refetch,
     reiniciarFiltros,
-    totalPaginas: Math.max(1, consulta.data?.totalPaginas ?? 1),
-    totalRegistros: consulta.data?.totalRegistros ?? 0,
   };
 }

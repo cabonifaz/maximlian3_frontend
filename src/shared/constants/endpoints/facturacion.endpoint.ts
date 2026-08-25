@@ -18,6 +18,8 @@ export const ENDPOINTS_FACTURACION = {
     `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/urlVerificacion`,
   erroresUltimoEnvio: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/erroresUltimoEnvio`,
+  obtenerPedidosRelacionados: (idDocumentoElectronico: number) =>
+    `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}/pedidos`,
   guardarCambios: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/guardarCambios/${idDocumentoElectronico}`,
   actualizarEstado: (idPedido: number) =>
@@ -39,4 +41,10 @@ export const ENDPOINTS_FACTURACION = {
   editarNotaCreditoDebito: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/notaCreditoDebito/${idDocumentoElectronico}`,
   sireRvieTxt: "/api/PedidoFactura/sireRvie/txt",
+  exportarPrefactura: "/api/PedidoFactura/listarPedidos/exportarExcel",
+  lineas: "/api/PedidoFacturaLinea",
+  editarLinea: (idPedidoFacturaLinea: number) =>
+    `/api/PedidoFacturaLinea/${idPedidoFacturaLinea}`,
+  eliminarLinea: (idPedidoFacturaLinea: number) =>
+    `/api/PedidoFacturaLinea/${idPedidoFacturaLinea}`,
 } as const;

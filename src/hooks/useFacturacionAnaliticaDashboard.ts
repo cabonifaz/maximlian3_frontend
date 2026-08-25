@@ -1,11 +1,15 @@
 import { useMemo, useState } from "react";
-import type { FiltrosFacturacionAnaliticaDashboard } from "@maximilian/shared/types/dashboard.type";
+import type {
+  FiltrosFacturacionAnaliticaDashboard,
+  GranularidadTiempoDashboard,
+  MetricaDesgloseFacturacionAnaliticaDashboard,
+} from "@maximilian/shared/types/dashboard.type";
 import {
   CLIENTES_PENDIENTES_FACTURACION_ANALITICA_DASHBOARD_MOCK,
   DETALLE_FACTURACION_ANALITICA_DASHBOARD_MOCK,
 } from "@maximilian/shared/constants/components/gerente/facturacion-analitica-dashboard.constants";
 import {
-  agruparEvolucionMensualFacturacion,
+  agruparEvolucionFacturacion,
   agruparFacturacionPorEstado,
   agruparFacturacionPorPaisTop5,
   agruparFacturacionPorTramite,
@@ -16,6 +20,9 @@ import {
 
 export function useFacturacionAnaliticaDashboard() {
   const [filtros, setFiltros] = useState<FiltrosFacturacionAnaliticaDashboard>({});
+  const [granularidad, setGranularidad] = useState<GranularidadTiempoDashboard>("mes");
+  const [metricaDesglose, setMetricaDesglose] =
+    useState<MetricaDesgloseFacturacionAnaliticaDashboard>("monto");
 
   const fechasInvalidas = Boolean(
     filtros.fechaDesde && filtros.fechaHasta && filtros.fechaDesde > filtros.fechaHasta,
@@ -68,9 +75,9 @@ export function useFacturacionAnaliticaDashboard() {
     [filasFiltradas],
   );
 
-  const evolucionMensual = useMemo(
-    () => agruparEvolucionMensualFacturacion(filasFiltradas),
-    [filasFiltradas],
+  const evolucion = useMemo(
+    () => agruparEvolucionFacturacion(filasFiltradas, granularidad),
+    [filasFiltradas, granularidad],
   );
 
   const resumenClientes = useMemo(
@@ -87,11 +94,15 @@ export function useFacturacionAnaliticaDashboard() {
     actualizarFiltros,
     limpiarFiltros,
     fechasInvalidas,
+    granularidad,
+    cambiarGranularidad: setGranularidad,
+    metricaDesglose,
+    cambiarMetricaDesglose: setMetricaDesglose,
     indicadores,
     desglosePorTramite,
     desglosePorPais,
     desglosePorEstado,
-    evolucionMensual,
+    evolucion,
     resumenClientes,
     clientesPendientesFiltrados,
     filasFiltradas,
