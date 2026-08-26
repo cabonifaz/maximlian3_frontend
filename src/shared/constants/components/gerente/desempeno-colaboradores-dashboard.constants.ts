@@ -58,10 +58,6 @@ export const INFORMES_COLABORADORES_DASHBOARD_MOCK: InformeColaboradorDesempenoD
   { id: 35, idColaborador: 6, fechaEntrega: "2026-08-12", esTardio: false, tieneObservaciones: true, tieneInformacionFinanciera: false },
 ];
 
-export const OPCIONES_COLABORADOR_DESEMPENO_DASHBOARD = COLABORADORES_DESEMPENO_DASHBOARD_MOCK.map(
-  (colaborador) => ({ valor: colaborador.idColaborador, etiqueta: colaborador.colaborador }),
-);
-
 export const ID_ROL_ANALISTA_DESEMPENO_DASHBOARD = 3;
 export const ID_ROL_TRADUCTOR_DESEMPENO_DASHBOARD = 4;
 
@@ -102,6 +98,20 @@ export const MAPA_ID_ROL_COLABORADOR_DESEMPENO_DASHBOARD: Record<number, RolCola
   [ID_ROL_ANALISTA_DESEMPENO_DASHBOARD]: "Analista",
   [ID_ROL_TRADUCTOR_DESEMPENO_DASHBOARD]: "Traductor",
 };
+
+export const CANTIDAD_REINTENTOS_CONSULTA_DESEMPENO_COLABORADORES_DASHBOARD = 2;
+
+export const PALETA_AVATAR_DESEMPENO_COLABORADORES_DASHBOARD: Array<{
+  colorLetra: string;
+  colorFondo: string;
+}> = [
+  { colorLetra: "#2563eb", colorFondo: "#dbeafe" },
+  { colorLetra: "#7c3aed", colorFondo: "#ede9fe" },
+  { colorLetra: "#059669", colorFondo: "#d1fae5" },
+  { colorLetra: "#d97706", colorFondo: "#fef3c7" },
+  { colorLetra: "#db2777", colorFondo: "#fce7f3" },
+  { colorLetra: "#0891b2", colorFondo: "#cffafe" },
+];
 
 export const COLUMNAS_TABLA_DESEMPENO_COLABORADORES_DASHBOARD: TableColumn[] = [
   { label: "Colaborador", width: "20%" },

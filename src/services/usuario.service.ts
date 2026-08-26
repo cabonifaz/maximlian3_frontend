@@ -6,11 +6,21 @@ import type {
   CreateUserRequest,
   CreateUserResponse,
   DeleteUserRequest,
+  EntradaResumenColaboradorApi,
+  EntradaUsuarioCortaDashboardApi,
+  ParametrosListaCortaDashboardUsuario,
+  ParametrosResumenColaboradores,
+  ResultadoResumenColaboradoresApi,
   UpdateUserRequest,
   UserDetails,
   UserListRequest,
   UserListResponse,
+  UsuarioCortaDashboard,
 } from "@maximilian/shared/types/usuario.type";
+import type {
+  ResumenColaboradorDesempenoDashboard,
+  RespuestaResumenColaboradoresDesempenoDashboard,
+} from "@maximilian/shared/types/dashboard.type";
 import {
   esRegistroRespuesta as esRegistro,
   obtenerNumeroOpcional as obtenerNumero,
@@ -64,6 +74,34 @@ function normalizarDetallesUsuario(registro: unknown): UserDetails {
     idiomas,
     idEstado: obtenerNumero(fila.idEstado ?? fila.IdEstado),
     estado: obtenerTexto(fila.estado, fila.Estado),
+  };
+}
+
+function mapearUsuarioCortaDashboard(
+  usuario: EntradaUsuarioCortaDashboardApi,
+): UsuarioCortaDashboard {
+  return {
+    idUsuario: usuario.idUsuario,
+    nombreCompleto: [usuario.nombres, usuario.apellidoPaterno, usuario.apellidoMaterno]
+      .filter((parte): parte is string => Boolean(parte))
+      .join(" "),
+  };
+}
+
+function mapearResumenColaborador(
+  usuario: EntradaResumenColaboradorApi,
+): ResumenColaboradorDesempenoDashboard {
+  return {
+    idColaborador: usuario.idColaborador,
+    colaborador: usuario.nombreCompleto,
+    rol: usuario.descripcionRol as ResumenColaboradorDesempenoDashboard["rol"],
+    iniciales: usuario.iniciales,
+    cantidadOrdenes: usuario.cantidadOrdenes,
+    porcentajeCumplimiento: usuario.porcentajeCumplimiento,
+    cantidadInformes: usuario.cantidadInformes,
+    cantidadTardios: usuario.cantidadTardios,
+    cantidadObservados: usuario.cantidadObservados,
+    cantidadConInformacionFinanciera: usuario.cantidadConInformacionFinanciera,
   };
 }
 
@@ -124,6 +162,79 @@ export const servicioUsuario = {
       return normalizarDetallesUsuario(resultado);
     } catch (error) {
       console.error(`Error fetching user ${idUsuario}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * List users in a short shape for dashboard selectors (e.g. colaborador filter).
+   * @param params Optional role filter.
+   */
+  listaCortaDashboard: async (
+    params: ParametrosListaCortaDashboardUsuario = {},
+    signal?: AbortSignal,
+  ) => {
+    try {
+      const parametros = new URLSearchParams();
+      (params.idsRolFiltro ?? []).forEach((idRol) => {
+        parametros.append("idsRolFiltro", String(idRol));
+      });
+
+      const query = parametros.toString();
+      const { data } = await maximilianService.get<ApiResponse<EntradaUsuarioCortaDashboardApi[]>>(
+        query
+          ? `${ENDPOINTS_USUARIO.listaCortaDashboard}?${query}`
+          : ENDPOINTS_USUARIO.listaCortaDashboard,
+        { signal },
+      );
+
+      if (data.idTipoMensaje !== MessageType.SUCCESS) {
+        throw new ErrorRespuestaApi(data);
+      }
+
+      return data.result.map(mapearUsuarioCortaDashboard);
+    } catch (error) {
+      console.error("Error listing users for dashboard selector:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get the aggregated performance summary per collaborator (Cumplimiento y Desempeño table).
+   * @param params Date range, collaborator, role and pagination filters.
+   */
+  obtenerResumenColaboradores: async (
+    params: ParametrosResumenColaboradores,
+    signal?: AbortSignal,
+  ): Promise<RespuestaResumenColaboradoresDesempenoDashboard> => {
+    try {
+      const parametros = new URLSearchParams({ numPag: String(params.numPag) });
+
+      if (params.fchDesde) parametros.set("fchDesde", params.fchDesde);
+      if (params.fchHasta) parametros.set("fchHasta", params.fchHasta);
+      if (params.idColaborador != null) {
+        parametros.set("idColaborador", String(params.idColaborador));
+      }
+      if (params.idRolAsignado != null) {
+        parametros.set("idRolAsignado", String(params.idRolAsignado));
+      }
+
+      const { data } = await maximilianService.get<ApiResponse<ResultadoResumenColaboradoresApi>>(
+        `${ENDPOINTS_USUARIO.resumen}?${parametros.toString()}`,
+        { signal },
+      );
+
+      if (data.idTipoMensaje !== MessageType.SUCCESS) {
+        throw new ErrorRespuestaApi(data);
+      }
+
+      return {
+        resumenColaboradores: data.result.lstUsuarios.map(mapearResumenColaborador),
+        totalRegistros: data.result.totalRegistros,
+        totalPaginas: data.result.totalPaginas,
+      };
+    } catch (error) {
+      console.error("Error fetching collaborator performance summary:", error);
       throw error;
     }
   },

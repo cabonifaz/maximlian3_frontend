@@ -13,6 +13,13 @@ export function CustomCumplimientoDesempenoGerente() {
     cambiarGranularidad,
     evolucion,
     resumenColaboradores,
+    pagina,
+    cambiarPagina,
+    totalRegistrosColaboradores,
+    totalPaginasColaboradores,
+    estaCargandoColaboradores,
+    hayErrorColaboradores,
+    reintentarColaboradores,
   } = useDesempenoColaboradoresDashboard();
 
   return (
@@ -41,7 +48,16 @@ export function CustomCumplimientoDesempenoGerente() {
         onCambiarGranularidad={cambiarGranularidad}
       />
 
-      <CustomTablaDesempenoColaboradoresGerente resumenColaboradores={resumenColaboradores} />
+      <CustomTablaDesempenoColaboradoresGerente
+        resumenColaboradores={resumenColaboradores}
+        paginaActual={pagina}
+        totalPaginas={totalPaginasColaboradores}
+        totalRegistros={totalRegistrosColaboradores}
+        onCambiarPagina={cambiarPagina}
+        estaCargando={estaCargandoColaboradores}
+        hayError={hayErrorColaboradores}
+        onReintentar={reintentarColaboradores}
+      />
     </section>
   );
 }
