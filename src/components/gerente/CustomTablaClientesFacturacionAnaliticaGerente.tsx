@@ -47,15 +47,6 @@ export function CustomTablaClientesFacturacionAnaliticaGerente({
                 className="tracking-normal text-inherit"
               />
             </td>
-            <td className="px-6 py-4 text-right text-xs text-slate-600">
-              {cliente.monedaIcono}
-              <NumberTicker
-                value={cliente.montoPendienteFacturar}
-                decimalPlaces={2}
-                rigidez={260}
-                className="tracking-normal text-inherit"
-              />
-            </td>
           </>
         )}
       />

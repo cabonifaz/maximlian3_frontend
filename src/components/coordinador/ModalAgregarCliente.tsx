@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, MailCheck, MailX } from "lucide-react";
+import { Plus, MailCheck, MailX, AlertTriangle } from "lucide-react";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { useForm, Controller, useWatch } from "react-hook-form";
@@ -259,6 +259,11 @@ export function ModalAgregarCliente({
   const watchedMoneda = infoWatch("moneda");
   const watchedFormatoInforme = infoWatch("formatoInforme");
   const watchedPlantillaInforme = infoWatch("plantillaInforme");
+
+  const monedaClienteId = watchedMoneda ? Number(watchedMoneda) : null;
+  const tarifasConMonedaDistinta = monedaClienteId
+    ? addedRates.filter((rate) => rate.monedaId !== monedaClienteId)
+    : [];
 
   return (
     <>
@@ -585,6 +590,10 @@ export function ModalAgregarCliente({
           {
             id: "rates",
             label: "Tarifas",
+            indicator:
+              tarifasConMonedaDistinta.length > 0 ? (
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              ) : undefined,
             content: (
               <div className="space-y-6 animate-in fade-in duration-300">
                 <div className="flex items-center justify-between gap-4">
@@ -676,8 +685,18 @@ export function ModalAgregarCliente({
                             <td className="px-4 py-3 text-gray-600">
                               {rate.paisLabel}
                             </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {rate.monedaLabel}
+                            <td className="px-4 py-3">
+                              {monedaClienteId && rate.monedaId !== monedaClienteId ? (
+                                <span
+                                  className="inline-flex items-center gap-1 text-amber-700 font-bold"
+                                  title="Moneda distinta a la de Información"
+                                >
+                                  <AlertTriangle size={12} className="text-amber-500 shrink-0" />
+                                  {rate.monedaLabel}
+                                </span>
+                              ) : (
+                                <span className="text-gray-600">{rate.monedaLabel}</span>
+                              )}
                             </td>
                             <td className="px-4 py-3 text-gray-600 text-center">
                               {rate.tramiteLabel}
@@ -964,6 +983,7 @@ export function ModalAgregarCliente({
         isOpen={isRateModalOpen}
         onClose={() => setIsRateModalOpen(false)}
         onConfirm={handleAddRate}
+        defaultValues={watchedMoneda ? { moneda: Number(watchedMoneda) } : undefined}
       />
       <ModalAgregarTarifa
         isOpen={isEditRateModalOpen}

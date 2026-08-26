@@ -4,20 +4,17 @@ import type {
   AnularFacturaRequest,
   AnularManualmenteFacturaRequest,
   ClienteResumenGlobalFacturacionApi,
-  CrearLineaAgrupadaFacturaRequest,
   DocumentoAfectadoAnulacion,
   DocumentoAnulacionPreviewApi,
   EditarLineaAgrupadaFacturaRequest,
   EditarNotaCreditoDebitoRequest,
-  EntradaLineaAgrupadaFacturaApi,
   EntradaLineaAgrupadaPendiente,
   EntradaFacturaCliente,
   EntradaFacturacion,
   EntradaFacturacionApi,
   EntradaListaFacturaApi,
   EntradaPedidoFacturacionApi,
-  EntradaProductoFacturable,
-  EntradaProductoFacturableApi,
+  EntradaPedidoConGrupoApi,
   ErrorDocumentoFactura,
   FiltroExportarPrefactura,
   FormatoDescargaFactura,
@@ -29,8 +26,10 @@ import type {
   ParametrosListaFacturas,
   ParametrosListaLineasPendientes,
   ParametrosListaPedidosFacturacion,
-  ParametrosListaProductosFacturables,
+  ParametrosListarPedidosConGrupos,
   ParametrosResumenFacturacion,
+  CrearLineasLoteRequest,
+  PedidoConGrupo,
   PedidoRelacionadoFacturaApi,
   PuntoEvolucionAnaliticaFacturacionApi,
   RespuestaExportarLibroVentas,
@@ -38,14 +37,14 @@ import type {
   RespuestaListaFacturasCliente,
   RespuestaListaFacturacion,
   RespuestaListaFacturas,
-  RespuestaListaProductosFacturables,
+  RespuestaListarPedidosConGrupos,
   ResultadoResumenAnaliticoFacturacionApi,
   ResumenFacturacion,
   ResultadoListaFacturacionApi,
   ResultadoListaFacturasApi,
   ResultadoListaLineasPendientesApi,
   ResultadoListaPedidosFacturacionApi,
-  ResultadoListaProductosFacturablesApi,
+  ResultadoListarPedidosConGruposApi,
   ResultadoGuardarBorradorFactura,
   ResultadoObtenerFacturaApi,
   ResultadoParaNotaApi,
@@ -201,9 +200,7 @@ function mapearPedidoFacturacion(
   };
 }
 
-function mapearProductoFacturable(
-  pedido: EntradaProductoFacturableApi,
-): EntradaProductoFacturable {
+function mapearPedidoConGrupo(pedido: EntradaPedidoConGrupoApi): PedidoConGrupo {
   const tipoNormalizado = pedido.tipoTramite
     .trim()
     .toLowerCase()
@@ -214,17 +211,20 @@ function mapearProductoFacturable(
       : "normal";
 
   return {
-    idProductoFacturable: pedido.idPedido,
+    idPedido: pedido.idPedido,
+    idGrupoRecomendado: pedido.groupId,
     codigo: pedido.codigo,
     numReferencia: pedido.numReferencia,
     investigado: pedido.investigado ?? "",
+    idPais: pedido.idPais,
     pais: pedido.pais,
     aplicaPenalidad: pedido.aplicaPenalidad === "Si",
+    idTipoTramite: pedido.idTipoTramite,
+    tipoTramite: pedido.tipoTramite,
     tipo,
     fecha: pedido.fecha,
     penalidad: pedido.penalidad,
     precio: pedido.precio,
-    descuentoPorcentaje: pedido.descuentoPorcentaje,
     idMoneda: pedido.idMoneda,
     moneda: pedido.moneda,
   };
@@ -256,8 +256,8 @@ function mapearResumenAnaliticoFacturacion(
       montoFacturado: grupo.montoFacturado,
     })),
     desglosePorEstado: resultado.desglosePorEstado.map((grupo) => ({
-      idEstadoBucket: grupo.idEstadoBucket,
-      estadoBucket: grupo.estadoBucket,
+      idEstadoMaestro: grupo.idEstadoMaestro,
+      estado: grupo.estado,
       cantidadFacturas: grupo.cantidadFacturas,
       montoFacturado: grupo.montoFacturado,
     })),
@@ -616,12 +616,12 @@ export const facturacionService = {
       esNota,
     ),
 
-  listarProductosFacturables: async (
-    parametros: ParametrosListaProductosFacturables,
-  ): Promise<RespuestaListaProductosFacturables> => {
+  listarPedidosConGrupos: async (
+    parametros: ParametrosListarPedidosConGrupos,
+  ): Promise<RespuestaListarPedidosConGrupos> => {
     const { data } = await maximilianService.get<
-      ApiResponse<ResultadoListaProductosFacturablesApi>
-    >(ENDPOINTS_FACTURACION.listarPedidosFacturables, {
+      ApiResponse<ResultadoListarPedidosConGruposApi>
+    >(ENDPOINTS_FACTURACION.listarPedidosConGrupos, {
       params: parametros,
       paramsSerializer: { indexes: null },
     });
@@ -631,31 +631,23 @@ export const facturacionService = {
     }
 
     return {
-      productos: data.result.pedidos.map(mapearProductoFacturable),
+      pedidos: data.result.pedidos.map(mapearPedidoConGrupo),
+      grupos: data.result.grupos.map((grupo) => ({
+        idGrupoRecomendado: grupo.groupId,
+        codigo: grupo.codigo,
+        descripcion: grupo.descripcion,
+        precio: grupo.precio,
+        descuento: grupo.descuento,
+        cantidad: grupo.cantidad,
+      })),
     };
   },
 
-  obtenerProductoFacturable: async (
-    idCliente: number,
-    idPedido: number,
-  ): Promise<EntradaProductoFacturable | null> => {
-    const respuesta = await facturacionService.listarProductosFacturables({
-      idCliente,
-    });
-
-    return (
-      respuesta.productos.find(
-        (productoActual) => productoActual.idProductoFacturable === idPedido,
-      ) ?? null
+  crearLineasLote: async (solicitud: CrearLineasLoteRequest): Promise<unknown> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.crearLineasLote,
+      solicitud,
     );
-  },
-
-  crearLineaAgrupada: async (
-    solicitud: CrearLineaAgrupadaFacturaRequest,
-  ): Promise<EntradaLineaAgrupadaFacturaApi> => {
-    const { data } = await maximilianService.post<
-      ApiResponse<EntradaLineaAgrupadaFacturaApi>
-    >(ENDPOINTS_FACTURACION.lineas, solicitud);
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
       throw new ErrorRespuestaApi(data);

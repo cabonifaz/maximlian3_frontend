@@ -1,7 +1,7 @@
 export const ENDPOINTS_FACTURACION = {
   listar: "/api/Cliente/listarFacturacion",
   listarPedidos: "/api/Cliente/listarPedidosFacturacion",
-  listarPedidosFacturables: "/api/PedidoFactura/listarPedidos",
+  listarPedidosConGrupos: "/api/PedidoFactura/listarPedidosConGrupos",
   listarFacturas: "/api/PedidoFactura/listarFacturas",
   guardarBorrador: "/api/PedidoFactura/guardarBorrador",
   eliminarBorrador: (idDocumentoElectronico: number) =>
@@ -46,6 +46,7 @@ export const ENDPOINTS_FACTURACION = {
   sireRvieTxt: "/api/PedidoFactura/sireRvie/txt",
   exportarPrefactura: "/api/PedidoFactura/listarPedidos/exportarExcel",
   lineas: "/api/PedidoFacturaLinea",
+  crearLineasLote: "/api/PedidoFacturaLinea/lote",
   editarLinea: (idPedidoFacturaLinea: number) =>
     `/api/PedidoFacturaLinea/${idPedidoFacturaLinea}`,
   eliminarLinea: (idPedidoFacturaLinea: number) =>

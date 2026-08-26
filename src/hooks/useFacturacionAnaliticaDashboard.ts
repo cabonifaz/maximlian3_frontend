@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type {
   FiltrosFacturacionAnaliticaDashboard,
   GranularidadTiempoDashboard,
@@ -9,6 +9,7 @@ import type {
 import { facturacionService } from "@maximilian/services/facturacion.service";
 import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
 import { GRANULARIDAD_TIEMPO_DASHBOARD_A_ID } from "@maximilian/shared/constants/pages/Gerente/dashboard-tiempo.constants";
+import { CANTIDAD_REINTENTOS_CONSULTA_FACTURACION_ANALITICA_DASHBOARD } from "@maximilian/shared/constants/components/gerente/facturacion-analitica-dashboard.constants";
 
 const INDICADORES_FACTURACION_ANALITICA_VACIOS: IndicadoresFacturacionAnaliticaDashboard = {
   totalFacturado: 0,
@@ -47,7 +48,7 @@ export function useFacturacionAnaliticaDashboard() {
   const consultaResumen = useQuery({
     queryKey: ["facturacion", "resumen"],
     queryFn: ({ signal }) => facturacionService.obtenerResumen({}, signal),
-    retry: false,
+    retry: CANTIDAD_REINTENTOS_CONSULTA_FACTURACION_ANALITICA_DASHBOARD,
   });
 
   const consultaResumenAnalitico = useQuery({
@@ -62,7 +63,8 @@ export function useFacturacionAnaliticaDashboard() {
         signal,
       ),
     enabled: !fechasInvalidas,
-    retry: false,
+    retry: CANTIDAD_REINTENTOS_CONSULTA_FACTURACION_ANALITICA_DASHBOARD,
+    placeholderData: keepPreviousData,
   });
 
   const consultaEvolucion = useQuery({
@@ -76,13 +78,14 @@ export function useFacturacionAnaliticaDashboard() {
         signal,
       ),
     enabled: !fechasInvalidas,
-    retry: false,
+    retry: CANTIDAD_REINTENTOS_CONSULTA_FACTURACION_ANALITICA_DASHBOARD,
+    placeholderData: keepPreviousData,
   });
 
   const consultaResumenClientes = useQuery({
     queryKey: ["facturacion", "resumenClientesGlobal"],
     queryFn: ({ signal }) => facturacionService.obtenerResumenClientesGlobal(signal),
-    retry: false,
+    retry: CANTIDAD_REINTENTOS_CONSULTA_FACTURACION_ANALITICA_DASHBOARD,
   });
 
   const monedaIcono = consultaResumen.data?.monedaIcono ?? "";
@@ -102,6 +105,22 @@ export function useFacturacionAnaliticaDashboard() {
     consultaEvolucion.isLoading ||
     consultaResumenClientes.isLoading;
 
+  const estaActualizando =
+    !estaCargando && (consultaResumenAnalitico.isFetching || consultaEvolucion.isFetching);
+
+  const haError =
+    consultaResumen.isError ||
+    consultaResumenAnalitico.isError ||
+    consultaEvolucion.isError ||
+    consultaResumenClientes.isError;
+
+  const reintentar = () => {
+    consultaResumen.refetch();
+    consultaResumenAnalitico.refetch();
+    consultaEvolucion.refetch();
+    consultaResumenClientes.refetch();
+  };
+
   return {
     filtros,
     actualizarFiltros,
@@ -118,5 +137,8 @@ export function useFacturacionAnaliticaDashboard() {
     evolucion: consultaEvolucion.data ?? [],
     resumenClientes,
     estaCargando,
+    estaActualizando,
+    haError,
+    reintentar,
   };
 }

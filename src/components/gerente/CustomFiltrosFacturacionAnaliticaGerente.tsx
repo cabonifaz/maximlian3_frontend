@@ -3,14 +3,9 @@ import { X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomFiltroRangoFechas } from "@maximilian/components/common/CustomFiltroRangoFechas";
-import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import {
-  OPCIONES_ESTADO_BUCKET_FACTURACION_ANALITICA_DASHBOARD,
-  OPCIONES_TIPO_DOCUMENTO_MAESTRO_FACTURACION_ANALITICA_DASHBOARD,
-} from "@maximilian/shared/constants/components/gerente/facturacion-analitica-dashboard.constants";
 import type { FiltrosFacturacionAnaliticaDashboard } from "@maximilian/shared/types/dashboard.type";
 
 interface PropsCustomFiltrosFacturacionAnaliticaGerente {
@@ -19,9 +14,6 @@ interface PropsCustomFiltrosFacturacionAnaliticaGerente {
   onActualizarFiltros: (patch: Partial<FiltrosFacturacionAnaliticaDashboard>) => void;
   onLimpiarFiltros: () => void;
 }
-
-const CLASE_SELECT_FILTRO =
-  "h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none transition focus:border-brand-wine/40 focus:ring-2 focus:ring-brand-wine/10";
 
 export function CustomFiltrosFacturacionAnaliticaGerente({
   filtros,
@@ -120,45 +112,30 @@ export function CustomFiltrosFacturacionAnaliticaGerente({
           placeholder="Todos"
         />
 
-        <div>
-          <CustomLabel className="mb-1.5 block text-xs">Estado</CustomLabel>
-          <select
-            className={CLASE_SELECT_FILTRO}
-            value={filtros.idEstadoBucket ?? ""}
-            onChange={(evento) =>
-              onActualizarFiltros({
-                idEstadoBucket: evento.target.value ? Number(evento.target.value) : undefined,
-              })
-            }
-          >
-            <option value="">Todos</option>
-            {OPCIONES_ESTADO_BUCKET_FACTURACION_ANALITICA_DASHBOARD.map((opcion) => (
-              <option key={opcion.valor} value={opcion.valor}>
-                {opcion.etiqueta}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CustomSelectorBuscable
+          label="Estado"
+          idMaster={TablaMaestraId.ESTADO_DOCUMENTO_ELECTRONICO}
+          value={filtros.idEstadoBucket}
+          onChange={(idEstadoBucket) => onActualizarFiltros({ idEstadoBucket })}
+          onClear={() => onActualizarFiltros({ idEstadoBucket: undefined })}
+          optional
+          mostrarTextoOpcionalEnLabel={false}
+          etiquetaOpcionVacia="Todos"
+          placeholder="Todos"
+        />
 
-        <div>
-          <CustomLabel className="mb-1.5 block text-xs">Comprobante</CustomLabel>
-          <select
-            className={CLASE_SELECT_FILTRO}
-            value={filtros.idTipoDocumentoMaestro ?? ""}
-            onChange={(evento) =>
-              onActualizarFiltros({
-                idTipoDocumentoMaestro: evento.target.value ? Number(evento.target.value) : undefined,
-              })
-            }
-          >
-            <option value="">Todos</option>
-            {OPCIONES_TIPO_DOCUMENTO_MAESTRO_FACTURACION_ANALITICA_DASHBOARD.map((opcion) => (
-              <option key={opcion.valor} value={opcion.valor}>
-                {opcion.etiqueta}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CustomSelectorBuscable
+          label="Comprobante"
+          idMaster={TablaMaestraId.TIPO_DOCUMENTO_COMPROBANTE}
+          value={filtros.idTipoDocumentoMaestro}
+          onChange={(idTipoDocumentoMaestro) => onActualizarFiltros({ idTipoDocumentoMaestro })}
+          onClear={() => onActualizarFiltros({ idTipoDocumentoMaestro: undefined })}
+          optional
+          mostrarTextoOpcionalEnLabel={false}
+          etiquetaOpcionVacia="Todos"
+          placeholder="Todos"
+          obtenerEtiquetaOpcion={(opcion) => opcion.string2 ?? opcion.string1 ?? ""}
+        />
       </div>
     </div>
   );

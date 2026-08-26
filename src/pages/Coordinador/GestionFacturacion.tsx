@@ -3,9 +3,9 @@ import { Combine, FileSpreadsheet, FileText, Layers, MoreHorizontal, Search } fr
 import { useQuery } from "@tanstack/react-query";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
+import { CustomModalAgruparPedidosDragDrop } from "@maximilian/components/coordinador/CustomModalAgruparPedidosDragDrop";
 import { CustomModalFactura } from "@maximilian/components/coordinador/CustomModalFactura";
 import { CustomModalGestionLineasAgrupadas } from "@maximilian/components/coordinador/CustomModalGestionLineasAgrupadas";
-import { CustomModalProductosFactura } from "@maximilian/components/coordinador/CustomModalProductosFactura";
 import { CustomModalGenerarPrefactura } from "@maximilian/components/coordinador/CustomModalGenerarPrefactura";
 import { useFiltrosFacturacion } from "@maximilian/hooks/useFiltrosFacturacion";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
@@ -258,17 +258,6 @@ export default function GestionFacturacion() {
               <button
                 type="button"
                 onClick={() => {
-                  setClienteParaAgruparPedidos(facturacion);
-                  setIdMenuActivo(null);
-                }}
-                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
-              >
-                <Combine size={14} className="shrink-0" />
-                <span>Agrupar Pedidos</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
                   abrirEmisionFactura(facturacion);
                   setIdMenuActivo(null);
                 }}
@@ -298,6 +287,17 @@ export default function GestionFacturacion() {
               >
                 <Layers size={14} className="shrink-0" />
                 <span>Gestionar Líneas Agrupadas</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setClienteParaAgruparPedidos(facturacion);
+                  setIdMenuActivo(null);
+                }}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                <Combine size={14} className="shrink-0" />
+                <span>Agrupar Pedidos</span>
               </button>
             </div>
           </>
@@ -381,12 +381,10 @@ export default function GestionFacturacion() {
         entityLabel="facturas"
       />
       {clienteParaAgruparPedidos ? (
-        <CustomModalProductosFactura
+        <CustomModalAgruparPedidosDragDrop
           abierto={clienteParaAgruparPedidos !== null}
           idCliente={clienteParaAgruparPedidos.idFacturacion}
-          idDocumentoElectronico={null}
           onCerrar={() => setClienteParaAgruparPedidos(null)}
-          onLineaCreada={() => setClienteParaAgruparPedidos(null)}
         />
       ) : null}
       {clienteParaGestionarLineas ? (

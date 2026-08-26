@@ -17,11 +17,6 @@ export function CustomIndicadoresFacturacionAnaliticaGerente({
       esMoneda: true,
     },
     {
-      etiqueta: "Pendiente por facturar",
-      valor: indicadores.montoPendienteFacturar,
-      esMoneda: true,
-    },
-    {
       etiqueta: "Pedidos facturados",
       valor: indicadores.cantidadPedidosFacturados,
       esMoneda: false,

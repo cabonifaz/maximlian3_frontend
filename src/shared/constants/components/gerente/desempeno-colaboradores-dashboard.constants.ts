@@ -4,6 +4,7 @@ import type {
   RolColaboradorDesempenoDashboard,
 } from "@maximilian/shared/types/dashboard.type";
 import type { TableColumn } from "@maximilian/components/common/CustomTabla";
+import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
 export const COLABORADORES_DESEMPENO_DASHBOARD_MOCK: ColaboradorDesempenoDashboard[] = [
   { idColaborador: 1, colaborador: "Ana Ramírez", rol: "Analista", iniciales: "AR", colorLetra: "#2563eb", colorFondo: "#dbeafe" },
@@ -61,13 +62,46 @@ export const OPCIONES_COLABORADOR_DESEMPENO_DASHBOARD = COLABORADORES_DESEMPENO_
   (colaborador) => ({ valor: colaborador.idColaborador, etiqueta: colaborador.colaborador }),
 );
 
-export const OPCIONES_ROL_COLABORADOR_DESEMPENO_DASHBOARD: Array<{
-  valor: RolColaboradorDesempenoDashboard;
-  etiqueta: string;
-}> = [
-  { valor: "Analista", etiqueta: "Analista" },
-  { valor: "Traductor", etiqueta: "Traductor" },
+export const ID_ROL_ANALISTA_DESEMPENO_DASHBOARD = 3;
+export const ID_ROL_TRADUCTOR_DESEMPENO_DASHBOARD = 4;
+
+export const OPCIONES_ROL_COLABORADOR_DESEMPENO_DASHBOARD: EntradaTablaMaestra[] = [
+  {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: "ANALISTA",
+    num1: ID_ROL_ANALISTA_DESEMPENO_DASHBOARD,
+    num2: null,
+    num3: null,
+    string1: "Analista",
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  },
+  {
+    idEmpresa: 0,
+    idTablaMaestra: null,
+    idMaestro: 0,
+    descripcion: "TRADUCTOR",
+    num1: ID_ROL_TRADUCTOR_DESEMPENO_DASHBOARD,
+    num2: null,
+    num3: null,
+    string1: "Traductor",
+    string2: null,
+    string3: null,
+    date1: null,
+    date2: null,
+    date3: null,
+  },
 ];
+
+export const MAPA_ID_ROL_COLABORADOR_DESEMPENO_DASHBOARD: Record<number, RolColaboradorDesempenoDashboard> = {
+  [ID_ROL_ANALISTA_DESEMPENO_DASHBOARD]: "Analista",
+  [ID_ROL_TRADUCTOR_DESEMPENO_DASHBOARD]: "Traductor",
+};
 
 export const COLUMNAS_TABLA_DESEMPENO_COLABORADORES_DASHBOARD: TableColumn[] = [
   { label: "Colaborador", width: "20%" },

@@ -1,8 +1,11 @@
 import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { NumberTicker } from "@maximilian/components/common/shadcn/number-ticker";
 import {
-  ESTILO_ESTADO_BUCKET_DESCONOCIDO_FACTURACION_ANALITICA_DASHBOARD,
-  ESTILOS_ESTADO_BUCKET_FACTURACION_ANALITICA_DASHBOARD,
+  CANTIDAD_MAXIMA_ESTADOS_FACTURACION_ANALITICA_DASHBOARD,
+  COLOR_OTROS_ESTADOS_FACTURACION_ANALITICA_DASHBOARD,
+  ETIQUETA_OTROS_ESTADOS_FACTURACION_ANALITICA_DASHBOARD,
+  ID_OTROS_ESTADOS_FACTURACION_ANALITICA_DASHBOARD,
+  PALETA_COLORES_DESGLOSE_FACTURACION_ANALITICA_DASHBOARD,
 } from "@maximilian/shared/constants/components/gerente/facturacion-analitica-dashboard.constants";
 import type { GrupoEstadoFacturacionAnaliticaDashboard } from "@maximilian/shared/types/dashboard.type";
 
@@ -11,39 +14,70 @@ interface PropsCustomEstadoFacturasAnaliticaGerente {
   monedaIcono: string;
 }
 
+function agruparTop5ConOtros(
+  grupos: GrupoEstadoFacturacionAnaliticaDashboard[],
+): GrupoEstadoFacturacionAnaliticaDashboard[] {
+  if (grupos.length <= CANTIDAD_MAXIMA_ESTADOS_FACTURACION_ANALITICA_DASHBOARD) {
+    return grupos;
+  }
+
+  const ordenados = [...grupos].sort((a, b) => b.cantidadFacturas - a.cantidadFacturas);
+  const visibles = ordenados.slice(0, CANTIDAD_MAXIMA_ESTADOS_FACTURACION_ANALITICA_DASHBOARD);
+  const resto = ordenados.slice(CANTIDAD_MAXIMA_ESTADOS_FACTURACION_ANALITICA_DASHBOARD);
+
+  const otros: GrupoEstadoFacturacionAnaliticaDashboard = {
+    idEstadoMaestro: ID_OTROS_ESTADOS_FACTURACION_ANALITICA_DASHBOARD,
+    estado: ETIQUETA_OTROS_ESTADOS_FACTURACION_ANALITICA_DASHBOARD,
+    cantidadFacturas: resto.reduce((total, grupo) => total + grupo.cantidadFacturas, 0),
+    montoFacturado: resto.reduce((total, grupo) => total + grupo.montoFacturado, 0),
+  };
+
+  return [...visibles, otros];
+}
+
+function obtenerColorEstado(grupo: GrupoEstadoFacturacionAnaliticaDashboard, indice: number) {
+  if (grupo.idEstadoMaestro === ID_OTROS_ESTADOS_FACTURACION_ANALITICA_DASHBOARD) {
+    return COLOR_OTROS_ESTADOS_FACTURACION_ANALITICA_DASHBOARD;
+  }
+
+  return (
+    PALETA_COLORES_DESGLOSE_FACTURACION_ANALITICA_DASHBOARD[
+      indice % PALETA_COLORES_DESGLOSE_FACTURACION_ANALITICA_DASHBOARD.length
+    ] ?? COLOR_OTROS_ESTADOS_FACTURACION_ANALITICA_DASHBOARD
+  );
+}
+
 export function CustomEstadoFacturasAnaliticaGerente({
   desglosePorEstado,
   monedaIcono,
 }: PropsCustomEstadoFacturasAnaliticaGerente) {
-  const totalFacturas = desglosePorEstado.reduce(
-    (total, grupo) => total + grupo.cantidadFacturas,
-    0,
-  );
+  const grupos = agruparTop5ConOtros(desglosePorEstado);
+  const totalFacturas = grupos.reduce((total, grupo) => total + grupo.cantidadFacturas, 0);
 
   return (
     <section className="h-full rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <h3 className="mb-5 text-sm font-bold text-slate-800">Estado de las facturas</h3>
 
-      {desglosePorEstado.length === 0 ? (
+      {grupos.length === 0 ? (
         <p className="py-6 text-center text-xs italic text-slate-400">
           No hay facturas en el período seleccionado.
         </p>
       ) : (
         <div className="space-y-3">
-          {desglosePorEstado.map((grupo) => {
-            const estilo =
-              ESTILOS_ESTADO_BUCKET_FACTURACION_ANALITICA_DASHBOARD[grupo.idEstadoBucket] ??
-              ESTILO_ESTADO_BUCKET_DESCONOCIDO_FACTURACION_ANALITICA_DASHBOARD;
+          {grupos.map((grupo, indice) => {
+            const color = obtenerColorEstado(grupo, indice);
 
             return (
-              <div key={grupo.idEstadoBucket} className="flex items-center justify-between gap-3">
-                <CustomChipEstado claseColor={estilo.clase}>{grupo.estadoBucket}</CustomChipEstado>
+              <div key={grupo.idEstadoMaestro} className="flex items-center justify-between gap-3">
+                <CustomChipEstado colorTexto={color} colorFondo={`${color}1a`}>
+                  {grupo.estado}
+                </CustomChipEstado>
                 <div className="flex flex-1 items-center gap-2">
                   <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
                     <div
                       className="animacion-crecer-horizontal-dashboard h-full rounded-full"
                       style={{
-                        backgroundColor: estilo.colorBarra,
+                        backgroundColor: color,
                         width: totalFacturas > 0
                           ? `${(grupo.cantidadFacturas / totalFacturas) * 100}%`
                           : "0%",

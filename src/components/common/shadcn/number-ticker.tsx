@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ComponentPropsWithoutRef } from "react"
+import { useCallback, useEffect, useRef, type ComponentPropsWithoutRef } from "react"
 import { useInView, useMotionValue, useSpring } from "motion/react"
 
 import { cn } from "@maximilian/lib/utils"
@@ -32,6 +32,15 @@ export function NumberTicker({
   })
   const isInView = useInView(ref, { once: true, margin: "0px" })
 
+  const formatearValor = useCallback(
+    (valor: number) =>
+      Intl.NumberFormat("en-US", {
+        minimumFractionDigits: decimalPlaces,
+        maximumFractionDigits: decimalPlaces,
+      }).format(Number(valor.toFixed(decimalPlaces))),
+    [decimalPlaces],
+  )
+
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null
 
@@ -52,13 +61,10 @@ export function NumberTicker({
     () =>
       springValue.on("change", (latest) => {
         if (ref.current) {
-          ref.current.textContent = Intl.NumberFormat("en-US", {
-            minimumFractionDigits: decimalPlaces,
-            maximumFractionDigits: decimalPlaces,
-          }).format(Number(latest.toFixed(decimalPlaces)))
+          ref.current.textContent = formatearValor(latest)
         }
       }),
-    [springValue, decimalPlaces]
+    [springValue, formatearValor]
   )
 
   return (
@@ -70,7 +76,7 @@ export function NumberTicker({
       )}
       {...props}
     >
-      {startValue}
+      {formatearValor(startValue)}
     </span>
   )
 }

@@ -44,7 +44,7 @@ const resolverTarifa: Resolver<DatosFormularioTarifa> = async (...argumentos) =>
 
 interface ParametrosUseModalAgregarTarifa {
   estaAbierto: boolean;
-  valoresIniciales?: DatosFormularioTarifa;
+  valoresIniciales?: Partial<DatosFormularioTarifa>;
   onCerrar: () => void;
   onConfirmar: (datos: DatosFormularioTarifa) => void;
 }

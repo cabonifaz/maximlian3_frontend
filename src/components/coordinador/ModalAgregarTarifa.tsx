@@ -11,7 +11,7 @@ interface ModalAgregarTarifaProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (data: DatosFormularioTarifa) => void;
-  defaultValues?: DatosFormularioTarifa;
+  defaultValues?: Partial<DatosFormularioTarifa>;
 }
 
 export function ModalAgregarTarifa({

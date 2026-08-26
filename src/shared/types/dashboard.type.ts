@@ -106,8 +106,8 @@ export interface GrupoFacturacionAnaliticaDashboard {
 }
 
 export interface GrupoEstadoFacturacionAnaliticaDashboard {
-  idEstadoBucket: number;
-  estadoBucket: string;
+  idEstadoMaestro: number;
+  estado: string;
   cantidadFacturas: number;
   montoFacturado: number;
 }
@@ -159,7 +159,7 @@ export interface FiltrosDesempenoColaboradoresDashboard {
   fechaDesde?: Date;
   fechaHasta?: Date;
   idColaborador?: number;
-  rol?: RolColaboradorDesempenoDashboard;
+  idRol?: number;
 }
 
 export interface EvolucionInformesColaboradoresDashboard {
