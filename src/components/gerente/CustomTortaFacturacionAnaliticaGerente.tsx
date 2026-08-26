@@ -9,7 +9,6 @@ interface PropsCustomTortaFacturacionAnaliticaGerente {
   monedaIcono: string;
   metrica: MetricaDesgloseFacturacionAnaliticaDashboard;
   obtenerColor: (grupo: GrupoFacturacionAnaliticaDashboard, indice: number) => string;
-  obtenerEtiqueta?: (grupo: GrupoFacturacionAnaliticaDashboard) => string;
 }
 
 export function CustomTortaFacturacionAnaliticaGerente({
@@ -17,7 +16,6 @@ export function CustomTortaFacturacionAnaliticaGerente({
   monedaIcono,
   metrica,
   obtenerColor,
-  obtenerEtiqueta,
 }: PropsCustomTortaFacturacionAnaliticaGerente) {
   const esMonto = metrica === "monto";
   const obtenerValor = (grupo: GrupoFacturacionAnaliticaDashboard) =>
@@ -34,7 +32,7 @@ export function CustomTortaFacturacionAnaliticaGerente({
     .map((segmento) => `${segmento.color} ${segmento.inicio}% ${segmento.fin}%`)
     .join(", ");
   const firmaSegmentos = segmentos
-    .map((segmento) => `${segmento.grupo.clave}:${segmento.valor}`)
+    .map((segmento) => `${segmento.grupo.id}:${segmento.valor}`)
     .join("|");
 
   return (
@@ -51,13 +49,13 @@ export function CustomTortaFacturacionAnaliticaGerente({
       </div>
       <ul className="flex-1 space-y-2">
         {segmentos.map(({ grupo, color, porcentaje, valor }) => (
-          <li key={grupo.clave} className="flex items-center justify-between gap-2 text-[11px]">
+          <li key={grupo.id} className="flex items-center justify-between gap-2 text-[11px]">
             <span className="flex min-w-0 items-center gap-2 font-medium text-slate-700">
               <span
                 className="h-2.5 w-2.5 shrink-0 rounded-full"
                 style={{ backgroundColor: color }}
               />
-              <span className="truncate">{obtenerEtiqueta?.(grupo) ?? grupo.etiqueta}</span>
+              <span className="truncate">{grupo.etiqueta}</span>
             </span>
             <span className="shrink-0 text-slate-500">
               {esMonto ? monedaIcono : ""}

@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Combine, FileSpreadsheet, FileText, Layers, MoreHorizontal, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
-import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomModalFactura } from "@maximilian/components/coordinador/CustomModalFactura";
 import { CustomModalGestionLineasAgrupadas } from "@maximilian/components/coordinador/CustomModalGestionLineasAgrupadas";
@@ -50,13 +49,10 @@ export default function GestionFacturacion() {
 
   const busquedaConRetardo = useRetardo(terminoBusqueda);
   const {
-    cambiarEstados,
     cambiarIdiomas,
     cambiarPrefacturables,
     emitirPrefactura,
-    estadoFacturacion,
     idIdiomaFacturacion,
-    idsEstado,
     idsIdioma,
     idsPrefacturable,
   } = useFiltrosFacturacion(() => setPaginaActual(1));
@@ -74,7 +70,6 @@ export default function GestionFacturacion() {
       busquedaConRetardo,
       emitirPrefactura,
       idIdiomaFacturacion,
-      estadoFacturacion,
     ],
     enabled: pestanaActiva === 'clientes',
     queryFn: () =>
@@ -83,7 +78,6 @@ export default function GestionFacturacion() {
         busqueda: busquedaConRetardo || undefined,
         emitirPrefactura,
         idIdiomaFacturacion,
-        estadoFacturacion,
       }),
   });
 
@@ -98,7 +92,7 @@ export default function GestionFacturacion() {
         ...columna,
         label: (
           <CustomEncabezadoFiltroTabla
-            titulo="Prefacturable"
+            titulo="Requiere prefactura"
             idMaster={TablaMaestraId.EMITIR_PREFACTURA}
             valores={idsPrefacturable}
             onChange={cambiarPrefacturables}
@@ -113,25 +107,10 @@ export default function GestionFacturacion() {
         ...columna,
         label: (
           <CustomEncabezadoFiltroTabla
-            titulo="Idioma"
+            titulo="Idioma de facturación"
             idMaster={TablaMaestraId.IDIOMA}
             valores={idsIdioma}
             onChange={cambiarIdiomas}
-            multiple={false}
-          />
-        ),
-      };
-    }
-
-    if (indice === 5) {
-      return {
-        ...columna,
-        label: (
-          <CustomEncabezadoFiltroTabla
-            titulo="Estado"
-            idMaster={TablaMaestraId.ESTADO_FACTURACION}
-            valores={idsEstado}
-            onChange={cambiarEstados}
             multiple={false}
           />
         ),
@@ -258,14 +237,6 @@ export default function GestionFacturacion() {
       </td>
       <td className="px-6 py-4 text-center text-sm font-medium text-slate-600">
         {facturacion.idioma}
-      </td>
-      <td className="px-6 py-4 text-center">
-        <CustomChipEstado
-          colorTexto={facturacion.colorTexto}
-          colorFondo={facturacion.colorFondo}
-        >
-          {facturacion.estado}
-        </CustomChipEstado>
       </td>
       <td className="px-6 py-4 text-right">
         <button

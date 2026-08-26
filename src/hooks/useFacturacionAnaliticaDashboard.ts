@@ -1,22 +1,24 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type {
   FiltrosFacturacionAnaliticaDashboard,
   GranularidadTiempoDashboard,
+  IndicadoresFacturacionAnaliticaDashboard,
   MetricaDesgloseFacturacionAnaliticaDashboard,
 } from "@maximilian/shared/types/dashboard.type";
-import {
-  CLIENTES_PENDIENTES_FACTURACION_ANALITICA_DASHBOARD_MOCK,
-  DETALLE_FACTURACION_ANALITICA_DASHBOARD_MOCK,
-} from "@maximilian/shared/constants/components/gerente/facturacion-analitica-dashboard.constants";
-import {
-  agruparEvolucionFacturacion,
-  agruparFacturacionPorEstado,
-  agruparFacturacionPorPaisTop5,
-  agruparFacturacionPorTramite,
-  calcularIndicadoresFacturacionAnalitica,
-  construirResumenClientesFacturacionAnalitica,
-  filtrarDetalleFacturacionAnalitica,
-} from "@maximilian/shared/utils/facturacion-analitica-dashboard.util";
+import { facturacionService } from "@maximilian/services/facturacion.service";
+import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
+import { GRANULARIDAD_TIEMPO_DASHBOARD_A_ID } from "@maximilian/shared/constants/pages/Gerente/dashboard-tiempo.constants";
+
+const INDICADORES_FACTURACION_ANALITICA_VACIOS: IndicadoresFacturacionAnaliticaDashboard = {
+  totalFacturado: 0,
+  montoPendienteFacturar: 0,
+  cantidadPedidosFacturados: 0,
+  cantidadPedidosPendientes: 0,
+  totalNotasCredito: 0,
+  totalNotasDebito: 0,
+  monedaIcono: "",
+};
 
 export function useFacturacionAnaliticaDashboard() {
   const [filtros, setFiltros] = useState<FiltrosFacturacionAnaliticaDashboard>({});
@@ -34,60 +36,71 @@ export function useFacturacionAnaliticaDashboard() {
 
   const limpiarFiltros = () => setFiltros({});
 
-  const filasFiltradas = useMemo(
-    () =>
-      fechasInvalidas
-        ? []
-        : filtrarDetalleFacturacionAnalitica(
-            DETALLE_FACTURACION_ANALITICA_DASHBOARD_MOCK,
-            filtros,
-          ),
-    [filtros, fechasInvalidas],
-  );
+  const parametrosComunes = {
+    fechaDesde: filtros.fechaDesde ? formatearFechaIsoLocal(filtros.fechaDesde) : undefined,
+    fechaHasta: filtros.fechaHasta ? formatearFechaIsoLocal(filtros.fechaHasta) : undefined,
+    idCliente: filtros.idCliente,
+    idPais: filtros.idPais,
+    idTipoTramite: filtros.idTipoTramite,
+  };
 
-  const clientesPendientesFiltrados = useMemo(
-    () =>
-      filtros.idCliente === undefined
-        ? CLIENTES_PENDIENTES_FACTURACION_ANALITICA_DASHBOARD_MOCK
-        : CLIENTES_PENDIENTES_FACTURACION_ANALITICA_DASHBOARD_MOCK.filter(
-            (cliente) => cliente.idCliente === filtros.idCliente,
-          ),
-    [filtros.idCliente],
-  );
+  const consultaResumen = useQuery({
+    queryKey: ["facturacion", "resumen"],
+    queryFn: ({ signal }) => facturacionService.obtenerResumen({}, signal),
+    retry: false,
+  });
 
-  const indicadores = useMemo(
-    () => calcularIndicadoresFacturacionAnalitica(filasFiltradas, clientesPendientesFiltrados),
-    [filasFiltradas, clientesPendientesFiltrados],
-  );
+  const consultaResumenAnalitico = useQuery({
+    queryKey: ["facturacion", "resumenAnalitico", filtros],
+    queryFn: ({ signal }) =>
+      facturacionService.obtenerResumenAnalitico(
+        {
+          ...parametrosComunes,
+          idEstadoBucket: filtros.idEstadoBucket,
+          idTipoDocumentoMaestro: filtros.idTipoDocumentoMaestro,
+        },
+        signal,
+      ),
+    enabled: !fechasInvalidas,
+    retry: false,
+  });
 
-  const desglosePorTramite = useMemo(
-    () => agruparFacturacionPorTramite(filasFiltradas),
-    [filasFiltradas],
-  );
+  const consultaEvolucion = useQuery({
+    queryKey: ["facturacion", "evolucionAnalitica", filtros, granularidad],
+    queryFn: ({ signal }) =>
+      facturacionService.obtenerEvolucionAnalitica(
+        {
+          ...parametrosComunes,
+          granularidad: GRANULARIDAD_TIEMPO_DASHBOARD_A_ID[granularidad],
+        },
+        signal,
+      ),
+    enabled: !fechasInvalidas,
+    retry: false,
+  });
 
-  const desglosePorPais = useMemo(
-    () => agruparFacturacionPorPaisTop5(filasFiltradas),
-    [filasFiltradas],
-  );
+  const consultaResumenClientes = useQuery({
+    queryKey: ["facturacion", "resumenClientesGlobal"],
+    queryFn: ({ signal }) => facturacionService.obtenerResumenClientesGlobal(signal),
+    retry: false,
+  });
 
-  const desglosePorEstado = useMemo(
-    () => agruparFacturacionPorEstado(filasFiltradas),
-    [filasFiltradas],
-  );
+  const monedaIcono = consultaResumen.data?.monedaIcono ?? "";
 
-  const evolucion = useMemo(
-    () => agruparEvolucionFacturacion(filasFiltradas, granularidad),
-    [filasFiltradas, granularidad],
-  );
+  const indicadores = useMemo<IndicadoresFacturacionAnaliticaDashboard>(() => {
+    const base = consultaResumenAnalitico.data?.indicadores ?? INDICADORES_FACTURACION_ANALITICA_VACIOS;
+    return { ...base, monedaIcono };
+  }, [consultaResumenAnalitico.data, monedaIcono]);
 
   const resumenClientes = useMemo(
-    () =>
-      construirResumenClientesFacturacionAnalitica(
-        DETALLE_FACTURACION_ANALITICA_DASHBOARD_MOCK,
-        CLIENTES_PENDIENTES_FACTURACION_ANALITICA_DASHBOARD_MOCK,
-      ),
-    [],
+    () => (consultaResumenClientes.data ?? []).map((cliente) => ({ ...cliente, monedaIcono })),
+    [consultaResumenClientes.data, monedaIcono],
   );
+
+  const estaCargando =
+    consultaResumenAnalitico.isLoading ||
+    consultaEvolucion.isLoading ||
+    consultaResumenClientes.isLoading;
 
   return {
     filtros,
@@ -99,12 +112,11 @@ export function useFacturacionAnaliticaDashboard() {
     metricaDesglose,
     cambiarMetricaDesglose: setMetricaDesglose,
     indicadores,
-    desglosePorTramite,
-    desglosePorPais,
-    desglosePorEstado,
-    evolucion,
+    desglosePorTramite: consultaResumenAnalitico.data?.desglosePorTramite ?? [],
+    desglosePorPais: consultaResumenAnalitico.data?.desglosePorPais ?? [],
+    desglosePorEstado: consultaResumenAnalitico.data?.desglosePorEstado ?? [],
+    evolucion: consultaEvolucion.data ?? [],
     resumenClientes,
-    clientesPendientesFiltrados,
-    filasFiltradas,
+    estaCargando,
   };
 }

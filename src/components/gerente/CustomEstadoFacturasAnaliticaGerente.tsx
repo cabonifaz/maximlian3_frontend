@@ -1,6 +1,9 @@
 import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { NumberTicker } from "@maximilian/components/common/shadcn/number-ticker";
-import { ESTILOS_ESTADO_FACTURA_ANALITICA_DASHBOARD } from "@maximilian/shared/constants/components/gerente/facturacion-analitica-dashboard.constants";
+import {
+  ESTILO_ESTADO_BUCKET_DESCONOCIDO_FACTURACION_ANALITICA_DASHBOARD,
+  ESTILOS_ESTADO_BUCKET_FACTURACION_ANALITICA_DASHBOARD,
+} from "@maximilian/shared/constants/components/gerente/facturacion-analitica-dashboard.constants";
 import type { GrupoEstadoFacturacionAnaliticaDashboard } from "@maximilian/shared/types/dashboard.type";
 
 interface PropsCustomEstadoFacturasAnaliticaGerente {
@@ -28,11 +31,13 @@ export function CustomEstadoFacturasAnaliticaGerente({
       ) : (
         <div className="space-y-3">
           {desglosePorEstado.map((grupo) => {
-            const estilo = ESTILOS_ESTADO_FACTURA_ANALITICA_DASHBOARD[grupo.estado];
+            const estilo =
+              ESTILOS_ESTADO_BUCKET_FACTURACION_ANALITICA_DASHBOARD[grupo.idEstadoBucket] ??
+              ESTILO_ESTADO_BUCKET_DESCONOCIDO_FACTURACION_ANALITICA_DASHBOARD;
 
             return (
-              <div key={grupo.estado} className="flex items-center justify-between gap-3">
-                <CustomChipEstado claseColor={estilo.clase}>{estilo.texto}</CustomChipEstado>
+              <div key={grupo.idEstadoBucket} className="flex items-center justify-between gap-3">
+                <CustomChipEstado claseColor={estilo.clase}>{grupo.estadoBucket}</CustomChipEstado>
                 <div className="flex flex-1 items-center gap-2">
                   <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
                     <div

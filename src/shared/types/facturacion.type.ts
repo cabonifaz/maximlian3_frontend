@@ -17,7 +17,6 @@ export interface ParametrosListaFacturacion {
   numPag?: number;
   emitirPrefactura?: number;
   idIdiomaFacturacion?: number;
-  estadoFacturacion?: number;
 }
 
 export interface EntradaFacturacion {
@@ -27,9 +26,6 @@ export interface EntradaFacturacion {
   totalPedidos: number;
   totalFacturados: number;
   idioma: string;
-  estado: string;
-  colorTexto: string;
-  colorFondo: string;
 }
 
 export interface RespuestaListaFacturacion {
@@ -110,9 +106,6 @@ export interface EntradaFacturacionApi {
   totalPedidos: number;
   pedidosFacturados: number;
   idIdiomaFacturacion: string;
-  estadoFacturacion: string;
-  colorTexto: string;
-  colorFondo: string;
 }
 
 export interface ResultadoListaFacturacionApi {
@@ -516,6 +509,58 @@ export interface ResultadoGuardarBorradorFactura {
 export interface ParametrosResumenFacturacion {
   fechaDesde?: string;
   fechaHasta?: string;
+}
+
+export interface IndicadoresResumenAnaliticoFacturacionApi {
+  cantidadPedidosPendientes: number;
+  montoPendienteFacturar: number;
+  cantidadPedidosFacturados: number;
+  totalFacturado: number;
+  totalNotasCredito: number;
+  totalNotasDebito: number;
+}
+
+export interface GrupoTramiteResumenAnaliticoFacturacionApi {
+  idTipoTramite: number;
+  tipoTramite: string;
+  cantidadPedidos: number;
+  montoFacturado: number;
+}
+
+export interface GrupoPaisResumenAnaliticoFacturacionApi {
+  idPais: number;
+  pais: string;
+  cantidadPedidos: number;
+  montoFacturado: number;
+}
+
+export interface GrupoEstadoResumenAnaliticoFacturacionApi {
+  idEstadoBucket: number;
+  estadoBucket: string;
+  cantidadFacturas: number;
+  montoFacturado: number;
+}
+
+export interface ResultadoResumenAnaliticoFacturacionApi {
+  indicadores: IndicadoresResumenAnaliticoFacturacionApi;
+  desglosePorTramite: GrupoTramiteResumenAnaliticoFacturacionApi[];
+  desglosePorPais: GrupoPaisResumenAnaliticoFacturacionApi[];
+  desglosePorEstado: GrupoEstadoResumenAnaliticoFacturacionApi[];
+}
+
+export interface PuntoEvolucionAnaliticaFacturacionApi {
+  periodo: string;
+  etiqueta: string;
+  cantidadPedidos: number;
+  montoFacturado: number;
+}
+
+export interface ClienteResumenGlobalFacturacionApi {
+  idCliente: number;
+  cliente: string;
+  cantidadPedidosFacturados: number;
+  totalFacturado: number;
+  montoPendienteFacturar: number;
 }
 
 export interface ResumenFacturacion {

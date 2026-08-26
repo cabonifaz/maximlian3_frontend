@@ -7,6 +7,9 @@ export const ENDPOINTS_FACTURACION = {
   eliminarBorrador: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/borrador/${idDocumentoElectronico}`,
   resumen: "/api/PedidoFactura/resumen",
+  resumenAnalitico: "/api/PedidoFactura/resumenAnalitico",
+  evolucionAnalitica: "/api/PedidoFactura/evolucionAnalitica",
+  resumenClientesGlobal: "/api/PedidoFactura/resumenClientesGlobal",
   obtenerFactura: (idPedido: number) => `/api/PedidoFactura/factura/${idPedido}`,
   obtenerFacturaPorId: (idDocumentoElectronico: number) =>
     `/api/PedidoFactura/facturaPorId/${idDocumentoElectronico}`,

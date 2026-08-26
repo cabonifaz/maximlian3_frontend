@@ -42,7 +42,7 @@ export function CustomTablaClientesFacturacionAnaliticaGerente({
             </td>
             <td className="px-6 py-4 text-center text-xs text-slate-600">
               <NumberTicker
-                value={cliente.cantidadPedidos}
+                value={cliente.cantidadPedidosFacturados}
                 rigidez={260}
                 className="tracking-normal text-inherit"
               />

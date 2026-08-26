@@ -30,3 +30,10 @@ export const OPCIONES_METRICA_DESGLOSE_FACTURACION_DASHBOARD: Array<{
   { valor: "monto", etiqueta: "Monto" },
   { valor: "pedidos", etiqueta: "Pedidos" },
 ];
+
+export const GRANULARIDAD_TIEMPO_DASHBOARD_A_ID: Record<GranularidadTiempoDashboard, number> = {
+  dia: 1,
+  semana: 2,
+  mes: 3,
+  ano: 4,
+};

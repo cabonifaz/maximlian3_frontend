@@ -6,6 +6,7 @@ import { CustomEvolucionFacturacionAnaliticaGerente } from "./CustomEvolucionFac
 import { CustomDesglosesFacturacionAnaliticaGerente } from "./CustomDesglosesFacturacionAnaliticaGerente";
 import { CustomEstadoFacturasAnaliticaGerente } from "./CustomEstadoFacturasAnaliticaGerente";
 import { CustomTablaClientesFacturacionAnaliticaGerente } from "./CustomTablaClientesFacturacionAnaliticaGerente";
+import { CustomCargadorTarjetaDashboard } from "./CustomCargadorTarjetaDashboard";
 
 export function CustomFacturacionAnaliticaGerente() {
   const {
@@ -23,16 +24,16 @@ export function CustomFacturacionAnaliticaGerente() {
     desglosePorEstado,
     evolucion,
     resumenClientes,
+    estaCargando,
   } = useFacturacionAnaliticaDashboard();
+
+  if (estaCargando) {
+    return <CustomCargadorTarjetaDashboard titulo="facturación analítica" variante="grafica" />;
+  }
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-bold text-slate-800">Facturación</h2>
-        <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-amber-600">
-          Vista preliminar (mock)
-        </span>
-      </div>
+      <h2 className="mb-1 text-sm font-bold text-slate-800">Facturación</h2>
       <p className="mb-4 text-xs text-slate-400">
         ¿Cuánto le estoy facturando o le voy a facturar a cada cliente hasta determinada fecha y
         cómo se compone ese monto?
