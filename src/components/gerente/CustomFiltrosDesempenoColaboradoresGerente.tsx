@@ -1,10 +1,13 @@
+import { useMemo } from "react";
 import { X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomFiltroRangoFechas } from "@maximilian/components/common/CustomFiltroRangoFechas";
-import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { servicioUsuario } from "@maximilian/services/usuario.service";
 import {
-  OPCIONES_COLABORADOR_DESEMPENO_DASHBOARD,
+  ID_ROL_ANALISTA_DESEMPENO_DASHBOARD,
+  ID_ROL_TRADUCTOR_DESEMPENO_DASHBOARD,
   OPCIONES_ROL_COLABORADOR_DESEMPENO_DASHBOARD,
 } from "@maximilian/shared/constants/components/gerente/desempeno-colaboradores-dashboard.constants";
 import type { FiltrosDesempenoColaboradoresDashboard } from "@maximilian/shared/types/dashboard.type";
@@ -16,9 +19,6 @@ interface PropsCustomFiltrosDesempenoColaboradoresGerente {
   onLimpiarFiltros: () => void;
 }
 
-const CLASE_SELECT_FILTRO =
-  "h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none transition focus:border-brand-wine/40 focus:ring-2 focus:ring-brand-wine/10";
-
 export function CustomFiltrosDesempenoColaboradoresGerente({
   filtros,
   fechasInvalidas,
@@ -26,6 +26,40 @@ export function CustomFiltrosDesempenoColaboradoresGerente({
   onLimpiarFiltros,
 }: PropsCustomFiltrosDesempenoColaboradoresGerente) {
   const hayFiltrosActivos = Object.values(filtros).some((valor) => valor !== undefined);
+
+  const { data: colaboradores = [] } = useQuery({
+    queryKey: [
+      "usuarios",
+      "listaCortaDashboard",
+      ID_ROL_ANALISTA_DESEMPENO_DASHBOARD,
+      ID_ROL_TRADUCTOR_DESEMPENO_DASHBOARD,
+    ],
+    queryFn: () =>
+      servicioUsuario.listaCortaDashboard({
+        idsRolFiltro: [ID_ROL_ANALISTA_DESEMPENO_DASHBOARD, ID_ROL_TRADUCTOR_DESEMPENO_DASHBOARD],
+      }),
+    staleTime: Infinity,
+  });
+
+  const opcionesColaborador = useMemo(
+    () =>
+      colaboradores.map((colaborador) => ({
+        idEmpresa: 0,
+        idTablaMaestra: null,
+        idMaestro: 0,
+        descripcion: "",
+        num1: colaborador.idUsuario,
+        num2: null,
+        num3: null,
+        string1: colaborador.nombreCompleto,
+        string2: null,
+        string3: null,
+        date1: null,
+        date2: null,
+        date3: null,
+      })),
+    [colaboradores],
+  );
 
   return (
     <div className="mb-5 space-y-3 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
@@ -54,25 +88,17 @@ export function CustomFiltrosDesempenoColaboradoresGerente({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <CustomLabel className="mb-1.5 block text-xs">Colaborador</CustomLabel>
-          <select
-            className={CLASE_SELECT_FILTRO}
-            value={filtros.idColaborador ?? ""}
-            onChange={(evento) =>
-              onActualizarFiltros({
-                idColaborador: evento.target.value ? Number(evento.target.value) : undefined,
-              })
-            }
-          >
-            <option value="">Todos</option>
-            {OPCIONES_COLABORADOR_DESEMPENO_DASHBOARD.map((opcion) => (
-              <option key={opcion.valor} value={opcion.valor}>
-                {opcion.etiqueta}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CustomSelectorBuscable
+          label="Colaborador"
+          options={opcionesColaborador}
+          value={filtros.idColaborador}
+          onChange={(idColaborador) => onActualizarFiltros({ idColaborador })}
+          onClear={() => onActualizarFiltros({ idColaborador: undefined })}
+          optional
+          mostrarTextoOpcionalEnLabel={false}
+          etiquetaOpcionVacia="Todos"
+          placeholder="Todos"
+        />
 
         <CustomSelectorBuscable
           label="Rol"

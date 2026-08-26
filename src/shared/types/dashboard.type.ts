@@ -173,12 +173,24 @@ export interface ResumenColaboradorDesempenoDashboard {
   colaborador: string;
   rol: RolColaboradorDesempenoDashboard;
   iniciales: string;
-  colorLetra: string;
-  colorFondo: string;
   cantidadOrdenes: number;
   porcentajeCumplimiento: number;
   cantidadInformes: number;
   cantidadTardios: number;
   cantidadObservados: number;
   cantidadConInformacionFinanciera: number;
+}
+
+export interface ParametrosResumenColaboradoresDesempenoDashboard {
+  fechaDesde?: string;
+  fechaHasta?: string;
+  idColaborador?: number;
+  idRolAsignado?: number;
+  numPag: number;
+}
+
+export interface RespuestaResumenColaboradoresDesempenoDashboard {
+  resumenColaboradores: ResumenColaboradorDesempenoDashboard[];
+  totalRegistros: number;
+  totalPaginas: number;
 }
