@@ -59,55 +59,33 @@ export type GranularidadTiempoDashboard = "dia" | "semana" | "mes" | "ano";
 
 export type MetricaDesgloseFacturacionAnaliticaDashboard = "monto" | "pedidos";
 
-export type EstadoFacturaAnaliticaDashboard =
-  | "borrador"
-  | "aprobada"
-  | "rechazada"
-  | "aceptada"
-  | "anulada"
-  | "dada-de-baja";
-
-export type TramiteFacturacionAnaliticaDashboard =
-  | "normal"
-  | "expres"
-  | "super-flash";
-
-export type TipoComprobanteFacturacionAnaliticaDashboard =
-  | "Factura"
-  | "Boleta"
-  | "Nota de Crédito"
-  | "Nota de Débito";
-
-export interface DetalleFacturacionAnaliticaDashboard {
-  id: number;
-  idCliente: number;
-  cliente: string;
-  fechaEmision: string;
-  pais: string;
-  tramite: TramiteFacturacionAnaliticaDashboard;
-  tipoComprobante: TipoComprobanteFacturacionAnaliticaDashboard;
-  estado: EstadoFacturaAnaliticaDashboard;
-  cantidadPedidos: number;
-  montoFacturado: number;
-  monedaIcono: string;
-}
-
-export interface ClientePendienteFacturacionAnaliticaDashboard {
-  idCliente: number;
-  cliente: string;
-  montoPendienteFacturar: number;
-  cantidadPedidosPendientes: number;
-  monedaIcono: string;
-}
-
 export interface FiltrosFacturacionAnaliticaDashboard {
   fechaDesde?: Date;
   fechaHasta?: Date;
   idCliente?: number;
-  estado?: EstadoFacturaAnaliticaDashboard;
-  pais?: string;
-  tramite?: TramiteFacturacionAnaliticaDashboard;
-  tipoComprobante?: TipoComprobanteFacturacionAnaliticaDashboard;
+  idPais?: number;
+  idTipoTramite?: number;
+  idEstadoBucket?: number;
+  idTipoDocumentoMaestro?: number;
+}
+
+export interface ParametrosResumenAnaliticoFacturacionDashboard {
+  fechaDesde?: string;
+  fechaHasta?: string;
+  idCliente?: number;
+  idPais?: number;
+  idTipoTramite?: number;
+  idEstadoBucket?: number;
+  idTipoDocumentoMaestro?: number;
+}
+
+export interface ParametrosEvolucionAnaliticaFacturacionDashboard {
+  fechaDesde?: string;
+  fechaHasta?: string;
+  idCliente?: number;
+  idPais?: number;
+  idTipoTramite?: number;
+  granularidad: number;
 }
 
 export interface IndicadoresFacturacionAnaliticaDashboard {
@@ -121,16 +99,24 @@ export interface IndicadoresFacturacionAnaliticaDashboard {
 }
 
 export interface GrupoFacturacionAnaliticaDashboard {
-  clave: string;
+  id: number;
   etiqueta: string;
   cantidadPedidos: number;
   montoFacturado: number;
 }
 
 export interface GrupoEstadoFacturacionAnaliticaDashboard {
-  estado: EstadoFacturaAnaliticaDashboard;
+  idEstadoMaestro: number;
+  estado: string;
   cantidadFacturas: number;
   montoFacturado: number;
+}
+
+export interface ResumenAnaliticoFacturacionDashboard {
+  indicadores: IndicadoresFacturacionAnaliticaDashboard;
+  desglosePorTramite: GrupoFacturacionAnaliticaDashboard[];
+  desglosePorPais: GrupoFacturacionAnaliticaDashboard[];
+  desglosePorEstado: GrupoEstadoFacturacionAnaliticaDashboard[];
 }
 
 export interface EvolucionFacturacionAnaliticaDashboard {
@@ -144,7 +130,7 @@ export interface ResumenClienteFacturacionAnaliticaDashboard {
   idCliente: number;
   cliente: string;
   totalFacturado: number;
-  cantidadPedidos: number;
+  cantidadPedidosFacturados: number;
   montoPendienteFacturar: number;
   monedaIcono: string;
 }
@@ -173,7 +159,7 @@ export interface FiltrosDesempenoColaboradoresDashboard {
   fechaDesde?: Date;
   fechaHasta?: Date;
   idColaborador?: number;
-  rol?: RolColaboradorDesempenoDashboard;
+  idRol?: number;
 }
 
 export interface EvolucionInformesColaboradoresDashboard {

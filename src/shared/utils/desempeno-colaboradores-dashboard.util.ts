@@ -8,6 +8,7 @@ import type {
 } from "@maximilian/shared/types/dashboard.type";
 import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
 import { obtenerClavePeriodo, obtenerEtiquetaPeriodo } from "@maximilian/shared/utils/dashboard-tiempo.util";
+import { MAPA_ID_ROL_COLABORADOR_DESEMPENO_DASHBOARD } from "@maximilian/shared/constants/components/gerente/desempeno-colaboradores-dashboard.constants";
 
 export function filtrarInformesColaboradores(
   informes: InformeColaboradorDesempenoDashboard[],
@@ -24,7 +25,10 @@ export function filtrarInformesColaboradores(
     if (fechaDesdeIso && informe.fechaEntrega < fechaDesdeIso) return false;
     if (fechaHastaIso && informe.fechaEntrega > fechaHastaIso) return false;
     if (filtros.idColaborador !== undefined && informe.idColaborador !== filtros.idColaborador) return false;
-    if (filtros.rol && colaboradoresPorId.get(informe.idColaborador)?.rol !== filtros.rol) return false;
+    if (
+      filtros.idRol !== undefined
+      && colaboradoresPorId.get(informe.idColaborador)?.rol !== MAPA_ID_ROL_COLABORADOR_DESEMPENO_DASHBOARD[filtros.idRol]
+    ) return false;
     return true;
   });
 }

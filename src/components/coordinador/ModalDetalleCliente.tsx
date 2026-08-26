@@ -4,6 +4,7 @@ import {
   Plus,
   Loader2,
   AlertCircle,
+  AlertTriangle,
   RefreshCw,
   MailCheck,
   MailX,
@@ -159,6 +160,7 @@ export function ModalDetalleCliente({
     mutationFn: servicioCliente.createTarifario,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tarifario", client?.idCliente] });
+      queryClient.invalidateQueries({ queryKey: ["tarifario", "listaCorta"] });
       setIsRateModalOpen(false);
       setEditingRate(null);
     },
@@ -168,6 +170,7 @@ export function ModalDetalleCliente({
     mutationFn: servicioCliente.updateTarifario,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tarifario", client?.idCliente] });
+      queryClient.invalidateQueries({ queryKey: ["tarifario", "listaCorta"] });
       setIsRateModalOpen(false);
       setEditingRate(null);
       setSelectedRateIndex(null);
@@ -181,6 +184,7 @@ export function ModalDetalleCliente({
         setTarifarioPag(p => p - 1);
       }
       queryClient.invalidateQueries({ queryKey: ["tarifario", client?.idCliente] });
+      queryClient.invalidateQueries({ queryKey: ["tarifario", "listaCorta"] });
       setSelectedRateIndex(null);
     },
   });
@@ -293,6 +297,18 @@ export function ModalDetalleCliente({
     enabled: activeTab === "rates" && !!client?.idCliente,
   });
 
+  // Lista completa (sin paginar) usada solo para detectar tarifas con moneda distinta a la de Información.
+  const { data: tarifarioCortaData } = useQuery({
+    queryKey: ["tarifario", "listaCorta", { idCliente: client?.idCliente }],
+    queryFn: () => servicioCliente.listTarifarioCorta({ idCliente: client!.idCliente }),
+    enabled: isOpen && !!client?.idCliente,
+  });
+
+  const mapaMonedaTarifario = useMemo(
+    () => new Map((tarifarioCortaData ?? []).map((t) => [t.idTarifario, t.idMoneda])),
+    [tarifarioCortaData],
+  );
+
 
   const debouncedContactosSearch = useRetardo(contactosSearch);
 
@@ -320,6 +336,11 @@ export function ModalDetalleCliente({
   const watchedPlantillaInforme = infoWatch("plantillaInforme");
   const { tipoDocumentoSunat, cargandoTipoDocumentoSunat } =
     useDescripcionTipoDocumentoSunat(tipoRegistroTributarioSeleccionado, isOpen);
+
+  const monedaClienteId = watchedMoneda ? Number(watchedMoneda) : null;
+  const tarifasConMonedaDistinta = monedaClienteId
+    ? (tarifarioCortaData ?? []).filter((t) => t.idMoneda !== monedaClienteId)
+    : [];
 
   useEffect(() => {
     if (!isOpen) return;
@@ -674,6 +695,10 @@ export function ModalDetalleCliente({
           {
             id: "rates",
             label: "Tarifas",
+            indicator:
+              tarifasConMonedaDistinta.length > 0 ? (
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              ) : undefined,
             content: isLoadingClient ? loadingState : isErrorClient ? errorState : (
                 <div className="space-y-6 animate-in fade-in duration-300">
                   <div className="flex items-center justify-between gap-4">
@@ -750,7 +775,19 @@ export function ModalDetalleCliente({
                               </td>
                               <td className="px-4 py-3 text-gray-600">{rate.producto}</td>
                               <td className="px-4 py-3 text-gray-600">{rate.pais}</td>
-                              <td className="px-4 py-3 text-gray-600">{rate.moneda}</td>
+                              <td className="px-4 py-3">
+                                {monedaClienteId && mapaMonedaTarifario.get(rate.idTarifario) !== undefined && mapaMonedaTarifario.get(rate.idTarifario) !== monedaClienteId ? (
+                                  <span
+                                    className="inline-flex items-center gap-1 text-amber-700 font-bold"
+                                    title="Moneda distinta a la de Información"
+                                  >
+                                    <AlertTriangle size={12} className="text-amber-500 shrink-0" />
+                                    {rate.moneda}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-600">{rate.moneda}</span>
+                                )}
+                              </td>
                               <td className="px-4 py-3 text-gray-600">{rate.tipoTramite}</td>
                               <td className="px-4 py-3 text-gray-600 text-center">{rate.diasMinMax}</td>
                               <td className="px-4 py-3 text-brand-black font-bold text-center">{rate.precio}</td>
@@ -974,7 +1011,7 @@ export function ModalDetalleCliente({
           diasMax: editingRate.diasMax,
           precio: editingRate.precio,
           penalidad: editingRate.penalidad,
-        } : undefined}
+        } : watchedMoneda ? { moneda: watchedMoneda } : undefined}
       />
 
       <ModalAgregarContacto

@@ -93,19 +93,6 @@ export type DatosFormularioGenerarPrefactura = z.infer<
   typeof esquemaGenerarPrefactura
 >;
 
-export const esquemaLineaAgrupadaFactura = z.object({
-  codigo: z.string().trim().max(30, "El código no puede superar los 30 caracteres"),
-  descripcion: z
-    .string()
-    .trim()
-    .min(1, "La descripción es requerida")
-    .max(500, "La descripción no puede superar los 500 caracteres"),
-});
-
-export type DatosFormularioLineaAgrupadaFactura = z.infer<
-  typeof esquemaLineaAgrupadaFactura
->;
-
 export const esquemaEditarLineaAgrupadaFactura = z.object({
   codigo: z.string().trim().max(30, "El código no puede superar los 30 caracteres"),
   descripcion: z

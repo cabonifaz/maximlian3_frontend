@@ -2,11 +2,10 @@ import { useMemo, useState } from "react";
 import { Combine, FileSpreadsheet, FileText, Layers, MoreHorizontal, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
-import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
+import { CustomModalAgruparPedidosDragDrop } from "@maximilian/components/coordinador/CustomModalAgruparPedidosDragDrop";
 import { CustomModalFactura } from "@maximilian/components/coordinador/CustomModalFactura";
 import { CustomModalGestionLineasAgrupadas } from "@maximilian/components/coordinador/CustomModalGestionLineasAgrupadas";
-import { CustomModalProductosFactura } from "@maximilian/components/coordinador/CustomModalProductosFactura";
 import { CustomModalGenerarPrefactura } from "@maximilian/components/coordinador/CustomModalGenerarPrefactura";
 import { useFiltrosFacturacion } from "@maximilian/hooks/useFiltrosFacturacion";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
@@ -50,13 +49,10 @@ export default function GestionFacturacion() {
 
   const busquedaConRetardo = useRetardo(terminoBusqueda);
   const {
-    cambiarEstados,
     cambiarIdiomas,
     cambiarPrefacturables,
     emitirPrefactura,
-    estadoFacturacion,
     idIdiomaFacturacion,
-    idsEstado,
     idsIdioma,
     idsPrefacturable,
   } = useFiltrosFacturacion(() => setPaginaActual(1));
@@ -74,7 +70,6 @@ export default function GestionFacturacion() {
       busquedaConRetardo,
       emitirPrefactura,
       idIdiomaFacturacion,
-      estadoFacturacion,
     ],
     enabled: pestanaActiva === 'clientes',
     queryFn: () =>
@@ -83,7 +78,6 @@ export default function GestionFacturacion() {
         busqueda: busquedaConRetardo || undefined,
         emitirPrefactura,
         idIdiomaFacturacion,
-        estadoFacturacion,
       }),
   });
 
@@ -98,7 +92,7 @@ export default function GestionFacturacion() {
         ...columna,
         label: (
           <CustomEncabezadoFiltroTabla
-            titulo="Prefacturable"
+            titulo="Requiere prefactura"
             idMaster={TablaMaestraId.EMITIR_PREFACTURA}
             valores={idsPrefacturable}
             onChange={cambiarPrefacturables}
@@ -113,25 +107,10 @@ export default function GestionFacturacion() {
         ...columna,
         label: (
           <CustomEncabezadoFiltroTabla
-            titulo="Idioma"
+            titulo="Idioma de facturación"
             idMaster={TablaMaestraId.IDIOMA}
             valores={idsIdioma}
             onChange={cambiarIdiomas}
-            multiple={false}
-          />
-        ),
-      };
-    }
-
-    if (indice === 5) {
-      return {
-        ...columna,
-        label: (
-          <CustomEncabezadoFiltroTabla
-            titulo="Estado"
-            idMaster={TablaMaestraId.ESTADO_FACTURACION}
-            valores={idsEstado}
-            onChange={cambiarEstados}
             multiple={false}
           />
         ),
@@ -259,14 +238,6 @@ export default function GestionFacturacion() {
       <td className="px-6 py-4 text-center text-sm font-medium text-slate-600">
         {facturacion.idioma}
       </td>
-      <td className="px-6 py-4 text-center">
-        <CustomChipEstado
-          colorTexto={facturacion.colorTexto}
-          colorFondo={facturacion.colorFondo}
-        >
-          {facturacion.estado}
-        </CustomChipEstado>
-      </td>
       <td className="px-6 py-4 text-right">
         <button
           type="button"
@@ -284,17 +255,6 @@ export default function GestionFacturacion() {
               className="fixed z-20 w-52 rounded-lg border border-slate-200 bg-white py-1 shadow-xl"
               style={menuDropdownStyle}
             >
-              <button
-                type="button"
-                onClick={() => {
-                  setClienteParaAgruparPedidos(facturacion);
-                  setIdMenuActivo(null);
-                }}
-                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
-              >
-                <Combine size={14} className="shrink-0" />
-                <span>Agrupar Pedidos</span>
-              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -327,6 +287,17 @@ export default function GestionFacturacion() {
               >
                 <Layers size={14} className="shrink-0" />
                 <span>Gestionar Líneas Agrupadas</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setClienteParaAgruparPedidos(facturacion);
+                  setIdMenuActivo(null);
+                }}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                <Combine size={14} className="shrink-0" />
+                <span>Agrupar Pedidos</span>
               </button>
             </div>
           </>
@@ -410,12 +381,10 @@ export default function GestionFacturacion() {
         entityLabel="facturas"
       />
       {clienteParaAgruparPedidos ? (
-        <CustomModalProductosFactura
+        <CustomModalAgruparPedidosDragDrop
           abierto={clienteParaAgruparPedidos !== null}
           idCliente={clienteParaAgruparPedidos.idFacturacion}
-          idDocumentoElectronico={null}
           onCerrar={() => setClienteParaAgruparPedidos(null)}
-          onLineaCreada={() => setClienteParaAgruparPedidos(null)}
         />
       ) : null}
       {clienteParaGestionarLineas ? (

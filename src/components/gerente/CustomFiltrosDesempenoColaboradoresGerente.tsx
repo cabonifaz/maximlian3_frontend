@@ -2,14 +2,12 @@ import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomFiltroRangoFechas } from "@maximilian/components/common/CustomFiltroRangoFechas";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import {
   OPCIONES_COLABORADOR_DESEMPENO_DASHBOARD,
   OPCIONES_ROL_COLABORADOR_DESEMPENO_DASHBOARD,
 } from "@maximilian/shared/constants/components/gerente/desempeno-colaboradores-dashboard.constants";
-import type {
-  FiltrosDesempenoColaboradoresDashboard,
-  RolColaboradorDesempenoDashboard,
-} from "@maximilian/shared/types/dashboard.type";
+import type { FiltrosDesempenoColaboradoresDashboard } from "@maximilian/shared/types/dashboard.type";
 
 interface PropsCustomFiltrosDesempenoColaboradoresGerente {
   filtros: FiltrosDesempenoColaboradoresDashboard;
@@ -76,25 +74,17 @@ export function CustomFiltrosDesempenoColaboradoresGerente({
           </select>
         </div>
 
-        <div>
-          <CustomLabel className="mb-1.5 block text-xs">Rol</CustomLabel>
-          <select
-            className={CLASE_SELECT_FILTRO}
-            value={filtros.rol ?? ""}
-            onChange={(evento) =>
-              onActualizarFiltros({
-                rol: (evento.target.value || undefined) as RolColaboradorDesempenoDashboard | undefined,
-              })
-            }
-          >
-            <option value="">Todos</option>
-            {OPCIONES_ROL_COLABORADOR_DESEMPENO_DASHBOARD.map((opcion) => (
-              <option key={opcion.valor} value={opcion.valor}>
-                {opcion.etiqueta}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CustomSelectorBuscable
+          label="Rol"
+          options={OPCIONES_ROL_COLABORADOR_DESEMPENO_DASHBOARD}
+          value={filtros.idRol}
+          onChange={(idRol) => onActualizarFiltros({ idRol })}
+          onClear={() => onActualizarFiltros({ idRol: undefined })}
+          optional
+          mostrarTextoOpcionalEnLabel={false}
+          etiquetaOpcionVacia="Todos"
+          placeholder="Todos"
+        />
       </div>
     </div>
   );

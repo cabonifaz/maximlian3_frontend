@@ -3,20 +3,18 @@ import type {
   ActualizarEstadoCuotaRequest,
   AnularFacturaRequest,
   AnularManualmenteFacturaRequest,
-  CrearLineaAgrupadaFacturaRequest,
+  ClienteResumenGlobalFacturacionApi,
   DocumentoAfectadoAnulacion,
   DocumentoAnulacionPreviewApi,
   EditarLineaAgrupadaFacturaRequest,
   EditarNotaCreditoDebitoRequest,
-  EntradaLineaAgrupadaFacturaApi,
   EntradaLineaAgrupadaPendiente,
   EntradaFacturaCliente,
   EntradaFacturacion,
   EntradaFacturacionApi,
   EntradaListaFacturaApi,
   EntradaPedidoFacturacionApi,
-  EntradaProductoFacturable,
-  EntradaProductoFacturableApi,
+  EntradaPedidoConGrupoApi,
   ErrorDocumentoFactura,
   FiltroExportarPrefactura,
   FormatoDescargaFactura,
@@ -28,26 +26,37 @@ import type {
   ParametrosListaFacturas,
   ParametrosListaLineasPendientes,
   ParametrosListaPedidosFacturacion,
-  ParametrosListaProductosFacturables,
+  ParametrosListarPedidosConGrupos,
   ParametrosResumenFacturacion,
+  CrearLineasLoteRequest,
+  PedidoConGrupo,
   PedidoRelacionadoFacturaApi,
+  PuntoEvolucionAnaliticaFacturacionApi,
   RespuestaExportarLibroVentas,
   RespuestaExportarPrefactura,
   RespuestaListaFacturasCliente,
   RespuestaListaFacturacion,
   RespuestaListaFacturas,
-  RespuestaListaProductosFacturables,
+  RespuestaListarPedidosConGrupos,
+  ResultadoResumenAnaliticoFacturacionApi,
   ResumenFacturacion,
   ResultadoListaFacturacionApi,
   ResultadoListaFacturasApi,
   ResultadoListaLineasPendientesApi,
   ResultadoListaPedidosFacturacionApi,
-  ResultadoListaProductosFacturablesApi,
+  ResultadoListarPedidosConGruposApi,
   ResultadoGuardarBorradorFactura,
   ResultadoObtenerFacturaApi,
   ResultadoParaNotaApi,
   ResultadoPedidosRelacionadosFacturaApi,
 } from "@maximilian/shared/types/facturacion.type";
+import type {
+  EvolucionFacturacionAnaliticaDashboard,
+  ParametrosEvolucionAnaliticaFacturacionDashboard,
+  ParametrosResumenAnaliticoFacturacionDashboard,
+  ResumenAnaliticoFacturacionDashboard,
+  ResumenClienteFacturacionAnaliticaDashboard,
+} from "@maximilian/shared/types/dashboard.type";
 import { ENDPOINTS_FACTURACION } from "@maximilian/shared/constants/endpoints/facturacion.endpoint";
 import { TIMEOUT_EMISION_ANULACION_FACTURA_MS } from "@maximilian/shared/constants/services/facturacion.service.constants";
 import {
@@ -109,9 +118,6 @@ function mapearFacturacion(
     totalPedidos: facturacion.totalPedidos,
     totalFacturados: facturacion.pedidosFacturados,
     idioma: facturacion.idIdiomaFacturacion,
-    estado: facturacion.estadoFacturacion,
-    colorTexto: facturacion.colorTexto,
-    colorFondo: facturacion.colorFondo,
   };
 }
 
@@ -194,9 +200,7 @@ function mapearPedidoFacturacion(
   };
 }
 
-function mapearProductoFacturable(
-  pedido: EntradaProductoFacturableApi,
-): EntradaProductoFacturable {
+function mapearPedidoConGrupo(pedido: EntradaPedidoConGrupoApi): PedidoConGrupo {
   const tipoNormalizado = pedido.tipoTramite
     .trim()
     .toLowerCase()
@@ -207,19 +211,80 @@ function mapearProductoFacturable(
       : "normal";
 
   return {
-    idProductoFacturable: pedido.idPedido,
+    idPedido: pedido.idPedido,
+    idGrupoRecomendado: pedido.groupId,
     codigo: pedido.codigo,
     numReferencia: pedido.numReferencia,
     investigado: pedido.investigado ?? "",
+    idPais: pedido.idPais,
     pais: pedido.pais,
     aplicaPenalidad: pedido.aplicaPenalidad === "Si",
+    idTipoTramite: pedido.idTipoTramite,
+    tipoTramite: pedido.tipoTramite,
     tipo,
     fecha: pedido.fecha,
     penalidad: pedido.penalidad,
     precio: pedido.precio,
-    descuentoPorcentaje: pedido.descuentoPorcentaje,
     idMoneda: pedido.idMoneda,
     moneda: pedido.moneda,
+  };
+}
+
+function mapearResumenAnaliticoFacturacion(
+  resultado: ResultadoResumenAnaliticoFacturacionApi,
+): ResumenAnaliticoFacturacionDashboard {
+  return {
+    indicadores: {
+      totalFacturado: resultado.indicadores.totalFacturado,
+      montoPendienteFacturar: resultado.indicadores.montoPendienteFacturar,
+      cantidadPedidosFacturados: resultado.indicadores.cantidadPedidosFacturados,
+      cantidadPedidosPendientes: resultado.indicadores.cantidadPedidosPendientes,
+      totalNotasCredito: resultado.indicadores.totalNotasCredito,
+      totalNotasDebito: resultado.indicadores.totalNotasDebito,
+      monedaIcono: "",
+    },
+    desglosePorTramite: resultado.desglosePorTramite.map((grupo) => ({
+      id: grupo.idTipoTramite,
+      etiqueta: grupo.tipoTramite,
+      cantidadPedidos: grupo.cantidadPedidos,
+      montoFacturado: grupo.montoFacturado,
+    })),
+    desglosePorPais: resultado.desglosePorPais.map((grupo) => ({
+      id: grupo.idPais,
+      etiqueta: grupo.pais,
+      cantidadPedidos: grupo.cantidadPedidos,
+      montoFacturado: grupo.montoFacturado,
+    })),
+    desglosePorEstado: resultado.desglosePorEstado.map((grupo) => ({
+      idEstadoMaestro: grupo.idEstadoMaestro,
+      estado: grupo.estado,
+      cantidadFacturas: grupo.cantidadFacturas,
+      montoFacturado: grupo.montoFacturado,
+    })),
+  };
+}
+
+function mapearPuntoEvolucionAnalitica(
+  punto: PuntoEvolucionAnaliticaFacturacionApi,
+): EvolucionFacturacionAnaliticaDashboard {
+  return {
+    periodo: punto.periodo,
+    etiqueta: punto.etiqueta,
+    montoFacturado: punto.montoFacturado,
+    cantidadPedidos: punto.cantidadPedidos,
+  };
+}
+
+function mapearClienteResumenGlobal(
+  cliente: ClienteResumenGlobalFacturacionApi,
+): ResumenClienteFacturacionAnaliticaDashboard {
+  return {
+    idCliente: cliente.idCliente,
+    cliente: cliente.cliente,
+    totalFacturado: cliente.totalFacturado,
+    cantidadPedidosFacturados: cliente.cantidadPedidosFacturados,
+    montoPendienteFacturar: cliente.montoPendienteFacturar,
+    monedaIcono: "",
   };
 }
 
@@ -475,7 +540,6 @@ export const facturacionService = {
         busqueda: params.busqueda,
         emitirPrefactura: params.emitirPrefactura,
         idIdiomaFacturacion: params.idIdiomaFacturacion,
-        estadoFacturacion: params.estadoFacturacion,
       },
     });
 
@@ -552,12 +616,12 @@ export const facturacionService = {
       esNota,
     ),
 
-  listarProductosFacturables: async (
-    parametros: ParametrosListaProductosFacturables,
-  ): Promise<RespuestaListaProductosFacturables> => {
+  listarPedidosConGrupos: async (
+    parametros: ParametrosListarPedidosConGrupos,
+  ): Promise<RespuestaListarPedidosConGrupos> => {
     const { data } = await maximilianService.get<
-      ApiResponse<ResultadoListaProductosFacturablesApi>
-    >(ENDPOINTS_FACTURACION.listarPedidosFacturables, {
+      ApiResponse<ResultadoListarPedidosConGruposApi>
+    >(ENDPOINTS_FACTURACION.listarPedidosConGrupos, {
       params: parametros,
       paramsSerializer: { indexes: null },
     });
@@ -567,31 +631,23 @@ export const facturacionService = {
     }
 
     return {
-      productos: data.result.pedidos.map(mapearProductoFacturable),
+      pedidos: data.result.pedidos.map(mapearPedidoConGrupo),
+      grupos: data.result.grupos.map((grupo) => ({
+        idGrupoRecomendado: grupo.groupId,
+        codigo: grupo.codigo,
+        descripcion: grupo.descripcion,
+        precio: grupo.precio,
+        descuento: grupo.descuento,
+        cantidad: grupo.cantidad,
+      })),
     };
   },
 
-  obtenerProductoFacturable: async (
-    idCliente: number,
-    idPedido: number,
-  ): Promise<EntradaProductoFacturable | null> => {
-    const respuesta = await facturacionService.listarProductosFacturables({
-      idCliente,
-    });
-
-    return (
-      respuesta.productos.find(
-        (productoActual) => productoActual.idProductoFacturable === idPedido,
-      ) ?? null
+  crearLineasLote: async (solicitud: CrearLineasLoteRequest): Promise<unknown> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      ENDPOINTS_FACTURACION.crearLineasLote,
+      solicitud,
     );
-  },
-
-  crearLineaAgrupada: async (
-    solicitud: CrearLineaAgrupadaFacturaRequest,
-  ): Promise<EntradaLineaAgrupadaFacturaApi> => {
-    const { data } = await maximilianService.post<
-      ApiResponse<EntradaLineaAgrupadaFacturaApi>
-    >(ENDPOINTS_FACTURACION.lineas, solicitud);
 
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
       throw new ErrorRespuestaApi(data);
@@ -997,5 +1053,55 @@ export const facturacionService = {
       archivo: respuesta.data,
       nombreArchivo,
     };
+  },
+
+  obtenerResumenAnalitico: async (
+    parametros: ParametrosResumenAnaliticoFacturacionDashboard,
+    senal?: AbortSignal,
+  ): Promise<ResumenAnaliticoFacturacionDashboard> => {
+    const { data } = await maximilianService.get<
+      ApiResponse<ResultadoResumenAnaliticoFacturacionApi>
+    >(ENDPOINTS_FACTURACION.resumenAnalitico, {
+      params: parametros,
+      signal: senal,
+    });
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return mapearResumenAnaliticoFacturacion(data.result);
+  },
+
+  obtenerEvolucionAnalitica: async (
+    parametros: ParametrosEvolucionAnaliticaFacturacionDashboard,
+    senal?: AbortSignal,
+  ): Promise<EvolucionFacturacionAnaliticaDashboard[]> => {
+    const { data } = await maximilianService.get<
+      ApiResponse<PuntoEvolucionAnaliticaFacturacionApi[]>
+    >(ENDPOINTS_FACTURACION.evolucionAnalitica, {
+      params: parametros,
+      signal: senal,
+    });
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result.map(mapearPuntoEvolucionAnalitica);
+  },
+
+  obtenerResumenClientesGlobal: async (
+    senal?: AbortSignal,
+  ): Promise<ResumenClienteFacturacionAnaliticaDashboard[]> => {
+    const { data } = await maximilianService.get<
+      ApiResponse<ClienteResumenGlobalFacturacionApi[]>
+    >(ENDPOINTS_FACTURACION.resumenClientesGlobal, { signal: senal });
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return data.result.map(mapearClienteResumenGlobal);
   },
 };

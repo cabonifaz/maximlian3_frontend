@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -9,7 +8,6 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { facturacionService } from "@maximilian/services/facturacion.service";
-import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import {
   CONFIGURACION_CONSULTA_FACTURACION,
   INTERVALO_RECARGA_LISTADO_FACTURAS_MS,
@@ -25,7 +23,6 @@ import type {
   ErrorDocumentoFactura,
   FormatoDescargaFactura,
 } from "@maximilian/shared/types/facturacion.type";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
 
 export function useListadoFacturas() {
@@ -75,20 +72,8 @@ export function useListadoFacturas() {
     fechaDesde && fechaHasta && fechaDesde > fechaHasta,
   );
 
-  const { data: opcionesEstadoMaestro } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.ESTADO_DOCUMENTO_ELECTRONICO],
-    queryFn: () =>
-      servicioTablaMaestra.list(TablaMaestraId.ESTADO_DOCUMENTO_ELECTRONICO),
-    staleTime: Infinity,
-  });
-
-  const estadoCodigoSeleccionado = useMemo(
-    () =>
-      opcionesEstadoMaestro?.find(
-        (opcion) => opcion.num1 === idEstadoSeleccionado,
-      )?.string1?.trim(),
-    [idEstadoSeleccionado, opcionesEstadoMaestro],
-  );
+  const estadoCodigoSeleccionado =
+    idEstadoSeleccionado !== undefined ? String(idEstadoSeleccionado) : undefined;
 
   const {
     data: respuesta,

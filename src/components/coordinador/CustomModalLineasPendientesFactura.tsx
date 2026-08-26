@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, Layers, Loader2, PackagePlus, Plus, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
-import { CustomModalProductosFactura } from "@maximilian/components/coordinador/CustomModalProductosFactura";
+import { CustomModalAgruparPedidosDragDrop } from "@maximilian/components/coordinador/CustomModalAgruparPedidosDragDrop";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomSelectorMes } from "@maximilian/components/common/CustomSelectorMes";
 import { useLineasPendientesFactura } from "@maximilian/hooks/useLineasPendientesFactura";
@@ -132,12 +132,10 @@ export function CustomModalLineasPendientesFactura({
 
   if (crearLineaAbierta) {
     return (
-      <CustomModalProductosFactura
+      <CustomModalAgruparPedidosDragDrop
         abierto
         idCliente={idCliente}
-        idDocumentoElectronico={null}
-        onCerrar={() => setCrearLineaAbierta(false)}
-        onLineaCreada={() => {
+        onCerrar={() => {
           setCrearLineaAbierta(false);
           void recargar();
         }}
