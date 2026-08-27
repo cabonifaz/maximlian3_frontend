@@ -318,7 +318,7 @@ export function CustomModalDetallePedido({
           <CustomSelectorBuscable
             label="Atendido por"
             options={empresasAtencion}
-            value={pedido.idCompania}
+            value={pedido.idEmpresaAtencion}
             onChange={() => {}}
             disabled
           />
