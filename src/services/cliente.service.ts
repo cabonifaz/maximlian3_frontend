@@ -8,7 +8,7 @@ import type {
   ClientDetail,
   ClientListRequest,
   ClientListResponse,
-  DeleteClientRequest,
+  ActivarDesactivarClienteRequest,
   UpdateClientRequest,
   TarifarioListResponse,
   TarifarioDetail,
@@ -106,10 +106,10 @@ export const servicioCliente = {
     return data.result[0] ?? null;
   },
 
-  eliminate: async (data: DeleteClientRequest) => {
+  activarDesactivar: async (data: ActivarDesactivarClienteRequest) => {
     try {
       const { data: responseData } = await maximilianService.post<ApiResponse<{ idCliente: number }[]>>(
-        ENDPOINTS_CLIENTE.eliminar,
+        ENDPOINTS_CLIENTE.activarDesactivar,
         data
       );
 
@@ -119,7 +119,7 @@ export const servicioCliente = {
 
       return responseData.result;
     } catch (error) {
-      console.error("Error eliminating client:", error);
+      console.error("Error activando/desactivando cliente:", error);
       throw error;
     }
   },

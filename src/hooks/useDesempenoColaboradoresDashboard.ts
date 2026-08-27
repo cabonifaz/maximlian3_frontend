@@ -74,6 +74,7 @@ export function useDesempenoColaboradoresDashboard() {
     granularidad,
     cambiarGranularidad: setGranularidad,
     evolucion: consultaEvolucion.data ?? [],
+    estaCargandoEvolucion: consultaEvolucion.isLoading,
     resumenColaboradores: consultaResumenColaboradores.data?.resumenColaboradores ?? [],
     pagina,
     cambiarPagina: setPagina,

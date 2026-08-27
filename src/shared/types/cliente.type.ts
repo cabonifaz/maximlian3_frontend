@@ -110,8 +110,9 @@ export type ClientListResponse = {
   totalPaginas: number;
 };
 
-export interface DeleteClientRequest {
+export interface ActivarDesactivarClienteRequest {
   idCliente: number;
+  idEstado: number;
 }
 
 export type TarifarioListEntry = {

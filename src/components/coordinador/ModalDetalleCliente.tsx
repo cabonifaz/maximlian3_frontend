@@ -18,6 +18,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   esquemaDetalleCliente,
   type DatosFormularioDetalleCliente,
+  type DatosFormularioTarifa,
 } from "@maximilian/schemas";
 import { ModalAgregarTarifa } from "./ModalAgregarTarifa";
 import { ModalAgregarContacto } from "./ModalAgregarContacto";
@@ -35,6 +36,7 @@ import type {
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
+import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomEntradaUrl } from "@maximilian/components/common/CustomEntradaUrl";
 import { useDescripcionTipoDocumentoSunat } from "@maximilian/hooks/useDescripcionTipoDocumentoSunat";
@@ -83,6 +85,7 @@ export function ModalDetalleCliente({
   const [isFetchingRate, setIsFetchingRate] = useState(false);
   const [isFetchingContact, setIsFetchingContact] = useState(false);
   const [rateToDelete, setRateToDelete] = useState<TarifarioListEntry | null>(null);
+  const [tarifaMonedaPendiente, setTarifaMonedaPendiente] = useState<{ datos: DatosFormularioTarifa; idTarifarioEditando: number | null } | null>(null);
   const [contactToDelete, setContactToDelete] = useState<ContactoListEntry | null>(null);
 
   const queryClient = useQueryClient();
@@ -341,6 +344,49 @@ export function ModalDetalleCliente({
   const tarifasConMonedaDistinta = monedaClienteId
     ? (tarifarioCortaData ?? []).filter((t) => t.idMoneda !== monedaClienteId)
     : [];
+
+  const obtenerEtiquetaMoneda = (idMoneda: number | undefined) => {
+    const opcion = opcionesMonedaCliente?.find((o) => o.num1 === idMoneda);
+    return opcion ? obtenerEtiquetaPrincipalSecundaria(opcion) : "-";
+  };
+
+  const procesarTarifa = (data: DatosFormularioTarifa, idTarifarioEditando: number | null) => {
+    if (idTarifarioEditando) {
+      updateTarifarioMutation.mutate({
+        idTarifario: idTarifarioEditando,
+        idCliente: client!.idCliente,
+        idProducto: Number(data.producto),
+        idTipoTramite: Number(data.tramite),
+        idPais: Number(data.pais),
+        idMoneda: Number(data.moneda),
+        diasMax: data.diasMax,
+        diasMin: data.diasMin,
+        precio: data.precio,
+        penalidad: data.penalidad,
+      });
+    } else {
+      createTarifarioMutation.mutate({
+        idCliente: client!.idCliente,
+        idProducto: Number(data.producto),
+        idTipoTramite: Number(data.tramite),
+        idPais: Number(data.pais),
+        idMoneda: Number(data.moneda),
+        diasMax: data.diasMax,
+        diasMin: data.diasMin,
+        precio: data.precio,
+        penalidad: data.penalidad,
+      });
+    }
+  };
+
+  const manejarConfirmarTarifa = (data: DatosFormularioTarifa) => {
+    const idTarifarioEditando = editingRate?.idTarifario ?? null;
+    if (monedaClienteId && Number(data.moneda) !== monedaClienteId) {
+      setTarifaMonedaPendiente({ datos: data, idTarifarioEditando });
+      return false;
+    }
+    procesarTarifa(data, idTarifarioEditando);
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -974,34 +1020,7 @@ export function ModalDetalleCliente({
         key={editingRate ? `edit-rate-${editingRate.idTarifario}` : "new-rate"}
         isOpen={isRateModalOpen}
         onClose={() => { setIsRateModalOpen(false); setEditingRate(null); setSelectedRateIndex(null); }}
-        onConfirm={(data) => {
-          if (editingRate) {
-            updateTarifarioMutation.mutate({
-              idTarifario: editingRate.idTarifario,
-              idCliente: client!.idCliente,
-              idProducto: Number(data.producto),
-              idTipoTramite: Number(data.tramite),
-              idPais: Number(data.pais),
-              idMoneda: Number(data.moneda),
-              diasMax: data.diasMax,
-              diasMin: data.diasMin,
-              precio: data.precio,
-              penalidad: data.penalidad,
-            });
-          } else {
-            createTarifarioMutation.mutate({
-              idCliente: client!.idCliente,
-              idProducto: Number(data.producto),
-              idTipoTramite: Number(data.tramite),
-              idPais: Number(data.pais),
-              idMoneda: Number(data.moneda),
-              diasMax: data.diasMax,
-              diasMin: data.diasMin,
-              precio: data.precio,
-              penalidad: data.penalidad,
-            });
-          }
-        }}
+        onConfirm={manejarConfirmarTarifa}
         defaultValues={editingRate ? {
           producto: editingRate.idProducto,
           pais: editingRate.idPais,
@@ -1059,6 +1078,27 @@ export function ModalDetalleCliente({
           enviarCorreo: editingContact.enviarCorreo,
         } : undefined}
       />
+
+      <CustomModalConfirmacionAccion
+        isOpen={tarifaMonedaPendiente !== null}
+        onClose={() => setTarifaMonedaPendiente(null)}
+        onConfirm={() => {
+          if (tarifaMonedaPendiente) {
+            procesarTarifa(tarifaMonedaPendiente.datos, tarifaMonedaPendiente.idTarifarioEditando);
+          }
+          setTarifaMonedaPendiente(null);
+          setIsRateModalOpen(false);
+          setEditingRate(null);
+          setSelectedRateIndex(null);
+        }}
+        title="Moneda diferente a la del cliente"
+        descripcion="La moneda de esta tarifa es distinta a la moneda del cliente. ¿Deseas continuar de todas formas?"
+        varianteConfirmar="wine"
+        textoConfirmar="Continuar"
+      >
+        <p><span className="font-bold">Moneda de la tarifa:</span> {obtenerEtiquetaMoneda(tarifaMonedaPendiente?.datos.moneda as number | undefined)}</p>
+        <p><span className="font-bold">Moneda del cliente:</span> {obtenerEtiquetaMoneda(monedaClienteId ?? undefined)}</p>
+      </CustomModalConfirmacionAccion>
 
       <CustomModalConfirmacionEliminacion
         isOpen={rateToDelete !== null}

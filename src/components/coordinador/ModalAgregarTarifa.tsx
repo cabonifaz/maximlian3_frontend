@@ -10,7 +10,7 @@ import { obtenerEtiquetaPrincipalSecundaria } from "@maximilian/shared/utils/tab
 interface ModalAgregarTarifaProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (data: DatosFormularioTarifa) => void;
+  onConfirm: (data: DatosFormularioTarifa) => boolean | void;
   defaultValues?: Partial<DatosFormularioTarifa>;
 }
 
