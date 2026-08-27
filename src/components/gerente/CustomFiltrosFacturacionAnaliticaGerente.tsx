@@ -1,19 +1,12 @@
+import { useMemo } from "react";
 import { X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomFiltroRangoFechas } from "@maximilian/components/common/CustomFiltroRangoFechas";
-import { CustomLabel } from "@maximilian/components/common/CustomLabel";
-import {
-  OPCIONES_CLIENTE_FACTURACION_ANALITICA_DASHBOARD,
-  OPCIONES_ESTADO_FACTURACION_ANALITICA_DASHBOARD,
-  OPCIONES_PAIS_FACTURACION_ANALITICA_DASHBOARD,
-  OPCIONES_TIPO_COMPROBANTE_FACTURACION_ANALITICA_DASHBOARD,
-  OPCIONES_TRAMITE_FACTURACION_ANALITICA_DASHBOARD,
-} from "@maximilian/shared/constants/components/gerente/facturacion-analitica-dashboard.constants";
-import type {
-  EstadoFacturaAnaliticaDashboard,
-  FiltrosFacturacionAnaliticaDashboard,
-  TramiteFacturacionAnaliticaDashboard,
-} from "@maximilian/shared/types/dashboard.type";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { servicioCliente } from "@maximilian/services/cliente.service";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import type { FiltrosFacturacionAnaliticaDashboard } from "@maximilian/shared/types/dashboard.type";
 
 interface PropsCustomFiltrosFacturacionAnaliticaGerente {
   filtros: FiltrosFacturacionAnaliticaDashboard;
@@ -22,9 +15,6 @@ interface PropsCustomFiltrosFacturacionAnaliticaGerente {
   onLimpiarFiltros: () => void;
 }
 
-const CLASE_SELECT_FILTRO =
-  "h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none transition focus:border-brand-wine/40 focus:ring-2 focus:ring-brand-wine/10";
-
 export function CustomFiltrosFacturacionAnaliticaGerente({
   filtros,
   fechasInvalidas,
@@ -32,6 +22,32 @@ export function CustomFiltrosFacturacionAnaliticaGerente({
   onLimpiarFiltros,
 }: PropsCustomFiltrosFacturacionAnaliticaGerente) {
   const hayFiltrosActivos = Object.values(filtros).some((valor) => valor !== undefined);
+
+  const { data: clientes = [] } = useQuery({
+    queryKey: ["clientes", "listaCorta"],
+    queryFn: () => servicioCliente.listaCorta(),
+    staleTime: Infinity,
+  });
+
+  const opcionesCliente = useMemo(
+    () =>
+      clientes.map((cliente) => ({
+        idEmpresa: 0,
+        idTablaMaestra: null,
+        idMaestro: 0,
+        descripcion: "",
+        num1: cliente.idCliente,
+        num2: null,
+        num3: null,
+        string1: cliente.nombreCliente,
+        string2: null,
+        string3: null,
+        date1: null,
+        date2: null,
+        date3: null,
+      })),
+    [clientes],
+  );
 
   return (
     <div className="mb-5 space-y-3 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
@@ -60,106 +76,66 @@ export function CustomFiltrosFacturacionAnaliticaGerente({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
-        <div>
-          <CustomLabel className="mb-1.5 block text-xs">Cliente</CustomLabel>
-          <select
-            className={CLASE_SELECT_FILTRO}
-            value={filtros.idCliente ?? ""}
-            onChange={(evento) =>
-              onActualizarFiltros({
-                idCliente: evento.target.value ? Number(evento.target.value) : undefined,
-              })
-            }
-          >
-            <option value="">Todos</option>
-            {OPCIONES_CLIENTE_FACTURACION_ANALITICA_DASHBOARD.map((opcion) => (
-              <option key={opcion.valor} value={opcion.valor}>
-                {opcion.etiqueta}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CustomSelectorBuscable
+          label="Cliente"
+          options={opcionesCliente}
+          value={filtros.idCliente}
+          onChange={(idCliente) => onActualizarFiltros({ idCliente })}
+          onClear={() => onActualizarFiltros({ idCliente: undefined })}
+          optional
+          mostrarTextoOpcionalEnLabel={false}
+          etiquetaOpcionVacia="Todos"
+          placeholder="Todos"
+        />
 
-        <div>
-          <CustomLabel className="mb-1.5 block text-xs">Estado</CustomLabel>
-          <select
-            className={CLASE_SELECT_FILTRO}
-            value={filtros.estado ?? ""}
-            onChange={(evento) =>
-              onActualizarFiltros({
-                estado: (evento.target.value || undefined) as
-                  | EstadoFacturaAnaliticaDashboard
-                  | undefined,
-              })
-            }
-          >
-            <option value="">Todos</option>
-            {OPCIONES_ESTADO_FACTURACION_ANALITICA_DASHBOARD.map((opcion) => (
-              <option key={opcion.valor} value={opcion.valor}>
-                {opcion.etiqueta}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CustomSelectorBuscable
+          label="País"
+          idMaster={TablaMaestraId.PAIS}
+          value={filtros.idPais}
+          onChange={(idPais) => onActualizarFiltros({ idPais })}
+          onClear={() => onActualizarFiltros({ idPais: undefined })}
+          optional
+          mostrarTextoOpcionalEnLabel={false}
+          etiquetaOpcionVacia="Todos"
+          placeholder="Todos"
+        />
 
-        <div>
-          <CustomLabel className="mb-1.5 block text-xs">País</CustomLabel>
-          <select
-            className={CLASE_SELECT_FILTRO}
-            value={filtros.pais ?? ""}
-            onChange={(evento) => onActualizarFiltros({ pais: evento.target.value || undefined })}
-          >
-            <option value="">Todos</option>
-            {OPCIONES_PAIS_FACTURACION_ANALITICA_DASHBOARD.map((opcion) => (
-              <option key={opcion.valor} value={opcion.valor}>
-                {opcion.etiqueta}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CustomSelectorBuscable
+          label="Trámite"
+          idMaster={TablaMaestraId.TIPO_TRAMITE}
+          value={filtros.idTipoTramite}
+          onChange={(idTipoTramite) => onActualizarFiltros({ idTipoTramite })}
+          onClear={() => onActualizarFiltros({ idTipoTramite: undefined })}
+          optional
+          mostrarTextoOpcionalEnLabel={false}
+          etiquetaOpcionVacia="Todos"
+          placeholder="Todos"
+        />
 
-        <div>
-          <CustomLabel className="mb-1.5 block text-xs">Trámite</CustomLabel>
-          <select
-            className={CLASE_SELECT_FILTRO}
-            value={filtros.tramite ?? ""}
-            onChange={(evento) =>
-              onActualizarFiltros({
-                tramite: (evento.target.value || undefined) as
-                  | TramiteFacturacionAnaliticaDashboard
-                  | undefined,
-              })
-            }
-          >
-            <option value="">Todos</option>
-            {OPCIONES_TRAMITE_FACTURACION_ANALITICA_DASHBOARD.map((opcion) => (
-              <option key={opcion.valor} value={opcion.valor}>
-                {opcion.etiqueta}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CustomSelectorBuscable
+          label="Estado"
+          idMaster={TablaMaestraId.ESTADO_DOCUMENTO_ELECTRONICO}
+          value={filtros.idEstadoBucket}
+          onChange={(idEstadoBucket) => onActualizarFiltros({ idEstadoBucket })}
+          onClear={() => onActualizarFiltros({ idEstadoBucket: undefined })}
+          optional
+          mostrarTextoOpcionalEnLabel={false}
+          etiquetaOpcionVacia="Todos"
+          placeholder="Todos"
+        />
 
-        <div>
-          <CustomLabel className="mb-1.5 block text-xs">Comprobante</CustomLabel>
-          <select
-            className={CLASE_SELECT_FILTRO}
-            value={filtros.tipoComprobante ?? ""}
-            onChange={(evento) =>
-              onActualizarFiltros({
-                tipoComprobante: (evento.target.value || undefined) as
-                  FiltrosFacturacionAnaliticaDashboard["tipoComprobante"],
-              })
-            }
-          >
-            <option value="">Todos</option>
-            {OPCIONES_TIPO_COMPROBANTE_FACTURACION_ANALITICA_DASHBOARD.map((opcion) => (
-              <option key={opcion.valor} value={opcion.valor}>
-                {opcion.etiqueta}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CustomSelectorBuscable
+          label="Comprobante"
+          idMaster={TablaMaestraId.TIPO_DOCUMENTO_COMPROBANTE}
+          value={filtros.idTipoDocumentoMaestro}
+          onChange={(idTipoDocumentoMaestro) => onActualizarFiltros({ idTipoDocumentoMaestro })}
+          onClear={() => onActualizarFiltros({ idTipoDocumentoMaestro: undefined })}
+          optional
+          mostrarTextoOpcionalEnLabel={false}
+          etiquetaOpcionVacia="Todos"
+          placeholder="Todos"
+          obtenerEtiquetaOpcion={(opcion) => opcion.string2 ?? opcion.string1 ?? ""}
+        />
       </div>
     </div>
   );

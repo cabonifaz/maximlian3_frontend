@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { Eye, FileText, MoreHorizontal, Search } from "lucide-react";
+import { Combine, FileSpreadsheet, FileText, Layers, MoreHorizontal, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
-import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
+import { CustomModalAgruparPedidosDragDrop } from "@maximilian/components/coordinador/CustomModalAgruparPedidosDragDrop";
 import { CustomModalFactura } from "@maximilian/components/coordinador/CustomModalFactura";
-import { CustomModalFacturasCliente } from "@maximilian/components/coordinador/CustomModalFacturasCliente";
+import { CustomModalGestionLineasAgrupadas } from "@maximilian/components/coordinador/CustomModalGestionLineasAgrupadas";
+import { CustomModalGenerarPrefactura } from "@maximilian/components/coordinador/CustomModalGenerarPrefactura";
 import { useFiltrosFacturacion } from "@maximilian/hooks/useFiltrosFacturacion";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import type { ModoFormularioFactura } from "@maximilian/hooks/useFormularioFactura";
@@ -36,8 +37,9 @@ export default function GestionFacturacion() {
   const [paginaActual, setPaginaActual] = useState(1);
   const [idMenuActivo, setIdMenuActivo] = useState<number | null>(null);
   const [menuDropdownStyle, setMenuDropdownStyle] = useState<React.CSSProperties>({});
-  const [clienteSeleccionado, setClienteSeleccionado] = useState<EntradaFacturacion | null>(null);
-  const [estaCargandoModalFactura, setEstaCargandoModalFactura] = useState(false);
+  const [clienteParaAgruparPedidos, setClienteParaAgruparPedidos] = useState<EntradaFacturacion | null>(null);
+  const [clienteParaGestionarLineas, setClienteParaGestionarLineas] = useState<EntradaFacturacion | null>(null);
+  const [clienteParaPrefactura, setClienteParaPrefactura] = useState<EntradaFacturacion | null>(null);
   const [modalFactura, setModalFactura] = useState<{
     modo: ModoFormularioFactura;
     detalle: DetalleFactura | null;
@@ -47,13 +49,10 @@ export default function GestionFacturacion() {
 
   const busquedaConRetardo = useRetardo(terminoBusqueda);
   const {
-    cambiarEstados,
     cambiarIdiomas,
     cambiarPrefacturables,
     emitirPrefactura,
-    estadoFacturacion,
     idIdiomaFacturacion,
-    idsEstado,
     idsIdioma,
     idsPrefacturable,
   } = useFiltrosFacturacion(() => setPaginaActual(1));
@@ -71,7 +70,6 @@ export default function GestionFacturacion() {
       busquedaConRetardo,
       emitirPrefactura,
       idIdiomaFacturacion,
-      estadoFacturacion,
     ],
     enabled: pestanaActiva === 'clientes',
     queryFn: () =>
@@ -80,7 +78,6 @@ export default function GestionFacturacion() {
         busqueda: busquedaConRetardo || undefined,
         emitirPrefactura,
         idIdiomaFacturacion,
-        estadoFacturacion,
       }),
   });
 
@@ -95,7 +92,7 @@ export default function GestionFacturacion() {
         ...columna,
         label: (
           <CustomEncabezadoFiltroTabla
-            titulo="Prefacturable"
+            titulo="Requiere prefactura"
             idMaster={TablaMaestraId.EMITIR_PREFACTURA}
             valores={idsPrefacturable}
             onChange={cambiarPrefacturables}
@@ -110,25 +107,10 @@ export default function GestionFacturacion() {
         ...columna,
         label: (
           <CustomEncabezadoFiltroTabla
-            titulo="Idioma"
+            titulo="Idioma de facturación"
             idMaster={TablaMaestraId.IDIOMA}
             valores={idsIdioma}
             onChange={cambiarIdiomas}
-            multiple={false}
-          />
-        ),
-      };
-    }
-
-    if (indice === 5) {
-      return {
-        ...columna,
-        label: (
-          <CustomEncabezadoFiltroTabla
-            titulo="Estado"
-            idMaster={TablaMaestraId.ESTADO_FACTURACION}
-            valores={idsEstado}
-            onChange={cambiarEstados}
             multiple={false}
           />
         ),
@@ -153,34 +135,17 @@ export default function GestionFacturacion() {
     }
 
     const rect = event.currentTarget.getBoundingClientRect();
-    const altoMenu = 92;
+    const altoMenu = 136;
     const espacioInferior = window.innerHeight - rect.bottom;
     const top = espacioInferior < altoMenu ? rect.top - altoMenu - 4 : rect.bottom + 4;
     setMenuDropdownStyle({ top, right: window.innerWidth - rect.right });
     setIdMenuActivo(facturacion.idFacturacion);
   };
 
-  const abrirDetalleFactura = async (facturacion: EntradaFacturacion, factura?: EntradaFacturaCliente | null) => {
-    setEstaCargandoModalFactura(true);
-    try {
-      const detalle = await facturacionService.obtenerDetalleFactura(
-        facturacion.idFacturacion,
-        facturacion.cliente,
-        factura,
-      );
-      setModalFactura({ modo: "detalle", detalle, productosIniciales: [] });
-    } catch {
-      return;
-    } finally {
-      setEstaCargandoModalFactura(false);
-    }
-  };
-
   const abrirDetalleFacturaListado = async (
     factura: EntradaListaFactura,
     abrirAnulacionInicial = false,
   ) => {
-    setEstaCargandoModalFactura(true);
     try {
       const detalle =
         await facturacionService.obtenerDetalleFacturaPorDocumento(
@@ -189,6 +154,7 @@ export default function GestionFacturacion() {
             ? ID_ESTADO_FACTURA_APROBADA
             : null,
           factura.estado,
+          factura.documentoAfectado !== null,
         );
       setModalFactura({
         modo: "detalle",
@@ -198,13 +164,10 @@ export default function GestionFacturacion() {
       });
     } catch {
       return;
-    } finally {
-      setEstaCargandoModalFactura(false);
     }
   };
 
   const abrirNotaCreditoDebito = async (factura: EntradaListaFactura) => {
-    setEstaCargandoModalFactura(true);
     try {
       const detalle = await facturacionService.obtenerDetalleFacturaPorDocumento(
         factura.idDocumentoElectronico,
@@ -218,18 +181,16 @@ export default function GestionFacturacion() {
       });
     } catch {
       return;
-    } finally {
-      setEstaCargandoModalFactura(false);
     }
   };
 
   const abrirEdicionFacturaListado = async (factura: EntradaListaFactura) => {
-    setEstaCargandoModalFactura(true);
     try {
       const detalle = await facturacionService.obtenerDetalleFacturaPorDocumento(
         factura.idDocumentoElectronico,
         null,
         factura.estado,
+        factura.documentoAfectado !== null,
       );
       setModalFactura({
         modo: detalle.esNotaCreditoDebito ? "editarNotaCreditoDebito" : "emitir",
@@ -238,13 +199,10 @@ export default function GestionFacturacion() {
       });
     } catch {
       return;
-    } finally {
-      setEstaCargandoModalFactura(false);
     }
   };
 
   const abrirEmisionFactura = async (facturacion: EntradaFacturacion, factura?: EntradaFacturaCliente | null) => {
-    setEstaCargandoModalFactura(true);
     try {
       const detalle = await facturacionService.obtenerDetalleFactura(
         facturacion.idFacturacion,
@@ -254,38 +212,6 @@ export default function GestionFacturacion() {
       setModalFactura({ modo: "emitir", detalle, productosIniciales: [] });
     } catch {
       return;
-    } finally {
-      setEstaCargandoModalFactura(false);
-    }
-  };
-
-  const abrirEmisionFacturaConPedido = async (
-    facturacion: EntradaFacturacion,
-    factura: EntradaFacturaCliente,
-  ) => {
-    setEstaCargandoModalFactura(true);
-    try {
-      const [detalle, producto] = await Promise.all([
-        facturacionService.obtenerDetalleFactura(
-          facturacion.idFacturacion,
-          facturacion.cliente,
-        ),
-        facturacionService.obtenerProductoFacturable(
-          facturacion.idFacturacion,
-          factura.idFactura,
-        ),
-      ]);
-
-      if (!producto) return;
-      setModalFactura({
-        modo: "emitir",
-        detalle,
-        productosIniciales: [producto],
-      });
-    } catch {
-      return;
-    } finally {
-      setEstaCargandoModalFactura(false);
     }
   };
 
@@ -312,14 +238,6 @@ export default function GestionFacturacion() {
       <td className="px-6 py-4 text-center text-sm font-medium text-slate-600">
         {facturacion.idioma}
       </td>
-      <td className="px-6 py-4 text-center">
-        <CustomChipEstado
-          colorTexto={facturacion.colorTexto}
-          colorFondo={facturacion.colorFondo}
-        >
-          {facturacion.estado}
-        </CustomChipEstado>
-      </td>
       <td className="px-6 py-4 text-right">
         <button
           type="button"
@@ -340,24 +258,46 @@ export default function GestionFacturacion() {
               <button
                 type="button"
                 onClick={() => {
-                  setClienteSeleccionado(facturacion);
-                  setIdMenuActivo(null);
-                }}
-                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
-              >
-                <Eye size={14} />
-                <span>Detalle de la facturación</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
                   abrirEmisionFactura(facturacion);
                   setIdMenuActivo(null);
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
               >
-                <FileText size={14} />
+                <FileText size={14} className="shrink-0" />
                 <span>Emitir Factura</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setClienteParaPrefactura(facturacion);
+                  setIdMenuActivo(null);
+                }}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                <FileSpreadsheet size={14} className="shrink-0" />
+                <span>Generar Prefactura</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setClienteParaGestionarLineas(facturacion);
+                  setIdMenuActivo(null);
+                }}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                <Layers size={14} className="shrink-0" />
+                <span>Gestionar Líneas Agrupadas</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setClienteParaAgruparPedidos(facturacion);
+                  setIdMenuActivo(null);
+                }}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                <Combine size={14} className="shrink-0" />
+                <span>Agrupar Pedidos</span>
               </button>
             </div>
           </>
@@ -440,18 +380,18 @@ export default function GestionFacturacion() {
         onPageChange={setPaginaActual}
         entityLabel="facturas"
       />
-      {clienteSeleccionado ? (
-        <CustomModalFacturasCliente
-          abierto={clienteSeleccionado !== null}
-          idCliente={clienteSeleccionado.idFacturacion}
-          cliente={clienteSeleccionado.cliente}
-          onCerrar={() => setClienteSeleccionado(null)}
-          onAgregarFactura={() => abrirEmisionFactura(clienteSeleccionado)}
-          onVerFactura={(factura) => abrirDetalleFactura(clienteSeleccionado, factura)}
-          onEditarFactura={(factura) => abrirEmisionFactura(clienteSeleccionado, factura)}
-          onEmitirFactura={(factura) =>
-            abrirEmisionFacturaConPedido(clienteSeleccionado, factura)}
-          cargandoAccion={estaCargandoModalFactura}
+      {clienteParaAgruparPedidos ? (
+        <CustomModalAgruparPedidosDragDrop
+          abierto={clienteParaAgruparPedidos !== null}
+          idCliente={clienteParaAgruparPedidos.idFacturacion}
+          onCerrar={() => setClienteParaAgruparPedidos(null)}
+        />
+      ) : null}
+      {clienteParaGestionarLineas ? (
+        <CustomModalGestionLineasAgrupadas
+          abierto={clienteParaGestionarLineas !== null}
+          idCliente={clienteParaGestionarLineas.idFacturacion}
+          onCerrar={() => setClienteParaGestionarLineas(null)}
         />
       ) : null}
         </>
@@ -467,6 +407,14 @@ export default function GestionFacturacion() {
         abrirAnulacionInicial={modalFactura?.abrirAnulacionInicial}
         onCerrar={() => setModalFactura(null)}
       />
+      {clienteParaPrefactura ? (
+        <CustomModalGenerarPrefactura
+          abierto={clienteParaPrefactura !== null}
+          idCliente={clienteParaPrefactura.idFacturacion}
+          cliente={clienteParaPrefactura.cliente}
+          onCerrar={() => setClienteParaPrefactura(null)}
+        />
+      ) : null}
     </div>
   );
 }

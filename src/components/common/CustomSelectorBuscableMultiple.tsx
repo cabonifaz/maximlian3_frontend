@@ -68,8 +68,13 @@ export function MultiCustomSelectorBuscable({
         seen.add(opt.num1);
         return opt.string1?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ?? false;
       })
-      .sort((a, b) => (a.string1 || "").localeCompare(b.string1 || ""));
-  }, [resolvedOptions, terminoBusqueda]);
+      .sort((a, b) => {
+        const seleccionadoA = value.includes(a.num1!);
+        const seleccionadoB = value.includes(b.num1!);
+        if (seleccionadoA !== seleccionadoB) return seleccionadoA ? -1 : 1;
+        return (a.string1 || "").localeCompare(b.string1 || "");
+      });
+  }, [resolvedOptions, terminoBusqueda, value]);
 
   const selectedOptions = useMemo(() => {
     if (!resolvedOptions) return [];

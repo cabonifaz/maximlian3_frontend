@@ -74,6 +74,7 @@ function ItemMenuAccion({
       variant='ghost'
       size='sm'
       className={`w-full px-3 ${activo ? 'bg-gray-100' : ''}`}
+      style={{ borderRadius: '0.5rem' }}
       onClick={onClick}
     >
       <span className={`flex w-full items-center gap-2 ${claseColorTexto}`}>
@@ -161,7 +162,7 @@ export function CustomMenuAccionesFactura({
           onClick={() => onAbrirSubmenuDescarga(factura)}
         />
         {submenuDescargaActivo ? (
-          <div className='absolute right-full top-0 mr-1 w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-xl'>
+          <div className='absolute right-full top-0 w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-xl'>
             <ItemMenuAccion
               icono={<FileText size={14} className={iconoClase} />}
               etiqueta='PDF'
@@ -207,7 +208,7 @@ export function CustomMenuAccionesFactura({
               onClick={() => onAbrirSubmenuOperaciones(factura)}
             />
             {submenuOperacionesActivo ? (
-              <div className='absolute right-full top-0 mr-1 w-52 rounded-xl border border-slate-200 bg-white p-1 shadow-xl'>
+              <div className='absolute right-full top-0 w-52 rounded-xl border border-slate-200 bg-white p-1 shadow-xl'>
                 {factura.documentoAfectado === null ? (
                   <ItemMenuAccion
                     icono={<FilePlus2 size={14} className={iconoClase} />}
@@ -245,7 +246,7 @@ export function CustomMenuAccionesFactura({
               onClick={() => onAbrirSubmenuEstado(factura)}
             />
             {submenuEstadoActivo ? (
-              <div className='absolute right-full top-0 mr-1 w-44 rounded-xl border border-slate-200 bg-white p-1 shadow-xl'>
+              <div className='absolute right-full top-0 w-44 rounded-xl border border-slate-200 bg-white p-1 shadow-xl'>
                 <ItemMenuAccion
                   icono={<ShieldAlert size={14} className={iconoClase} />}
                   etiqueta='Marcar como Anulado'

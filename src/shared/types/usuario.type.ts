@@ -61,3 +61,47 @@ export type UserListResponse = {
   totalRegistros: number;
   totalPaginas: number;
 };
+
+export type ParametrosListaCortaDashboardUsuario = {
+  idsRolFiltro?: number[];
+};
+
+export type EntradaUsuarioCortaDashboardApi = {
+  idUsuario: number;
+  nombres: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string | null;
+};
+
+export type UsuarioCortaDashboard = {
+  idUsuario: number;
+  nombreCompleto: string;
+};
+
+export type ParametrosResumenColaboradores = {
+  fchDesde?: string;
+  fchHasta?: string;
+  idColaborador?: number;
+  idRolAsignado?: number;
+  numPag: number;
+};
+
+export type EntradaResumenColaboradorApi = {
+  idColaborador: number;
+  nombreCompleto: string;
+  iniciales: string;
+  idRol: number;
+  descripcionRol: string;
+  cantidadOrdenes: number;
+  cantidadInformes: number;
+  cantidadTardios: number;
+  cantidadObservados: number;
+  cantidadConInformacionFinanciera: number;
+  porcentajeCumplimiento: number;
+};
+
+export type ResultadoResumenColaboradoresApi = {
+  lstUsuarios: EntradaResumenColaboradorApi[];
+  totalRegistros: number;
+  totalPaginas: number;
+};

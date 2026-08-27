@@ -1,80 +1,58 @@
-import { useEffect, useState } from "react";
-import { NumberTicker } from "@maximilian/components/common/shadcn/number-ticker";
-import type { EvolucionMensualFacturacionAnaliticaDashboard } from "@maximilian/shared/types/dashboard.type";
+import { CustomBarrasEvolucionDashboardGerente } from "./CustomBarrasEvolucionDashboardGerente";
+import { OPCIONES_GRANULARIDAD_FACTURACION_DASHBOARD } from "@maximilian/shared/constants/pages/Gerente/dashboard-tiempo.constants";
+import type {
+  EvolucionFacturacionAnaliticaDashboard,
+  GranularidadTiempoDashboard,
+  MetricaDesgloseFacturacionAnaliticaDashboard,
+} from "@maximilian/shared/types/dashboard.type";
 
 interface PropsCustomEvolucionFacturacionAnaliticaGerente {
-  evolucionMensual: EvolucionMensualFacturacionAnaliticaDashboard[];
+  evolucion: EvolucionFacturacionAnaliticaDashboard[];
   monedaIcono: string;
+  granularidad: GranularidadTiempoDashboard;
+  onCambiarGranularidad: (granularidad: GranularidadTiempoDashboard) => void;
+  metricaDesglose: MetricaDesgloseFacturacionAnaliticaDashboard;
 }
 
 export function CustomEvolucionFacturacionAnaliticaGerente({
-  evolucionMensual,
+  evolucion,
   monedaIcono,
+  granularidad,
+  onCambiarGranularidad,
+  metricaDesglose,
 }: PropsCustomEvolucionFacturacionAnaliticaGerente) {
-  const firmaEvolucion = evolucionMensual
-    .map((mes) => `${mes.mes}:${mes.montoFacturado}`)
-    .join("|");
+  const esMonto = metricaDesglose === "monto";
+  const datos = evolucion.map((punto) => ({
+    periodo: punto.periodo,
+    etiqueta: punto.etiqueta,
+    valor: esMonto ? punto.montoFacturado : punto.cantidadPedidos,
+  }));
 
   return (
     <section className="h-full rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h3 className="mb-5 text-sm font-bold text-slate-800">Evolución de facturación por mes</h3>
-
-      {evolucionMensual.length === 0 ? (
-        <p className="py-10 text-center text-xs italic text-slate-400">
-          No hay facturación en el período seleccionado.
-        </p>
-      ) : (
-        <BarrasEvolucionFacturacionAnaliticaGerente
-          key={firmaEvolucion}
-          evolucionMensual={evolucionMensual}
-          monedaIcono={monedaIcono}
-        />
-      )}
-    </section>
-  );
-}
-
-function BarrasEvolucionFacturacionAnaliticaGerente({
-  evolucionMensual,
-  monedaIcono,
-}: PropsCustomEvolucionFacturacionAnaliticaGerente) {
-  const montoMaximo = Math.max(1, ...evolucionMensual.map((mes) => mes.montoFacturado));
-  const [barrasCrecidas, setBarrasCrecidas] = useState(false);
-
-  useEffect(() => {
-    const temporizador = setTimeout(() => setBarrasCrecidas(true), 20);
-    return () => clearTimeout(temporizador);
-  }, []);
-
-  return (
-    <div className="flex h-40 items-end gap-3">
-      {evolucionMensual.map((mes, indice) => (
-        <div key={mes.mes} className="flex flex-1 flex-col items-center gap-1.5">
-          <span className="text-[9px] font-semibold text-slate-500">
-            {monedaIcono}
-            <NumberTicker
-              value={mes.montoFacturado}
-              decimalPlaces={0}
-              rigidez={260}
-              className="tracking-normal text-inherit"
-            />
-          </span>
-          <div className="flex h-28 w-full items-end overflow-hidden rounded-t-md bg-slate-100">
-            <div
-              className="w-full rounded-t-md bg-brand-wine transition-[height] duration-700 ease-out"
-              style={{
-                height: barrasCrecidas
-                  ? `${Math.max(4, (mes.montoFacturado / montoMaximo) * 100)}%`
-                  : "0%",
-                transitionDelay: `${indice * 60}ms`,
-              }}
-            />
-          </div>
-          <span className="text-[10px] font-semibold uppercase text-slate-400">
-            {mes.etiqueta}
-          </span>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-sm font-bold text-slate-800">
+          Evolución de {esMonto ? "facturación" : "pedidos"} por {granularidad === "dia" ? "día" : granularidad === "semana" ? "semana" : "mes"}
+        </h3>
+        <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+          {OPCIONES_GRANULARIDAD_FACTURACION_DASHBOARD.map((opcion) => (
+            <button
+              key={opcion.valor}
+              type="button"
+              onClick={() => onCambiarGranularidad(opcion.valor)}
+              className={`rounded-md px-2.5 py-1 text-[10px] font-semibold transition ${
+                granularidad === opcion.valor
+                  ? "bg-white text-brand-wine shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              {opcion.etiqueta}
+            </button>
+          ))}
         </div>
-      ))}
-    </div>
+      </div>
+
+      <CustomBarrasEvolucionDashboardGerente datos={datos} prefijo={esMonto ? monedaIcono : ""} />
+    </section>
   );
 }

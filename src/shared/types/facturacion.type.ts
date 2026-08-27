@@ -17,7 +17,6 @@ export interface ParametrosListaFacturacion {
   numPag?: number;
   emitirPrefactura?: number;
   idIdiomaFacturacion?: number;
-  estadoFacturacion?: number;
 }
 
 export interface EntradaFacturacion {
@@ -27,9 +26,6 @@ export interface EntradaFacturacion {
   totalPedidos: number;
   totalFacturados: number;
   idioma: string;
-  estado: string;
-  colorTexto: string;
-  colorFondo: string;
 }
 
 export interface RespuestaListaFacturacion {
@@ -110,9 +106,6 @@ export interface EntradaFacturacionApi {
   totalPedidos: number;
   pedidosFacturados: number;
   idIdiomaFacturacion: string;
-  estadoFacturacion: string;
-  colorTexto: string;
-  colorFondo: string;
 }
 
 export interface ResultadoListaFacturacionApi {
@@ -168,7 +161,7 @@ export interface RespuestaListaFacturasCliente {
 
 export interface EntradaProductoFactura {
   idProductoFactura: number;
-  idPedido: number;
+  idPedidoFacturaLinea: number;
   codigo: string;
   numeroLinea: number;
   idLineaDocumentoElectronico: number;
@@ -177,7 +170,7 @@ export interface EntradaProductoFactura {
   unidadMedidaDescripcion: string;
   cantidad: number;
   descripcion: string;
-  descuentoPorcentaje: number;
+  montoDescuento: number;
   valorUnitario: number;
   precioUnitario: number;
   porcentajeIgv: number;
@@ -229,49 +222,164 @@ export interface DetalleFactura {
   cuotas: EntradaCuotaFactura[];
 }
 
+export interface PedidoRelacionadoFacturaApi {
+  codigo: string;
+  numReferencia: string;
+  investigado: string;
+  tipoTramite: string;
+  pais: string;
+  valorUnitario: string;
+  descuento: string;
+}
+
+export interface ResultadoPedidosRelacionadosFacturaApi {
+  pedidos: PedidoRelacionadoFacturaApi[];
+}
+
 export interface EntradaProductoFacturable {
   idProductoFacturable: number;
   codigo: string;
+  numReferencia: string;
   investigado: string;
+  pais: string;
   aplicaPenalidad: boolean;
   tipo: "express" | "normal" | "super-flash";
   fecha: string;
   penalidad: number;
   precio: number;
   descuentoPorcentaje: number;
+  idMoneda: number;
+  moneda: string;
 }
 
-export interface ParametrosListaProductosFacturables {
+export interface ParametrosListarPedidosConGrupos {
   idCliente: number;
+  fchInicio: string;
+  fchFin: string;
   idTipoTramite?: number;
-  fechaInicio?: string;
-  fechaFin?: string;
-  idDocumentoElectronico?: number | null;
-  numPag: number;
+  idsPais?: number[];
+  idMoneda?: number;
+  finalizadoEnFecha?: boolean;
 }
 
-export interface EntradaProductoFacturableApi {
+export interface EntradaPedidoConGrupoApi {
+  groupId: number;
   idPedido: number;
   codigo: string;
-  investigado: string;
+  numReferencia: string;
+  investigado: string | null;
+  idPais: number;
+  pais: string;
   aplicaPenalidad: "Si" | "No";
+  idTipoTramite: number;
   tipoTramite: string;
+  fecha: string;
+  idTarifario: number;
+  penalidad: number;
+  precio: number;
+  idMoneda: number;
+  moneda: string;
+}
+
+export interface EntradaGrupoRecomendadoApi {
+  groupId: number;
+  codigo: string;
+  descripcion: string;
+  precio: number;
+  descuento: number;
+  cantidad: number;
+}
+
+export interface ResultadoListarPedidosConGruposApi {
+  pedidos: EntradaPedidoConGrupoApi[];
+  grupos: EntradaGrupoRecomendadoApi[];
+}
+
+export interface PedidoConGrupo {
+  idPedido: number;
+  idGrupoRecomendado: number;
+  codigo: string;
+  numReferencia: string;
+  investigado: string;
+  idPais: number;
+  pais: string;
+  aplicaPenalidad: boolean;
+  idTipoTramite: number;
+  tipoTramite: string;
+  tipo: "express" | "normal" | "super-flash";
   fecha: string;
   penalidad: number;
   precio: number;
-  descuentoPorcentaje: number;
+  idMoneda: number;
+  moneda: string;
 }
 
-export interface ResultadoListaProductosFacturablesApi {
-  totalRegistros: number;
-  totalPaginas: number;
-  pedidos: EntradaProductoFacturableApi[];
+export interface GrupoRecomendado {
+  idGrupoRecomendado: number;
+  codigo: string;
+  descripcion: string;
+  precio: number;
+  descuento: number;
+  cantidad: number;
 }
 
-export interface RespuestaListaProductosFacturables {
-  productos: EntradaProductoFacturable[];
-  totalRegistros: number;
-  totalPaginas: number;
+export interface RespuestaListarPedidosConGrupos {
+  pedidos: PedidoConGrupo[];
+  grupos: GrupoRecomendado[];
+}
+
+export interface GrupoLineaLoteRequest {
+  idsPedido: number[];
+  codigo: string;
+  descripcion: string;
+  valorUnitario: number;
+  descuento: number;
+}
+
+export interface CrearLineasLoteRequest {
+  idCliente: number;
+  grupos: GrupoLineaLoteRequest[];
+}
+
+export interface EditarLineaAgrupadaFacturaRequest {
+  codigo: string;
+  descripcion: string;
+  valorUnitario: number;
+  descuento: number;
+}
+
+export interface EntradaLineaAgrupadaFacturaApi {
+  idPedidoFacturaLinea: number;
+  codigo: string;
+  descripcion: string;
+  cantidad: number;
+  valorUnitario: number;
+  descuento: number;
+}
+
+export interface ParametrosListaLineasPendientes {
+  idCliente: number;
+  anio?: number;
+  mes?: number;
+  idDocumentoElectronico?: number;
+  idMoneda?: number;
+}
+
+export interface EntradaLineaAgrupadaPendiente {
+  idPedidoFacturaLinea: number;
+  codigo: string;
+  descripcion: string;
+  idTipoTramite: number;
+  tipoTramite: string;
+  idMoneda: number;
+  moneda: string;
+  cantidad: number;
+  valorUnitario: number;
+  descuento: number;
+}
+
+export interface ResultadoListaLineasPendientesApi {
+  lineas: EntradaLineaAgrupadaPendiente[];
 }
 
 export interface CuotaGuardarBorradorFactura {
@@ -288,12 +396,9 @@ export interface DocumentoAfectadoGuardarBorradorFactura {
 }
 
 export interface LineaGuardarBorradorFactura {
-  idPedido: number;
+  idPedidoFacturaLinea: number;
   productoSunatCodigo: string | null;
   idUnidadMedidaMaestro: number;
-  cantidad: number;
-  descripcion: string;
-  montoDescuento: number;
   idAfectacionIgvMaestro: number;
   porcentajeIgv: number;
 }
@@ -340,8 +445,8 @@ export interface CabeceraFacturaApi {
 export interface LineaFacturaApi {
   idLineaDocumentoElectronico: number;
   numeroLinea: number;
-  idPedido: number;
-  productoCodigo: string;
+  idPedidoFacturaLinea: number;
+  productoCodigo: string | null;
   productoSunatCodigo: string | null;
   descripcion: string;
   unidadMedidaCodigo: string;
@@ -389,8 +494,12 @@ export interface ResultadoObtenerFacturaApi {
   camposExtra: CampoExtraFacturaApi[];
 }
 
-export interface LineaGuardarCambiosFactura
-  extends LineaGuardarBorradorFactura {
+export interface LineaGuardarCambiosFactura {
+  idPedidoFacturaLinea: number;
+  productoSunatCodigo: string | null;
+  idUnidadMedidaMaestro: number;
+  idAfectacionIgvMaestro: number;
+  porcentajeIgv: number;
   numeroLinea: number;
   idLineaDocumentoElectronico: number;
 }
@@ -447,6 +556,58 @@ export interface ParametrosResumenFacturacion {
   fechaHasta?: string;
 }
 
+export interface IndicadoresResumenAnaliticoFacturacionApi {
+  cantidadPedidosPendientes: number;
+  montoPendienteFacturar: number;
+  cantidadPedidosFacturados: number;
+  totalFacturado: number;
+  totalNotasCredito: number;
+  totalNotasDebito: number;
+}
+
+export interface GrupoTramiteResumenAnaliticoFacturacionApi {
+  idTipoTramite: number;
+  tipoTramite: string;
+  cantidadPedidos: number;
+  montoFacturado: number;
+}
+
+export interface GrupoPaisResumenAnaliticoFacturacionApi {
+  idPais: number;
+  pais: string;
+  cantidadPedidos: number;
+  montoFacturado: number;
+}
+
+export interface GrupoEstadoResumenAnaliticoFacturacionApi {
+  idEstadoMaestro: number;
+  estado: string;
+  cantidadFacturas: number;
+  montoFacturado: number;
+}
+
+export interface ResultadoResumenAnaliticoFacturacionApi {
+  indicadores: IndicadoresResumenAnaliticoFacturacionApi;
+  desglosePorTramite: GrupoTramiteResumenAnaliticoFacturacionApi[];
+  desglosePorPais: GrupoPaisResumenAnaliticoFacturacionApi[];
+  desglosePorEstado: GrupoEstadoResumenAnaliticoFacturacionApi[];
+}
+
+export interface PuntoEvolucionAnaliticaFacturacionApi {
+  periodo: string;
+  etiqueta: string;
+  cantidadPedidos: number;
+  montoFacturado: number;
+}
+
+export interface ClienteResumenGlobalFacturacionApi {
+  idCliente: number;
+  cliente: string;
+  cantidadPedidosFacturados: number;
+  totalFacturado: number;
+  montoPendienteFacturar: number;
+}
+
 export interface ResumenFacturacion {
   fechaDesde: string;
   fechaHasta: string;
@@ -471,6 +632,23 @@ export interface GuardarBorradorFacturaRequest {
 }
 
 export interface RespuestaExportarLibroVentas {
+  archivo: Blob;
+  nombreArchivo: string;
+}
+
+export interface AnioMesPrefactura {
+  anio: number;
+  mes: number;
+}
+
+export interface FiltroExportarPrefactura {
+  idCliente: number;
+  fchInicio?: string;
+  fchFin?: string;
+  meses?: AnioMesPrefactura[];
+}
+
+export interface RespuestaExportarPrefactura {
   archivo: Blob;
   nombreArchivo: string;
 }

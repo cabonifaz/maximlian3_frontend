@@ -7,11 +7,10 @@ import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra
 
 export const COLUMNAS_FACTURACION = [
   { label: "Cliente" },
-  { label: "Prefacturable", className: "text-center" },
+  { label: "Requiere prefactura", className: "text-center" },
   { label: "Total Pedidos", className: "text-center" },
   { label: "Total Facturados", className: "text-center" },
   { label: "Idioma", className: "text-center" },
-  { label: "Estado", className: "text-center" },
   { label: "", className: "text-right w-16" },
 ];
 

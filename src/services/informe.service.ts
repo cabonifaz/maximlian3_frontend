@@ -37,6 +37,10 @@ import type {
   DatosInvestigacionAnalista,
   EstadoInvestigacionAnalista,
 } from "@maximilian/shared/types/investigacion.type";
+import type {
+  EvolucionInformesColaboradoresDashboard,
+  ParametrosEvolucionInformesColaboradoresDashboard,
+} from "@maximilian/shared/types/dashboard.type";
 import {
   normalizarMontoDecimales,
   normalizarMontoDosDecimales,
@@ -346,6 +350,18 @@ function normalizarRespuestaLista(resultado: unknown): InformeListResponse {
     vencido: obtenerNumero(registro.vencido, registro.Vencido),
     totalRegistros: obtenerNumero(registro.totalRegistros, registro.TotalRegistros, listaOriginal.length),
     totalPaginas: obtenerNumero(registro.totalPaginas, registro.TotalPaginas, 1),
+  };
+}
+
+function normalizarPuntoEvolucionInformesColaboradores(
+  punto: unknown,
+): EvolucionInformesColaboradoresDashboard {
+  const registro = obtenerRegistro(punto);
+
+  return {
+    periodo: obtenerTexto(registro.periodo, registro.Periodo),
+    etiqueta: obtenerTexto(registro.etiqueta, registro.Etiqueta),
+    cantidadInformes: obtenerNumero(registro.cantidadInformes, registro.CantidadInformes),
   };
 }
 
@@ -1407,6 +1423,28 @@ export const informeService = {
     }
 
     return normalizarRespuestaLista(data.result);
+  },
+
+  obtenerEvolucionColaboradores: async (
+    parametros: ParametrosEvolucionInformesColaboradoresDashboard,
+    senal?: AbortSignal,
+  ): Promise<EvolucionInformesColaboradoresDashboard[]> => {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_INFORME.resumen, {
+      params: {
+        idColaborador: parametros.idColaborador,
+        rol: parametros.rol,
+        fechaDesde: parametros.fechaDesde,
+        fechaHasta: parametros.fechaHasta,
+        granularidad: parametros.granularidad,
+      },
+      signal: senal,
+    });
+
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.resumen)) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return obtenerLista(data.result).map(normalizarPuntoEvolucionInformesColaboradores);
   },
 
   listarHistorialPorCompania: async ({

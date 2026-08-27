@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, CircleX, FilePenLine, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { AlertTriangle, CircleX, ClipboardList, FilePenLine, FileSpreadsheet, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
@@ -7,7 +7,9 @@ import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSele
 import { CustomModalCuotaFactura } from "@maximilian/components/coordinador/CustomModalCuotaFactura";
 import { CustomListaCamposExtraFactura } from "@maximilian/components/coordinador/CustomListaCamposExtraFactura";
 import { CustomModalAnularFactura } from "@maximilian/components/coordinador/CustomModalAnularFactura";
-import { CustomModalProductosFactura } from "@maximilian/components/coordinador/CustomModalProductosFactura";
+import { CustomModalGenerarPrefactura } from "@maximilian/components/coordinador/CustomModalGenerarPrefactura";
+import { CustomModalLineasPendientesFactura } from "@maximilian/components/coordinador/CustomModalLineasPendientesFactura";
+import { CustomModalPedidosRelacionadosFactura } from "@maximilian/components/coordinador/CustomModalPedidosRelacionadosFactura";
 import { useDocumentosAfectadosPorAnulacion } from "@maximilian/hooks/useDocumentosAfectadosPorAnulacion";
 import {
   useFormularioFactura,
@@ -17,6 +19,7 @@ import { usePlazoAnulacionFactura } from "@maximilian/hooks/usePlazoAnulacionFac
 import type {
   DetalleFactura,
   EntradaCuotaFactura,
+  EntradaLineaAgrupadaPendiente,
   EntradaProductoFacturable,
 } from "@maximilian/shared/types/facturacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
@@ -64,17 +67,22 @@ export function CustomModalFactura({
   const [confirmacionSunatAbierta, setConfirmacionSunatAbierta] = useState(false);
   const [confirmacionAnulacionAbierta, setConfirmacionAnulacionAbierta] =
     useState(abrirAnulacionInicial);
+  const [prefacturaAbierta, setPrefacturaAbierta] = useState(false);
+  const [pedidosRelacionadosAbierto, setPedidosRelacionadosAbierto] = useState(false);
   const {
     afectacionIgvPredeterminadaDescripcion,
     afectacionesIgv,
+    agregarLineaAgrupada,
     agregarLineaNota,
-    agregarProductos: agregarProductosFormulario,
     anularFactura,
     anularFacturaMutation,
     actualizarCampoFactura,
     actualizarCamposExtra,
+    cancelarEdicionCodigo,
+    cancelarEdicionDescripcion,
     cancelarEdicionDescuento,
     cancelarEdicionIgv,
+    cancelarEdicionValorUnitario,
     agregarCodigoPersonalizadoNota,
     cargandoClienteNotaCreditoDebito,
     codigosProducto,
@@ -85,18 +93,28 @@ export function CustomModalFactura({
     envioIntentado,
     erroresFormulario,
     esNotaCreditoDebito,
+    guardandoLineaAgrupada,
     guardarFactura,
     guardarFacturaMutation,
+    guardarEdicionCodigo,
+    guardarEdicionDescripcion,
     guardarEdicionDescuento,
     guardarEdicionIgv,
+    guardarEdicionValorUnitario,
     guardarCuota,
     actualizarEstadoCuota,
     actualizarEstadoCuotaMutation,
     hayEdicionProductoPendiente,
+    idProductoCodigoEdicion,
+    idProductoDescripcionEdicion,
     idProductoDescuentoEdicion,
     idProductoIgvEdicion,
+    idProductoValorUnitarioEdicion,
+    iniciarEdicionCodigo,
+    iniciarEdicionDescripcion,
     iniciarEdicionDescuento,
     iniciarEdicionIgv,
+    iniciarEdicionValorUnitario,
     obtenerOpcionesCodigoDisponibles,
     obtenerPrecioUnitario,
     obtenerTotalProducto,
@@ -163,8 +181,18 @@ export function CustomModalFactura({
   const puedeAnularFactura =
     detalle.codigoEstadoFacturacion === ID_ESTADO_FACTURA_APROBADA;
 
-  const agregarProductos = (productos: EntradaProductoFacturable[]) => {
-    agregarProductosFormulario(productos);
+  const confirmarSeleccionLineasPendientes = (
+    paraAgregar: EntradaLineaAgrupadaPendiente[],
+    paraQuitar: EntradaLineaAgrupadaPendiente[],
+  ) => {
+    paraAgregar.forEach((linea) => agregarLineaAgrupada(linea));
+    paraQuitar.forEach((linea) => {
+      const producto = detalle.productos.find(
+        (productoActual) =>
+          productoActual.idPedidoFacturaLinea === linea.idPedidoFacturaLinea,
+      );
+      if (producto) quitarProducto(producto);
+    });
     setModalProductosAbierto(false);
   };
 
@@ -389,9 +417,26 @@ export function CustomModalFactura({
                     variant="secondary"
                     size="sm"
                     onClick={abrirProductosFacturables}
+                    disabled={!valoresMaestros.idMonedaMaestro}
+                    title={
+                      valoresMaestros.idMonedaMaestro
+                        ? undefined
+                        : "Selecciona primero la moneda"
+                    }
                   >
                     <Plus size={14} />
                     Agregar productos
+                  </CustomButton>
+                ) : null}
+                {puedeAnularFactura && soloLectura ? (
+                  <CustomButton
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setPedidosRelacionadosAbierto(true)}
+                  >
+                    <ClipboardList size={14} />
+                    Pedidos relacionados
                   </CustomButton>
                 ) : null}
               </div>
@@ -400,12 +445,10 @@ export function CustomModalFactura({
                   <thead className="bg-slate-50 text-xs font-bold text-slate-500">
                     <tr>
                       <th className="px-4 py-3 text-center">Cantidad</th>
-                      {esNotaCreditoDebito ? (
-                        <th className="w-40 min-w-40 max-w-40 px-4 py-3 text-center">Código</th>
-                      ) : null}
+                      <th className="w-40 min-w-40 max-w-40 px-4 py-3 text-center">Código</th>
                       <th className="px-4 py-3 text-center">Descripción</th>
                       <th className="w-48 min-w-48 max-w-48 px-4 py-3 text-center">Unidad de medida</th>
-                      <th className="px-4 py-3 text-center">Dscto. %</th>
+                      <th className="px-4 py-3 text-center">Dscto.</th>
                       <th className="px-4 py-3 text-center">Valor U.</th>
                       <th className="px-4 py-3 text-center">Precio U.</th>
                       <th className="w-48 min-w-48 max-w-48 px-4 py-3 text-center">Afectacion IGV</th>
@@ -429,37 +472,92 @@ export function CustomModalFactura({
                       return (
                       <tr key={producto.idProductoFactura}>
                         <td className="px-4 py-3 text-center text-slate-600">{producto.cantidad}</td>
-                        {esNotaCreditoDebito ? (
-                          <td className="w-48 min-w-48 max-w-48 px-4 py-3">
-                            {soloLectura ? (
-                              <span className="text-slate-600">{producto.codigo}</span>
-                            ) : (
-                              <CustomSelectorBuscable
-                                options={obtenerOpcionesCodigoDisponibles(producto.idProductoFactura)}
-                                value={
-                                  opcionesCodigoNota.find(
-                                    (opcion) => opcion.string1 === codigosProducto?.[claveProducto],
-                                  )?.num1 ?? undefined
-                                }
-                                displayValue={codigosProducto?.[claveProducto] || producto.codigo}
-                                onChange={(valor) =>
-                                  seleccionarCodigoProducto(producto.idProductoFactura, valor)}
-                                onAddNew={(texto) =>
-                                  agregarCodigoPersonalizadoNota(producto.idProductoFactura, texto)}
-                                placeholder="Seleccione código"
-                                required
-                                obtenerEtiquetaOpcion={(opcion) => opcion.string1 ?? ""}
-                                error={errorCodigoProducto?.message}
-                              />
-                            )}
-                          </td>
-                        ) : null}
+                        <td className="w-48 min-w-48 max-w-48 px-4 py-3">
+                          {soloLectura ? (
+                            <span className="text-slate-600">{producto.codigo}</span>
+                          ) : esNotaCreditoDebito ? (
+                            <CustomSelectorBuscable
+                              options={obtenerOpcionesCodigoDisponibles(producto.idProductoFactura)}
+                              value={
+                                opcionesCodigoNota.find(
+                                  (opcion) => opcion.string1 === codigosProducto?.[claveProducto],
+                                )?.num1 ?? undefined
+                              }
+                              displayValue={codigosProducto?.[claveProducto] || producto.codigo}
+                              onChange={(valor) =>
+                                seleccionarCodigoProducto(producto.idProductoFactura, valor)}
+                              onAddNew={(texto) =>
+                                agregarCodigoPersonalizadoNota(producto.idProductoFactura, texto)}
+                              placeholder="Seleccione código"
+                              required
+                              obtenerEtiquetaOpcion={(opcion) => opcion.string1 ?? ""}
+                              error={errorCodigoProducto?.message}
+                            />
+                          ) : idProductoCodigoEdicion !== producto.idProductoFactura ? (
+                            <div className="flex items-center gap-1">
+                              <span className="truncate text-slate-600">{producto.codigo}</span>
+                              <CustomButton
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 shrink-0"
+                                onClick={() => iniciarEdicionCodigo(producto)}
+                                disabled={hayEdicionProductoPendiente}
+                                aria-label={`Editar código de ${producto.descripcion}`}
+                              >
+                                <Pencil size={14} />
+                              </CustomButton>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="flex items-center gap-1">
+                                <input
+                                  {...registrarDescripcion(
+                                    `codigosProducto.${producto.idProductoFactura}`,
+                                  )}
+                                  autoFocus
+                                  aria-label={`Código de ${producto.descripcion}`}
+                                  className={`w-full rounded-md border px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-brand-wine ${
+                                    errorCodigoProducto ? "border-red-500" : "border-slate-200"
+                                  }`}
+                                />
+                                <CustomButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 shrink-0 text-emerald-600"
+                                  onClick={() => void guardarEdicionCodigo(producto)}
+                                  loading={guardandoLineaAgrupada}
+                                  loadingText=""
+                                  aria-label={`Guardar código de ${producto.descripcion}`}
+                                >
+                                  <Save size={15} />
+                                </CustomButton>
+                                <CustomButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 shrink-0 text-red-500"
+                                  onClick={() => cancelarEdicionCodigo(producto)}
+                                  aria-label={`Cancelar código de ${producto.descripcion}`}
+                                >
+                                  <X size={15} />
+                                </CustomButton>
+                              </div>
+                              {errorCodigoProducto ? (
+                                <p className="mt-1 text-left text-[10px] text-red-500">
+                                  {errorCodigoProducto.message}
+                                </p>
+                              ) : null}
+                            </div>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-left">
                           {soloLectura ? (
                             <span className="font-medium text-slate-700">
                               {producto.descripcion}
                             </span>
-                          ) : (
+                          ) : esNotaCreditoDebito ? (
                             <>
                               <input
                                 {...registrarDescripcion(
@@ -476,6 +574,65 @@ export function CustomModalFactura({
                                 </p>
                               ) : null}
                             </>
+                          ) : idProductoDescripcionEdicion !== producto.idProductoFactura ? (
+                            <div className="flex items-center gap-1">
+                              <span className="truncate font-medium text-slate-700">
+                                {producto.descripcion}
+                              </span>
+                              <CustomButton
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 shrink-0"
+                                onClick={() => iniciarEdicionDescripcion(producto)}
+                                disabled={hayEdicionProductoPendiente}
+                                aria-label={`Editar descripción de ${producto.descripcion}`}
+                              >
+                                <Pencil size={14} />
+                              </CustomButton>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="flex items-center gap-1">
+                                <input
+                                  {...registrarDescripcion(
+                                    `descripciones.${producto.idProductoFactura}`,
+                                  )}
+                                  autoFocus
+                                  aria-label={`Descripción de ${producto.descripcion}`}
+                                  className={`w-full rounded-md border px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-brand-wine ${
+                                    errorDescripcion ? "border-red-500" : "border-slate-200"
+                                  }`}
+                                />
+                                <CustomButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 shrink-0 text-emerald-600"
+                                  onClick={() => void guardarEdicionDescripcion(producto)}
+                                  loading={guardandoLineaAgrupada}
+                                  loadingText=""
+                                  aria-label={`Guardar descripción de ${producto.descripcion}`}
+                                >
+                                  <Save size={15} />
+                                </CustomButton>
+                                <CustomButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 shrink-0 text-red-500"
+                                  onClick={() => cancelarEdicionDescripcion(producto)}
+                                  aria-label={`Cancelar descripción de ${producto.descripcion}`}
+                                >
+                                  <X size={15} />
+                                </CustomButton>
+                              </div>
+                              {errorDescripcion ? (
+                                <p className="mt-1 text-left text-[10px] text-red-500">
+                                  {errorDescripcion.message}
+                                </p>
+                              ) : null}
+                            </div>
                           )}
                         </td>
                         <td className="w-48 min-w-48 max-w-48 px-4 py-3">
@@ -507,10 +664,10 @@ export function CustomModalFactura({
                         </td>
                         <td className="px-4 py-3 text-center text-slate-600">
                           {soloLectura ? (
-                            `${producto.descuentoPorcentaje}%`
+                            formatearMontoConSimbolo(producto.montoDescuento, simboloMoneda)
                           ) : idProductoDescuentoEdicion !== producto.idProductoFactura ? (
                             <div className="flex items-center justify-center gap-1">
-                              <span>{producto.descuentoPorcentaje}%</span>
+                              <span>{formatearMontoConSimbolo(producto.montoDescuento, simboloMoneda)}</span>
                               <CustomButton
                                 type="button"
                                 variant="ghost"
@@ -526,22 +683,21 @@ export function CustomModalFactura({
                           ) : (
                             <div className="mx-auto w-40">
                               <div className="flex items-center justify-center gap-1">
-                                <div className="relative w-20">
+                                <div className="relative w-24">
                                   <input
                                     {...registrarDescuento(`descuentos.${producto.idProductoFactura}`, {
                                       valueAsNumber: true,
                                     })}
                                     type="number"
                                     min="0"
-                                    max="100"
                                     step="0.01"
                                     autoFocus
                                     aria-label={`Descuento de ${producto.descripcion}`}
-                                    className={`w-full rounded-md border py-1.5 pl-2 pr-6 text-right text-sm outline-none focus:border-brand-wine ${
+                                    className={`w-full rounded-md border py-1.5 pl-2 pr-8 text-right text-sm outline-none focus:border-brand-wine ${
                                       errorDescuento ? "border-red-500" : "border-slate-200"
                                     }`}
                                   />
-                                  <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">%</span>
+                                  <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">{simboloMoneda}</span>
                                 </div>
                                 <CustomButton
                                   type="button"
@@ -549,6 +705,8 @@ export function CustomModalFactura({
                                   size="icon"
                                   className="h-7 w-7 text-emerald-600"
                                   onClick={() => void guardarEdicionDescuento(producto)}
+                                  loading={guardandoLineaAgrupada}
+                                  loadingText=""
                                   aria-label={`Guardar descuento de ${producto.descripcion}`}
                                 >
                                   <Save size={15} />
@@ -594,8 +752,69 @@ export function CustomModalFactura({
                                 </p>
                               ) : null}
                             </>
-                          ) : (
+                          ) : soloLectura ? (
                             formatearMontoConSimbolo(producto.valorUnitario, simboloMoneda)
+                          ) : idProductoValorUnitarioEdicion !== producto.idProductoFactura ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <span>{formatearMontoConSimbolo(producto.valorUnitario, simboloMoneda)}</span>
+                              <CustomButton
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => iniciarEdicionValorUnitario(producto)}
+                                disabled={hayEdicionProductoPendiente}
+                                aria-label={`Editar valor unitario de ${producto.descripcion}`}
+                              >
+                                <Pencil size={14} />
+                              </CustomButton>
+                            </div>
+                          ) : (
+                            <div className="mx-auto w-40">
+                              <div className="flex items-center justify-center gap-1">
+                                <input
+                                  {...registrarValorUnitario(
+                                    `valoresUnitarios.${producto.idProductoFactura}`,
+                                    { valueAsNumber: true },
+                                  )}
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  autoFocus
+                                  aria-label={`Valor unitario de ${producto.descripcion}`}
+                                  className={`w-24 rounded-md border px-2 py-1.5 text-right text-sm outline-none focus:border-brand-wine ${
+                                    errorValorUnitario ? "border-red-500" : "border-slate-200"
+                                  }`}
+                                />
+                                <CustomButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-emerald-600"
+                                  onClick={() => void guardarEdicionValorUnitario(producto)}
+                                  loading={guardandoLineaAgrupada}
+                                  loadingText=""
+                                  aria-label={`Guardar valor unitario de ${producto.descripcion}`}
+                                >
+                                  <Save size={15} />
+                                </CustomButton>
+                                <CustomButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-red-500"
+                                  onClick={() => cancelarEdicionValorUnitario(producto)}
+                                  aria-label={`Cancelar valor unitario de ${producto.descripcion}`}
+                                >
+                                  <X size={15} />
+                                </CustomButton>
+                              </div>
+                              {errorValorUnitario ? (
+                                <p className="mt-1 text-left text-[10px] text-red-500">
+                                  {errorValorUnitario.message}
+                                </p>
+                              ) : null}
+                            </div>
                           )}
                         </td>
                         <td className="px-4 py-3 text-center text-slate-600">
@@ -858,6 +1077,17 @@ export function CustomModalFactura({
                 </CustomButton>
               ) : (
                 <>
+                  {modo === "emitir" && !esNotaCreditoDebito ? (
+                    <CustomButton
+                      type="button"
+                      variant="secondary"
+                      size="compact"
+                      onClick={() => setPrefacturaAbierta(true)}
+                    >
+                      <FileSpreadsheet size={14} />
+                      Generar Prefactura
+                    </CustomButton>
+                  ) : null}
                   <CustomButton
                     type="submit"
                     variant="secondary"
@@ -896,15 +1126,16 @@ export function CustomModalFactura({
         </form>
       </div>
 
-      <CustomModalProductosFactura
+      <CustomModalLineasPendientesFactura
         abierto={modalProductosAbierto}
         idCliente={detalle.idCliente}
         idDocumentoElectronico={detalle.idDocumentoElectronico}
-        idsProductosAgregados={detalle.productos.map(
-          (producto) => producto.idPedido,
-        )}
+        idMonedaFactura={valoresMaestros.idMonedaMaestro || undefined}
+        idsLineasAgregadas={detalle.productos
+          .map((producto) => producto.idPedidoFacturaLinea)
+          .filter((id): id is number => Boolean(id))}
         onCerrar={() => setModalProductosAbierto(false)}
-        onConfirmar={agregarProductos}
+        onConfirmar={confirmarSeleccionLineasPendientes}
       />
       <CustomModalCuotaFactura
         abierto={configuracionModalCuota !== null}
@@ -916,6 +1147,17 @@ export function CustomModalFactura({
         guardando={actualizarEstadoCuotaMutation.isPending}
         onCerrar={() => setConfiguracionModalCuota(null)}
         onGuardar={guardarCuotaFactura}
+      />
+      <CustomModalGenerarPrefactura
+        abierto={prefacturaAbierta}
+        idCliente={detalle.idCliente}
+        cliente={detalle.cliente}
+        onCerrar={() => setPrefacturaAbierta(false)}
+      />
+      <CustomModalPedidosRelacionadosFactura
+        abierto={pedidosRelacionadosAbierto}
+        idDocumentoElectronico={detalle.idDocumentoElectronico}
+        onCerrar={() => setPedidosRelacionadosAbierto(false)}
       />
       <CustomModalAnularFactura
         abierto={confirmacionAnulacionAbierta}

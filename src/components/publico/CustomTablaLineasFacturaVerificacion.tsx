@@ -1,3 +1,6 @@
+import { ClipboardList } from "lucide-react";
+import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { ESTADO_CODIGO_VERIFICACION_FACTURA_ACEPTADO } from "@maximilian/shared/constants/pages/Publico/verificacion-factura.constants";
 import type {
   CabeceraVerificacionFacturaApi,
   LineaVerificacionFacturaApi,
@@ -7,6 +10,8 @@ import { formatearMontoConSimbolo } from "@maximilian/shared/utils/formato-monto
 interface PropsCustomTablaLineasFacturaVerificacion {
   cabecera: CabeceraVerificacionFacturaApi;
   lineas: LineaVerificacionFacturaApi[];
+  onVerDetallePedidos: () => void;
+  onVerDetalleLinea: (linea: LineaVerificacionFacturaApi) => void;
 }
 
 function FilaTotal({
@@ -45,14 +50,26 @@ function FilaTotal({
 export function CustomTablaLineasFacturaVerificacion({
   cabecera,
   lineas,
+  onVerDetallePedidos,
+  onVerDetalleLinea,
 }: PropsCustomTablaLineasFacturaVerificacion) {
   const simbolo = cabecera.monedaCodigo;
+  const puedeVerDetallePedidos =
+    cabecera.estadoCodigo === ESTADO_CODIGO_VERIFICACION_FACTURA_ACEPTADO;
 
   return (
     <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div>
-        <h2 className="text-sm font-bold text-brand-black">Productos y servicios</h2>
-        <p className="mt-0.5 text-xs text-slate-400">Detalle de conceptos incluidos en el comprobante.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-bold text-brand-black">Productos y servicios</h2>
+          <p className="mt-0.5 text-xs text-slate-400">Detalle de conceptos incluidos en el comprobante.</p>
+        </div>
+        {puedeVerDetallePedidos ? (
+          <CustomButton variant="secondary" size="sm" onClick={onVerDetallePedidos}>
+            <ClipboardList size={14} />
+            Ver detalle de pedidos
+          </CustomButton>
+        ) : null}
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-slate-200">
@@ -72,7 +89,16 @@ export function CustomTablaLineasFacturaVerificacion({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {lineas.map((linea) => (
-              <tr key={linea.numeroLinea}>
+              <tr
+                key={linea.numeroLinea}
+                onClick={puedeVerDetallePedidos ? () => onVerDetalleLinea(linea) : undefined}
+                className={
+                  puedeVerDetallePedidos
+                    ? "cursor-pointer transition-colors hover:bg-slate-50"
+                    : ""
+                }
+                title={puedeVerDetallePedidos ? "Ver detalle de pedidos de este producto" : undefined}
+              >
                 <td className="px-4 py-3 text-center text-slate-600">{linea.cantidad}</td>
                 <td className="px-4 py-3 text-left text-slate-600">
                   {linea.productoCodigo}

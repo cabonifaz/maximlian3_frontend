@@ -55,55 +55,37 @@ export interface PropsTarjetaDashboard {
   estaCargando?: boolean;
 }
 
-export type EstadoFacturaAnaliticaDashboard =
-  | "borrador"
-  | "aprobada"
-  | "rechazada"
-  | "aceptada"
-  | "anulada"
-  | "dada-de-baja";
+export type GranularidadTiempoDashboard = "dia" | "semana" | "mes" | "ano";
 
-export type TramiteFacturacionAnaliticaDashboard =
-  | "normal"
-  | "expres"
-  | "super-flash";
-
-export type TipoComprobanteFacturacionAnaliticaDashboard =
-  | "Factura"
-  | "Boleta"
-  | "Nota de Crédito"
-  | "Nota de Débito";
-
-export interface DetalleFacturacionAnaliticaDashboard {
-  id: number;
-  idCliente: number;
-  cliente: string;
-  fechaEmision: string;
-  pais: string;
-  tramite: TramiteFacturacionAnaliticaDashboard;
-  tipoComprobante: TipoComprobanteFacturacionAnaliticaDashboard;
-  estado: EstadoFacturaAnaliticaDashboard;
-  cantidadPedidos: number;
-  montoFacturado: number;
-  monedaIcono: string;
-}
-
-export interface ClientePendienteFacturacionAnaliticaDashboard {
-  idCliente: number;
-  cliente: string;
-  montoPendienteFacturar: number;
-  cantidadPedidosPendientes: number;
-  monedaIcono: string;
-}
+export type MetricaDesgloseFacturacionAnaliticaDashboard = "monto" | "pedidos";
 
 export interface FiltrosFacturacionAnaliticaDashboard {
   fechaDesde?: Date;
   fechaHasta?: Date;
   idCliente?: number;
-  estado?: EstadoFacturaAnaliticaDashboard;
-  pais?: string;
-  tramite?: TramiteFacturacionAnaliticaDashboard;
-  tipoComprobante?: TipoComprobanteFacturacionAnaliticaDashboard;
+  idPais?: number;
+  idTipoTramite?: number;
+  idEstadoBucket?: number;
+  idTipoDocumentoMaestro?: number;
+}
+
+export interface ParametrosResumenAnaliticoFacturacionDashboard {
+  fechaDesde?: string;
+  fechaHasta?: string;
+  idCliente?: number;
+  idPais?: number;
+  idTipoTramite?: number;
+  idEstadoBucket?: number;
+  idTipoDocumentoMaestro?: number;
+}
+
+export interface ParametrosEvolucionAnaliticaFacturacionDashboard {
+  fechaDesde?: string;
+  fechaHasta?: string;
+  idCliente?: number;
+  idPais?: number;
+  idTipoTramite?: number;
+  granularidad: number;
 }
 
 export interface IndicadoresFacturacionAnaliticaDashboard {
@@ -117,29 +99,88 @@ export interface IndicadoresFacturacionAnaliticaDashboard {
 }
 
 export interface GrupoFacturacionAnaliticaDashboard {
-  clave: string;
+  id: number;
   etiqueta: string;
   cantidadPedidos: number;
   montoFacturado: number;
 }
 
 export interface GrupoEstadoFacturacionAnaliticaDashboard {
-  estado: EstadoFacturaAnaliticaDashboard;
+  idEstadoMaestro: number;
+  estado: string;
   cantidadFacturas: number;
   montoFacturado: number;
 }
 
-export interface EvolucionMensualFacturacionAnaliticaDashboard {
-  mes: string;
+export interface ResumenAnaliticoFacturacionDashboard {
+  indicadores: IndicadoresFacturacionAnaliticaDashboard;
+  desglosePorTramite: GrupoFacturacionAnaliticaDashboard[];
+  desglosePorPais: GrupoFacturacionAnaliticaDashboard[];
+  desglosePorEstado: GrupoEstadoFacturacionAnaliticaDashboard[];
+}
+
+export interface EvolucionFacturacionAnaliticaDashboard {
+  periodo: string;
   etiqueta: string;
   montoFacturado: number;
+  cantidadPedidos: number;
 }
 
 export interface ResumenClienteFacturacionAnaliticaDashboard {
   idCliente: number;
   cliente: string;
   totalFacturado: number;
-  cantidadPedidos: number;
+  cantidadPedidosFacturados: number;
   montoPendienteFacturar: number;
   monedaIcono: string;
+}
+
+export type RolColaboradorDesempenoDashboard = "Analista" | "Traductor";
+
+export interface FiltrosDesempenoColaboradoresDashboard {
+  fechaDesde?: Date;
+  fechaHasta?: Date;
+  idColaborador?: number;
+  idRol?: number;
+}
+
+export interface EvolucionInformesColaboradoresDashboard {
+  periodo: string;
+  etiqueta: string;
+  cantidadInformes: number;
+}
+
+export interface ParametrosEvolucionInformesColaboradoresDashboard {
+  idColaborador?: number;
+  rol?: number;
+  fechaDesde?: string;
+  fechaHasta?: string;
+  granularidad: number;
+}
+
+export interface ResumenColaboradorDesempenoDashboard {
+  idColaborador: number;
+  colaborador: string;
+  rol: RolColaboradorDesempenoDashboard;
+  iniciales: string;
+  cantidadOrdenes: number;
+  porcentajeCumplimiento: number;
+  cantidadInformes: number;
+  cantidadTardios: number;
+  cantidadObservados: number;
+  cantidadConInformacionFinanciera: number;
+}
+
+export interface ParametrosResumenColaboradoresDesempenoDashboard {
+  fechaDesde?: string;
+  fechaHasta?: string;
+  idColaborador?: number;
+  idRolAsignado?: number;
+  numPag: number;
+}
+
+export interface RespuestaResumenColaboradoresDesempenoDashboard {
+  resumenColaboradores: ResumenColaboradorDesempenoDashboard[];
+  totalRegistros: number;
+  totalPaginas: number;
 }

@@ -9,7 +9,7 @@ import {
   CLAVE_CONSULTA_RESUMEN_PEDIDOS_DASHBOARD,
   CLAVE_CONSULTA_RESUMEN_USUARIOS_DASHBOARD,
 } from "@maximilian/shared/constants/pages/Gerente/dashboard-gerente.constants";
-import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
+import { formatearFechaIsoLocal, obtenerPrimerDiaMesActual } from "@maximilian/shared/utils/fecha.util";
 
 export function useResumenClientesDashboard() {
   const consultaResumenClientes = useQuery({
@@ -55,11 +55,8 @@ export function useResumenFacturacionDashboard() {
 
 export function useCumplimientoEntregasDashboard() {
   const [busqueda, setBusqueda] = useState("");
-  const [fechaInicio, setFechaInicio] = useState<Date | undefined>(() => {
-    const fechaActual = new Date();
-    return new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1);
-  });
-  const [fechaFin, setFechaFin] = useState<Date>();
+  const [fechaInicio, setFechaInicio] = useState<Date | undefined>(obtenerPrimerDiaMesActual);
+  const [fechaFin, setFechaFin] = useState<Date | undefined>(() => new Date());
   const [idsEficiencia, setIdsEficiencia] = useState<number[]>([]);
   const [pagina, setPagina] = useState(1);
   const busquedaConRetardo = useRetardo(busqueda);
