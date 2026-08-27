@@ -107,6 +107,7 @@ export interface GetPedidoResponse {
   nombreCliente: string;
   idTipoPersona: number;
   idCompania: number;
+  idEmpresaAtencion: number;
   numeroDocumentoInvestigado: string;
   investigarRazonSocialNombres: string;
   idTarifario: number;
@@ -132,6 +133,7 @@ export interface UpdatePedidoRequest {
   numeroDocumento: string;
   nombreCliente: string;
   idTipoPersona: number;
+  idEmpresaAtencion: number;
   numeroDocumentoInvestigado: string;
   investigarRazonSocialNombres: string;
   idCompania: number;

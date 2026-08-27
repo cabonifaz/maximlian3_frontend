@@ -4,11 +4,13 @@ import {
   Plus,
   MoreHorizontal,
   UserMinus,
+  UserCheck,
   Edit,
 } from "lucide-react";
 import { ModalAgregarCliente } from "@maximilian/components/coordinador/ModalAgregarCliente";
 import { ModalDetalleCliente } from "@maximilian/components/coordinador/ModalDetalleCliente";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
+import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
@@ -25,6 +27,7 @@ export default function GestionClientes() {
     cambiarPaginaCliente,
     cerrarDetalleCliente,
     clienteAEliminar,
+    clienteAReactivar,
     clientesData,
     crearCliente,
     crearClienteMutation,
@@ -40,9 +43,13 @@ export default function GestionClientes() {
     idClienteSeleccionado,
     idMenuActivo,
     paises,
+    reactivarCliente,
+    reactivarClienteMutation,
     recargarClientes,
     seleccionarClienteAEliminar,
+    seleccionarClienteAReactivar,
     setClienteAEliminar,
+    setClienteAReactivar,
     setEstaAbiertoModalCrear,
     setIdMenuActivo,
     abrirDetalleCliente,
@@ -154,15 +161,27 @@ export default function GestionClientes() {
                 <Edit size={14} />
                 <span>Modificar Cliente</span>
               </button>
-              <button
-                onClick={() => {
-                  seleccionarClienteAEliminar(client);
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
-              >
-                <UserMinus size={14} />
-                <span>Desactivar cliente</span>
-              </button>
+              {client.estado?.toLowerCase() === "inactivo" ? (
+                <button
+                  onClick={() => {
+                    seleccionarClienteAReactivar(client);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <UserCheck size={14} />
+                  <span>Reactivar cliente</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    seleccionarClienteAEliminar(client);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <UserMinus size={14} />
+                  <span>Desactivar cliente</span>
+                </button>
+              )}
             </div>
           </>
         )}
@@ -239,6 +258,21 @@ export default function GestionClientes() {
         <p><span className="font-bold">Nombre:</span> {clienteAEliminar?.nombre ?? "-"}</p>
         <p><span className="font-bold">Correo:</span> {clienteAEliminar?.correo ?? "-"}</p>
       </CustomModalConfirmacionEliminacion>
+
+      <CustomModalConfirmacionAccion
+        isOpen={clienteAReactivar !== null}
+        onClose={() => setClienteAReactivar(null)}
+        onConfirm={reactivarCliente}
+        title="Reactivar cliente"
+        descripcion="¿Estás seguro de que deseas reactivar este cliente?"
+        varianteConfirmar="primary"
+        textoConfirmar="Reactivar"
+        textoCargandoConfirmar="Reactivando..."
+        isSubmitting={reactivarClienteMutation.isPending}
+      >
+        <p><span className="font-bold">Nombre:</span> {clienteAReactivar?.nombre ?? "-"}</p>
+        <p><span className="font-bold">Correo:</span> {clienteAReactivar?.correo ?? "-"}</p>
+      </CustomModalConfirmacionAccion>
     </div>
   );
 }

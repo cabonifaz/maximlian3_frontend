@@ -69,9 +69,17 @@ export function CustomEstadoFacturasAnaliticaGerente({
 
             return (
               <div key={grupo.idEstadoMaestro} className="flex items-center justify-between gap-3">
-                <CustomChipEstado colorTexto={color} colorFondo={`${color}1a`}>
-                  {grupo.estado}
-                </CustomChipEstado>
+                <div className="w-32 shrink-0">
+                  <CustomChipEstado
+                    colorTexto={color}
+                    colorFondo={`${color}1a`}
+                    forma="rectangular"
+                    className="max-w-full whitespace-normal break-words text-left leading-snug"
+                    title={grupo.estado}
+                  >
+                    {grupo.estado}
+                  </CustomChipEstado>
+                </div>
                 <div className="flex flex-1 items-center gap-2">
                   <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
                     <div

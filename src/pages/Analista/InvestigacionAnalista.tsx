@@ -1411,14 +1411,6 @@ function PantallaInvestigacionAnalista({
     );
   };
 
-  const procesarCiudadPendienteDespuesPais = () => {
-    const ciudadPendiente = ciudadExtraccionPendienteRef.current;
-    if (!ciudadPendiente) return;
-
-    asignarCiudadExtraccionPendiente(null, false);
-    procesarCiudadExtraida(ciudadPendiente.valor, ciudadPendiente);
-  };
-
   const normalizarValorExtraido = (ruta: string[], valor: unknown): ValorExtraidoNormalizado => {
     const rutaTexto = ruta.join(".");
     const valorTexto = valor == null ? "" : String(valor).trim();
@@ -1538,61 +1530,6 @@ function PantallaInvestigacionAnalista({
       return {
         valor: valorTexto,
         alAplicar: () => setIdTipoPersonaSeleccionado(undefined),
-      };
-    }
-
-    if (rutaTexto === "identificacion.pais") {
-      const opcionPorId = obtenerOpcionTablaMaestraPorId(opcionesPais, valor);
-      if (opcionPorId?.string1) {
-        const nombrePais = opcionPorId.string1;
-        paisExtraccionRef.current = {
-          idPais: opcionPorId.num1 ?? undefined,
-          pais: nombrePais,
-          aplicado: normalizarTextoExtraccion(datosInvestigacion.identificacion.pais) === normalizarTextoExtraccion(nombrePais),
-        };
-        return {
-          valor: nombrePais,
-          alAplicar: () => {
-            setIdPaisSeleccionado(opcionPorId.num1 ?? undefined);
-            paisExtraccionRef.current = {
-              idPais: opcionPorId.num1 ?? undefined,
-              pais: nombrePais,
-              aplicado: true,
-            };
-            procesarCiudadPendienteDespuesPais();
-          },
-        };
-      }
-
-      const opcionPorTexto = obtenerOpcionTablaMaestraPorTexto(opcionesPais, valor);
-      if (opcionPorTexto?.string1) {
-        const nombrePais = opcionPorTexto.string1;
-        paisExtraccionRef.current = {
-          idPais: opcionPorTexto.num1 ?? undefined,
-          pais: nombrePais,
-          aplicado: normalizarTextoExtraccion(datosInvestigacion.identificacion.pais) === normalizarTextoExtraccion(nombrePais),
-        };
-        return {
-          valor: nombrePais,
-          alAplicar: () => {
-            setIdPaisSeleccionado(opcionPorTexto.num1 ?? undefined);
-            paisExtraccionRef.current = {
-              idPais: opcionPorTexto.num1 ?? undefined,
-              pais: nombrePais,
-              aplicado: true,
-            };
-            procesarCiudadPendienteDespuesPais();
-          },
-        };
-      }
-
-      return {
-        valor: valorTexto,
-        alAplicar: () => {
-          setIdPaisSeleccionado(undefined);
-          paisExtraccionRef.current = { aplicado: false };
-          asignarCiudadExtraccionPendiente(null, false);
-        },
       };
     }
 
@@ -1807,6 +1744,10 @@ function PantallaInvestigacionAnalista({
 
     if (rutaBase.join(".") === "identificacion.ciudadEstadoProvincia") {
       procesarCiudadExtraida(seccionExtraida);
+      return;
+    }
+
+    if (rutaBase.join(".") === "identificacion.pais") {
       return;
     }
 
@@ -3231,7 +3172,7 @@ function PantallaInvestigacionAnalista({
         }}
         optional
         mostrarTextoOpcionalEnLabel={false}
-        disabled={esSoloLectura}
+        disabled
       />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Tipo de Identificación Fiscal"
@@ -3997,12 +3938,12 @@ function PantallaInvestigacionAnalista({
             <div>
               <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Al Contado</p>
               <CampoInvestigacionAnalista etiqueta="Ventas al Contado (%)" valor={datosInvestigacion.operacionPrincipal.ventasContadoPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasContadoPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("ventasContadoPorcentaje", "ventasCreditoPorcentaje", valor)} />
-              <CampoInvestigacionAnalista className="mt-5" etiqueta="Detalle Ventas al Contado" valor={datosInvestigacion.operacionPrincipal.ventasContadoDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasContadoDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasContadoDetalle", valor)} />
+              <AreaInvestigacionAnalista className="mt-5" etiqueta="Detalle Ventas al Contado" valor={datosInvestigacion.operacionPrincipal.ventasContadoDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasContadoDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasContadoDetalle", valor)} />
             </div>
             <div className="md:border-l md:border-slate-200 md:pl-6">
               <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">A Crédito</p>
               <CampoInvestigacionAnalista etiqueta="Ventas a Crédito (%)" valor={datosInvestigacion.operacionPrincipal.ventasCreditoPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasCreditoPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("ventasCreditoPorcentaje", "ventasContadoPorcentaje", valor)} />
-              <CampoInvestigacionAnalista className="mt-5" etiqueta="Detalle Ventas a Crédito" valor={datosInvestigacion.operacionPrincipal.ventasCreditoDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasCreditoDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasCreditoDetalle", valor)} />
+              <AreaInvestigacionAnalista className="mt-5" etiqueta="Detalle Ventas a Crédito" valor={datosInvestigacion.operacionPrincipal.ventasCreditoDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasCreditoDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasCreditoDetalle", valor)} />
               <SelectorMaestroConAltaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Tiempo de Crédito"
@@ -4022,12 +3963,12 @@ function PantallaInvestigacionAnalista({
             <div>
               <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Ventas Nacionales</p>
               <CampoInvestigacionAnalista etiqueta="(%) Ventas Nacionales" valor={datosInvestigacion.operacionPrincipal.territorioVentasPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.territorioVentasPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("territorioVentasPorcentaje", "ventasExtranjeroPorcentaje", valor)} />
-              <CampoInvestigacionAnalista className="mt-5" etiqueta="Detalle Ventas Nacionales" valor={datosInvestigacion.operacionPrincipal.territorioVentasDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.territorioVentasDetalle")} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasDetalle", valor)} />
+              <AreaInvestigacionAnalista className="mt-5" etiqueta="Detalle Ventas Nacionales" valor={datosInvestigacion.operacionPrincipal.territorioVentasDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.territorioVentasDetalle")} onChange={(valor) => actualizarOperacionPrincipal("territorioVentasDetalle", valor)} />
             </div>
             <div>
               <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Ventas en el Extranjero</p>
               <CampoInvestigacionAnalista etiqueta="(%) Ventas en el Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasExtranjeroPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("ventasExtranjeroPorcentaje", "territorioVentasPorcentaje", valor)} />
-              <CampoInvestigacionAnalista className="mt-5" etiqueta="Detalle Ventas Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasExtranjeroDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasExtranjeroDetalle", valor)} />
+              <AreaInvestigacionAnalista className="mt-5" etiqueta="Detalle Ventas Extranjero" valor={datosInvestigacion.operacionPrincipal.ventasExtranjeroDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.ventasExtranjeroDetalle")} onChange={(valor) => actualizarOperacionPrincipal("ventasExtranjeroDetalle", valor)} />
             </div>
           </div>
         </div>
@@ -4035,18 +3976,18 @@ function PantallaInvestigacionAnalista({
           <p className="mb-4 border-b border-slate-100 pb-3 text-xs font-bold uppercase tracking-widest text-slate-700">Compras Nacionales</p>
           <div className="mb-5 grid gap-5 md:grid-cols-2">
             <CampoInvestigacionAnalista etiqueta="(%) Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasNacionalesPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("comprasNacionalesPorcentaje", "comprasExtranjeroPorcentaje", valor)} />
-            <CampoInvestigacionAnalista etiqueta="Detalle Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasNacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasNacionalesDetalle", valor)} />
+            <AreaInvestigacionAnalista etiqueta="Detalle Compras Nacionales" valor={datosInvestigacion.operacionPrincipal.comprasNacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasNacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasNacionalesDetalle", valor)} />
           </div>
           <div className="grid gap-x-6 gap-y-5 border-t border-slate-200 pt-5 md:grid-cols-2">
             <div>
               <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Al Contado Nacionales</p>
               <CampoInvestigacionAnalista etiqueta="Compras al Contado (%)" marcador="Ej. 20%" valor={datosInvestigacion.operacionPrincipal.comprasContadoNacionalesPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasContadoNacionalesPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("comprasContadoNacionalesPorcentaje", "comprasCreditoNacionalesPorcentaje", valor)} />
-              <CampoInvestigacionAnalista className="mt-5" etiqueta="Detalle Compras al Contado" marcador="Describa cómo se realizan las compras al contado nacionales" valor={datosInvestigacion.operacionPrincipal.comprasContadoNacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasContadoNacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasContadoNacionalesDetalle", valor)} />
+              <AreaInvestigacionAnalista className="mt-5" etiqueta="Detalle Compras al Contado" marcador="Describa cómo se realizan las compras al contado nacionales" valor={datosInvestigacion.operacionPrincipal.comprasContadoNacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasContadoNacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasContadoNacionalesDetalle", valor)} />
             </div>
             <div className="md:border-l md:border-slate-200 md:pl-6">
               <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">A Crédito Nacionales</p>
               <CampoInvestigacionAnalista etiqueta="Compras a Crédito (%)" marcador="Ej. 80%" valor={datosInvestigacion.operacionPrincipal.comprasCreditoNacionalesPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasCreditoNacionalesPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("comprasCreditoNacionalesPorcentaje", "comprasContadoNacionalesPorcentaje", valor)} />
-              <CampoInvestigacionAnalista className="mt-5" etiqueta="Detalle Compras a Crédito" marcador="Describa cómo se realizan las compras a crédito nacionales" valor={datosInvestigacion.operacionPrincipal.comprasCreditoNacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasCreditoNacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasCreditoNacionalesDetalle", valor)} />
+              <AreaInvestigacionAnalista className="mt-5" etiqueta="Detalle Compras a Crédito" marcador="Describa cómo se realizan las compras a crédito nacionales" valor={datosInvestigacion.operacionPrincipal.comprasCreditoNacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasCreditoNacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasCreditoNacionalesDetalle", valor)} />
               <SelectorMaestroConAltaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Tiempo de Crédito"
@@ -4067,18 +4008,18 @@ function PantallaInvestigacionAnalista({
           <p className="mb-4 border-b border-slate-100 pb-3 text-xs font-bold uppercase tracking-widest text-slate-700">Compras en el Extranjero</p>
           <div className="mb-5 grid gap-5 md:grid-cols-2">
             <CampoInvestigacionAnalista etiqueta="(%) Compras en el Extranjero" valor={datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasExtranjeroPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("comprasExtranjeroPorcentaje", "comprasNacionalesPorcentaje", valor)} />
-            <CampoInvestigacionAnalista etiqueta="Detalle Compras Extranjero" valor={datosInvestigacion.operacionPrincipal.comprasExtranjeroDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasExtranjeroDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasExtranjeroDetalle", valor)} />
+            <AreaInvestigacionAnalista etiqueta="Detalle Compras Extranjero" valor={datosInvestigacion.operacionPrincipal.comprasExtranjeroDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasExtranjeroDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasExtranjeroDetalle", valor)} />
           </div>
           <div className="grid gap-x-6 gap-y-5 border-t border-slate-200 pt-5 md:grid-cols-2">
             <div>
               <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Al Contado Extranjero</p>
               <CampoInvestigacionAnalista etiqueta="Compras al Contado (%)" marcador="Ej. 20%" valor={datosInvestigacion.operacionPrincipal.comprasContadoInternacionalesPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasContadoInternacionalesPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("comprasContadoInternacionalesPorcentaje", "comprasCreditoInternacionalesPorcentaje", valor)} />
-              <CampoInvestigacionAnalista className="mt-5" etiqueta="Detalle Compras al Contado" marcador="Describa cómo se realizan las compras al contado en el extranjero" valor={datosInvestigacion.operacionPrincipal.comprasContadoInternacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasContadoInternacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasContadoInternacionalesDetalle", valor)} />
+              <AreaInvestigacionAnalista className="mt-5" etiqueta="Detalle Compras al Contado" marcador="Describa cómo se realizan las compras al contado en el extranjero" valor={datosInvestigacion.operacionPrincipal.comprasContadoInternacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasContadoInternacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasContadoInternacionalesDetalle", valor)} />
             </div>
             <div className="md:border-l md:border-slate-200 md:pl-6">
               <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">A Crédito Extranjero</p>
               <CampoInvestigacionAnalista etiqueta="Compras a Crédito (%)" marcador="Ej. 80%" valor={datosInvestigacion.operacionPrincipal.comprasCreditoInternacionalesPorcentaje} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasCreditoInternacionalesPorcentaje")} onChange={(valor) => actualizarPorcentajesComplementarios("comprasCreditoInternacionalesPorcentaje", "comprasContadoInternacionalesPorcentaje", valor)} />
-              <CampoInvestigacionAnalista className="mt-5" etiqueta="Detalle Compras a Crédito" marcador="Describa cómo se realizan las compras a crédito en el extranjero" valor={datosInvestigacion.operacionPrincipal.comprasCreditoInternacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasCreditoInternacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasCreditoInternacionalesDetalle", valor)} />
+              <AreaInvestigacionAnalista className="mt-5" etiqueta="Detalle Compras a Crédito" marcador="Describa cómo se realizan las compras a crédito en el extranjero" valor={datosInvestigacion.operacionPrincipal.comprasCreditoInternacionalesDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comprasCreditoInternacionalesDetalle")} onChange={(valor) => actualizarOperacionPrincipal("comprasCreditoInternacionalesDetalle", valor)} />
               <SelectorMaestroConAltaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Tiempo de Crédito"
@@ -4099,7 +4040,7 @@ function PantallaInvestigacionAnalista({
           <p className="mb-4 border-b border-slate-100 pb-3 text-xs font-bold uppercase tracking-widest text-slate-700">Empleados</p>
           <div className="grid gap-5 md:grid-cols-2">
             <CampoInvestigacionAnalista etiqueta="N. de Empleados" valor={datosInvestigacion.operacionPrincipal.numeroEmpleados} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.numeroEmpleados")} onChange={(valor) => actualizarOperacionPrincipal("numeroEmpleados", valor)} />
-            <CampoInvestigacionAnalista etiqueta="Detalle Empleados" valor={datosInvestigacion.operacionPrincipal.numeroEmpleadosDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.numeroEmpleadosDetalle")} onChange={(valor) => actualizarOperacionPrincipal("numeroEmpleadosDetalle", valor)} />
+            <AreaInvestigacionAnalista etiqueta="Detalle Empleados" valor={datosInvestigacion.operacionPrincipal.numeroEmpleadosDetalle} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.numeroEmpleadosDetalle")} onChange={(valor) => actualizarOperacionPrincipal("numeroEmpleadosDetalle", valor)} />
           </div>
         </div>
         <AreaInvestigacionAnalista etiqueta="Comentarios sobre las Operaciones" valor={datosInvestigacion.operacionPrincipal.comentariosOperaciones} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comentariosOperaciones")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("comentariosOperaciones", valor)} />

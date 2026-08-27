@@ -11,6 +11,7 @@ import type {
 import type { ClientListEntry } from "@maximilian/shared/types/cliente.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { construirPayloadCrearCliente } from "@maximilian/shared/utils/gestion-clientes.util";
+import { ESTADO_CLIENTE_ACCION } from "@maximilian/shared/constants/pages/Coordinador/gestion-clientes.constants";
 
 interface ParametrosCrearCliente {
   datosCliente: DatosFormularioInformacionCliente;
@@ -34,6 +35,7 @@ export function useGestionClientes() {
   const [idClienteSeleccionado, setIdClienteSeleccionado] = useState<number | null>(null);
   const [idMenuActivo, setIdMenuActivo] = useState<number | null>(null);
   const [clienteAEliminar, setClienteAEliminar] = useState<ClientListEntry | null>(null);
+  const [clienteAReactivar, setClienteAReactivar] = useState<ClientListEntry | null>(null);
   const [filtroPais, setFiltroPais] = useState<number | undefined>(undefined);
   const [filtroEstado, setFiltroEstado] = useState<number | undefined>(undefined);
 
@@ -84,12 +86,24 @@ export function useGestionClientes() {
   });
 
   const eliminarClienteMutation = useMutation({
-    mutationFn: (idCliente: number) => servicioCliente.eliminate({ idCliente }),
+    mutationFn: (idCliente: number) =>
+      servicioCliente.activarDesactivar({ idCliente, idEstado: ESTADO_CLIENTE_ACCION.DESACTIVAR }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
     },
     onError: (error: Error) => {
       console.error("Error al desactivar cliente:", error.message);
+    },
+  });
+
+  const reactivarClienteMutation = useMutation({
+    mutationFn: (idCliente: number) =>
+      servicioCliente.activarDesactivar({ idCliente, idEstado: ESTADO_CLIENTE_ACCION.ACTIVAR }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    },
+    onError: (error: Error) => {
+      console.error("Error al reactivar cliente:", error.message);
     },
   });
 
@@ -106,6 +120,12 @@ export function useGestionClientes() {
     if (!clienteAEliminar) return;
     eliminarClienteMutation.mutate(clienteAEliminar.idCliente);
     setClienteAEliminar(null);
+  };
+
+  const reactivarCliente = () => {
+    if (!clienteAReactivar) return;
+    reactivarClienteMutation.mutate(clienteAReactivar.idCliente);
+    setClienteAReactivar(null);
   };
 
   const cambiarPaginaCliente = (pagina: number) => {
@@ -138,6 +158,11 @@ export function useGestionClientes() {
     setIdMenuActivo(null);
   };
 
+  const seleccionarClienteAReactivar = (cliente: ClientListEntry) => {
+    setClienteAReactivar(cliente);
+    setIdMenuActivo(null);
+  };
+
   return {
     abrirDetalleCliente,
     cambiarBusqueda,
@@ -146,6 +171,7 @@ export function useGestionClientes() {
     cambiarPaginaCliente,
     cerrarDetalleCliente,
     clienteAEliminar,
+    clienteAReactivar,
     clientesData,
     crearCliente,
     crearClienteMutation,
@@ -162,9 +188,13 @@ export function useGestionClientes() {
     idMenuActivo,
     paginaActual,
     paises,
+    reactivarCliente,
+    reactivarClienteMutation,
     recargarClientes,
     seleccionarClienteAEliminar,
+    seleccionarClienteAReactivar,
     setClienteAEliminar,
+    setClienteAReactivar,
     setEstaAbiertoModalCrear,
     setIdMenuActivo,
     terminoBusqueda,

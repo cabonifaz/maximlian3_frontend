@@ -31,7 +31,6 @@ import {
 } from "@maximilian/shared/utils/tabla-maestra.util";
 import {
   ID_ESTADO_FACTURA_APROBADA,
-  ID_FORMA_PAGO_CONTADO,
   ID_FORMA_PAGO_CREDITO,
   PLAZO_MAXIMO_DIAS_ANULACION_FACTURA,
 } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
@@ -69,6 +68,7 @@ export function CustomModalFactura({
     useState(abrirAnulacionInicial);
   const [prefacturaAbierta, setPrefacturaAbierta] = useState(false);
   const [pedidosRelacionadosAbierto, setPedidosRelacionadosAbierto] = useState(false);
+  const [monedaPendiente, setMonedaPendiente] = useState<number | null>(null);
   const {
     afectacionIgvPredeterminadaDescripcion,
     afectacionesIgv,
@@ -126,6 +126,7 @@ export function CustomModalFactura({
     requiereSeleccionProducto,
     quitarCuota,
     quitarProducto,
+    quitarTodosLosProductos,
     registrarDescripcion,
     registrarDescuento,
     registrarPorcentajeIgv,
@@ -145,6 +146,7 @@ export function CustomModalFactura({
     simboloSoles,
     totalFactura,
     unidadesMedida,
+    validarMonedaSeleccionada,
     valoresMaestros,
   } = useFormularioFactura(factura, modo, onCerrar, productosIniciales);
   const { puedeAnular: puedeAnularDentroDePlazo } = usePlazoAnulacionFactura(
@@ -211,8 +213,28 @@ export function CustomModalFactura({
     setConfiguracionModalCuota(null);
   };
 
-  const abrirProductosFacturables = () => {
+  const abrirProductosFacturables = async () => {
+    if (!valoresMaestros.idMonedaMaestro) {
+      await validarMonedaSeleccionada();
+      return;
+    }
     setModalProductosAbierto(true);
+  };
+
+  const manejarSeleccionMoneda = (valor: number) => {
+    if (valor === valoresMaestros.idMonedaMaestro) return;
+    if (detalle.productos.length > 0) {
+      setMonedaPendiente(valor);
+      return;
+    }
+    seleccionarMoneda(valor);
+  };
+
+  const confirmarCambioMoneda = () => {
+    if (monedaPendiente === null) return;
+    quitarTodosLosProductos();
+    seleccionarMoneda(monedaPendiente);
+    setMonedaPendiente(null);
   };
 
   return (
@@ -262,9 +284,7 @@ export function CustomModalFactura({
               <CampoFactura
                 etiqueta="Cliente"
                 valor={detalle.cliente}
-                soloLectura={
-                  soloLectura || detalle.idDocumentoElectronico !== null
-                }
+                soloLectura
                 onChange={(valor) => actualizarCampoFactura("cliente", valor)}
               />
               <CampoFactura
@@ -307,7 +327,7 @@ export function CustomModalFactura({
                 required
                 options={opcionesMoneda}
                 value={valoresMaestros.idMonedaMaestro || undefined}
-                onChange={seleccionarMoneda}
+                onChange={manejarSeleccionMoneda}
                 obtenerEtiquetaOpcion={obtenerEtiquetaPrincipalSecundaria}
                 displayValue={detalle.monedaDescripcion}
                 disabled={soloLectura || esNotaCreditoDebito}
@@ -416,13 +436,7 @@ export function CustomModalFactura({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    onClick={abrirProductosFacturables}
-                    disabled={!valoresMaestros.idMonedaMaestro}
-                    title={
-                      valoresMaestros.idMonedaMaestro
-                        ? undefined
-                        : "Selecciona primero la moneda"
-                    }
+                    onClick={() => void abrirProductosFacturables()}
                   >
                     <Plus size={14} />
                     Agregar productos
@@ -946,7 +960,7 @@ export function CustomModalFactura({
               </div>
             </section>
 
-            {!esNotaCreditoDebito && valoresMaestros.idFormaPago !== ID_FORMA_PAGO_CONTADO ? (
+            {!esNotaCreditoDebito && valoresMaestros.idFormaPago === ID_FORMA_PAGO_CREDITO ? (
             <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
@@ -1148,6 +1162,19 @@ export function CustomModalFactura({
         onCerrar={() => setConfiguracionModalCuota(null)}
         onGuardar={guardarCuotaFactura}
       />
+      <CustomModalConfirmacionAccion
+        isOpen={monedaPendiente !== null}
+        onClose={() => setMonedaPendiente(null)}
+        onConfirm={confirmarCambioMoneda}
+        title="Cambiar moneda"
+        descripcion="Al cambiar la moneda se eliminarán los productos ya agregados y deberás volver a seleccionarlos."
+        textoConfirmar="Cambiar moneda"
+        varianteConfirmar="primary"
+        anchoMaximoClassName="max-w-sm"
+        zIndexClassName="z-[95]"
+      >
+        <p>Se eliminarán {detalle.productos.length} producto(s) ya agregado(s).</p>
+      </CustomModalConfirmacionAccion>
       <CustomModalGenerarPrefactura
         abierto={prefacturaAbierta}
         idCliente={detalle.idCliente}

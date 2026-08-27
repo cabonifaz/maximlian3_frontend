@@ -2451,14 +2451,6 @@ function PantallaInvestigacionAnalista({
     );
   };
 
-  const procesarCiudadPendienteDespuesPais = () => {
-    const ciudadPendiente = ciudadExtraccionPendienteRef.current;
-    if (!ciudadPendiente) return;
-
-    asignarCiudadExtraccionPendiente(null, false);
-    procesarCiudadExtraida(ciudadPendiente.valor, ciudadPendiente);
-  };
-
   const normalizarValorExtraido = (ruta: string[], valor: unknown) => {
     const rutaTexto = ruta.join(".");
     const valorTexto = valor == null ? "" : String(valor).trim();
@@ -2666,70 +2658,6 @@ function PantallaInvestigacionAnalista({
       return {
         valor: valorTexto,
         alAplicar: () => setIdTipoPersonaSeleccionado(undefined),
-      };
-    }
-
-    if (rutaTexto === "identificacion.pais") {
-      const opcionPorId = obtenerOpcionTablaMaestraPorId(opcionesPais, valor);
-      if (opcionPorId?.string1) {
-        const nombrePais = opcionPorId.string1;
-        paisExtraccionRef.current = {
-          idPais: opcionPorId.num1 ?? undefined,
-          pais: nombrePais,
-          aplicado:
-            normalizarTextoExtraccion(
-              datosInvestigacion.identificacion.pais,
-            ) === normalizarTextoExtraccion(nombrePais),
-        };
-        return {
-          valor: nombrePais,
-          alAplicar: () => {
-            setIdPaisSeleccionado(opcionPorId.num1 ?? undefined);
-            paisExtraccionRef.current = {
-              idPais: opcionPorId.num1 ?? undefined,
-              pais: nombrePais,
-              aplicado: true,
-            };
-            procesarCiudadPendienteDespuesPais();
-          },
-        };
-      }
-
-      const opcionPorTexto = obtenerOpcionTablaMaestraPorTexto(
-        opcionesPais,
-        valor,
-      );
-      if (opcionPorTexto?.string1) {
-        const nombrePais = opcionPorTexto.string1;
-        paisExtraccionRef.current = {
-          idPais: opcionPorTexto.num1 ?? undefined,
-          pais: nombrePais,
-          aplicado:
-            normalizarTextoExtraccion(
-              datosInvestigacion.identificacion.pais,
-            ) === normalizarTextoExtraccion(nombrePais),
-        };
-        return {
-          valor: nombrePais,
-          alAplicar: () => {
-            setIdPaisSeleccionado(opcionPorTexto.num1 ?? undefined);
-            paisExtraccionRef.current = {
-              idPais: opcionPorTexto.num1 ?? undefined,
-              pais: nombrePais,
-              aplicado: true,
-            };
-            procesarCiudadPendienteDespuesPais();
-          },
-        };
-      }
-
-      return {
-        valor: valorTexto,
-        alAplicar: () => {
-          setIdPaisSeleccionado(undefined);
-          paisExtraccionRef.current = { aplicado: false };
-          asignarCiudadExtraccionPendiente(null, false);
-        },
       };
     }
 
@@ -2989,6 +2917,10 @@ function PantallaInvestigacionAnalista({
 
     if (rutaBase.join(".") === "identificacion.ciudadEstadoProvincia") {
       procesarCiudadExtraida(seccionExtraida);
+      return;
+    }
+
+    if (rutaBase.join(".") === "identificacion.pais") {
       return;
     }
 
@@ -5174,7 +5106,7 @@ function PantallaInvestigacionAnalista({
         }}
         optional
         mostrarTextoOpcionalEnLabel={false}
-        disabled={esSoloLectura}
+        disabled
       />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Tipo de Identificación Fiscal"
@@ -6508,7 +6440,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Ventas al Contado"
                 valor={
@@ -6544,7 +6476,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Ventas a Crédito"
                 valor={
@@ -6609,7 +6541,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Ventas Nacionales"
                 valor={
@@ -6646,7 +6578,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Ventas Extranjero"
                 valor={
@@ -6686,7 +6618,7 @@ function PantallaInvestigacionAnalista({
                 )
               }
             />
-            <CampoInvestigacionAnalista
+            <AreaInvestigacionAnalista
               etiqueta="Detalle Compras Nacionales"
               valor={
                 datosInvestigacion.operacionPrincipal.comprasNacionalesDetalle
@@ -6724,7 +6656,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Compras al Contado"
                 marcador="Describa cómo se realizan las compras al contado nacionales"
@@ -6767,7 +6699,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Compras a Crédito"
                 marcador="Describa cómo se realizan las compras a crédito nacionales"
@@ -6842,7 +6774,7 @@ function PantallaInvestigacionAnalista({
                 )
               }
             />
-            <CampoInvestigacionAnalista
+            <AreaInvestigacionAnalista
               etiqueta="Detalle Compras Extranjero"
               valor={
                 datosInvestigacion.operacionPrincipal.comprasExtranjeroDetalle
@@ -6880,7 +6812,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Compras al Contado"
                 marcador="Describa cómo se realizan las compras al contado en el extranjero"
@@ -6923,7 +6855,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Compras a Crédito"
                 marcador="Describa cómo se realizan las compras a crédito en el extranjero"
@@ -6991,7 +6923,7 @@ function PantallaInvestigacionAnalista({
                 actualizarOperacionPrincipal("numeroEmpleados", valor)
               }
             />
-            <CampoInvestigacionAnalista
+            <AreaInvestigacionAnalista
               etiqueta="Detalle Empleados"
               valor={
                 datosInvestigacion.operacionPrincipal.numeroEmpleadosDetalle

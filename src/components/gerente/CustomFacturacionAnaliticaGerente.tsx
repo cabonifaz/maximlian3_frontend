@@ -25,6 +25,7 @@ export function CustomFacturacionAnaliticaGerente() {
     desglosePorPais,
     desglosePorEstado,
     evolucion,
+    estaCargandoEvolucion,
     resumenClientes,
     estaCargando,
     estaActualizando,
@@ -90,6 +91,7 @@ export function CustomFacturacionAnaliticaGerente() {
           granularidad={granularidad}
           onCambiarGranularidad={cambiarGranularidad}
           metricaDesglose={metricaDesglose}
+          estaCargando={estaCargandoEvolucion}
         />
         <CustomEstadoFacturasAnaliticaGerente
           desglosePorEstado={desglosePorEstado}
