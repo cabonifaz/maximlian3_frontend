@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { facturacionService } from "@maximilian/services/facturacion.service";
 import { CONFIGURACION_CONSULTA_FACTURACION } from "@maximilian/shared/constants/components/coordinador/facturacion.constants";
+import type { EditarLineaAgrupadaFacturaRequest } from "@maximilian/shared/types/facturacion.type";
 
 export function useLineasPendientesFactura(
   idCliente: number,
@@ -9,7 +10,7 @@ export function useLineasPendientesFactura(
   idDocumentoElectronico: number | null = null,
   idMonedaFactura?: number,
 ) {
-  const [idTipoTramite, setIdTipoTramite] = useState<number | undefined>();
+  const queryClient = useQueryClient();
   const [mesSeleccionado, setMesSeleccionado] = useState<Date | undefined>();
   // La moneda sigue a la de la factura hasta que el usuario la cambie manualmente
   // en este selector; reiniciarFiltros() vuelve a seguirla en la próxima apertura.
@@ -41,9 +42,29 @@ export function useLineasPendientesFactura(
     enabled: abierto && idCliente > 0,
   });
 
-  const lineas = (consulta.data ?? []).filter(
-    (linea) => !idTipoTramite || linea.idTipoTramite === idTipoTramite,
-  );
+  const lineas = consulta.data ?? [];
+
+  const invalidarLineas = () =>
+    queryClient.invalidateQueries({
+      queryKey: ["facturacion", "lineas-pendientes", idCliente],
+    });
+
+  const editarLineaMutation = useMutation({
+    mutationFn: ({
+      idPedidoFacturaLinea,
+      datos,
+    }: {
+      idPedidoFacturaLinea: number;
+      datos: EditarLineaAgrupadaFacturaRequest;
+    }) => facturacionService.editarLineaAgrupada(idPedidoFacturaLinea, datos),
+    onSuccess: () => void invalidarLineas(),
+  });
+
+  const eliminarLineaMutation = useMutation({
+    mutationFn: (idPedidoFacturaLinea: number) =>
+      facturacionService.eliminarLinea(idPedidoFacturaLinea),
+    onSuccess: () => void invalidarLineas(),
+  });
 
   const cambiarMoneda = (valor?: number) => {
     setIdMonedaTocada(true);
@@ -51,7 +72,6 @@ export function useLineasPendientesFactura(
   };
 
   const reiniciarFiltros = () => {
-    setIdTipoTramite(undefined);
     setMesSeleccionado(undefined);
     setIdMonedaTocada(false);
     setIdMonedaSeleccion(undefined);
@@ -60,11 +80,13 @@ export function useLineasPendientesFactura(
   return {
     cambiarMes: setMesSeleccionado,
     cambiarMoneda,
-    cambiarTipoTramite: setIdTipoTramite,
+    editandoLinea: editarLineaMutation.isPending,
+    editarLinea: editarLineaMutation.mutateAsync,
+    eliminandoLinea: eliminarLineaMutation.isPending,
+    eliminarLinea: eliminarLineaMutation.mutateAsync,
     estaCargando: consulta.isLoading,
     hayError: consulta.isError,
     idMoneda,
-    idTipoTramite,
     lineas,
     mesSeleccionado,
     recargar: consulta.refetch,

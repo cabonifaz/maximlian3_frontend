@@ -280,17 +280,6 @@ export default function GestionFacturacion() {
               <button
                 type="button"
                 onClick={() => {
-                  setClienteParaGestionarLineas(facturacion);
-                  setIdMenuActivo(null);
-                }}
-                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
-              >
-                <Layers size={14} className="shrink-0" />
-                <span>Gestionar Líneas Agrupadas</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
                   setClienteParaAgruparPedidos(facturacion);
                   setIdMenuActivo(null);
                 }}
@@ -298,6 +287,17 @@ export default function GestionFacturacion() {
               >
                 <Combine size={14} className="shrink-0" />
                 <span>Agrupar Pedidos</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setClienteParaGestionarLineas(facturacion);
+                  setIdMenuActivo(null);
+                }}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                <Layers size={14} className="shrink-0" />
+                <span>Gestionar Líneas Agrupadas</span>
               </button>
             </div>
           </>

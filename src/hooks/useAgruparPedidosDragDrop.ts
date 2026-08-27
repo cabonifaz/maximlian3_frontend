@@ -204,14 +204,6 @@ export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
     )));
   };
 
-  const quitarPedidoDeTodasLasLineas = (idPedido: number) => {
-    setLineas((actual) => actual.map((linea) => {
-      if (!linea.idsPedido.includes(idPedido)) return linea;
-      const idsPedido = linea.idsPedido.filter((id) => id !== idPedido);
-      return { ...linea, idsPedido, ...calcularValoresLinea(idsPedido, pedidosTotales) };
-    }));
-  };
-
   const cambiarFiltros = (cambios: Partial<FiltrosAgruparPedidos>) => {
     setFiltros((actual) => ({ ...actual, ...cambios }));
   };
@@ -266,7 +258,6 @@ export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
     moverAPedidosSinGrupo,
     pedidosDisponibles,
     pedidosTotales,
-    quitarPedidoDeTodasLasLineas,
     recargar: consulta.refetch,
     reiniciarWorkspace,
   };

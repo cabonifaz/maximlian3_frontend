@@ -6,7 +6,6 @@ import type { EditarLineaAgrupadaFacturaRequest } from "@maximilian/shared/types
 
 export function useGestionLineasAgrupadas(idCliente: number, abierto: boolean) {
   const queryClient = useQueryClient();
-  const [idTipoTramite, setIdTipoTramite] = useState<number | undefined>();
   const [mesSeleccionado, setMesSeleccionado] = useState<Date | undefined>();
   const anio = mesSeleccionado?.getFullYear();
   const mes = mesSeleccionado ? mesSeleccionado.getMonth() + 1 : undefined;
@@ -20,9 +19,7 @@ export function useGestionLineasAgrupadas(idCliente: number, abierto: boolean) {
     enabled: abierto && idCliente > 0,
   });
 
-  const lineas = (consulta.data ?? []).filter(
-    (linea) => !idTipoTramite || linea.idTipoTramite === idTipoTramite,
-  );
+  const lineas = consulta.data ?? [];
 
   const invalidarLineas = () =>
     queryClient.invalidateQueries({
@@ -47,20 +44,17 @@ export function useGestionLineasAgrupadas(idCliente: number, abierto: boolean) {
   });
 
   const reiniciarFiltros = () => {
-    setIdTipoTramite(undefined);
     setMesSeleccionado(undefined);
   };
 
   return {
     cambiarMes: setMesSeleccionado,
-    cambiarTipoTramite: setIdTipoTramite,
     editandoLinea: editarLineaMutation.isPending,
     editarLinea: editarLineaMutation.mutateAsync,
     eliminandoLinea: eliminarLineaMutation.isPending,
     eliminarLinea: eliminarLineaMutation.mutateAsync,
     estaCargando: consulta.isLoading,
     hayError: consulta.isError,
-    idTipoTramite,
     lineas,
     mesSeleccionado,
     recargar: consulta.refetch,
