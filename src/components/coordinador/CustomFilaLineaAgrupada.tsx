@@ -1,7 +1,6 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import type { EntradaLineaAgrupadaPendiente } from "@maximilian/shared/types/facturacion.type";
-import { obtenerEstiloTipoTramiteAgrupado } from "@maximilian/shared/utils/facturacion.util";
 import { formatearMontoDosDecimales } from "@maximilian/shared/utils/formato-monto.util";
 
 interface CustomFilaLineaAgrupadaProps {
@@ -16,17 +15,11 @@ export function CustomFilaLineaAgrupada({
   onEliminar,
 }: CustomFilaLineaAgrupadaProps) {
   const total = linea.cantidad * linea.valorUnitario - linea.descuento;
-  const estiloTipo = obtenerEstiloTipoTramiteAgrupado(linea.tipoTramite);
 
   return (
     <tr className="hover:bg-slate-50">
       <td className="px-3 py-2 font-bold text-slate-700">{linea.codigo}</td>
       <td className="px-3 py-2 text-slate-600">{linea.descripcion}</td>
-      <td className="px-3 py-2 text-center">
-        <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${estiloTipo.clase}`}>
-          {estiloTipo.texto}
-        </span>
-      </td>
       <td className="px-3 py-2 text-center text-slate-600">{linea.moneda}</td>
       <td className="px-3 py-2 text-center text-slate-600">{linea.cantidad}</td>
       <td className="px-3 py-2 text-right text-slate-600">
