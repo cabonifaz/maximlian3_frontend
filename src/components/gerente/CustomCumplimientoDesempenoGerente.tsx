@@ -12,6 +12,7 @@ export function CustomCumplimientoDesempenoGerente() {
     granularidad,
     cambiarGranularidad,
     evolucion,
+    estaCargandoEvolucion,
     resumenColaboradores,
     pagina,
     cambiarPagina,
@@ -43,6 +44,7 @@ export function CustomCumplimientoDesempenoGerente() {
         evolucion={evolucion}
         granularidad={granularidad}
         onCambiarGranularidad={cambiarGranularidad}
+        estaCargando={estaCargandoEvolucion}
       />
 
       <CustomTablaDesempenoColaboradoresGerente

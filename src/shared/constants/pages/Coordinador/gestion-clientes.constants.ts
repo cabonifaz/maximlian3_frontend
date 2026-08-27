@@ -1,3 +1,8 @@
+export const ESTADO_CLIENTE_ACCION = {
+  ACTIVAR: 1,
+  DESACTIVAR: 2,
+} as const;
+
 export const CLIENT_COLUMNS = [
   { label: "Nombre", width: "24%" },
   { label: "País", width: "12%" },

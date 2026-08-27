@@ -3,7 +3,7 @@ export const ENDPOINTS_CLIENTE = {
   crear: "/api/Cliente/crear",
   obtener: "/api/Cliente/obtener",
   obtenerPorDocumentoElectronico: "/api/Cliente/obtenerPorDocumentoElectronico",
-  eliminar: "/api/Cliente/eliminar",
+  activarDesactivar: "/api/Cliente/activarDesactivar",
   editar: "/api/Cliente/editar",
   listaCorta: "/api/Cliente/listaCorta",
   listarTarifario: "/api/Tarifario/listar",

@@ -142,6 +142,7 @@ export function useFacturacionAnaliticaDashboard() {
     desglosePorPais: consultaResumenAnalitico.data?.desglosePorPais ?? [],
     desglosePorEstado: consultaResumenAnalitico.data?.desglosePorEstado ?? [],
     evolucion: consultaEvolucion.data ?? [],
+    estaCargandoEvolucion: consultaEvolucion.isLoading,
     resumenClientes,
     estaCargando,
     estaActualizando,

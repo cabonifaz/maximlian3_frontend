@@ -1079,6 +1079,28 @@ export function useFormularioFactura(
   const actualizarEstadoCuota = (cuota: EntradaCuotaFactura) =>
     actualizarEstadoCuotaMutation.mutateAsync(cuota);
 
+  const quitarTodosLosProductos = () => {
+    if (!detalle) return;
+    clearErrors("root.cuotas");
+    detalle.productos.forEach((producto) => {
+      unregister(`descuentos.${producto.idProductoFactura}`);
+      unregister(`porcentajesIgv.${producto.idProductoFactura}`);
+      unregister(`afectacionesIgv.${producto.idProductoFactura}`);
+      unregister(`unidadesMedida.${producto.idProductoFactura}`);
+      unregister(`descripciones.${producto.idProductoFactura}`);
+      unregister(`valoresUnitarios.${producto.idProductoFactura}`);
+      unregister(`codigosProducto.${producto.idProductoFactura}`);
+    });
+    setIdProductoDescuentoEdicion(null);
+    setIdProductoIgvEdicion(null);
+    setIdProductoCodigoEdicion(null);
+    setIdProductoDescripcionEdicion(null);
+    setIdProductoValorUnitarioEdicion(null);
+    setDetalle((actual) => (actual ? { ...actual, productos: [] } : actual));
+  };
+
+  const validarMonedaSeleccionada = () => trigger("idMonedaMaestro");
+
   const quitarCuota = (idCuotaFactura: number) => {
     clearErrors("root.cuotas");
     setDetalle((actual) =>
@@ -1428,6 +1450,7 @@ export function useFormularioFactura(
     agregarLineaNota,
     quitarCuota,
     quitarProducto,
+    quitarTodosLosProductos,
     requiereTipoCambio,
     descripciones,
     codigosProducto,
@@ -1467,6 +1490,7 @@ export function useFormularioFactura(
         shouldDirty: true,
         shouldValidate: true,
       }),
+    validarMonedaSeleccionada,
     simboloSoles,
     valoresMaestros: {
       idFormaPago,

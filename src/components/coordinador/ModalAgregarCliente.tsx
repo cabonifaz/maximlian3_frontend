@@ -19,6 +19,7 @@ import { obtenerEtiquetaPrincipalSecundaria } from "@maximilian/shared/utils/tab
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomEntradaUrl } from "@maximilian/components/common/CustomEntradaUrl";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { useDescripcionTipoDocumentoSunat } from "@maximilian/hooks/useDescripcionTipoDocumentoSunat";
@@ -89,6 +90,9 @@ export function ModalAgregarCliente({
   >(null);
   const [contactsPag, setContactsPag] = useState(1);
   const [contactSearch, setContactSearch] = useState("");
+  const [tarifaMonedaPendiente, setTarifaMonedaPendiente] = useState<
+    { datos: DatosFormularioTarifa; indiceEditando: number | null } | null
+  >(null);
   const busquedaContactoConRetardo = useRetardo(contactSearch);
 
   const {
@@ -163,17 +167,32 @@ export function ModalAgregarCliente({
     };
   };
 
-  const handleAddRate = (data: DatosFormularioTarifa) => {
-    setAddedRates((prev) => [...prev, buildRate(data)]);
+  const guardarTarifa = (data: DatosFormularioTarifa, indiceEditando: number | null) => {
+    if (indiceEditando !== null) {
+      setAddedRates((prev) =>
+        prev.map((rate, i) => (i === indiceEditando ? buildRate(data) : rate)),
+      );
+    } else {
+      setAddedRates((prev) => [...prev, buildRate(data)]);
+    }
     setSelectedRateIndex(null);
+  };
+
+  const handleAddRate = (data: DatosFormularioTarifa) => {
+    if (monedaClienteId && Number(data.moneda) !== monedaClienteId) {
+      setTarifaMonedaPendiente({ datos: data, indiceEditando: null });
+      return false;
+    }
+    guardarTarifa(data, null);
   };
 
   const handleEditRate = (data: DatosFormularioTarifa) => {
     if (selectedRateIndex === null) return;
-    setAddedRates((prev) =>
-      prev.map((rate, i) => (i === selectedRateIndex ? buildRate(data) : rate)),
-    );
-    setSelectedRateIndex(null);
+    if (monedaClienteId && Number(data.moneda) !== monedaClienteId) {
+      setTarifaMonedaPendiente({ datos: data, indiceEditando: selectedRateIndex });
+      return false;
+    }
+    guardarTarifa(data, selectedRateIndex);
   };
 
   const handleConfirm = async () => {
@@ -1030,6 +1049,29 @@ export function ModalAgregarCliente({
             : undefined
         }
       />
+
+      <CustomModalConfirmacionAccion
+        isOpen={tarifaMonedaPendiente !== null}
+        onClose={() => setTarifaMonedaPendiente(null)}
+        onConfirm={() => {
+          if (tarifaMonedaPendiente) {
+            guardarTarifa(tarifaMonedaPendiente.datos, tarifaMonedaPendiente.indiceEditando);
+            if (tarifaMonedaPendiente.indiceEditando === null) {
+              setIsRateModalOpen(false);
+            } else {
+              setIsEditRateModalOpen(false);
+            }
+          }
+          setTarifaMonedaPendiente(null);
+        }}
+        title="Moneda diferente a la del cliente"
+        descripcion="La moneda de esta tarifa es distinta a la moneda del cliente. ¿Deseas continuar de todas formas?"
+        varianteConfirmar="wine"
+        textoConfirmar="Continuar"
+      >
+        <p><span className="font-bold">Moneda de la tarifa:</span> {tarifaMonedaPendiente ? getLabel(TablaMaestraId.MONEDA_SUNAT, Number(tarifaMonedaPendiente.datos.moneda)) : "-"}</p>
+        <p><span className="font-bold">Moneda del cliente:</span> {monedaClienteId ? getLabel(TablaMaestraId.MONEDA_SUNAT, monedaClienteId) : "-"}</p>
+      </CustomModalConfirmacionAccion>
     </>
   );
 }

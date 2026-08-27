@@ -9,12 +9,14 @@ interface PropsCustomEvolucionDesempenoColaboradoresGerente {
   evolucion: EvolucionInformesColaboradoresDashboard[];
   granularidad: GranularidadTiempoDashboard;
   onCambiarGranularidad: (granularidad: GranularidadTiempoDashboard) => void;
+  estaCargando?: boolean;
 }
 
 export function CustomEvolucionDesempenoColaboradoresGerente({
   evolucion,
   granularidad,
   onCambiarGranularidad,
+  estaCargando,
 }: PropsCustomEvolucionDesempenoColaboradoresGerente) {
   const datos = evolucion.map((punto) => ({
     periodo: punto.periodo,
@@ -47,6 +49,7 @@ export function CustomEvolucionDesempenoColaboradoresGerente({
       <CustomBarrasEvolucionDashboardGerente
         datos={datos}
         mensajeVacio="No hay informes en el período seleccionado."
+        estaCargando={estaCargando}
       />
     </section>
   );

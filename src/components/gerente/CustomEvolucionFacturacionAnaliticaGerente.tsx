@@ -12,6 +12,7 @@ interface PropsCustomEvolucionFacturacionAnaliticaGerente {
   granularidad: GranularidadTiempoDashboard;
   onCambiarGranularidad: (granularidad: GranularidadTiempoDashboard) => void;
   metricaDesglose: MetricaDesgloseFacturacionAnaliticaDashboard;
+  estaCargando?: boolean;
 }
 
 export function CustomEvolucionFacturacionAnaliticaGerente({
@@ -20,6 +21,7 @@ export function CustomEvolucionFacturacionAnaliticaGerente({
   granularidad,
   onCambiarGranularidad,
   metricaDesglose,
+  estaCargando,
 }: PropsCustomEvolucionFacturacionAnaliticaGerente) {
   const esMonto = metricaDesglose === "monto";
   const datos = evolucion.map((punto) => ({
@@ -52,7 +54,11 @@ export function CustomEvolucionFacturacionAnaliticaGerente({
         </div>
       </div>
 
-      <CustomBarrasEvolucionDashboardGerente datos={datos} prefijo={esMonto ? monedaIcono : ""} />
+      <CustomBarrasEvolucionDashboardGerente
+        datos={datos}
+        prefijo={esMonto ? monedaIcono : ""}
+        estaCargando={estaCargando}
+      />
     </section>
   );
 }

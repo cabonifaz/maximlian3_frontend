@@ -46,7 +46,7 @@ interface ParametrosUseModalAgregarTarifa {
   estaAbierto: boolean;
   valoresIniciales?: Partial<DatosFormularioTarifa>;
   onCerrar: () => void;
-  onConfirmar: (datos: DatosFormularioTarifa) => void;
+  onConfirmar: (datos: DatosFormularioTarifa) => boolean | void;
 }
 
 export function useModalAgregarTarifa({
@@ -74,7 +74,8 @@ export function useModalAgregarTarifa({
   }, [valoresIniciales, estaAbierto, reset]);
 
   const confirmar = (datos: DatosFormularioTarifa) => {
-    onConfirmar(datos);
+    const debeCerrar = onConfirmar(datos);
+    if (debeCerrar === false) return;
     reset();
     onCerrar();
   };
