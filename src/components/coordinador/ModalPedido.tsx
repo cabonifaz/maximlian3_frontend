@@ -925,7 +925,7 @@ function useFormReset(
       investigado: pedido.investigarRazonSocialNombres ?? "",
       idCompania: pedido.idCompania,
       idTipoPersona: pedido.idTipoPersona,
-      idEmpresaAtencion: pedido.idCompania,
+      idEmpresaAtencion: pedido.idEmpresaAtencion,
       idIdioma: pedido.idIdioma,
       idClaseInforme: pedido.idClaseInforme,
       idPlantillaInforme: pedido.idPlantilla,
@@ -1091,6 +1091,7 @@ export function ModalPedido({
       numeroDocumento: data.nroDocumentoCliente ?? "",
       nombreCliente: cliente?.nombreCliente ?? pedido?.nombreCliente ?? "",
       idTipoPersona: data.idTipoPersona,
+      idEmpresaAtencion: data.idEmpresaAtencion,
       numeroDocumentoInvestigado: data.nroDocumento ?? "",
       investigarRazonSocialNombres: data.investigado,
       idCompania: data.idCompania ?? 0,
@@ -1121,7 +1122,6 @@ export function ModalPedido({
     guardarPedido({
       ...datosComunes,
       codigo: data.autogenerarCodigo ? null : (data.codigo ?? ""),
-      idEmpresaAtencion: data.idEmpresaAtencion,
       idEstado: 1,
       archivos: [],
     });

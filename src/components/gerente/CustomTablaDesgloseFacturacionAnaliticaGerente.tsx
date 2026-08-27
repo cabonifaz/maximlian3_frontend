@@ -56,7 +56,9 @@ export function CustomTablaDesgloseFacturacionAnaliticaGerente({
                   <span className="truncate">{grupo.etiqueta}</span>
                 </span>
               </td>
-              <td className="py-2 px-2 text-right text-slate-600">
+              <td
+                className={`py-2 px-2 text-right ${esMonto ? "text-slate-600" : "font-bold text-slate-800"}`}
+              >
                 <NumberTicker value={grupo.cantidadPedidos} rigidez={260} className="tracking-normal text-inherit" />
               </td>
               <td className="py-2 px-2 text-right text-slate-500">
@@ -68,7 +70,9 @@ export function CustomTablaDesgloseFacturacionAnaliticaGerente({
                 />
                 %
               </td>
-              <td className="py-2 pl-2 text-right font-bold text-slate-800">
+              <td
+                className={`py-2 pl-2 text-right ${esMonto ? "font-bold text-slate-800" : "text-slate-600"}`}
+              >
                 {monedaIcono}
                 <NumberTicker
                   value={grupo.montoFacturado}
