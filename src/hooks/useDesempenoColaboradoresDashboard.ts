@@ -1,23 +1,24 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type {
   FiltrosDesempenoColaboradoresDashboard,
   GranularidadTiempoDashboard,
 } from "@maximilian/shared/types/dashboard.type";
-import {
-  COLABORADORES_DESEMPENO_DASHBOARD_MOCK,
-  INFORMES_COLABORADORES_DASHBOARD_MOCK,
-  CANTIDAD_REINTENTOS_CONSULTA_DESEMPENO_COLABORADORES_DASHBOARD,
-} from "@maximilian/shared/constants/components/gerente/desempeno-colaboradores-dashboard.constants";
-import {
-  agruparEvolucionInformesColaboradores,
-  filtrarInformesColaboradores,
-} from "@maximilian/shared/utils/desempeno-colaboradores-dashboard.util";
+import { CANTIDAD_REINTENTOS_CONSULTA_DESEMPENO_COLABORADORES_DASHBOARD } from "@maximilian/shared/constants/components/gerente/desempeno-colaboradores-dashboard.constants";
+import { GRANULARIDAD_TIEMPO_DASHBOARD_A_ID } from "@maximilian/shared/constants/pages/Gerente/dashboard-tiempo.constants";
 import { servicioUsuario } from "@maximilian/services/usuario.service";
-import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
+import { informeService } from "@maximilian/services/informe.service";
+import { formatearFechaIsoLocal, obtenerPrimerDiaMesActual } from "@maximilian/shared/utils/fecha.util";
+
+const FILTROS_INICIALES_DESEMPENO_COLABORADORES_DASHBOARD: FiltrosDesempenoColaboradoresDashboard = {
+  fechaDesde: obtenerPrimerDiaMesActual(),
+  fechaHasta: new Date(),
+};
 
 export function useDesempenoColaboradoresDashboard() {
-  const [filtros, setFiltros] = useState<FiltrosDesempenoColaboradoresDashboard>({});
+  const [filtros, setFiltros] = useState<FiltrosDesempenoColaboradoresDashboard>(
+    FILTROS_INICIALES_DESEMPENO_COLABORADORES_DASHBOARD,
+  );
   const [granularidad, setGranularidad] = useState<GranularidadTiempoDashboard>("mes");
   const [pagina, setPagina] = useState(1);
 
@@ -31,26 +32,24 @@ export function useDesempenoColaboradoresDashboard() {
   };
 
   const limpiarFiltros = () => {
-    setFiltros({});
+    setFiltros(FILTROS_INICIALES_DESEMPENO_COLABORADORES_DASHBOARD);
     setPagina(1);
   };
 
-  const informesFiltrados = useMemo(
-    () =>
-      fechasInvalidas
-        ? []
-        : filtrarInformesColaboradores(
-            INFORMES_COLABORADORES_DASHBOARD_MOCK,
-            COLABORADORES_DESEMPENO_DASHBOARD_MOCK,
-            filtros,
-          ),
-    [filtros, fechasInvalidas],
-  );
-
-  const evolucion = useMemo(
-    () => agruparEvolucionInformesColaboradores(informesFiltrados, granularidad),
-    [informesFiltrados, granularidad],
-  );
+  const consultaEvolucion = useQuery({
+    queryKey: ["informes", "evolucionColaboradores", filtros, granularidad],
+    queryFn: () =>
+      informeService.obtenerEvolucionColaboradores({
+        idColaborador: filtros.idColaborador,
+        rol: filtros.idRol,
+        fechaDesde: filtros.fechaDesde ? formatearFechaIsoLocal(filtros.fechaDesde) : undefined,
+        fechaHasta: filtros.fechaHasta ? formatearFechaIsoLocal(filtros.fechaHasta) : undefined,
+        granularidad: GRANULARIDAD_TIEMPO_DASHBOARD_A_ID[granularidad],
+      }),
+    enabled: !fechasInvalidas,
+    retry: CANTIDAD_REINTENTOS_CONSULTA_DESEMPENO_COLABORADORES_DASHBOARD,
+    placeholderData: keepPreviousData,
+  });
 
   const consultaResumenColaboradores = useQuery({
     queryKey: ["usuarios", "resumenColaboradores", filtros, pagina],
@@ -74,7 +73,7 @@ export function useDesempenoColaboradoresDashboard() {
     fechasInvalidas,
     granularidad,
     cambiarGranularidad: setGranularidad,
-    evolucion,
+    evolucion: consultaEvolucion.data ?? [],
     resumenColaboradores: consultaResumenColaboradores.data?.resumenColaboradores ?? [],
     pagina,
     cambiarPagina: setPagina,

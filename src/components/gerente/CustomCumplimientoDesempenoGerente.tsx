@@ -26,9 +26,6 @@ export function CustomCumplimientoDesempenoGerente() {
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-bold text-slate-800">Cumplimiento y Desempeño</h2>
-        <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-amber-600">
-          Vista preliminar (mock)
-        </span>
       </div>
       <p className="mb-4 text-xs text-slate-400">
         Producción y calidad de entregas por analista y traductor: órdenes, cumplimiento, informes

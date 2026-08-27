@@ -137,24 +137,6 @@ export interface ResumenClienteFacturacionAnaliticaDashboard {
 
 export type RolColaboradorDesempenoDashboard = "Analista" | "Traductor";
 
-export interface ColaboradorDesempenoDashboard {
-  idColaborador: number;
-  colaborador: string;
-  rol: RolColaboradorDesempenoDashboard;
-  iniciales: string;
-  colorLetra: string;
-  colorFondo: string;
-}
-
-export interface InformeColaboradorDesempenoDashboard {
-  id: number;
-  idColaborador: number;
-  fechaEntrega: string;
-  esTardio: boolean;
-  tieneObservaciones: boolean;
-  tieneInformacionFinanciera: boolean;
-}
-
 export interface FiltrosDesempenoColaboradoresDashboard {
   fechaDesde?: Date;
   fechaHasta?: Date;
@@ -166,6 +148,14 @@ export interface EvolucionInformesColaboradoresDashboard {
   periodo: string;
   etiqueta: string;
   cantidadInformes: number;
+}
+
+export interface ParametrosEvolucionInformesColaboradoresDashboard {
+  idColaborador?: number;
+  rol?: number;
+  fechaDesde?: string;
+  fechaHasta?: string;
+  granularidad: number;
 }
 
 export interface ResumenColaboradorDesempenoDashboard {

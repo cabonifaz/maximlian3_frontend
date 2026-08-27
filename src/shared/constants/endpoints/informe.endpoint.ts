@@ -5,6 +5,7 @@ export const ENDPOINTS_INFORME = {
   actualizarEstado: "/api/Informe/actualizarEstado",
   editar: "/api/Informe/editar",
   obtener: "/api/Informe/obtener",
+  resumen: "/api/Informe/resumen",
   previsualizarDocumento: "/api/Informe/previsualizarDocumento",
   obtenerDocumento: "/api/Informe/obtenerDocumento",
   obtenerUrlPrefirmada: "/api/Informe/obtenerUrlPrefirmada",
