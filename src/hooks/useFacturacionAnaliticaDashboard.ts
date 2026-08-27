@@ -7,7 +7,7 @@ import type {
   MetricaDesgloseFacturacionAnaliticaDashboard,
 } from "@maximilian/shared/types/dashboard.type";
 import { facturacionService } from "@maximilian/services/facturacion.service";
-import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
+import { formatearFechaIsoLocal, obtenerPrimerDiaMesActual } from "@maximilian/shared/utils/fecha.util";
 import { GRANULARIDAD_TIEMPO_DASHBOARD_A_ID } from "@maximilian/shared/constants/pages/Gerente/dashboard-tiempo.constants";
 import { CANTIDAD_REINTENTOS_CONSULTA_FACTURACION_ANALITICA_DASHBOARD } from "@maximilian/shared/constants/components/gerente/facturacion-analitica-dashboard.constants";
 
@@ -21,8 +21,15 @@ const INDICADORES_FACTURACION_ANALITICA_VACIOS: IndicadoresFacturacionAnaliticaD
   monedaIcono: "",
 };
 
+const FILTROS_INICIALES_FACTURACION_ANALITICA_DASHBOARD: FiltrosFacturacionAnaliticaDashboard = {
+  fechaDesde: obtenerPrimerDiaMesActual(),
+  fechaHasta: new Date(),
+};
+
 export function useFacturacionAnaliticaDashboard() {
-  const [filtros, setFiltros] = useState<FiltrosFacturacionAnaliticaDashboard>({});
+  const [filtros, setFiltros] = useState<FiltrosFacturacionAnaliticaDashboard>(
+    FILTROS_INICIALES_FACTURACION_ANALITICA_DASHBOARD,
+  );
   const [granularidad, setGranularidad] = useState<GranularidadTiempoDashboard>("mes");
   const [metricaDesglose, setMetricaDesglose] =
     useState<MetricaDesgloseFacturacionAnaliticaDashboard>("monto");
@@ -35,7 +42,7 @@ export function useFacturacionAnaliticaDashboard() {
     setFiltros((filtrosActuales) => ({ ...filtrosActuales, ...patch }));
   };
 
-  const limpiarFiltros = () => setFiltros({});
+  const limpiarFiltros = () => setFiltros(FILTROS_INICIALES_FACTURACION_ANALITICA_DASHBOARD);
 
   const parametrosComunes = {
     fechaDesde: filtros.fechaDesde ? formatearFechaIsoLocal(filtros.fechaDesde) : undefined,
