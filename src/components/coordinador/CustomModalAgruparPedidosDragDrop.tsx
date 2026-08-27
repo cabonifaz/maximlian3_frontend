@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronRight, LayoutGrid, Loader2, Sparkles, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -7,7 +6,6 @@ import { CustomLineaPedidoDisponible } from "@maximilian/components/coordinador/
 import { CustomModalConfirmarLineasFactura } from "@maximilian/components/coordinador/CustomModalConfirmarLineasFactura";
 import { CustomPanelRecomendacionesGrupoPedidos } from "@maximilian/components/coordinador/CustomPanelRecomendacionesGrupoPedidos";
 import { useAgruparPedidosDragDrop } from "@maximilian/hooks/useAgruparPedidosDragDrop";
-import { leerCargaArrastre } from "@maximilian/shared/utils/agrupar-pedidos-drag-drop.util";
 
 interface CustomModalAgruparPedidosDragDropProps {
   abierto: boolean;
@@ -47,11 +45,9 @@ export function CustomModalAgruparPedidosDragDrop({
     moverAPedidosSinGrupo,
     pedidosDisponibles,
     pedidosTotales,
-    quitarPedidoDeTodasLasLineas,
     recargar,
     reiniciarWorkspace,
   } = useAgruparPedidosDragDrop(idCliente, abierto);
-  const [enArrastreSobrePool, setEnArrastreSobrePool] = useState(false);
 
   const cerrar = () => {
     limpiarTodo();
@@ -130,20 +126,7 @@ export function CustomModalAgruparPedidosDragDrop({
               />
 
               <div
-                onDragOver={(evento) => {
-                  evento.preventDefault();
-                  setEnArrastreSobrePool(true);
-                }}
-                onDragLeave={() => setEnArrastreSobrePool(false)}
-                onDrop={(evento) => {
-                  evento.preventDefault();
-                  setEnArrastreSobrePool(false);
-                  const carga = leerCargaArrastre(evento);
-                  if (carga) quitarPedidoDeTodasLasLineas(carga.idPedido);
-                }}
-                className={`flex min-w-0 flex-1 min-h-0 flex-col rounded-2xl border p-3 shadow-sm transition-colors ${
-                  enArrastreSobrePool ? "border-brand-wine bg-brand-wine/5" : "border-slate-200 bg-white"
-                }`}
+                className="flex min-w-0 flex-1 min-h-0 flex-col rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"
               >
                 <div className="mb-2 flex items-center gap-1 px-1 text-xs font-bold">
                   <button

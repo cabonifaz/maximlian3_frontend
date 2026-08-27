@@ -367,10 +367,9 @@ export interface ParametrosListaLineasPendientes {
 
 export interface EntradaLineaAgrupadaPendiente {
   idPedidoFacturaLinea: number;
+  idDocumentoElectronico: number | null;
   codigo: string;
   descripcion: string;
-  idTipoTramite: number;
-  tipoTramite: string;
   idMoneda: number;
   moneda: string;
   cantidad: number;

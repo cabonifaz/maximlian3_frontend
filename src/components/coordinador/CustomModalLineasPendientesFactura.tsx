@@ -1,14 +1,18 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Layers, Loader2, PackagePlus, Plus, X } from "lucide-react";
+import { Check, Layers, Loader2, PackagePlus, Pencil, Plus, Trash2, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomModalAgruparPedidosDragDrop } from "@maximilian/components/coordinador/CustomModalAgruparPedidosDragDrop";
+import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
+import { CustomModalEditarLineaAgrupada } from "@maximilian/components/coordinador/CustomModalEditarLineaAgrupada";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { CustomSelectorMes } from "@maximilian/components/common/CustomSelectorMes";
 import { useLineasPendientesFactura } from "@maximilian/hooks/useLineasPendientesFactura";
-import type { EntradaLineaAgrupadaPendiente } from "@maximilian/shared/types/facturacion.type";
+import type {
+  EditarLineaAgrupadaFacturaRequest,
+  EntradaLineaAgrupadaPendiente,
+} from "@maximilian/shared/types/facturacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import { obtenerEstiloTipoTramiteAgrupado } from "@maximilian/shared/utils/facturacion.util";
 import { formatearMontoDosDecimales } from "@maximilian/shared/utils/formato-monto.util";
 
 interface CustomModalLineasPendientesFacturaProps {
@@ -36,11 +40,13 @@ export function CustomModalLineasPendientesFactura({
   const {
     cambiarMes,
     cambiarMoneda,
-    cambiarTipoTramite,
+    editandoLinea,
+    editarLinea,
+    eliminandoLinea,
+    eliminarLinea,
     estaCargando,
     hayError,
     idMoneda,
-    idTipoTramite,
     lineas,
     mesSeleccionado,
     recargar,
@@ -52,6 +58,10 @@ export function CustomModalLineasPendientesFactura({
     idMonedaFactura,
   );
   const [crearLineaAbierta, setCrearLineaAbierta] = useState(false);
+  const [lineaAEditar, setLineaAEditar] =
+    useState<EntradaLineaAgrupadaPendiente | null>(null);
+  const [lineaAEliminar, setLineaAEliminar] =
+    useState<EntradaLineaAgrupadaPendiente | null>(null);
   // Ids cuyo estado de selección se movió respecto al valor por defecto
   // (ya agregada = seleccionada por defecto), para no perder la selección
   // inicial de las líneas que ya están en la factura al listarlas de nuevo.
@@ -128,6 +138,18 @@ export function CustomModalLineasPendientesFactura({
     reiniciarFiltros();
   };
 
+  const guardarEdicion = async (datos: EditarLineaAgrupadaFacturaRequest) => {
+    if (!lineaAEditar) return;
+    await editarLinea({ idPedidoFacturaLinea: lineaAEditar.idPedidoFacturaLinea, datos });
+    setLineaAEditar(null);
+  };
+
+  const confirmarEliminacion = async () => {
+    if (!lineaAEliminar) return;
+    await eliminarLinea(lineaAEliminar.idPedidoFacturaLinea);
+    setLineaAEliminar(null);
+  };
+
   if (!abierto) return null;
 
   if (crearLineaAbierta) {
@@ -176,15 +198,6 @@ export function CustomModalLineasPendientesFactura({
 
         <div className="space-y-4 bg-slate-50/60 px-6 py-4">
           <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
-            <CustomSelectorBuscable
-              label="Tipo de trámite"
-              optional
-              idMaster={TablaMaestraId.TIPO_TRAMITE}
-              value={idTipoTramite}
-              onChange={cambiarTipoTramite}
-              onClear={() => cambiarTipoTramite(undefined)}
-              obtenerEtiquetaOpcion={(opcion) => opcion.string2 ?? opcion.string1 ?? ""}
-            />
             <CustomSelectorMes
               label="Mes"
               optional
@@ -222,12 +235,12 @@ export function CustomModalLineasPendientesFactura({
                   </th>
                   <th className="px-3 py-2">Código</th>
                   <th className="px-3 py-2">Descripción</th>
-                  <th className="px-3 py-2 text-center">Tipo</th>
                   <th className="px-3 py-2 text-center">Moneda</th>
                   <th className="px-3 py-2 text-center">Cantidad</th>
                   <th className="px-3 py-2 text-right">Valor U.</th>
                   <th className="px-3 py-2 text-center">Dscto.</th>
                   <th className="px-3 py-2 text-right">Total</th>
+                  <th className="px-3 py-2 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -255,7 +268,6 @@ export function CustomModalLineasPendientesFactura({
                 ) : lineas.map((linea) => {
                   const seleccionada = estaSeleccionada(linea.idPedidoFacturaLinea);
                   const total = linea.cantidad * linea.valorUnitario - linea.descuento;
-                  const estiloTipo = obtenerEstiloTipoTramiteAgrupado(linea.tipoTramite);
 
                   return (
                     <tr
@@ -276,11 +288,6 @@ export function CustomModalLineasPendientesFactura({
                       </td>
                       <td className="px-3 py-2 font-bold text-slate-700">{linea.codigo}</td>
                       <td className="px-3 py-2 text-slate-600">{linea.descripcion}</td>
-                      <td className="px-3 py-2 text-center">
-                        <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${estiloTipo.clase}`}>
-                          {estiloTipo.texto}
-                        </span>
-                      </td>
                       <td className="px-3 py-2 text-center text-slate-600">{linea.moneda}</td>
                       <td className="px-3 py-2 text-center text-slate-600">{linea.cantidad}</td>
                       <td className="px-3 py-2 text-right text-slate-600">
@@ -291,6 +298,26 @@ export function CustomModalLineasPendientesFactura({
                       </td>
                       <td className="px-3 py-2 text-right font-medium text-slate-700">
                         {formatearMontoDosDecimales(total)}
+                      </td>
+                      <td className="px-3 py-2" onClick={(evento) => evento.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
+                          <CustomButton
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setLineaAEditar(linea)}
+                            aria-label={`Editar línea ${linea.codigo}`}
+                          >
+                            <Pencil size={14} className="text-slate-500" />
+                          </CustomButton>
+                          <CustomButton
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setLineaAEliminar(linea)}
+                            aria-label={`Eliminar línea ${linea.codigo}`}
+                          >
+                            <Trash2 size={14} className="text-red-500" />
+                          </CustomButton>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -317,6 +344,32 @@ export function CustomModalLineasPendientesFactura({
           </CustomButton>
         </div>
       </div>
+
+      <CustomModalEditarLineaAgrupada
+        linea={lineaAEditar}
+        guardando={editandoLinea}
+        onCerrar={() => setLineaAEditar(null)}
+        onGuardar={(datos) => void guardarEdicion(datos)}
+      />
+
+      <CustomModalConfirmacionAccion
+        isOpen={lineaAEliminar !== null}
+        onClose={() => setLineaAEliminar(null)}
+        onConfirm={() => void confirmarEliminacion()}
+        title="Eliminar línea agrupada"
+        descripcion="¿Deseas eliminar esta línea agrupada? Esta acción no se puede deshacer."
+        isSubmitting={eliminandoLinea}
+        textoConfirmar="Eliminar"
+        textoCargandoConfirmar="Eliminando..."
+        zIndexClassName="z-[90]"
+      >
+        <p>
+          <span className="font-bold">Código:</span> {lineaAEliminar?.codigo}
+        </p>
+        <p>
+          <span className="font-bold">Descripción:</span> {lineaAEliminar?.descripcion}
+        </p>
+      </CustomModalConfirmacionAccion>
     </div>,
     document.body,
   );
