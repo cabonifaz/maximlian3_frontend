@@ -6440,7 +6440,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Ventas al Contado"
                 valor={
@@ -6476,7 +6476,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Ventas a Crédito"
                 valor={
@@ -6541,7 +6541,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Ventas Nacionales"
                 valor={
@@ -6578,7 +6578,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Ventas Extranjero"
                 valor={
@@ -6618,7 +6618,7 @@ function PantallaInvestigacionAnalista({
                 )
               }
             />
-            <CampoInvestigacionAnalista
+            <AreaInvestigacionAnalista
               etiqueta="Detalle Compras Nacionales"
               valor={
                 datosInvestigacion.operacionPrincipal.comprasNacionalesDetalle
@@ -6656,7 +6656,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Compras al Contado"
                 marcador="Describa cómo se realizan las compras al contado nacionales"
@@ -6699,7 +6699,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Compras a Crédito"
                 marcador="Describa cómo se realizan las compras a crédito nacionales"
@@ -6774,7 +6774,7 @@ function PantallaInvestigacionAnalista({
                 )
               }
             />
-            <CampoInvestigacionAnalista
+            <AreaInvestigacionAnalista
               etiqueta="Detalle Compras Extranjero"
               valor={
                 datosInvestigacion.operacionPrincipal.comprasExtranjeroDetalle
@@ -6812,7 +6812,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Compras al Contado"
                 marcador="Describa cómo se realizan las compras al contado en el extranjero"
@@ -6855,7 +6855,7 @@ function PantallaInvestigacionAnalista({
                   )
                 }
               />
-              <CampoInvestigacionAnalista
+              <AreaInvestigacionAnalista
                 className="mt-5"
                 etiqueta="Detalle Compras a Crédito"
                 marcador="Describa cómo se realizan las compras a crédito en el extranjero"
@@ -6923,7 +6923,7 @@ function PantallaInvestigacionAnalista({
                 actualizarOperacionPrincipal("numeroEmpleados", valor)
               }
             />
-            <CampoInvestigacionAnalista
+            <AreaInvestigacionAnalista
               etiqueta="Detalle Empleados"
               valor={
                 datosInvestigacion.operacionPrincipal.numeroEmpleadosDetalle

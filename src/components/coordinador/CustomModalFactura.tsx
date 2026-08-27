@@ -284,9 +284,7 @@ export function CustomModalFactura({
               <CampoFactura
                 etiqueta="Cliente"
                 valor={detalle.cliente}
-                soloLectura={
-                  soloLectura || detalle.idDocumentoElectronico !== null
-                }
+                soloLectura
                 onChange={(valor) => actualizarCampoFactura("cliente", valor)}
               />
               <CampoFactura
