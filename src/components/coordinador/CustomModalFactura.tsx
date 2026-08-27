@@ -417,6 +417,12 @@ export function CustomModalFactura({
                     variant="secondary"
                     size="sm"
                     onClick={abrirProductosFacturables}
+                    disabled={!valoresMaestros.idMonedaMaestro}
+                    title={
+                      valoresMaestros.idMonedaMaestro
+                        ? undefined
+                        : "Selecciona primero la moneda"
+                    }
                   >
                     <Plus size={14} />
                     Agregar productos

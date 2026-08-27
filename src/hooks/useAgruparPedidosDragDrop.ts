@@ -150,7 +150,7 @@ export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
     if (lineaDestino.codigo !== CODIGO_PEDIDOS_SIN_GRUPO) {
       const pedidosDestino = pedidosTotales.filter((pedido) => lineaDestino.idsPedido.includes(pedido.idPedido));
       if (!pedidoEsCompatibleConLinea(pedidoArrastrado, pedidosDestino)) {
-        toast.error("El pedido tiene precio, descuento o moneda distintos a los del grupo.");
+        toast.error("El pedido tiene precio o moneda distintos a los del grupo.");
         return;
       }
     }

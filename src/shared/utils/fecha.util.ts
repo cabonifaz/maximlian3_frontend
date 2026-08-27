@@ -4,6 +4,11 @@ export function formatearFechaDdMmYyyy(fecha: Date) {
   return `${dia}/${mes}/${fecha.getFullYear()}`;
 }
 
+export function obtenerPrimerDiaMesActual() {
+  const fechaActual = new Date();
+  return new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1);
+}
+
 export function formatearFechaIsoLocal(fecha: Date) {
   const dia = String(fecha.getDate()).padStart(2, "0");
   const mes = String(fecha.getMonth() + 1).padStart(2, "0");

@@ -73,6 +73,5 @@ export function pedidoEsCompatibleConLinea(
   return (
     referencia.idMoneda === pedido.idMoneda
     && referencia.precio === pedido.precio
-    && referencia.penalidad === pedido.penalidad
   );
 }

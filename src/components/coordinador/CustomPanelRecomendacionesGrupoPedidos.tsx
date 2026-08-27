@@ -43,6 +43,7 @@ export function CustomPanelRecomendacionesGrupoPedidos({
     ],
     [lineas],
   );
+  const gruposSeleccionados = lineas.filter((linea) => linea.seleccionada).length;
 
   return (
     <aside className="flex w-[30rem] shrink-0 flex-col gap-2 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
@@ -216,6 +217,11 @@ export function CustomPanelRecomendacionesGrupoPedidos({
           );
         })
       )}
+      {lineas.length > 0 ? (
+        <p className="mt-1 border-t border-slate-100 pt-2 text-center text-[11px] font-bold text-slate-500">
+          {gruposSeleccionados} grupo{gruposSeleccionados === 1 ? "" : "s"} seleccionado{gruposSeleccionados === 1 ? "" : "s"}
+        </p>
+      ) : null}
     </aside>
   );
 }
