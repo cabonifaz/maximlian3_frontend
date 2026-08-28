@@ -40,7 +40,6 @@ export function CustomModalAgruparPedidosDragDrop({
     gruposSeleccionados,
     hayBusquedaAplicada,
     hayError,
-    hayGruposConPedidos,
     idLineaEnfocada,
     limpiarEnfoque,
     limpiarTodo,
@@ -101,7 +100,6 @@ export function CustomModalAgruparPedidosDragDrop({
             filtros={filtros}
             fechasCompletas={fechasCompletas}
             buscando={buscando}
-            hayGruposConPedidos={hayGruposConPedidos}
             onCambiar={cambiarFiltros}
             onBuscar={buscar}
           />

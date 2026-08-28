@@ -3,6 +3,7 @@ export const ENDPOINTS_INFORME = {
   listarIdPorCompania: "/api/Informe/listarIdPorCompania",
   crear: "/api/Informe/crear",
   actualizarEstado: "/api/Informe/actualizarEstado",
+  enviarNotificacion: "/api/Informe/enviarNotificacion",
   editar: "/api/Informe/editar",
   obtener: "/api/Informe/obtener",
   resumen: "/api/Informe/resumen",

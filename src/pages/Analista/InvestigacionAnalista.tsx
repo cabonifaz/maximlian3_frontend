@@ -2812,37 +2812,6 @@ function PantallaInvestigacionAnalista({
     setEstaAbiertoModalEjecutivo(false);
   };
 
-  const completarPorcentajeEjecutivos = () => {
-    if (datosInvestigacion.directorioEjecutivo.length === 0 || porcentajeRestanteEjecutivos <= 0) {
-      return;
-    }
-
-    setDatosInvestigacion((anterior) => {
-      const directorioEjecutivo = anterior.directorioEjecutivo.filter((ejecutivo) => ejecutivo.nombreCompleto !== "Otros");
-      directorioEjecutivo.unshift({
-        id: Date.now(),
-        ejecutivo: "Otros",
-        cargo: "-",
-        porcentaje: formatearPorcentajeOchoDecimales(porcentajeRestanteEjecutivos),
-        lista: false,
-        detalleEjecutivo: false,
-        orden: String(directorioEjecutivo.length + 1),
-        vinculadoDesde: "",
-        companiaAnterior: "",
-        esParteDirectorio: false,
-        pais: "",
-        tipoPersona: "",
-        descripcionBusqueda: "Otros",
-        nombreCompleto: "Otros",
-      });
-
-      return {
-        ...anterior,
-        directorioEjecutivo,
-      };
-    });
-  };
-
   const guardarPersonaDirectorio = (registro: RegistroPersonaDirectorioAnalista) => {
     const nuevoRegistro = {
       ...registro,
@@ -2928,7 +2897,6 @@ function PantallaInvestigacionAnalista({
     (total, ejecutivo) => total + obtenerPorcentajeNumerico(ejecutivo.porcentaje),
     0,
   );
-  const porcentajeRestanteEjecutivos = Math.max(0, 100 - totalPorcentajeEjecutivos);
   const seccionesDisponiblesExtraccion = useMemo(
     () => construirSeccionesDisponiblesExtraccion(alcanceExtraccionInformacion),
     [alcanceExtraccionInformacion],
@@ -4489,14 +4457,6 @@ function PantallaInvestigacionAnalista({
           />
         </label>
         <div className="flex flex-wrap gap-3">
-          <CustomButton
-            variant="secondary"
-            size="sm"
-            disabled={esSoloLectura || datosInvestigacion.directorioEjecutivo.length === 0 || porcentajeRestanteEjecutivos <= 0}
-            onClick={completarPorcentajeEjecutivos}
-          >
-            Completar porcentaje
-          </CustomButton>
           <CustomButton
             size="sm"
             disabled={esSoloLectura}

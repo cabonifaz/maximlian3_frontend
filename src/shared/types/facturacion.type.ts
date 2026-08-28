@@ -259,7 +259,6 @@ export interface ParametrosListarPedidosConGrupos {
   idTipoTramite?: number;
   idsPais?: number[];
   idMoneda?: number;
-  finalizadoEnFecha?: boolean;
 }
 
 export interface EntradaPedidoConGrupoApi {
@@ -279,6 +278,7 @@ export interface EntradaPedidoConGrupoApi {
   precio: number;
   idMoneda: number;
   moneda: string;
+  vigencia: boolean;
 }
 
 export interface EntradaGrupoRecomendadoApi {
@@ -312,6 +312,7 @@ export interface PedidoConGrupo {
   precio: number;
   idMoneda: number;
   moneda: string;
+  vigencia: boolean;
 }
 
 export interface GrupoRecomendado {

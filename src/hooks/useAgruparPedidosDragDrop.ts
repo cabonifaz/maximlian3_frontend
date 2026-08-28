@@ -52,7 +52,6 @@ export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
       filtrosAplicados.idTipoTramite,
       filtrosAplicados.idsPais,
       filtrosAplicados.idMoneda,
-      filtrosAplicados.idVigencia,
     ],
     queryFn: () =>
       facturacionService.listarPedidosConGrupos({
@@ -62,7 +61,6 @@ export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
         idTipoTramite: filtrosAplicados.idTipoTramite,
         idsPais: filtrosAplicados.idsPais.length > 0 ? filtrosAplicados.idsPais : undefined,
         idMoneda: filtrosAplicados.idMoneda,
-        finalizadoEnFecha: filtrosAplicados.idVigencia === undefined ? undefined : Boolean(filtrosAplicados.idVigencia),
       }),
     enabled: abierto && idCliente > 0 && hayBusquedaAplicada,
   });
@@ -96,11 +94,6 @@ export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
 
   const lineasParaConfirmar = useMemo(
     () => lineas.filter((linea) => linea.seleccionada && linea.idsPedido.length > 0),
-    [lineas],
-  );
-
-  const hayGruposConPedidos = useMemo(
-    () => lineas.some((linea) => linea.codigo !== CODIGO_PEDIDOS_SIN_GRUPO && linea.idsPedido.length > 0),
     [lineas],
   );
 
@@ -283,7 +276,6 @@ export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
     gruposSeleccionados,
     hayBusquedaAplicada,
     hayError: consulta.isError,
-    hayGruposConPedidos,
     idLineaEnfocada,
     limpiarEnfoque,
     limpiarTodo,

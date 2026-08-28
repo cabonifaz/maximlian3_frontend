@@ -1,4 +1,8 @@
-import { ID_ESTADO_INFORME_APROBADO } from "@maximilian/shared/constants/pages/Coordinador/revision-informe-coordinador.constants";
+import {
+  CLASE_CHIP_FORMATO_INFORME,
+  CLASE_CHIP_FORMATO_INFORME_DEFECTO,
+  ID_ESTADO_INFORME_APROBADO,
+} from "@maximilian/shared/constants/pages/Coordinador/revision-informe-coordinador.constants";
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -16,10 +20,15 @@ import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   FormatoDescargaInforme,
   InformeActualizarEstadoRequest,
+  InformeMetadatosDocumento,
   InformeObservacion,
 } from "@maximilian/shared/types/informe.type";
 
 type TabInformeComparado = "original" | "traducido";
+
+function obtenerClaseChipFormato(formato: string): string {
+  return CLASE_CHIP_FORMATO_INFORME[formato.trim().toLowerCase()] ?? CLASE_CHIP_FORMATO_INFORME_DEFECTO;
+}
 
 export default function RevisionInformeCoordinador() {
   const navigate = useNavigate();
@@ -33,6 +42,9 @@ export default function RevisionInformeCoordinador() {
   const informeYaAprobado = parametrosBusqueda.get("estado") === "aprobado";
   const [estaAbiertoModalRechazo, setEstaAbiertoModalRechazo] = useState(false);
   const [estaAbiertoModalAprobar, setEstaAbiertoModalAprobar] = useState(false);
+  const [estaAbiertoModalEnviarInforme, setEstaAbiertoModalEnviarInforme] = useState(false);
+  const [enviarCorreoAlAprobar, setEnviarCorreoAlAprobar] = useState(false);
+  const [metadatosDocumento, setMetadatosDocumento] = useState<InformeMetadatosDocumento | null>(null);
   const [observacionesRechazo, setObservacionesRechazo] = useState<InformeObservacion[]>([]);
   const [tabInformeComparado, setTabInformeComparado] = useState<TabInformeComparado>("original");
   const datosInvestigacion = undefined;
@@ -96,6 +108,10 @@ export default function RevisionInformeCoordinador() {
     enabled: Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0,
   });
 
+  const mutationEnviarNotificacion = useMutation({
+    mutationFn: (idInforme: number) => informeService.enviarNotificacion({ idInforme }),
+  });
+
   const mutationRevision = useMutation({
     mutationFn: async (payload: InformeActualizarEstadoRequest) => {
       await informeService.actualizarEstado(payload);
@@ -104,6 +120,10 @@ export default function RevisionInformeCoordinador() {
       setEstaAbiertoModalRechazo(false);
       setEstaAbiertoModalAprobar(false);
       setObservacionesRechazo([]);
+      if (enviarCorreoAlAprobar) {
+        mutationEnviarNotificacion.mutate(idInformeSeguro);
+      }
+      setEnviarCorreoAlAprobar(false);
       await queryClient.invalidateQueries({
         queryKey: ["informes-bandeja-coordinador-revision"],
       });
@@ -202,12 +222,24 @@ export default function RevisionInformeCoordinador() {
   const cerrarModalAprobar = () => {
     if (mutationRevision.isPending) return;
     setEstaAbiertoModalAprobar(false);
+    setEnviarCorreoAlAprobar(false);
   };
 
   const confirmarAprobacion = () => {
     mutationRevision.mutate({
       idInforme: idInformeSeguro,
       idEstadoInforme: ID_ESTADO_INFORME_APROBADO,
+    });
+  };
+
+  const cerrarModalEnviarInforme = () => {
+    if (mutationEnviarNotificacion.isPending) return;
+    setEstaAbiertoModalEnviarInforme(false);
+  };
+
+  const confirmarEnviarInforme = () => {
+    mutationEnviarNotificacion.mutate(idInformeSeguro, {
+      onSuccess: () => setEstaAbiertoModalEnviarInforme(false),
     });
   };
 
@@ -248,6 +280,62 @@ export default function RevisionInformeCoordinador() {
       toast.error(`No se pudo descargar el documento ${etiquetaFormato}.`, { id: idToast });
     }
   };
+
+  const requiereTraduccionInforme = metadatosDocumento?.requiereTraduccion ?? false;
+  const formatosClienteInforme = metadatosDocumento?.formatosCliente ?? [];
+  const cantidadEnviosInforme = metadatosDocumento?.cantidadEnvios ?? 0;
+
+  const contenidoAdicionalAprobar = requiereTraduccionInforme ? undefined : (
+    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+      <input
+        type="checkbox"
+        checked={enviarCorreoAlAprobar}
+        onChange={(evento) => setEnviarCorreoAlAprobar(evento.target.checked)}
+        className="h-4 w-4 accent-emerald-600"
+      />
+      Enviar informe al correo del cliente
+    </label>
+  );
+
+  const modalEnviarInforme = (
+    <CustomModalConfirmacionAccion
+      isOpen={estaAbiertoModalEnviarInforme}
+      onClose={cerrarModalEnviarInforme}
+      onConfirm={confirmarEnviarInforme}
+      title="Enviar informe"
+      descripcion="¿Deseas enviar este informe al correo del cliente?"
+      textoConfirmar="Enviar informe"
+      textoCargandoConfirmar="Enviando..."
+      varianteConfirmar="primary"
+      isSubmitting={mutationEnviarNotificacion.isPending}
+    >
+      <div className="space-y-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Formatos en los que sera enviado el informe
+          </p>
+          {formatosClienteInforme.length > 0 ? (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {formatosClienteInforme.map((formato) => (
+                <span
+                  key={formato}
+                  className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${obtenerClaseChipFormato(formato)}`}
+                >
+                  {formato}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-1 text-sm text-gray-900">-</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span>Veces enviado al cliente:</span>
+          <span className="font-semibold text-gray-900">{cantidadEnviosInforme}</span>
+        </div>
+      </div>
+    </CustomModalConfirmacionAccion>
+  );
 
   if (tieneInformeOriginal) {
     return (
@@ -333,6 +421,9 @@ export default function RevisionInformeCoordinador() {
                   }}
                   onAprobar={() => setEstaAbiertoModalAprobar(true)}
                   onRechazar={abrirModalRechazo}
+                  onEnviarInforme={() => setEstaAbiertoModalEnviarInforme(true)}
+                  onMetadatosDocumento={setMetadatosDocumento}
+                  requiereTraduccionInforme={requiereTraduccionInforme}
                   onVolver={() => navigate("/coordinador/revision")}
                 />
               </div>
@@ -375,9 +466,12 @@ export default function RevisionInformeCoordinador() {
           textoCargandoConfirmar="Aprobando..."
           varianteConfirmar="primary"
           isSubmitting={mutationRevision.isPending}
+          contenidoAdicional={contenidoAdicionalAprobar}
         >
           <p>El informe pasará al estado <span className="font-semibold">Aprobado</span>.</p>
         </CustomModalConfirmacionAccion>
+
+        {modalEnviarInforme}
       </>
     );
   }
@@ -405,6 +499,9 @@ export default function RevisionInformeCoordinador() {
         }}
         onAprobar={() => setEstaAbiertoModalAprobar(true)}
         onRechazar={abrirModalRechazo}
+        onEnviarInforme={() => setEstaAbiertoModalEnviarInforme(true)}
+        onMetadatosDocumento={setMetadatosDocumento}
+        requiereTraduccionInforme={requiereTraduccionInforme}
         onVolver={() => navigate("/coordinador/revision")}
       />
 
@@ -431,9 +528,12 @@ export default function RevisionInformeCoordinador() {
         textoCargandoConfirmar="Aprobando..."
         varianteConfirmar="primary"
         isSubmitting={mutationRevision.isPending}
+        contenidoAdicional={contenidoAdicionalAprobar}
       >
         <p>El informe pasará al estado <span className="font-semibold">Aprobado</span>.</p>
       </CustomModalConfirmacionAccion>
+
+      {modalEnviarInforme}
     </>
   );
 }
