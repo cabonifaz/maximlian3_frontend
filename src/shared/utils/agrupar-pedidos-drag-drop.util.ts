@@ -3,8 +3,14 @@ import {
   DESCRIPCION_PEDIDOS_SIN_GRUPO,
   FORMATO_ARRASTRE_AGRUPAR_PEDIDOS,
 } from "@maximilian/shared/constants/components/coordinador/agrupar-pedidos-drag-drop.constants";
-import type { CargaArrastrePedido, LineaFacturaBorrador, PedidoConGrupo } from "@maximilian/shared/types/agrupar-pedidos-drag-drop.type";
+import type {
+  CargaArrastrePedido,
+  FiltrosAgruparPedidos,
+  LineaFacturaBorrador,
+  PedidoConGrupo,
+} from "@maximilian/shared/types/agrupar-pedidos-drag-drop.type";
 import type { RespuestaListarPedidosConGrupos } from "@maximilian/shared/types/facturacion.type";
+import { convertirTextoAFecha } from "@maximilian/shared/utils/fecha.util";
 
 export function leerCargaArrastre(evento: React.DragEvent): CargaArrastrePedido | null {
   const crudo = evento.dataTransfer.getData(FORMATO_ARRASTRE_AGRUPAR_PEDIDOS);
@@ -74,4 +80,27 @@ export function pedidoEsCompatibleConLinea(
     referencia.idMoneda === pedido.idMoneda
     && referencia.precio === pedido.precio
   );
+}
+
+export function filtrarPedidosLocalmente(
+  pedidos: PedidoConGrupo[],
+  filtros: FiltrosAgruparPedidos,
+): PedidoConGrupo[] {
+  const busquedaNormalizada = filtros.busqueda.trim().toLowerCase();
+
+  return pedidos.filter((pedido) => {
+    if (filtros.idTipoTramite !== undefined && pedido.idTipoTramite !== filtros.idTipoTramite) return false;
+    if (filtros.idsPais.length > 0 && !filtros.idsPais.includes(pedido.idPais)) return false;
+    if (filtros.idMoneda !== undefined && pedido.idMoneda !== filtros.idMoneda) return false;
+
+    const fechaPedido = convertirTextoAFecha(pedido.fecha);
+    if (filtros.fechaInicio && fechaPedido && fechaPedido < filtros.fechaInicio) return false;
+    if (filtros.fechaFin && fechaPedido && fechaPedido > filtros.fechaFin) return false;
+
+    if (!busquedaNormalizada) return true;
+    return (
+      pedido.codigo.toLowerCase().includes(busquedaNormalizada)
+      || pedido.investigado.toLowerCase().includes(busquedaNormalizada)
+    );
+  });
 }

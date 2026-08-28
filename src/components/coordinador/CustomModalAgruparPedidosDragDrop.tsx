@@ -25,6 +25,8 @@ export function CustomModalAgruparPedidosDragDrop({
     agregarPedidoALinea,
     alternarEnfoqueLinea,
     alternarSeleccionLinea,
+    buscando,
+    buscar,
     cambiarFiltros,
     cerrarConfirmacion,
     confirmarCreacionLineas,
@@ -34,7 +36,11 @@ export function CustomModalAgruparPedidosDragDrop({
     estaCargando,
     fechasCompletas,
     filtros,
+    gruposCreados,
+    gruposSeleccionados,
+    hayBusquedaAplicada,
     hayError,
+    hayGruposConPedidos,
     idLineaEnfocada,
     limpiarEnfoque,
     limpiarTodo,
@@ -44,6 +50,9 @@ export function CustomModalAgruparPedidosDragDrop({
     mostrarConfirmacion,
     moverAPedidosSinGrupo,
     pedidosDisponibles,
+    pedidosEnGrupos,
+    pedidosSinAsignar,
+    pedidosSinGrupo,
     pedidosTotales,
     recargar,
     reiniciarWorkspace,
@@ -65,7 +74,6 @@ export function CustomModalAgruparPedidosDragDrop({
 
   if (!abierto) return null;
 
-  const totalPedidosAgrupados = lineas.reduce((total, linea) => total + linea.idsPedido.length, 0);
   const buscandoGlobalmente = filtros.busqueda.trim().length > 0;
 
   return createPortal(
@@ -92,12 +100,15 @@ export function CustomModalAgruparPedidosDragDrop({
           <CustomFiltrosAgruparPedidosDragDrop
             filtros={filtros}
             fechasCompletas={fechasCompletas}
+            buscando={buscando}
+            hayGruposConPedidos={hayGruposConPedidos}
             onCambiar={cambiarFiltros}
+            onBuscar={buscar}
           />
 
-          {!fechasCompletas ? (
+          {!hayBusquedaAplicada ? (
             <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 text-sm italic text-slate-400">
-              Selecciona fecha de inicio y fin para ver los pedidos.
+              Selecciona fecha de inicio y fin, y presiona Buscar para ver los pedidos.
             </div>
           ) : hayError ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-red-200 bg-red-50/40">
@@ -187,8 +198,18 @@ export function CustomModalAgruparPedidosDragDrop({
         </div>
 
         <div className="flex items-center justify-between border-t border-slate-100 bg-white px-6 py-3">
-          <div className="text-xs font-medium text-slate-400">
-            {lineas.length} grupo{lineas.length === 1 ? "" : "s"} · {totalPedidosAgrupados} pedido{totalPedidosAgrupados === 1 ? "" : "s"} asignados
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-slate-400">
+            <span>
+              {gruposCreados} grupo{gruposCreados === 1 ? "" : "s"}
+              {" "}
+              <span className="text-brand-wine">({gruposSeleccionados} seleccionado{gruposSeleccionados === 1 ? "" : "s"})</span>
+            </span>
+            <span className="text-slate-300">·</span>
+            <span>{pedidosEnGrupos} pedido{pedidosEnGrupos === 1 ? "" : "s"} en grupos</span>
+            <span className="text-slate-300">·</span>
+            <span>{pedidosSinGrupo} sin grupo</span>
+            <span className="text-slate-300">·</span>
+            <span>{pedidosSinAsignar} sin asignar</span>
           </div>
           <div className="flex items-center gap-2">
             <CustomButton type="button" variant="secondary" size="compact" onClick={reiniciarWorkspace}>
