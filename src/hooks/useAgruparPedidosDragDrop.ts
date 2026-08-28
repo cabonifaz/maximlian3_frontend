@@ -13,6 +13,7 @@ import {
   calcularValoresLinea,
   construirLineasBorradorDesdeApi,
   crearLineaPedidosSinGrupoVacia,
+  filtrarPedidosLocalmente,
   pedidoEsCompatibleConLinea,
 } from "@maximilian/shared/utils/agrupar-pedidos-drag-drop.util";
 import { formatearFechaIsoLocal } from "@maximilian/shared/utils/fecha.util";
@@ -31,12 +32,14 @@ const FILTROS_INICIALES: FiltrosAgruparPedidos = {
 
 export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
   const [filtros, setFiltros] = useState<FiltrosAgruparPedidos>(FILTROS_INICIALES);
+  const [filtrosAplicados, setFiltrosAplicados] = useState<FiltrosAgruparPedidos>(FILTROS_INICIALES);
   const [lineas, setLineas] = useState<LineaFacturaBorrador[]>([]);
   const [idLineaEnfocada, setIdLineaEnfocada] = useState<number | null>(null);
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
   const [datosBase, setDatosBase] = useState<RespuestaListarPedidosConGrupos | undefined>(undefined);
 
   const fechasCompletas = Boolean(filtros.fechaInicio && filtros.fechaFin);
+  const hayBusquedaAplicada = Boolean(filtrosAplicados.fechaInicio && filtrosAplicados.fechaFin);
 
   const consulta = useQuery({
     ...CONFIGURACION_CONSULTA_FACTURACION,
@@ -44,24 +47,24 @@ export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
       "facturacion",
       "pedidos-con-grupos",
       idCliente,
-      filtros.fechaInicio?.getTime(),
-      filtros.fechaFin?.getTime(),
-      filtros.idTipoTramite,
-      filtros.idsPais,
-      filtros.idMoneda,
-      filtros.idVigencia,
+      filtrosAplicados.fechaInicio?.getTime(),
+      filtrosAplicados.fechaFin?.getTime(),
+      filtrosAplicados.idTipoTramite,
+      filtrosAplicados.idsPais,
+      filtrosAplicados.idMoneda,
+      filtrosAplicados.idVigencia,
     ],
     queryFn: () =>
       facturacionService.listarPedidosConGrupos({
         idCliente,
-        fchInicio: formatearFechaIsoLocal(filtros.fechaInicio!),
-        fchFin: formatearFechaIsoLocal(filtros.fechaFin!),
-        idTipoTramite: filtros.idTipoTramite,
-        idsPais: filtros.idsPais.length > 0 ? filtros.idsPais : undefined,
-        idMoneda: filtros.idMoneda,
-        finalizadoEnFecha: filtros.idVigencia === undefined ? undefined : Boolean(filtros.idVigencia),
+        fchInicio: formatearFechaIsoLocal(filtrosAplicados.fechaInicio!),
+        fchFin: formatearFechaIsoLocal(filtrosAplicados.fechaFin!),
+        idTipoTramite: filtrosAplicados.idTipoTramite,
+        idsPais: filtrosAplicados.idsPais.length > 0 ? filtrosAplicados.idsPais : undefined,
+        idMoneda: filtrosAplicados.idMoneda,
+        finalizadoEnFecha: filtrosAplicados.idVigencia === undefined ? undefined : Boolean(filtrosAplicados.idVigencia),
       }),
-    enabled: abierto && idCliente > 0 && fechasCompletas,
+    enabled: abierto && idCliente > 0 && hayBusquedaAplicada,
   });
 
   if (consulta.data && consulta.data !== datosBase) {
@@ -96,19 +99,43 @@ export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
     [lineas],
   );
 
-  const pedidosDisponibles = useMemo(() => {
-    const busquedaNormalizada = filtros.busqueda.trim().toLowerCase();
+  const hayGruposConPedidos = useMemo(
+    () => lineas.some((linea) => linea.codigo !== CODIGO_PEDIDOS_SIN_GRUPO && linea.idsPedido.length > 0),
+    [lineas],
+  );
 
-    if (busquedaNormalizada) {
-      return pedidosTotales.filter((pedido) =>
-        pedido.codigo.toLowerCase().includes(busquedaNormalizada)
-        || pedido.investigado.toLowerCase().includes(busquedaNormalizada));
-    }
+  const gruposCreados = useMemo(
+    () => lineas.filter((linea) => linea.codigo !== CODIGO_PEDIDOS_SIN_GRUPO).length,
+    [lineas],
+  );
+
+  const gruposSeleccionados = useMemo(
+    () => lineas.filter((linea) => linea.seleccionada).length,
+    [lineas],
+  );
+
+  const totalPedidosAgrupados = useMemo(
+    () => lineas.reduce((total, linea) => total + linea.idsPedido.length, 0),
+    [lineas],
+  );
+
+  const pedidosSinGrupo = useMemo(
+    () => lineas.find((linea) => linea.codigo === CODIGO_PEDIDOS_SIN_GRUPO)?.idsPedido.length ?? 0,
+    [lineas],
+  );
+
+  const pedidosEnGrupos = totalPedidosAgrupados - pedidosSinGrupo;
+  const pedidosSinAsignar = pedidosTotales.length - totalPedidosAgrupados;
+
+  const pedidosDisponibles = useMemo(() => {
+    const pedidosFiltrados = filtrarPedidosLocalmente(pedidosTotales, filtros);
+
+    if (filtros.busqueda.trim()) return pedidosFiltrados;
 
     return lineaEnfocada
-      ? pedidosTotales.filter((pedido) => lineaEnfocada.idsPedido.includes(pedido.idPedido))
-      : pedidosTotales;
-  }, [pedidosTotales, filtros.busqueda, lineaEnfocada]);
+      ? pedidosFiltrados.filter((pedido) => lineaEnfocada.idsPedido.includes(pedido.idPedido))
+      : pedidosFiltrados;
+  }, [pedidosTotales, filtros, lineaEnfocada]);
 
   const alternarEnfoqueLinea = (id: number) => {
     setIdLineaEnfocada((actual) => (actual === id ? null : id));
@@ -208,6 +235,8 @@ export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
     setFiltros((actual) => ({ ...actual, ...cambios }));
   };
 
+  const buscar = () => setFiltrosAplicados(filtros);
+
   const reiniciarWorkspace = () => {
     if (!datosBase) return;
     setLineas(construirLineasBorradorDesdeApi(datosBase));
@@ -216,6 +245,7 @@ export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
 
   const limpiarTodo = () => {
     setFiltros(FILTROS_INICIALES);
+    setFiltrosAplicados(FILTROS_INICIALES);
     setDatosBase(undefined);
     setLineas([]);
     setIdLineaEnfocada(null);
@@ -238,6 +268,8 @@ export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
     agregarPedidoALinea,
     alternarEnfoqueLinea,
     alternarSeleccionLinea,
+    buscando: consulta.isFetching,
+    buscar,
     cambiarFiltros,
     cerrarConfirmacion,
     confirmarCreacionLineas,
@@ -247,7 +279,11 @@ export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
     estaCargando: consulta.isLoading,
     fechasCompletas,
     filtros,
+    gruposCreados,
+    gruposSeleccionados,
+    hayBusquedaAplicada,
     hayError: consulta.isError,
+    hayGruposConPedidos,
     idLineaEnfocada,
     limpiarEnfoque,
     limpiarTodo,
@@ -257,6 +293,9 @@ export function useAgruparPedidosDragDrop(idCliente: number, abierto: boolean) {
     mostrarConfirmacion,
     moverAPedidosSinGrupo,
     pedidosDisponibles,
+    pedidosEnGrupos,
+    pedidosSinAsignar,
+    pedidosSinGrupo,
     pedidosTotales,
     recargar: consulta.refetch,
     reiniciarWorkspace,
