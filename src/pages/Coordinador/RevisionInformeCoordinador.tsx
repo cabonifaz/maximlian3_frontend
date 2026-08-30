@@ -110,6 +110,18 @@ export default function RevisionInformeCoordinador() {
 
   const mutationEnviarNotificacion = useMutation({
     mutationFn: (idInforme: number) => informeService.enviarNotificacion({ idInforme }),
+    onSuccess: async () => {
+      try {
+        const respuesta = await informeService.previsualizarDocumento(idInformeSeguro, idPedidoNumerico);
+        setMetadatosDocumento({
+          cantidadEnvios: respuesta.cantidadEnvios,
+          formatosCliente: respuesta.formatosCliente,
+          requiereTraduccion: respuesta.requiereTraduccion,
+        });
+      } catch {
+        // El contador de envios se actualizara en la proxima carga del documento; no crítico.
+      }
+    },
   });
 
   const mutationRevision = useMutation({
