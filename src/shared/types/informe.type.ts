@@ -501,6 +501,16 @@ export interface InformeActualizarEstadoRequest {
   idEstadoInforme: number;
 }
 
+export interface InformeEnviarNotificacionRequest {
+  idInforme: number;
+}
+
+export interface InformeMetadatosDocumento {
+  cantidadEnvios: number;
+  formatosCliente: string[];
+  requiereTraduccion: boolean;
+}
+
 export interface InformeObservacion {
   idInformeObservacion: number;
   observacion: string;
@@ -739,6 +749,9 @@ export interface DocumentoInformeGenerado {
 export interface RespuestaDocumentoInformeGenerado {
   documento: DocumentoInformeGenerado;
   nombreInforme: string;
+  cantidadEnvios: number;
+  formatosCliente: string[];
+  requiereTraduccion: boolean;
 }
 
 export interface DocumentoInformeObtenido {

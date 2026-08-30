@@ -1,7 +1,8 @@
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, RotateCcw } from "lucide-react";
 import type { DatosInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
+import type { InformeMetadatosDocumento } from "@maximilian/shared/types/informe.type";
 import { seccionesInvestigacionAnalista } from "@maximilian/shared/utils/investigacion.util";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
@@ -77,6 +78,7 @@ interface PropsVistaPreviaInformeComparado {
   ocuparAltoDisponibleDocumento?: boolean;
   className?: string;
   contenidoEntreTabsYTarjetas?: ReactNode;
+  onMetadatosDocumento?: (metadatos: InformeMetadatosDocumento | null) => void;
 }
 
 function humanizarEtiquetaVistaPrevia(texto: string) {
@@ -1050,6 +1052,7 @@ export function CustomVistaPreviaInformeComparado({
   ocuparAltoDisponibleDocumento = false,
   className = "space-y-6",
   contenidoEntreTabsYTarjetas,
+  onMetadatosDocumento,
 }: PropsVistaPreviaInformeComparado) {
   const [idTabActiva, setIdTabActiva] = useState<IdTabVistaPreviaInforme>("vista-general");
   const idInformeDocumento = Number(idInforme);
@@ -1066,12 +1069,17 @@ export function CustomVistaPreviaInformeComparado({
 
   const {
     documentoGenerado,
+    metadatosDocumento,
     estaCargandoDocumento,
     estaRenderizandoDocumento,
     setEstaRenderizandoDocumento,
     errorDocumento,
     reintentarCargaDocumento,
   } = useDocumentoVistaPreviaInforme(idInformeDocumento, idPedidoDocumento, puedeMostrarDocumento);
+
+  useEffect(() => {
+    onMetadatosDocumento?.(metadatosDocumento);
+  }, [metadatosDocumento, onMetadatosDocumento]);
 
   const seccionesVistaPrevia = useMemo(
     () => datosInvestigacion

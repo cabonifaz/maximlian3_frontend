@@ -1,11 +1,11 @@
-import { ArrowLeft, CheckCircle2, CircleX, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CircleX, Mail, ShieldCheck } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomDescargaInforme } from "@maximilian/components/coordinador/CustomDescargaInforme";
 import {
   CustomVistaPreviaInformeComparado,
   type EncabezadoVistaPreviaInforme,
 } from "@maximilian/components/common/CustomVistaPreviaInforme";
-import type { FormatoDescargaInforme } from "@maximilian/shared/types/informe.type";
+import type { FormatoDescargaInforme, InformeMetadatosDocumento } from "@maximilian/shared/types/informe.type";
 import type { DatosInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomVisorRevisionInforme {
@@ -31,6 +31,9 @@ interface PropsCustomVisorRevisionInforme {
   onDescargar: (formato: FormatoDescargaInforme) => void;
   onAprobar: () => void;
   onRechazar: () => void;
+  onEnviarInforme?: () => void;
+  onMetadatosDocumento?: (metadatos: InformeMetadatosDocumento | null) => void;
+  requiereTraduccionInforme?: boolean;
   onVolver: () => void;
 }
 
@@ -55,6 +58,9 @@ export function CustomVisorRevisionInforme({
   onDescargar,
   onAprobar,
   onRechazar,
+  onEnviarInforme,
+  onMetadatosDocumento,
+  requiereTraduccionInforme = false,
   onVolver,
 }: PropsCustomVisorRevisionInforme) {
   const tieneDocumento =
@@ -68,17 +74,31 @@ export function CustomVisorRevisionInforme({
     <div className={className}>
       {mostrarAccionesRevision ? (
         <>
-          <CustomButton
-            variant="secondary"
-            size="sm"
-            className="border-green-400 text-green-600"
-            disabled={!puedeEditar || informeYaAprobado}
-            title={informeYaAprobado ? "El informe ya fue aprobado." : undefined}
-            onClick={onAprobar}
-          >
-            <CheckCircle2 size={14} />
-            Aprobar
-          </CustomButton>
+          {informeYaAprobado ? (
+            !requiereTraduccionInforme && onEnviarInforme ? (
+              <CustomButton
+                variant="secondary"
+                size="sm"
+                className="border-blue-400 text-blue-600"
+                disabled={!puedeEditar}
+                onClick={onEnviarInforme}
+              >
+                <Mail size={14} />
+                Enviar informe
+              </CustomButton>
+            ) : null
+          ) : (
+            <CustomButton
+              variant="secondary"
+              size="sm"
+              className="border-green-400 text-green-600"
+              disabled={!puedeEditar}
+              onClick={onAprobar}
+            >
+              <CheckCircle2 size={14} />
+              Aprobar
+            </CustomButton>
+          )}
           <CustomButton
             variant="secondary"
             size="sm"
@@ -151,6 +171,7 @@ export function CustomVisorRevisionInforme({
             tituloBarraDocumento={tituloInforme}
             subtituloBarraDocumento={idiomaInforme}
             className="mx-auto flex h-full max-w-6xl flex-col space-y-3"
+            onMetadatosDocumento={onMetadatosDocumento}
           />
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-500">

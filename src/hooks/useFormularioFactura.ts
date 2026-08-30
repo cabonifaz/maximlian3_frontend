@@ -46,6 +46,7 @@ import {
   ID_TIPO_DOCUMENTO_SUNAT_RUC,
   ID_TIPO_OPERACION_SUNAT_EXPORTACION_SERVICIOS,
   ID_UNIDAD_MEDIDA_PREDETERMINADA,
+  IDS_TIPO_OPERACION_SUNAT_EXPORTACION,
   ID_TIPO_NOTA_DEBITO,
   IDS_AFECTACION_IGV_DISPONIBLES,
   IDS_TIPO_COMPROBANTE_CLIENTE_RUC,
@@ -502,6 +503,77 @@ export function useFormularioFactura(
       shouldValidate: true,
     });
   }, [detalle, getValues, idAfectacionIgvPredeterminada, setValue]);
+  const esModoEdicionLineas = modo !== "detalle";
+  const esTipoOperacionExportacion = Boolean(
+    idTipoOperacionMaestro
+    && (IDS_TIPO_OPERACION_SUNAT_EXPORTACION as readonly number[]).includes(
+      idTipoOperacionMaestro,
+    ),
+  );
+  const idAfectacionIgvSegunTipoOperacion = esTipoOperacionExportacion
+    ? ID_AFECTACION_IGV_EXTRANJERO
+    : ID_AFECTACION_IGV_PERU;
+  const porcentajeIgvSegunTipoOperacion = esTipoOperacionExportacion
+    ? 0
+    : PORCENTAJE_IGV_PREDETERMINADO;
+  useEffect(() => {
+    if (!detalle || !esModoEdicionLineas || !idTipoOperacionMaestro) return;
+
+    const afectacionesActuales = getValues("afectacionesIgv");
+    const porcentajesActuales = getValues("porcentajesIgv");
+    const afectacionesActualizadas = { ...afectacionesActuales };
+    const porcentajesActualizados = { ...porcentajesActuales };
+    let hayCambios = false;
+
+    detalle.productos.forEach((producto) => {
+      const claveProducto = String(producto.idProductoFactura);
+
+      if (afectacionesActuales[claveProducto] !== idAfectacionIgvSegunTipoOperacion) {
+        afectacionesActualizadas[claveProducto] = idAfectacionIgvSegunTipoOperacion;
+        hayCambios = true;
+      }
+
+      if (
+        producto.porcentajeIgv !== porcentajeIgvSegunTipoOperacion
+        || porcentajesActuales[claveProducto] !== porcentajeIgvSegunTipoOperacion
+      ) {
+        porcentajesActualizados[claveProducto] = porcentajeIgvSegunTipoOperacion;
+        hayCambios = true;
+      }
+    });
+
+    if (!hayCambios) return;
+
+    setValue("afectacionesIgv", afectacionesActualizadas, {
+      shouldValidate: true,
+    });
+    setValue("porcentajesIgv", porcentajesActualizados, {
+      shouldValidate: true,
+    });
+    // Sincroniza detalle.productos.porcentajeIgv (fuente de la vista en modo lectura de la fila)
+    // con la afectación IGV que corresponde al tipo de operación; el payload de envío ya usa porcentajesIgv del formulario.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDetalle((actual) =>
+      actual
+        ? {
+            ...actual,
+            productos: actual.productos.map((producto) =>
+              producto.porcentajeIgv === porcentajeIgvSegunTipoOperacion
+                ? producto
+                : { ...producto, porcentajeIgv: porcentajeIgvSegunTipoOperacion },
+            ),
+          }
+        : actual,
+    );
+  }, [
+    detalle,
+    esModoEdicionLineas,
+    getValues,
+    idAfectacionIgvSegunTipoOperacion,
+    idTipoOperacionMaestro,
+    porcentajeIgvSegunTipoOperacion,
+    setValue,
+  ]);
   const opcionesTipoDocumento = useMemo(() => {
     if (esNotaCreditoDebito) return opcionesTipoDocumentoBase;
 
