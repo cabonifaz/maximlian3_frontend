@@ -350,9 +350,16 @@ async function obtenerFacturaRegistrada(
     idCliente !== null
       ? servicioCliente.getById(idCliente)
       : esPendienteEnvio && !esNota
-        ? servicioCliente.obtenerPorDocumentoElectronico(idReferencia)
+        ? servicioCliente.obtenerConLineasPorDocumentoElectronico(idReferencia)
         : Promise.resolve(null),
   ]);
+  // Cuando el cliente se resolvió por documento, sus líneas son la fuente de verdad:
+  // una línea agrupada eliminada en la BD de pedidos puede seguir apareciendo en la
+  // factura si esa eliminación no llegó a propagarse a la BD de facturación.
+  const idsLineaAgrupadaVigente =
+    detalleCliente && "lineas" in detalleCliente
+      ? new Set(detalleCliente.lineas.map((linea) => linea.idPedidoFacturaLinea))
+      : null;
 
   if (data.idTipoMensaje !== MessageType.SUCCESS) {
     throw new ErrorRespuestaApi(data);
@@ -429,38 +436,45 @@ async function obtenerFacturaRegistrada(
         campoExtra.idCampoExtraDocumentoElectronico,
       texto: campoExtra.texto,
     })),
-    productos: lineas.map((linea) => {
-      const opcionAfectacionIgv = buscarOpcionTablaMaestra(
-        opcionesAfectacionIgv,
-        linea.afectacionIgvCodigo,
-      );
-      const opcionUnidadMedida = buscarOpcionTablaMaestra(
-        opcionesUnidadMedida,
-        linea.unidadMedidaCodigo,
-      );
+    productos: lineas
+      .filter(
+        (linea) =>
+          idsLineaAgrupadaVigente === null
+          || linea.idPedidoFacturaLinea === 0
+          || idsLineaAgrupadaVigente.has(linea.idPedidoFacturaLinea),
+      )
+      .map((linea) => {
+        const opcionAfectacionIgv = buscarOpcionTablaMaestra(
+          opcionesAfectacionIgv,
+          linea.afectacionIgvCodigo,
+        );
+        const opcionUnidadMedida = buscarOpcionTablaMaestra(
+          opcionesUnidadMedida,
+          linea.unidadMedidaCodigo,
+        );
 
-      return {
-        idProductoFactura: linea.idLineaDocumentoElectronico,
-        idPedidoFacturaLinea: linea.idPedidoFacturaLinea,
-        codigo: linea.productoCodigo ?? "",
-        numeroLinea: linea.numeroLinea,
-        idLineaDocumentoElectronico: linea.idLineaDocumentoElectronico,
-        productoSunatCodigo: linea.productoSunatCodigo,
-        idUnidadMedidaMaestro: opcionUnidadMedida?.num1 ?? 0,
-        unidadMedidaDescripcion:
-          obtenerEtiquetaTablaMaestra(opcionUnidadMedida),
-        cantidad: linea.cantidad,
-        descripcion: linea.descripcion,
-        montoDescuento: linea.montoDescuento,
-        valorUnitario: linea.valorUnitario,
-        precioUnitario: linea.precioUnitario,
-        porcentajeIgv: linea.porcentajeIgv,
-        idAfectacionIgvMaestro: opcionAfectacionIgv?.num1 ?? 0,
-        afectacionIgvDescripcion:
-          obtenerEtiquetaTablaMaestra(opcionAfectacionIgv),
-        total: linea.totalLinea,
-      };
-    }),
+        return {
+          idProductoFactura: linea.idLineaDocumentoElectronico,
+          idPedidoFacturaLinea: linea.idPedidoFacturaLinea,
+          codigo: linea.productoCodigo ?? "",
+          numeroLinea: linea.numeroLinea,
+          idLineaDocumentoElectronico: linea.idLineaDocumentoElectronico,
+          productoSunatCodigo: linea.productoSunatCodigo,
+          idUnidadMedidaMaestro: opcionUnidadMedida?.num1 ?? 0,
+          unidadMedidaDescripcion:
+            obtenerEtiquetaTablaMaestra(opcionUnidadMedida),
+          cantidad: linea.cantidad,
+          descripcion: linea.descripcion,
+          montoDescuento: linea.montoDescuento,
+          valorUnitario: linea.valorUnitario,
+          precioUnitario: linea.precioUnitario,
+          porcentajeIgv: linea.porcentajeIgv,
+          idAfectacionIgvMaestro: opcionAfectacionIgv?.num1 ?? 0,
+          afectacionIgvDescripcion:
+            obtenerEtiquetaTablaMaestra(opcionAfectacionIgv),
+          total: linea.totalLinea,
+        };
+      }),
     cuotas: (cuotas ?? []).map((cuota) => ({
       idCuotaFactura: cuota.idCuotaDocumentoElectronico,
       idCuotaDocumentoElectronico: cuota.idCuotaDocumentoElectronico,

@@ -2,7 +2,7 @@ export const ENDPOINTS_CLIENTE = {
   listar: "/api/Cliente/listar",
   crear: "/api/Cliente/crear",
   obtener: "/api/Cliente/obtener",
-  obtenerPorDocumentoElectronico: "/api/Cliente/obtenerPorDocumentoElectronico",
+  obtenerConLineasPorDocumentoElectronico: "/api/Cliente/obtenerConLineasPorDocumentoElectronico",
   activarDesactivar: "/api/Cliente/activarDesactivar",
   editar: "/api/Cliente/editar",
   listaCorta: "/api/Cliente/listaCorta",
