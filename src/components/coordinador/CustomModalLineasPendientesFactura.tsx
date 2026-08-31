@@ -26,6 +26,7 @@ interface CustomModalLineasPendientesFacturaProps {
     paraAgregar: EntradaLineaAgrupadaPendiente[],
     paraQuitar: EntradaLineaAgrupadaPendiente[],
   ) => void;
+  onLineaEliminada?: (idPedidoFacturaLinea: number) => void;
 }
 
 export function CustomModalLineasPendientesFactura({
@@ -36,6 +37,7 @@ export function CustomModalLineasPendientesFactura({
   idsLineasAgregadas,
   onCerrar,
   onConfirmar,
+  onLineaEliminada,
 }: CustomModalLineasPendientesFacturaProps) {
   const {
     cambiarMes,
@@ -147,6 +149,7 @@ export function CustomModalLineasPendientesFactura({
   const confirmarEliminacion = async () => {
     if (!lineaAEliminar) return;
     await eliminarLinea(lineaAEliminar.idPedidoFacturaLinea);
+    onLineaEliminada?.(lineaAEliminar.idPedidoFacturaLinea);
     setLineaAEliminar(null);
   };
 

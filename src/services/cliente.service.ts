@@ -6,6 +6,7 @@ import type {
   CreateClientRequest,
   CreateClientResponse,
   ClientDetail,
+  ClienteConLineasPorDocumento,
   ClientListRequest,
   ClientListResponse,
   ActivarDesactivarClienteRequest,
@@ -88,22 +89,20 @@ export const servicioCliente = {
     return data.result[0];
   },
 
-  /**
-   * Resolve the client behind an already-issued electronic document (invoice/note).
-   * Used when a factura is loaded by idDocumentoElectronico and the caller does not
-   * already know its idCliente (e.g. editing/viewing/anulando from the Facturas tab).
-   */
-  obtenerPorDocumentoElectronico: async (
+  // Resuelve el cliente detrás de un documento electrónico ya emitido, junto con las
+  // líneas agrupadas vigentes según la BD de pedidos (fuente de verdad frente a las
+  // líneas ya guardadas en la factura, que pueden haber quedado desactualizadas).
+  obtenerConLineasPorDocumentoElectronico: async (
     idDocumentoElectronico: number,
-  ): Promise<ClientDetail | null> => {
-    const { data } = await maximilianService.get<ApiResponse<ClientDetail[]>>(
-      ENDPOINTS_CLIENTE.obtenerPorDocumentoElectronico,
+  ): Promise<ClienteConLineasPorDocumento | null> => {
+    const { data } = await maximilianService.get<ApiResponse<ClienteConLineasPorDocumento>>(
+      ENDPOINTS_CLIENTE.obtenerConLineasPorDocumentoElectronico,
       { params: { idDocumentoElectronico } }
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) {
       throw new ErrorRespuestaApi(data);
     }
-    return data.result[0] ?? null;
+    return data.result ?? null;
   },
 
   activarDesactivar: async (data: ActivarDesactivarClienteRequest) => {
