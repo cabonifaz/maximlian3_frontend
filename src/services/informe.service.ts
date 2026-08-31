@@ -11,6 +11,7 @@ import type {
   ImagenPendienteSubida,
   InformeAutocompletarRequest,
   InformeActualizarEstadoRequest,
+  InformeEnviarNotificacionRequest,
   InformeCrearRequest,
   InformeCrearResponse,
   DocumentoInformeGenerado,
@@ -1495,6 +1496,17 @@ export const informeService = {
     }
   },
 
+  enviarNotificacion: async (payload: InformeEnviarNotificacionRequest): Promise<void> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      ENDPOINTS_INFORME.enviarNotificacion,
+      payload,
+    );
+
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.enviarNotificacion)) {
+      throw new ErrorRespuestaApi(data);
+    }
+  },
+
   editar: async (payload: InformeCrearRequest): Promise<InformeCrearResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_INFORME.editar, payload);
 
@@ -1520,7 +1532,10 @@ export const informeService = {
     return enriquecerRespuestaObtener(normalizarRespuestaObtener(data.result));
   },
 
-  previsualizarDocumento: async (idInforme: number, idPedido: number): Promise<DocumentoInformeGenerado> => {
+  previsualizarDocumento: async (
+    idInforme: number,
+    idPedido: number,
+  ): Promise<RespuestaDocumentoInformeGenerado> => {
     const { data } = await maximilianService.get<
       ApiResponse<DocumentoInformeGenerado | RespuestaDocumentoInformeGenerado>
     >(ENDPOINTS_INFORME.previsualizarDocumento, {
@@ -1534,7 +1549,17 @@ export const informeService = {
       throw new ErrorRespuestaApi(data);
     }
 
-    return "documento" in data.result ? data.result.documento : data.result;
+    const registro = obtenerRegistro(data.result);
+    const documento = "documento" in data.result ? data.result.documento : data.result;
+
+    return {
+      documento,
+      nombreInforme: obtenerTexto(registro.nombreInforme, registro.NombreInforme),
+      cantidadEnvios: obtenerNumero(registro.cantidadEnvios, registro.CantidadEnvios),
+      formatosCliente: obtenerLista(registro.formatosCliente, registro.FormatosCliente)
+        .filter((formato): formato is string => typeof formato === "string"),
+      requiereTraduccion: obtenerBooleano(registro.requiereTraduccion, registro.RequiereTraduccion),
+    };
   },
 
   obtenerDocumento: async (

@@ -92,6 +92,7 @@ export function filtrarPedidosLocalmente(
     if (filtros.idTipoTramite !== undefined && pedido.idTipoTramite !== filtros.idTipoTramite) return false;
     if (filtros.idsPais.length > 0 && !filtros.idsPais.includes(pedido.idPais)) return false;
     if (filtros.idMoneda !== undefined && pedido.idMoneda !== filtros.idMoneda) return false;
+    if (filtros.idVigencia !== undefined && pedido.vigencia !== Boolean(filtros.idVigencia)) return false;
 
     const fechaPedido = convertirTextoAFecha(pedido.fecha);
     if (filtros.fechaInicio && fechaPedido && fechaPedido < filtros.fechaInicio) return false;

@@ -227,6 +227,7 @@ function mapearPedidoConGrupo(pedido: EntradaPedidoConGrupoApi): PedidoConGrupo 
     precio: pedido.precio,
     idMoneda: pedido.idMoneda,
     moneda: pedido.moneda,
+    vigencia: pedido.vigencia,
   };
 }
 

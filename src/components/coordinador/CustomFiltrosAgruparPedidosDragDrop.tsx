@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, ChevronDown, ChevronUp, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, ChevronUp, Info, Search, SlidersHorizontal } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
@@ -15,7 +15,6 @@ interface CustomFiltrosAgruparPedidosDragDropProps {
   filtros: FiltrosAgruparPedidos;
   fechasCompletas: boolean;
   buscando: boolean;
-  hayGruposConPedidos: boolean;
   onCambiar: (cambios: Partial<FiltrosAgruparPedidos>) => void;
   onBuscar: () => void;
 }
@@ -24,7 +23,6 @@ export function CustomFiltrosAgruparPedidosDragDrop({
   filtros,
   fechasCompletas,
   buscando,
-  hayGruposConPedidos,
   onCambiar,
   onBuscar,
 }: CustomFiltrosAgruparPedidosDragDropProps) {
@@ -46,6 +44,9 @@ export function CustomFiltrosAgruparPedidosDragDrop({
               ({formatearFechaDdMmYyyy(filtros.fechaInicio)} - {formatearFechaDdMmYyyy(filtros.fechaFin)})
             </span>
           ) : null}
+          <span title={AYUDA_FILTROS_Y_BUSCAR}>
+            <Info size={13} className="shrink-0 text-sky-500" />
+          </span>
         </span>
         {expandido ? (
           <ChevronUp size={15} className="shrink-0 text-slate-400" />
@@ -122,16 +123,7 @@ export function CustomFiltrosAgruparPedidosDragDrop({
           </div>
           {!fechasCompletas ? (
             <p className="text-xs italic text-slate-400">Selecciona fecha de inicio y fin para buscar pedidos.</p>
-          ) : (
-            <p
-              className={`flex items-center gap-1.5 text-xs ${
-                hayGruposConPedidos ? "font-medium text-amber-600" : "italic text-slate-400"
-              }`}
-            >
-              {hayGruposConPedidos ? <AlertTriangle size={13} className="shrink-0" /> : null}
-              {AYUDA_FILTROS_Y_BUSCAR}
-            </p>
-          )}
+          ) : null}
           <div className="relative w-72">
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
