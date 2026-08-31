@@ -188,14 +188,15 @@ export function CustomModalFactura({
     paraQuitar: EntradaLineaAgrupadaPendiente[],
   ) => {
     paraAgregar.forEach((linea) => agregarLineaAgrupada(linea));
-    paraQuitar.forEach((linea) => {
-      const producto = detalle.productos.find(
-        (productoActual) =>
-          productoActual.idPedidoFacturaLinea === linea.idPedidoFacturaLinea,
-      );
-      if (producto) quitarProducto(producto);
-    });
+    paraQuitar.forEach((linea) => quitarProductoPorLineaAgrupada(linea.idPedidoFacturaLinea));
     setModalProductosAbierto(false);
+  };
+
+  const quitarProductoPorLineaAgrupada = (idPedidoFacturaLinea: number) => {
+    const producto = detalle.productos.find(
+      (productoActual) => productoActual.idPedidoFacturaLinea === idPedidoFacturaLinea,
+    );
+    if (producto) quitarProducto(producto);
   };
 
   const soloEstadoCuota = soloLectura && Boolean(configuracionModalCuota?.cuota);
@@ -1150,6 +1151,7 @@ export function CustomModalFactura({
           .filter((id): id is number => Boolean(id))}
         onCerrar={() => setModalProductosAbierto(false)}
         onConfirmar={confirmarSeleccionLineasPendientes}
+        onLineaEliminada={quitarProductoPorLineaAgrupada}
       />
       <CustomModalCuotaFactura
         abierto={configuracionModalCuota !== null}

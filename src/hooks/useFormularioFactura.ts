@@ -467,8 +467,8 @@ export function useFormularioFactura(
       ),
     [opcionesAfectacionIgvBase],
   );
-  // Al editar una nota, servicioCliente.obtenerPorDocumentoElectronico ya no se
-  // consulta (no reconoce el idDocumentoElectronico de una nota), así que el
+  // Al editar una nota, servicioCliente.obtenerConLineasPorDocumentoElectronico ya no
+  // se consulta (no reconoce el idDocumentoElectronico de una nota), así que el
   // idTipoDocumentoSunat de detalle queda en 0; se usa el de /paraNota en su lugar.
   const idTipoDocumentoSunatEfectivo =
     esEdicionNotaCreditoDebito && datosParaNota

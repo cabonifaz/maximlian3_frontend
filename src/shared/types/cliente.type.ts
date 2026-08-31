@@ -83,6 +83,23 @@ export type ClientDetail = {
   idEstado: number;
 };
 
+export type LineaClienteDocumentoElectronico = {
+  idPedidoFacturaLinea: number;
+  idDocumentoElectronico: number | null;
+  codigo: string;
+  descripcion: string;
+  cantidad: number;
+  valorUnitario: number;
+  descuento: number;
+};
+
+export type ClienteConLineasPorDocumento = {
+  idCliente: number;
+  idTipoDocumentoSunat: number;
+  lstIdFormatoDocumento: number[];
+  lineas: LineaClienteDocumentoElectronico[];
+};
+
 export type UpdateClientRequest = Omit<CreateClientRequest, 'contactos' | 'tarifario'> & {
   idCliente: number;
 };
