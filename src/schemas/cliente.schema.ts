@@ -8,6 +8,14 @@ const selectorRequerido = (mensaje: string) =>
     { message: mensaje },
   );
 
+const selectorConCeroRequerido = (mensaje: string) =>
+  z.custom<string | number>(
+    (valor) =>
+      (typeof valor === "string" && valor !== "")
+      || (typeof valor === "number" && Number.isFinite(valor) && valor >= 0),
+    { message: mensaje },
+  );
+
 const selectorMultipleRequerido = (mensaje: string) =>
   z.custom<number[]>(
     (valor) => Array.isArray(valor) && valor.every((item) => typeof item === "number"),
@@ -38,7 +46,9 @@ export const esquemaInformacionCliente = z.object({
   telefono: z.string().optional().or(z.literal("")),
   sitioWeb: z.string().url("URL inválida").optional().or(z.literal("")),
   fax: z.string().optional(),
-  tipoRegistroTributario: selectorRequerido("El tipo de registro tributario es requerido"),
+  tipoRegistroTributario: selectorConCeroRequerido(
+    "El tipo de registro tributario es requerido",
+  ),
   numRegistroTributario: textoRequerido("El registro tributario es requerido"),
   moneda: selectorRequerido("La moneda es requerida"),
   atendidoPor: selectorRequerido("El atendido por es requerido"),
@@ -84,6 +94,7 @@ export const esquemaContacto = z.object({
   correo: textoRequerido("El correo es requerido").email("Correo inválido"),
   telefono: z.string().optional().or(z.literal("")),
   areaTrabajo: z.number({ error: "El área de trabajo es requerida" }),
+  areaTrabajoNuevo: z.string().optional(),
   enviarCorreo: z.boolean(),
 });
 

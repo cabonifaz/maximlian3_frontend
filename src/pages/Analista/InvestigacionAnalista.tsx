@@ -459,7 +459,7 @@ function PantallaInvestigacionAnalista({
   usePrecargaTablaMaestra([
     TablaMaestraId.TIPO_PERSONA,
     TablaMaestraId.PAIS,
-    TablaMaestraId.TIPO_REG_TRIBUTARIO,
+    TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION,
     TablaMaestraId.ESTADO_CLIENTE,
     TablaMaestraId.CIUDAD,
     TablaMaestraId.TIPO_EMPRESA,
@@ -493,8 +493,8 @@ function PantallaInvestigacionAnalista({
   });
 
   const { data: opcionesTipoRegTributario } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_REG_TRIBUTARIO],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_REG_TRIBUTARIO),
+    queryKey: ["masterTable", TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION),
     staleTime: Infinity,
   });
 
@@ -3147,8 +3147,8 @@ function PantallaInvestigacionAnalista({
         valor={datosInvestigacion.identificacion.tipoIdentificacionFiscal}
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesTipoRegTributario}
-        idMaestro={TablaMaestraId.TIPO_REG_TRIBUTARIO}
-              marcador="Seleccione tipo de identificación fiscal"
+        idMaestro={TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION}
+        marcador="Seleccione tipo de identificación fiscal"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.tipoIdentificacionFiscal")}
         onChange={(valor) => actualizarIdentificacion("tipoIdentificacionFiscal", valor)}
       />

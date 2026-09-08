@@ -29,6 +29,10 @@ export function obtenerReferenciaParametro(parametro: EntradaTablaMaestra) {
   return parametro.num2 != null ? String(parametro.num2) : "";
 }
 
+export function obtenerReferenciaSecundariaParametro(parametro: EntradaTablaMaestra) {
+  return parametro.num3 != null ? String(parametro.num3) : "";
+}
+
 export function obtenerDescripcionParametro(parametro: EntradaTablaMaestra) {
   return parametro.string1?.trim() || parametro.descripcion?.trim() || "";
 }
@@ -55,6 +59,27 @@ export function obtenerEtiquetaReferenciaParametro(
   if (!opcionReferencia) return String(referencia);
 
   if (configuracion.mostrarReferenciaConCodigo) {
+    return obtenerEtiquetaCodigoDescripcionParametro(opcionReferencia);
+  }
+
+  return opcionReferencia.string1?.trim() || String(referencia);
+}
+
+export function obtenerEtiquetaReferenciaSecundariaParametro(
+  parametro: EntradaTablaMaestra,
+  opcionesReferencia: EntradaTablaMaestra[] | undefined,
+  configuracion: ConfiguracionCamposParametro,
+) {
+  const referencia = parametro.num3;
+  if (referencia == null) return "";
+
+  const opcionReferencia = opcionesReferencia?.find(
+    (opcion) => opcion.num1 === referencia,
+  );
+
+  if (!opcionReferencia) return String(referencia);
+
+  if (configuracion.mostrarReferenciaSecundariaConCodigo) {
     return obtenerEtiquetaCodigoDescripcionParametro(opcionReferencia);
   }
 
@@ -104,6 +129,9 @@ export function obtenerColumnasVisiblesParametro(
     referencia:
       Boolean(configuracion.etiquetaReferencia) ||
       lista.some((parametro) => parametro.num2 != null),
+    referenciaSecundaria:
+      Boolean(configuracion.etiquetaReferenciaSecundaria) ||
+      lista.some((parametro) => parametro.num3 != null),
     detalle:
       Boolean(configuracion.etiquetaDetalle) ||
       lista.some((parametro) => tieneValorTexto(parametro.string3)),
@@ -139,6 +167,9 @@ export function crearValoresFormularioParametro(
   return {
     codigo: parametro ? obtenerCodigoParametro(parametro) : "",
     referencia: parametro ? obtenerReferenciaParametro(parametro) : "",
+    referenciaSecundaria: parametro
+      ? obtenerReferenciaSecundariaParametro(parametro)
+      : "",
     descripcion: parametro ? obtenerDescripcionParametro(parametro) : "",
     detalle: parametro ? obtenerSimboloParametro(parametro) : "",
     traduccionIngles1: parametro
@@ -167,6 +198,7 @@ export function filtrarParametros(
       obtenerNumeroParametro(parametro),
       obtenerCodigoParametro(parametro),
       obtenerReferenciaParametro(parametro),
+      obtenerReferenciaSecundariaParametro(parametro),
       obtenerDescripcionParametro(parametro),
       obtenerSimboloParametro(parametro),
       obtenerTraduccionInglesParametro(parametro),

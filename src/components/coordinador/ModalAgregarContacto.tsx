@@ -15,8 +15,11 @@ interface ModalAgregarContactoProps {
 
 export function ModalAgregarContacto({ isOpen, onClose, onConfirm, defaultValues }: ModalAgregarContactoProps) {
   const {
+    agregarAreaTrabajo,
     agregarTipoContacto,
     areaTrabajo,
+    areaTrabajoNuevo,
+    cambiarAreaTrabajo,
     cambiarTipoContacto,
     confirmar,
     formulario,
@@ -128,11 +131,11 @@ export function ModalAgregarContacto({ isOpen, onClose, onConfirm, defaultValues
                 required
                 idMaster={TablaMaestraId.AREA_TRABAJO}
                 value={areaTrabajo}
-                onChange={(val) =>
-                setValue("areaTrabajo", val, { shouldValidate: true })
-              }
-              onBlur={() => trigger("areaTrabajo")}
-              autoSeleccionarOpcionUnica
+                onChange={cambiarAreaTrabajo}
+                onBlur={() => trigger("areaTrabajo")}
+                autoSeleccionarOpcionUnica
+                onAddNew={agregarAreaTrabajo}
+                displayValue={areaTrabajo === 0 ? areaTrabajoNuevo : undefined}
                 error={errors.areaTrabajo?.message}
               />
             </div>

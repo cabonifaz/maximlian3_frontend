@@ -19,6 +19,7 @@ export function validarFormularioParametro(
   const descripcion = valores.descripcion.trim();
   const codigo = valores.codigo.trim();
   const referencia = valores.referencia.trim();
+  const referenciaSecundaria = valores.referenciaSecundaria.trim();
 
   if (!descripcion) return "Ingrese descripcion para continuar.";
 
@@ -28,6 +29,12 @@ export function validarFormularioParametro(
 
   if (configuracion.referenciaRequerida && !referencia) {
     return `Ingrese ${configuracion.etiquetaReferencia?.toLowerCase()} para continuar.`;
+  }
+
+  if (configuracion.referenciaSecundariaRequerida && !referenciaSecundaria) {
+    return "Ingrese "
+      + configuracion.etiquetaReferenciaSecundaria?.toLowerCase()
+      + " para continuar.";
   }
 
   return "";
@@ -45,6 +52,9 @@ function obtenerCamposConfiguradosParametro(
   const referencia = configuracion.etiquetaReferencia
     ? Number.parseInt(valores.referencia, 10)
     : parametro?.num2 ?? null;
+  const referenciaSecundaria = configuracion.etiquetaReferenciaSecundaria
+    ? Number.parseInt(valores.referenciaSecundaria, 10)
+    : parametro?.num3 ?? null;
   const detalle = configuracion.etiquetaDetalle
     ? valores.detalle.trim() || null
     : parametro?.string3 ?? null;
@@ -52,6 +62,9 @@ function obtenerCamposConfiguradosParametro(
   return {
     codigo,
     referencia: Number.isNaN(referencia) ? null : referencia,
+    referenciaSecundaria: Number.isNaN(referenciaSecundaria)
+      ? null
+      : referenciaSecundaria,
     detalle,
   };
 }
@@ -61,10 +74,12 @@ export function crearPayloadParametro(
   valores: FormularioParametro,
   opcionesActuales: EntradaTablaMaestra[],
 ): TablaMaestraCrearRequest {
-  const { codigo, referencia, detalle } = obtenerCamposConfiguradosParametro(
-    idMaestro,
-    valores,
-  );
+  const {
+    codigo,
+    referencia,
+    referenciaSecundaria,
+    detalle,
+  } = obtenerCamposConfiguradosParametro(idMaestro, valores);
 
   return {
     idMaestro,
@@ -74,7 +89,7 @@ export function crearPayloadParametro(
     descripcion: obtenerDescripcionTablaMaestra(idMaestro),
     num1: obtenerSiguienteNumTablaMaestra(opcionesActuales),
     num2: referencia,
-    num3: null,
+    num3: referenciaSecundaria,
     string1: null,
     string2: null,
     string3: detalle,
@@ -93,17 +108,18 @@ export function crearPayloadEdicionParametro(
   valores: FormularioParametro,
   parametro: EntradaTablaMaestra,
 ): TablaMaestraEditarRequest {
-  const { codigo, referencia, detalle } = obtenerCamposConfiguradosParametro(
-    idMaestro,
-    valores,
-    parametro,
-  );
+  const {
+    codigo,
+    referencia,
+    referenciaSecundaria,
+    detalle,
+  } = obtenerCamposConfiguradosParametro(idMaestro, valores, parametro);
 
   return {
     idMaestro,
     num1: parametro.num1,
     num2: referencia,
-    num3: parametro.num3,
+    num3: referenciaSecundaria,
     string1: valores.descripcion.trim(),
     string2: codigo,
     string3: detalle,
