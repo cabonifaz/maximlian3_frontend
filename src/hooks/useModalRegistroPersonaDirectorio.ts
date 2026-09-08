@@ -63,8 +63,8 @@ export function useModalRegistroPersonaDirectorio({
   });
 
   const { data: opcionesTipoIdFiscalBase } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_REG_TRIBUTARIO],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_REG_TRIBUTARIO),
+    queryKey: ["masterTable", TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION),
     enabled: estaAbierto,
     staleTime: Infinity,
   });

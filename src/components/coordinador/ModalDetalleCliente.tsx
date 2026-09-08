@@ -25,7 +25,11 @@ import { ModalAgregarContacto } from "./ModalAgregarContacto";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import { obtenerEtiquetaPrincipalSecundaria } from "@maximilian/shared/utils/tabla-maestra.util";
+import {
+  esTipoRegistroTributarioSeleccionado,
+  obtenerEtiquetaPrincipalSecundaria,
+  obtenerEtiquetaTipoRegistroTributario,
+} from "@maximilian/shared/utils/tabla-maestra.util";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   TarifarioListEntry,
@@ -330,6 +334,8 @@ export function ModalDetalleCliente({
     control: infoControl,
     name: "tipoRegistroTributario",
   });
+  const tieneTipoRegistroTributarioSeleccionado =
+    esTipoRegistroTributarioSeleccionado(tipoRegistroTributarioSeleccionado);
   const watchedAtendidoPor = infoWatch("atendidoPor");
   const watchedIdioma = infoWatch("idioma");
   const watchedIdiomaFacturacion = infoWatch("idiomaFacturacion");
@@ -584,6 +590,9 @@ export function ModalDetalleCliente({
                     required
                     options={tipoRegTributarioData}
                     value={tipoRegistroTributarioSeleccionado}
+                    obtenerEtiquetaOpcion={(opcion) =>
+                      obtenerEtiquetaTipoRegistroTributario(opcion, tipoPersonaData)
+                    }
                     onChange={(val) =>
                       setInfoValue("tipoRegistroTributario", val, {
                         shouldValidate: true,
@@ -596,11 +605,11 @@ export function ModalDetalleCliente({
                   />
 
                   <div className="space-y-2">
-                    <CustomLabel required={!!tipoRegistroTributarioSeleccionado}>Registro Tributario</CustomLabel>
+                    <CustomLabel required={tieneTipoRegistroTributarioSeleccionado}>Registro Tributario</CustomLabel>
                     <input
                       {...infoRegister("numRegistroTributario")}
                       type="text"
-                      disabled={!tipoRegistroTributarioSeleccionado}
+                      disabled={!tieneTipoRegistroTributarioSeleccionado}
                       className={`w-full px-4 py-2.5 bg-brand-white border ${infoErrors.numRegistroTributario ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`}
                     />
                     {infoErrors.numRegistroTributario && <p className="text-xs text-red-500">{infoErrors.numRegistroTributario.message}</p>}
@@ -609,7 +618,7 @@ export function ModalDetalleCliente({
                   <CustomLeyendaTipoDocumentoSunat
                     valor={tipoDocumentoSunat}
                     cargando={cargandoTipoDocumentoSunat}
-                    tieneTipoRegistro={!!tipoRegistroTributarioSeleccionado}
+                    tieneTipoRegistro={tieneTipoRegistroTributarioSeleccionado}
                   />
 
                   <CustomSelectorBuscable

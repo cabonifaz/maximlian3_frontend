@@ -52,8 +52,8 @@ export function useModalProveedorInforme({
     staleTime: Infinity,
   });
   const { data: opcionesTaxIdBase } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_REG_TRIBUTARIO],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_REG_TRIBUTARIO),
+    queryKey: ["masterTable", TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION),
     staleTime: Infinity,
   });
   const { data: opcionesMonedaBase } = useQuery({

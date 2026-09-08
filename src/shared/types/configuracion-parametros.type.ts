@@ -3,6 +3,7 @@ export type ModoFormularioParametro = "crear" | "editar";
 export interface FormularioParametro {
   codigo: string;
   referencia: string;
+  referenciaSecundaria: string;
   descripcion: string;
   detalle: string;
   traduccionIngles1: string;
@@ -25,6 +26,10 @@ export interface ConfiguracionCamposParametro {
   referenciaRequerida?: boolean;
   idMaestroReferencia?: number;
   mostrarReferenciaConCodigo?: boolean;
+  etiquetaReferenciaSecundaria?: string;
+  referenciaSecundariaRequerida?: boolean;
+  idMaestroReferenciaSecundaria?: number;
+  mostrarReferenciaSecundariaConCodigo?: boolean;
   etiquetaDetalle?: string;
   etiquetaDescripcion?: string;
   codigoDespuesDescripcion?: boolean;
@@ -33,6 +38,7 @@ export interface ConfiguracionCamposParametro {
 export interface ColumnasVisiblesParametro {
   codigo: boolean;
   referencia: boolean;
+  referenciaSecundaria: boolean;
   detalle: boolean;
   ingles: boolean;
   portugues: boolean;

@@ -1152,7 +1152,7 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
     TablaMaestraId.TIPO_PROVEEDOR,
     TablaMaestraId.LIMITE_CREDITO_PROVEEDOR,
     TablaMaestraId.PAIS,
-    TablaMaestraId.TIPO_REG_TRIBUTARIO,
+    TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION,
     TablaMaestraId.TIPO_PERSONA,
     TablaMaestraId.ESTADO_CLIENTE,
     TablaMaestraId.TIPO_EMPRESA,
@@ -1172,7 +1172,7 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
   const tiposProveedor = opcionesTablaMaestra[TablaMaestraId.TIPO_PROVEEDOR] ?? [];
   const limitesCreditoProveedor = opcionesTablaMaestra[TablaMaestraId.LIMITE_CREDITO_PROVEEDOR] ?? [];
   const paises = opcionesTablaMaestra[TablaMaestraId.PAIS] ?? [];
-  const tiposDocumento = opcionesTablaMaestra[TablaMaestraId.TIPO_REG_TRIBUTARIO] ?? [];
+  const tiposDocumento = opcionesTablaMaestra[TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION] ?? [];
   const tiposPersona = opcionesTablaMaestra[TablaMaestraId.TIPO_PERSONA] ?? [];
   const estadosCliente = opcionesTablaMaestra[TablaMaestraId.ESTADO_CLIENTE] ?? [];
   const tiposEmpresa = opcionesTablaMaestra[TablaMaestraId.TIPO_EMPRESA] ?? [];

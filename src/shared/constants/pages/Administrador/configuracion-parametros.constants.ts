@@ -11,6 +11,14 @@ export const PARAMETROS_DISPONIBLES: ParametroDisponible[] = [
     idMaestro: TablaMaestraId.TIPO_REG_TRIBUTARIO,
     etiqueta: "Tipo reg. tributario",
   },
+  {
+    idMaestro: TablaMaestraId.TIPO_DOCUMENTO_SUNAT,
+    etiqueta: "Tipo documento SUNAT",
+  },
+  {
+    idMaestro: TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION,
+    etiqueta: "Tipo documento investigación",
+  },
   { idMaestro: TablaMaestraId.TIPO_CONTACTO, etiqueta: "Tipo contacto" },
   { idMaestro: TablaMaestraId.AREA_TRABAJO, etiqueta: "Área trabajo" },
   { idMaestro: TablaMaestraId.ESTADO_CLIENTE, etiqueta: "Estado del cliente" },
@@ -94,6 +102,18 @@ export const CONFIGURACION_CAMPOS_POR_MAESTRO: Partial<
   [TablaMaestraId.MONEDA]: {
     etiquetaCodigo: "Código",
     etiquetaDetalle: "Símbolo",
+  },
+  [TablaMaestraId.TIPO_REG_TRIBUTARIO]: {
+    etiquetaReferencia: "Tipo documento SUNAT",
+    idMaestroReferencia: TablaMaestraId.TIPO_DOCUMENTO_SUNAT,
+    mostrarReferenciaConCodigo: true,
+    etiquetaReferenciaSecundaria: "Tipo de persona",
+    idMaestroReferenciaSecundaria: TablaMaestraId.TIPO_PERSONA,
+  },
+  [TablaMaestraId.TIPO_DOCUMENTO_SUNAT]: {
+    etiquetaDescripcion: "Código SUNAT",
+    etiquetaCodigo: "Descripción",
+    codigoDespuesDescripcion: true,
   },
   [TablaMaestraId.SECTOR_ECONOMICO]: {
     etiquetaCodigo: "Código",

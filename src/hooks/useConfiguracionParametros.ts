@@ -71,12 +71,28 @@ export function useConfiguracionParametros() {
     staleTime: Infinity,
   });
 
+  const { data: opcionesReferenciaSecundaria } = useQuery({
+    queryKey: [
+      "masterTable",
+      configuracionCampos.idMaestroReferenciaSecundaria,
+    ],
+    queryFn: () =>
+      servicioTablaMaestra.list(
+        configuracionCampos.idMaestroReferenciaSecundaria!,
+      ),
+    enabled: Boolean(configuracionCampos.idMaestroReferenciaSecundaria),
+    staleTime: Infinity,
+  });
+
   const mutacionCrear = useMutation({
     mutationFn: (payload: TablaMaestraCrearRequest) =>
       servicioTablaMaestra.crear(payload),
     onSuccess: () => {
       clienteConsultas.invalidateQueries({
         queryKey: ["parametros-administrador", idMaestroSeleccionado],
+      });
+      clienteConsultas.invalidateQueries({
+        queryKey: ["masterTable", idMaestroSeleccionado],
       });
       setFilaFormulario(null);
       setMensajeValidacion("");
@@ -90,6 +106,9 @@ export function useConfiguracionParametros() {
     onSuccess: () => {
       clienteConsultas.invalidateQueries({
         queryKey: ["parametros-administrador", idMaestroSeleccionado],
+      });
+      clienteConsultas.invalidateQueries({
+        queryKey: ["masterTable", idMaestroSeleccionado],
       });
       setFilaFormulario(null);
       setMensajeValidacion("");
@@ -249,6 +268,7 @@ export function useConfiguracionParametros() {
     parametros,
     registrosPagina,
     opcionesReferencia,
+    opcionesReferenciaSecundaria,
     configuracionCampos,
     columnasVisibles,
     totalColumnas,

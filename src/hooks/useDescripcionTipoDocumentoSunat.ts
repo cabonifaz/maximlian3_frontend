@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { esTipoRegistroTributarioSeleccionado } from "@maximilian/shared/utils/tabla-maestra.util";
 
 export function useDescripcionTipoDocumentoSunat(
   idTipoRegistroTributario: string | number | undefined,
@@ -11,7 +12,9 @@ export function useDescripcionTipoDocumentoSunat(
     typeof idTipoRegistroTributario === "number"
       ? idTipoRegistroTributario
       : Number(idTipoRegistroTributario);
-  const tieneTipoRegistro = Number.isFinite(idTipoRegistro) && idTipoRegistro > 0;
+  const tieneTipoRegistro = esTipoRegistroTributarioSeleccionado(
+    idTipoRegistroTributario,
+  );
 
   const {
     data: opcionesTipoRegistroTributario,
