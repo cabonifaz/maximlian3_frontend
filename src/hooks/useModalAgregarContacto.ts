@@ -14,11 +14,17 @@ import {
 
 const resolverContacto: Resolver<DatosFormularioContacto> = async (...args) => {
   const resultado = await zodResolver(esquemaContacto)(...args);
-  const { tipoContacto, tipoContactoNuevo } = args[0];
+  const { areaTrabajo, tipoContacto, tipoContactoNuevo } = args[0];
   if (tipoContacto === 0 && !tipoContactoNuevo?.trim()) {
     resultado.errors = {
       ...resultado.errors,
       tipoContacto: { type: "custom", message: "El tipo de contacto es requerido" },
+    };
+  }
+  if (areaTrabajo === 0) {
+    resultado.errors = {
+      ...resultado.errors,
+      areaTrabajo: { type: "custom", message: "Espere mientras se agrega el área de trabajo" },
     };
   }
   return resultado;
@@ -48,39 +54,48 @@ export function useModalAgregarContacto({
   } = formulario;
   const queryClient = useQueryClient();
 
+  const crearOpcionTablaMaestra = async (termino: string, idMaestro: number) => {
+    const terminoLimpio = termino.trim();
+    const claveConsulta = ["masterTable", idMaestro];
+    const opcionesActuales = await queryClient.fetchQuery<EntradaTablaMaestra[]>({
+      queryKey: claveConsulta,
+      queryFn: () => servicioTablaMaestra.list(idMaestro),
+      staleTime: 0,
+    });
+    const payload: TablaMaestraCrearRequest = {
+      idMaestro,
+      descripcion: obtenerDescripcionTablaMaestra(idMaestro),
+      string1: terminoLimpio,
+      num1: obtenerSiguienteNumTablaMaestra(opcionesActuales),
+      num2: null,
+      num3: null,
+      string2: null,
+      string3: null,
+      date1: null,
+      date2: null,
+      date3: null,
+    };
+
+    await servicioTablaMaestra.crear(payload);
+    await queryClient.invalidateQueries({ queryKey: claveConsulta });
+    const opcionesActualizadas = await queryClient.fetchQuery<EntradaTablaMaestra[]>({
+      queryKey: claveConsulta,
+      queryFn: () => servicioTablaMaestra.list(idMaestro),
+      staleTime: 0,
+    });
+
+    const terminoNormalizado = terminoLimpio.toLowerCase();
+    return opcionesActualizadas.find(
+      (opcion) => (opcion.string1 ?? "").trim().toLowerCase() === terminoNormalizado,
+    );
+  };
+
   const crearTipoContactoMutation = useMutation({
-    mutationFn: async (termino: string) => {
-      const terminoLimpio = termino.trim();
-      const opcionesActuales = await queryClient.fetchQuery<EntradaTablaMaestra[]>({
-        queryKey: ["masterTable", TablaMaestraId.TIPO_CONTACTO],
-        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_CONTACTO),
-        staleTime: 0,
-      });
-      const payload: TablaMaestraCrearRequest = {
-        idMaestro: TablaMaestraId.TIPO_CONTACTO,
-        descripcion: obtenerDescripcionTablaMaestra(TablaMaestraId.TIPO_CONTACTO),
-        string1: terminoLimpio,
-        num1: obtenerSiguienteNumTablaMaestra(opcionesActuales),
-        num2: null,
-        num3: null,
-        string2: null,
-        string3: null,
-        date1: null,
-        date2: null,
-        date3: null,
-      };
+    mutationFn: (termino: string) => crearOpcionTablaMaestra(termino, TablaMaestraId.TIPO_CONTACTO),
+  });
 
-      await servicioTablaMaestra.crear(payload);
-      await queryClient.invalidateQueries({ queryKey: ["masterTable", TablaMaestraId.TIPO_CONTACTO] });
-      const opcionesActualizadas = await queryClient.fetchQuery({
-        queryKey: ["masterTable", TablaMaestraId.TIPO_CONTACTO],
-        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_CONTACTO),
-        staleTime: 0,
-      });
-
-      const terminoNormalizado = terminoLimpio.toLowerCase();
-      return opcionesActualizadas.find((opcion) => (opcion.string1 ?? "").trim().toLowerCase() === terminoNormalizado);
-    },
+  const crearAreaTrabajoMutation = useMutation({
+    mutationFn: (termino: string) => crearOpcionTablaMaestra(termino, TablaMaestraId.AREA_TRABAJO),
   });
 
   useEffect(() => {
@@ -91,6 +106,7 @@ export function useModalAgregarContacto({
   const tipoContacto = watch("tipoContacto");
   const tipoContactoNuevo = watch("tipoContactoNuevo");
   const areaTrabajo = watch("areaTrabajo");
+  const areaTrabajoNuevo = watch("areaTrabajoNuevo");
 
   const confirmar = (data: DatosFormularioContacto) => {
     onConfirm(data);
@@ -114,9 +130,27 @@ export function useModalAgregarContacto({
     if (valor !== 0) setValue("tipoContactoNuevo", undefined);
   };
 
+  const agregarAreaTrabajo = (termino: string) => {
+    setValue("areaTrabajo", 0, { shouldValidate: true });
+    setValue("areaTrabajoNuevo", termino);
+    void crearAreaTrabajoMutation.mutateAsync(termino).then((opcion) => {
+      if (!opcion?.num1) return;
+      setValue("areaTrabajo", opcion.num1, { shouldValidate: true });
+      setValue("areaTrabajoNuevo", undefined);
+    });
+  };
+
+  const cambiarAreaTrabajo = (valor: number) => {
+    setValue("areaTrabajo", valor, { shouldValidate: true });
+    setValue("areaTrabajoNuevo", undefined);
+  };
+
   return {
+    agregarAreaTrabajo,
     agregarTipoContacto,
     areaTrabajo,
+    areaTrabajoNuevo,
+    cambiarAreaTrabajo,
     cambiarTipoContacto,
     confirmar,
     formulario,

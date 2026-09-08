@@ -18,6 +18,7 @@ import {
   obtenerDetalleInglesParametro,
   obtenerDetallePortuguesParametro,
   obtenerEtiquetaReferenciaParametro,
+  obtenerEtiquetaReferenciaSecundariaParametro,
   obtenerNumeroParametro,
   obtenerSimboloParametro,
   obtenerTraduccionInglesParametro,
@@ -50,6 +51,12 @@ export function CustomTablaParametros({ modelo }: PropsCustomTablaParametros) {
               {modelo.columnasVisibles.referencia ? (
                 <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
                   {modelo.configuracionCampos.etiquetaReferencia ?? "Referencia"}
+                </th>
+              ) : null}
+              {modelo.columnasVisibles.referenciaSecundaria ? (
+                <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
+                  {modelo.configuracionCampos.etiquetaReferenciaSecundaria
+                    ?? "Referencia secundaria"}
                 </th>
               ) : null}
               <th className="px-5 py-4 text-[11px] font-bold uppercase text-slate-300">
@@ -90,6 +97,9 @@ export function CustomTablaParametros({ modelo }: PropsCustomTablaParametros) {
                   configuracion={modelo.configuracionCampos}
                   columnasVisibles={modelo.columnasVisibles}
                   opcionesReferencia={modelo.opcionesReferencia}
+                  opcionesReferenciaSecundaria={
+                    modelo.opcionesReferenciaSecundaria
+                  }
                   onCambiar={modelo.cambiarValoresFormulario}
                 />
                 <td className="px-5 py-3">
@@ -184,6 +194,9 @@ export function CustomTablaParametros({ modelo }: PropsCustomTablaParametros) {
                         configuracion={modelo.configuracionCampos}
                         columnasVisibles={modelo.columnasVisibles}
                         opcionesReferencia={modelo.opcionesReferencia}
+                        opcionesReferenciaSecundaria={
+                          modelo.opcionesReferenciaSecundaria
+                        }
                         onCambiar={modelo.cambiarValoresFormulario}
                       />
                     ) : (
@@ -202,6 +215,15 @@ export function CustomTablaParametros({ modelo }: PropsCustomTablaParametros) {
                             {obtenerEtiquetaReferenciaParametro(
                               parametro,
                               modelo.opcionesReferencia,
+                              modelo.configuracionCampos,
+                            ) || "-"}
+                          </td>
+                        ) : null}
+                        {modelo.columnasVisibles.referenciaSecundaria ? (
+                          <td className="px-5 py-5 text-xs font-semibold text-slate-600">
+                            {obtenerEtiquetaReferenciaSecundariaParametro(
+                              parametro,
+                              modelo.opcionesReferenciaSecundaria,
                               modelo.configuracionCampos,
                             ) || "-"}
                           </td>

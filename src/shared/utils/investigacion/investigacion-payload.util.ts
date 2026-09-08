@@ -361,17 +361,21 @@ export function construirPayloadCrearInforme({
   const { identificacion, aspectosLegales, operacionPrincipal, informacionFinanciera, referencias, datosGenerales } = datosValidados;
   const esEdicion = typeof idInforme === "number" && idInforme > 0;
   const esPayloadTraductor = modoPayload === "traductor";
+  const idTipoPersona = obtenerIdPorTexto(opcionesTipoPersona, identificacion.tipoPersona);
 
   return depurarPayloadInforme({
     ...(esPayloadTraductor ? (esEdicion ? { idInforme } : {}) : { idInforme: esEdicion ? idInforme : 0 }),
     idPedido,
     idFormatoFecha,
-    idTipoPersona: obtenerIdPorTexto(opcionesTipoPersona, identificacion.tipoPersona),
+    idTipoPersona,
     nombre: identificacion.nombreEmpresa,
     nombreComercial: identificacion.nombreComercial,
     idPais: obtenerIdPorTexto(opcionesPais, identificacion.pais),
     operacionesTCMoneda: obtenerIdPorTextoONumero(opcionesMoneda, aspectosLegales.operacionesCambioDivisas),
-    taxIdType: obtenerIdPorTexto(opcionesTipoRegTributario, identificacion.tipoIdentificacionFiscal),
+    taxIdType: obtenerIdPorTexto(
+      opcionesTipoRegTributario,
+      identificacion.tipoIdentificacionFiscal,
+    ),
     taxNum: identificacion.numeroIdentificacionFiscal,
     direccion: identificacion.direccionPrincipal,
     ubigeo: identificacion.ciudadEstadoProvincia,

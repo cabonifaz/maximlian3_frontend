@@ -14,6 +14,7 @@ interface PropsCustomCamposEdicionParametro {
   configuracion: ConfiguracionCamposParametro;
   columnasVisibles: ColumnasVisiblesParametro;
   opcionesReferencia?: EntradaTablaMaestra[];
+  opcionesReferenciaSecundaria?: EntradaTablaMaestra[];
 }
 
 export function CustomCamposEdicionParametro({
@@ -23,6 +24,7 @@ export function CustomCamposEdicionParametro({
   configuracion,
   columnasVisibles,
   opcionesReferencia,
+  opcionesReferenciaSecundaria,
 }: PropsCustomCamposEdicionParametro) {
   return (
     <>
@@ -82,6 +84,51 @@ export function CustomCamposEdicionParametro({
           ) : (
             <span className="text-xs text-slate-300">
               {valores.referencia || "-"}
+            </span>
+          )}
+        </td>
+      ) : null}
+      {columnasVisibles.referenciaSecundaria ? (
+        <td className="px-5 py-3">
+          {configuracion.idMaestroReferenciaSecundaria ? (
+            <CustomSelectorBuscable
+              options={opcionesReferenciaSecundaria ?? []}
+              value={
+                valores.referenciaSecundaria
+                  ? Number.parseInt(valores.referenciaSecundaria, 10)
+                  : undefined
+              }
+              onChange={(valor) =>
+                onCambiar({
+                  ...valores,
+                  referenciaSecundaria: String(valor),
+                })
+              }
+              placeholder={
+                "Seleccione "
+                + configuracion.etiquetaReferenciaSecundaria?.toLowerCase()
+              }
+              obtenerEtiquetaOpcion={(opcion) =>
+                configuracion.mostrarReferenciaSecundariaConCodigo
+                  ? obtenerEtiquetaCodigoDescripcionParametro(opcion)
+                  : opcion.string1 ?? ""
+              }
+            />
+          ) : configuracion.etiquetaReferenciaSecundaria ? (
+            <input
+              value={valores.referenciaSecundaria}
+              onChange={(event) =>
+                onCambiar({
+                  ...valores,
+                  referenciaSecundaria: event.target.value.replace(/\D/g, ""),
+                })
+              }
+              placeholder={configuracion.etiquetaReferenciaSecundaria}
+              className="h-9 w-28 rounded-md border border-blue-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            />
+          ) : (
+            <span className="text-xs text-slate-300">
+              {valores.referenciaSecundaria || "-"}
             </span>
           )}
         </td>

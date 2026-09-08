@@ -43,7 +43,7 @@ export default function RevisionInformeCoordinador() {
   const [estaAbiertoModalRechazo, setEstaAbiertoModalRechazo] = useState(false);
   const [estaAbiertoModalAprobar, setEstaAbiertoModalAprobar] = useState(false);
   const [estaAbiertoModalEnviarInforme, setEstaAbiertoModalEnviarInforme] = useState(false);
-  const [enviarCorreoAlAprobar, setEnviarCorreoAlAprobar] = useState(false);
+  const [enviarCorreoAlAprobar, setEnviarCorreoAlAprobar] = useState(true);
   const [metadatosDocumento, setMetadatosDocumento] = useState<InformeMetadatosDocumento | null>(null);
   const [observacionesRechazo, setObservacionesRechazo] = useState<InformeObservacion[]>([]);
   const [tabInformeComparado, setTabInformeComparado] = useState<TabInformeComparado>("original");
