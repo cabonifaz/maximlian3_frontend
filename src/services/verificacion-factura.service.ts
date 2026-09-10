@@ -22,7 +22,9 @@ const TIPO_ARCHIVO_DESCARGA_FACTURA: Record<FormatoDescargaFactura, "Pdf" | "Xml
 };
 
 const clienteVerificacionFactura = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL:
+    import.meta.env.VITE_API_URL
+    || "https://maximilianbackendpreprod-f9haawdbdna5h9gx.canadacentral-01.azurewebsites.net",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
