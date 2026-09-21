@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
-import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
+
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
 import { useModalProveedorInforme } from "@maximilian/hooks/useModalProveedorInforme";
 import type { RegistroProveedorAnalista } from "@maximilian/shared/types/investigacion.type";
@@ -58,11 +58,16 @@ export function CustomModalProveedorAnalista({
     setLimiteCredito,
     promedioMensual,
     setPromedioMensual,
+    idCalificacion,
+    setIdCalificacion,
+    comentarios,
+    setComentarios,
     opcionesTipoProveedor,
     opcionesPais,
     opcionesTaxId,
     opcionesMoneda,
     opcionesLimiteCredito,
+    opcionesCalificacion,
     manejarGuardar,
   } = useModalProveedorInforme({ registroInicial, idIdioma, onGuardar });
 
@@ -166,11 +171,10 @@ export function CustomModalProveedorAnalista({
 
           {tieneReferenciaComercial ? (
             <>
-              <CustomCampoFechaInvestigacion
-                etiqueta="Comienzo de las Negociaciones"
-                valor={comienzoNegociaciones}
-                onChange={setComienzoNegociaciones}
-              />
+              <div className="space-y-2">
+                <CustomLabel>Comienzo de las Negociaciones</CustomLabel>
+                <input value={comienzoNegociaciones} onChange={(event) => setComienzoNegociaciones(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese el comienzo de las negociaciones" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+              </div>
 
               <div className="space-y-2">
                 <CustomLabel>Operaciones de Cambio de Moneda</CustomLabel>
@@ -202,6 +206,24 @@ export function CustomModalProveedorAnalista({
               <div className="space-y-2">
                 <CustomLabel>Promedio Mensual</CustomLabel>
                 <input value={promedioMensual} onChange={(event) => setPromedioMensual(sanitizarMontoDosDecimales(event.target.value))} onBlur={(event) => setPromedioMensual(normalizarMontoDosDecimales(event.target.value))} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese el promedio mensual" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+              </div>
+
+              <div className="space-y-2">
+                <CustomLabel optional>Calificación</CustomLabel>
+                <CustomSelectorBuscable
+                  options={opcionesCalificacion}
+                  value={idCalificacion}
+                  onChange={setIdCalificacion}
+                  onClear={() => setIdCalificacion(undefined)}
+                  optional
+                  mostrarTextoOpcionalEnLabel={false}
+                  placeholder="Seleccionar calificación..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <CustomLabel optional>Comentarios</CustomLabel>
+                <textarea value={comentarios} onChange={(event) => setComentarios(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese comentarios" className="min-h-24 w-full resize-y rounded-xl border border-gray-200 px-4 py-3 text-sm text-slate-600 outline-none" />
               </div>
             </>
           ) : null}

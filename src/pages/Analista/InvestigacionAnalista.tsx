@@ -461,6 +461,8 @@ function PantallaInvestigacionAnalista({
     TablaMaestraId.PAIS,
     TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION,
     TablaMaestraId.ESTADO_CLIENTE,
+    TablaMaestraId.CALIFICACION,
+    TablaMaestraId.RECORD_PAGOS,
     TablaMaestraId.CIUDAD,
     TablaMaestraId.TIPO_EMPRESA,
     TablaMaestraId.MONEDA,
@@ -501,6 +503,17 @@ function PantallaInvestigacionAnalista({
   const { data: opcionesEstadoCliente } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.ESTADO_CLIENTE],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_CLIENTE),
+    staleTime: Infinity,
+  });
+  const { data: opcionesCalificacion } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.CALIFICACION],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CALIFICACION),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesRecordPagos } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.RECORD_PAGOS],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.RECORD_PAGOS),
     staleTime: Infinity,
   });
 
@@ -3182,7 +3195,23 @@ function PantallaInvestigacionAnalista({
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.estadoActual")}
         onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}
       />
-      <AreaInvestigacionAnalista etiqueta="Datos Adicionales" valor={datosInvestigacion.identificacion.datosAdicionales} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.datosAdicionales")} className="md:col-span-2" onChange={(valor) => actualizarIdentificacion("datosAdicionales", valor)} />
+      <CustomSelectorBuscable
+        label="Calificación"
+        options={opcionesCalificacion}
+        value={Number(datosInvestigacion.identificacion.idCalificacion) || undefined}
+        onChange={(valor) => actualizarIdentificacion("idCalificacion", String(valor))}
+        onClear={() => actualizarIdentificacion("idCalificacion", "")}
+        disabled={esSoloLectura}
+      />
+      <CustomSelectorBuscable
+        label="Record de Pagos"
+        options={opcionesRecordPagos}
+        value={Number(datosInvestigacion.identificacion.idRecordPagos) || undefined}
+        onChange={(valor) => actualizarIdentificacion("idRecordPagos", String(valor))}
+        onClear={() => actualizarIdentificacion("idRecordPagos", "")}
+        disabled={esSoloLectura}
+      />
+      <AreaInvestigacionAnalista etiqueta="Observaciones de Identificación" valor={datosInvestigacion.identificacion.datosAdicionales} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.datosAdicionales")} className="md:col-span-2" onChange={(valor) => actualizarIdentificacion("datosAdicionales", valor)} />
     </div>
   );
 
@@ -3452,7 +3481,8 @@ function PantallaInvestigacionAnalista({
                 ) : (
                   <tr>
                     <th className="px-4 py-3">Año</th>
-                    <th className="px-4 py-3">Mes</th>
+                    <th className="px-4 py-3">Mes inicio</th>
+                    <th className="px-4 py-3">Mes final</th>
                     <th className="px-4 py-3">Moneda</th>
                     <th className="px-4 py-3">Países</th>
                     <th className="px-4 py-3">Productos</th>
@@ -3466,7 +3496,7 @@ function PantallaInvestigacionAnalista({
                   ? datosInvestigacion.locales.length
                   : registrosImportacionExportacionTabla.length) === 0 ? (
                   <tr>
-                    <td colSpan={pestanaRamoOperacionesVisible === "locales" ? 3 : 7} className="px-4 py-10 text-center text-sm text-slate-300">
+                    <td colSpan={pestanaRamoOperacionesVisible === "locales" ? 3 : 8} className="px-4 py-10 text-center text-sm text-slate-300">
                       Sin registros disponibles.
                     </td>
                   </tr>
@@ -3510,11 +3540,13 @@ function PantallaInvestigacionAnalista({
                   })
                 ) : (
                   registrosImportacionExportacionPaginados.map((registro) => {
-                    const mesRegistro = obtenerTextoPorId(opcionesMes, registro.idMesInicio) || registro.mes;
+                    const mesInicioRegistro = obtenerTextoPorId(opcionesMes, registro.idMesInicio) || registro.mes;
+                    const mesFinRegistro = obtenerTextoPorId(opcionesMes, registro.idMesFin) || mesInicioRegistro;
                     const monedaRegistro = obtenerTextoPorId(opcionesMoneda, registro.idMoneda) || registro.moneda;
                     const indiceRegistro = registrosOperacionActivos.findIndex((item) =>
                       item.anio === registro.anio
                       && (item.idMesInicio ?? 0) === (registro.idMesInicio ?? 0)
+                      && (item.idMesFin ?? item.idMesInicio ?? 0) === (registro.idMesFin ?? registro.idMesInicio ?? 0)
                       && item.mes === registro.mes
                       && item.paises === registro.paises
                       && item.monto === registro.monto
@@ -3530,7 +3562,9 @@ function PantallaInvestigacionAnalista({
                           <span className={`pointer-events-none absolute inset-y-0 left-0 w-[3px] rounded-r-full transition-colors ${indiceOperacionSeleccionada === indiceRegistro ? "bg-brand-wine" : ""}`} />
                           <span className={indiceOperacionSeleccionada === indiceRegistro ? "text-brand-wine" : "text-slate-500"}>{registro.anio}</span>
                         </td>
-                        <td className="px-4 py-4 text-sm text-slate-500">{mesRegistro || "-"}</td>
+                        <td className="px-4 py-4 text-sm text-slate-500">{mesInicioRegistro || "-"}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-slate-500">{mesFinRegistro || "-"}</td>
                         <td className="px-4 py-4 text-sm text-slate-500">{monedaRegistro || "-"}</td>
                         <td className="px-4 py-4 text-sm text-slate-500">{registro.paises}</td>
                         <td className="px-4 py-4 text-sm italic text-slate-300">{registro.productos}</td>
@@ -4012,6 +4046,8 @@ function PantallaInvestigacionAnalista({
           </div>
         </div>
         <AreaInvestigacionAnalista etiqueta="Comentarios sobre las Operaciones" valor={datosInvestigacion.operacionPrincipal.comentariosOperaciones} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comentariosOperaciones")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("comentariosOperaciones", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Clientes" valor={datosInvestigacion.operacionPrincipal.clientes} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.clientes")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("clientes", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Competidores" valor={datosInvestigacion.operacionPrincipal.competidores} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.competidores")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("competidores", valor)} />
       </div>
     );
   };

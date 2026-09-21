@@ -1,9 +1,9 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { Search, X, Check, Loader2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useOpcionesTablaMaestraPaginadas } from "@maximilian/hooks/useOpcionesTablaMaestraPaginadas";
 import { useSeleccionAutomaticaOpcionUnicaMultiple } from "@maximilian/hooks/useSeleccionAutomaticaOpcionUnica";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
+
 import { CustomLabel } from "./CustomLabel";
 
 export interface MultiCustomSelectorBuscableProps {
@@ -50,14 +50,28 @@ export function MultiCustomSelectorBuscable({
   const ALTURA_DROPDOWN = 260;
   const MARGEN_VENTANA = 16;
 
-  const { data: fetchedOptions, isLoading } = useQuery({
-    queryKey: ["masterTable", idMaster],
-    queryFn: () => servicioTablaMaestra.list(idMaster!),
-    enabled: idMaster !== undefined && (isOpen || autoSeleccionarOpcionUnica),
-    staleTime: Infinity,
+  const idMaestroPredeterminado = idMaster ?? options?.find((opcion) => opcion.idMaestro > 0)?.idMaestro;
+  const {
+    opciones: opcionesConsultadas,
+    estaCargando: estaCargandoOpciones,
+    estaCargandoSiguientePagina,
+    tieneSiguientePagina,
+    cargarSiguientePagina,
+  } = useOpcionesTablaMaestraPaginadas({
+    idMaestro: idMaestroPredeterminado,
+    terminoBusqueda,
+    activo: isOpen || autoSeleccionarOpcionUnica,
   });
 
-  const resolvedOptions = idMaster ? fetchedOptions : options;
+  const resolvedOptions = useMemo(() => {
+    if (!idMaestroPredeterminado) return options;
+
+    const opcionesPorId = new Map(opcionesConsultadas.map((opcion) => [opcion.num1, opcion]));
+    options?.filter((opcion) => opcion.num1 != null && value.includes(opcion.num1)).forEach((opcion) => {
+      opcionesPorId.set(opcion.num1, opcion);
+    });
+    return Array.from(opcionesPorId.values());
+  }, [idMaestroPredeterminado, opcionesConsultadas, options, value]);
 
   const filteredOptions = useMemo(() => {
     if (!resolvedOptions) return [];
@@ -134,6 +148,17 @@ export function MultiCustomSelectorBuscable({
       return;
     }
     setIsOpen(true);
+  };
+
+  const manejarDesplazamientoOpciones = (event: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
+    if (
+      scrollTop + clientHeight < scrollHeight - 24
+      || !tieneSiguientePagina
+      || estaCargandoSiguientePagina
+    ) return;
+
+    void cargarSiguientePagina();
   };
 
   const handleSelect = (e: React.MouseEvent, id: number) => {
@@ -218,8 +243,8 @@ export function MultiCustomSelectorBuscable({
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="max-h-48 overflow-y-auto" style={{ maxHeight: dropdownStyle.maxHeight ? Number(dropdownStyle.maxHeight) - 56 : undefined }}>
-              {isLoading ? (
+            <div className="max-h-48 overflow-y-auto" style={{ maxHeight: dropdownStyle.maxHeight ? Number(dropdownStyle.maxHeight) - 56 : undefined }} onScroll={manejarDesplazamientoOpciones}>
+              {estaCargandoOpciones ? (
                 <div className="px-4 py-6 flex justify-center">
                   <Loader2 size={16} className="animate-spin text-gray-400" />
                 </div>
@@ -269,6 +294,11 @@ export function MultiCustomSelectorBuscable({
                   No se encontraron resultados
                 </div>
               )}
+              {estaCargandoSiguientePagina ? (
+                <div className="px-4 py-3 flex justify-center">
+                  <Loader2 size={16} className="animate-spin text-gray-400" />
+                </div>
+              ) : null}
             </div>
           </div>
         </>

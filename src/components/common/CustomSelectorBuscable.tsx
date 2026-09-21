@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState, useMemo, useRef, type ReactNode } from "react";
 import { Search, Loader2, Plus } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useOpcionesTablaMaestraPaginadas } from "@maximilian/hooks/useOpcionesTablaMaestraPaginadas";
 import { useSeleccionAutomaticaOpcionUnica } from "@maximilian/hooks/useSeleccionAutomaticaOpcionUnica";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
-import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
+
 import { CustomLabel } from "./CustomLabel";
 
 export interface CustomSelectorBuscableProps {
@@ -76,15 +76,28 @@ export function CustomSelectorBuscable({
   const ALTURA_DROPDOWN = 260;
   const MARGEN_VENTANA = 16;
 
-  const { data: fetchedOptions, isLoading: isMasterLoading } = useQuery({
-    queryKey: ["masterTable", idMaster],
-    queryFn: () => servicioTablaMaestra.list(idMaster!),
-    enabled: idMaster !== undefined && (isOpen || autoSeleccionarOpcionUnica),
-    staleTime: Infinity,
+  const idMaestroPredeterminado = idMaster ?? options?.find((opcion) => opcion.idMaestro > 0)?.idMaestro;
+  const {
+    opciones: opcionesConsultadas,
+    estaCargando: estaCargandoOpciones,
+    estaCargandoSiguientePagina,
+    tieneSiguientePagina,
+    cargarSiguientePagina,
+  } = useOpcionesTablaMaestraPaginadas({
+    idMaestro: idMaestroPredeterminado,
+    terminoBusqueda,
+    activo: isOpen || autoSeleccionarOpcionUnica,
   });
 
-  const showLoading = isMasterLoading || loading;
-  const resolvedOptions = idMaster ? fetchedOptions : options;
+  const showLoading = estaCargandoOpciones || loading;
+  const resolvedOptions = useMemo(() => {
+    if (!idMaestroPredeterminado) return options;
+
+    const opcionesPorId = new Map(opcionesConsultadas.map((opcion) => [opcion.num1, opcion]));
+    const opcionSeleccionada = options?.find((opcion) => opcion.num1 === value);
+    if (opcionSeleccionada) opcionesPorId.set(opcionSeleccionada.num1, opcionSeleccionada);
+    return Array.from(opcionesPorId.values());
+  }, [idMaestroPredeterminado, opcionesConsultadas, options, value]);
 
   const filteredOptions = useMemo(() => {
     if (!resolvedOptions) return [];
@@ -170,6 +183,17 @@ export function CustomSelectorBuscable({
     alCambiarBusqueda?.(termino);
   };
 
+  const manejarDesplazamientoOpciones = (event: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
+    if (
+      scrollTop + clientHeight < scrollHeight - 24
+      || !tieneSiguientePagina
+      || estaCargandoSiguientePagina
+    ) return;
+
+    void cargarSiguientePagina();
+  };
+
   return (
     <div className="relative space-y-2">
       {label != null && <CustomLabel required={required} optional={optional && mostrarTextoOpcionalEnLabel}>{label}</CustomLabel>}
@@ -211,7 +235,7 @@ export function CustomSelectorBuscable({
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
-            <div className="max-h-48 overflow-y-auto" style={{ maxHeight: dropdownStyle.maxHeight ? Number(dropdownStyle.maxHeight) - 56 : undefined }}>
+            <div className="max-h-48 overflow-y-auto" style={{ maxHeight: dropdownStyle.maxHeight ? Number(dropdownStyle.maxHeight) - 56 : undefined }} onScroll={manejarDesplazamientoOpciones}>
               {showLoading ? (
                 <div className="px-4 py-6 flex justify-center">
                   <Loader2 size={16} className="animate-spin text-gray-400" />
@@ -252,6 +276,11 @@ export function CustomSelectorBuscable({
                   )}
                 </>
               )}
+              {estaCargandoSiguientePagina ? (
+                <div className="px-4 py-3 flex justify-center">
+                  <Loader2 size={16} className="animate-spin text-gray-400" />
+                </div>
+              ) : null}
             </div>
             {onAddNew && (
               <div

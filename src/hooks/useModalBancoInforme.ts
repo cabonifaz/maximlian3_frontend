@@ -39,9 +39,7 @@ export function useModalBancoInforme({
   );
   const [pais, setPais] = useState(registroInicial?.pais ?? "");
   const [banco, setBanco] = useState(registroInicial?.banco ?? "");
-  const [idSectorSeleccionado, setIdSectorSeleccionado] = useState<
-    number | undefined
-  >(undefined);
+  const [idSectorSeleccionado, setIdSectorSeleccionado] = useState<number | undefined>(undefined);
   const [sector, setSector] = useState(registroInicial?.sector ?? "");
   const [telefono, setTelefono] = useState(registroInicial?.telefono ?? "");
   const [numeroCuenta, setNumeroCuenta] = useState(
@@ -65,21 +63,15 @@ export function useModalBancoInforme({
     setSectoristaJefeCuenta(registroInicial?.sectoristaJefeCuenta ?? "");
   }, [estaAbierto, registroInicial]);
 
+
   useEffect(() => {
     if (!estaAbierto || !opcionesSector) return;
 
     const opcionSector = registroInicial?.idSector
       ? opcionesSector.find((opcion) => opcion.num1 === registroInicial.idSector)
-      : opcionesSector.find(
-          (opcion) => opcion.string1 === (registroInicial?.sector ?? ""),
-        );
+      : opcionesSector.find((opcion) => opcion.string1 === (registroInicial?.sector ?? ""));
     setIdSectorSeleccionado(opcionSector?.num1 ?? undefined);
-  }, [
-    estaAbierto,
-    opcionesSector,
-    registroInicial?.idSector,
-    registroInicial?.sector,
-  ]);
+  }, [estaAbierto, opcionesSector, registroInicial?.idSector, registroInicial?.sector]);
 
   const manejarCambioSector = (valor?: number) => {
     setIdSectorSeleccionado(valor);
@@ -90,19 +82,14 @@ export function useModalBancoInforme({
     setIdSectorSeleccionado(undefined);
     setSector("");
   };
-
   const manejarGuardar = () => {
-    const sectorSeleccionado =
-      opcionesSector?.find((opcion) => opcion.num1 === idSectorSeleccionado)
-        ?.string1 ?? sector;
-
     onGuardar({
       idInformeBanco: registroInicial?.idInformeBanco,
       idBanco,
       idPais,
       pais: pais.trim() || undefined,
       banco: banco.trim(),
-      sector: sectorSeleccionado.trim(),
+      sector: sector.trim(),
       telefono: telefono.trim(),
       numeroCuenta: numeroCuenta.trim(),
       sectoristaJefeCuenta: sectoristaJefeCuenta.trim(),
@@ -138,3 +125,4 @@ export function useModalBancoInforme({
     telefono,
   };
 }
+

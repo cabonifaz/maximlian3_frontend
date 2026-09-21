@@ -74,6 +74,8 @@ export function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       paginaWeb: "",
       estadoActual: "",
       datosAdicionales: "",
+      idCalificacion: "",
+      idRecordPagos: "",
     },
     aspectosLegales: {
       tipoEmpresa: "",
@@ -130,6 +132,8 @@ export function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       numeroEmpleados: "",
       numeroEmpleadosDetalle: "",
       comentariosOperaciones: "",
+      clientes: "",
+      competidores: "",
     },
     importaciones: [],
     exportaciones: [],

@@ -33,8 +33,12 @@ export function CustomModalOperacionAnalista({
   const {
     anio,
     setAnio,
-    idMesActual,
-    setIdMes,
+    idMesInicioActual,
+    setIdMesInicio,
+    idMesFinActual,
+    setIdMesFin,
+    mesInicioActual,
+    mesFinActual,
     idMoneda,
     setIdMoneda,
     monto,
@@ -47,7 +51,6 @@ export function CustomModalOperacionAnalista({
     setOperaciones,
     opcionesMesesOrdenadas,
     opcionesMoneda,
-    mesActual,
     monedaActual,
     manejarGuardar,
     sanitizarEntero,
@@ -82,16 +85,29 @@ export function CustomModalOperacionAnalista({
           </div>
 
           <CustomSelectorBuscable
-            label="Mes"
+            label="Mes inicio"
             options={opcionesMesesOrdenadas}
-            value={idMesActual}
-            displayValue={mesActual}
-            onChange={setIdMes}
-            onClear={() => setIdMes(undefined)}
+            value={idMesInicioActual}
+            displayValue={mesInicioActual}
+            onChange={setIdMesInicio}
+            onClear={() => setIdMesInicio(undefined)}
             optional
             mostrarTextoOpcionalEnLabel={false}
             ordenarOpciones={false}
-            placeholder="Seleccione mes"
+            placeholder="Seleccione mes inicio"
+          />
+
+          <CustomSelectorBuscable
+            label="Mes final"
+            options={opcionesMesesOrdenadas}
+            value={idMesFinActual}
+            displayValue={mesFinActual}
+            onChange={setIdMesFin}
+            onClear={() => setIdMesFin(undefined)}
+            optional
+            mostrarTextoOpcionalEnLabel={false}
+            ordenarOpciones={false}
+            placeholder="Seleccione mes final"
           />
 
           <CustomSelectorBuscable

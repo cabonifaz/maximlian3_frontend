@@ -365,6 +365,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
           {adicionalEtiqueta}
         </span>
       )}
+      idMaster={idMaestro}
       options={opcionesDisponibles}
       value={valorSeleccionado}
       displayValue={textoSeleccionado}
