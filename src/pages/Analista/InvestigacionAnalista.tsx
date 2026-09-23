@@ -369,7 +369,6 @@ function PantallaInvestigacionAnalista({
   const [filtroBancoNombre, setFiltroBancoNombre] = useState("");
   const [filtroBancoCuenta, setFiltroBancoCuenta] = useState("");
   const [filtroBancoTelefono, setFiltroBancoTelefono] = useState("");
-  const [idsFiltroBancoSector, setIdsFiltroBancoSector] = useState<number[]>([]);
   const [codigoNuevaCategoriaCiiu, setCodigoNuevaCategoriaCiiu] = useState("");
   const [textoNuevaCategoriaCiiu, setTextoNuevaCategoriaCiiu] = useState("");
   const [codigoNuevaClaseCiiu, setCodigoNuevaClaseCiiu] = useState("");
@@ -460,7 +459,7 @@ function PantallaInvestigacionAnalista({
     TablaMaestraId.TIPO_PERSONA,
     TablaMaestraId.PAIS,
     TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION,
-    TablaMaestraId.ESTADO_CLIENTE,
+    TablaMaestraId.ESTADO_ACTUAL,
     TablaMaestraId.CALIFICACION,
     TablaMaestraId.RECORD_PAGOS,
     TablaMaestraId.CIUDAD,
@@ -501,8 +500,8 @@ function PantallaInvestigacionAnalista({
   });
 
   const { data: opcionesEstadoCliente } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.ESTADO_CLIENTE],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_CLIENTE),
+    queryKey: ["masterTable", TablaMaestraId.ESTADO_ACTUAL],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_ACTUAL),
     staleTime: Infinity,
   });
   const { data: opcionesCalificacion } = useQuery({
@@ -944,10 +943,6 @@ function PantallaInvestigacionAnalista({
     ).trim(),
     [datosPedidoNavegacion?.pais, nombrePaisInforme, registroAsignacionPedido?.pais],
   );
-  const opcionesCiudadIdentificacion = useMemo(() => {
-    if (!idPaisSeleccionado) return opcionesCiudad;
-    return opcionesCiudad?.filter((opcion) => opcion.num2 === idPaisSeleccionado);
-  }, [idPaisSeleccionado, opcionesCiudad]);
   const tipoInformeResumen = useMemo(() => {
     const idTipoTramite = tarifarioPedidoSeleccionado?.idTipoTramite;
     if (!idTipoTramite) {
@@ -2713,15 +2708,8 @@ function PantallaInvestigacionAnalista({
     const coincideNombre = !filtroBancoNombreConRetardo.trim() || banco.banco.toLowerCase().includes(filtroBancoNombreConRetardo.trim().toLowerCase());
     const coincideCuenta = !filtroBancoCuentaConRetardo.trim() || banco.numeroCuenta.toLowerCase().includes(filtroBancoCuentaConRetardo.trim().toLowerCase());
     const coincideTelefono = !filtroBancoTelefonoConRetardo.trim() || banco.telefono.toLowerCase().includes(filtroBancoTelefonoConRetardo.trim().toLowerCase());
-    const sectorBanco = banco.sector || opcionesSectorEconomico?.find((opcion) => opcion.num1 === banco.idSector)?.string1 || "";
-    const sectoresSeleccionados = (opcionesSectorEconomico ?? [])
-      .filter((opcion) => opcion.num1 != null && idsFiltroBancoSector.includes(opcion.num1))
-      .map((opcion) => opcion.string1?.toLowerCase() ?? "")
-      .filter(Boolean);
-    const coincideSector = sectoresSeleccionados.length === 0
-      || sectoresSeleccionados.some((sectorSeleccionado) => sectorBanco.toLowerCase() === sectorSeleccionado);
 
-    return coincideNombre && coincideCuenta && coincideTelefono && coincideSector;
+    return coincideNombre && coincideCuenta && coincideTelefono;
   });
 
   const exportacionesHabilitadas = esPorcentajeMayorACero(datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje);
@@ -2859,6 +2847,7 @@ function PantallaInvestigacionAnalista({
     setEstaAbiertoModalBuscarEjecutivo(false);
     setEstaAbiertoModalEjecutivo(true);
   };
+
 
   const ejecutivosFiltrados = datosInvestigacion.directorioEjecutivo.filter((ejecutivo) => {
     const termino = busquedaEjecutivoConRetardo.trim().toLowerCase();
@@ -3167,16 +3156,10 @@ function PantallaInvestigacionAnalista({
       />
       <CampoInvestigacionAnalista etiqueta="Número de Identificación Fiscal" valor={datosInvestigacion.identificacion.numeroIdentificacionFiscal} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.numeroIdentificacionFiscal")} onChange={(valor) => actualizarIdentificacion("numeroIdentificacionFiscal", valor)} />
       <CampoInvestigacionAnalista etiqueta="Dirección Principal" valor={datosInvestigacion.identificacion.direccionPrincipal} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.direccionPrincipal")} onChange={(valor) => actualizarIdentificacion("direccionPrincipal", valor)} />
-      <SelectorMaestroConAltaInvestigacionAnalista
+      <CampoInvestigacionAnalista
         etiqueta="Ciudad/Estado/Provincia"
         valor={datosInvestigacion.identificacion.ciudadEstadoProvincia}
         soloLectura={esSoloLectura}
-        opcionesTablaMaestra={opcionesCiudadIdentificacion}
-        idMaestro={TablaMaestraId.CIUDAD}
-        permiteAltaNueva
-        num2AltaNueva={idPaisSeleccionado ?? null}
-        conservarOpcionesLocales={false}
-        marcador="Seleccione o agregue ciudad/estado/provincia"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.ciudadEstadoProvincia")}
         onChange={(valor) => actualizarIdentificacion("ciudadEstadoProvincia", valor)}
       />
@@ -3189,11 +3172,11 @@ function PantallaInvestigacionAnalista({
         valor={datosInvestigacion.identificacion.estadoActual}
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesEstadoCliente}
-        idMaestro={TablaMaestraId.ESTADO_CLIENTE}
+        idMaestro={TablaMaestraId.ESTADO_ACTUAL}
         permiteAltaNueva
         marcador="Seleccione o agregue estado actual"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.estadoActual")}
-        onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}
+        onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}        className="md:col-span-2"
       />
       <CustomSelectorBuscable
         label="Calificación"
@@ -3285,11 +3268,6 @@ function PantallaInvestigacionAnalista({
         opcion.string1 === datosInvestigacion.aspectosLegales.operacionesCambioDivisas
         || String(opcion.num1 ?? "") === datosInvestigacion.aspectosLegales.operacionesCambioDivisas,
     )?.string2?.trim() ?? "";
-    const opcionMonedaTipoCambioSeleccionada = opcionesMoneda?.find(
-      (opcion) =>
-        opcion.string1 === datosInvestigacion.aspectosLegales.monedaTipoCambio
-        || String(opcion.num1 ?? "") === datosInvestigacion.aspectosLegales.monedaTipoCambio,
-    );
     const idIdiomaInforme = registroPedidoSeleccionado?.idIdioma;
 
     return (
@@ -3312,22 +3290,17 @@ function PantallaInvestigacionAnalista({
               etiqueta="Fecha de constitución"
           valor={datosInvestigacion.aspectosLegales.fechaConstitucion}
           soloLectura={esSoloLectura}
-          tipoEntrada="fecha"
           adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.fechaConstitucion")}
           onChange={(valor) => actualizarAspectosLegales("fechaConstitucion", valor)}
         />
-        <SelectorMaestroConAltaInvestigacionAnalista
+        <CampoInvestigacionAnalista
           etiqueta="Ciudad de Registro"
           valor={datosInvestigacion.aspectosLegales.ciudadRegistro}
           soloLectura={esSoloLectura}
-          opcionesTablaMaestra={opcionesCiudad}
-          idMaestro={TablaMaestraId.CIUDAD}
-          permiteAltaNueva
-          marcador="Seleccione ciudad de registro"
           adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.ciudadRegistro")}
           onChange={(valor) => actualizarAspectosLegales("ciudadRegistro", valor)}
         />
-        <CampoInvestigacionAnalista etiqueta="Notaría" valor={datosInvestigacion.aspectosLegales.notaria} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.notaria")} onChange={(valor) => actualizarAspectosLegales("notaria", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Oficina de Notaría" valor={datosInvestigacion.aspectosLegales.notaria} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.notaria")} onChange={(valor) => actualizarAspectosLegales("notaria", valor)} />
         <CampoInvestigacionAnalista etiqueta="Notario" valor={datosInvestigacion.aspectosLegales.notario} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.notario")} onChange={(valor) => actualizarAspectosLegales("notario", valor)} />
         <CampoInvestigacionAnalista etiqueta="Registro" valor={datosInvestigacion.aspectosLegales.registro} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.registro")} onChange={(valor) => actualizarAspectosLegales("registro", valor)} />
         <CampoInvestigacionAnalista etiqueta="Condiciones" valor={datosInvestigacion.aspectosLegales.condiciones} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.condiciones")} onChange={(valor) => actualizarAspectosLegales("condiciones", valor)} />
@@ -3343,7 +3316,7 @@ function PantallaInvestigacionAnalista({
         />
         <CampoInvestigacionAnalista etiqueta="Capital Inicial" valor={datosInvestigacion.aspectosLegales.capitalInicial} soloLectura={esSoloLectura} tipoEntrada="decimal" adornoFinal={isoOperacionesCambioDivisas} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.capitalInicial")} onChange={(valor) => actualizarAspectosLegales("capitalInicial", valor)} />
         <CampoInvestigacionAnalista etiqueta="Capital Desembolsado" valor={datosInvestigacion.aspectosLegales.capitalDesembolsado} soloLectura={esSoloLectura} tipoEntrada="decimal" adornoFinal={isoOperacionesCambioDivisas} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.capitalDesembolsado")} onChange={(valor) => actualizarAspectosLegales("capitalDesembolsado", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Última Ampliación" valor={datosInvestigacion.aspectosLegales.ultimaAmpliacion} soloLectura={esSoloLectura} tipoEntrada="fecha" adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.ultimaAmpliacion")} onChange={(valor) => actualizarAspectosLegales("ultimaAmpliacion", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Última Ampliación" valor={datosInvestigacion.aspectosLegales.ultimaAmpliacion} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.ultimaAmpliacion")} onChange={(valor) => actualizarAspectosLegales("ultimaAmpliacion", valor)} />
         <CampoInvestigacionAnalista etiqueta="Patrimonio Neto" valor={datosInvestigacion.aspectosLegales.patrimonioNeto} soloLectura={esSoloLectura} tipoEntrada="decimal" adornoFinal={isoOperacionesCambioDivisas} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.patrimonioNeto")} onChange={(valor) => actualizarAspectosLegales("patrimonioNeto", valor)} />
         <CampoInvestigacionAnalista etiqueta="Tipo de Acciones" valor={datosInvestigacion.aspectosLegales.tipoAcciones} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.tipoAcciones")} onChange={(valor) => actualizarAspectosLegales("tipoAcciones", valor)} />
         <CampoInvestigacionAnalista etiqueta="Valor de las Acciones" valor={datosInvestigacion.aspectosLegales.valorAcciones} soloLectura={esSoloLectura} tipoEntrada="decimal" adornoFinal={isoOperacionesCambioDivisas} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.valorAcciones")} onChange={(valor) => actualizarAspectosLegales("valorAcciones", valor)} />
@@ -3363,41 +3336,25 @@ function PantallaInvestigacionAnalista({
           <CustomLabel as="p" className="text-sm font-bold text-gray-700">
             <span className="inline-flex items-center gap-2">
               <span>Tipo de Cambio</span>
-              {obtenerIndicadorCambioExtraccion("aspectosLegales.monedaTipoCambio")}
               {obtenerIndicadorCambioExtraccion("aspectosLegales.tipoCambio")}
             </span>
           </CustomLabel>
-          <div className="grid gap-3 md:grid-cols-[190px_minmax(0,1fr)]">
-            <CustomSelectorBuscable
-              options={opcionesMoneda}
-              value={opcionMonedaTipoCambioSeleccionada?.num1 ?? undefined}
-              displayValue={
-                opcionMonedaTipoCambioSeleccionada?.string1
-                ?? (datosInvestigacion.aspectosLegales.monedaTipoCambio === "0" ? "" : datosInvestigacion.aspectosLegales.monedaTipoCambio)
-              }
-              onChange={(valor) => actualizarAspectosLegales("monedaTipoCambio", String(valor))}
-              onClear={() => actualizarAspectosLegales("monedaTipoCambio", "")}
-              optional
-              mostrarTextoOpcionalEnLabel={false}
-              disabled={esSoloLectura}
-              placeholder="Seleccione moneda"
+          <div className="relative flex h-11 overflow-hidden rounded-xl border border-gray-200 bg-white focus-within:border-brand-black focus-within:ring-2 focus-within:ring-brand-black/5">
+            <span className="flex items-center border-r border-gray-200 bg-slate-50 px-4 text-sm font-semibold text-slate-600">1 USD =</span>
+            <input
+              value={datosInvestigacion.aspectosLegales.tipoCambio}
+              readOnly={esSoloLectura}
+              onChange={(event) => actualizarAspectosLegales("tipoCambio", sanitizarMontoDecimales(event.target.value, 6))}
+              onBlur={(event) => actualizarAspectosLegales("tipoCambio", normalizarMontoDecimales(event.target.value, 6))}
+              onFocus={seleccionarTextoCampoEditable}
+              placeholder="0.000000"
+              className={`min-w-0 flex-1 bg-transparent px-4 text-sm text-slate-600 outline-none read-only:text-slate-400 ${isoOperacionesCambioDivisas ? "pr-20" : ""}`}
             />
-            <div className="relative">
-              <input
-                value={datosInvestigacion.aspectosLegales.tipoCambio}
-                readOnly={esSoloLectura}
-                onChange={(event) => actualizarAspectosLegales("tipoCambio", sanitizarMontoDecimales(event.target.value, 6))}
-                onBlur={(event) => actualizarAspectosLegales("tipoCambio", normalizarMontoDecimales(event.target.value, 6))}
-                onFocus={seleccionarTextoCampoEditable}
-                placeholder="0.000000"
-                className={`h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400 ${isoOperacionesCambioDivisas ? "pr-20" : ""}`}
-              />
-              {isoOperacionesCambioDivisas ? (
-                <span className="pointer-events-none absolute right-2 top-1/2 flex h-7 -translate-y-1/2 items-center rounded-md bg-slate-900 px-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
-                  {isoOperacionesCambioDivisas}
-                </span>
-              ) : null}
-            </div>
+            {isoOperacionesCambioDivisas ? (
+              <span className="pointer-events-none absolute right-2 top-1/2 flex h-7 -translate-y-1/2 items-center rounded-md bg-slate-900 px-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
+                {isoOperacionesCambioDivisas}
+              </span>
+            ) : null}
           </div>
         </div>
         <AreaInvestigacionAnalista etiqueta="Antecedentes" valor={datosInvestigacion.aspectosLegales.antecedentes} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.antecedentes")} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("antecedentes", valor)} />
@@ -3470,7 +3427,7 @@ function PantallaInvestigacionAnalista({
           </div>
 
           <div className="overflow-x-auto rounded-2xl border border-gray-100">
-            <table className={`${pestanaRamoOperacionesVisible === "locales" ? "min-w-[720px]" : "min-w-[980px]"} w-full text-left`}>
+            <table key={`tabla-operaciones-${pestanaRamoOperacionesVisible}`} className={`${pestanaRamoOperacionesVisible === "locales" ? "min-w-[720px]" : "min-w-[980px]"} w-full text-left`}>
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
                 {pestanaRamoOperacionesVisible === "locales" ? (
                   <tr>
@@ -3507,7 +3464,7 @@ function PantallaInvestigacionAnalista({
                     );
                     return (
                     <tr
-                      key={`${local.tipoLocal}-${local.comentario}`}
+                      key={`local-${local.tipoLocal}-${local.comentario}`}
                       className={`cursor-pointer transition-colors ${estaSeleccionado ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
                       onClick={() => setIndiceLocalSeleccionado(datosInvestigacion.locales.findIndex((item) => item.tipoLocal === local.tipoLocal && item.comentario === local.comentario))}
                     >
@@ -3554,7 +3511,7 @@ function PantallaInvestigacionAnalista({
 
                     return (
                       <tr
-                        key={`${registro.anio}-${registro.idMesInicio ?? registro.mes}-${registro.paises}-${registro.monto}`}
+                        key={`${pestanaRamoOperacionesVisible}-${registro.anio}-${registro.idMesInicio ?? registro.mes}-${registro.paises}-${registro.monto}`}
                         className={`cursor-pointer transition-colors ${indiceOperacionSeleccionada === indiceRegistro ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
                         onClick={() => setIndiceOperacionSeleccionada(indiceRegistro)}
                       >
@@ -3809,6 +3766,7 @@ function PantallaInvestigacionAnalista({
               soloLectura={esSoloLectura}
               opcionesTablaMaestra={opcionesCategoriaCiiu}
               idMaestro={TablaMaestraId.ACTIVIDAD_ECONOMICA}
+              usarPaginacion={false}
               conservarOpcionesLocales={false}
               marcador="Código"
               obtenerEtiquetaOpcion={(opcion) => opcion.string2?.trim() || opcion.string1?.trim() || ""}
@@ -3822,6 +3780,7 @@ function PantallaInvestigacionAnalista({
               soloLectura={esSoloLectura}
               opcionesTablaMaestra={opcionesCategoriaCiiu}
               idMaestro={TablaMaestraId.ACTIVIDAD_ECONOMICA}
+              usarPaginacion={false}
               conservarOpcionesLocales={false}
               marcador="Seleccione categoría"
               obtenerEtiquetaOpcion={(opcion) => opcion.string1?.trim() || ""}
@@ -3878,6 +3837,7 @@ function PantallaInvestigacionAnalista({
               soloLectura={esSoloLectura}
               opcionesTablaMaestra={opcionesClaseCiiuFiltradas}
               idMaestro={TablaMaestraId.CLASE_CIIU}
+              usarPaginacion={false}
               conservarOpcionesLocales={false}
               marcador="Código"
               obtenerEtiquetaOpcion={(opcion) => opcion.string2?.trim() || opcion.string1?.trim() || ""}
@@ -3891,6 +3851,7 @@ function PantallaInvestigacionAnalista({
               soloLectura={esSoloLectura}
               opcionesTablaMaestra={opcionesClaseCiiuFiltradas}
               idMaestro={TablaMaestraId.CLASE_CIIU}
+              usarPaginacion={false}
               conservarOpcionesLocales={false}
               marcador="Seleccione clase"
               obtenerEtiquetaOpcion={(opcion) => opcion.string1?.trim() || ""}
@@ -4352,7 +4313,6 @@ function PantallaInvestigacionAnalista({
                     setFiltroBancoNombre("");
                     setFiltroBancoCuenta("");
                     setFiltroBancoTelefono("");
-                    setIdsFiltroBancoSector([]);
                   }}
                 >
                   <RotateCcw size={14} />
@@ -4395,17 +4355,6 @@ function PantallaInvestigacionAnalista({
                   <input value={filtroBancoTelefono} onChange={(event) => setFiltroBancoTelefono(event.target.value)} placeholder="Número..." className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5" />
                 </div>
               </div>
-            </div>
-
-            <div className="border-t border-slate-100 px-5 pb-2">
-              <MultiCustomSelectorBuscable
-                label="Sectores"
-                idMaster={TablaMaestraId.SECTOR_ECONOMICO}
-                value={idsFiltroBancoSector}
-                onChange={setIdsFiltroBancoSector}
-                placeholder="Filtrar por sectores"
-                resumirSelecciones
-              />
             </div>
           </div>
 
@@ -4627,6 +4576,7 @@ function PantallaInvestigacionAnalista({
                 setPestanaRamoOperaciones(valor as PestanaRamoOperaciones);
                 setIndiceOperacionSeleccionada(null);
                 setIndiceLocalSeleccionado(null);
+                setPaginaOperaciones(1);
               }}
             />
             {renderizarRamoOperaciones()}
@@ -4832,6 +4782,11 @@ function PantallaInvestigacionAnalista({
         estaAbierto={estaAbiertoModalDetalleBalance}
         detalleInicial={indiceBalanceSeleccionado != null ? datosInvestigacion.balances[indiceBalanceSeleccionado]?.detalleCuentas : undefined}
         tipoEstadoFinanciero={indiceBalanceSeleccionado != null ? datosInvestigacion.balances[indiceBalanceSeleccionado]?.tipoEstadoFinanciero : undefined}
+          idTipoBalance={
+            indiceBalanceSeleccionado != null
+              ? datosInvestigacion.balances[indiceBalanceSeleccionado]?.idTipoBalance
+              : undefined
+          }
         soloLectura={esSoloLectura}
         onCerrar={() => {
           setIndiceBalanceSeleccionado(null);
@@ -5312,7 +5267,6 @@ export default function InvestigacionAnalista() {
       idTipoRegTributarioInicial={informeObtenido?.taxIdType}
       idEstadoActualInicial={informeObtenido?.idEstadoManual}
       idTipoEmpresaInicial={informeObtenido?.idTipoEmpresa}
-      idCiudadRegistroInicial={informeObtenido?.idCiudadRegistro}
       idSectorInicial={informeObtenido?.idSector}
       idActividadInicial={informeObtenido?.idActividad}
     />

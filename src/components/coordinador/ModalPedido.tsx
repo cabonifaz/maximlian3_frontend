@@ -1103,7 +1103,6 @@ export function ModalPedido({
       montoCredito: data.montoCredito,
       plazoCredito: data.plazoCredito,
       idTipoPlazoCredito: data.idTipoPlazoCredito,
-      tipoPlazoCredito: data.tipoPlazoCredito,
       fchDesde: data.fechaDesde.toISOString(),
       fchHasta: data.fechaHasta.toISOString(),
       comentario: data.comentario ?? "",

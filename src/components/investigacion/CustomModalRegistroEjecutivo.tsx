@@ -2,13 +2,11 @@ import { Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
-import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
 import { useModalRegistroEjecutivoInforme } from "@maximilian/hooks/useModalRegistroEjecutivoInforme";
 import type {
   RegistroDirectorioEjecutivoAnalista,
   RegistroPersonaDirectorioAnalista,
 } from "@maximilian/shared/types/investigacion.type";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import {
   normalizarPorcentajeDecimales,
   sanitizarPorcentajeDecimales,
@@ -33,7 +31,6 @@ export function CustomModalRegistroEjecutivoAnalista({
   personaSeleccionada,
   mensajeBusquedaEjecutivo,
   requiereEjecutivoRegistrado = false,
-  idIdioma,
   onCerrar,
   onBuscarEjecutivo,
   onGuardar,
@@ -46,7 +43,6 @@ export function CustomModalRegistroEjecutivoAnalista({
     setCargo,
     porcentajeParticipacion,
     setPorcentajeParticipacion,
-    opcionesCargo,
     tieneEjecutivoRegistrado,
     manejarEnvio,
   } = useModalRegistroEjecutivoInforme({
@@ -54,8 +50,7 @@ export function CustomModalRegistroEjecutivoAnalista({
     registroInicial,
     personaSeleccionada,
     requiereEjecutivoRegistrado,
-    idIdioma,
-    onGuardar,
+      onGuardar,
   });
 
   if (!estaAbierto) return null;
@@ -104,20 +99,15 @@ export function CustomModalRegistroEjecutivoAnalista({
             </div>
 
             <div className="pt-1">
-              <SelectorMaestroConAltaInvestigacionAnalista
+              <CampoInput
+                nombre="cargo"
                 etiqueta="Cargo"
+                marcador="Ingrese el cargo"
                 valor={cargoActual}
-                soloLectura={false}
-                opcionesTablaMaestra={opcionesCargo}
-                idMaestro={TablaMaestraId.CARGO_DIRECTORIO}
-                marcador="Seleccione o agregue cargo"
                 onChange={setCargo}
-                permiteAltaNueva
-                conservarOpcionesLocales={false}
               />
             </div>
-
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-5 md:grid-cols-3">
               <CustomCampoFechaInvestigacion
                 nombre="vinculadoDesde"
                 etiqueta="Vinculado Desde"
@@ -125,6 +115,13 @@ export function CustomModalRegistroEjecutivoAnalista({
                 onChange={setVinculadoDesde}
               />
               <CampoInput nombre="companiaAnterior" etiqueta="Compañía Anterior" marcador="Empresa previa" valorInicial={registroInicial?.companiaAnterior} />
+              <CampoInput
+                nombre="orden"
+                etiqueta="Orden"
+                marcador="1"
+                tipo="number"
+                valorInicial={registroInicial?.orden ?? "1"}
+              />
             </div>
 
             <div className="pt-1">
@@ -180,7 +177,7 @@ function CampoInput({
   valor?: string;
   onChange?: (valor: string) => void;
   onBlur?: () => void;
-  tipo?: "text" | "date";
+  tipo?: "text" | "date" | "number";
 }) {
   if (valor !== undefined) {
     return (
@@ -193,6 +190,8 @@ function CampoInput({
           onChange={(event) => onChange?.(event.target.value)}
           onBlur={onBlur}
           placeholder={marcador}
+          min={tipo === "number" ? 1 : undefined}
+          step={tipo === "number" ? 1 : undefined}
           className="h-11 w-full rounded-lg border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none"
         />
       </label>

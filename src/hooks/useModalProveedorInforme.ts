@@ -14,10 +14,13 @@ interface ParametrosUseModalProveedorInforme {
 
 function obtenerIdSeleccion(opciones: { num1: number | null; string1: string | null }[] | undefined, valor: string) {
   const texto = valor.trim();
-  const numero = Number.parseInt(texto, 10);
-  if (Number.isFinite(numero) && numero > 0) return numero;
+  const opcionCoincidente = opciones?.find(
+    (opcion) => opcion.string1?.trim().toLowerCase() === texto.toLowerCase(),
+  );
+  if (opcionCoincidente?.num1 != null) return opcionCoincidente.num1;
 
-  return opciones?.find((opcion) => opcion.string1?.trim().toLowerCase() === texto.toLowerCase())?.num1 ?? undefined;
+  const numero = Number.parseInt(texto, 10);
+  return Number.isFinite(numero) && numero > 0 ? numero : undefined;
 }
 
 export function useModalProveedorInforme({
@@ -40,6 +43,10 @@ export function useModalProveedorInforme({
   const [tipoCambio, setTipoCambio] = useState(registroInicial?.tipoCambio ?? "");
   const [limiteCredito, setLimiteCredito] = useState(registroInicial?.limiteCredito ?? "");
   const [promedioMensual, setPromedioMensual] = useState(registroInicial?.promedioMensual ?? "");
+  const [plazoCredito, setPlazoCredito] = useState(registroInicial?.plazoCredito ?? "");
+  const [idTiempoCreditoSeleccionado, setIdTiempoCreditoSeleccionado] = useState<number | undefined>(
+    registroInicial?.idTiempoCredito ?? registroInicial?.idPlazoCredito,
+  );
   const [idCalificacion, setIdCalificacion] = useState<number | undefined>(registroInicial?.idCalificacion);
   const [comentarios, setComentarios] = useState(registroInicial?.comentarios ?? "");
 
@@ -69,6 +76,11 @@ export function useModalProveedorInforme({
     staleTime: Infinity,
   });
 
+  const { data: opcionesPlazoCreditoBase } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.PLAZO_CREDITO_PROVEEDOR],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLAZO_CREDITO_PROVEEDOR),
+    staleTime: Infinity,
+  });
   const { data: opcionesCalificacion } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.CALIFICACION_PROVEEDOR],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CALIFICACION_PROVEEDOR),
@@ -87,13 +99,25 @@ export function useModalProveedorInforme({
     [idIdioma, opcionesLimiteCreditoBase],
   );
 
+  const opcionesPlazoCredito = useMemo(
+    () => traducirOpcionesTablaMaestra(opcionesPlazoCreditoBase, idIdioma),
+    [idIdioma, opcionesPlazoCreditoBase],
+  );
+
+  const idLimiteCreditoActual = obtenerIdSeleccion(opcionesLimiteCredito, limiteCredito)
+    ?? registroInicial?.idLimiteCredito;
+  const promedioMensualHabilitado = idLimiteCreditoActual === 1;
+
   const manejarGuardar = () => {
     const idTipoProveedor = obtenerIdSeleccion(opcionesTipoProveedor, tipoProveedor) || registroInicial?.idTipoProveedor;
     const idPais = obtenerIdSeleccion(opcionesPais, pais) || registroInicial?.idPais;
     const idTipoDocumento = obtenerIdSeleccion(opcionesTaxId, taxIdType) || registroInicial?.idTipoDocumento;
     const idMoneda = obtenerIdSeleccion(opcionesMoneda, operacionCambioMoneda) || registroInicial?.idMoneda;
     const idLimiteCredito = obtenerIdSeleccion(opcionesLimiteCredito, limiteCredito)
-      ?? registroInicial?.idLimiteCredito
+      ?? registroInicial?.idLimiteCredito;
+    const idTiempoCredito = idTiempoCreditoSeleccionado
+      ?? obtenerIdSeleccion(opcionesPlazoCredito, plazoCredito)
+      ?? registroInicial?.idTiempoCredito
       ?? registroInicial?.idPlazoCredito;
 
     const resultado = esquemaModalProveedorInvestigacion.safeParse({
@@ -116,11 +140,14 @@ export function useModalProveedorInforme({
       operacionCambioMoneda: tieneReferenciaComercial ? operacionCambioMoneda : "",
       tipoCambio: tieneReferenciaComercial ? tipoCambio.trim() : "",
       idLimiteCredito: tieneReferenciaComercial ? idLimiteCredito ?? undefined : undefined,
-      idPlazoCredito: tieneReferenciaComercial ? idLimiteCredito ?? undefined : undefined,
       limiteCredito: tieneReferenciaComercial ? limiteCredito : "",
-      promedioMensual: tieneReferenciaComercial ? promedioMensual.trim() : "",
+      idPlazoCredito: tieneReferenciaComercial ? idTiempoCredito ?? undefined : undefined,
+      idTiempoCredito: tieneReferenciaComercial ? idTiempoCredito ?? undefined : undefined,
+      plazoCredito: tieneReferenciaComercial ? plazoCredito : "",
+      promedioMensual: tieneReferenciaComercial && idLimiteCredito === 1 ? promedioMensual.trim() : "",
       idCalificacion: tieneReferenciaComercial ? idCalificacion : undefined,
       comentarios: tieneReferenciaComercial ? comentarios.trim() : "",
+      productos: registroInicial?.productos ?? "",
     });
     if (!resultado.success) return;
 
@@ -154,6 +181,9 @@ export function useModalProveedorInforme({
     setLimiteCredito,
     promedioMensual,
     setPromedioMensual,
+    plazoCredito,
+    setPlazoCredito,
+    setIdTiempoCreditoSeleccionado,
     idCalificacion,
     setIdCalificacion,
     comentarios,
@@ -163,6 +193,8 @@ export function useModalProveedorInforme({
     opcionesTaxId,
     opcionesMoneda,
     opcionesLimiteCredito,
+    promedioMensualHabilitado,
+    opcionesPlazoCredito,
     opcionesCalificacion,
     manejarGuardar,
   };

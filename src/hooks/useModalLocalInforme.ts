@@ -1,17 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { servicioInformeLocalImagen } from "@maximilian/services/informe-local-imagen.service";
-import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type {
   RegistroImagenLocalAnalista,
   RegistroLocalAnalista,
 } from "@maximilian/shared/types/investigacion.type";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 
 interface ParametrosUseModalLocalInforme {
   estaAbierto: boolean;
-  idIdioma?: number;
   onGuardar: (registro: RegistroLocalAnalista) => void;
   registroInicial?: RegistroLocalAnalista | null;
 }
@@ -36,15 +31,11 @@ function obtenerImagenesIniciales(registroInicial?: RegistroLocalAnalista | null
 
 export function useModalLocalInforme({
   estaAbierto,
-  idIdioma,
   onGuardar,
   registroInicial,
 }: ParametrosUseModalLocalInforme) {
   const [tipoLocal, setTipoLocal] = useState(() =>
     obtenerTextoLocal(registroInicial?.tipoLocal),
-  );
-  const [direccion, setDireccion] = useState(() =>
-    obtenerTextoLocal(registroInicial?.direccion),
   );
   const [comentario, setComentario] = useState(() =>
     obtenerTextoLocal(registroInicial?.comentario),
@@ -64,7 +55,6 @@ export function useModalLocalInforme({
   useEffect(() => {
     if (!estaAbierto) return;
     setTipoLocal(obtenerTextoLocal(registroInicial?.tipoLocal));
-    setDireccion(obtenerTextoLocal(registroInicial?.direccion));
     setComentario(obtenerTextoLocal(registroInicial?.comentario));
     setIndiceImagenAEliminar(null);
     setIndiceImagenVisualizando(null);
@@ -106,17 +96,6 @@ export function useModalLocalInforme({
     };
   }, [estaAbierto, registroInicial]);
 
-  const { data: opcionesTipoLocalBase } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_LOCAL],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_LOCAL),
-    staleTime: Infinity,
-  });
-
-  const opcionesTipoLocal = useMemo(
-    () => traducirOpcionesTablaMaestra(opcionesTipoLocalBase, idIdioma),
-    [idIdioma, opcionesTipoLocalBase],
-  );
-
   useEffect(() => {
     return () => {
       blobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
@@ -125,17 +104,11 @@ export function useModalLocalInforme({
 
   const manejarGuardar = () => {
     const tipoLocalNormalizado = obtenerTextoLocal(tipoLocal).trim();
-    const idTipoLocal =
-      opcionesTipoLocal?.find(
-        (opcion) =>
-          opcion.string1 === tipoLocalNormalizado ||
-          String(opcion.num1 ?? "") === tipoLocalNormalizado,
-      )?.num1 ?? registroInicial?.idTipoLocal;
+
 
     onGuardar({
-      idTipoLocal: idTipoLocal ?? undefined,
+      idTipoLocal: registroInicial?.idTipoLocal,
       tipoLocal: tipoLocalNormalizado,
-      direccion: obtenerTextoLocal(direccion).trim(),
       comentario: obtenerTextoLocal(comentario).trim(),
       imagen:
         imagenes.length === 0
@@ -185,6 +158,13 @@ export function useModalLocalInforme({
     }
   };
 
+  const actualizarDescripcionImagen = (indiceImagen: number, descripcion: string) => {
+    setImagenes((anteriores) =>
+      anteriores.map((imagen, indice) =>
+        indice === indiceImagen ? { ...imagen, descripcion } : imagen,
+      ),
+    );
+  };
   const abrirImagenAdjunta = (indice: number) => {
     if (!imagenes[indice]?.url) return;
     setIndiceImagenVisualizando(indice);
@@ -210,8 +190,8 @@ export function useModalLocalInforme({
 
   return {
     abrirImagenAdjunta,
+    actualizarDescripcionImagen,
     comentario,
-    direccion,
     eliminarImagenAdjunta,
     etiquetaImagenes,
     imagenes,
@@ -220,9 +200,7 @@ export function useModalLocalInforme({
     inputArchivoRef,
     manejarGuardar,
     manejarSeleccionImagen,
-    opcionesTipoLocal,
     setComentario,
-    setDireccion,
     setIndiceImagenAEliminar,
     setIndiceImagenVisualizando,
     setTipoLocal,

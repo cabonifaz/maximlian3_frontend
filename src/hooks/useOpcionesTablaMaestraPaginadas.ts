@@ -1,4 +1,5 @@
-﻿import { useDeferredValue, useMemo } from "react";
+import { useMemo } from "react";
+import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
@@ -14,12 +15,12 @@ export function useOpcionesTablaMaestraPaginadas({
   terminoBusqueda,
   activo,
 }: ParametrosUseOpcionesTablaMaestraPaginadas) {
-  const terminoBusquedaDiferido = useDeferredValue(terminoBusqueda.trim());
+  const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
   const consulta = useInfiniteQuery({
-    queryKey: ["masterTablePaginated", idMaestro, terminoBusquedaDiferido],
+    queryKey: ["masterTablePaginated", idMaestro, terminoBusquedaConRetardo],
     queryFn: ({ pageParam }) => servicioTablaMaestra.listarParametros({
       idMaestro: idMaestro!,
-      busqueda: terminoBusquedaDiferido || undefined,
+      busqueda: terminoBusquedaConRetardo || undefined,
       numPag: pageParam,
     }),
     initialPageParam: 1,

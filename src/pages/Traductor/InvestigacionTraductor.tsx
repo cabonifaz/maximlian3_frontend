@@ -1,6 +1,26 @@
-import { FILAS_POR_PAGINA_INVESTIGACION, ID_ESTADO_PEDIDO_BORRADOR, ID_ESTADO_PEDIDO_FINALIZADO, CAMPOS_MONETARIOS_EXTRACCION, CAMPOS_PORCENTAJE_EXTRACCION, CAMPOS_PORCENTAJE_COMPLEMENTARIO, ETIQUETAS_SECCIONES_EXTRACCION, CONFIGURACION_EXTRACCION_POR_SECCION, SECCIONES_LISTA_EXTRACCION, ETIQUETAS_CAMPOS_EXTRACCION, CAMPOS_TRADUCIBLES_POR_SECCION, RUTAS_SELECTORES_CON_REFERENCIA_ORIGINAL } from "@maximilian/shared/constants/pages/Traductor/investigacion-traductor.constants";
+import {
+  FILAS_POR_PAGINA_INVESTIGACION,
+  ID_ESTADO_PEDIDO_BORRADOR,
+  ID_ESTADO_PEDIDO_FINALIZADO,
+  CAMPOS_MONETARIOS_EXTRACCION,
+  CAMPOS_PORCENTAJE_EXTRACCION,
+  CAMPOS_PORCENTAJE_COMPLEMENTARIO,
+  ETIQUETAS_SECCIONES_EXTRACCION,
+  CONFIGURACION_EXTRACCION_POR_SECCION,
+  SECCIONES_LISTA_EXTRACCION,
+  ETIQUETAS_CAMPOS_EXTRACCION,
+  CAMPOS_TRADUCIBLES_POR_SECCION,
+  RUTAS_SELECTORES_CON_REFERENCIA_ORIGINAL,
+} from "@maximilian/shared/constants/pages/Traductor/investigacion-traductor.constants";
 import type { CampoPorcentajeOperacion } from "@maximilian/shared/constants/pages/Traductor/investigacion-traductor.constants";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -394,7 +414,9 @@ function obtenerEtiquetaTipoEmpresaTraductor(
   const textoEspanol = opcion.string1?.trim() ?? "";
 
   return [textoTraducido, textoEspanol]
-    .filter((texto, indice, textos) => texto && textos.indexOf(texto) === indice)
+    .filter(
+      (texto, indice, textos) => texto && textos.indexOf(texto) === indice,
+    )
     .join(" - ");
 }
 
@@ -560,8 +582,9 @@ function PantallaInvestigacionAnalista({
         ? prepararDatosParaNuevoInforme(datosIniciales)
         : datosIniciales,
     );
-  const [datosInvestigacionOriginales] =
-    useState<DatosInvestigacionAnalista>(datosOriginalesIniciales ?? datosIniciales);
+  const [datosInvestigacionOriginales] = useState<DatosInvestigacionAnalista>(
+    datosOriginalesIniciales ?? datosIniciales,
+  );
   const [idInformeActual, setIdInformeActual] = useState<number | undefined>(
     debeCrearInformeInicial ? undefined : idInforme,
   );
@@ -743,9 +766,6 @@ function PantallaInvestigacionAnalista({
   const [filtroBancoNombre, setFiltroBancoNombre] = useState("");
   const [filtroBancoCuenta, setFiltroBancoCuenta] = useState("");
   const [filtroBancoTelefono, setFiltroBancoTelefono] = useState("");
-  const [idsFiltroBancoSector, setIdsFiltroBancoSector] = useState<number[]>(
-    [],
-  );
   const [codigoNuevaCategoriaCiiu, setCodigoNuevaCategoriaCiiu] = useState("");
   const [textoNuevaCategoriaCiiu, setTextoNuevaCategoriaCiiu] = useState("");
   const [codigoNuevaClaseCiiu, setCodigoNuevaClaseCiiu] = useState("");
@@ -809,27 +829,29 @@ function PantallaInvestigacionAnalista({
   const [busquedaEjecutivo, setBusquedaEjecutivo] = useState("");
   const busquedaBalancesConRetardo = useRetardo(busquedaBalances);
   const filtroProveedorNombreConRetardo = useRetardo(filtroProveedorNombre);
-  const filtroProveedorContactoConRetardo = useRetardo(
-    filtroProveedorContacto,
-  );
-  const filtroProveedorTelefonoConRetardo = useRetardo(
-    filtroProveedorTelefono,
-  );
+  const filtroProveedorContactoConRetardo = useRetardo(filtroProveedorContacto);
+  const filtroProveedorTelefonoConRetardo = useRetardo(filtroProveedorTelefono);
   const filtroBancoNombreConRetardo = useRetardo(filtroBancoNombre);
   const filtroBancoCuentaConRetardo = useRetardo(filtroBancoCuenta);
   const filtroBancoTelefonoConRetardo = useRetardo(filtroBancoTelefono);
   const busquedaEjecutivoConRetardo = useRetardo(busquedaEjecutivo);
   useEffect(() => setPaginaBalances(1), [busquedaBalancesConRetardo]);
-  useEffect(() => setPaginaProveedores(1), [
-    filtroProveedorContactoConRetardo,
-    filtroProveedorNombreConRetardo,
-    filtroProveedorTelefonoConRetardo,
-  ]);
-  useEffect(() => setPaginaBancos(1), [
-    filtroBancoCuentaConRetardo,
-    filtroBancoNombreConRetardo,
-    filtroBancoTelefonoConRetardo,
-  ]);
+  useEffect(
+    () => setPaginaProveedores(1),
+    [
+      filtroProveedorContactoConRetardo,
+      filtroProveedorNombreConRetardo,
+      filtroProveedorTelefonoConRetardo,
+    ],
+  );
+  useEffect(
+    () => setPaginaBancos(1),
+    [
+      filtroBancoCuentaConRetardo,
+      filtroBancoNombreConRetardo,
+      filtroBancoTelefonoConRetardo,
+    ],
+  );
   useEffect(() => setPaginaEjecutivos(1), [busquedaEjecutivoConRetardo]);
   const [
     debeVolverABandejaTrasGuardarBorrador,
@@ -882,7 +904,7 @@ function PantallaInvestigacionAnalista({
     TablaMaestraId.TIPO_PERSONA,
     TablaMaestraId.PAIS,
     TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION,
-    TablaMaestraId.ESTADO_CLIENTE,
+    TablaMaestraId.ESTADO_ACTUAL,
     TablaMaestraId.CALIFICACION,
     TablaMaestraId.RECORD_PAGOS,
     TablaMaestraId.CIUDAD,
@@ -924,8 +946,8 @@ function PantallaInvestigacionAnalista({
   });
 
   const { data: opcionesEstadoClienteBase } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.ESTADO_CLIENTE],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_CLIENTE),
+    queryKey: ["masterTable", TablaMaestraId.ESTADO_ACTUAL],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_ACTUAL),
     staleTime: Infinity,
   });
   const { data: opcionesCalificacion } = useQuery({
@@ -1028,7 +1050,8 @@ function PantallaInvestigacionAnalista({
 
   const { data: opcionesFormatoFechaInforme } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.FORMATO_FECHA_INFORME],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.FORMATO_FECHA_INFORME),
+    queryFn: () =>
+      servicioTablaMaestra.list(TablaMaestraId.FORMATO_FECHA_INFORME),
     staleTime: Infinity,
   });
 
@@ -1175,7 +1198,10 @@ function PantallaInvestigacionAnalista({
     [idIdiomaTraduccion, opcionesCargoDirectorioBase],
   );
 
-  const { data: registroAsignacionPedido, isLoading: estaCargandoAsignacionPedido } = useQuery({
+  const {
+    data: registroAsignacionPedido,
+    isLoading: estaCargandoAsignacionPedido,
+  } = useQuery({
     queryKey: ["asignacion-resumen-traductor", idPedido],
     queryFn: async () => {
       if (!idPedido?.trim()) return null;
@@ -1195,9 +1221,9 @@ function PantallaInvestigacionAnalista({
   });
 
   const tieneTipoTramiteResumenPedido = Boolean(
-    datosPedidoNavegacion?.tipoTramite
-      || registroAsignacionPedido?.tipoTramite
-      || datosInvestigacion.resumen.prioridad,
+    datosPedidoNavegacion?.tipoTramite ||
+    registroAsignacionPedido?.tipoTramite ||
+    datosInvestigacion.resumen.prioridad,
   );
 
   const { data: tarifarioPedidoSeleccionado } = useQuery({
@@ -1212,10 +1238,10 @@ function PantallaInvestigacionAnalista({
         idCliente: registroPedidoSeleccionado!.idCliente,
       }),
     enabled: Boolean(
-      !estaCargandoAsignacionPedido
-      && !tieneTipoTramiteResumenPedido
-      && registroPedidoSeleccionado?.idTarifario
-      && registroPedidoSeleccionado?.idCliente,
+      !estaCargandoAsignacionPedido &&
+      !tieneTipoTramiteResumenPedido &&
+      registroPedidoSeleccionado?.idTarifario &&
+      registroPedidoSeleccionado?.idCliente,
     ),
     staleTime: Infinity,
   });
@@ -1523,12 +1549,6 @@ function PantallaInvestigacionAnalista({
       registroAsignacionPedido?.pais,
     ],
   );
-  const opcionesCiudadIdentificacion = useMemo(() => {
-    if (!idPaisSeleccionado) return opcionesCiudad;
-    return opcionesCiudad?.filter(
-      (opcion) => opcion.num2 === idPaisSeleccionado,
-    );
-  }, [idPaisSeleccionado, opcionesCiudad]);
   const tipoInformeResumen = useMemo(() => {
     const idTipoTramite = tarifarioPedidoSeleccionado?.idTipoTramite;
     if (!idTipoTramite) {
@@ -1608,8 +1628,9 @@ function PantallaInvestigacionAnalista({
   }, [opcionesIdioma, registroPedidoSeleccionado?.idIdioma]);
   const formatoFechaInformeVisual = useMemo(
     () =>
-      opcionesFormatoFechaInforme?.find((opcion) => opcion.num1 === idFormatoFechaInforme)?.string2?.trim()
-      || "dd/MM/yyyy",
+      opcionesFormatoFechaInforme
+        ?.find((opcion) => opcion.num1 === idFormatoFechaInforme)
+        ?.string2?.trim() || "dd/MM/yyyy",
     [idFormatoFechaInforme, opcionesFormatoFechaInforme],
   );
   const construirPayloadAltaNuevaTraducida = useCallback(
@@ -3506,7 +3527,8 @@ function PantallaInvestigacionAnalista({
   const abrirReferenciaTraduccion = (rutaTexto: string) => {
     const ruta = rutaTexto.split(".");
     const textoOriginal = String(
-      obtenerValorInvestigacionPorRuta(datosInvestigacionOriginales, ruta) ?? "",
+      obtenerValorInvestigacionPorRuta(datosInvestigacionOriginales, ruta) ??
+        "",
     ).trim();
     if (!textoOriginal) return;
 
@@ -3955,8 +3977,7 @@ function PantallaInvestigacionAnalista({
       ? "operaciones"
       : pestanaRamoOperaciones === "importaciones" &&
           !esPorcentajeMayorACero(
-            datosInvestigacion.operacionPrincipal
-              .comprasExtranjeroPorcentaje,
+            datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje,
           )
         ? "operaciones"
         : pestanaRamoOperaciones;
@@ -4245,27 +4266,9 @@ function PantallaInvestigacionAnalista({
       banco.telefono
         .toLowerCase()
         .includes(filtroBancoTelefonoConRetardo.trim().toLowerCase());
-    const sectorBanco =
-      banco.sector ||
-      opcionesSectorEconomico?.find((opcion) => opcion.num1 === banco.idSector)
-        ?.string1 ||
-      "";
-    const sectoresSeleccionados = (opcionesSectorEconomico ?? [])
-      .filter(
-        (opcion) =>
-          opcion.num1 != null && idsFiltroBancoSector.includes(opcion.num1),
-      )
-      .map((opcion) => opcion.string1?.toLowerCase() ?? "")
-      .filter(Boolean);
-    const coincideSector =
-      sectoresSeleccionados.length === 0 ||
-      sectoresSeleccionados.some(
-        (sectorSeleccionado) =>
-          sectorBanco.toLowerCase() === sectorSeleccionado,
-      );
 
     return (
-      coincideNombre && coincideCuenta && coincideTelefono && coincideSector
+      coincideNombre && coincideCuenta && coincideTelefono
     );
   });
 
@@ -4968,7 +4971,8 @@ function PantallaInvestigacionAnalista({
         ? `Original: ${textoOriginal.trim()}`
         : undefined,
       indicadorCambio: obtenerIndicadorCambioExtraccion(ruta),
-      mostrarReferencia: tieneTextoOriginal && (esCampoIA || esSelectorConReferencia),
+      mostrarReferencia:
+        tieneTextoOriginal && (esCampoIA || esSelectorConReferencia),
     });
   };
 
@@ -5115,30 +5119,12 @@ function PantallaInvestigacionAnalista({
           actualizarIdentificacion("direccionPrincipal", valor)
         }
       />
-      <SelectorMaestroConAltaInvestigacionAnalista
+      <CampoInvestigacionAnalista
         etiqueta="Ciudad/Estado/Provincia"
         valor={datosInvestigacion.identificacion.ciudadEstadoProvincia}
         soloLectura={esSoloLectura}
-        opcionesTablaMaestra={opcionesCiudadIdentificacion}
-        idMaestro={TablaMaestraId.CIUDAD}
-        permiteAltaNueva
-        num2AltaNueva={idPaisSeleccionado ?? null}
-        construirPayloadAltaNueva={(termino, opcionesActuales) =>
-          construirPayloadAltaNuevaTraducida({
-            idMaestro: TablaMaestraId.CIUDAD,
-            termino,
-            opcionesActuales,
-            num2: idPaisSeleccionado ?? null,
-          })
-        }
-        conservarOpcionesLocales={false}
-        marcador="Seleccione o agregue ciudad/estado/provincia"
-        adicionalEtiqueta={obtenerAyudaTraduccion(
-          "identificacion.ciudadEstadoProvincia",
-        )}
-        onChange={(valor) =>
-          actualizarIdentificacion("ciudadEstadoProvincia", valor)
-        }
+        adicionalEtiqueta={obtenerAyudaTraduccion("identificacion.ciudadEstadoProvincia")}
+        onChange={(valor) => actualizarIdentificacion("ciudadEstadoProvincia", valor)}
       />
       <CampoInvestigacionAnalista
         etiqueta="Número de Teléfono"
@@ -5183,11 +5169,11 @@ function PantallaInvestigacionAnalista({
         valor={datosInvestigacion.identificacion.estadoActual}
         soloLectura={esSoloLectura}
         opcionesTablaMaestra={opcionesEstadoCliente}
-        idMaestro={TablaMaestraId.ESTADO_CLIENTE}
+        idMaestro={TablaMaestraId.ESTADO_ACTUAL}
         permiteAltaNueva
         construirPayloadAltaNueva={(termino, opcionesActuales) =>
           construirPayloadAltaNuevaTraducida({
-            idMaestro: TablaMaestraId.ESTADO_CLIENTE,
+            idMaestro: TablaMaestraId.ESTADO_ACTUAL,
             termino,
             opcionesActuales,
           })
@@ -5196,21 +5182,29 @@ function PantallaInvestigacionAnalista({
         adicionalEtiqueta={obtenerAyudaTraduccion(
           "identificacion.estadoActual",
         )}
-        onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}
+        onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}        className="md:col-span-2"
       />
       <CustomSelectorBuscable
         label="Calificación"
         options={opcionesCalificacion}
-        value={Number(datosInvestigacion.identificacion.idCalificacion) || undefined}
-        onChange={(valor) => actualizarIdentificacion("idCalificacion", String(valor))}
+        value={
+          Number(datosInvestigacion.identificacion.idCalificacion) || undefined
+        }
+        onChange={(valor) =>
+          actualizarIdentificacion("idCalificacion", String(valor))
+        }
         onClear={() => actualizarIdentificacion("idCalificacion", "")}
         disabled={esSoloLectura}
       />
       <CustomSelectorBuscable
         label="Record de Pagos"
         options={opcionesRecordPagos}
-        value={Number(datosInvestigacion.identificacion.idRecordPagos) || undefined}
-        onChange={(valor) => actualizarIdentificacion("idRecordPagos", String(valor))}
+        value={
+          Number(datosInvestigacion.identificacion.idRecordPagos) || undefined
+        }
+        onChange={(valor) =>
+          actualizarIdentificacion("idRecordPagos", String(valor))
+        }
         onClear={() => actualizarIdentificacion("idRecordPagos", "")}
         disabled={esSoloLectura}
       />
@@ -5299,12 +5293,16 @@ function PantallaInvestigacionAnalista({
                         {!esSoloLectura ? (
                           <button
                             type="button"
-                            onClick={() => setIndiceCompaniaAEliminar(indiceReal)}
+                            onClick={() =>
+                              setIndiceCompaniaAEliminar(indiceReal)
+                            }
                             className="ml-auto inline-flex text-red-600 transition-colors hover:text-red-700"
                           >
                             <Trash2 size={14} />
                           </button>
-                        ) : <span className="text-sm text-slate-300">-</span>}
+                        ) : (
+                          <span className="text-sm text-slate-300">-</span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -5332,13 +5330,6 @@ function PantallaInvestigacionAnalista({
               datosInvestigacion.aspectosLegales.operacionesCambioDivisas,
         )
         ?.string2?.trim() ?? "";
-    const opcionMonedaTipoCambioSeleccionada = opcionesMoneda?.find(
-      (opcion) =>
-        opcion.string1 ===
-          datosInvestigacion.aspectosLegales.monedaTipoCambio ||
-        String(opcion.num1 ?? "") ===
-          datosInvestigacion.aspectosLegales.monedaTipoCambio,
-    );
 
     return (
       <div className="grid gap-5 md:grid-cols-2">
@@ -5377,32 +5368,20 @@ function PantallaInvestigacionAnalista({
           onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)}
         />
         <CampoInvestigacionAnalista
-                    etiqueta="Fecha de constitución"
+          etiqueta="Fecha de constitución"
           valor={datosInvestigacion.aspectosLegales.fechaConstitucion}
           soloLectura={esSoloLectura}
-          tipoEntrada="fecha"
           adicionalEtiqueta={obtenerAyudaTraduccion(
             "aspectosLegales.fechaConstitucion",
           )}
           onChange={(valor) =>
             actualizarAspectosLegales("fechaConstitucion", valor)
           }
-        />
-        <SelectorMaestroConAltaInvestigacionAnalista
+        />{" "}
+        <CampoInvestigacionAnalista
           etiqueta="Ciudad de Registro"
           valor={datosInvestigacion.aspectosLegales.ciudadRegistro}
           soloLectura={esSoloLectura}
-          opcionesTablaMaestra={opcionesCiudad}
-          idMaestro={TablaMaestraId.CIUDAD}
-          permiteAltaNueva
-          construirPayloadAltaNueva={(termino, opcionesActuales) =>
-            construirPayloadAltaNuevaTraducida({
-              idMaestro: TablaMaestraId.CIUDAD,
-              termino,
-              opcionesActuales,
-            })
-          }
-          marcador="Seleccione ciudad de registro"
           adicionalEtiqueta={obtenerAyudaTraduccion(
             "aspectosLegales.ciudadRegistro",
           )}
@@ -5411,7 +5390,7 @@ function PantallaInvestigacionAnalista({
           }
         />
         <CampoInvestigacionAnalista
-          etiqueta="Notaría"
+          etiqueta="Oficina de Notaría"
           valor={datosInvestigacion.aspectosLegales.notaria}
           soloLectura={esSoloLectura}
           adicionalEtiqueta={obtenerAyudaTraduccion("aspectosLegales.notaria")}
@@ -5488,7 +5467,6 @@ function PantallaInvestigacionAnalista({
           etiqueta="Última Ampliación"
           valor={datosInvestigacion.aspectosLegales.ultimaAmpliacion}
           soloLectura={esSoloLectura}
-          tipoEntrada="fecha"
           adicionalEtiqueta={obtenerAyudaTraduccion(
             "aspectosLegales.ultimaAmpliacion",
           )}
@@ -5559,57 +5537,39 @@ function PantallaInvestigacionAnalista({
           <CustomLabel as="p" className="text-sm font-bold text-gray-700">
             <span className="inline-flex items-center gap-2">
               <span>Tipo de Cambio</span>
-              {obtenerAyudaTraduccion("aspectosLegales.monedaTipoCambio")}
               {obtenerAyudaTraduccion("aspectosLegales.tipoCambio")}
             </span>
           </CustomLabel>
-          <div className="grid gap-3 md:grid-cols-[190px_minmax(0,1fr)]">
-            <CustomSelectorBuscable
-              options={opcionesMoneda}
-              value={opcionMonedaTipoCambioSeleccionada?.num1 ?? undefined}
-              displayValue={
-                opcionMonedaTipoCambioSeleccionada?.string1 ??
-                (datosInvestigacion.aspectosLegales.monedaTipoCambio === "0"
-                  ? ""
-                  : datosInvestigacion.aspectosLegales.monedaTipoCambio)
+          <div className="relative flex h-11 overflow-hidden rounded-xl border border-gray-200 bg-white focus-within:border-brand-black focus-within:ring-2 focus-within:ring-brand-black/5">
+            <span className="flex items-center border-r border-gray-200 bg-slate-50 px-4 text-sm font-semibold text-slate-600">
+              1 USD =
+            </span>
+            <input
+              value={datosInvestigacion.aspectosLegales.tipoCambio}
+              readOnly={esSoloLectura}
+              onChange={(event) =>
+                actualizarAspectosLegales(
+                  "tipoCambio",
+                  sanitizarMontoDecimales(event.target.value, 6),
+                )
               }
-              onChange={(valor) =>
-                actualizarAspectosLegales("monedaTipoCambio", String(valor))
+              onBlur={(event) =>
+                actualizarAspectosLegales(
+                  "tipoCambio",
+                  normalizarMontoDecimales(event.target.value, 6),
+                )
               }
-              onClear={() => actualizarAspectosLegales("monedaTipoCambio", "")}
-              optional
-              mostrarTextoOpcionalEnLabel={false}
-              disabled={esSoloLectura}
-              placeholder="Seleccione moneda"
+              onFocus={seleccionarTextoCampoEditable}
+              placeholder="0.000000"
+              className={`min-w-0 flex-1 bg-transparent px-4 text-sm text-slate-600 outline-none read-only:text-slate-400 ${isoOperacionesCambioDivisas ? "pr-20" : ""}`}
             />
-            <div className="relative">
-              <input
-                value={datosInvestigacion.aspectosLegales.tipoCambio}
-                readOnly={esSoloLectura}
-                onChange={(event) =>
-                  actualizarAspectosLegales(
-                    "tipoCambio",
-                    sanitizarMontoDecimales(event.target.value, 6),
-                  )
-                }
-                onBlur={(event) =>
-                  actualizarAspectosLegales(
-                    "tipoCambio",
-                    normalizarMontoDecimales(event.target.value, 6),
-                  )
-                }
-                onFocus={seleccionarTextoCampoEditable}
-                placeholder="0.000000"
-                className={`h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400 ${isoOperacionesCambioDivisas ? "pr-20" : ""}`}
-              />
-              {isoOperacionesCambioDivisas ? (
-                <span className="pointer-events-none absolute right-2 top-1/2 flex h-7 -translate-y-1/2 items-center rounded-md bg-slate-900 px-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
-                  {isoOperacionesCambioDivisas}
-                </span>
-              ) : null}
-            </div>
+            {isoOperacionesCambioDivisas ? (
+              <span className="pointer-events-none absolute right-2 top-1/2 flex h-7 -translate-y-1/2 items-center rounded-md bg-slate-900 px-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
+                {isoOperacionesCambioDivisas}
+              </span>
+            ) : null}
           </div>
-        </div>
+        </div>{" "}
         <AreaInvestigacionAnalista
           etiqueta="Antecedentes"
           valor={datosInvestigacion.aspectosLegales.antecedentes}
@@ -5719,6 +5679,7 @@ function PantallaInvestigacionAnalista({
 
           <div className="overflow-x-auto rounded-2xl border border-gray-100">
             <table
+              key={`tabla-operaciones-${pestanaRamoOperacionesVisible}`}
               className={`${pestanaRamoOperacionesVisible === "locales" ? "min-w-[720px]" : "min-w-[980px]"} w-full text-left`}
             >
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
@@ -5766,7 +5727,7 @@ function PantallaInvestigacionAnalista({
                       );
                     return (
                       <tr
-                        key={`${local.tipoLocal}-${local.comentario}`}
+                        key={`local-${local.tipoLocal}-${local.comentario}`}
                         className={`cursor-pointer transition-colors ${estaSeleccionado ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
                         onClick={() =>
                           setIndiceLocalSeleccionado(
@@ -5839,7 +5800,7 @@ function PantallaInvestigacionAnalista({
 
                     return (
                       <tr
-                        key={`${registro.anio}-${registro.idMesInicio ?? registro.mes}-${registro.paises}-${registro.monto}`}
+                        key={`${pestanaRamoOperacionesVisible}-${registro.anio}-${registro.idMesInicio ?? registro.mes}-${registro.paises}-${registro.monto}`}
                         className={`cursor-pointer transition-colors ${indiceOperacionSeleccionada === indiceRegistro ? "bg-brand-wine/5" : "hover:bg-slate-50"}`}
                         onClick={() =>
                           setIndiceOperacionSeleccionada(indiceRegistro)
@@ -5862,7 +5823,8 @@ function PantallaInvestigacionAnalista({
                         <td className="px-4 py-4 text-sm text-slate-500">
                           {mesInicioRegistro || "-"}
                         </td>
-                        <td className="px-4 py-4 text-sm text-slate-500">{mesFinRegistro || "-"}
+                        <td className="px-4 py-4 text-sm text-slate-500">
+                          {mesFinRegistro || "-"}
                         </td>
                         <td className="px-4 py-4 text-sm text-slate-500">
                           {monedaRegistro || "-"}
@@ -6233,6 +6195,7 @@ function PantallaInvestigacionAnalista({
               soloLectura={esSoloLectura}
               opcionesTablaMaestra={opcionesCategoriaCiiu}
               idMaestro={TablaMaestraId.ACTIVIDAD_ECONOMICA}
+              usarPaginacion={false}
               conservarOpcionesLocales={false}
               marcador="Código"
               obtenerEtiquetaOpcion={(opcion) =>
@@ -6251,6 +6214,7 @@ function PantallaInvestigacionAnalista({
               soloLectura={esSoloLectura}
               opcionesTablaMaestra={opcionesCategoriaCiiu}
               idMaestro={TablaMaestraId.ACTIVIDAD_ECONOMICA}
+              usarPaginacion={false}
               conservarOpcionesLocales={false}
               marcador="Seleccione categoría"
               obtenerEtiquetaOpcion={(opcion) => opcion.string1?.trim() || ""}
@@ -6321,6 +6285,7 @@ function PantallaInvestigacionAnalista({
               soloLectura={esSoloLectura}
               opcionesTablaMaestra={opcionesClaseCiiuFiltradas}
               idMaestro={TablaMaestraId.CLASE_CIIU}
+              usarPaginacion={false}
               conservarOpcionesLocales={false}
               marcador="Código"
               obtenerEtiquetaOpcion={(opcion) =>
@@ -6339,6 +6304,7 @@ function PantallaInvestigacionAnalista({
               soloLectura={esSoloLectura}
               opcionesTablaMaestra={opcionesClaseCiiuFiltradas}
               idMaestro={TablaMaestraId.CLASE_CIIU}
+              usarPaginacion={false}
               conservarOpcionesLocales={false}
               marcador="Seleccione clase"
               obtenerEtiquetaOpcion={(opcion) => opcion.string1?.trim() || ""}
@@ -6947,7 +6913,9 @@ function PantallaInvestigacionAnalista({
           etiqueta="Clientes"
           valor={datosInvestigacion.operacionPrincipal.clientes}
           soloLectura={esSoloLectura}
-          adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.clientes")}
+          adicionalEtiqueta={obtenerAyudaTraduccion(
+            "operacionPrincipal.clientes",
+          )}
           className="md:col-span-2"
           onChange={(valor) => actualizarOperacionPrincipal("clientes", valor)}
         />
@@ -6955,9 +6923,13 @@ function PantallaInvestigacionAnalista({
           etiqueta="Competidores"
           valor={datosInvestigacion.operacionPrincipal.competidores}
           soloLectura={esSoloLectura}
-          adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.competidores")}
+          adicionalEtiqueta={obtenerAyudaTraduccion(
+            "operacionPrincipal.competidores",
+          )}
           className="md:col-span-2"
-          onChange={(valor) => actualizarOperacionPrincipal("competidores", valor)}
+          onChange={(valor) =>
+            actualizarOperacionPrincipal("competidores", valor)
+          }
         />
       </div>
     );
@@ -7140,12 +7112,16 @@ function PantallaInvestigacionAnalista({
                             <button
                               type="button"
                               className="cursor-pointer transition-colors hover:text-slate-600"
-                              onClick={() => setIndiceBalanceAEliminar(indiceReal)}
+                              onClick={() =>
+                                setIndiceBalanceAEliminar(indiceReal)
+                              }
                             >
                               <Trash2 size={14} />
                             </button>
                           </>
-                        ) : <span className="text-sm text-slate-300">-</span>}
+                        ) : (
+                          <span className="text-sm text-slate-300">-</span>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -7431,7 +7407,9 @@ function PantallaInvestigacionAnalista({
                                 <Trash2 size={14} />
                               </button>
                             </>
-                          ) : <span className="text-sm text-slate-300">-</span>}
+                          ) : (
+                            <span className="text-sm text-slate-300">-</span>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -7461,8 +7439,7 @@ function PantallaInvestigacionAnalista({
                   Cuentas bancarias
                 </h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  Busca por banco, cuenta, teléfono o combina varios sectores
-                  para acotar la lista.
+                  Busca por banco, cuenta o teléfono.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -7485,7 +7462,6 @@ function PantallaInvestigacionAnalista({
                     setFiltroBancoNombre("");
                     setFiltroBancoCuenta("");
                     setFiltroBancoTelefono("");
-                    setIdsFiltroBancoSector([]);
                   }}
                 >
                   <RotateCcw size={14} />
@@ -7564,17 +7540,6 @@ function PantallaInvestigacionAnalista({
                   />
                 </div>
               </div>
-            </div>
-
-            <div className="border-t border-slate-100 px-5 py-5">
-              <MultiCustomSelectorBuscable
-                label="Sectores"
-                idMaster={TablaMaestraId.SECTOR_ECONOMICO}
-                value={idsFiltroBancoSector}
-                onChange={setIdsFiltroBancoSector}
-                placeholder="Filtrar por sectores"
-                resumirSelecciones
-              />
             </div>
           </div>
 
@@ -7658,12 +7623,16 @@ function PantallaInvestigacionAnalista({
                               <button
                                 type="button"
                                 className="cursor-pointer transition-colors hover:text-slate-600"
-                                onClick={() => setIndiceBancoAEliminar(indiceReal)}
+                                onClick={() =>
+                                  setIndiceBancoAEliminar(indiceReal)
+                                }
                               >
                                 <Trash2 size={14} />
                               </button>
                             </>
-                          ) : <span className="text-sm text-slate-300">-</span>}
+                          ) : (
+                            <span className="text-sm text-slate-300">-</span>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -7845,7 +7814,9 @@ function PantallaInvestigacionAnalista({
                               <Trash2 size={14} />
                             </button>
                           </>
-                        ) : <span className="text-sm text-slate-300">-</span>}
+                        ) : (
+                          <span className="text-sm text-slate-300">-</span>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -7912,6 +7883,7 @@ function PantallaInvestigacionAnalista({
                 setPestanaRamoOperaciones(valor as PestanaRamoOperaciones);
                 setIndiceOperacionSeleccionada(null);
                 setIndiceLocalSeleccionado(null);
+                setPaginaOperaciones(1);
               }}
             />
             {renderizarRamoOperaciones()}
@@ -7931,885 +7903,931 @@ function PantallaInvestigacionAnalista({
   };
 
   return (
-    <ProveedorFormatoFechaInforme formato={formatoFechaInformeVisual} idIdioma={idIdiomaTraduccion}>
-    <div ref={contenedorPantallaRef} className="min-w-0 space-y-6">
-      <ResumenPedidoInvestigacionAnalista
-        codigoPedido={
-          datosPedidoNavegacion?.codigoPedido
-          || registroAsignacionPedido?.codigoPedido
-          || registroPedidoSeleccionado?.codigoPedido
-          || ""
-        }
-        plantilla={nombrePlantilla}
-        idioma={nombreIdioma}
-        idFormatoFechaInforme={idFormatoFechaInforme}
-        formatoFechaInformeDisplay={formatoFechaInformeVisual}
-        resumen={resumenEncabezado}
-        esSoloLectura={esSoloLectura}
-        mostrarBotonFinalizar={
-          idSeccionActiva === "datos-generales" && !esSoloLectura
-        }
-        onFinalizarInvestigacion={guardarAntesDeFinalizar}
-        onExtraerInformacion={
-          permiteExtraccionSeccion
-            ? () => abrirModalExtraccionInformacion("general")
-            : undefined
-        }
-        onAbrirArchivos={() => setEstaAbiertoModalArchivosInvestigacion(true)}
-        onVistaPrevia={() => setEstaAbiertoModalVistaPrevia(true)}
-        textoBotonArchivos={`Archivos (${archivosInvestigacion.length})`}
-        textoBotonAccionIa="Traducir con IA"
-        formatoFechaInformeSoloLectura
-        textoBotonFinalizar="Finalizar Traducción"
-      />
-
-      <div className="grid min-w-0 gap-6 xl:grid-cols-[240px_minmax(0,1fr)]">
-        <MenuSeccionesInvestigacionAnalista
-          idSeccionActiva={idSeccionActiva}
-          onSeleccionar={setIdSeccionActiva}
-          estadoSecciones={estadoSecciones}
-          secciones={seccionesInvestigacionAnalista}
+    <ProveedorFormatoFechaInforme
+      formato={formatoFechaInformeVisual}
+      idIdioma={idIdiomaTraduccion}
+    >
+      <div ref={contenedorPantallaRef} className="min-w-0 space-y-6">
+        <ResumenPedidoInvestigacionAnalista
+          codigoPedido={
+            datosPedidoNavegacion?.codigoPedido ||
+            registroAsignacionPedido?.codigoPedido ||
+            registroPedidoSeleccionado?.codigoPedido ||
+            ""
+          }
+          plantilla={nombrePlantilla}
+          idioma={nombreIdioma}
+          idFormatoFechaInforme={idFormatoFechaInforme}
+          formatoFechaInformeDisplay={formatoFechaInformeVisual}
+          resumen={resumenEncabezado}
+          esSoloLectura={esSoloLectura}
+          mostrarBotonFinalizar={
+            idSeccionActiva === "datos-generales" && !esSoloLectura
+          }
+          onFinalizarInvestigacion={guardarAntesDeFinalizar}
+          onExtraerInformacion={
+            permiteExtraccionSeccion
+              ? () => abrirModalExtraccionInformacion("general")
+              : undefined
+          }
+          onAbrirArchivos={() => setEstaAbiertoModalArchivosInvestigacion(true)}
+          onVistaPrevia={() => setEstaAbiertoModalVistaPrevia(true)}
+          textoBotonArchivos={`Archivos (${archivosInvestigacion.length})`}
+          textoBotonAccionIa="Traducir con IA"
+          formatoFechaInformeSoloLectura
+          textoBotonFinalizar="Finalizar Traducción"
         />
 
-        <div className="min-w-0 space-y-5">
-          <ContenedorSeccionInvestigacionAnalista
-            numero={seccionActual.indice}
-            titulo={seccionActual.titulo}
-            botonExtra={botonExtraSeccion}
-          >
-            {renderizarContenidoSeccion()}
-          </ContenedorSeccionInvestigacionAnalista>
+        <div className="grid min-w-0 gap-6 xl:grid-cols-[240px_minmax(0,1fr)]">
+          <MenuSeccionesInvestigacionAnalista
+            idSeccionActiva={idSeccionActiva}
+            onSeleccionar={setIdSeccionActiva}
+            estadoSecciones={estadoSecciones}
+            secciones={seccionesInvestigacionAnalista}
+          />
 
-          <div className="flex flex-col items-stretch gap-3 rounded-3xl border border-gray-100 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-5">
-            <CustomButton
-              variant="secondary"
-              size="sm"
-              disabled={esSoloLectura}
-              onClick={() =>
-                setEstaAbiertoModalConfirmacionPrimerBorrador(true)
-              }
+          <div className="min-w-0 space-y-5">
+            <ContenedorSeccionInvestigacionAnalista
+              numero={seccionActual.indice}
+              titulo={seccionActual.titulo}
+              botonExtra={botonExtraSeccion}
             >
-              Guardar Borrador
-            </CustomButton>
+              {renderizarContenidoSeccion()}
+            </ContenedorSeccionInvestigacionAnalista>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col items-stretch gap-3 rounded-3xl border border-gray-100 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <CustomButton
                 variant="secondary"
                 size="sm"
-                disabled={indiceSeccionActiva === 0}
-                onClick={() => irASeccion("anterior")}
+                disabled={esSoloLectura}
+                onClick={() =>
+                  setEstaAbiertoModalConfirmacionPrimerBorrador(true)
+                }
               >
-                <ArrowLeft size={14} />
-                Anterior
+                Guardar Borrador
               </CustomButton>
 
-              {indiceSeccionActiva ===
-              seccionesInvestigacionAnalista.length - 1 ? (
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <CustomButton
+                  variant="secondary"
                   size="sm"
-                  disabled={
-                    esSoloLectura || debeBloquearFinalizacionPorObservaciones
-                  }
-                  title={
-                    tieneObservacionesRechazoPendientes
-                      ? "Completa todas las observaciones antes de finalizar"
-                      : undefined
-                  }
-                  onClick={guardarAntesDeFinalizar}
+                  disabled={indiceSeccionActiva === 0}
+                  onClick={() => irASeccion("anterior")}
                 >
-                  <Check size={14} />
-                  Finalizar Traducción
+                  <ArrowLeft size={14} />
+                  Anterior
                 </CustomButton>
-              ) : (
-                <CustomButton size="sm" onClick={() => irASeccion("siguiente")}>
-                  Siguiente
-                  <ArrowRight size={14} />
-                </CustomButton>
-              )}
+
+                {indiceSeccionActiva ===
+                seccionesInvestigacionAnalista.length - 1 ? (
+                  <CustomButton
+                    size="sm"
+                    disabled={
+                      esSoloLectura || debeBloquearFinalizacionPorObservaciones
+                    }
+                    title={
+                      tieneObservacionesRechazoPendientes
+                        ? "Completa todas las observaciones antes de finalizar"
+                        : undefined
+                    }
+                    onClick={guardarAntesDeFinalizar}
+                  >
+                    <Check size={14} />
+                    Finalizar Traducción
+                  </CustomButton>
+                ) : (
+                  <CustomButton
+                    size="sm"
+                    onClick={() => irASeccion("siguiente")}
+                  >
+                    Siguiente
+                    <ArrowRight size={14} />
+                  </CustomButton>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <button
-        type="button"
-        onClick={() => navigate("/traductor/bandeja")}
-        className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition-colors hover:text-slate-700"
-      >
-        <ArrowLeft size={16} />
-        Volver a la bandeja {idPedido ? `#${idPedido}` : ""}
-      </button>
+        <button
+          type="button"
+          onClick={() => navigate("/traductor/bandeja")}
+          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition-colors hover:text-slate-700"
+        >
+          <ArrowLeft size={16} />
+          Volver a la bandeja {idPedido ? `#${idPedido}` : ""}
+        </button>
 
-      <CustomModalListaPersonasAnalista
-        estaAbierto={estaAbiertoModalCompanias}
-        opcionesTipoPersona={opcionesTipoPersona}
-        opcionesPais={opcionesPais}
-        idIdioma={idIdiomaTraduccion}
-        onCerrar={() => setEstaAbiertoModalCompanias(false)}
-        onGuardar={agregarCompaniaRelacionada}
-      />
-
-      <CustomModalExtraccionInformacionAnalista
-        estaAbierto={estaAbiertoModalExtraccionInformacion}
-        alcance={alcanceExtraccionInformacion}
-        tituloSeccion={tituloSeccionExtraccion}
-        seccionesDisponibles={seccionesDisponiblesExtraccion}
-        archivosDisponibles={archivosInvestigacion.flatMap((archivo) =>
-          archivo.archivo ? [archivo.archivo] : [],
-        )}
-        ocultarCargaArchivos
-        ocultarEspecificaciones
-        onCerrar={() => setEstaAbiertoModalExtraccionInformacion(false)}
-        onExtraer={extraerInformacionDocumento}
-        etiquetaContexto=""
-        textoBotonAccion="Traducir y revisar"
-        textoBotonAccionCargando="Traduciendo..."
-        textoBotonAccionDirecta="Traducción Directa"
-        textoBotonAccionDirectaCargando="Traduciendo..."
-        textoEspecificaciones="Instrucciones de traducción"
-        marcadorEspecificaciones="Ingrese instrucciones para la traducción"
-        verboAccion="Traducir"
-        ocultarCancelar
-        mostrarAccionDirecta
-      />
-
-      <CustomModalVistaPreviaInforme
-        estaAbierto={estaAbiertoModalVistaPrevia}
-        datosInvestigacion={datosInvestigacion}
-        idInforme={idInformeActual}
-        idPedido={
-          Number.isFinite(Number(idPedido)) ? Number(idPedido) : undefined
-        }
-        encabezado={{
-          pais: resumenEncabezado.pais || "-",
-          fecha: new Date().toLocaleDateString("es-PE"),
-          tipoSolicitud: resumenEncabezado.prioridad || "-",
-          analista: "-",
-          traductor: "-",
-        }}
-        mostrarInformeTraducido
-        onCerrar={() => setEstaAbiertoModalVistaPrevia(false)}
-      />
-
-      <CustomModalArchivosInvestigacionAnalista
-        estaAbierto={estaAbiertoModalArchivosInvestigacion}
-        idPedido={
-          Number.isFinite(Number(idPedido)) ? Number(idPedido) : undefined
-        }
-        idInforme={idInformeActual}
-        archivos={archivosInvestigacion}
-        idIdioma={idIdiomaTraduccion}
-        soloLectura={esSoloLectura}
-        onCerrar={() => setEstaAbiertoModalArchivosInvestigacion(false)}
-        onInformeCreado={(nuevoIdInforme) => {
-          setIdInformeActual(nuevoIdInforme);
-          const parametros = new URLSearchParams(window.location.search);
-          parametros.set("modo", "continuar");
-          parametros.set("idInforme", String(nuevoIdInforme));
-          window.history.replaceState(
-            window.history.state,
-            "",
-            `${window.location.pathname}?${parametros.toString()}`,
-          );
-        }}
-        onArchivosChange={setArchivosInvestigacion}
-      />
-
-      <CustomModalOperacionAnalista
-        key={`operacion-${pestanaRamoOperacionesVisible}-${indiceOperacionSeleccionada ?? "nuevo"}-${estaAbiertoModalOperacion ? "abierto" : "cerrado"}`}
-        estaAbierto={estaAbiertoModalOperacion}
-        titulo={
-          indiceOperacionSeleccionada != null
-            ? pestanaRamoOperacionesVisible === "importaciones"
-              ? "Editar Importación"
-              : "Editar Exportación"
-            : pestanaRamoOperacionesVisible === "importaciones"
-              ? "Nueva Importación"
-              : "Nueva Exportación"
-        }
-        subtitulo="Registro de operaciones"
-        idIdioma={idIdiomaTraduccion}
-        registroInicial={
-          indiceOperacionSeleccionada != null
-            ? registrosOperacionActivos[indiceOperacionSeleccionada]
-            : null
-        }
-        onCerrar={() => {
-          setIndiceOperacionSeleccionada(null);
-          setEstaAbiertoModalOperacion(false);
-        }}
-        onGuardar={guardarOperacion}
-      />
-
-      <CustomModalLocalAnalista
-        key="local-modal"
-        estaAbierto={estaAbiertoModalLocal}
-        idIdioma={idIdiomaTraduccion}
-        registroInicial={
-          indiceLocalSeleccionado != null
-            ? datosInvestigacion.locales[indiceLocalSeleccionado]
-            : null
-        }
-        onCerrar={() => {
-          setIndiceLocalSeleccionado(null);
-          setEstaAbiertoModalLocal(false);
-        }}
-        onGuardar={guardarLocal}
-      />
-
-      <CustomModalLocalAnalista
-        key="local-vista"
-        estaAbierto={estaAbiertoVistaLocal}
-        idIdioma={idIdiomaTraduccion}
-        registroInicial={
-          indiceVistaLocal != null
-            ? datosInvestigacion.locales[indiceVistaLocal]
-            : null
-        }
-        soloLectura
-        onCerrar={() => {
-          setIndiceVistaLocal(null);
-          setEstaAbiertoVistaLocal(false);
-        }}
-        onGuardar={() => {}}
-      />
-
-      <CustomModalBalanceAnalista
-        key={`balance-${indiceBalanceSeleccionado ?? "nuevo"}-${estaAbiertoModalBalance ? "abierto" : "cerrado"}`}
-        estaAbierto={estaAbiertoModalBalance}
-        idIdioma={idIdiomaTraduccion}
-        registroInicial={
-          indiceBalanceSeleccionado != null
-            ? datosInvestigacion.balances[indiceBalanceSeleccionado]
-            : null
-        }
-        onCerrar={() => {
-          setIndiceBalanceSeleccionado(null);
-          setEstaAbiertoModalBalance(false);
-        }}
-        onGuardar={guardarBalance}
-      />
-
-      <CustomModalDetalleCuentasAnalista
-        key={`${indiceBalanceSeleccionado ?? "sin-balance"}-${estaAbiertoModalDetalleBalance ? "abierto" : "cerrado"}`}
-        estaAbierto={estaAbiertoModalDetalleBalance}
-        idIdioma={idIdiomaTraduccion}
-        detalleInicial={
-          indiceBalanceSeleccionado != null
-            ? datosInvestigacion.balances[indiceBalanceSeleccionado]
-                ?.detalleCuentas
-            : undefined
-        }
-        tipoEstadoFinanciero={
-          indiceBalanceSeleccionado != null
-            ? datosInvestigacion.balances[indiceBalanceSeleccionado]
-                ?.tipoEstadoFinanciero
-            : undefined
-        }
-        soloLectura={esSoloLectura}
-        onCerrar={() => {
-          setIndiceBalanceSeleccionado(null);
-          setEstaAbiertoModalDetalleBalance(false);
-        }}
-        onGuardar={guardarDetalleCuentasBalance}
-      />
-
-      <CustomModalConfirmacionEliminacion
-        isOpen={indiceBalanceAEliminar !== null}
-        onClose={() => setIndiceBalanceAEliminar(null)}
-        onConfirm={() => {
-          if (indiceBalanceAEliminar == null || esSoloLectura) return;
-          setDatosInvestigacion((anterior) => ({
-            ...anterior,
-            balances: anterior.balances.filter(
-              (_, indice) => indice !== indiceBalanceAEliminar,
-            ),
-          }));
-          setIndiceBalanceAEliminar(null);
-        }}
-        title="Eliminar Balance"
-      >
-        <p>
-          <span className="font-bold">Código:</span>{" "}
-          {indiceBalanceAEliminar != null
-            ? (datosInvestigacion.balances[indiceBalanceAEliminar]?.codigo ??
-              "-")
-            : "-"}
-        </p>
-        <p>
-          <span className="font-bold">Período:</span>{" "}
-          {indiceBalanceAEliminar != null
-            ? (datosInvestigacion.balances[indiceBalanceAEliminar]?.periodo ??
-              "-")
-            : "-"}
-        </p>
-      </CustomModalConfirmacionEliminacion>
-
-      <CustomModalProveedorAnalista
-        key={`proveedor-${indiceProveedorSeleccionado ?? "nuevo"}-${estaAbiertoModalProveedor ? "abierto" : "cerrado"}`}
-        estaAbierto={estaAbiertoModalProveedor}
-        idIdioma={idIdiomaTraduccion}
-        registroInicial={
-          indiceProveedorSeleccionado != null
-            ? datosInvestigacion.proveedores[indiceProveedorSeleccionado]
-            : null
-        }
-        onCerrar={() => {
-          setIndiceProveedorSeleccionado(null);
-          setEstaAbiertoModalProveedor(false);
-        }}
-        onGuardar={guardarProveedor}
-      />
-
-      <CustomModalBancoAnalista
-        key={`banco-${indiceBancoSeleccionado ?? "nuevo"}-${estaAbiertoModalBanco ? "abierto" : "cerrado"}`}
-        estaAbierto={estaAbiertoModalBanco}
-        idIdioma={idIdiomaTraduccion}
-        registroInicial={
-          indiceBancoSeleccionado != null
-            ? datosInvestigacion.bancos[indiceBancoSeleccionado]
-            : null
-        }
-        onCerrar={() => {
-          setIndiceBancoSeleccionado(null);
-          setEstaAbiertoModalBanco(false);
-        }}
-        onGuardar={guardarBanco}
-      />
-
-      <CustomModalConfirmacionEliminacion
-        isOpen={indiceProveedorAEliminar !== null}
-        onClose={() => setIndiceProveedorAEliminar(null)}
-        onConfirm={() => {
-          if (indiceProveedorAEliminar == null || esSoloLectura) return;
-          setDatosInvestigacion((anterior) => ({
-            ...anterior,
-            proveedores: anterior.proveedores.filter(
-              (_, indice) => indice !== indiceProveedorAEliminar,
-            ),
-          }));
-          setIndiceProveedorAEliminar(null);
-        }}
-        title="Eliminar Proveedor"
-      >
-        <p>
-          <span className="font-bold">Proveedor:</span>{" "}
-          {indiceProveedorAEliminar != null
-            ? (datosInvestigacion.proveedores[indiceProveedorAEliminar]
-                ?.nombreEmpresa ?? "-")
-            : "-"}
-        </p>
-      </CustomModalConfirmacionEliminacion>
-
-      <CustomModalConfirmacionEliminacion
-        isOpen={indiceBancoAEliminar !== null}
-        onClose={() => setIndiceBancoAEliminar(null)}
-        onConfirm={() => {
-          if (indiceBancoAEliminar == null || esSoloLectura) return;
-          setDatosInvestigacion((anterior) => ({
-            ...anterior,
-            bancos: anterior.bancos.filter(
-              (_, indice) => indice !== indiceBancoAEliminar,
-            ),
-          }));
-          setIndiceBancoAEliminar(null);
-        }}
-        title="Eliminar Banco"
-      >
-        <p>
-          <span className="font-bold">Banco:</span>{" "}
-          {indiceBancoAEliminar != null
-            ? (datosInvestigacion.bancos[indiceBancoAEliminar]?.banco ?? "-")
-            : "-"}
-        </p>
-      </CustomModalConfirmacionEliminacion>
-
-      <CustomModalConfirmacionEliminacion
-        isOpen={indiceCompaniaAEliminar !== null}
-        onClose={() => setIndiceCompaniaAEliminar(null)}
-        onConfirm={() => {
-          if (indiceCompaniaAEliminar == null || esSoloLectura) return;
-          setDatosInvestigacion((anterior) => ({
-            ...anterior,
-            companiasRelacionadas: anterior.companiasRelacionadas.filter(
-              (_, indice) => indice !== indiceCompaniaAEliminar,
-            ),
-          }));
-          setIndiceCompaniaAEliminar(null);
-        }}
-        title="Eliminar Compañía Relacionada"
-      >
-        <p>
-          <span className="font-bold">Empresa:</span>{" "}
-          {indiceCompaniaAEliminar != null
-            ? (datosInvestigacion.companiasRelacionadas[indiceCompaniaAEliminar]
-                ?.empresa ?? "-")
-            : "-"}
-        </p>
-        <p>
-          <span className="font-bold">ID Fiscal:</span>{" "}
-          {indiceCompaniaAEliminar != null
-            ? (datosInvestigacion.companiasRelacionadas[indiceCompaniaAEliminar]
-                ?.idFiscal ?? "-")
-            : "-"}
-        </p>
-      </CustomModalConfirmacionEliminacion>
-
-      {estaAbiertoModalRevisionCompaniasExtraccion ? (
-        <CustomModalRevisionCompaniasExtraccion
-          companias={companiasExtraccionPendientes}
-          indiceAprobando={
-            crearCompaniaExtraccionMutation.variables?.indice ?? null
-          }
-          onEditar={setIndiceCompaniaExtraccionEdicion}
-          onAprobar={aprobarCompaniaExtraccion}
-          onRechazar={rechazarCompaniaExtraccion}
-          onCerrar={() => setEstaAbiertoModalRevisionCompaniasExtraccion(false)}
+        <CustomModalListaPersonasAnalista
+          estaAbierto={estaAbiertoModalCompanias}
+          opcionesTipoPersona={opcionesTipoPersona}
+          opcionesPais={opcionesPais}
+          idIdioma={idIdiomaTraduccion}
+          onCerrar={() => setEstaAbiertoModalCompanias(false)}
+          onGuardar={agregarCompaniaRelacionada}
         />
-      ) : null}
 
-      <CustomModalRegistroEmpresaRelacionadaAnalista
-        key={`compania-extraccion-${indiceCompaniaExtraccionEdicion ?? "cerrado"}`}
-        estaAbierto={indiceCompaniaExtraccionEdicion !== null}
-        opcionesTipoPersona={opcionesTipoPersona}
-        opcionesPais={opcionesPais}
-        idIdioma={idIdiomaTraduccion}
-        registroInicial={
-          indiceCompaniaExtraccionEdicion == null
-            ? null
-            : convertirCompaniaExtraccionARegistro(
-                companiasExtraccionPendientes[indiceCompaniaExtraccionEdicion],
-                indiceCompaniaExtraccionEdicion,
-              )
-        }
-        tipoCreacion="compania"
-        soloEdicionLocal
-        onCerrar={() => setIndiceCompaniaExtraccionEdicion(null)}
-        onGuardar={guardarEdicionCompaniaExtraccion}
-      />
-
-      {estaAbiertoModalRevisionEjecutivosExtraccion ? (
-        <CustomModalRevisionEjecutivosExtraccion
-          ejecutivos={ejecutivosExtraccionPendientes}
-          opcionesCargo={opcionesCargoDirectorio}
-          onAprobar={aprobarEjecutivoExtraccion}
-          onRechazar={rechazarEjecutivoExtraccion}
-          onCerrar={() =>
-            setEstaAbiertoModalRevisionEjecutivosExtraccion(false)
-          }
+        <CustomModalExtraccionInformacionAnalista
+          estaAbierto={estaAbiertoModalExtraccionInformacion}
+          alcance={alcanceExtraccionInformacion}
+          tituloSeccion={tituloSeccionExtraccion}
+          seccionesDisponibles={seccionesDisponiblesExtraccion}
+          archivosDisponibles={archivosInvestigacion.flatMap((archivo) =>
+            archivo.archivo ? [archivo.archivo] : [],
+          )}
+          ocultarCargaArchivos
+          ocultarEspecificaciones
+          onCerrar={() => setEstaAbiertoModalExtraccionInformacion(false)}
+          onExtraer={extraerInformacionDocumento}
+          etiquetaContexto=""
+          textoBotonAccion="Traducir y revisar"
+          textoBotonAccionCargando="Traduciendo..."
+          textoBotonAccionDirecta="Traducción Directa"
+          textoBotonAccionDirectaCargando="Traduciendo..."
+          textoEspecificaciones="Instrucciones de traducción"
+          marcadorEspecificaciones="Ingrese instrucciones para la traducción"
+          verboAccion="Traducir"
+          ocultarCancelar
+          mostrarAccionDirecta
         />
-      ) : null}
 
-      <CustomModalRegistroEjecutivoAnalista
-        key={`ejecutivo-extraccion-${indiceEjecutivoExtraccionEdicion ?? "cerrado"}-${indiceEjecutivoExtraccionEdicion == null ? "" : (ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionEdicion]?.idDirectorioEjecutivo ?? ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionEdicion]?.nombreCompleto ?? "")}`}
-        estaAbierto={indiceEjecutivoExtraccionEdicion !== null}
-        idIdioma={idIdiomaTraduccion}
-        registroInicial={
-          indiceEjecutivoExtraccionEdicion != null
-            ? ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionEdicion]
-            : null
-        }
-        mensajeBusquedaEjecutivo={
-          indiceEjecutivoExtraccionAprobacion !== null
-            ? "El nombre fue detectado en el documento. Presione Buscar y seleccione un resultado o registre una empresa o persona antes de guardar."
-            : undefined
-        }
-        requiereEjecutivoRegistrado={
-          indiceEjecutivoExtraccionAprobacion !== null
-        }
-        onCerrar={() => {
-          setIndiceEjecutivoExtraccionEdicion(null);
-          setIndiceEjecutivoExtraccionAprobacion(null);
-          setIndiceEjecutivoExtraccionBusqueda(null);
-          if (ejecutivosExtraccionPendientes.length > 0) {
-            setEstaAbiertoModalRevisionEjecutivosExtraccion(true);
+        <CustomModalVistaPreviaInforme
+          estaAbierto={estaAbiertoModalVistaPrevia}
+          datosInvestigacion={datosInvestigacion}
+          idInforme={idInformeActual}
+          idPedido={
+            Number.isFinite(Number(idPedido)) ? Number(idPedido) : undefined
           }
-        }}
-        onBuscarEjecutivo={() => {
-          setIndiceEjecutivoExtraccionBusqueda(
-            indiceEjecutivoExtraccionEdicion,
-          );
-          setEstaAbiertoModalBuscarEjecutivo(true);
-        }}
-        onGuardar={guardarEdicionEjecutivoExtraccion}
-      />
-
-      {estaAbiertoModalRevisionBancosExtraccion ? (
-        <CustomModalRevisionBancosExtraccion
-          bancos={bancosExtraccionPendientes}
-          onAprobar={aprobarBancoExtraccion}
-          onRechazar={rechazarBancoExtraccion}
-          onCerrar={() => setEstaAbiertoModalRevisionBancosExtraccion(false)}
+          encabezado={{
+            pais: resumenEncabezado.pais || "-",
+            fecha: new Date().toLocaleDateString("es-PE"),
+            tipoSolicitud: resumenEncabezado.prioridad || "-",
+            analista: "-",
+            traductor: "-",
+          }}
+          mostrarInformeTraducido
+          onCerrar={() => setEstaAbiertoModalVistaPrevia(false)}
         />
-      ) : null}
 
-      <CustomModalCrearBancoAnalista
-        key={`banco-extraccion-crear-${indiceBancoExtraccionEdicion ?? "cerrado"}`}
-        estaAbierto={indiceBancoExtraccionEdicion !== null}
-        idIdioma={idIdiomaTraduccion}
-        bancoInicial={
-          indiceBancoExtraccionEdicion != null
-            ? {
-                idBanco: 0,
-                nombre:
-                  bancosExtraccionPendientes[indiceBancoExtraccionEdicion]
-                    ?.banco ?? "",
-                telefono:
-                  bancosExtraccionPendientes[indiceBancoExtraccionEdicion]
-                    ?.telefono ?? "",
-                pais:
-                  bancosExtraccionPendientes[indiceBancoExtraccionEdicion]
-                    ?.pais ?? "",
-                idPais:
-                  opcionesPais?.find(
-                    (op) =>
-                      op.string1 ===
-                      bancosExtraccionPendientes[indiceBancoExtraccionEdicion]
-                        ?.pais,
-                  )?.num1 ?? undefined,
-              }
-            : null
-        }
-        onCerrar={() => {
-          setIndiceBancoExtraccionEdicion(null);
-          if (bancosExtraccionPendientes.length > 0) {
-            setEstaAbiertoModalRevisionBancosExtraccion(true);
+        <CustomModalArchivosInvestigacionAnalista
+          estaAbierto={estaAbiertoModalArchivosInvestigacion}
+          idPedido={
+            Number.isFinite(Number(idPedido)) ? Number(idPedido) : undefined
           }
-        }}
-        onBancoCreado={onBancoExtraccionCreado}
-      />
+          idInforme={idInformeActual}
+          archivos={archivosInvestigacion}
+          idIdioma={idIdiomaTraduccion}
+          soloLectura={esSoloLectura}
+          onCerrar={() => setEstaAbiertoModalArchivosInvestigacion(false)}
+          onInformeCreado={(nuevoIdInforme) => {
+            setIdInformeActual(nuevoIdInforme);
+            const parametros = new URLSearchParams(window.location.search);
+            parametros.set("modo", "continuar");
+            parametros.set("idInforme", String(nuevoIdInforme));
+            window.history.replaceState(
+              window.history.state,
+              "",
+              `${window.location.pathname}?${parametros.toString()}`,
+            );
+          }}
+          onArchivosChange={setArchivosInvestigacion}
+        />
 
-      <CustomModalBancoAnalista
-        key={`banco-extraccion-cuenta-${bancoRecienCreado?.idBanco ?? "cerrado"}`}
-        estaAbierto={bancoRecienCreado !== null}
-        idIdioma={idIdiomaTraduccion}
-        registroInicial={
-          bancoRecienCreado
-            ? {
-                idBanco: bancoRecienCreado.idBanco,
-                idPais: bancoRecienCreado.idPais,
-                pais: bancoRecienCreado.pais,
-                banco: bancoRecienCreado.nombre,
-                telefono: bancoRecienCreado.telefono,
-                numeroCuenta: "",
-                sector: "",
-              }
-            : null
-        }
-        onCerrar={() => setBancoRecienCreado(null)}
-        onGuardar={guardarCuentaBancariaExtraccion}
-      />
+        <CustomModalOperacionAnalista
+          key={`operacion-${pestanaRamoOperacionesVisible}-${indiceOperacionSeleccionada ?? "nuevo"}-${estaAbiertoModalOperacion ? "abierto" : "cerrado"}`}
+          estaAbierto={estaAbiertoModalOperacion}
+          titulo={
+            indiceOperacionSeleccionada != null
+              ? pestanaRamoOperacionesVisible === "importaciones"
+                ? "Editar Importación"
+                : "Editar Exportación"
+              : pestanaRamoOperacionesVisible === "importaciones"
+                ? "Nueva Importación"
+                : "Nueva Exportación"
+          }
+          subtitulo="Registro de operaciones"
+          idIdioma={idIdiomaTraduccion}
+          registroInicial={
+            indiceOperacionSeleccionada != null
+              ? registrosOperacionActivos[indiceOperacionSeleccionada]
+              : null
+          }
+          onCerrar={() => {
+            setIndiceOperacionSeleccionada(null);
+            setEstaAbiertoModalOperacion(false);
+          }}
+          onGuardar={guardarOperacion}
+        />
 
-      <CustomModalConfirmacionAccion
-        isOpen={estaAbiertoModalConfirmacionPrimerBorrador}
-        onClose={() => setEstaAbiertoModalConfirmacionPrimerBorrador(false)}
-        onConfirm={() => guardarBorrador(true)}
-        title="Guardar borrador"
-        descripcion="Se registrará el informe como borrador y volverás a Mi Bandeja para retomarlo después."
-        isSubmitting={guardarInformeMutation.isPending}
-        textoConfirmar="Guardar y volver"
-        textoCargandoConfirmar="Guardando..."
-        varianteConfirmar="primary"
-      >
-        <p>
-          <span className="font-bold">Acción:</span> Se guardará el avance
-          actual del informe.
-        </p>
-        <p>
-          <span className="font-bold">Destino:</span> Serás redirigido a Mi
-          Bandeja.
-        </p>
-      </CustomModalConfirmacionAccion>
+        <CustomModalLocalAnalista
+          key="local-modal"
+          estaAbierto={estaAbiertoModalLocal}
+          idIdioma={idIdiomaTraduccion}
+          registroInicial={
+            indiceLocalSeleccionado != null
+              ? datosInvestigacion.locales[indiceLocalSeleccionado]
+              : null
+          }
+          onCerrar={() => {
+            setIndiceLocalSeleccionado(null);
+            setEstaAbiertoModalLocal(false);
+          }}
+          onGuardar={guardarLocal}
+        />
 
-      <CustomModalConfirmacionAccion
-        isOpen={ciudadExtraccionPendiente != null}
-        onClose={() => asignarCiudadExtraccionPendiente(null, false)}
-        onConfirm={() => {
-          if (!ciudadExtraccionPendiente) return;
-          crearCiudadExtraccionMutation.mutate(ciudadExtraccionPendiente);
-        }}
-        title="Agregar ciudad/estado/provincia"
-        descripcion={`Está seguro de querer añadir esta ciudad/estado/provincia al país ${ciudadExtraccionPendiente?.pais ?? ""}?`}
-        isSubmitting={crearCiudadExtraccionMutation.isPending}
-        textoConfirmar="Añadir"
-        textoCargandoConfirmar="Añadiendo..."
-        varianteConfirmar="primary"
-      >
-        <p>
-          <span className="font-bold">País:</span>{" "}
-          {ciudadExtraccionPendiente?.pais ?? "-"}
-        </p>
-        <p>
-          <span className="font-bold">Ciudad/Estado/Provincia:</span>{" "}
-          {ciudadExtraccionPendiente?.valor ?? "-"}
-        </p>
-      </CustomModalConfirmacionAccion>
+        <CustomModalLocalAnalista
+          key="local-vista"
+          estaAbierto={estaAbiertoVistaLocal}
+          idIdioma={idIdiomaTraduccion}
+          registroInicial={
+            indiceVistaLocal != null
+              ? datosInvestigacion.locales[indiceVistaLocal]
+              : null
+          }
+          soloLectura
+          onCerrar={() => {
+            setIndiceVistaLocal(null);
+            setEstaAbiertoVistaLocal(false);
+          }}
+          onGuardar={() => {}}
+        />
 
-      <CustomModalConfirmacionAccion
-        isOpen={idCambioExtraccionActivo != null}
-        onClose={() => setIdCambioExtraccionActivo(null)}
-        onConfirm={() => {
-          if (!idCambioExtraccionActivo) return;
+        <CustomModalBalanceAnalista
+          key={`balance-${indiceBalanceSeleccionado ?? "nuevo"}-${estaAbiertoModalBalance ? "abierto" : "cerrado"}`}
+          estaAbierto={estaAbiertoModalBalance}
+          idIdioma={idIdiomaTraduccion}
+          registroInicial={
+            indiceBalanceSeleccionado != null
+              ? datosInvestigacion.balances[indiceBalanceSeleccionado]
+              : null
+          }
+          onCerrar={() => {
+            setIndiceBalanceSeleccionado(null);
+            setEstaAbiertoModalBalance(false);
+          }}
+          onGuardar={guardarBalance}
+        />
 
-          const cambio = cambiosExtraccionPendientes[idCambioExtraccionActivo];
-          if (!cambio) return;
-
-          const valorEditado = valorTraducidoCambioActivo;
-          aplicarCambioExtraccion(idCambioExtraccionActivo, () => {
-            if (valorEditado !== cambio.valorNuevo) {
-              actualizarCampoInvestigacion(cambio.ruta, valorEditado);
-              return;
-            }
-            cambio.alAplicar?.();
-          });
-        }}
-        title="Revisar traducción"
-        descripcion={cambiosExtraccionPendientes[idCambioExtraccionActivo ?? ""]?.etiqueta ?? ""}
-        textoConfirmar="Aplicar traducción"
-        textoCargandoConfirmar="Aplicando..."
-        varianteConfirmar="secondary"
-        anchoMaximoClassName="max-w-7xl max-h-[92vh] flex flex-col"
-        zIndexClassName="z-[120]"
-      >
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="space-y-2">
-            <CustomLabel>Texto original</CustomLabel>
-            <textarea
-              value={obtenerValorOriginalCambioExtraccion()}
-              readOnly
-              rows={Math.min(18, Math.max(7, Math.ceil(obtenerValorOriginalCambioExtraccion().length / 70)))}
-              className="min-h-48 max-h-[58vh] w-full resize-y rounded-xl border border-gray-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600 outline-none"
-            />
-          </label>
-          <label className="space-y-2">
-            <CustomLabel>Texto traducido</CustomLabel>
-            <textarea
-              value={valorTraducidoCambioActivo}
-              rows={Math.min(18, Math.max(7, Math.ceil(valorTraducidoCambioActivo.length / 70)))}
-              onChange={(event) => setValorTraducidoCambioActivo(event.target.value)}
-              className="min-h-48 max-h-[58vh] w-full resize-y rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
-            />
-          </label>
-        </div>
-      </CustomModalConfirmacionAccion>
-
-      <CustomModalConfirmacionAccion
-        isOpen={referenciaTraduccionActiva != null}
-        onClose={() => setReferenciaTraduccionActiva(null)}
-        onConfirm={() => {
-          if (!referenciaTraduccionActiva) return;
-          actualizarCampoInvestigacion(
-            referenciaTraduccionActiva.ruta,
-            valorReferenciaTraduccion,
-          );
-          setReferenciaTraduccionActiva(null);
-        }}
-        title="Revisar traducción"
-        descripcion={referenciaTraduccionActiva?.etiqueta ?? ""}
-        textoConfirmar="Guardar traducción"
-        textoCargandoConfirmar="Guardando..."
-        varianteConfirmar="secondary"
-        anchoMaximoClassName="max-w-7xl max-h-[92vh] flex flex-col"
-        zIndexClassName="z-[120]"
-      >
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="space-y-2">
-            <CustomLabel>Texto original</CustomLabel>
-            <textarea
-              value={referenciaTraduccionActiva?.textoOriginal ?? ""}
-              readOnly
-              rows={Math.min(
-                18,
-                Math.max(
-                  7,
-                  Math.ceil(
-                    (referenciaTraduccionActiva?.textoOriginal.length ?? 0) /
-                      70,
-                  ),
-                ),
-              )}
-              className="min-h-48 max-h-[58vh] w-full resize-y rounded-xl border border-gray-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600 outline-none"
-            />
-          </label>
-          <label className="space-y-2">
-            <CustomLabel>Texto traducido</CustomLabel>
-            <textarea
-              value={valorReferenciaTraduccion}
-              rows={Math.min(
-                18,
-                Math.max(7, Math.ceil(valorReferenciaTraduccion.length / 70)),
-              )}
-              onChange={(event) =>
-                setValorReferenciaTraduccion(event.target.value)
-              }
-              className="min-h-48 max-h-[58vh] w-full resize-y rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
-            />
-          </label>
-        </div>
-      </CustomModalConfirmacionAccion>
-
-      <CustomModalFinalizarInvestigacionAnalista
-        estaAbierto={estaAbiertoModalFinalizarInvestigacion}
-        estaGuardando={guardarInformeMutation.isPending}
-        onCerrar={() => setEstaAbiertoModalFinalizarInvestigacion(false)}
-        onConfirmar={() =>
-          guardarInformeMutation.mutate({
-            idEstadoInforme: ID_ESTADO_PEDIDO_FINALIZADO,
-          })
-        }
-        onVerVistaPreviaInforme={() => setEstaAbiertoVistaPreviaFinalizar(true)}
-        tipoProceso="traducción"
-        descripcionDestino="Al confirmar, este informe traducido será enviado al coordinador para revisión y aprobación."
-      />
-
-      {tieneObservacionesRechazo ? (
-        <CustomModalObservacionesRechazoAnalista
-          estaAbierto={estaAbiertoModalObservacionesRechazo}
-          observaciones={observacionesRechazo}
-          estaCargando={estaCargandoObservacionesRechazo}
-          idObservacionActualizando={
-            actualizarObservacionRechazoMutation.isPending
-              ? actualizarObservacionRechazoMutation.variables
-                  ?.idInformeObservacion
+        <CustomModalDetalleCuentasAnalista
+          key={`${indiceBalanceSeleccionado ?? "sin-balance"}-${estaAbiertoModalDetalleBalance ? "abierto" : "cerrado"}`}
+          estaAbierto={estaAbiertoModalDetalleBalance}
+          idIdioma={idIdiomaTraduccion}
+          detalleInicial={
+            indiceBalanceSeleccionado != null
+              ? datosInvestigacion.balances[indiceBalanceSeleccionado]
+                  ?.detalleCuentas
               : undefined
           }
-          onAbrir={() => setEstaCerradoModalObservacionesRechazo(false)}
-          onCerrar={() => setEstaCerradoModalObservacionesRechazo(true)}
-          onCambiarEstado={(observacion, checked) => {
-            actualizarObservacionRechazoMutation.mutate({
-              ...observacion,
-              checked,
+          tipoEstadoFinanciero={
+            indiceBalanceSeleccionado != null
+              ? datosInvestigacion.balances[indiceBalanceSeleccionado]
+                  ?.tipoEstadoFinanciero
+              : undefined
+          }
+          idTipoBalance={
+            indiceBalanceSeleccionado != null
+              ? datosInvestigacion.balances[indiceBalanceSeleccionado]?.idTipoBalance
+              : undefined
+          }
+          soloLectura={esSoloLectura}
+          onCerrar={() => {
+            setIndiceBalanceSeleccionado(null);
+            setEstaAbiertoModalDetalleBalance(false);
+          }}
+          onGuardar={guardarDetalleCuentasBalance}
+        />
+
+        <CustomModalConfirmacionEliminacion
+          isOpen={indiceBalanceAEliminar !== null}
+          onClose={() => setIndiceBalanceAEliminar(null)}
+          onConfirm={() => {
+            if (indiceBalanceAEliminar == null || esSoloLectura) return;
+            setDatosInvestigacion((anterior) => ({
+              ...anterior,
+              balances: anterior.balances.filter(
+                (_, indice) => indice !== indiceBalanceAEliminar,
+              ),
+            }));
+            setIndiceBalanceAEliminar(null);
+          }}
+          title="Eliminar Balance"
+        >
+          <p>
+            <span className="font-bold">Código:</span>{" "}
+            {indiceBalanceAEliminar != null
+              ? (datosInvestigacion.balances[indiceBalanceAEliminar]?.codigo ??
+                "-")
+              : "-"}
+          </p>
+          <p>
+            <span className="font-bold">Período:</span>{" "}
+            {indiceBalanceAEliminar != null
+              ? (datosInvestigacion.balances[indiceBalanceAEliminar]?.periodo ??
+                "-")
+              : "-"}
+          </p>
+        </CustomModalConfirmacionEliminacion>
+
+        <CustomModalProveedorAnalista
+          key={`proveedor-${indiceProveedorSeleccionado ?? "nuevo"}-${estaAbiertoModalProveedor ? "abierto" : "cerrado"}`}
+          estaAbierto={estaAbiertoModalProveedor}
+          idIdioma={idIdiomaTraduccion}
+          registroInicial={
+            indiceProveedorSeleccionado != null
+              ? datosInvestigacion.proveedores[indiceProveedorSeleccionado]
+              : null
+          }
+          onCerrar={() => {
+            setIndiceProveedorSeleccionado(null);
+            setEstaAbiertoModalProveedor(false);
+          }}
+          onGuardar={guardarProveedor}
+        />
+
+        <CustomModalBancoAnalista
+          key={`banco-${indiceBancoSeleccionado ?? "nuevo"}-${estaAbiertoModalBanco ? "abierto" : "cerrado"}`}
+          estaAbierto={estaAbiertoModalBanco}
+          idIdioma={idIdiomaTraduccion}
+          registroInicial={
+            indiceBancoSeleccionado != null
+              ? datosInvestigacion.bancos[indiceBancoSeleccionado]
+              : null
+          }
+          onCerrar={() => {
+            setIndiceBancoSeleccionado(null);
+            setEstaAbiertoModalBanco(false);
+          }}
+          onGuardar={guardarBanco}
+        />
+
+        <CustomModalConfirmacionEliminacion
+          isOpen={indiceProveedorAEliminar !== null}
+          onClose={() => setIndiceProveedorAEliminar(null)}
+          onConfirm={() => {
+            if (indiceProveedorAEliminar == null || esSoloLectura) return;
+            setDatosInvestigacion((anterior) => ({
+              ...anterior,
+              proveedores: anterior.proveedores.filter(
+                (_, indice) => indice !== indiceProveedorAEliminar,
+              ),
+            }));
+            setIndiceProveedorAEliminar(null);
+          }}
+          title="Eliminar Proveedor"
+        >
+          <p>
+            <span className="font-bold">Proveedor:</span>{" "}
+            {indiceProveedorAEliminar != null
+              ? (datosInvestigacion.proveedores[indiceProveedorAEliminar]
+                  ?.nombreEmpresa ?? "-")
+              : "-"}
+          </p>
+        </CustomModalConfirmacionEliminacion>
+
+        <CustomModalConfirmacionEliminacion
+          isOpen={indiceBancoAEliminar !== null}
+          onClose={() => setIndiceBancoAEliminar(null)}
+          onConfirm={() => {
+            if (indiceBancoAEliminar == null || esSoloLectura) return;
+            setDatosInvestigacion((anterior) => ({
+              ...anterior,
+              bancos: anterior.bancos.filter(
+                (_, indice) => indice !== indiceBancoAEliminar,
+              ),
+            }));
+            setIndiceBancoAEliminar(null);
+          }}
+          title="Eliminar Banco"
+        >
+          <p>
+            <span className="font-bold">Banco:</span>{" "}
+            {indiceBancoAEliminar != null
+              ? (datosInvestigacion.bancos[indiceBancoAEliminar]?.banco ?? "-")
+              : "-"}
+          </p>
+        </CustomModalConfirmacionEliminacion>
+
+        <CustomModalConfirmacionEliminacion
+          isOpen={indiceCompaniaAEliminar !== null}
+          onClose={() => setIndiceCompaniaAEliminar(null)}
+          onConfirm={() => {
+            if (indiceCompaniaAEliminar == null || esSoloLectura) return;
+            setDatosInvestigacion((anterior) => ({
+              ...anterior,
+              companiasRelacionadas: anterior.companiasRelacionadas.filter(
+                (_, indice) => indice !== indiceCompaniaAEliminar,
+              ),
+            }));
+            setIndiceCompaniaAEliminar(null);
+          }}
+          title="Eliminar Compañía Relacionada"
+        >
+          <p>
+            <span className="font-bold">Empresa:</span>{" "}
+            {indiceCompaniaAEliminar != null
+              ? (datosInvestigacion.companiasRelacionadas[
+                  indiceCompaniaAEliminar
+                ]?.empresa ?? "-")
+              : "-"}
+          </p>
+          <p>
+            <span className="font-bold">ID Fiscal:</span>{" "}
+            {indiceCompaniaAEliminar != null
+              ? (datosInvestigacion.companiasRelacionadas[
+                  indiceCompaniaAEliminar
+                ]?.idFiscal ?? "-")
+              : "-"}
+          </p>
+        </CustomModalConfirmacionEliminacion>
+
+        {estaAbiertoModalRevisionCompaniasExtraccion ? (
+          <CustomModalRevisionCompaniasExtraccion
+            companias={companiasExtraccionPendientes}
+            indiceAprobando={
+              crearCompaniaExtraccionMutation.variables?.indice ?? null
+            }
+            onEditar={setIndiceCompaniaExtraccionEdicion}
+            onAprobar={aprobarCompaniaExtraccion}
+            onRechazar={rechazarCompaniaExtraccion}
+            onCerrar={() =>
+              setEstaAbiertoModalRevisionCompaniasExtraccion(false)
+            }
+          />
+        ) : null}
+
+        <CustomModalRegistroEmpresaRelacionadaAnalista
+          key={`compania-extraccion-${indiceCompaniaExtraccionEdicion ?? "cerrado"}`}
+          estaAbierto={indiceCompaniaExtraccionEdicion !== null}
+          opcionesTipoPersona={opcionesTipoPersona}
+          opcionesPais={opcionesPais}
+          idIdioma={idIdiomaTraduccion}
+          registroInicial={
+            indiceCompaniaExtraccionEdicion == null
+              ? null
+              : convertirCompaniaExtraccionARegistro(
+                  companiasExtraccionPendientes[
+                    indiceCompaniaExtraccionEdicion
+                  ],
+                  indiceCompaniaExtraccionEdicion,
+                )
+          }
+          tipoCreacion="compania"
+          soloEdicionLocal
+          onCerrar={() => setIndiceCompaniaExtraccionEdicion(null)}
+          onGuardar={guardarEdicionCompaniaExtraccion}
+        />
+
+        {estaAbiertoModalRevisionEjecutivosExtraccion ? (
+          <CustomModalRevisionEjecutivosExtraccion
+            ejecutivos={ejecutivosExtraccionPendientes}
+            opcionesCargo={opcionesCargoDirectorio}
+            onAprobar={aprobarEjecutivoExtraccion}
+            onRechazar={rechazarEjecutivoExtraccion}
+            onCerrar={() =>
+              setEstaAbiertoModalRevisionEjecutivosExtraccion(false)
+            }
+          />
+        ) : null}
+
+        <CustomModalRegistroEjecutivoAnalista
+          key={`ejecutivo-extraccion-${indiceEjecutivoExtraccionEdicion ?? "cerrado"}-${indiceEjecutivoExtraccionEdicion == null ? "" : (ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionEdicion]?.idDirectorioEjecutivo ?? ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionEdicion]?.nombreCompleto ?? "")}`}
+          estaAbierto={indiceEjecutivoExtraccionEdicion !== null}
+          idIdioma={idIdiomaTraduccion}
+          registroInicial={
+            indiceEjecutivoExtraccionEdicion != null
+              ? ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionEdicion]
+              : null
+          }
+          mensajeBusquedaEjecutivo={
+            indiceEjecutivoExtraccionAprobacion !== null
+              ? "El nombre fue detectado en el documento. Presione Buscar y seleccione un resultado o registre una empresa o persona antes de guardar."
+              : undefined
+          }
+          requiereEjecutivoRegistrado={
+            indiceEjecutivoExtraccionAprobacion !== null
+          }
+          onCerrar={() => {
+            setIndiceEjecutivoExtraccionEdicion(null);
+            setIndiceEjecutivoExtraccionAprobacion(null);
+            setIndiceEjecutivoExtraccionBusqueda(null);
+            if (ejecutivosExtraccionPendientes.length > 0) {
+              setEstaAbiertoModalRevisionEjecutivosExtraccion(true);
+            }
+          }}
+          onBuscarEjecutivo={() => {
+            setIndiceEjecutivoExtraccionBusqueda(
+              indiceEjecutivoExtraccionEdicion,
+            );
+            setEstaAbiertoModalBuscarEjecutivo(true);
+          }}
+          onGuardar={guardarEdicionEjecutivoExtraccion}
+        />
+
+        {estaAbiertoModalRevisionBancosExtraccion ? (
+          <CustomModalRevisionBancosExtraccion
+            bancos={bancosExtraccionPendientes}
+            onAprobar={aprobarBancoExtraccion}
+            onRechazar={rechazarBancoExtraccion}
+            onCerrar={() => setEstaAbiertoModalRevisionBancosExtraccion(false)}
+          />
+        ) : null}
+
+        <CustomModalCrearBancoAnalista
+          key={`banco-extraccion-crear-${indiceBancoExtraccionEdicion ?? "cerrado"}`}
+          estaAbierto={indiceBancoExtraccionEdicion !== null}
+          idIdioma={idIdiomaTraduccion}
+          bancoInicial={
+            indiceBancoExtraccionEdicion != null
+              ? {
+                  idBanco: 0,
+                  nombre:
+                    bancosExtraccionPendientes[indiceBancoExtraccionEdicion]
+                      ?.banco ?? "",
+                  telefono:
+                    bancosExtraccionPendientes[indiceBancoExtraccionEdicion]
+                      ?.telefono ?? "",
+                  pais:
+                    bancosExtraccionPendientes[indiceBancoExtraccionEdicion]
+                      ?.pais ?? "",
+                  idPais:
+                    opcionesPais?.find(
+                      (op) =>
+                        op.string1 ===
+                        bancosExtraccionPendientes[indiceBancoExtraccionEdicion]
+                          ?.pais,
+                    )?.num1 ?? undefined,
+                }
+              : null
+          }
+          onCerrar={() => {
+            setIndiceBancoExtraccionEdicion(null);
+            if (bancosExtraccionPendientes.length > 0) {
+              setEstaAbiertoModalRevisionBancosExtraccion(true);
+            }
+          }}
+          onBancoCreado={onBancoExtraccionCreado}
+        />
+
+        <CustomModalBancoAnalista
+          key={`banco-extraccion-cuenta-${bancoRecienCreado?.idBanco ?? "cerrado"}`}
+          estaAbierto={bancoRecienCreado !== null}
+          idIdioma={idIdiomaTraduccion}
+          registroInicial={
+            bancoRecienCreado
+              ? {
+                  idBanco: bancoRecienCreado.idBanco,
+                  idPais: bancoRecienCreado.idPais,
+                  pais: bancoRecienCreado.pais,
+                  banco: bancoRecienCreado.nombre,
+                  telefono: bancoRecienCreado.telefono,
+                  numeroCuenta: "",
+                  sector: "",
+                }
+              : null
+          }
+          onCerrar={() => setBancoRecienCreado(null)}
+          onGuardar={guardarCuentaBancariaExtraccion}
+        />
+
+        <CustomModalConfirmacionAccion
+          isOpen={estaAbiertoModalConfirmacionPrimerBorrador}
+          onClose={() => setEstaAbiertoModalConfirmacionPrimerBorrador(false)}
+          onConfirm={() => guardarBorrador(true)}
+          title="Guardar borrador"
+          descripcion="Se registrará el informe como borrador y volverás a Mi Bandeja para retomarlo después."
+          isSubmitting={guardarInformeMutation.isPending}
+          textoConfirmar="Guardar y volver"
+          textoCargandoConfirmar="Guardando..."
+          varianteConfirmar="primary"
+        >
+          <p>
+            <span className="font-bold">Acción:</span> Se guardará el avance
+            actual del informe.
+          </p>
+          <p>
+            <span className="font-bold">Destino:</span> Serás redirigido a Mi
+            Bandeja.
+          </p>
+        </CustomModalConfirmacionAccion>
+
+        <CustomModalConfirmacionAccion
+          isOpen={ciudadExtraccionPendiente != null}
+          onClose={() => asignarCiudadExtraccionPendiente(null, false)}
+          onConfirm={() => {
+            if (!ciudadExtraccionPendiente) return;
+            crearCiudadExtraccionMutation.mutate(ciudadExtraccionPendiente);
+          }}
+          title="Agregar ciudad/estado/provincia"
+          descripcion={`Está seguro de querer añadir esta ciudad/estado/provincia al país ${ciudadExtraccionPendiente?.pais ?? ""}?`}
+          isSubmitting={crearCiudadExtraccionMutation.isPending}
+          textoConfirmar="Añadir"
+          textoCargandoConfirmar="Añadiendo..."
+          varianteConfirmar="primary"
+        >
+          <p>
+            <span className="font-bold">País:</span>{" "}
+            {ciudadExtraccionPendiente?.pais ?? "-"}
+          </p>
+          <p>
+            <span className="font-bold">Ciudad/Estado/Provincia:</span>{" "}
+            {ciudadExtraccionPendiente?.valor ?? "-"}
+          </p>
+        </CustomModalConfirmacionAccion>
+
+        <CustomModalConfirmacionAccion
+          isOpen={idCambioExtraccionActivo != null}
+          onClose={() => setIdCambioExtraccionActivo(null)}
+          onConfirm={() => {
+            if (!idCambioExtraccionActivo) return;
+
+            const cambio =
+              cambiosExtraccionPendientes[idCambioExtraccionActivo];
+            if (!cambio) return;
+
+            const valorEditado = valorTraducidoCambioActivo;
+            aplicarCambioExtraccion(idCambioExtraccionActivo, () => {
+              if (valorEditado !== cambio.valorNuevo) {
+                actualizarCampoInvestigacion(cambio.ruta, valorEditado);
+                return;
+              }
+              cambio.alAplicar?.();
             });
           }}
-        />
-      ) : null}
+          title="Revisar traducción"
+          descripcion={
+            cambiosExtraccionPendientes[idCambioExtraccionActivo ?? ""]
+              ?.etiqueta ?? ""
+          }
+          textoConfirmar="Aplicar traducción"
+          textoCargandoConfirmar="Aplicando..."
+          varianteConfirmar="secondary"
+          anchoMaximoClassName="max-w-7xl max-h-[92vh] flex flex-col"
+          zIndexClassName="z-[120]"
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2">
+              <CustomLabel>Texto original</CustomLabel>
+              <textarea
+                value={obtenerValorOriginalCambioExtraccion()}
+                readOnly
+                rows={Math.min(
+                  18,
+                  Math.max(
+                    7,
+                    Math.ceil(
+                      obtenerValorOriginalCambioExtraccion().length / 70,
+                    ),
+                  ),
+                )}
+                className="min-h-48 max-h-[58vh] w-full resize-y rounded-xl border border-gray-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600 outline-none"
+              />
+            </label>
+            <label className="space-y-2">
+              <CustomLabel>Texto traducido</CustomLabel>
+              <textarea
+                value={valorTraducidoCambioActivo}
+                rows={Math.min(
+                  18,
+                  Math.max(
+                    7,
+                    Math.ceil(valorTraducidoCambioActivo.length / 70),
+                  ),
+                )}
+                onChange={(event) =>
+                  setValorTraducidoCambioActivo(event.target.value)
+                }
+                className="min-h-48 max-h-[58vh] w-full resize-y rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+              />
+            </label>
+          </div>
+        </CustomModalConfirmacionAccion>
 
-      <CustomModalVistaPreviaInforme
-        estaAbierto={estaAbiertoVistaPreviaFinalizar}
-        datosInvestigacion={datosInvestigacion}
-        idInforme={idInformeActual}
-        idPedido={
-          Number.isFinite(Number(idPedido)) ? Number(idPedido) : undefined
-        }
-        encabezado={{
-          pais: resumenEncabezado.pais || "-",
-          fecha: new Date().toLocaleDateString("es-PE"),
-          tipoSolicitud: resumenEncabezado.prioridad || "-",
-          analista: "-",
-          traductor: "-",
-        }}
-        mostrarInformeTraducido
-        onCerrar={() => setEstaAbiertoVistaPreviaFinalizar(false)}
-      />
-
-      <CustomModalRegistroEjecutivoAnalista
-        key={`ejecutivo-${indiceEjecutivoSeleccionado ?? "nuevo"}-${personaDirectorioSeleccionada?.id ?? "sin-persona"}-${estaAbiertoModalEjecutivo ? "abierto" : "cerrado"}`}
-        estaAbierto={estaAbiertoModalEjecutivo}
-        idIdioma={idIdiomaTraduccion}
-        registroInicial={
-          indiceEjecutivoSeleccionado != null
-            ? datosInvestigacion.directorioEjecutivo[
-                indiceEjecutivoSeleccionado
-              ]
-            : null
-        }
-        personaSeleccionada={personaDirectorioSeleccionada}
-        onCerrar={() => {
-          setIndiceEjecutivoSeleccionado(null);
-          setPersonaDirectorioSeleccionada(null);
-          setEstaAbiertoModalEjecutivo(false);
-        }}
-        onBuscarEjecutivo={() => setEstaAbiertoModalBuscarEjecutivo(true)}
-        onGuardar={guardarEjecutivo}
-      />
-
-      <CustomModalBuscarEjecutivoAnalista
-        key={`buscar-ejecutivo-${indiceEjecutivoExtraccionBusqueda ?? "manual"}-${estaAbiertoModalBuscarEjecutivo ? "abierto" : "cerrado"}`}
-        estaAbierto={estaAbiertoModalBuscarEjecutivo}
-        idIdioma={idIdiomaTraduccion}
-        registros={registrosPersonaDirectorio}
-        busquedaInicial={
-          indiceEjecutivoExtraccionBusqueda == null
-            ? ""
-            : (ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]
-                ?.nombreCompleto ??
-              ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]
-                ?.ejecutivo ??
-              "")
-        }
-        onCerrar={() => {
-          setEstaAbiertoModalBuscarEjecutivo(false);
-          setIndiceEjecutivoExtraccionBusqueda(null);
-        }}
-        onSeleccionar={(registro) => {
-          if (indiceEjecutivoExtraccionBusqueda != null) {
-            setEjecutivosExtraccionPendientes((anteriores) =>
-              anteriores.map((ejecutivo, indice) =>
-                indice === indiceEjecutivoExtraccionBusqueda
-                  ? {
-                      ...ejecutivo,
-                      idDirectorioEjecutivo:
-                        registro.idDirectorioEjecutivo ?? registro.id,
-                      ejecutivo: registro.nombres,
-                      nombreCompleto: registro.nombres,
-                      pais: registro.pais,
-                      tipoPersona: registro.tipoPersona,
-                      descripcionBusqueda: registro.nombres,
-                    }
-                  : ejecutivo,
-              ),
+        <CustomModalConfirmacionAccion
+          isOpen={referenciaTraduccionActiva != null}
+          onClose={() => setReferenciaTraduccionActiva(null)}
+          onConfirm={() => {
+            if (!referenciaTraduccionActiva) return;
+            actualizarCampoInvestigacion(
+              referenciaTraduccionActiva.ruta,
+              valorReferenciaTraduccion,
             );
+            setReferenciaTraduccionActiva(null);
+          }}
+          title="Revisar traducción"
+          descripcion={referenciaTraduccionActiva?.etiqueta ?? ""}
+          textoConfirmar="Guardar traducción"
+          textoCargandoConfirmar="Guardando..."
+          varianteConfirmar="secondary"
+          anchoMaximoClassName="max-w-7xl max-h-[92vh] flex flex-col"
+          zIndexClassName="z-[120]"
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2">
+              <CustomLabel>Texto original</CustomLabel>
+              <textarea
+                value={referenciaTraduccionActiva?.textoOriginal ?? ""}
+                readOnly
+                rows={Math.min(
+                  18,
+                  Math.max(
+                    7,
+                    Math.ceil(
+                      (referenciaTraduccionActiva?.textoOriginal.length ?? 0) /
+                        70,
+                    ),
+                  ),
+                )}
+                className="min-h-48 max-h-[58vh] w-full resize-y rounded-xl border border-gray-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600 outline-none"
+              />
+            </label>
+            <label className="space-y-2">
+              <CustomLabel>Texto traducido</CustomLabel>
+              <textarea
+                value={valorReferenciaTraduccion}
+                rows={Math.min(
+                  18,
+                  Math.max(7, Math.ceil(valorReferenciaTraduccion.length / 70)),
+                )}
+                onChange={(event) =>
+                  setValorReferenciaTraduccion(event.target.value)
+                }
+                className="min-h-48 max-h-[58vh] w-full resize-y rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+              />
+            </label>
+          </div>
+        </CustomModalConfirmacionAccion>
+
+        <CustomModalFinalizarInvestigacionAnalista
+          estaAbierto={estaAbiertoModalFinalizarInvestigacion}
+          estaGuardando={guardarInformeMutation.isPending}
+          onCerrar={() => setEstaAbiertoModalFinalizarInvestigacion(false)}
+          onConfirmar={() =>
+            guardarInformeMutation.mutate({
+              idEstadoInforme: ID_ESTADO_PEDIDO_FINALIZADO,
+            })
+          }
+          onVerVistaPreviaInforme={() =>
+            setEstaAbiertoVistaPreviaFinalizar(true)
+          }
+          tipoProceso="traducción"
+          descripcionDestino="Al confirmar, este informe traducido será enviado al coordinador para revisión y aprobación."
+        />
+
+        {tieneObservacionesRechazo ? (
+          <CustomModalObservacionesRechazoAnalista
+            estaAbierto={estaAbiertoModalObservacionesRechazo}
+            observaciones={observacionesRechazo}
+            estaCargando={estaCargandoObservacionesRechazo}
+            idObservacionActualizando={
+              actualizarObservacionRechazoMutation.isPending
+                ? actualizarObservacionRechazoMutation.variables
+                    ?.idInformeObservacion
+                : undefined
+            }
+            onAbrir={() => setEstaCerradoModalObservacionesRechazo(false)}
+            onCerrar={() => setEstaCerradoModalObservacionesRechazo(true)}
+            onCambiarEstado={(observacion, checked) => {
+              actualizarObservacionRechazoMutation.mutate({
+                ...observacion,
+                checked,
+              });
+            }}
+          />
+        ) : null}
+
+        <CustomModalVistaPreviaInforme
+          estaAbierto={estaAbiertoVistaPreviaFinalizar}
+          datosInvestigacion={datosInvestigacion}
+          idInforme={idInformeActual}
+          idPedido={
+            Number.isFinite(Number(idPedido)) ? Number(idPedido) : undefined
+          }
+          encabezado={{
+            pais: resumenEncabezado.pais || "-",
+            fecha: new Date().toLocaleDateString("es-PE"),
+            tipoSolicitud: resumenEncabezado.prioridad || "-",
+            analista: "-",
+            traductor: "-",
+          }}
+          mostrarInformeTraducido
+          onCerrar={() => setEstaAbiertoVistaPreviaFinalizar(false)}
+        />
+
+        <CustomModalRegistroEjecutivoAnalista
+          key={`ejecutivo-${indiceEjecutivoSeleccionado ?? "nuevo"}-${personaDirectorioSeleccionada?.id ?? "sin-persona"}-${estaAbiertoModalEjecutivo ? "abierto" : "cerrado"}`}
+          estaAbierto={estaAbiertoModalEjecutivo}
+          idIdioma={idIdiomaTraduccion}
+          registroInicial={
+            indiceEjecutivoSeleccionado != null
+              ? datosInvestigacion.directorioEjecutivo[
+                  indiceEjecutivoSeleccionado
+                ]
+              : null
+          }
+          personaSeleccionada={personaDirectorioSeleccionada}
+          onCerrar={() => {
+            setIndiceEjecutivoSeleccionado(null);
+            setPersonaDirectorioSeleccionada(null);
+            setEstaAbiertoModalEjecutivo(false);
+          }}
+          onBuscarEjecutivo={() => setEstaAbiertoModalBuscarEjecutivo(true)}
+          onGuardar={guardarEjecutivo}
+        />
+
+        <CustomModalBuscarEjecutivoAnalista
+          key={`buscar-ejecutivo-${indiceEjecutivoExtraccionBusqueda ?? "manual"}-${estaAbiertoModalBuscarEjecutivo ? "abierto" : "cerrado"}`}
+          estaAbierto={estaAbiertoModalBuscarEjecutivo}
+          idIdioma={idIdiomaTraduccion}
+          registros={registrosPersonaDirectorio}
+          busquedaInicial={
+            indiceEjecutivoExtraccionBusqueda == null
+              ? ""
+              : (ejecutivosExtraccionPendientes[
+                  indiceEjecutivoExtraccionBusqueda
+                ]?.nombreCompleto ??
+                ejecutivosExtraccionPendientes[
+                  indiceEjecutivoExtraccionBusqueda
+                ]?.ejecutivo ??
+                "")
+          }
+          onCerrar={() => {
             setEstaAbiertoModalBuscarEjecutivo(false);
             setIndiceEjecutivoExtraccionBusqueda(null);
-            return;
+          }}
+          onSeleccionar={(registro) => {
+            if (indiceEjecutivoExtraccionBusqueda != null) {
+              setEjecutivosExtraccionPendientes((anteriores) =>
+                anteriores.map((ejecutivo, indice) =>
+                  indice === indiceEjecutivoExtraccionBusqueda
+                    ? {
+                        ...ejecutivo,
+                        idDirectorioEjecutivo:
+                          registro.idDirectorioEjecutivo ?? registro.id,
+                        ejecutivo: registro.nombres,
+                        nombreCompleto: registro.nombres,
+                        pais: registro.pais,
+                        tipoPersona: registro.tipoPersona,
+                        descripcionBusqueda: registro.nombres,
+                      }
+                    : ejecutivo,
+                ),
+              );
+              setEstaAbiertoModalBuscarEjecutivo(false);
+              setIndiceEjecutivoExtraccionBusqueda(null);
+              return;
+            }
+            setPersonaDirectorioSeleccionada(registro);
+            setEstaAbiertoModalBuscarEjecutivo(false);
+            setEstaAbiertoModalEjecutivo(true);
+          }}
+          onAgregarEmpresaPersona={() =>
+            setEstaAbiertoModalRegistroPersona(true)
           }
-          setPersonaDirectorioSeleccionada(registro);
-          setEstaAbiertoModalBuscarEjecutivo(false);
-          setEstaAbiertoModalEjecutivo(true);
-        }}
-        onAgregarEmpresaPersona={() => setEstaAbiertoModalRegistroPersona(true)}
-      />
+        />
 
-      <CustomModalRegistroPersonaDirectorioAnalista
-        key={`registro-persona-${indiceEjecutivoExtraccionBusqueda ?? "manual"}-${estaAbiertoModalRegistroPersona ? "abierto" : "cerrado"}`}
-        estaAbierto={estaAbiertoModalRegistroPersona}
-        idIdioma={idIdiomaTraduccion}
-        nombreInicial={
-          indiceEjecutivoExtraccionBusqueda == null
-            ? undefined
-            : (ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]
-                ?.nombreCompleto ??
-              ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]
-                ?.ejecutivo)
-        }
-        onCerrar={() => setEstaAbiertoModalRegistroPersona(false)}
-        onGuardar={guardarPersonaDirectorio}
-      />
+        <CustomModalRegistroPersonaDirectorioAnalista
+          key={`registro-persona-${indiceEjecutivoExtraccionBusqueda ?? "manual"}-${estaAbiertoModalRegistroPersona ? "abierto" : "cerrado"}`}
+          estaAbierto={estaAbiertoModalRegistroPersona}
+          idIdioma={idIdiomaTraduccion}
+          nombreInicial={
+            indiceEjecutivoExtraccionBusqueda == null
+              ? undefined
+              : (ejecutivosExtraccionPendientes[
+                  indiceEjecutivoExtraccionBusqueda
+                ]?.nombreCompleto ??
+                ejecutivosExtraccionPendientes[
+                  indiceEjecutivoExtraccionBusqueda
+                ]?.ejecutivo)
+          }
+          onCerrar={() => setEstaAbiertoModalRegistroPersona(false)}
+          onGuardar={guardarPersonaDirectorio}
+        />
 
-      <CustomModalConfirmacionEliminacion
-        isOpen={indiceEjecutivoAEliminar !== null}
-        onClose={() => setIndiceEjecutivoAEliminar(null)}
-        onConfirm={() => {
-          if (indiceEjecutivoAEliminar == null || esSoloLectura) return;
-          setDatosInvestigacion((anterior) => ({
-            ...anterior,
-            directorioEjecutivo: anterior.directorioEjecutivo.filter(
-              (_, indice) => indice !== indiceEjecutivoAEliminar,
-            ),
-          }));
-          setIndiceEjecutivoAEliminar(null);
-        }}
-        title="Eliminar Ejecutivo"
-      >
-        <p>
-          <span className="font-bold">Ejecutivo:</span>{" "}
-          {indiceEjecutivoAEliminar != null
-            ? (datosInvestigacion.directorioEjecutivo[indiceEjecutivoAEliminar]
-                ?.nombreCompleto ?? "-")
-            : "-"}
-        </p>
-      </CustomModalConfirmacionEliminacion>
-    </div>
+        <CustomModalConfirmacionEliminacion
+          isOpen={indiceEjecutivoAEliminar !== null}
+          onClose={() => setIndiceEjecutivoAEliminar(null)}
+          onConfirm={() => {
+            if (indiceEjecutivoAEliminar == null || esSoloLectura) return;
+            setDatosInvestigacion((anterior) => ({
+              ...anterior,
+              directorioEjecutivo: anterior.directorioEjecutivo.filter(
+                (_, indice) => indice !== indiceEjecutivoAEliminar,
+              ),
+            }));
+            setIndiceEjecutivoAEliminar(null);
+          }}
+          title="Eliminar Ejecutivo"
+        >
+          <p>
+            <span className="font-bold">Ejecutivo:</span>{" "}
+            {indiceEjecutivoAEliminar != null
+              ? (datosInvestigacion.directorioEjecutivo[
+                  indiceEjecutivoAEliminar
+                ]?.nombreCompleto ?? "-")
+              : "-"}
+          </p>
+        </CustomModalConfirmacionEliminacion>
+      </div>
     </ProveedorFormatoFechaInforme>
   );
 }
@@ -8835,8 +8853,10 @@ export default function InvestigacionTraductor() {
   const idInformeOriginalNumerico = Number(
     idInformeOriginal ?? datosPedidoNavegacion?.idInformeOriginal,
   );
-  const tieneIdInforme = Number.isFinite(idInformeNumerico) && idInformeNumerico > 0;
-  const tieneIdInformeOriginal = Number.isFinite(idInformeOriginalNumerico) && idInformeOriginalNumerico > 0;
+  const tieneIdInforme =
+    Number.isFinite(idInformeNumerico) && idInformeNumerico > 0;
+  const tieneIdInformeOriginal =
+    Number.isFinite(idInformeOriginalNumerico) && idInformeOriginalNumerico > 0;
   const usaDatosBackend =
     Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0;
   const datosBaseInvestigacion = useMemo(
@@ -8845,7 +8865,12 @@ export default function InvestigacionTraductor() {
   );
 
   const { data: informeObtenido, isLoading: estaCargandoInforme } = useQuery({
-    queryKey: ["informe-obtener-traductor", idPedidoNumerico, idInformeNumerico, idCarga],
+    queryKey: [
+      "informe-obtener-traductor",
+      idPedidoNumerico,
+      idInformeNumerico,
+      idCarga,
+    ],
     queryFn: () =>
       informeService.obtener({
         idPedido: idPedidoNumerico,
@@ -8895,9 +8920,7 @@ export default function InvestigacionTraductor() {
       key={`${idPedido ?? "sin-id"}-${modo}-${idInformeClave}-${idCarga}-${claveDatos}`}
       idPedido={idPedido}
       idInforme={
-        tieneIdInforme
-          ? idInformeNumerico
-          : informeObtenido?.idInforme
+        tieneIdInforme ? idInformeNumerico : informeObtenido?.idInforme
       }
       esInformeRechazado={esInformeRechazado}
       modo={modo}
@@ -8915,7 +8938,6 @@ export default function InvestigacionTraductor() {
       idTipoRegTributarioInicial={informeObtenido?.taxIdType}
       idEstadoActualInicial={informeObtenido?.idEstadoManual}
       idTipoEmpresaInicial={informeObtenido?.idTipoEmpresa}
-      idCiudadRegistroInicial={informeObtenido?.idCiudadRegistro}
       idSectorInicial={informeObtenido?.idSector}
       idActividadInicial={informeObtenido?.idActividad}
     />

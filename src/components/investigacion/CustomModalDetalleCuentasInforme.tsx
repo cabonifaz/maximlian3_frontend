@@ -41,6 +41,7 @@ interface PropsCustomModalDetalleCuentasAnalista {
   onGuardar: (detalle: DetalleCuentasBalanceAnalista) => void;
   detalleInicial?: DetalleCuentasBalanceAnalista;
   tipoEstadoFinanciero?: string;
+  idTipoBalance?: number;
   idIdioma?: number;
   soloLectura?: boolean;
 }
@@ -497,6 +498,7 @@ export function CustomModalDetalleCuentasAnalista({
   onGuardar,
   detalleInicial,
   tipoEstadoFinanciero,
+  idTipoBalance,
   idIdioma,
   soloLectura = false,
 }: PropsCustomModalDetalleCuentasAnalista) {
@@ -525,7 +527,7 @@ export function CustomModalDetalleCuentasAnalista({
     setDetalle(detalleBase);
   }, [detalleBase]);
 
-  const mostrarRatios = ["Desagregado", "Totalizado", "Turquía"].includes(
+  const mostrarRatios = idTipoBalance === 1 && ["Desagregado", "Totalizado", "Turquía"].includes(
     tipoEstadoFinanciero ?? "",
   );
   const esEstadoFinancieroTotalizado =

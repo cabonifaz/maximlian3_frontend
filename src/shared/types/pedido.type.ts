@@ -78,7 +78,6 @@ export interface CreatePedidoRequest {
   montoCredito?: number;
   plazoCredito?: number;
   idTipoPlazoCredito?: number;
-  tipoPlazoCredito?: string;
   fchDesde: string;
   fchHasta: string;
   comentario: string;
@@ -145,7 +144,6 @@ export interface UpdatePedidoRequest {
   montoCredito?: number;
   plazoCredito?: number;
   idTipoPlazoCredito?: number;
-  tipoPlazoCredito?: string;
   fchDesde: string;
   fchHasta: string;
   comentario: string;

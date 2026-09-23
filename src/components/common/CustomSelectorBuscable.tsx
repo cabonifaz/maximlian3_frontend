@@ -9,6 +9,7 @@ import { CustomLabel } from "./CustomLabel";
 export interface CustomSelectorBuscableProps {
   label?: ReactNode;
   idMaster?: number;
+  usarPaginacion?: boolean;
   options?: EntradaTablaMaestra[] | undefined;
   value: string | number | undefined;
   onChange: (val: number) => void;
@@ -41,6 +42,7 @@ export interface CustomSelectorBuscableProps {
 export function CustomSelectorBuscable({
   label,
   idMaster,
+  usarPaginacion = true,
   options,
   value,
   onChange,
@@ -76,7 +78,9 @@ export function CustomSelectorBuscable({
   const ALTURA_DROPDOWN = 260;
   const MARGEN_VENTANA = 16;
 
-  const idMaestroPredeterminado = idMaster ?? options?.find((opcion) => opcion.idMaestro > 0)?.idMaestro;
+  const idMaestroPredeterminado = usarPaginacion
+    ? idMaster ?? options?.find((opcion) => opcion.idMaestro > 0)?.idMaestro
+    : undefined;
   const {
     opciones: opcionesConsultadas,
     estaCargando: estaCargandoOpciones,
