@@ -25,7 +25,10 @@ export function useModalOperacionInforme({
   onGuardar,
 }: ParametrosUseModalOperacionInforme) {
   const [anio, setAnio] = useState(registroInicial?.anio ?? "2025");
-  const [idMes, setIdMes] = useState<number | undefined>(registroInicial?.idMesInicio);
+  const [idMesInicio, setIdMesInicio] = useState<number | undefined>(registroInicial?.idMesInicio);
+  const [idMesFin, setIdMesFin] = useState<number | undefined>(
+    registroInicial?.idMesFin ?? registroInicial?.idMesInicio,
+  );
   const [idMoneda, setIdMoneda] = useState<number | undefined>(registroInicial?.idMoneda);
   const [monto, setMonto] = useState(registroInicial?.monto ?? "");
   const [paises, setPaises] = useState(registroInicial?.paises ?? "");
@@ -55,23 +58,26 @@ export function useModalOperacionInforme({
     () => [...(opcionesMeses ?? [])].sort((a, b) => (a.num1 ?? 0) - (b.num1 ?? 0)),
     [opcionesMeses],
   );
-  const idMesActual = idMes
+  const idMesInicioActual = idMesInicio
     ?? opcionesMesesOrdenadas.find((opcion) => opcion.string1 === registroInicial?.mes)?.num1
     ?? undefined;
-  const mesActual = opcionesMesesOrdenadas.find((opcion) => opcion.num1 === idMesActual)?.string1
+  const idMesFinActual = idMesFin ?? idMesInicioActual;
+  const mesInicioActual = opcionesMesesOrdenadas.find((opcion) => opcion.num1 === idMesInicioActual)?.string1
     ?? registroInicial?.mes
     ?? "";
+  const mesFinActual = opcionesMesesOrdenadas.find((opcion) => opcion.num1 === idMesFinActual)?.string1
+    ?? mesInicioActual;
   const monedaActual = opcionesMoneda?.find((opcion) => opcion.num1 === idMoneda)?.string1
     ?? registroInicial?.moneda
     ?? "";
 
   const manejarGuardar = () => {
     const resultado = esquemaModalOperacionInvestigacion.safeParse({
-      idMesInicio: idMesActual,
-      idMesFin: idMesActual,
+      idMesInicio: idMesInicioActual,
+      idMesFin: idMesFinActual,
       idMoneda,
       anio: anio.trim(),
-      mes: mesActual.trim(),
+      mes: mesInicioActual.trim(),
       moneda: monedaActual.trim(),
       paises: paises.trim(),
       productos: productos.trim(),
@@ -86,8 +92,12 @@ export function useModalOperacionInforme({
   return {
     anio,
     setAnio,
-    idMesActual,
-    setIdMes,
+    idMesInicioActual,
+    setIdMesInicio,
+    idMesFinActual,
+    setIdMesFin,
+    mesInicioActual,
+    mesFinActual,
     idMoneda,
     setIdMoneda,
     monto,
@@ -100,7 +110,6 @@ export function useModalOperacionInforme({
     setOperaciones,
     opcionesMesesOrdenadas,
     opcionesMoneda,
-    mesActual,
     monedaActual,
     manejarGuardar,
     sanitizarEntero,

@@ -40,6 +40,8 @@ export function useModalProveedorInforme({
   const [tipoCambio, setTipoCambio] = useState(registroInicial?.tipoCambio ?? "");
   const [limiteCredito, setLimiteCredito] = useState(registroInicial?.limiteCredito ?? "");
   const [promedioMensual, setPromedioMensual] = useState(registroInicial?.promedioMensual ?? "");
+  const [idCalificacion, setIdCalificacion] = useState<number | undefined>(registroInicial?.idCalificacion);
+  const [comentarios, setComentarios] = useState(registroInicial?.comentarios ?? "");
 
   const { data: opcionesTipoProveedorBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_PROVEEDOR],
@@ -64,6 +66,12 @@ export function useModalProveedorInforme({
   const { data: opcionesLimiteCreditoBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.LIMITE_CREDITO_PROVEEDOR],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.LIMITE_CREDITO_PROVEEDOR),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesCalificacion } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.CALIFICACION_PROVEEDOR],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CALIFICACION_PROVEEDOR),
     staleTime: Infinity,
   });
 
@@ -111,6 +119,8 @@ export function useModalProveedorInforme({
       idPlazoCredito: tieneReferenciaComercial ? idLimiteCredito ?? undefined : undefined,
       limiteCredito: tieneReferenciaComercial ? limiteCredito : "",
       promedioMensual: tieneReferenciaComercial ? promedioMensual.trim() : "",
+      idCalificacion: tieneReferenciaComercial ? idCalificacion : undefined,
+      comentarios: tieneReferenciaComercial ? comentarios.trim() : "",
     });
     if (!resultado.success) return;
 
@@ -144,11 +154,16 @@ export function useModalProveedorInforme({
     setLimiteCredito,
     promedioMensual,
     setPromedioMensual,
+    idCalificacion,
+    setIdCalificacion,
+    comentarios,
+    setComentarios,
     opcionesTipoProveedor,
     opcionesPais,
     opcionesTaxId,
     opcionesMoneda,
     opcionesLimiteCredito,
+    opcionesCalificacion,
     manejarGuardar,
   };
 }

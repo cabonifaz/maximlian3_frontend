@@ -231,6 +231,8 @@ export interface DatosIdentificacionAnalista {
   paginaWeb: string;
   estadoActual: string;
   datosAdicionales: string;
+  idCalificacion: string;
+  idRecordPagos: string;
 }
 
 export interface DatosAspectosLegalesAnalista {
@@ -288,6 +290,8 @@ export interface DatosOperacionPrincipalAnalista {
   numeroEmpleados: string;
   numeroEmpleadosDetalle: string;
   comentariosOperaciones: string;
+  clientes: string;
+  competidores: string;
 }
 
 export interface DatosInformacionFinancieraAnalista {
@@ -328,6 +332,8 @@ export interface RegistroProveedorAnalista {
   idPlazoCredito?: number;
   limiteCredito?: string;
   promedioMensual?: string;
+  idCalificacion?: number;
+  comentarios?: string;
 }
 
 export interface RegistroBancoAnalista {

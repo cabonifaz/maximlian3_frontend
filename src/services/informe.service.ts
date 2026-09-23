@@ -507,6 +507,8 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       paginaWeb: "",
       estadoActual: "",
       datosAdicionales: "",
+      idCalificacion: "",
+      idRecordPagos: "",
     },
     aspectosLegales: {
       tipoEmpresa: "",
@@ -563,6 +565,8 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       numeroEmpleados: "",
       numeroEmpleadosDetalle: "",
       comentariosOperaciones: "",
+      clientes: "",
+      competidores: "",
     },
     importaciones: [],
     exportaciones: [],
@@ -656,7 +660,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     correoElectronico: obtenerTexto(registro.email, registro.Email),
     paginaWeb: obtenerTexto(registro.paginaWeb, registro.PaginaWeb),
     estadoActual: obtenerTexto(registro.estadoActual, registro.EstadoActual, registro.descripcionEstado, registro.DescripcionEstado),
-    datosAdicionales: obtenerTexto(registro.datosAdicionales, registro.DatosAdicionales),
+    datosAdicionales: obtenerTexto(registro.observacionesIdentificacion, registro.ObservacionesIdentificacion),
+    idCalificacion: obtenerTexto(registro.idClasificacion, registro.IdClasificacion),
+    idRecordPagos: obtenerTexto(registro.idExperienciaPago, registro.IdExperienciaPago),
   };
 
   const idOperacionesCambioDivisas = obtenerNumeroOpcional(registro.idOperacionesCambioDivisas, registro.IdOperacionesCambioDivisas);
@@ -790,6 +796,8 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     numeroEmpleados: obtenerTextoNumerico(registro.numeroEmpleados),
     numeroEmpleadosDetalle: obtenerTexto(registro.numeroEmpleadosText, registro.NumeroEmpleadosText),
     comentariosOperaciones: obtenerTexto(registro.comentariosOperaciones, registro.ComentariosOperaciones),
+    clientes: obtenerTexto(registro.clientes, registro.Clientes),
+    competidores: obtenerTexto(registro.competidores, registro.Competidores),
   };
 
   const operaciones = obtenerLista(
@@ -1127,6 +1135,8 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     idPais: obtenerNumeroOpcional(registro.idPais, registro.IdPais),
     taxIdType: obtenerNumeroOpcional(registro.taxIdType, registro.TaxIdType),
     idEstadoManual: obtenerNumeroOpcional(registro.idEstadoManual, registro.IdEstadoManual),
+    idClasificacion: obtenerNumeroOpcional(registro.idClasificacion, registro.IdClasificacion),
+    idExperienciaPago: obtenerNumeroOpcional(registro.idExperienciaPago, registro.IdExperienciaPago),
     idTipoEmpresa: obtenerNumeroOpcional(registro.idTipoEmpresa, registro.IdTipoEmpresa),
     idTipoCambio: obtenerNumeroOpcional(registro.idTipoCambio, registro.IdTipoCambio),
     idOperacionesTCMoneda: obtenerNumeroOpcional(registro.operacionesTCMoneda, registro.OperacionesTCMoneda),
@@ -1356,6 +1366,12 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
   }
   if (!identificacion.tipoIdentificacionFiscal && respuesta.taxIdType) {
     identificacion.tipoIdentificacionFiscal = tiposDocumento.find((t) => t.num1 === respuesta.taxIdType)?.string1 ?? identificacion.tipoIdentificacionFiscal;
+  }
+  if (respuesta.idClasificacion != null) {
+    identificacion.idCalificacion = String(respuesta.idClasificacion);
+  }
+  if (respuesta.idExperienciaPago != null) {
+    identificacion.idRecordPagos = String(respuesta.idExperienciaPago);
   }
   if (!identificacion.estadoActual && respuesta.idEstadoManual) {
     identificacion.estadoActual = estadosCliente.find((e) => e.num1 === respuesta.idEstadoManual)?.string1 ?? identificacion.estadoActual;

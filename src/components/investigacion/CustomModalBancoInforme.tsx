@@ -423,9 +423,9 @@ export function CustomModalBancoAnalista({
 
   return (
     <>
-      <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
-        <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-gray-100 px-7 py-6">
+      <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
+        <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-[30px] bg-white shadow-[0_40px_100px_rgba(15,23,42,0.24)]">
+          <div className="flex items-start justify-between gap-4 border-b border-slate-100 bg-[radial-gradient(circle_at_top_left,rgba(130,21,51,0.11),transparent_42%),linear-gradient(180deg,#ffffff,#f8fafc)] px-6 py-6 md:px-8">
             <div>
               <h2 className="text-2xl font-bold text-brand-black">{registroInicial ? "Editar Cuenta Bancaria" : "Agregar Cuenta Bancaria"}</h2>
               <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">Registro de cuentas bancarias</p>
@@ -435,18 +435,18 @@ export function CustomModalBancoAnalista({
             </CustomButton>
           </div>
 
-          <div className="space-y-4 overflow-y-auto px-7 py-6">
+          <div className="space-y-5 overflow-y-auto bg-slate-50/50 px-6 py-6 md:px-8">
             <div className="space-y-2">
               <CustomLabel>Bancos</CustomLabel>
-              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px]">
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px]">
                 <input
                   value={banco}
                   onChange={(event) => setBanco(event.target.value)}
                   onFocus={seleccionarTextoCampoEditable}
                   placeholder="Nombre del banco"
-                  className="h-11 rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none"
+                  className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
                 />
-                <CustomButton size="sm" className="bg-[#ff6a2b] hover:bg-[#ff6a2b]/90" onClick={() => setEstaAbiertoModalBusqueda(true)}>
+                <CustomButton size="sm" className="bg-brand-wine hover:bg-brand-wine/90" onClick={() => setEstaAbiertoModalBusqueda(true)}>
                   <Search size={14} />
                   Buscar
                 </CustomButton>
@@ -460,7 +460,7 @@ export function CustomModalBancoAnalista({
                 onChange={(event) => setNumeroCuenta(event.target.value)}
                 onFocus={seleccionarTextoCampoEditable}
                 placeholder="0000 0000 0000"
-                className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
               />
             </div>
 
@@ -483,7 +483,7 @@ export function CustomModalBancoAnalista({
                 onChange={(event) => setSectoristaJefeCuenta(event.target.value)}
                 onFocus={seleccionarTextoCampoEditable}
                 placeholder="Nombre del sectorista o jefe de cuenta"
-                className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
               />
             </div>
 
@@ -494,7 +494,7 @@ export function CustomModalBancoAnalista({
                 onChange={(event) => setTelefono(event.target.value)}
                 onFocus={seleccionarTextoCampoEditable}
                 placeholder="+52 ..."
-                className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
               />
             </div>
 
@@ -503,7 +503,7 @@ export function CustomModalBancoAnalista({
             ) : null}
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-gray-100 px-7 py-5">
+          <div className="flex justify-end gap-3 border-t border-slate-100 bg-white px-6 py-5 md:px-8">
             <CustomButton variant="secondary" size="sm" onClick={onCerrar}>Cancelar</CustomButton>
             <CustomButton size="sm" onClick={manejarGuardar}>Guardar</CustomButton>
           </div>

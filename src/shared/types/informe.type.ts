@@ -402,6 +402,8 @@ export interface InformeCrearRequest {
   email: string;
   paginaWeb: string;
   idEstadoManual: number;
+  idClasificacion: number;
+  idExperienciaPago: number;
   idEstadoInforme: number;
   datosAdicionales: string;
   observacionesIdentificacion: string;
@@ -458,6 +460,8 @@ export interface InformeCrearRequest {
   numeroEmpleados?: number;
   numeroEmpleadosText: string;
   comentariosOperaciones: string;
+  clientes: string;
+  competidores: string;
   contenidoInformacionFinanciera: string;
   comentarioInformacionFinanciera: string;
   activosFijos: string;
@@ -540,6 +544,8 @@ export interface InformeObtenerResponse {
   idPais?: number;
   taxIdType?: number;
   idEstadoManual?: number;
+  idClasificacion?: number;
+  idExperienciaPago?: number;
   idTipoEmpresa?: number;
   idTipoCambio?: number;
   idOperacionesTCMoneda?: number;
