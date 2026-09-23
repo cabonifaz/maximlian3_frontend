@@ -89,8 +89,10 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   opcionesIniciales,
   opcionesTablaMaestra,
   idMaestro,
+  usarPaginacion = true,
   marcador,
   onChange,
+  onSeleccionar,
   adicionalEtiqueta,
   permiteAltaNueva = false,
   num2AltaNueva = null,
@@ -112,8 +114,10 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   opcionesIniciales?: string[];
   opcionesTablaMaestra?: EntradaTablaMaestra[];
   idMaestro?: number;
+  usarPaginacion?: boolean;
   marcador?: string;
   onChange?: (valor: string) => void;
+  onSeleccionar?: (id: number | undefined) => void;
   adicionalEtiqueta?: ReactNode;
   permiteAltaNueva?: boolean;
   num2AltaNueva?: number | null;
@@ -301,6 +305,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
     const opcion = opcionesDisponibles.find((opcionActual) => opcionActual.num1 === nuevoValor);
     const valorTexto = opcion ? obtenerValorSeleccion(opcion) : "";
     onChange?.(valorTexto);
+    onSeleccionar?.(nuevoValor);
   };
 
   const manejarAltaNuevo = (termino: string) => {
@@ -350,6 +355,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
         });
       }
       onChange?.(opcion ? obtenerValorSeleccion(opcion) : termino);
+      onSeleccionar?.(opcion?.num1 ?? undefined);
     }).catch(() => {
       // La notificacion de error la maneja el interceptor global.
     });
@@ -366,11 +372,15 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
         </span>
       )}
       idMaster={idMaestro}
+      usarPaginacion={usarPaginacion}
       options={opcionesDisponibles}
       value={valorSeleccionado}
       displayValue={textoSeleccionado}
       onChange={manejarCambio}
-      onClear={() => onChange?.("")}
+      onClear={() => {
+        onChange?.("");
+        onSeleccionar?.(undefined);
+      }}
       optional
       mostrarTextoOpcionalEnLabel={false}
       onAddNew={permiteAltaNueva ? manejarAltaNuevo : undefined}
@@ -393,6 +403,7 @@ interface PropsCampoInvestigacionAnalista {
   marcador?: string;
   className?: string;
   onChange?: (valor: string) => void;
+  onSeleccionar?: (id: number | undefined) => void;
   adicionalEtiqueta?: ReactNode;
   tipoEntrada?: "texto" | "email" | "url" | "fecha" | "decimal";
   decimales?: number;
@@ -650,8 +661,7 @@ export function ContenedorSeccionInvestigacionAnalista({
 
 export function MenuSeccionesInvestigacionAnalista({
   idSeccionActiva,
-  onSeleccionar,
-  pendientesRevision,
+    onSeleccionar,pendientesRevision,
   secciones,
 }: PropsMenuSeccionesInvestigacionAnalista) {
   const iconos = {

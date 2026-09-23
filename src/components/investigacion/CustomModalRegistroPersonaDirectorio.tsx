@@ -33,7 +33,6 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
     opcionesEstadoCivil,
     opcionesNacionalidad,
     opcionesPais,
-    opcionesProfesion,
     opcionesTipoDocumento,
     opcionesTipoIdFiscal,
     opcionesTipoPersona,
@@ -115,7 +114,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
               <EncabezadoSeccion icono={<BadgeCheck size={18} />} titulo="Perfil" subtitulo="Información complementaria" />
               <div className="grid gap-4 md:grid-cols-2">
                 <CampoSelector nombre="estadoCivil" nombreId="idEstadoCivil" etiqueta="Estado Civil" opciones={opcionesEstadoCivil} valorDefecto={registroInicial?.estadoCivil} valorDefectoId={registroInicial?.idEstadoCivil} marcadorVacio="Seleccione estado civil" />
-                <CampoSelector nombre="profesion" nombreId="idProfesion" etiqueta="Profesión" opciones={opcionesProfesion} valorDefecto={registroInicial?.profesion} valorDefectoId={registroInicial?.idProfesion} marcadorVacio="Seleccione profesión" />
+                <div><CampoInput nombre="profesion" etiqueta="Profesión" marcador="Ingrese profesión" valorInicial={registroInicial?.profesion} /><input type="hidden" name="idProfesion" value="0" /></div>
               </div>
               <div className="mt-4">
                 <CampoArea

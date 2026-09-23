@@ -96,7 +96,7 @@ export function useModalCrearBancoInforme({
     },
   });
 
-  const formularioInvalido = !idPais || !nombre.trim() || !telefono.trim();
+  const formularioInvalido = !nombre.trim() || !telefono.trim();
 
   return {
     formularioInvalido,

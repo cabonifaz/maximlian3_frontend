@@ -72,7 +72,7 @@ export function CustomModalOperacionAnalista({
         </div>
 
         <div className="grid gap-5 overflow-y-auto px-6 py-5 md:grid-cols-2 md:px-8 md:py-7">
-          <div className="space-y-2">
+          <div className="space-y-2 md:col-span-2 md:max-w-[calc(50%-0.625rem)]">
             <CustomLabel>Año</CustomLabel>
             <input
               value={anio}

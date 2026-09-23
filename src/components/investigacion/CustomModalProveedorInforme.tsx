@@ -58,6 +58,9 @@ export function CustomModalProveedorAnalista({
     setLimiteCredito,
     promedioMensual,
     setPromedioMensual,
+    plazoCredito,
+    setPlazoCredito,
+    setIdTiempoCreditoSeleccionado,
     idCalificacion,
     setIdCalificacion,
     comentarios,
@@ -67,6 +70,8 @@ export function CustomModalProveedorAnalista({
     opcionesTaxId,
     opcionesMoneda,
     opcionesLimiteCredito,
+    promedioMensualHabilitado,
+    opcionesPlazoCredito,
     opcionesCalificacion,
     manejarGuardar,
   } = useModalProveedorInforme({ registroInicial, idIdioma, onGuardar });
@@ -75,10 +80,10 @@ export function CustomModalProveedorAnalista({
 
   return (
     <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
-      <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-7 py-6">
+      <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div className="flex items-start justify-between border-b border-gray-100 px-6 py-5 md:px-8">
           <div>
-            <h2 className="text-2xl font-bold text-brand-black">{registroInicial ? "Editar Proveedor" : "Agregar Nuevo Proveedor"}</h2>
+            <h2 className="text-[18px] font-bold text-slate-800">{registroInicial ? "Editar Proveedor" : "Agregar Nuevo Proveedor"}</h2>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">Registro de terceros</p>
           </div>
           <CustomButton variant="ghost" size="icon" onClick={onCerrar}>
@@ -86,7 +91,8 @@ export function CustomModalProveedorAnalista({
           </CustomButton>
         </div>
 
-        <div className="space-y-4 overflow-y-auto px-7 py-6">
+        <div className="grid gap-5 overflow-y-auto px-6 py-5 md:grid-cols-2 md:px-8 md:py-7">
+          <div className="md:col-span-2 md:max-w-[calc(50%-0.625rem)]">
           <SelectorMaestroConAltaInvestigacionAnalista
             etiqueta="Tipo de Proveedor"
             valor={tipoProveedor}
@@ -97,13 +103,14 @@ export function CustomModalProveedorAnalista({
             marcador="Seleccione tipo de proveedor"
             onChange={setTipoProveedor}
           />
+          </div>
 
           <div className="space-y-2">
             <CustomLabel>Nombre de la Empresa / Compañía</CustomLabel>
             <input value={nombreEmpresa} onChange={(event) => setNombreEmpresa(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ej. Schneider Electric SA de CV" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="contents">
             <div className="space-y-2">
               <CustomLabel>País</CustomLabel>
               <CustomSelectorBuscable
@@ -146,7 +153,7 @@ export function CustomModalProveedorAnalista({
             <input value={telefono} onChange={(event) => setTelefono(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese el teléfono" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
           </div>
 
-          <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-slate-600">
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-600 md:col-span-2">
             <span>Tiene referencia comercial</span>
             <button
               type="button"
@@ -171,6 +178,10 @@ export function CustomModalProveedorAnalista({
 
           {tieneReferenciaComercial ? (
             <>
+              <div className="border-t border-slate-100 pt-5 md:col-span-2">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8ea0c0]">Condiciones comerciales</p>
+                <p className="mt-1 text-sm text-slate-500">Informacion de la relacion y condiciones de credito.</p>
+              </div>
               <div className="space-y-2">
                 <CustomLabel>Comienzo de las Negociaciones</CustomLabel>
                 <input value={comienzoNegociaciones} onChange={(event) => setComienzoNegociaciones(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese el comienzo de las negociaciones" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
@@ -205,9 +216,20 @@ export function CustomModalProveedorAnalista({
 
               <div className="space-y-2">
                 <CustomLabel>Promedio Mensual</CustomLabel>
-                <input value={promedioMensual} onChange={(event) => setPromedioMensual(sanitizarMontoDosDecimales(event.target.value))} onBlur={(event) => setPromedioMensual(normalizarMontoDosDecimales(event.target.value))} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese el promedio mensual" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+                <input value={promedioMensual} onChange={(event) => setPromedioMensual(sanitizarMontoDosDecimales(event.target.value))} onBlur={(event) => setPromedioMensual(normalizarMontoDosDecimales(event.target.value))} onFocus={seleccionarTextoCampoEditable} disabled={!promedioMensualHabilitado} placeholder="Ingrese el promedio mensual" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400" />
               </div>
 
+              <SelectorMaestroConAltaInvestigacionAnalista
+                etiqueta="Plazo"
+                valor={plazoCredito}
+                soloLectura={false}
+                opcionesTablaMaestra={opcionesPlazoCredito}
+                idMaestro={TablaMaestraId.PLAZO_CREDITO_PROVEEDOR}
+                permiteAltaNueva
+                marcador="Seleccione o agregue plazo"
+                onChange={setPlazoCredito}
+                onSeleccionar={setIdTiempoCreditoSeleccionado}
+              />
               <div className="space-y-2">
                 <CustomLabel optional>Calificación</CustomLabel>
                 <CustomSelectorBuscable
@@ -221,7 +243,7 @@ export function CustomModalProveedorAnalista({
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-2">
                 <CustomLabel optional>Comentarios</CustomLabel>
                 <textarea value={comentarios} onChange={(event) => setComentarios(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese comentarios" className="min-h-24 w-full resize-y rounded-xl border border-gray-200 px-4 py-3 text-sm text-slate-600 outline-none" />
               </div>
@@ -229,7 +251,7 @@ export function CustomModalProveedorAnalista({
           ) : null}
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-gray-100 px-7 py-5">
+        <div className="flex justify-end gap-3 border-t border-gray-100 bg-gray-50/50 px-6 py-5 md:px-8">
           <CustomButton variant="secondary" size="sm" onClick={onCerrar}>Cancelar</CustomButton>
           <CustomButton size="sm" onClick={manejarGuardar}>Guardar</CustomButton>
         </div>

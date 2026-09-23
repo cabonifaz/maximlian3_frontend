@@ -78,8 +78,6 @@ export interface RespuestaHistorialInformesCompania {
 export interface InformeBalanceRequest {
   idInformeBalance?: number;
   fechaBalance: string | null;
-  fechaHasta: string | null;
-  flgActualidad: boolean;
   tipoCambio: number;
   idMoneda: number;
   idTipoBalance: number;
@@ -325,18 +323,16 @@ export interface InformeOperacionExteriorRequest {
 
 export interface InformeProveedorRequest {
   idInformeProveedor?: number;
-  idBancoProveedor: number;
   idTipoPersona: number;
   nombre: string;
   idPais: number;
   idTipoDocumento: number;
   numeroDocumento: string;
   idMoneda: number;
-  fechaInicio: string | null;
   idLimiteCredito: number;
+  idTiempoCredito: number;
   promedioMensual: number;
   tipoCambio?: number;
-  plazoCredito: string;
   productos: string;
   idCalificacion: number;
   comentarios: string;
@@ -344,7 +340,6 @@ export interface InformeProveedorRequest {
   nombreContacto?: string;
   telefono?: string;
   comienzoNegociaciones?: string;
-  idPlazoCredito?: number;
 }
 
 export interface InformeDirectorioEjecutivoRequest {
@@ -363,14 +358,14 @@ export interface InformeDirectorioEjecutivoRequest {
 export interface InformeImagenLocalRequest {
   idInformeLocalImagen?: number;
   imagenURL: string;
+  descripcion: string;
   idTipoArchivo: number;
 }
 
 export interface InformeLocalRequest {
   idInformeLocal?: number;
-  idTipoLocal: number;
+  tipoLocal: string;
   comentario: string;
-  imagenUrl: string;
   imagenes: InformeImagenLocalRequest[];
 }
 
@@ -391,7 +386,6 @@ export interface InformeCrearRequest {
   nombre: string;
   nombreComercial: string;
   idPais: number;
-  operacionesTCMoneda: number;
   taxIdType: number;
   taxNum: string;
   direccion: string;
@@ -409,12 +403,11 @@ export interface InformeCrearRequest {
   observacionesIdentificacion: string;
   idTipoEmpresa: number;
   fechaConstitucion: string | null;
-  idCiudadRegistro: number;
+  ciudadRegistro: string;
   idNotaria: string;
   idNotario: string;
   idRegistro: string;
   idPlazo: string;
-  idOperacionesCambioDivisas: number;
   capitalInicial?: number;
   capitalPagado?: number;
   fechaUltimoIncremento: string | null;
@@ -548,10 +541,7 @@ export interface InformeObtenerResponse {
   idExperienciaPago?: number;
   idTipoEmpresa?: number;
   idTipoCambio?: number;
-  idOperacionesTCMoneda?: number;
-  idOperacionesCambioDivisas?: number;
   idVentasCreditoTiempo?: number;
-  idCiudadRegistro?: number;
   idSector?: number;
   idActividad?: number;
   idIsicCategoria?: number;

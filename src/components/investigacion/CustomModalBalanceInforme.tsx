@@ -41,13 +41,8 @@ export function CustomModalBalanceAnalista({
   onGuardar,
 }: PropsCustomModalBalanceAnalista) {
   const {
-    cambiarEsActual,
-    cambiarFechaFin,
-    cambiarFechaInicio,
-    errorFechas,
-    esActual,
-    fechaFin,
-    fechaInicio,
+    cambiarFechaBalance,
+    fechaBalance,
     manejarGuardar,
     operacionCambio,
     opcionesEstadoFinanciero,
@@ -69,8 +64,8 @@ export function CustomModalBalanceAnalista({
       className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
       onFocusCapture={seleccionarTextoEditableEnContenedor}
     >
-      <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-7 py-6">
+      <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-gray-100 bg-gradient-to-r from-slate-50 to-white px-8 py-7">
           <div>
             <h2 className="text-2xl font-bold text-brand-black">
               {registroInicial ? "Editar Balance" : "Agregar Balance"}
@@ -84,7 +79,8 @@ export function CustomModalBalanceAnalista({
           </CustomButton>
         </div>
 
-        <div className="grid gap-5 px-7 py-6 md:grid-cols-2">
+        <div className="space-y-6 px-8 py-7">
+          <div className="grid gap-5 md:grid-cols-2">
           <div className="space-y-2">
             <CustomLabel>Tipo de Balance</CustomLabel>
             <CustomSelectorBuscable
@@ -124,36 +120,26 @@ export function CustomModalBalanceAnalista({
               placeholder="Seleccionar..."
             />
           </div>
+          </div>
 
-          <CustomCampoFechaInvestigacion
-            etiqueta="Fecha de Inicio"
-            valor={fechaInicio}
-            onChange={cambiarFechaInicio}
-          />
-
-          <CustomCampoFechaInvestigacion
-            etiqueta="Fecha de Fin"
-            valor={fechaFin}
-            soloLectura={esActual}
-            onChange={cambiarFechaFin}
-          />
-
-          <label className="col-span-full flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-slate-600">
-            <input
-              type="checkbox"
-              checked={esActual}
-              onChange={(event) => cambiarEsActual(event.target.checked)}
-              className="h-4 w-4 accent-brand-wine"
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+              Periodo del balance
+            </p>
+            <CustomCampoFechaInvestigacion
+              etiqueta="Fecha del balance"
+              valor={fechaBalance}
+              onChange={cambiarFechaBalance}
             />
-            Actualidad
-          </label>
+          </div>
 
-          {errorFechas ? (
-            <p className="col-span-full text-sm text-red-500">{errorFechas}</p>
-          ) : null}
-
-          <div className="space-y-2">
-            <CustomLabel>Operación de cambio</CustomLabel>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+              Tipo de cambio
+            </p>
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <CustomLabel>Operación de cambio</CustomLabel>
             <CustomSelectorBuscable
               options={opcionesMoneda}
               value={obtenerIdSeleccion(opcionesMoneda, operacionCambio)}
@@ -166,12 +152,12 @@ export function CustomModalBalanceAnalista({
               onClear={() => setOperacionCambio("")}
               optional
               mostrarTextoOpcionalEnLabel={false}
-              placeholder="Seleccionar..."
-            />
-          </div>
+                placeholder="Seleccionar..."
+              />
+              </div>
 
-          <div className="space-y-2">
-            <CustomLabel>Tipo de Cambio</CustomLabel>
+              <div className="space-y-2">
+                <CustomLabel>Tipo de cambio</CustomLabel>
             <input
               value={tipoCambio}
               onChange={(event) =>
@@ -184,10 +170,12 @@ export function CustomModalBalanceAnalista({
               placeholder="0.00"
               className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
             />
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-gray-100 px-7 py-5">
+        <div className="flex justify-end gap-3 border-t border-gray-100 bg-slate-50/70 px-8 py-5">
           <CustomButton variant="secondary" size="sm" onClick={onCerrar}>
             Cancelar
           </CustomButton>

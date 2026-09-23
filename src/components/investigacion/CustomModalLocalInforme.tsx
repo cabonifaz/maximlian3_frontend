@@ -11,10 +11,8 @@ import {
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
-import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
 import { useModalLocalInforme } from "@maximilian/hooks/useModalLocalInforme";
 import type { RegistroLocalAnalista } from "@maximilian/shared/types/investigacion.type";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import {
   seleccionarTextoCampoEditable,
   seleccionarTextoEditableEnContenedor,
@@ -33,14 +31,14 @@ export function CustomModalLocalAnalista({
   estaAbierto,
   registroInicial,
   soloLectura = false,
-  idIdioma,
+  idIdioma: _idIdioma,
   onCerrar,
   onGuardar,
 }: PropsCustomModalLocalAnalista) {
   const {
     abrirImagenAdjunta,
+    actualizarDescripcionImagen,
     comentario,
-    direccion,
     eliminarImagenAdjunta,
     etiquetaImagenes,
     imagenes,
@@ -49,17 +47,14 @@ export function CustomModalLocalAnalista({
     inputArchivoRef,
     manejarGuardar,
     manejarSeleccionImagen,
-    opcionesTipoLocal,
     setComentario,
-    setDireccion,
     setIndiceImagenAEliminar,
     setIndiceImagenVisualizando,
     setTipoLocal,
     tipoLocal,
   } = useModalLocalInforme({
     estaAbierto,
-    idIdioma,
-    onGuardar,
+      onGuardar,
     registroInicial,
   });
 
@@ -117,8 +112,13 @@ export function CustomModalLocalAnalista({
                   <Eye size={14} className="text-white" />
                 </div>
               </div>
-              <div className="absolute bottom-0 left-0 right-0 truncate bg-gradient-to-t from-black/60 to-transparent px-2 py-1 text-xs text-white">
-                {imagen.nombre}
+              <div className="absolute bottom-0 left-0 right-0 space-y-0.5 bg-gradient-to-t from-black/75 via-black/45 to-transparent px-2 py-2 text-left text-white">
+                <p className="truncate text-xs font-semibold">{imagen.nombre}</p>
+                {imagen.descripcion ? (
+                  <p className="line-clamp-2 text-xs leading-snug text-white/90">
+                    {imagen.descripcion}
+                  </p>
+                ) : null}
               </div>
             </button>
           ))}
@@ -187,13 +187,25 @@ export function CustomModalLocalAnalista({
                 </div>
               )}
 
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-700">
-                  {imagen.nombre}
-                </p>
-                <p className="text-xs text-slate-400">
-                  {imagen.tipo || "Imagen adjunta"}
-                </p>
+              <div className="min-w-0 flex-1 space-y-2">
+                <div>
+                  <p className="truncate text-sm font-semibold text-slate-700">
+                    {imagen.nombre}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {imagen.tipo || "Imagen adjunta"}
+                  </p>
+                </div>
+                <input
+                  value={imagen.descripcion ?? ""}
+                  onChange={(event) =>
+                    actualizarDescripcionImagen(indice, event.target.value)
+                  }
+                  onFocus={seleccionarTextoCampoEditable}
+                  placeholder="Descripción de la imagen"
+                  aria-label={`Descripción de ${imagen.nombre}`}
+                  className="h-9 w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-600 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
+                />
               </div>
 
               <div className="flex shrink-0 gap-2">
@@ -253,29 +265,17 @@ export function CustomModalLocalAnalista({
 
           <div className="space-y-5 overflow-y-auto px-6 py-5">
             <div className="space-y-2">
-              <SelectorMaestroConAltaInvestigacionAnalista
-                etiqueta="Tipo de Local"
-                valor={tipoLocal}
-                soloLectura={soloLectura}
-                opcionesTablaMaestra={opcionesTipoLocal}
-                idMaestro={TablaMaestraId.TIPO_LOCAL}
-                permiteAltaNueva={!soloLectura}
-                marcador="Seleccione tipo de local"
-                onChange={setTipoLocal}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <CustomLabel>Dirección</CustomLabel>
+              <CustomLabel>Tipo de Local</CustomLabel>
               <input
-                value={direccion}
-                onChange={(event) => setDireccion(event.target.value)}
+                value={tipoLocal}
+                onChange={(event) => setTipoLocal(event.target.value)}
                 onFocus={seleccionarTextoCampoEditable}
                 disabled={soloLectura}
-                placeholder="Ej. Av. Industrial 456, Planta 2..."
+                placeholder="Ingrese el tipo de local"
                 className="h-12 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-default disabled:bg-slate-50"
               />
             </div>
+
 
             <div className="space-y-2">
               <CustomLabel>Comentario</CustomLabel>

@@ -100,7 +100,7 @@ export function CustomModalCrearBancoAnalista({
                 value={idPais}
                 onChange={setIdPais}
                 onClear={() => setIdPais(undefined)}
-                required
+                optional
                 placeholder="Seleccione un país"
               />
 
@@ -397,12 +397,8 @@ export function CustomModalBancoAnalista({
   const {
     banco,
     estaAbiertoModalBusqueda,
-    idSectorSeleccionado,
-    limpiarSector,
-    manejarCambioSector,
     manejarGuardar,
     numeroCuenta,
-    opcionesSector,
     pais,
     sectoristaJefeCuenta,
     seleccionarBanco,
@@ -464,17 +460,6 @@ export function CustomModalBancoAnalista({
               />
             </div>
 
-            <div className="space-y-2">
-              <CustomLabel>Lista de Sectores</CustomLabel>
-              <CustomSelectorBuscable
-                label={null}
-                options={opcionesSector}
-                value={idSectorSeleccionado}
-                onChange={manejarCambioSector}
-                onClear={limpiarSector}
-                placeholder="Seleccione un sector"
-              />
-            </div>
 
             <div className="space-y-2">
               <CustomLabel>Sectorista / Jefe de Cuenta</CustomLabel>

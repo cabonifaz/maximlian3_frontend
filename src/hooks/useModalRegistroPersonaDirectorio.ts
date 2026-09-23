@@ -2,7 +2,6 @@ import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ID_MAESTRO_ESTADO_CIVIL,
-  ID_MAESTRO_PROFESION,
   ID_MAESTRO_TIPO_DOCUMENTO,
 } from "@maximilian/shared/constants/components/investigacion/custom-modal-registro-persona-directorio.constants";
 import { servicioDirectorioEjecutivo } from "@maximilian/services/directorio-ejecutivo.service";
@@ -76,13 +75,6 @@ export function useModalRegistroPersonaDirectorio({
     staleTime: Infinity,
   });
 
-  const { data: opcionesProfesionBase } = useQuery({
-    queryKey: ["masterTable", ID_MAESTRO_PROFESION],
-    queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_PROFESION),
-    enabled: estaAbierto,
-    staleTime: Infinity,
-  });
-
   const opcionesTipoPersona = useMemo(
     () => traducirOpcionesTablaMaestra(opcionesTipoPersonaBase, idIdioma),
     [idIdioma, opcionesTipoPersonaBase],
@@ -103,11 +95,6 @@ export function useModalRegistroPersonaDirectorio({
     () => traducirOpcionesTablaMaestra(opcionesEstadoCivilBase, idIdioma),
     [idIdioma, opcionesEstadoCivilBase],
   );
-  const opcionesProfesion = useMemo(
-    () => traducirOpcionesTablaMaestra(opcionesProfesionBase, idIdioma),
-    [idIdioma, opcionesProfesionBase],
-  );
-
   const opcionesNacionalidad = useMemo(
     () =>
       opcionesPais?.map((opcion) => ({
@@ -196,7 +183,6 @@ export function useModalRegistroPersonaDirectorio({
     opcionesEstadoCivil,
     opcionesNacionalidad,
     opcionesPais,
-    opcionesProfesion,
     opcionesTipoDocumento,
     opcionesTipoIdFiscal,
     opcionesTipoPersona,

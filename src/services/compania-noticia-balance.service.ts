@@ -55,7 +55,6 @@ function normalizarBalance(item: unknown): CompaniaNoticiaBalanceListaItem {
     registro.fechaInforme,
     registro.FechaInforme,
   );
-  const fechaFin = obtenerTexto(registro.fechaFin, registro.FechaFin);
   const estado = obtenerTexto(registro.estado, registro.Estado);
 
   const tipo = obtenerTexto(
@@ -91,9 +90,8 @@ function normalizarBalance(item: unknown): CompaniaNoticiaBalanceListaItem {
     ) || (idCompania ? `Compañía ${idCompania}` : "-"),
     pais: obtenerTexto(registro.pais, registro.Pais, registro.nombrePais, registro.NombrePais) || "-",
     fecha,
-    fechaFin,
     tipo,
-    estado: normalizarEstado(estado, fechaFin || fecha),
+    estado: normalizarEstado(estado, fecha),
     detalleCuentas: Object.keys(cuentaBalance).length > 0
       ? normalizarDetalleCuentas(cuentaBalance, tipo)
       : undefined,

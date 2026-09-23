@@ -21,7 +21,6 @@ export interface CompaniaNoticiaBalanceListaItem {
   compania: string;
   pais: string;
   fecha: string;
-  fechaFin?: string;
   tipo: string;
   estado: "Vigente" | "Expirado";
   detalleCuentas?: DetalleCuentasBalanceAnalista;

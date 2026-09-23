@@ -338,7 +338,7 @@ function SeccionCredito({
                     </h2>
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400">
                       <CalendarDays size={12} />
-                      {formatearRangoFecha(reporte.fecha, reporte.fechaFin)}
+                      {formatearRangoFecha(reporte.fecha)}
                     </span>
                   </div>
                   <span className="inline-flex rounded-md bg-slate-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">

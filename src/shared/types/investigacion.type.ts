@@ -98,6 +98,7 @@ export interface RegistroImagenLocalAnalista {
   nombre: string;
   url?: string;
   tipo?: string;
+  descripcion?: string;
   esNueva?: boolean;
   archivo?: File;
 }
@@ -330,7 +331,10 @@ export interface RegistroProveedorAnalista {
   tipoCambio?: string;
   idLimiteCredito?: number;
   idPlazoCredito?: number;
+  idTiempoCredito?: number;
   limiteCredito?: string;
+  productos?: string;
+  plazoCredito?: string;
   promedioMensual?: string;
   idCalificacion?: number;
   comentarios?: string;
