@@ -5163,6 +5163,15 @@ function PantallaInvestigacionAnalista({
         )}
         onChange={(valor) => actualizarIdentificacion("paginaWeb", valor)}
       />
+      <CampoInvestigacionAnalista
+        etiqueta="Código Postal"
+        valor={datosInvestigacion.identificacion.codigoPostal}
+        soloLectura={esSoloLectura}
+        adicionalEtiqueta={obtenerIndicadorCambioExtraccion(
+          "identificacion.codigoPostal",
+        )}
+        onChange={(valor) => actualizarIdentificacion("codigoPostal", valor)}
+      />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Estado Actual"
         valor={datosInvestigacion.identificacion.estadoActual}
@@ -5181,7 +5190,7 @@ function PantallaInvestigacionAnalista({
         adicionalEtiqueta={obtenerAyudaTraduccion(
           "identificacion.estadoActual",
         )}
-        onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}        className="md:col-span-2"
+        onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}
       />
       <CustomSelectorBuscable
         label="Calificación"

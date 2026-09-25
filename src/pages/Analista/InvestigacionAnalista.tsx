@@ -3166,6 +3166,7 @@ function PantallaInvestigacionAnalista({
       <CampoInvestigacionAnalista etiqueta="Número de Fax" valor={datosInvestigacion.identificacion.numeroFax} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.numeroFax")} onChange={(valor) => actualizarIdentificacion("numeroFax", valor)} />
       <CampoInvestigacionAnalista etiqueta="Correo Electrónico" valor={datosInvestigacion.identificacion.correoElectronico} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.correoElectronico")} onChange={(valor) => actualizarIdentificacion("correoElectronico", valor)} />
       <CampoInvestigacionAnalista etiqueta="Página Web" valor={datosInvestigacion.identificacion.paginaWeb} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.paginaWeb")} onChange={(valor) => actualizarIdentificacion("paginaWeb", valor)} />
+      <CampoInvestigacionAnalista etiqueta="Código Postal" valor={datosInvestigacion.identificacion.codigoPostal} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.codigoPostal")} onChange={(valor) => actualizarIdentificacion("codigoPostal", valor)} />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Estado Actual"
         valor={datosInvestigacion.identificacion.estadoActual}
@@ -3175,7 +3176,7 @@ function PantallaInvestigacionAnalista({
         permiteAltaNueva
         marcador="Seleccione o agregue estado actual"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.estadoActual")}
-        onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}        className="md:col-span-2"
+        onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}
       />
       <CustomSelectorBuscable
         label="Calificación"

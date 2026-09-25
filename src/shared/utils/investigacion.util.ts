@@ -72,6 +72,7 @@ export function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       numeroFax: "",
       correoElectronico: "",
       paginaWeb: "",
+      codigoPostal: "",
       estadoActual: "",
       datosAdicionales: "",
       idCalificacion: "",

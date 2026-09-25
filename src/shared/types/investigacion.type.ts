@@ -230,6 +230,7 @@ export interface DatosIdentificacionAnalista {
   numeroFax: string;
   correoElectronico: string;
   paginaWeb: string;
+  codigoPostal: string;
   estadoActual: string;
   datosAdicionales: string;
   idCalificacion: string;
