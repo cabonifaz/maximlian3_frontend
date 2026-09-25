@@ -252,6 +252,13 @@ export const esquemaModalBancoInvestigacion = z.object({
   sectoristaJefeCuenta: textoFormulario.optional(),
 });
 
+export type DatosModalBancoInvestigacion = z.infer<
+  typeof esquemaModalBancoInvestigacion
+>;
+export type EntradaModalBancoInvestigacion = z.input<
+  typeof esquemaModalBancoInvestigacion
+>;
+
 export const esquemaArchivoInvestigacion = z.object({
   id: textoFormulario,
   idInformeArchivo: idOpcionalFormulario,

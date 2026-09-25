@@ -396,17 +396,22 @@ export function CustomModalBancoAnalista({
 }: PropsCustomModalBancoAnalista) {
   const {
     banco,
+    cambiarBanco,
+    cambiarEstaAbiertoModalBusqueda,
+    cambiarNumeroCuenta,
+    cambiarSectoristaJefeCuenta,
+    cambiarTelefono,
     estaAbiertoModalBusqueda,
+    idSector,
+    limpiarSector,
     manejarGuardar,
     numeroCuenta,
+    opcionesSector,
     pais,
+    sector,
     sectoristaJefeCuenta,
     seleccionarBanco,
-    setBanco,
-    setEstaAbiertoModalBusqueda,
-    setNumeroCuenta,
-    setSectoristaJefeCuenta,
-    setTelefono,
+    seleccionarSector,
     telefono,
   } = useModalBancoInforme({
     estaAbierto,
@@ -437,12 +442,12 @@ export function CustomModalBancoAnalista({
               <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px]">
                 <input
                   value={banco}
-                  onChange={(event) => setBanco(event.target.value)}
+                  onChange={(event) => cambiarBanco(event.target.value)}
                   onFocus={seleccionarTextoCampoEditable}
                   placeholder="Nombre del banco"
                   className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
                 />
-                <CustomButton size="sm" className="bg-brand-wine hover:bg-brand-wine/90" onClick={() => setEstaAbiertoModalBusqueda(true)}>
+                <CustomButton size="sm" className="bg-brand-wine hover:bg-brand-wine/90" onClick={() => cambiarEstaAbiertoModalBusqueda(true)}>
                   <Search size={14} />
                   Buscar
                 </CustomButton>
@@ -453,19 +458,31 @@ export function CustomModalBancoAnalista({
               <CustomLabel>Número de cuenta</CustomLabel>
               <input
                 value={numeroCuenta}
-                onChange={(event) => setNumeroCuenta(event.target.value)}
+                onChange={(event) => cambiarNumeroCuenta(event.target.value)}
                 onFocus={seleccionarTextoCampoEditable}
                 placeholder="0000 0000 0000"
                 className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
               />
             </div>
 
+            <CustomSelectorBuscable
+              label="Sector"
+              options={opcionesSector}
+              usarPaginacion={false}
+              value={idSector}
+              displayValue={sector}
+              onChange={seleccionarSector}
+              onClear={limpiarSector}
+              optional
+              mostrarTextoOpcionalEnLabel={false}
+              placeholder="Seleccione un sector"
+            />
 
             <div className="space-y-2">
               <CustomLabel>Sectorista / Jefe de Cuenta</CustomLabel>
               <input
                 value={sectoristaJefeCuenta}
-                onChange={(event) => setSectoristaJefeCuenta(event.target.value)}
+                onChange={(event) => cambiarSectoristaJefeCuenta(event.target.value)}
                 onFocus={seleccionarTextoCampoEditable}
                 placeholder="Nombre del sectorista o jefe de cuenta"
                 className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
@@ -476,7 +493,7 @@ export function CustomModalBancoAnalista({
               <CustomLabel>Número(s) de teléfono</CustomLabel>
               <input
                 value={telefono}
-                onChange={(event) => setTelefono(event.target.value)}
+                onChange={(event) => cambiarTelefono(event.target.value)}
                 onFocus={seleccionarTextoCampoEditable}
                 placeholder="+52 ..."
                 className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
@@ -498,7 +515,7 @@ export function CustomModalBancoAnalista({
       <CustomModalBusquedaBancoAnalista
         estaAbierto={estaAbiertoModalBusqueda}
         idIdioma={idIdioma}
-        onCerrar={() => setEstaAbiertoModalBusqueda(false)}
+        onCerrar={() => cambiarEstaAbiertoModalBusqueda(false)}
         onSeleccionar={seleccionarBanco}
       />
     </>

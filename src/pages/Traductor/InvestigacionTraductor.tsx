@@ -83,7 +83,6 @@ import {
 import { CustomModalRevisionEjecutivosExtraccion } from "@maximilian/components/investigacion/CustomModalRevisionEjecutivosExtraccion";
 import { CustomModalRevisionBancosExtraccion } from "@maximilian/components/investigacion/CustomModalRevisionBancosExtraccion";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
-import { MultiCustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscableMultiple";
 import {
   AreaInvestigacionAnalista,
   CampoInvestigacionAnalista,
