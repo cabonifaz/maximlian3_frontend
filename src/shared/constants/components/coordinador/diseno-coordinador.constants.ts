@@ -1,4 +1,4 @@
-import { CheckSquare, Database, FileText, Package, UserPlus, Users } from "lucide-react";
+import { CheckSquare, Database, FileCheck2, FileText, Package, UserPlus, Users } from "lucide-react";
 
 export const coordinatorMenuItems = [
   { name: "Banco de Información", icon: Database, path: "/coordinador/banco-informacion" },
@@ -7,4 +7,5 @@ export const coordinatorMenuItems = [
   { name: "Asignaciones", icon: UserPlus, path: "/coordinador/asignaciones" },
   { name: "Revisión y Aprobación", icon: CheckSquare, path: "/coordinador/revision" },
   { name: "Facturación", icon: FileText, path: "/coordinador/facturacion" },
+  { name: "Aprobación de Migraciones", icon: FileCheck2, path: "/coordinador/migraciones" },
 ];

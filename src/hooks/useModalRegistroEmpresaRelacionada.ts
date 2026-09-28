@@ -5,7 +5,6 @@ import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service
 import type {
   CompaniaEditarRequest,
   CompaniaListaItem,
-  DirectorioEjecutivoCrearRequest,
 } from "@maximilian/shared/types/compania.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
@@ -21,7 +20,6 @@ interface ParametrosUseModalRegistroEmpresaRelacionada {
   opcionesTipoPersona?: EntradaTablaMaestra[];
   registroInicial?: RegistroPersonaAnalista | null;
   soloEdicionLocal: boolean;
-  tipoCreacion: "compania" | "directorioEjecutivo";
 }
 
 function obtenerTextoPorId(opciones: EntradaTablaMaestra[] | undefined, id?: number) {
@@ -37,7 +35,6 @@ export function useModalRegistroEmpresaRelacionada({
   opcionesTipoPersona,
   registroInicial,
   soloEdicionLocal,
-  tipoCreacion,
 }: ParametrosUseModalRegistroEmpresaRelacionada) {
   const queryClient = useQueryClient();
   const [idTipoPersona, setIdTipoPersona] = useState<number | undefined>(
@@ -148,36 +145,18 @@ export function useModalRegistroEmpresaRelacionada({
             codigoPostal: payloadBase.codigoPostal,
             existeInformacion: payloadBase.existeInformacion,
           } satisfies CompaniaEditarRequest)
-        : tipoCreacion === "compania"
-          ? await servicioCompania.crear({
-              idTipoPersona: payloadBase.idTipoPersona,
-              idTipoDocumento: payloadBase.idTipoDocumento,
-              numeroDocumento: payloadBase.numeroDocumento,
-              nombreCompleto: payloadBase.nombreCompleto,
-              idPais: payloadBase.idPais,
-              telefono: payloadBase.telefono,
-              direccion: payloadBase.direccion,
-              ciudadProvinciaEstado: payloadBase.ubigeo,
-              codigoPostal: payloadBase.codigoPostal,
-              existeInformacion: payloadBase.existeInformacion,
-            })
-          : await servicioCompania.crearDirectorioEjecutivo({
-              idTipoPersona: payloadBase.idTipoPersona,
-              nombreCompleto: payloadBase.nombreCompleto,
-              idPais: payloadBase.idPais,
-              direccion: payloadBase.direccion,
-              ubigeo: payloadBase.ubigeo,
-              codigoPostal: payloadBase.codigoPostal,
-              idTipoDocumento: payloadBase.idTipoDocumento,
-              numeroDocumento: payloadBase.numeroDocumento,
-              taxIdType: payloadBase.idTipoDocumento,
-              taxNum: payloadBase.numeroDocumento,
-              idNacionalidad: 0,
-              fechaNacimiento: null,
-              idEstadoCivil: 0,
-              idProfesion: 0,
-              referencias: "",
-            } satisfies DirectorioEjecutivoCrearRequest);
+        : await servicioCompania.crear({
+            idTipoPersona: payloadBase.idTipoPersona,
+            idTipoDocumento: payloadBase.idTipoDocumento,
+            numeroDocumento: payloadBase.numeroDocumento,
+            nombreCompleto: payloadBase.nombreCompleto,
+            idPais: payloadBase.idPais,
+            telefono: payloadBase.telefono,
+            direccion: payloadBase.direccion,
+            ciudadProvinciaEstado: payloadBase.ubigeo,
+            codigoPostal: payloadBase.codigoPostal,
+            existeInformacion: payloadBase.existeInformacion,
+          });
 
       await queryClient.invalidateQueries({
         queryKey: ["companias-relacionadas-modal"],

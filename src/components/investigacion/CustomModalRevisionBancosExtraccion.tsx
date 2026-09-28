@@ -35,12 +35,11 @@ export function CustomModalRevisionBancosExtraccion({
 
         <div className="overflow-y-auto px-7 py-6">
           <div className="overflow-x-auto rounded-2xl border border-gray-100">
-            <table className="min-w-[560px] w-full text-left">
+            <table className="min-w-[480px] w-full text-left">
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
                 <tr>
                   <th className="px-4 py-3">Banco</th>
                   <th className="px-4 py-3">Número de Cuenta</th>
-                  <th className="px-4 py-3">Sector</th>
                   <th className="px-4 py-3 text-right">Acciones</th>
                 </tr>
               </thead>
@@ -49,7 +48,6 @@ export function CustomModalRevisionBancosExtraccion({
                   <tr key={`${banco.banco}-${indice}`} className="transition-colors hover:bg-slate-50">
                     <td className="px-4 py-4 text-sm font-semibold text-slate-700">{banco.banco || "-"}</td>
                     <td className="px-4 py-4 text-sm text-slate-500">{banco.numeroCuenta || "-"}</td>
-                    <td className="px-4 py-4 text-sm text-slate-500">{banco.sector || "-"}</td>
                     <td className="px-4 py-4">
                       <div className="flex justify-end gap-2">
                         <CustomButton variant="secondary" size="sm" onClick={() => onRechazar(indice)}>

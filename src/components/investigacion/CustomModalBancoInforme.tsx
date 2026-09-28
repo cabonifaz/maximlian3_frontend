@@ -402,20 +402,14 @@ export function CustomModalBancoAnalista({
     cambiarSectoristaJefeCuenta,
     cambiarTelefono,
     estaAbiertoModalBusqueda,
-    idSector,
-    limpiarSector,
     manejarGuardar,
     numeroCuenta,
-    opcionesSector,
     pais,
-    sector,
     sectoristaJefeCuenta,
     seleccionarBanco,
-    seleccionarSector,
     telefono,
   } = useModalBancoInforme({
     estaAbierto,
-    idIdioma,
     registroInicial,
     onGuardar,
   });
@@ -464,19 +458,6 @@ export function CustomModalBancoAnalista({
                 className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition-colors focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
               />
             </div>
-
-            <CustomSelectorBuscable
-              label="Sector"
-              options={opcionesSector}
-              usarPaginacion={false}
-              value={idSector}
-              displayValue={sector}
-              onChange={seleccionarSector}
-              onClear={limpiarSector}
-              optional
-              mostrarTextoOpcionalEnLabel={false}
-              placeholder="Seleccione un sector"
-            />
 
             <div className="space-y-2">
               <CustomLabel>Sectorista / Jefe de Cuenta</CustomLabel>

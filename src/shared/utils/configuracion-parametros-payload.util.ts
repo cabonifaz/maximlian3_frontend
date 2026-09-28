@@ -5,7 +5,6 @@ import type {
 import { ID_IDIOMA_ESPANOL_TABLA_MAESTRA } from "@maximilian/shared/constants/tabla-maestra.constants";
 import {
   obtenerDescripcionTablaMaestra,
-  obtenerSiguienteNumTablaMaestra,
   type EntradaTablaMaestra,
   type TablaMaestraCrearRequest,
   type TablaMaestraEditarRequest,
@@ -72,7 +71,6 @@ function obtenerCamposConfiguradosParametro(
 export function crearPayloadParametro(
   idMaestro: number,
   valores: FormularioParametro,
-  opcionesActuales: EntradaTablaMaestra[],
 ): TablaMaestraCrearRequest {
   const {
     codigo,
@@ -87,7 +85,6 @@ export function crearPayloadParametro(
     inputText: valores.descripcion.trim(),
     inputText2: codigo,
     descripcion: obtenerDescripcionTablaMaestra(idMaestro),
-    num1: obtenerSiguienteNumTablaMaestra(opcionesActuales),
     num2: referencia,
     num3: referenciaSecundaria,
     string1: null,

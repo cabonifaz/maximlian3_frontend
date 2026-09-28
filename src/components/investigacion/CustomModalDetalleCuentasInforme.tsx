@@ -117,9 +117,13 @@ function CampoDetalle({
   calculando?: boolean;
   azul?: boolean;
 }) {
-  const valorMostrado = mostrarComoPorcentaje
+  const [estaEnfocado, setEstaEnfocado] = useState(false);
+  const valorFormateado = mostrarComoPorcentaje
     ? `${formatearMontoDosDecimales(obtenerNumero(valor))}%`
-    : valor;
+    : formatearMontoDosDecimales(obtenerNumero(valor));
+  const valorMostrado = estaEnfocado && !deshabilitado
+    ? valor
+    : valorFormateado;
 
   return (
     <div
@@ -154,6 +158,7 @@ function CampoDetalle({
           onChange(sanitizarNumero(event.target.value, permitirNegativo))
         }
         onBlur={(event) => {
+          setEstaEnfocado(false);
           const texto = event.target.value.trim();
           if (!texto || texto === "-" || texto === "-.") {
             onChange("0.00");
@@ -161,7 +166,10 @@ function CampoDetalle({
           }
           onChange(normalizarMontoDosDecimales(texto, permitirNegativo));
         }}
-        onFocus={seleccionarTextoCampoEditable}
+        onFocus={(event) => {
+          setEstaEnfocado(true);
+          seleccionarTextoCampoEditable(event);
+        }}
         placeholder="0.00"
         className={`h-10 w-full rounded-md border px-3 text-right text-sm tabular-nums outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-not-allowed disabled:text-slate-500 ${azul ? "border-blue-300 bg-blue-100 text-blue-800 disabled:bg-blue-100 disabled:text-blue-700" : destacado ? "border-brand-wine/20 bg-brand-wine/5 text-brand-wine disabled:bg-brand-wine/5 disabled:text-brand-wine/70" : "border-slate-200 bg-white text-slate-700 disabled:bg-slate-100 disabled:text-slate-400"} ${negrita || destacado || azul ? "font-bold" : ""}`}
       />

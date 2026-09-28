@@ -345,11 +345,9 @@ export interface RegistroBancoAnalista {
   idInformeBanco?: number;
   idBanco?: number;
   idPais?: number;
-  idSector?: number;
   pais?: string;
   banco: string;
   numeroCuenta: string;
-  sector: string;
   telefono: string;
   sectoristaJefeCuenta?: string;
 }

@@ -61,6 +61,7 @@ import {
   SelectorMaestroConAltaInvestigacionAnalista,
 } from "@maximilian/components/investigacion/ControlesInforme";
 import { informeService } from "@maximilian/services/informe.service";
+import { servicioInformeMigracion } from "@maximilian/services/informe-migracion.service";
 import { servicioInformeObservacion } from "@maximilian/services/informe-observacion.service";
 import { servicioInformeLocalImagen } from "@maximilian/services/informe-local-imagen.service";
 import { servicioBanco } from "@maximilian/services/banco.service";
@@ -244,6 +245,8 @@ function PantallaInvestigacionAnalista({
   idActividadInicial,
 }: PropsContenidoPantallaInvestigacionAnalista) {
   const navigate = useNavigate();
+  const ubicacion = useLocation();
+  const esMigracionInforme = ubicacion.pathname.includes("/migraciones/");
   const queryClient = useQueryClient();
   const esSoloLectura = modo === "detalle" || esPendienteAprobacionInformacion;
   const contenedorPantallaRef = useRef<HTMLDivElement>(null);
@@ -773,7 +776,7 @@ function PantallaInvestigacionAnalista({
     mutationFn: async ({ idEstadoInforme }: ParametrosGuardadoInforme) => {
       const idPedidoNumerico = Number(idPedido);
 
-      if (!Number.isFinite(idPedidoNumerico) || idPedidoNumerico <= 0) {
+      if (!esMigracionInforme && (!Number.isFinite(idPedidoNumerico) || idPedidoNumerico <= 0)) {
         throw new Error("No se encontró un pedido válido para crear el informe.");
       }
 
@@ -800,7 +803,7 @@ function PantallaInvestigacionAnalista({
       archivosImagenesNuevosRef.current = mapaArchivos;
 
       const payload = construirPayloadCrearInforme({
-        idPedido: idPedidoNumerico,
+        idPedido: esMigracionInforme ? 0 : idPedidoNumerico,
         idInforme: debeCrearInformePorRechazo ? 0 : idInformeActual,
         idFormatoFecha: idFormatoFechaInforme,
         idEstadoInforme,
@@ -819,6 +822,13 @@ function PantallaInvestigacionAnalista({
         opcionesTipoProveedor,
         opcionesFormatoArchivo,
       });
+
+      if (esMigracionInforme) {
+        if (idInformeActual && idInformeActual > 0) {
+          return servicioInformeMigracion.editar(idInformeActual, payload);
+        }
+        return servicioInformeMigracion.crear(payload);
+      }
 
       if (debeCrearInformePorRechazo) {
         return informeService.create(payload);
@@ -894,6 +904,25 @@ function PantallaInvestigacionAnalista({
         queryKey: ["informe-documento-generado", Number(idInformeResultado), Number(idPedido)],
       });
       setEstaAbiertoModalConfirmacionPrimerBorrador(false);
+
+      if (esMigracionInforme) {
+        queryClient.invalidateQueries({ queryKey: ["migraciones-informe", "analista"] });
+        if (idEstadoInforme === ID_ESTADO_PEDIDO_FINALIZADO) {
+          setEstaAbiertoModalFinalizarInvestigacion(false);
+          navigate("/analista/migraciones");
+          return;
+        }
+        if (idEstadoInforme === ID_ESTADO_PEDIDO_BORRADOR && debeVolverABandejaTrasGuardarBorrador) {
+          setDebeVolverABandejaTrasGuardarBorrador(false);
+          navigate("/analista/migraciones");
+          return;
+        }
+        if (modo === "iniciar" && idInformeResultado) {
+          navigate(`/analista/migraciones/${idInformeResultado}?modo=continuar`, { replace: true });
+        }
+        if (abrirConfirmacionFinalizacion) setEstaAbiertoModalFinalizarInvestigacion(true);
+        return;
+      }
 
       if (idEstadoInforme === ID_ESTADO_PEDIDO_FINALIZADO) {
         setEstaAbiertoModalFinalizarInvestigacion(false);
@@ -1159,8 +1188,6 @@ function PantallaInvestigacionAnalista({
               banco: banco.nombre,
               telefono: item.telefono || banco.telefono,
               numeroCuenta: item.numeroCuenta,
-              idSector: item.idSector,
-              sector: item.sector || banco.sector || "",
               sectoristaJefeCuenta: item.sectoristaJefeCuenta,
             };
           },
@@ -2283,8 +2310,6 @@ function PantallaInvestigacionAnalista({
       idBanco: typeof item.idBanco === "number" && item.idBanco > 0 ? item.idBanco : undefined,
       banco: String(item.nombre ?? item.banco ?? "").trim(),
       numeroCuenta: String(item.numeroCuenta ?? "").trim(),
-      idSector: typeof item.listaSectores === "number" ? item.listaSectores : undefined,
-      sector: String(item.sector ?? "").trim(),
       telefono: String(item.numerosTelefono ?? item.telefono ?? "").trim(),
       sectoristaJefeCuenta: String(item.sectoristaJefeCuenta ?? "").trim() || undefined,
       pais: String(item.pais ?? "").trim() || undefined,
@@ -2373,11 +2398,9 @@ function PantallaInvestigacionAnalista({
       setBancoRecienCreado({
         idBanco: bancoPendiente.idBanco,
         idPais: bancoPendiente.idPais,
-        idSector: bancoPendiente.idSector,
         nombre: bancoPendiente.banco,
         telefono: bancoPendiente.telefono,
         pais: bancoPendiente.pais ?? "",
-        sector: bancoPendiente.sector,
       });
       return;
     }
@@ -3035,7 +3058,7 @@ function PantallaInvestigacionAnalista({
     }
   };
 
-  const permiteExtraccionSeccion = idSeccionActiva !== "balances";
+  const permiteExtraccionSeccion = true;
 
   const pendientesRevisionPorSeccion: Partial<Record<IdSeccionInvestigacionAnalista, number>> = {
     "aspectos-legales": companiasExtraccionPendientes.length,
@@ -4359,12 +4382,11 @@ function PantallaInvestigacionAnalista({
           </div>
 
           <div className="overflow-x-auto rounded-3xl border border-gray-100 bg-white shadow-sm">
-            <table className="min-w-[980px] w-full table-fixed text-left">
+            <table className="min-w-[810px] w-full table-fixed text-left">
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
                 <tr>
                   <th className="w-[220px] px-4 py-3">Banco</th>
                   <th className="w-[180px] px-4 py-3">Número de Cuenta</th>
-                  <th className="w-[170px] px-4 py-3 text-center">Sector</th>
                   <th className="w-[220px] px-4 py-3">Sectorista / Jefe de Cuenta</th>
                   <th className="w-[130px] px-4 py-3">Teléfono</th>
                   <th className="w-[120px] px-4 py-3 text-right">Acciones</th>
@@ -4373,25 +4395,11 @@ function PantallaInvestigacionAnalista({
               <tbody className="divide-y divide-gray-100 bg-white">
                 {bancosPaginados.map((banco) => {
                   const indiceReal = datosInvestigacion.bancos.findIndex((item) => item.banco === banco.banco && item.numeroCuenta === banco.numeroCuenta);
-                  const sectorBanco = banco.sector || opcionesSectorEconomico?.find((opcion) => opcion.num1 === banco.idSector)?.string1 || "";
                   return (
                     <tr key={`${banco.banco}-${banco.numeroCuenta}`}>
                       <td className="px-4 py-4 text-sm font-semibold leading-4 text-slate-700"><span className="block truncate">{banco.banco}</span></td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500">
                         <span className="block truncate">{enmascararNumeroCuenta(banco.numeroCuenta)}</span>
-                      </td>
-                      <td className="px-4 py-4 text-center text-sm">
-                        <span className={`inline-flex max-w-full items-center overflow-hidden rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
-                          sectorBanco.toLowerCase().includes("finanzas")
-                            ? "bg-blue-50 text-blue-600"
-                            : sectorBanco.toLowerCase().includes("comercio")
-                              ? "bg-slate-100 text-slate-600"
-                              : sectorBanco.toLowerCase().includes("energia")
-                                ? "bg-green-50 text-green-600"
-                                : "bg-orange-50 text-orange-600"
-                        }`} title={sectorBanco || "-"}>
-                          <span className="block truncate">{sectorBanco || "-"}</span>
-                        </span>
                       </td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500"><span className="block truncate">{banco.sectoristaJefeCuenta || "-"}</span></td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500"><span className="block truncate">{banco.telefono}</span></td>
@@ -4599,6 +4607,7 @@ function PantallaInvestigacionAnalista({
     <ProveedorFormatoFechaInforme formato={formatoFechaInformeVisual}>
     <div ref={contenedorPantallaRef} className="min-w-0 space-y-6">
       <ResumenPedidoInvestigacionAnalista
+        mostrarDatosPedido={!esMigracionInforme}
         codigoPedido={
           datosPedidoNavegacion?.codigoPedido
           || registroAsignacionPedido?.codigoPedido
@@ -4681,7 +4690,7 @@ function PantallaInvestigacionAnalista({
 
       <button
         type="button"
-        onClick={() => navigate("/analista/bandeja")}
+        onClick={() => navigate(esMigracionInforme ? "/analista/migraciones" : "/analista/bandeja")}
         className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition-colors hover:text-slate-700"
       >
         <ArrowLeft size={16} />
@@ -4911,7 +4920,6 @@ function PantallaInvestigacionAnalista({
                 indiceCompaniaExtraccionEdicion,
               )
         }
-        tipoCreacion="compania"
         soloEdicionLocal
         onCerrar={() => setIndiceCompaniaExtraccionEdicion(null)}
         onGuardar={guardarEdicionCompaniaExtraccion}
@@ -4992,8 +5000,6 @@ function PantallaInvestigacionAnalista({
           banco: bancoRecienCreado.nombre,
           telefono: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.telefono || bancoRecienCreado.telefono,
           numeroCuenta: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.numeroCuenta ?? "",
-          idSector: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.idSector,
-          sector: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.sector ?? "",
           sectoristaJefeCuenta: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.sectoristaJefeCuenta,
         } : null}
         onCerrar={() => {
@@ -5204,7 +5210,7 @@ function PantallaInvestigacionAnalista({
 }
 
 export default function InvestigacionAnalista() {
-  const { idPedido } = useParams();
+  const { idPedido, idInformeMigracion } = useParams();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const modo = (searchParams.get("modo") as ModoInvestigacionAnalista | null) ?? "iniciar";
@@ -5213,18 +5219,24 @@ export default function InvestigacionAnalista() {
   const idCarga = searchParams.get("carga") ?? "sin-carga";
   const datosPedidoNavegacion = (location.state as { datosPedidoInvestigacion?: DatosPedidoNavegacionInvestigacion } | null)?.datosPedidoInvestigacion;
   const idPedidoNumerico = Number(idPedido);
+  const esMigracionInforme = location.pathname.includes("/migraciones/");
+  const idInformeMigracionNumerico = Number(idInformeMigracion);
   const idInformeClave = idInforme ?? "sin-informe";
   const idInformeNumerico = Number(idInforme);
   const tieneIdInforme = Number.isFinite(idInformeNumerico) && idInformeNumerico > 0;
-  const usaDatosBackend = modo !== "iniciar" && Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0 && tieneIdInforme;
+  const tieneIdInformeMigracion = Number.isFinite(idInformeMigracionNumerico) && idInformeMigracionNumerico > 0;
+  const usaDatosBackend = esMigracionInforme
+    ? tieneIdInformeMigracion
+    : modo !== "iniciar" && Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0 && tieneIdInforme;
   const datosBaseInvestigacion = useMemo(() => crearDatosInvestigacionVacios(), []);
 
   const { data: informeObtenido, isLoading: estaCargandoInforme } = useQuery({
-    queryKey: ["informe-obtener-analista", idPedidoNumerico, idCarga],
-    queryFn: () => informeService.obtener({
-      idPedido: idPedidoNumerico,
-      idInforme: idInformeNumerico,
-    }),
+    queryKey: esMigracionInforme
+      ? ["migracion-informe-obtener-analista", idInformeMigracionNumerico, idCarga]
+      : ["informe-obtener-analista", idPedidoNumerico, idCarga],
+    queryFn: () => esMigracionInforme
+      ? servicioInformeMigracion.obtener(idInformeMigracionNumerico)
+      : informeService.obtener({ idPedido: idPedidoNumerico, idInforme: idInformeNumerico }),
     enabled: usaDatosBackend,
     staleTime: 0,
     gcTime: 0,
@@ -5245,10 +5257,12 @@ export default function InvestigacionAnalista() {
 
   return (
     <PantallaInvestigacionAnalista
-      key={`${idPedido ?? "sin-id"}-${modo}-${idInformeClave}-${idCarga}-${claveDatos}`}
+      key={`${idPedido ?? idInformeMigracion ?? "sin-id"}-${modo}-${idInformeClave}-${idCarga}-${claveDatos}`}
       idPedido={idPedido}
       idInforme={
-        tieneIdInforme
+        esMigracionInforme && tieneIdInformeMigracion
+          ? idInformeMigracionNumerico
+          : tieneIdInforme
           ? idInformeNumerico
           : informeObtenido?.idInforme
       }

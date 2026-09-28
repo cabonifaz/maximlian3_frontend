@@ -143,7 +143,9 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacion
   "informacion-financiera": {
     informacionFinanciera: ["contenido", "comentariosFinancieros", "activosFijos", "seguros"],
   },
-  balances: {},
+  balances: {
+    balances: ["balances"],
+  },
   "bancos-proveedores": {
     bancosProveedores: [
       "comentariosProveedores",
@@ -179,6 +181,7 @@ export const SECCIONES_LISTA_EXTRACCION = new Set([
   "locales",
   "proveedores",
   "bancos",
+  "balances",
 ]);
 
 export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {

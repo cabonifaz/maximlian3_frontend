@@ -281,6 +281,18 @@ export const servicioTablaMaestra = {
 
     return normalizarListadoParametros(data.result, idMaestro);
   },
+  listaCorta: async (idMaestro: number): Promise<EntradaTablaMaestra[]> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      ENDPOINTS_TABLA_MAESTRA.listaCorta,
+      { idMaestro },
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return normalizarListadoParametros(data.result, idMaestro).listaTablaMaestra;
+  },
   crear: async (payload: TablaMaestraCrearRequest): Promise<TablaMaestraGuardarResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_TABLA_MAESTRA.crear, payload);
 
