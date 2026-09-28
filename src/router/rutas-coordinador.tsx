@@ -62,6 +62,13 @@ export const rutasCoordinador: RouteObject[] = [
           })),
       },
       {
+        path: "migraciones",
+        lazy: () =>
+          import("@maximilian/pages/Coordinador/GestionAprobacionMigraciones").then((m) => ({
+            Component: m.default,
+          })),
+      },
+      {
         path: "facturacion",
         lazy: () =>
           import("@maximilian/pages/Coordinador/GestionFacturacion").then((m) => ({

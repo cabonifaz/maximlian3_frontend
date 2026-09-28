@@ -93,6 +93,7 @@ import {
   SelectorMaestroConAltaInvestigacionAnalista,
 } from "@maximilian/components/investigacion/ControlesInforme";
 import { informeService } from "@maximilian/services/informe.service";
+import { servicioInformeMigracion } from "@maximilian/services/informe-migracion.service";
 import { servicioInformeObservacion } from "@maximilian/services/informe-observacion.service";
 import { servicioInformeLocalImagen } from "@maximilian/services/informe-local-imagen.service";
 import { servicioBanco } from "@maximilian/services/banco.service";
@@ -560,6 +561,8 @@ function PantallaInvestigacionAnalista({
   idActividadInicial,
 }: PropsContenidoPantallaInvestigacionAnalista) {
   const navigate = useNavigate();
+  const ubicacion = useLocation();
+  const esMigracionInforme = ubicacion.pathname.includes("/migraciones/");
   const queryClient = useQueryClient();
   const esSoloLectura = modo === "detalle" || esPendienteAprobacionInformacion;
   const contenedorPantallaRef = useRef<HTMLDivElement>(null);
@@ -1325,7 +1328,7 @@ function PantallaInvestigacionAnalista({
     mutationFn: async ({ idEstadoInforme }: ParametrosGuardadoInforme) => {
       const idPedidoNumerico = Number(idPedido);
 
-      if (!Number.isFinite(idPedidoNumerico) || idPedidoNumerico <= 0) {
+      if (!esMigracionInforme && (!Number.isFinite(idPedidoNumerico) || idPedidoNumerico <= 0)) {
         throw new Error(
           "No se encontró un pedido válido para crear el informe.",
         );
@@ -1358,7 +1361,7 @@ function PantallaInvestigacionAnalista({
 
       const payload = construirPayloadCrearInforme({
         modoPayload: "traductor",
-        idPedido: idPedidoNumerico,
+        idPedido: esMigracionInforme ? 0 : idPedidoNumerico,
         idInforme: debeCrearInformeTraduccion ? 0 : idInformeActual,
         idFormatoFecha: idFormatoFechaInforme,
         idEstadoInforme,
@@ -1380,6 +1383,13 @@ function PantallaInvestigacionAnalista({
         opcionesTipoProveedor,
         opcionesFormatoArchivo,
       });
+
+      if (esMigracionInforme) {
+        if (idInformeActual && idInformeActual > 0) {
+          return servicioInformeMigracion.editar(idInformeActual, payload);
+        }
+        return servicioInformeMigracion.crear(payload);
+      }
 
       if (debeCrearInformeTraduccion) {
         return informeService.create(payload);
@@ -1476,6 +1486,28 @@ function PantallaInvestigacionAnalista({
         ],
       });
       setEstaAbiertoModalConfirmacionPrimerBorrador(false);
+
+      if (esMigracionInforme) {
+        queryClient.invalidateQueries({ queryKey: ["migraciones-informe", "traductor"] });
+        if (abrirConfirmacionFinalizacion) {
+          setEstaAbiertoModalFinalizarInvestigacion(true);
+          return;
+        }
+        if (idEstadoInforme === ID_ESTADO_PEDIDO_FINALIZADO) {
+          setEstaAbiertoModalFinalizarInvestigacion(false);
+          navigate("/traductor/migraciones");
+          return;
+        }
+        if (idEstadoInforme === ID_ESTADO_PEDIDO_BORRADOR && debeVolverABandejaTrasGuardarBorrador) {
+          setDebeVolverABandejaTrasGuardarBorrador(false);
+          navigate("/traductor/migraciones");
+          return;
+        }
+        if (modo === "iniciar" && idInformeResultado) {
+          navigate(`/traductor/migraciones/${idInformeResultado}?modo=continuar`, { replace: true });
+        }
+        return;
+      }
 
       if (abrirConfirmacionFinalizacion) {
         setEstaAbiertoModalFinalizarInvestigacion(true);
@@ -4941,7 +4973,7 @@ function PantallaInvestigacionAnalista({
     }
   };
 
-  const permiteExtraccionSeccion = idSeccionActiva !== "balances";
+  const permiteExtraccionSeccion = true;
   const obtenerTextoOriginal = (ruta: string) => {
     const valor = obtenerValorInvestigacionPorRuta(
       datosInvestigacionOriginales,
@@ -7886,7 +7918,8 @@ function PantallaInvestigacionAnalista({
       idIdioma={idIdiomaTraduccion}
     >
       <div ref={contenedorPantallaRef} className="min-w-0 space-y-6">
-        <ResumenPedidoInvestigacionAnalista
+      <ResumenPedidoInvestigacionAnalista
+        mostrarDatosPedido={!esMigracionInforme}
           codigoPedido={
             datosPedidoNavegacion?.codigoPedido ||
             registroAsignacionPedido?.codigoPedido ||
@@ -7989,7 +8022,7 @@ function PantallaInvestigacionAnalista({
 
         <button
           type="button"
-          onClick={() => navigate("/traductor/bandeja")}
+          onClick={() => navigate(esMigracionInforme ? "/traductor/migraciones" : "/traductor/bandeja")}
           className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition-colors hover:text-slate-700"
         >
           <ArrowLeft size={16} />
@@ -8809,7 +8842,7 @@ function PantallaInvestigacionAnalista({
 }
 
 export default function InvestigacionTraductor() {
-  const { idPedido } = useParams();
+  const { idPedido, idInformeMigracion } = useParams();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const modo =
@@ -8824,6 +8857,8 @@ export default function InvestigacionTraductor() {
     } | null
   )?.datosPedidoInvestigacion;
   const idPedidoNumerico = Number(idPedido);
+  const esMigracionInforme = location.pathname.includes("/migraciones/");
+  const idInformeMigracionNumerico = Number(idInformeMigracion);
   const idInformeClave = idInforme ?? "sin-informe";
   const idInformeNumerico = Number(idInforme);
   const idInformeOriginalNumerico = Number(
@@ -8833,26 +8868,23 @@ export default function InvestigacionTraductor() {
     Number.isFinite(idInformeNumerico) && idInformeNumerico > 0;
   const tieneIdInformeOriginal =
     Number.isFinite(idInformeOriginalNumerico) && idInformeOriginalNumerico > 0;
-  const usaDatosBackend =
-    Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0;
+  const tieneIdInformeMigracion = Number.isFinite(idInformeMigracionNumerico) && idInformeMigracionNumerico > 0;
+  const usaDatosBackend = esMigracionInforme
+    ? tieneIdInformeMigracion
+    : Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0;
   const datosBaseInvestigacion = useMemo(
     () => crearDatosInvestigacionVacios(),
     [],
   );
 
   const { data: informeObtenido, isLoading: estaCargandoInforme } = useQuery({
-    queryKey: [
-      "informe-obtener-traductor",
-      idPedidoNumerico,
-      idInformeNumerico,
-      idCarga,
-    ],
-    queryFn: () =>
-      informeService.obtener({
-        idPedido: idPedidoNumerico,
-        idInforme: idInformeNumerico,
-      }),
-    enabled: usaDatosBackend && tieneIdInforme,
+    queryKey: esMigracionInforme
+      ? ["migracion-informe-obtener-traductor", idInformeMigracionNumerico, idCarga]
+      : ["informe-obtener-traductor", idPedidoNumerico, idInformeNumerico, idCarga],
+    queryFn: () => esMigracionInforme
+      ? servicioInformeMigracion.obtener(idInformeMigracionNumerico)
+      : informeService.obtener({ idPedido: idPedidoNumerico, idInforme: idInformeNumerico }),
+    enabled: usaDatosBackend && (esMigracionInforme ? tieneIdInformeMigracion : tieneIdInforme),
   });
 
   const {
@@ -8893,10 +8925,12 @@ export default function InvestigacionTraductor() {
 
   return (
     <PantallaInvestigacionAnalista
-      key={`${idPedido ?? "sin-id"}-${modo}-${idInformeClave}-${idCarga}-${claveDatos}`}
+      key={`${idPedido ?? idInformeMigracion ?? "sin-id"}-${modo}-${idInformeClave}-${idCarga}-${claveDatos}`}
       idPedido={idPedido}
       idInforme={
-        tieneIdInforme ? idInformeNumerico : informeObtenido?.idInforme
+        esMigracionInforme && tieneIdInformeMigracion
+          ? idInformeMigracionNumerico
+          : tieneIdInforme ? idInformeNumerico : informeObtenido?.idInforme
       }
       esInformeRechazado={esInformeRechazado}
       modo={modo}

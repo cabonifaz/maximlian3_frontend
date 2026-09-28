@@ -40,6 +40,27 @@ export const rutasAnalista: RouteObject[] = [
             Component: m.default,
           })),
       },
+      {
+        path: "migraciones",
+        lazy: () =>
+          import("@maximilian/pages/Analista/MigracionesInformeAnalista").then((m) => ({
+            Component: m.default,
+          })),
+      },
+      {
+        path: "migraciones/nueva",
+        lazy: () =>
+          import("@maximilian/pages/Analista/InvestigacionAnalista").then((m) => ({
+            Component: m.default,
+          })),
+      },
+      {
+        path: "migraciones/:idInformeMigracion",
+        lazy: () =>
+          import("@maximilian/pages/Analista/InvestigacionAnalista").then((m) => ({
+            Component: m.default,
+          })),
+      },
     ],
   },
 ];
