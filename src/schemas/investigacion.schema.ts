@@ -244,11 +244,9 @@ export const esquemaModalBancoInvestigacion = z.object({
   idInformeBanco: idOpcionalFormulario,
   idBanco: idOpcionalFormulario,
   idPais: idOpcionalFormulario,
-  idSector: idOpcionalFormulario,
   pais: textoFormulario.optional(),
   banco: textoFormulario,
   numeroCuenta: textoFormulario,
-  sector: textoFormulario,
   telefono: textoFormulario,
   sectoristaJefeCuenta: textoFormulario.optional(),
 });

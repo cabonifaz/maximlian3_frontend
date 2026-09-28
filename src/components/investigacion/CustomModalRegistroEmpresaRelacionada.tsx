@@ -31,7 +31,6 @@ interface PropsCustomModalRegistroEmpresaRelacionadaAnalista {
   opcionesPais?: EntradaTablaMaestra[];
   idIdioma?: number;
   registroInicial?: RegistroPersonaAnalista | null;
-  tipoCreacion?: "compania" | "directorioEjecutivo";
   soloEdicionLocal?: boolean;
   onCerrar: () => void;
   onGuardar: (registro: RegistroPersonaAnalista) => void;
@@ -43,7 +42,6 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
   opcionesPais,
   idIdioma,
   registroInicial,
-  tipoCreacion = "directorioEjecutivo",
   soloEdicionLocal = false,
   onCerrar,
   onGuardar,
@@ -80,7 +78,6 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
     opcionesTipoPersona,
     registroInicial,
     soloEdicionLocal,
-    tipoCreacion,
   });
 
   if (!estaAbierto) return null;

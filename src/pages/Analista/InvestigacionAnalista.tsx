@@ -1159,8 +1159,6 @@ function PantallaInvestigacionAnalista({
               banco: banco.nombre,
               telefono: item.telefono || banco.telefono,
               numeroCuenta: item.numeroCuenta,
-              idSector: item.idSector,
-              sector: item.sector || banco.sector || "",
               sectoristaJefeCuenta: item.sectoristaJefeCuenta,
             };
           },
@@ -2283,8 +2281,6 @@ function PantallaInvestigacionAnalista({
       idBanco: typeof item.idBanco === "number" && item.idBanco > 0 ? item.idBanco : undefined,
       banco: String(item.nombre ?? item.banco ?? "").trim(),
       numeroCuenta: String(item.numeroCuenta ?? "").trim(),
-      idSector: typeof item.listaSectores === "number" ? item.listaSectores : undefined,
-      sector: String(item.sector ?? "").trim(),
       telefono: String(item.numerosTelefono ?? item.telefono ?? "").trim(),
       sectoristaJefeCuenta: String(item.sectoristaJefeCuenta ?? "").trim() || undefined,
       pais: String(item.pais ?? "").trim() || undefined,
@@ -2373,11 +2369,9 @@ function PantallaInvestigacionAnalista({
       setBancoRecienCreado({
         idBanco: bancoPendiente.idBanco,
         idPais: bancoPendiente.idPais,
-        idSector: bancoPendiente.idSector,
         nombre: bancoPendiente.banco,
         telefono: bancoPendiente.telefono,
         pais: bancoPendiente.pais ?? "",
-        sector: bancoPendiente.sector,
       });
       return;
     }
@@ -4359,12 +4353,11 @@ function PantallaInvestigacionAnalista({
           </div>
 
           <div className="overflow-x-auto rounded-3xl border border-gray-100 bg-white shadow-sm">
-            <table className="min-w-[980px] w-full table-fixed text-left">
+            <table className="min-w-[810px] w-full table-fixed text-left">
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
                 <tr>
                   <th className="w-[220px] px-4 py-3">Banco</th>
                   <th className="w-[180px] px-4 py-3">Número de Cuenta</th>
-                  <th className="w-[170px] px-4 py-3 text-center">Sector</th>
                   <th className="w-[220px] px-4 py-3">Sectorista / Jefe de Cuenta</th>
                   <th className="w-[130px] px-4 py-3">Teléfono</th>
                   <th className="w-[120px] px-4 py-3 text-right">Acciones</th>
@@ -4373,25 +4366,11 @@ function PantallaInvestigacionAnalista({
               <tbody className="divide-y divide-gray-100 bg-white">
                 {bancosPaginados.map((banco) => {
                   const indiceReal = datosInvestigacion.bancos.findIndex((item) => item.banco === banco.banco && item.numeroCuenta === banco.numeroCuenta);
-                  const sectorBanco = banco.sector || opcionesSectorEconomico?.find((opcion) => opcion.num1 === banco.idSector)?.string1 || "";
                   return (
                     <tr key={`${banco.banco}-${banco.numeroCuenta}`}>
                       <td className="px-4 py-4 text-sm font-semibold leading-4 text-slate-700"><span className="block truncate">{banco.banco}</span></td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500">
                         <span className="block truncate">{enmascararNumeroCuenta(banco.numeroCuenta)}</span>
-                      </td>
-                      <td className="px-4 py-4 text-center text-sm">
-                        <span className={`inline-flex max-w-full items-center overflow-hidden rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
-                          sectorBanco.toLowerCase().includes("finanzas")
-                            ? "bg-blue-50 text-blue-600"
-                            : sectorBanco.toLowerCase().includes("comercio")
-                              ? "bg-slate-100 text-slate-600"
-                              : sectorBanco.toLowerCase().includes("energia")
-                                ? "bg-green-50 text-green-600"
-                                : "bg-orange-50 text-orange-600"
-                        }`} title={sectorBanco || "-"}>
-                          <span className="block truncate">{sectorBanco || "-"}</span>
-                        </span>
                       </td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500"><span className="block truncate">{banco.sectoristaJefeCuenta || "-"}</span></td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500"><span className="block truncate">{banco.telefono}</span></td>
@@ -4911,7 +4890,6 @@ function PantallaInvestigacionAnalista({
                 indiceCompaniaExtraccionEdicion,
               )
         }
-        tipoCreacion="compania"
         soloEdicionLocal
         onCerrar={() => setIndiceCompaniaExtraccionEdicion(null)}
         onGuardar={guardarEdicionCompaniaExtraccion}
@@ -4992,8 +4970,6 @@ function PantallaInvestigacionAnalista({
           banco: bancoRecienCreado.nombre,
           telefono: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.telefono || bancoRecienCreado.telefono,
           numeroCuenta: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.numeroCuenta ?? "",
-          idSector: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.idSector,
-          sector: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.sector ?? "",
           sectoristaJefeCuenta: bancosExtraccionPendientes[indiceBancoExtraccionCuenta ?? -1]?.sectoristaJefeCuenta,
         } : null}
         onCerrar={() => {

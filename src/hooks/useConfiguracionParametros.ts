@@ -5,6 +5,7 @@ import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service
 import type { FilaFormularioParametro } from "@maximilian/shared/types/configuracion-parametros.type";
 import {
   TablaMaestraId,
+  obtenerSiguienteNumTablaMaestra,
   type EntradaTablaMaestra,
   type TablaMaestraCrearRequest,
   type TablaMaestraEditarRequest,
@@ -59,6 +60,15 @@ export function useConfiguracionParametros() {
 
   const parametros = respuestaParametros?.listaTablaMaestra;
 
+  const { data: parametrosCompletosCreacion } = useQuery({
+    queryKey: [
+      "parametros-administrador-lista-corta",
+      idMaestroSeleccionado,
+    ],
+    queryFn: () => servicioTablaMaestra.listaCorta(idMaestroSeleccionado),
+    enabled: filaFormulario?.modo === "crear",
+  });
+
   const configuracionCampos = obtenerConfiguracionCamposParametro(
     idMaestroSeleccionado,
   );
@@ -85,14 +95,28 @@ export function useConfiguracionParametros() {
   });
 
   const mutacionCrear = useMutation({
-    mutationFn: (payload: TablaMaestraCrearRequest) =>
-      servicioTablaMaestra.crear(payload),
+    mutationFn: async (payload: TablaMaestraCrearRequest) => {
+      const opcionesActuales = await servicioTablaMaestra.listaCorta(
+        payload.idMaestro,
+      );
+
+      return servicioTablaMaestra.crear({
+        ...payload,
+        num1: obtenerSiguienteNumTablaMaestra(opcionesActuales),
+      });
+    },
     onSuccess: () => {
       clienteConsultas.invalidateQueries({
         queryKey: ["parametros-administrador", idMaestroSeleccionado],
       });
       clienteConsultas.invalidateQueries({
         queryKey: ["masterTable", idMaestroSeleccionado],
+      });
+      clienteConsultas.invalidateQueries({
+        queryKey: [
+          "parametros-administrador-lista-corta",
+          idMaestroSeleccionado,
+        ],
       });
       setFilaFormulario(null);
       setMensajeValidacion("");
@@ -136,6 +160,9 @@ export function useConfiguracionParametros() {
   const totalPaginas = respuestaParametros?.totalPaginas ?? 1;
   const totalRegistros = respuestaParametros?.totalRegistros ?? 0;
   const registrosPagina = parametros ?? [];
+  const siguienteNumeroCreacion = parametrosCompletosCreacion
+    ? obtenerSiguienteNumTablaMaestra(parametrosCompletosCreacion)
+    : null;
   const estaGuardando =
     mutacionCrear.isPending
     || mutacionEditar.isPending
@@ -231,7 +258,6 @@ export function useConfiguracionParametros() {
         crearPayloadParametro(
           idMaestroSeleccionado,
           filaFormulario.valores,
-          parametros ?? [],
         ),
       );
       return;
@@ -275,6 +301,7 @@ export function useConfiguracionParametros() {
     anchoMinimoTabla,
     totalPaginas,
     totalRegistros,
+    siguienteNumeroCreacion,
     paginas,
     estaGuardando,
     estaEliminando: mutacionEliminar.isPending,

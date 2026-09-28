@@ -10,7 +10,6 @@ import {
 import { CustomCamposEdicionParametro } from "@maximilian/components/administrador/CustomCamposEdicionParametro";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import type { ModeloConfiguracionParametros } from "@maximilian/hooks/useConfiguracionParametros";
-import { obtenerSiguienteNumTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import {
   obtenerClaveRegistroParametro,
   obtenerCodigoParametro,
@@ -93,7 +92,7 @@ export function CustomTablaParametros({ modelo }: PropsCustomTablaParametros) {
               <tr className="bg-slate-50/70">
                 <CustomCamposEdicionParametro
                   valores={modelo.filaFormulario.valores}
-                  numero={obtenerSiguienteNumTablaMaestra(modelo.parametros ?? [])}
+                  numero={modelo.siguienteNumeroCreacion}
                   configuracion={modelo.configuracionCampos}
                   columnasVisibles={modelo.columnasVisibles}
                   opcionesReferencia={modelo.opcionesReferencia}

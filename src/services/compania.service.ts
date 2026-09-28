@@ -3,7 +3,6 @@ import maximilianService, { esRespuestaOkCompatibilidad } from "./maximilian-ser
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   CompaniaCrearRequest,
-  DirectorioEjecutivoCrearRequest,
   CompaniaEditarRequest,
   CompaniaEliminarRequest,
   CompaniaGuardarResponse,
@@ -83,8 +82,6 @@ function normalizarGuardado(resultado: unknown): CompaniaGuardarResponse {
     idCompania: obtenerNumero(
       registro.idCompania,
       registro.IdCompania,
-      registro.idDirectorioEjecutivo,
-      registro.IdDirectorioEjecutivo,
       registro.id,
       registro.Id,
     ),
@@ -187,16 +184,6 @@ export const servicioCompania = {
     }
 
     cacheCompaniaObtener.clear();
-    return normalizarGuardado(data.result);
-  },
-
-  crearDirectorioEjecutivo: async (payload: DirectorioEjecutivoCrearRequest): Promise<CompaniaGuardarResponse> => {
-    const { data } = await maximilianService.post<ApiResponse<unknown>>(ENDPOINTS_COMPANIA.crearDirectorioEjecutivo, [payload]);
-
-    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA.crearDirectorioEjecutivo)) {
-      throw new ErrorRespuestaApi(data);
-    }
-
     return normalizarGuardado(data.result);
   },
 
