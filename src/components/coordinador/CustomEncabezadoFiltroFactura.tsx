@@ -1,5 +1,6 @@
-import { useState, type ReactNode, type CSSProperties } from 'react';
+import type { ReactNode } from 'react';
 import { Filter } from 'lucide-react';
+import { usePanelFiltroFlotante } from '@maximilian/hooks/usePanelFiltroFlotante';
 
 interface PropsCustomEncabezadoFiltroFactura {
   titulo: string;
@@ -14,8 +15,13 @@ export function CustomEncabezadoFiltroFactura({
   children,
   anchoClassName = 'w-64',
 }: PropsCustomEncabezadoFiltroFactura) {
-  const [estaAbierto, setEstaAbierto] = useState(false);
-  const [estiloMenu, setEstiloMenu] = useState<CSSProperties>({});
+  const {
+    alternarPanel,
+    cerrarPanel,
+    estaAbierto,
+    refDisparador,
+    refPanel,
+  } = usePanelFiltroFlotante();
 
   return (
     <div className='relative normal-case'>
@@ -24,6 +30,7 @@ export function CustomEncabezadoFiltroFactura({
           {titulo}
         </span>
         <button
+          ref={refDisparador}
           type='button'
           aria-label={'Filtrar por ' + titulo}
           title={'Filtrar por ' + titulo}
@@ -33,15 +40,7 @@ export function CustomEncabezadoFiltroFactura({
               ? 'border-brand-wine/30 bg-brand-wine/10 text-brand-wine'
               : 'border-gray-200 bg-white text-gray-400 hover:border-brand-wine/30 hover:text-brand-wine')
           }
-          onClick={(evento) => {
-            const rectangulo =
-              evento.currentTarget.getBoundingClientRect();
-            setEstiloMenu({
-              top: rectangulo.bottom + 8,
-              left: Math.min(rectangulo.left, window.innerWidth - 300),
-            });
-            setEstaAbierto((valorActual) => !valorActual);
-          }}
+          onClick={alternarPanel}
         >
           <Filter size={15} />
           {activo ? (
@@ -54,14 +53,14 @@ export function CustomEncabezadoFiltroFactura({
         <>
           <div
             className='fixed inset-0 z-[90]'
-            onClick={() => setEstaAbierto(false)}
+            onClick={cerrarPanel}
           />
           <div
+            ref={refPanel}
             className={
               'fixed z-[91] rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-2xl shadow-slate-950/15 ' +
               anchoClassName
             }
-            style={estiloMenu}
             onClick={(evento) => evento.stopPropagation()}
           >
             {children}

@@ -300,7 +300,6 @@ export interface InformeBancoRequest {
   numeroCuenta: string;
   idSector: number;
   sectorista: string;
-  referenciaBanco: string;
 }
 
 export interface InformeCompaniaRelacionadaRequest {
@@ -345,7 +344,7 @@ export interface InformeProveedorRequest {
 export interface InformeDirectorioEjecutivoRequest {
   idInformeDirectorioEjecutivo?: number;
   idDirectorioEjecutivo: number;
-  idCargo: number;
+  cargo: string;
   vinculadoDesde: string | null;
   companiaAnterior: string;
   participacion: number;
@@ -533,6 +532,7 @@ export interface InformeObtenerResponse {
   estadoInforme?: string;
   estado?: EstadoInvestigacionAnalista;
   idFormatoFecha?: number;
+  idPlantilla?: number;
   idTipoPersona?: number;
   idPais?: number;
   taxIdType?: number;

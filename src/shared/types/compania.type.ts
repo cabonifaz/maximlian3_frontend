@@ -45,24 +45,6 @@ export interface CompaniaCrearRequest {
   existeInformacion: boolean;
 }
 
-export interface DirectorioEjecutivoCrearRequest {
-  idTipoPersona: number;
-  nombreCompleto: string;
-  idPais: number;
-  direccion: string;
-  ubigeo: string;
-  codigoPostal: string;
-  idTipoDocumento: number;
-  numeroDocumento: string;
-  taxIdType: number;
-  taxNum: string;
-  idNacionalidad: number;
-  fechaNacimiento: string | null;
-  idEstadoCivil: number;
-  idProfesion: number;
-  referencias: string;
-}
-
 export interface CompaniaEditarRequest extends CompaniaCrearRequest {
   idCompania: number;
 }

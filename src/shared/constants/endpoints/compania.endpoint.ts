@@ -6,5 +6,4 @@ export const ENDPOINTS_COMPANIA = {
   crear: "/api/Compania/crear",
   editar: "/api/Compania/editar",
   eliminar: "/api/Compania/eliminar",
-  crearDirectorioEjecutivo: "/api/DirectorioEjecutivo/crear",
 } as const;

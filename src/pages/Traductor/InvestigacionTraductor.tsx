@@ -93,6 +93,7 @@ import {
   SelectorMaestroConAltaInvestigacionAnalista,
 } from "@maximilian/components/investigacion/ControlesInforme";
 import { informeService } from "@maximilian/services/informe.service";
+import { servicioInformeMigracion } from "@maximilian/services/informe-migracion.service";
 import { servicioInformeObservacion } from "@maximilian/services/informe-observacion.service";
 import { servicioInformeLocalImagen } from "@maximilian/services/informe-local-imagen.service";
 import { servicioBanco } from "@maximilian/services/banco.service";
@@ -182,6 +183,7 @@ interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInves
   esPendienteAprobacionInformacion?: boolean;
   archivosIniciales?: ArchivoInvestigacionAnalista[];
   idFormatoFechaInicial?: number;
+  idPlantillaInicial?: number;
   idTipoPersonaInicial?: number;
   idPaisInicial?: number;
   idTipoRegTributarioInicial?: number;
@@ -550,6 +552,7 @@ function PantallaInvestigacionAnalista({
   esPendienteAprobacionInformacion = false,
   archivosIniciales = [],
   idFormatoFechaInicial,
+  idPlantillaInicial,
   idTipoPersonaInicial,
   idPaisInicial,
   idTipoRegTributarioInicial,
@@ -560,6 +563,8 @@ function PantallaInvestigacionAnalista({
   idActividadInicial,
 }: PropsContenidoPantallaInvestigacionAnalista) {
   const navigate = useNavigate();
+  const ubicacion = useLocation();
+  const esMigracionInforme = ubicacion.pathname.includes("/migraciones/");
   const queryClient = useQueryClient();
   const esSoloLectura = modo === "detalle" || esPendienteAprobacionInformacion;
   const contenedorPantallaRef = useRef<HTMLDivElement>(null);
@@ -782,6 +787,7 @@ function PantallaInvestigacionAnalista({
   const [estaAbiertoVistaPreviaFinalizar, setEstaAbiertoVistaPreviaFinalizar] =
     useState(false);
   const [idFormatoFechaInforme] = useState(idFormatoFechaInicial ?? 2);
+  const [idPlantillaMigracion, setIdPlantillaMigracion] = useState(idPlantillaInicial);
   const [
     estaAbiertoModalConfirmacionPrimerBorrador,
     setEstaAbiertoModalConfirmacionPrimerBorrador,
@@ -1325,7 +1331,7 @@ function PantallaInvestigacionAnalista({
     mutationFn: async ({ idEstadoInforme }: ParametrosGuardadoInforme) => {
       const idPedidoNumerico = Number(idPedido);
 
-      if (!Number.isFinite(idPedidoNumerico) || idPedidoNumerico <= 0) {
+      if (!esMigracionInforme && (!Number.isFinite(idPedidoNumerico) || idPedidoNumerico <= 0)) {
         throw new Error(
           "No se encontró un pedido válido para crear el informe.",
         );
@@ -1358,7 +1364,7 @@ function PantallaInvestigacionAnalista({
 
       const payload = construirPayloadCrearInforme({
         modoPayload: "traductor",
-        idPedido: idPedidoNumerico,
+        idPedido: esMigracionInforme ? 0 : idPedidoNumerico,
         idInforme: debeCrearInformeTraduccion ? 0 : idInformeActual,
         idFormatoFecha: idFormatoFechaInforme,
         idEstadoInforme,
@@ -1380,6 +1386,13 @@ function PantallaInvestigacionAnalista({
         opcionesTipoProveedor,
         opcionesFormatoArchivo,
       });
+
+      if (esMigracionInforme) {
+        if (idInformeActual && idInformeActual > 0) {
+          return servicioInformeMigracion.editar(idInformeActual, payload, idPlantillaMigracion);
+        }
+        return servicioInformeMigracion.crear(payload, idPlantillaMigracion);
+      }
 
       if (debeCrearInformeTraduccion) {
         return informeService.create(payload);
@@ -1476,6 +1489,28 @@ function PantallaInvestigacionAnalista({
         ],
       });
       setEstaAbiertoModalConfirmacionPrimerBorrador(false);
+
+      if (esMigracionInforme) {
+        queryClient.invalidateQueries({ queryKey: ["migraciones-informe", "traductor"] });
+        if (abrirConfirmacionFinalizacion) {
+          setEstaAbiertoModalFinalizarInvestigacion(true);
+          return;
+        }
+        if (idEstadoInforme === ID_ESTADO_PEDIDO_FINALIZADO) {
+          setEstaAbiertoModalFinalizarInvestigacion(false);
+          navigate("/traductor/migraciones");
+          return;
+        }
+        if (idEstadoInforme === ID_ESTADO_PEDIDO_BORRADOR && debeVolverABandejaTrasGuardarBorrador) {
+          setDebeVolverABandejaTrasGuardarBorrador(false);
+          navigate("/traductor/migraciones");
+          return;
+        }
+        if (modo === "iniciar" && idInformeResultado) {
+          navigate(`/traductor/migraciones/${idInformeResultado}?modo=continuar`, { replace: true });
+        }
+        return;
+      }
 
       if (abrirConfirmacionFinalizacion) {
         setEstaAbiertoModalFinalizarInvestigacion(true);
@@ -2145,8 +2180,6 @@ function PantallaInvestigacionAnalista({
               banco: banco.nombre,
               telefono: item.telefono || banco.telefono,
               numeroCuenta: item.numeroCuenta,
-              idSector: item.idSector,
-              sector: item.sector || banco.sector || "",
               sectoristaJefeCuenta: item.sectoristaJefeCuenta,
             };
           })
@@ -3768,9 +3801,6 @@ function PantallaInvestigacionAnalista({
           : undefined,
       banco: String(item.nombre ?? item.banco ?? "").trim(),
       numeroCuenta: String(item.numeroCuenta ?? "").trim(),
-      idSector:
-        typeof item.listaSectores === "number" ? item.listaSectores : undefined,
-      sector: String(item.sector ?? "").trim(),
       telefono: String(item.numerosTelefono ?? item.telefono ?? "").trim(),
       sectoristaJefeCuenta:
         String(item.sectoristaJefeCuenta ?? "").trim() || undefined,
@@ -4946,7 +4976,7 @@ function PantallaInvestigacionAnalista({
     }
   };
 
-  const permiteExtraccionSeccion = idSeccionActiva !== "balances";
+  const permiteExtraccionSeccion = true;
   const obtenerTextoOriginal = (ruta: string) => {
     const valor = obtenerValorInvestigacionPorRuta(
       datosInvestigacionOriginales,
@@ -5163,6 +5193,15 @@ function PantallaInvestigacionAnalista({
         )}
         onChange={(valor) => actualizarIdentificacion("paginaWeb", valor)}
       />
+      <CampoInvestigacionAnalista
+        etiqueta="Código Postal"
+        valor={datosInvestigacion.identificacion.codigoPostal}
+        soloLectura={esSoloLectura}
+        adicionalEtiqueta={obtenerIndicadorCambioExtraccion(
+          "identificacion.codigoPostal",
+        )}
+        onChange={(valor) => actualizarIdentificacion("codigoPostal", valor)}
+      />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Estado Actual"
         valor={datosInvestigacion.identificacion.estadoActual}
@@ -5181,7 +5220,7 @@ function PantallaInvestigacionAnalista({
         adicionalEtiqueta={obtenerAyudaTraduccion(
           "identificacion.estadoActual",
         )}
-        onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}        className="md:col-span-2"
+        onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}
       />
       <CustomSelectorBuscable
         label="Calificación"
@@ -7543,12 +7582,11 @@ function PantallaInvestigacionAnalista({
           </div>
 
           <div className="overflow-x-auto rounded-3xl border border-gray-100 bg-white shadow-sm">
-            <table className="min-w-[980px] w-full table-fixed text-left">
+            <table className="min-w-[810px] w-full table-fixed text-left">
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
                 <tr>
                   <th className="w-[220px] px-4 py-3">Banco</th>
                   <th className="w-[180px] px-4 py-3">Número de Cuenta</th>
-                  <th className="w-[170px] px-4 py-3 text-center">Sector</th>
                   <th className="w-[220px] px-4 py-3">
                     Sectorista / Jefe de Cuenta
                   </th>
@@ -7563,12 +7601,6 @@ function PantallaInvestigacionAnalista({
                       item.banco === banco.banco &&
                       item.numeroCuenta === banco.numeroCuenta,
                   );
-                  const sectorBanco =
-                    banco.sector ||
-                    opcionesSectorEconomico?.find(
-                      (opcion) => opcion.num1 === banco.idSector,
-                    )?.string1 ||
-                    "";
                   return (
                     <tr key={`${banco.banco}-${banco.numeroCuenta}`}>
                       <td className="px-4 py-4 text-sm font-semibold leading-4 text-slate-700">
@@ -7577,24 +7609,6 @@ function PantallaInvestigacionAnalista({
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500">
                         <span className="block truncate">
                           {enmascararNumeroCuenta(banco.numeroCuenta)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-center text-sm">
-                        <span
-                          className={`inline-flex max-w-full items-center overflow-hidden rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
-                            sectorBanco.toLowerCase().includes("finanzas")
-                              ? "bg-blue-50 text-blue-600"
-                              : sectorBanco.toLowerCase().includes("comercio")
-                                ? "bg-slate-100 text-slate-600"
-                                : sectorBanco.toLowerCase().includes("energia")
-                                  ? "bg-green-50 text-green-600"
-                                  : "bg-orange-50 text-orange-600"
-                          }`}
-                          title={sectorBanco || "-"}
-                        >
-                          <span className="block truncate">
-                            {sectorBanco || "-"}
-                          </span>
                         </span>
                       </td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500">
@@ -7907,7 +7921,8 @@ function PantallaInvestigacionAnalista({
       idIdioma={idIdiomaTraduccion}
     >
       <div ref={contenedorPantallaRef} className="min-w-0 space-y-6">
-        <ResumenPedidoInvestigacionAnalista
+      <ResumenPedidoInvestigacionAnalista
+        mostrarDatosPedido={!esMigracionInforme}
           codigoPedido={
             datosPedidoNavegacion?.codigoPedido ||
             registroAsignacionPedido?.codigoPedido ||
@@ -7934,6 +7949,10 @@ function PantallaInvestigacionAnalista({
           textoBotonArchivos={`Archivos (${archivosInvestigacion.length})`}
           textoBotonAccionIa="Traducir con IA"
           formatoFechaInformeSoloLectura
+          idPlantilla={idPlantillaMigracion}
+          opcionesPlantilla={opcionesPlantillaInforme}
+          onPlantillaChange={esMigracionInforme ? setIdPlantillaMigracion : undefined}
+          plantillaSoloLectura={esSoloLectura}
           textoBotonFinalizar="Finalizar Traducción"
         />
 
@@ -8010,7 +8029,7 @@ function PantallaInvestigacionAnalista({
 
         <button
           type="button"
-          onClick={() => navigate("/traductor/bandeja")}
+          onClick={() => navigate(esMigracionInforme ? "/traductor/migraciones" : "/traductor/bandeja")}
           className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition-colors hover:text-slate-700"
         >
           <ArrowLeft size={16} />
@@ -8370,7 +8389,6 @@ function PantallaInvestigacionAnalista({
                   indiceCompaniaExtraccionEdicion,
                 )
           }
-          tipoCreacion="compania"
           soloEdicionLocal
           onCerrar={() => setIndiceCompaniaExtraccionEdicion(null)}
           onGuardar={guardarEdicionCompaniaExtraccion}
@@ -8480,7 +8498,6 @@ function PantallaInvestigacionAnalista({
                   banco: bancoRecienCreado.nombre,
                   telefono: bancoRecienCreado.telefono,
                   numeroCuenta: "",
-                  sector: "",
                 }
               : null
           }
@@ -8832,7 +8849,7 @@ function PantallaInvestigacionAnalista({
 }
 
 export default function InvestigacionTraductor() {
-  const { idPedido } = useParams();
+  const { idPedido, idInformeMigracion } = useParams();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const modo =
@@ -8847,6 +8864,8 @@ export default function InvestigacionTraductor() {
     } | null
   )?.datosPedidoInvestigacion;
   const idPedidoNumerico = Number(idPedido);
+  const esMigracionInforme = location.pathname.includes("/migraciones/");
+  const idInformeMigracionNumerico = Number(idInformeMigracion);
   const idInformeClave = idInforme ?? "sin-informe";
   const idInformeNumerico = Number(idInforme);
   const idInformeOriginalNumerico = Number(
@@ -8856,26 +8875,23 @@ export default function InvestigacionTraductor() {
     Number.isFinite(idInformeNumerico) && idInformeNumerico > 0;
   const tieneIdInformeOriginal =
     Number.isFinite(idInformeOriginalNumerico) && idInformeOriginalNumerico > 0;
-  const usaDatosBackend =
-    Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0;
+  const tieneIdInformeMigracion = Number.isFinite(idInformeMigracionNumerico) && idInformeMigracionNumerico > 0;
+  const usaDatosBackend = esMigracionInforme
+    ? tieneIdInformeMigracion
+    : Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0;
   const datosBaseInvestigacion = useMemo(
     () => crearDatosInvestigacionVacios(),
     [],
   );
 
   const { data: informeObtenido, isLoading: estaCargandoInforme } = useQuery({
-    queryKey: [
-      "informe-obtener-traductor",
-      idPedidoNumerico,
-      idInformeNumerico,
-      idCarga,
-    ],
-    queryFn: () =>
-      informeService.obtener({
-        idPedido: idPedidoNumerico,
-        idInforme: idInformeNumerico,
-      }),
-    enabled: usaDatosBackend && tieneIdInforme,
+    queryKey: esMigracionInforme
+      ? ["migracion-informe-obtener-traductor", idInformeMigracionNumerico, idCarga]
+      : ["informe-obtener-traductor", idPedidoNumerico, idInformeNumerico, idCarga],
+    queryFn: () => esMigracionInforme
+      ? servicioInformeMigracion.obtener(idInformeMigracionNumerico)
+      : informeService.obtener({ idPedido: idPedidoNumerico, idInforme: idInformeNumerico }),
+    enabled: usaDatosBackend && (esMigracionInforme ? tieneIdInformeMigracion : tieneIdInforme),
   });
 
   const {
@@ -8916,10 +8932,12 @@ export default function InvestigacionTraductor() {
 
   return (
     <PantallaInvestigacionAnalista
-      key={`${idPedido ?? "sin-id"}-${modo}-${idInformeClave}-${idCarga}-${claveDatos}`}
+      key={`${idPedido ?? idInformeMigracion ?? "sin-id"}-${modo}-${idInformeClave}-${idCarga}-${claveDatos}`}
       idPedido={idPedido}
       idInforme={
-        tieneIdInforme ? idInformeNumerico : informeObtenido?.idInforme
+        esMigracionInforme && tieneIdInformeMigracion
+          ? idInformeMigracionNumerico
+          : tieneIdInforme ? idInformeNumerico : informeObtenido?.idInforme
       }
       esInformeRechazado={esInformeRechazado}
       modo={modo}
@@ -8932,6 +8950,7 @@ export default function InvestigacionTraductor() {
       })}
       archivosIniciales={informeObtenido?.archivosInvestigacion}
       idFormatoFechaInicial={informeObtenido?.idFormatoFecha}
+      idPlantillaInicial={informeObtenido?.idPlantilla}
       idTipoPersonaInicial={informeObtenido?.idTipoPersona}
       idPaisInicial={informeObtenido?.idPais}
       idTipoRegTributarioInicial={informeObtenido?.taxIdType}

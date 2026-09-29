@@ -1,0 +1,2 @@
+export const MARGEN_VIEWPORT_PANEL_FILTRO = 16;
+export const SEPARACION_PANEL_FILTRO = 8;

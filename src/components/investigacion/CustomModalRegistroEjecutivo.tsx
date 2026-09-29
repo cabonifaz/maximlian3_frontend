@@ -1,7 +1,6 @@
 import { Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
-import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { useModalRegistroEjecutivoInforme } from "@maximilian/hooks/useModalRegistroEjecutivoInforme";
 import type {
   RegistroDirectorioEjecutivoAnalista,
@@ -108,9 +107,10 @@ export function CustomModalRegistroEjecutivoAnalista({
               />
             </div>
             <div className="grid gap-5 md:grid-cols-3">
-              <CustomCampoFechaInvestigacion
+              <CampoInput
                 nombre="vinculadoDesde"
                 etiqueta="Vinculado Desde"
+                marcador="Ingrese el periodo de vinculacion"
                 valor={vinculadoDesde}
                 onChange={setVinculadoDesde}
               />

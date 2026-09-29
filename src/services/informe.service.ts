@@ -505,6 +505,7 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       numeroFax: "",
       correoElectronico: "",
       paginaWeb: "",
+      codigoPostal: "",
       estadoActual: "",
       datosAdicionales: "",
       idCalificacion: "",
@@ -659,6 +660,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     numeroFax: obtenerTexto(registro.fax, registro.Fax),
     correoElectronico: obtenerTexto(registro.email, registro.Email),
     paginaWeb: obtenerTexto(registro.paginaWeb, registro.PaginaWeb),
+    codigoPostal: obtenerTexto(registro.codigoPostal, registro.CodigoPostal),
     estadoActual: obtenerTexto(registro.estadoActual, registro.EstadoActual, registro.descripcionEstado, registro.DescripcionEstado),
     datosAdicionales: obtenerTexto(registro.observacionesIdentificacion, registro.ObservacionesIdentificacion),
     idCalificacion: obtenerTexto(registro.idClasificacion, registro.IdClasificacion),
@@ -1034,11 +1036,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       ),
       idBanco: obtenerNumero(banco.idBanco, banco.IdBanco),
       idPais: obtenerNumero(banco.idPais, banco.IdPais),
-      idSector: obtenerNumeroOpcional(banco.idSector, banco.IdSector),
       pais: obtenerTexto(banco.pais, banco.Pais, banco.nombrePais, banco.NombrePais) || undefined,
       banco: obtenerTexto(banco.nombre, banco.Nombre, banco.banco, banco.Banco),
       numeroCuenta: obtenerTexto(banco.numeroCuenta, banco.NumeroCuenta),
-      sector: obtenerTexto(banco.sector, banco.Sector),
       telefono: obtenerTexto(banco.telefono, banco.Telefono, banco.referenciaBanco, banco.ReferenciaBanco),
       sectoristaJefeCuenta: obtenerTexto(banco.sectorista, banco.Sectorista, banco.sectoristaJefeCuenta, banco.SectoristaJefeCuenta) || undefined,
     };
@@ -1080,7 +1080,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       lista: obtenerBooleano(ejecutivo.apareceImpresoLista, ejecutivo.ApareceImpresoLista),
       detalleEjecutivo: obtenerBooleano(ejecutivo.imprimeDatosEjecutivos, ejecutivo.ImprimeDatosEjecutivos),
       orden: obtenerTextoNumerico(ejecutivo.orden),
-      vinculadoDesde: formatearFechaEntrada(obtenerTexto(ejecutivo.vinculadoDesde, ejecutivo.VinculadoDesde, ejecutivo.formularioVinculado, ejecutivo.FormularioVinculado)),
+      vinculadoDesde: obtenerTexto(ejecutivo.vinculadoDesde, ejecutivo.VinculadoDesde, ejecutivo.formularioVinculado, ejecutivo.FormularioVinculado),
       companiaAnterior: obtenerTexto(ejecutivo.companiaAnterior, ejecutivo.CompaniaAnterior),
       esParteDirectorio: obtenerBooleano(ejecutivo.esParticipanteDirectiva, ejecutivo.EsParticipanteDirectiva),
       pais: obtenerTexto(ejecutivo.pais, ejecutivo.Pais),
@@ -1207,16 +1207,12 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
         const detalle = await servicioBanco.obtener({ idBanco: banco.idBanco });
         if (!detalle) return banco;
 
-        const idSector = banco.idSector ?? detalle.idSector;
-
         return {
           ...banco,
           idPais: banco.idPais ?? detalle.idPais,
           pais: banco.pais || detalle.pais,
           banco: banco.banco || detalle.nombre,
           telefono: banco.telefono || detalle.telefono,
-          idSector,
-          sector: banco.sector || sectores.find((sector) => sector.num1 === idSector)?.string1 || "",
         };
       } catch {
         return banco;

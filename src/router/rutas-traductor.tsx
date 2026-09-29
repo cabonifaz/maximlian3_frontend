@@ -33,6 +33,27 @@ export const rutasTraductor: RouteObject[] = [
             Component: m.default,
           })),
       },
+      {
+        path: "migraciones",
+        lazy: () =>
+          import("@maximilian/pages/Traductor/MigracionesInformeTraductor").then((m) => ({
+            Component: m.default,
+          })),
+      },
+      {
+        path: "migraciones/nueva",
+        lazy: () =>
+          import("@maximilian/pages/Traductor/InvestigacionTraductor").then((m) => ({
+            Component: m.default,
+          })),
+      },
+      {
+        path: "migraciones/:idInformeMigracion",
+        lazy: () =>
+          import("@maximilian/pages/Traductor/InvestigacionTraductor").then((m) => ({
+            Component: m.default,
+          })),
+      },
     ],
   },
 ];

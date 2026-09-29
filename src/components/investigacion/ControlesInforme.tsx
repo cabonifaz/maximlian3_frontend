@@ -454,11 +454,16 @@ interface PropsResumenPedidoInvestigacionAnalista {
   onAbrirArchivos?: () => void;
   onVistaPrevia?: () => void;
   onFormatoFechaInformeChange?: (idFormato: number) => void;
+  idPlantilla?: number;
+  opcionesPlantilla?: EntradaTablaMaestra[];
+  onPlantillaChange?: (idPlantilla: number) => void;
+  plantillaSoloLectura?: boolean;
   accionesSecundarias?: ReactNode;
   textoBotonArchivos?: string;
   textoBotonAccionIa?: string;
   textoBotonFinalizar?: string;
   formatoFechaInformeSoloLectura?: boolean;
+  mostrarDatosPedido?: boolean;
 }
 
 export function CampoInvestigacionAnalista({
@@ -731,17 +736,22 @@ export function ResumenPedidoInvestigacionAnalista({
   onAbrirArchivos,
   onVistaPrevia,
   onFormatoFechaInformeChange,
+  idPlantilla,
+  opcionesPlantilla,
+  onPlantillaChange,
+  plantillaSoloLectura = false,
   accionesSecundarias,
   textoBotonArchivos = "Adjuntar archivos",
   formatoFechaInformeSoloLectura = false,
   textoBotonAccionIa = "Extraer Información",
+  mostrarDatosPedido = true,
 }: PropsResumenPedidoInvestigacionAnalista) {
   const estaBloqueadoFormatoFecha = formatoFechaInformeSoloLectura || !onFormatoFechaInformeChange;
 
   return (
     <section className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
       <div className="flex flex-col gap-5">
-        <div className="space-y-3">
+        {mostrarDatosPedido ? <div className="space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">
             Datos del Pedido
           </p>
@@ -774,7 +784,7 @@ export function ResumenPedidoInvestigacionAnalista({
               <p className="mt-1 text-sm font-bold text-slate-900">{idioma || "-"}</p>
             </div>
           </div>
-        </div>
+        </div> : null}
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-wrap items-center gap-3">
@@ -810,17 +820,32 @@ export function ResumenPedidoInvestigacionAnalista({
             {accionesSecundarias}
           </div>
 
-          <div className="w-full lg:w-auto lg:min-w-[220px]">
-            <CustomSelectorBuscable
-              label="Formato de fecha"
-              idMaster={TablaMaestraId.FORMATO_FECHA_INFORME}
-              value={idFormatoFechaInforme}
-              displayValue={formatoFechaInformeDisplay}
-              onChange={(valor) => onFormatoFechaInformeChange?.(valor)}
-              obtenerEtiquetaOpcion={(opcion) => opcion.string2?.trim() || opcion.string1?.trim() || ""}
-              placeholder="Seleccione formato"
-              disabled={estaBloqueadoFormatoFecha}
-            />
+          <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+            {onPlantillaChange ? (
+              <div className="w-full lg:w-auto lg:min-w-[220px]">
+                <CustomSelectorBuscable
+                  label="Plantilla"
+                  idMaster={TablaMaestraId.PLANTILLA_INFORME}
+                  options={opcionesPlantilla}
+                  value={idPlantilla}
+                  onChange={onPlantillaChange}
+                  placeholder="Seleccione plantilla"
+                  disabled={plantillaSoloLectura}
+                />
+              </div>
+            ) : null}
+            <div className="w-full lg:w-auto lg:min-w-[220px]">
+              <CustomSelectorBuscable
+                label="Formato de fecha"
+                idMaster={TablaMaestraId.FORMATO_FECHA_INFORME}
+                value={idFormatoFechaInforme}
+                displayValue={formatoFechaInformeDisplay}
+                onChange={(valor) => onFormatoFechaInformeChange?.(valor)}
+                obtenerEtiquetaOpcion={(opcion) => opcion.string2?.trim() || opcion.string1?.trim() || ""}
+                placeholder="Seleccione formato"
+                disabled={estaBloqueadoFormatoFecha}
+              />
+            </div>
           </div>
         </div>
       </div>
