@@ -43,6 +43,23 @@ export function convertirTextoAFecha(valor: string): Date | undefined {
   return Number.isNaN(fecha.getTime()) ? undefined : fecha;
 }
 
+export function convertirDiaLocalAUtcIso(fecha: Date | undefined, puntoDia: "inicio" | "fin") {
+  if (!fecha) return undefined;
+
+  const limiteDia = puntoDia === "inicio"
+    ? new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate(), 0, 0, 0)
+    : new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate(), 23, 59, 59);
+
+  return limiteDia.toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+export function formatearFechaUtcALocal(valor: string) {
+  const fecha = new Date(valor);
+  if (!valor.trim() || Number.isNaN(fecha.getTime())) return valor;
+
+  return formatearFechaDdMmYyyy(fecha);
+}
+
 export function formatearFechaVisual(
   valor: string | null | undefined,
   opciones: Intl.DateTimeFormatOptions,

@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useParams, useSearchParams } from "react-rout
 import { servicioInformeAprobacion } from "@maximilian/services/informe-aprobacion.service";
 import { CLAVE_CONSULTA_INFORMES_PENDIENTES_APROBACION } from "@maximilian/shared/constants/pages/Coordinador/aprobacion-migraciones.constants";
 import type { RegistroInformePendienteAprobacion } from "@maximilian/shared/types/informe-aprobacion.type";
+import { formatearFechaUtcALocal } from "@maximilian/shared/utils/fecha.util";
 
 export function useRevisionMigracionCoordinador() {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ export function useRevisionMigracionCoordinador() {
     confirmarAprobacion: () => mutacionAprobar.mutate(),
     encabezado: {
       pais: registro?.pais ?? "-",
-      fecha: registro?.fecha ?? "-",
+      fecha: registro ? formatearFechaUtcALocal(registro.fecha) : "-",
       tipoSolicitud: "Migracion",
       analista: registro?.usuario ?? "-",
       traductor: "-",

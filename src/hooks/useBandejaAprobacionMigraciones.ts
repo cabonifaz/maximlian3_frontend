@@ -4,6 +4,7 @@ import { useFiltroRangoFechas } from "@maximilian/hooks/useFiltroRangoFechas";
 import { servicioInformeAprobacion } from "@maximilian/services/informe-aprobacion.service";
 import { CLAVE_CONSULTA_INFORMES_PENDIENTES_APROBACION } from "@maximilian/shared/constants/pages/Coordinador/aprobacion-migraciones.constants";
 import type { ParametrosListaInformesPendientesAprobacion } from "@maximilian/shared/types/informe-aprobacion.type";
+import { convertirDiaLocalAUtcIso } from "@maximilian/shared/utils/fecha.util";
 
 export function useBandejaAprobacionMigraciones() {
   const queryClient = useQueryClient();
@@ -20,8 +21,8 @@ export function useBandejaAprobacionMigraciones() {
     idPais: filtroPaises[0],
     idPlantilla: filtroPlantillas[0],
     idIdioma: filtroIdiomas[0],
-    fchInicio: rangoFechas.fechasInvalidas ? undefined : rangoFechas.fechaInicioParametro,
-    fchFin: rangoFechas.fechasInvalidas ? undefined : rangoFechas.fechaFinParametro,
+    fchInicio: rangoFechas.fechasInvalidas ? undefined : convertirDiaLocalAUtcIso(rangoFechas.fechaInicioFiltro, "inicio"),
+    fchFin: rangoFechas.fechasInvalidas ? undefined : convertirDiaLocalAUtcIso(rangoFechas.fechaFinFiltro, "fin"),
     numPag: paginaActual,
   };
 

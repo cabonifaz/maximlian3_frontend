@@ -7,6 +7,7 @@ import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/Custo
 import { CustomFiltroColumnaFactura } from "@maximilian/components/coordinador/CustomFiltroColumnaFactura";
 import { useBandejaAprobacionMigraciones } from "@maximilian/hooks/useBandejaAprobacionMigraciones";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+import { formatearFechaUtcALocal } from "@maximilian/shared/utils/fecha.util";
 
 export function CustomBandejaAprobacionMigraciones() {
   const navigate = useNavigate();
@@ -117,7 +118,7 @@ export function CustomBandejaAprobacionMigraciones() {
               <td className="px-6 py-4 text-sm text-slate-500">{registro.plantilla}</td>
               <td className="px-6 py-4 text-sm text-slate-500">{registro.idioma}</td>
               <td className="px-6 py-4 text-sm font-medium text-slate-700">{registro.usuario}</td>
-              <td className="px-6 py-4 text-sm text-slate-500">{registro.fecha}</td>
+              <td className="px-6 py-4 text-sm text-slate-500">{formatearFechaUtcALocal(registro.fecha)}</td>
               <td className="px-6 py-4">
                 <div className="flex justify-end">
                   <CustomButton
