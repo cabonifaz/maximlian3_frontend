@@ -202,12 +202,6 @@ interface CambioExtraccionPendiente {
   alAplicar?: () => void;
 }
 
-interface CiudadExtraccionPendiente {
-  valor: string;
-  idPais: number;
-  pais: string;
-}
-
 interface ReferenciaTraduccionActiva {
   ruta: string[];
   etiqueta: string;
@@ -568,14 +562,6 @@ function PantallaInvestigacionAnalista({
   const queryClient = useQueryClient();
   const esSoloLectura = modo === "detalle" || esPendienteAprobacionInformacion;
   const contenedorPantallaRef = useRef<HTMLDivElement>(null);
-  const paisExtraccionRef = useRef<{
-    idPais?: number;
-    pais?: string;
-    aplicado: boolean;
-  }>({ aplicado: false });
-  const ciudadExtraccionPendienteRef = useRef<CiudadExtraccionPendiente | null>(
-    null,
-  );
   const debeAplicarTraduccionDirectaRef = useRef(false);
   const selectoresTraducidosInicializadosRef = useRef(false);
   const debeCrearInformeInicial = modo === "iniciar" || esInformeRechazado;
@@ -822,8 +808,6 @@ function PantallaInvestigacionAnalista({
     useState<ReferenciaTraduccionActiva | null>(null);
   const [valorReferenciaTraduccion, setValorReferenciaTraduccion] =
     useState("");
-  const [ciudadExtraccionPendiente, setCiudadExtraccionPendiente] =
-    useState<CiudadExtraccionPendiente | null>(null);
   const [archivosInvestigacion, setArchivosInvestigacion] =
     useState<ArchivoInvestigacionAnalista[]>(archivosIniciales);
   const [indiceEjecutivoSeleccionado, setIndiceEjecutivoSeleccionado] =
@@ -1264,47 +1248,6 @@ function PantallaInvestigacionAnalista({
       registroPedidoSeleccionado?.idCliente,
     ),
     staleTime: Infinity,
-  });
-
-  const crearCiudadExtraccionMutation = useMutation({
-    mutationFn: async (ciudad: CiudadExtraccionPendiente) => {
-      const opcionesActuales = await queryClient.fetchQuery({
-        queryKey: ["masterTable", TablaMaestraId.CIUDAD],
-        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CIUDAD),
-        staleTime: 0,
-      });
-
-      await servicioTablaMaestra.crear({
-        idMaestro: TablaMaestraId.CIUDAD,
-        descripcion: obtenerDescripcionTablaMaestra(TablaMaestraId.CIUDAD),
-        string1: ciudad.valor,
-        num1:
-          opcionesActuales.reduce(
-            (maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0),
-            0,
-          ) + 1,
-        num2: ciudad.idPais,
-        num3: null,
-        string2: null,
-        string3: null,
-        date1: null,
-        date2: null,
-        date3: null,
-      });
-
-      await queryClient.invalidateQueries({
-        queryKey: ["masterTable", TablaMaestraId.CIUDAD],
-      });
-      return ciudad.valor;
-    },
-    onSuccess: (valor) => {
-      actualizarCampoInvestigacion(
-        ["identificacion", "ciudadEstadoProvincia"],
-        valor,
-      );
-      ciudadExtraccionPendienteRef.current = null;
-      setCiudadExtraccionPendiente(null);
-    },
   });
 
   const marcarSeccionActivaComoBorrador = () => {
@@ -2428,110 +2371,6 @@ function PantallaInvestigacionAnalista({
       return "";
     }, origen as unknown);
 
-  const asignarCiudadExtraccionPendiente = (
-    ciudad: CiudadExtraccionPendiente | null,
-    debeMostrar: boolean,
-  ) => {
-    ciudadExtraccionPendienteRef.current = ciudad;
-    setCiudadExtraccionPendiente(debeMostrar ? ciudad : null);
-  };
-
-  const obtenerCiudadExistenteParaPais = (valor: string, idPais: number) => {
-    const textoNormalizado = normalizarTextoExtraccion(valor);
-    return opcionesCiudad?.find(
-      (opcion) =>
-        normalizarTextoExtraccion(opcion.string1 ?? "") === textoNormalizado &&
-        opcion.num2 === idPais,
-    );
-  };
-
-  const procesarCiudadExtraida = (
-    valor: unknown,
-    paisForzado?: CiudadExtraccionPendiente,
-  ) => {
-    const valorTexto = valor == null ? "" : String(valor).trim();
-    if (!valorTexto) return;
-
-    const opcionPaisActual =
-      opcionesPais?.find((opcion) => opcion.num1 === idPaisSeleccionado) ??
-      obtenerOpcionTablaMaestraPorTexto(
-        opcionesPais,
-        datosInvestigacion.identificacion.pais,
-      );
-    const paisActual =
-      paisForzado ??
-      (paisExtraccionRef.current.idPais
-        ? {
-            valor: valorTexto,
-            idPais: paisExtraccionRef.current.idPais,
-            pais: paisExtraccionRef.current.pais ?? "",
-          }
-        : opcionPaisActual?.num1
-          ? {
-              valor: valorTexto,
-              idPais: opcionPaisActual.num1,
-              pais:
-                opcionPaisActual.string1 ??
-                datosInvestigacion.identificacion.pais,
-            }
-          : null);
-
-    if (!paisActual?.idPais) {
-      return;
-    }
-
-    const paisEstaAplicado = Boolean(
-      paisForzado ||
-      paisExtraccionRef.current.aplicado ||
-      (!paisExtraccionRef.current.idPais && opcionPaisActual?.num1),
-    );
-
-    if (!paisEstaAplicado) {
-      asignarCiudadExtraccionPendiente(
-        {
-          valor: valorTexto,
-          idPais: paisActual.idPais,
-          pais: paisActual.pais,
-        },
-        false,
-      );
-      return;
-    }
-
-    const opcionCiudad = obtenerCiudadExistenteParaPais(
-      valorTexto,
-      paisActual.idPais,
-    );
-    const valorExtraido = opcionCiudad?.string1 ?? valorTexto;
-    const valorActual =
-      datosInvestigacion.identificacion.ciudadEstadoProvincia.trim();
-
-    if (opcionCiudad?.string1) {
-      registrarCambioExtraccion({
-        id: "identificacion.ciudadEstadoProvincia",
-        ruta: ["identificacion", "ciudadEstadoProvincia"],
-        etiqueta: "Identificación - Ciudad Estado Provincia",
-        valorActual,
-        valorExtraido,
-        onAplicar: () =>
-          actualizarCampoInvestigacion(
-            ["identificacion", "ciudadEstadoProvincia"],
-            valorExtraido,
-          ),
-      });
-      return;
-    }
-
-    asignarCiudadExtraccionPendiente(
-      {
-        valor: valorTexto,
-        idPais: paisActual.idPais,
-        pais: paisActual.pais,
-      },
-      true,
-    );
-  };
-
   const normalizarValorExtraido = (ruta: string[], valor: unknown) => {
     const rutaTexto = ruta.join(".");
     const valorTexto = valor == null ? "" : String(valor).trim();
@@ -2744,10 +2583,6 @@ function PantallaInvestigacionAnalista({
 
     if (rutaTexto === "aspectosLegales.tipoEmpresa") {
       return { valor: normalizarPorTablaMaestra(opcionesTipoEmpresa) };
-    }
-
-    if (rutaTexto === "aspectosLegales.ciudadRegistro") {
-      return { valor: normalizarPorTablaMaestra(opcionesCiudad) };
     }
 
     if (rutaTexto === "aspectosLegales.operacionesCambioDivisas") {
@@ -2992,18 +2827,7 @@ function PantallaInvestigacionAnalista({
     }
 
     if (esRegistroPlano(seccionActual) && esRegistroPlano(seccionExtraida)) {
-      const entradas = Object.entries(seccionExtraida).sort(
-        ([claveA], [claveB]) => {
-          if (rutaBase.join(".") !== "identificacion") return 0;
-          if (claveA === "pais") return -1;
-          if (claveB === "pais") return 1;
-          if (claveA === "ciudadEstadoProvincia") return 1;
-          if (claveB === "ciudadEstadoProvincia") return -1;
-          return 0;
-        },
-      );
-
-      entradas.forEach(([clave, valor]) => {
+      Object.entries(seccionExtraida).forEach(([clave, valor]) => {
         if (!(clave in seccionActual)) return;
         aplicarResultadosExtraccion(
           (seccionActual as Record<string, unknown>)[clave],
@@ -3011,11 +2835,6 @@ function PantallaInvestigacionAnalista({
           [...rutaBase, clave],
         );
       });
-      return;
-    }
-
-    if (rutaBase.join(".") === "identificacion.ciudadEstadoProvincia") {
-      procesarCiudadExtraida(seccionExtraida);
       return;
     }
 
@@ -4945,8 +4764,6 @@ function PantallaInvestigacionAnalista({
     );
 
     try {
-      paisExtraccionRef.current = { aplicado: false };
-      asignarCiudadExtraccionPendiente(null, false);
       reiniciarPendientesExtraccion(configuracionSecciones);
       const totalArchivos = archivos.length;
 
@@ -8604,30 +8421,6 @@ function PantallaInvestigacionAnalista({
           <p>
             <span className="font-bold">Destino:</span> Serás redirigido a Mi
             Bandeja.
-          </p>
-        </CustomModalConfirmacionAccion>
-
-        <CustomModalConfirmacionAccion
-          isOpen={ciudadExtraccionPendiente != null}
-          onClose={() => asignarCiudadExtraccionPendiente(null, false)}
-          onConfirm={() => {
-            if (!ciudadExtraccionPendiente) return;
-            crearCiudadExtraccionMutation.mutate(ciudadExtraccionPendiente);
-          }}
-          title="Agregar ciudad/estado/provincia"
-          descripcion={`Está seguro de querer añadir esta ciudad/estado/provincia al país ${ciudadExtraccionPendiente?.pais ?? ""}?`}
-          isSubmitting={crearCiudadExtraccionMutation.isPending}
-          textoConfirmar="Añadir"
-          textoCargandoConfirmar="Añadiendo..."
-          varianteConfirmar="primary"
-        >
-          <p>
-            <span className="font-bold">País:</span>{" "}
-            {ciudadExtraccionPendiente?.pais ?? "-"}
-          </p>
-          <p>
-            <span className="font-bold">Ciudad/Estado/Provincia:</span>{" "}
-            {ciudadExtraccionPendiente?.valor ?? "-"}
           </p>
         </CustomModalConfirmacionAccion>
 
