@@ -183,6 +183,7 @@ interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInves
   esPendienteAprobacionInformacion?: boolean;
   archivosIniciales?: ArchivoInvestigacionAnalista[];
   idFormatoFechaInicial?: number;
+  idPlantillaInicial?: number;
   idTipoPersonaInicial?: number;
   idPaisInicial?: number;
   idTipoRegTributarioInicial?: number;
@@ -551,6 +552,7 @@ function PantallaInvestigacionAnalista({
   esPendienteAprobacionInformacion = false,
   archivosIniciales = [],
   idFormatoFechaInicial,
+  idPlantillaInicial,
   idTipoPersonaInicial,
   idPaisInicial,
   idTipoRegTributarioInicial,
@@ -785,6 +787,7 @@ function PantallaInvestigacionAnalista({
   const [estaAbiertoVistaPreviaFinalizar, setEstaAbiertoVistaPreviaFinalizar] =
     useState(false);
   const [idFormatoFechaInforme] = useState(idFormatoFechaInicial ?? 2);
+  const [idPlantillaMigracion, setIdPlantillaMigracion] = useState(idPlantillaInicial);
   const [
     estaAbiertoModalConfirmacionPrimerBorrador,
     setEstaAbiertoModalConfirmacionPrimerBorrador,
@@ -1386,9 +1389,9 @@ function PantallaInvestigacionAnalista({
 
       if (esMigracionInforme) {
         if (idInformeActual && idInformeActual > 0) {
-          return servicioInformeMigracion.editar(idInformeActual, payload);
+          return servicioInformeMigracion.editar(idInformeActual, payload, idPlantillaMigracion);
         }
-        return servicioInformeMigracion.crear(payload);
+        return servicioInformeMigracion.crear(payload, idPlantillaMigracion);
       }
 
       if (debeCrearInformeTraduccion) {
@@ -7946,6 +7949,10 @@ function PantallaInvestigacionAnalista({
           textoBotonArchivos={`Archivos (${archivosInvestigacion.length})`}
           textoBotonAccionIa="Traducir con IA"
           formatoFechaInformeSoloLectura
+          idPlantilla={idPlantillaMigracion}
+          opcionesPlantilla={opcionesPlantillaInforme}
+          onPlantillaChange={esMigracionInforme ? setIdPlantillaMigracion : undefined}
+          plantillaSoloLectura={esSoloLectura}
           textoBotonFinalizar="Finalizar Traducción"
         />
 
@@ -8943,6 +8950,7 @@ export default function InvestigacionTraductor() {
       })}
       archivosIniciales={informeObtenido?.archivosInvestigacion}
       idFormatoFechaInicial={informeObtenido?.idFormatoFecha}
+      idPlantillaInicial={informeObtenido?.idPlantilla}
       idTipoPersonaInicial={informeObtenido?.idTipoPersona}
       idPaisInicial={informeObtenido?.idPais}
       idTipoRegTributarioInicial={informeObtenido?.taxIdType}

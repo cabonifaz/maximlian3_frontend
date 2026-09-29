@@ -6,6 +6,7 @@ import { useBarraLateralResponsive } from "@maximilian/hooks/useBarraLateralResp
 
 export default function DisenoCoordinador() {
   const esDetalleRevision = Boolean(useMatch("/coordinador/revision/:idPedido"));
+  const esDetalleMigracion = Boolean(useMatch("/coordinador/migraciones/:idInforme"));
   const {
     alternarBarraLateralEscritorio,
     alternarBarraLateralMobile,
@@ -29,7 +30,7 @@ export default function DisenoCoordinador() {
           estaAbiertaBarraLateralMobile={estaAbiertaMobile}
           alAlternarBarraLateralMobile={alternarBarraLateralMobile}
         />
-        <main className={`flex-1 overflow-y-auto bg-white/50 ${esDetalleRevision ? "p-0" : "p-8"}`}>
+        <main className={`flex-1 overflow-y-auto bg-white/50 ${esDetalleRevision || esDetalleMigracion ? "p-0" : "p-8"}`}>
           <Outlet />
         </main>
       </div>

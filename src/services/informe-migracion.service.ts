@@ -65,9 +65,13 @@ function normalizarRegistroMigracion(valor: unknown): RegistroMigracionInforme {
     estado: normalizarEstadoMigracion(idEstado, estadoDescripcion),
     estadoDescripcion: estadoDescripcion || "Borrador",
     investigado: obtenerTexto(registro.investigado, registro.Investigado, registro.nombre, registro.Nombre) || "-",
+    idPais: obtenerNumeroOpcional(registro.idPais, registro.IdPais) ?? null,
     pais: obtenerTexto(registro.pais, registro.Pais, registro.nombrePais, registro.NombrePais) || "-",
+    idPlantilla: obtenerNumeroOpcional(registro.idPlantilla, registro.IdPlantilla) ?? null,
     plantilla: obtenerTexto(registro.plantilla, registro.Plantilla, registro.nombrePlantilla) || "-",
+    idIdiomaOrigen: obtenerNumeroOpcional(registro.idIdiomaOrigen, registro.IdIdiomaOrigen) ?? null,
     idiomaOrigen: obtenerTexto(registro.idiomaOrigen, registro.IdiomaOrigen) || "-",
+    idIdiomaDestino: obtenerNumeroOpcional(registro.idIdiomaDestino, registro.IdIdiomaDestino) ?? null,
     idiomaDestino: obtenerTexto(registro.idiomaDestino, registro.IdiomaDestino) || "-",
     creador: obtenerTexto(registro.creador, registro.Creador, registro.usuarioCreador) || "-",
     rolCreador: obtenerTexto(registro.rolCreador, registro.RolCreador) || "-",
@@ -108,9 +112,11 @@ function normalizarRespuestaLista(resultado: unknown): RespuestaListaMigraciones
 
 function construirPayloadMigracion(
   payload: InformeCrearRequest,
+  idPlantilla?: number,
   idInformeMigracion?: number,
 ) {
-  const contenido = { ...payload } as Partial<InformeCrearRequest> & {
+  const contenido = { ...payload, idPlantilla } as Partial<InformeCrearRequest> & {
+    idPlantilla?: number;
     idInformeMigracion?: number;
   };
   delete contenido.idPedido;
@@ -151,7 +157,6 @@ export const servicioInformeMigracion = {
           IdEstado: parametros.idEstado,
           IdPlantilla: parametros.idPlantilla,
           NumPag: parametros.numPag,
-          SoloPendientesAprobacion: parametros.soloPendientesAprobacion,
         },
         signal: senal,
       },
@@ -163,10 +168,10 @@ export const servicioInformeMigracion = {
 
     return normalizarRespuestaLista(data.result);
   },
-  crear: async (payload: InformeCrearRequest): Promise<InformeCrearResponse> => {
+  crear: async (payload: InformeCrearRequest, idPlantilla?: number): Promise<InformeCrearResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
       ENDPOINTS_INFORME_MIGRACION.crear,
-      construirPayloadMigracion(payload),
+      construirPayloadMigracion(payload, idPlantilla),
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return normalizarRespuestaGuardado(data.result);
@@ -174,10 +179,11 @@ export const servicioInformeMigracion = {
   editar: async (
     idInformeMigracion: number,
     payload: InformeCrearRequest,
+    idPlantilla?: number,
   ): Promise<InformeCrearResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
       ENDPOINTS_INFORME_MIGRACION.editar,
-      construirPayloadMigracion(payload, idInformeMigracion),
+      construirPayloadMigracion(payload, idPlantilla, idInformeMigracion),
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return normalizarRespuestaGuardado(data.result);
@@ -188,9 +194,11 @@ export const servicioInformeMigracion = {
       { params: { IdInformeMigracion: idInformeMigracion } },
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
+    const registro = obtenerRegistro(data.result);
     return {
       ...data.result,
       idInforme: idInformeMigracion,
+      idPlantilla: obtenerNumeroOpcional(registro.idPlantilla, registro.IdPlantilla),
     };
   },
 };

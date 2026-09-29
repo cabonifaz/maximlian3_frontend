@@ -1,15 +1,19 @@
+import type { ReactNode } from "react";
 import { ArrowLeft, CheckCircle2, CircleX, Mail, ShieldCheck } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomVisorDocumentoInforme } from "@maximilian/components/common/CustomVisorDocumentoInforme";
 import { CustomDescargaInforme } from "@maximilian/components/coordinador/CustomDescargaInforme";
 import {
   CustomVistaPreviaInformeComparado,
   type EncabezadoVistaPreviaInforme,
 } from "@maximilian/components/common/CustomVistaPreviaInforme";
-import type { FormatoDescargaInforme, InformeMetadatosDocumento } from "@maximilian/shared/types/informe.type";
+import type { DocumentoInformeGenerado, FormatoDescargaInforme, InformeMetadatosDocumento } from "@maximilian/shared/types/informe.type";
 import type { DatosInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomVisorRevisionInforme {
   datosInvestigacion?: DatosInvestigacionAnalista;
+  documentoGenerado?: DocumentoInformeGenerado;
+  accionesEncabezado?: ReactNode;
   encabezado: EncabezadoVistaPreviaInforme;
   idInforme?: number;
   idPedido?: number;
@@ -21,6 +25,7 @@ interface PropsCustomVisorRevisionInforme {
   idiomaInforme?: string;
   tipoPlantilla?: string;
   mostrarAccionesRevision?: boolean;
+  mostrarRechazar?: boolean;
   mostrarInformeTraducido?: boolean;
   mostrarPie?: boolean;
   mostrarCerrar?: boolean;
@@ -39,6 +44,8 @@ interface PropsCustomVisorRevisionInforme {
 
 export function CustomVisorRevisionInforme({
   datosInvestigacion,
+  documentoGenerado,
+  accionesEncabezado,
   encabezado,
   idInforme,
   idPedido,
@@ -50,6 +57,7 @@ export function CustomVisorRevisionInforme({
   idiomaInforme = "Español",
   tipoPlantilla,
   mostrarAccionesRevision = true,
+  mostrarRechazar = true,
   mostrarInformeTraducido = false,
   mostrarPie = true,
   mostrarRegresar = true,
@@ -99,16 +107,18 @@ export function CustomVisorRevisionInforme({
               Aprobar
             </CustomButton>
           )}
-          <CustomButton
-            variant="secondary"
-            size="sm"
-            className="border-red-400 text-red-500"
-            disabled={!puedeEditar}
-            onClick={onRechazar}
-          >
-            <CircleX size={14} />
-            Rechazar
-          </CustomButton>
+          {mostrarRechazar ? (
+            <CustomButton
+              variant="secondary"
+              size="sm"
+              className="border-red-400 text-red-500"
+              disabled={!puedeEditar}
+              onClick={onRechazar}
+            >
+              <CircleX size={14} />
+              Rechazar
+            </CustomButton>
+          ) : null}
         </>
       ) : null}
       <CustomDescargaInforme
@@ -153,14 +163,30 @@ export function CustomVisorRevisionInforme({
             ) : null}
           </div>
 
-          {renderControlesRevision(
-            "flex flex-wrap items-center justify-end gap-2",
-          )}
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            {accionesEncabezado}
+            {renderControlesRevision(
+              "flex flex-wrap items-center justify-end gap-2",
+            )}
+          </div>
         </div>
       </header>
 
       <main className="min-h-0 w-full flex-1 overflow-hidden bg-slate-50 p-3 sm:p-4">
-        {datosInvestigacion || tieneDocumento ? (
+        {documentoGenerado ? (
+          <div className="mx-auto flex h-full max-w-6xl flex-col">
+            <div className={`relative min-h-0 ${ocuparAltoDisponible ? "flex-1" : ""}`}>
+              <CustomVisorDocumentoInforme
+                documento={documentoGenerado}
+                datosInvestigacion={datosInvestigacion}
+                encabezado={encabezado}
+                ocuparAltoDisponible={ocuparAltoDisponible}
+                tituloBarra={tituloInforme}
+                subtituloBarra={idiomaInforme}
+              />
+            </div>
+          </div>
+        ) : datosInvestigacion || tieneDocumento ? (
           <CustomVistaPreviaInformeComparado
             datosInvestigacion={datosInvestigacion}
             encabezado={encabezado}

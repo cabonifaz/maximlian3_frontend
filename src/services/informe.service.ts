@@ -1080,7 +1080,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       lista: obtenerBooleano(ejecutivo.apareceImpresoLista, ejecutivo.ApareceImpresoLista),
       detalleEjecutivo: obtenerBooleano(ejecutivo.imprimeDatosEjecutivos, ejecutivo.ImprimeDatosEjecutivos),
       orden: obtenerTextoNumerico(ejecutivo.orden),
-      vinculadoDesde: formatearFechaEntrada(obtenerTexto(ejecutivo.vinculadoDesde, ejecutivo.VinculadoDesde, ejecutivo.formularioVinculado, ejecutivo.FormularioVinculado)),
+      vinculadoDesde: obtenerTexto(ejecutivo.vinculadoDesde, ejecutivo.VinculadoDesde, ejecutivo.formularioVinculado, ejecutivo.FormularioVinculado),
       companiaAnterior: obtenerTexto(ejecutivo.companiaAnterior, ejecutivo.CompaniaAnterior),
       esParteDirectorio: obtenerBooleano(ejecutivo.esParticipanteDirectiva, ejecutivo.EsParticipanteDirectiva),
       pais: obtenerTexto(ejecutivo.pais, ejecutivo.Pais),

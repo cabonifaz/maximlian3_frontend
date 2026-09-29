@@ -1,5 +1,5 @@
-import { CustomBandejaMigracionesInforme } from "@maximilian/components/common/CustomBandejaMigracionesInforme";
+import { CustomBandejaAprobacionMigraciones } from "@maximilian/components/coordinador/CustomBandejaAprobacionMigraciones";
 
 export default function GestionAprobacionMigraciones() {
-  return <CustomBandejaMigracionesInforme rol="coordinador" />;
+  return <CustomBandejaAprobacionMigraciones />;
 }
