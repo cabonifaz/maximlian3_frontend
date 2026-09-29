@@ -532,6 +532,7 @@ export interface InformeObtenerResponse {
   estadoInforme?: string;
   estado?: EstadoInvestigacionAnalista;
   idFormatoFecha?: number;
+  idIdioma?: number;
   idPlantilla?: number;
   idTipoPersona?: number;
   idPais?: number;

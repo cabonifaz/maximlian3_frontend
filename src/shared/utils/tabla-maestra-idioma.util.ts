@@ -1,10 +1,14 @@
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
+export function tieneTraduccionTablaMaestra(idIdioma?: number) {
+  return idIdioma === 2 || idIdioma === 3;
+}
+
 export function traducirOpcionesTablaMaestra(
   opciones: EntradaTablaMaestra[] | undefined,
   idIdioma?: number,
 ) {
-  if (idIdioma !== 2 && idIdioma !== 3) return opciones;
+  if (!tieneTraduccionTablaMaestra(idIdioma)) return opciones;
 
   const claveString1 = idIdioma === 2 ? "string4" : "string6";
   const claveString2 = idIdioma === 2 ? "string5" : "string7";

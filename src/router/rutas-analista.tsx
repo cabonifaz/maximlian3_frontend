@@ -1,6 +1,7 @@
 import { type RouteObject, Navigate } from "react-router";
 import { GuardiaRol } from "@maximilian/components/autenticacion/GuardiaRol";
 import { CustomLimiteErrorRuta } from "@maximilian/components/common/CustomLimiteErrorRuta";
+import { FUNCIONALIDADES_HABILITADAS } from "@maximilian/shared/constants/funcionalidades.constants";
 
 export const rutasAnalista: RouteObject[] = [
   {
@@ -40,27 +41,31 @@ export const rutasAnalista: RouteObject[] = [
             Component: m.default,
           })),
       },
-      {
-        path: "migraciones",
-        lazy: () =>
-          import("@maximilian/pages/Analista/MigracionesInformeAnalista").then((m) => ({
-            Component: m.default,
-          })),
-      },
-      {
-        path: "migraciones/nueva",
-        lazy: () =>
-          import("@maximilian/pages/Analista/InvestigacionAnalista").then((m) => ({
-            Component: m.default,
-          })),
-      },
-      {
-        path: "migraciones/:idInformeMigracion",
-        lazy: () =>
-          import("@maximilian/pages/Analista/InvestigacionAnalista").then((m) => ({
-            Component: m.default,
-          })),
-      },
+      ...(FUNCIONALIDADES_HABILITADAS.migracionInformesCreador
+        ? [
+          {
+            path: "migraciones",
+            lazy: () =>
+              import("@maximilian/pages/Analista/MigracionesInformeAnalista").then((m) => ({
+                Component: m.default,
+              })),
+          },
+          {
+            path: "migraciones/nueva",
+            lazy: () =>
+              import("@maximilian/pages/Analista/InvestigacionAnalista").then((m) => ({
+                Component: m.default,
+              })),
+          },
+          {
+            path: "migraciones/:idInformeMigracion",
+            lazy: () =>
+              import("@maximilian/pages/Analista/InvestigacionAnalista").then((m) => ({
+                Component: m.default,
+              })),
+          },
+          ]
+        : []),
     ],
   },
 ];

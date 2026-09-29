@@ -66,7 +66,6 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacion
       "nombreEmpresa",
       "nombreComercial",
       "pais",
-      "operacionesCambio",
       "tipoIdentificacionFiscal",
       "numeroIdentificacionFiscal",
       "direccionPrincipal",
@@ -75,7 +74,10 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacion
       "numeroFax",
       "correoElectronico",
       "paginaWeb",
+      "codigoPostal",
       "estadoActual",
+      "idCalificacion",
+      "idRecordPagos",
       "datosAdicionales",
     ],
   },
@@ -138,6 +140,8 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacion
       "ventasNacionalesPorcentaje",
       "ventasExtranjeroDetalle",
       "ventasExtranjeroPorcentaje",
+      "clientes",
+      "competidores",
     ],
   },
   "informacion-financiera": {
@@ -185,6 +189,8 @@ export const SECCIONES_LISTA_EXTRACCION = new Set([
 ]);
 
 export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
+  idCalificacion: "Calificación",
+  idRecordPagos: "Record de Pagos",
   porcentaje: "Porcentaje de participación",
   esParteDirectorio: "¿Forma parte del directorio Ejecutivo?",
   lista: "¿Figura en el listado de ejecutivos?",

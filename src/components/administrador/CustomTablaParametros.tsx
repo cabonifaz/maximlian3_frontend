@@ -1,7 +1,5 @@
 import {
   Check,
-  ChevronLeft,
-  ChevronRight,
   Edit2,
   Loader2,
   Trash2,
@@ -9,6 +7,7 @@ import {
 } from "lucide-react";
 import { CustomCamposEdicionParametro } from "@maximilian/components/administrador/CustomCamposEdicionParametro";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomPaginacionTabla } from "@maximilian/components/common/CustomPaginacionTabla";
 import type { ModeloConfiguracionParametros } from "@maximilian/hooks/useConfiguracionParametros";
 import {
   obtenerClaveRegistroParametro,
@@ -333,59 +332,15 @@ export function CustomTablaParametros({ modelo }: PropsCustomTablaParametros) {
         </table>
       </div>
 
-      <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4">
-        <p className="text-xs font-medium text-slate-400">
-          Mostrando {modelo.registrosPagina.length} de{" "}
-          {modelo.totalRegistros} registros
-        </p>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => modelo.cambiarPagina(modelo.paginaActual - 1)}
-            disabled={modelo.paginaActual === 1 || modelo.isLoading || modelo.isError}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Página anterior"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          {modelo.paginas.map((pagina, indice) =>
-            pagina === "puntos" ? (
-              <span
-                key={`puntos-${indice}`}
-                className="flex h-8 w-8 items-center justify-center text-xs font-bold text-slate-300"
-              >
-                ...
-              </span>
-            ) : (
-              <button
-                key={pagina}
-                type="button"
-                onClick={() => modelo.cambiarPagina(pagina)}
-                className={`flex h-8 w-8 items-center justify-center rounded-md text-xs font-bold transition-colors ${
-                  pagina === modelo.paginaActual
-                    ? "bg-brand-black text-white"
-                    : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                }`}
-              >
-                {pagina}
-              </button>
-            ),
-          )}
-          <button
-            type="button"
-            onClick={() => modelo.cambiarPagina(modelo.paginaActual + 1)}
-            disabled={
-              modelo.paginaActual === modelo.totalPaginas ||
-              modelo.isLoading ||
-              modelo.isError
-            }
-            className="flex h-8 w-8 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Página siguiente"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      </div>
+      <CustomPaginacionTabla
+        paginaActual={modelo.paginaActual}
+        totalPaginas={modelo.totalPaginas}
+        totalRegistros={modelo.totalRegistros}
+        cantidadPagina={modelo.registrosPagina.length}
+        onPaginaChange={modelo.cambiarPagina}
+        etiquetaRegistros="registros"
+        deshabilitado={modelo.isLoading || modelo.isError}
+      />
     </>
   );
 }

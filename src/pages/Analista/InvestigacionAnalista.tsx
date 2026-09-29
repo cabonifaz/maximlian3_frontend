@@ -1,4 +1,4 @@
-import { FILAS_POR_PAGINA_INVESTIGACION, ID_ESTADO_PEDIDO_BORRADOR, ID_ESTADO_PEDIDO_FINALIZADO, CAMPOS_MONETARIOS_EXTRACCION, CAMPOS_PORCENTAJE_EXTRACCION, CAMPOS_PORCENTAJE_COMPLEMENTARIO, ETIQUETAS_SECCIONES_EXTRACCION } from "@maximilian/shared/constants/pages/Analista/investigacion-analista.constants";
+import { FILAS_POR_PAGINA_INVESTIGACION, ID_ESTADO_PEDIDO_BORRADOR, ID_ESTADO_PEDIDO_FINALIZADO, CAMPOS_MONETARIOS_EXTRACCION, CAMPOS_PORCENTAJE_EXTRACCION, CAMPOS_PORCENTAJE_COMPLEMENTARIO, ETIQUETAS_SECCIONES_EXTRACCION, ETIQUETAS_CAMPOS_EXTRACCION } from "@maximilian/shared/constants/pages/Analista/investigacion-analista.constants";
 import type { CampoPorcentajeOperacion } from "@maximilian/shared/constants/pages/Analista/investigacion-analista.constants";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -80,6 +80,8 @@ import {
   construirPayloadCrearInforme,
   prepararDatosParaNuevoInforme,
 } from "@maximilian/shared/utils/investigacion/investigacion-payload.util";
+import { convertirBalanceApiARegistroInvestigacion } from "@maximilian/shared/utils/investigacion/balance-informe.util";
+import { obtenerLista } from "@maximilian/shared/utils/normalizacion-respuesta.util";
 import {
   actualizarValorEnRuta,
   construirSeccionesDisponiblesExtraccion,
@@ -584,6 +586,12 @@ function PantallaInvestigacionAnalista({
   const { data: opcionesTiempoCreditoVentas } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIEMPO_CREDITO_VENTAS],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIEMPO_CREDITO_VENTAS),
+    staleTime: Infinity,
+  });
+
+  const { data: opcionesLimiteCreditoProveedor } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.LIMITE_CREDITO_PROVEEDOR],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.LIMITE_CREDITO_PROVEEDOR),
     staleTime: Infinity,
   });
 
@@ -1673,6 +1681,15 @@ function PantallaInvestigacionAnalista({
       }
     }
 
+    if (rutaTexto === "identificacion.idCalificacion" || rutaTexto === "identificacion.idRecordPagos") {
+      const campo = rutaTexto === "identificacion.idCalificacion" ? "idCalificacion" : "idRecordPagos";
+      const opciones = campo === "idCalificacion" ? opcionesCalificacion : opcionesRecordPagos;
+      const opcion = obtenerOpcionTablaMaestraPorId(opciones, valor);
+      if (opcion?.num1 == null || !opcion.string1) return { valor: "" };
+      if (String(opcion.num1) === datosInvestigacion.identificacion[campo]) return { valor: "" };
+      return { valor: opcion.string1, valorFormulario: String(opcion.num1) };
+    }
+
     if (rutaTexto === "identificacion.tipoIdentificacionFiscal") {
       const opcionPorId = obtenerOpcionTablaMaestraPorId(opcionesTipoRegTributario, valor);
       if (opcionPorId?.string1) {
@@ -1799,7 +1816,8 @@ function PantallaInvestigacionAnalista({
     if (!valorExtraido) return;
 
     const etiquetaSeccion = ETIQUETAS_SECCIONES_EXTRACCION[rutaBase[0] ?? ""] ?? humanizarClaveExtraccion(rutaBase[0] ?? "");
-    const etiquetaCampo = humanizarClaveExtraccion(rutaBase[rutaBase.length - 1] ?? "");
+    const claveCampo = rutaBase[rutaBase.length - 1] ?? "";
+    const etiquetaCampo = ETIQUETAS_CAMPOS_EXTRACCION[claveCampo] ?? humanizarClaveExtraccion(claveCampo);
     const etiquetaCompleta = rutaBase.length > 1 ? `${etiquetaSeccion} - ${etiquetaCampo}` : etiquetaCampo;
     const idCambio = rutaBase.join(".");
 
@@ -1995,7 +2013,8 @@ function PantallaInvestigacionAnalista({
         const idPais = obtenerIdExtraccion(proveedor.idPais);
         const idTipoDocumento = obtenerIdExtraccion(proveedor.idTipoDocumento);
         const idMoneda = obtenerIdExtraccion(proveedor.operacionesCambioMoneda ?? proveedor.idMoneda);
-        const idLimiteCredito = obtenerIdExtraccion(proveedor.limiteCredito ?? proveedor.idLimiteCredito ?? proveedor.idPlazoCredito);
+        const idLimiteCredito = obtenerIdExtraccion(proveedor.limiteCredito ?? proveedor.idLimiteCredito);
+        const idTiempoCredito = obtenerIdExtraccion(proveedor.idTiempoCredito ?? proveedor.idPlazoCredito);
         const tieneReferenciaComercial = obtenerBooleanoExtraccion(proveedor.referenciaComercial ?? proveedor.esTieneReferenciaComercial ?? proveedor.tieneReferenciaComercial);
 
         return {
@@ -2017,9 +2036,14 @@ function PantallaInvestigacionAnalista({
           operacionCambioMoneda: obtenerTextoTablaMaestraExtraccion(opcionesMoneda, idMoneda ?? proveedor.operacionesCambioMoneda ?? proveedor.operacionCambioMoneda),
           tipoCambio: proveedor.tipoCambio == null ? "" : normalizarMontoDecimales(obtenerTextoExtraccionSeguro(proveedor.tipoCambio), 6),
           idLimiteCredito,
-          idPlazoCredito: idLimiteCredito,
-          limiteCredito: obtenerTextoTablaMaestraExtraccion(undefined, idLimiteCredito ?? proveedor.limiteCredito),
+          idPlazoCredito: idTiempoCredito,
+          idTiempoCredito,
+          limiteCredito: obtenerTextoTablaMaestraExtraccion(opcionesLimiteCreditoProveedor, idLimiteCredito ?? proveedor.limiteCredito),
+          plazoCredito: idTiempoCredito ? obtenerTextoTablaMaestraExtraccion(opcionesTiempoCreditoVentas, idTiempoCredito) : "",
           promedioMensual: proveedor.promedioMensual == null ? "" : normalizarMontoDosDecimales(obtenerTextoExtraccionSeguro(proveedor.promedioMensual)),
+          productos: obtenerTextoExtraccionSeguro(proveedor.productos),
+          idCalificacion: obtenerIdExtraccion(proveedor.idCalificacion),
+          comentarios: obtenerTextoExtraccionSeguro(proveedor.comentarios),
         };
       });
   };
@@ -2176,6 +2200,11 @@ function PantallaInvestigacionAnalista({
       return opcionTiempoCredito?.string1?.trim() || cambio.valorOriginal || "-";
     }
 
+    if (idCambio === "identificacion.idCalificacion" || idCambio === "identificacion.idRecordPagos") {
+      const opciones = idCambio === "identificacion.idCalificacion" ? opcionesCalificacion : opcionesRecordPagos;
+      return obtenerOpcionTablaMaestraPorId(opciones, cambio.valorOriginal)?.string1?.trim() || cambio.valorOriginal || "-";
+    }
+
     const opcionesCiiu = idCambio === "operacionPrincipal.categoriaCiiu"
       ? opcionesActividadEconomica
       : idCambio === "operacionPrincipal.claseCiiu"
@@ -2278,7 +2307,7 @@ function PantallaInvestigacionAnalista({
           (e) => e.ejecutivo.toLowerCase() === nombre || (e.nombreCompleto ?? "").toLowerCase() === nombre,
         );
       })
-      .map((item): RegistroDirectorioEjecutivoAnalista => {
+      .map((item, indice): RegistroDirectorioEjecutivoAnalista => {
         const valorCargo = item.cargoEjecutivo ?? item.idCargo;
         const valorParticipacion = item.participacion ?? item.porcentaje;
         const idCargo = valorCargo == null ? Number.NaN : Number(valorCargo);
@@ -2293,7 +2322,7 @@ function PantallaInvestigacionAnalista({
           porcentaje: Number.isFinite(participacion) ? formatearPorcentajeOchoDecimales(participacion) : "",
           lista: Boolean(item.figuraListadoEjecutivos ?? item.lista),
           detalleEjecutivo: Boolean(item.existenDetallesEjecutivo ?? item.detalleEjecutivo),
-          orden: "1",
+          orden: String(existentes.length + indice + 1),
           vinculadoDesde: String(item.vinculadoDesde ?? "").trim(),
           companiaAnterior: String(item.companiaAnterior ?? "").trim(),
           esParteDirectorio: Boolean(item.formaParteDirectorioEjecutivo ?? item.esParteDirectorio),
@@ -2306,6 +2335,32 @@ function PantallaInvestigacionAnalista({
     if (nuevos.length > 0) {
       setEjecutivosExtraccionPendientes((anteriores) => [...anteriores, ...nuevos]);
     }
+  };
+
+  const aplicarBalancesExtraccion = (valor: unknown) => {
+    const balancesExtraidos = obtenerLista(valor).map(convertirBalanceApiARegistroInvestigacion);
+    if (balancesExtraidos.length === 0) return;
+
+    setDatosInvestigacion((anterior) => {
+      const balances = [...anterior.balances];
+      balancesExtraidos.forEach((balance) => {
+        const yaExiste = balances.some((actual) => (
+          actual.fechaInicio === balance.fechaInicio
+          && actual.idTipoEstadoFinanciero === balance.idTipoEstadoFinanciero
+        ));
+        if (yaExiste) return;
+
+        balances.unshift({
+          ...balance,
+          codigo: generarCodigoBalance(balances),
+          periodo: balance.periodo || balance.fechaInicio?.split("/")[2] || "",
+          tipo: balance.tipo || balance.tipoEstadoFinanciero || "",
+          operacionCambio: balance.operacionCambio || obtenerTextoPorId(opcionesMoneda, balance.idMoneda),
+        });
+      });
+
+      return { ...anterior, balances };
+    });
   };
 
   const aplicarBancosExtraccion = (valor: unknown) => {
@@ -2354,6 +2409,10 @@ function PantallaInvestigacionAnalista({
 
   const aprobarEjecutivoExtraccion = (indice: number) => {
     if (!ejecutivosExtraccionPendientes[indice]) return;
+    const ordenSugerido = String(datosInvestigacion.directorioEjecutivo.length + 1);
+    setEjecutivosExtraccionPendientes((anteriores) => anteriores.map((ejecutivo, i) => (
+      i === indice ? { ...ejecutivo, orden: ordenSugerido } : ejecutivo
+    )));
     setEstaAbiertoModalRevisionEjecutivosExtraccion(false);
     setIndiceEjecutivoExtraccionAprobacion(indice);
     setIndiceEjecutivoExtraccionEdicion(indice);
@@ -3047,6 +3106,11 @@ function PantallaInvestigacionAnalista({
             return;
           }
 
+          if (claveSeccion === "balances") {
+            aplicarBalancesExtraccion((camposExtraidos as Record<string, unknown>)[claveSeccion]);
+            return;
+          }
+
           const seccionActualDatos = (datosInvestigacion as unknown as Record<string, unknown>)[claveSeccion];
           const seccionExtraida = (camposExtraidos as Record<string, unknown>)[claveSeccion];
           if (seccionActualDatos === undefined || seccionExtraida === undefined) return;
@@ -3205,7 +3269,7 @@ function PantallaInvestigacionAnalista({
         onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}
       />
       <CustomSelectorBuscable
-        label="Calificación"
+        label={<span className="inline-flex items-center gap-2">Calificación{obtenerIndicadorCambioExtraccion("identificacion.idCalificacion")}</span>}
         options={opcionesCalificacion}
         value={Number(datosInvestigacion.identificacion.idCalificacion) || undefined}
         onChange={(valor) => actualizarIdentificacion("idCalificacion", String(valor))}
@@ -3213,7 +3277,7 @@ function PantallaInvestigacionAnalista({
         disabled={esSoloLectura}
       />
       <CustomSelectorBuscable
-        label="Record de Pagos"
+        label={<span className="inline-flex items-center gap-2">Record de Pagos{obtenerIndicadorCambioExtraccion("identificacion.idRecordPagos")}</span>}
         options={opcionesRecordPagos}
         value={Number(datosInvestigacion.identificacion.idRecordPagos) || undefined}
         onChange={(valor) => actualizarIdentificacion("idRecordPagos", String(valor))}

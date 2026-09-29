@@ -52,7 +52,6 @@ import {
 import { formatearFechaIsoADdMmYyyy } from "@maximilian/shared/utils/fecha.util";
 import {
   adaptarCuentaBalanceDesdeApi,
-  esCampoEnteroEstadoFinanciero,
   obtenerClaveEstadoFinanciero,
   obtenerValorCampoEstadoFinanciero,
 } from "@maximilian/shared/utils/estados-financieros.util";
@@ -65,6 +64,7 @@ import {
   obtenerRegistro,
   obtenerTexto,
 } from "@maximilian/shared/utils/normalizacion-respuesta.util";
+import { convertirBalanceApiARegistroInvestigacion } from "@maximilian/shared/utils/investigacion/balance-informe.util";
 
 type RegistroCompaniaInvestigacion = DatosInvestigacionAnalista["companiasRelacionadas"][number];
 type RegistroBancoInvestigacion = DatosInvestigacionAnalista["bancos"][number];
@@ -176,17 +176,6 @@ function normalizarArchivosInvestigacion(
 
 function formatearFechaEntrada(valor: string): string {
   return formatearFechaIsoADdMmYyyy(valor, "");
-}
-
-function obtenerValorRegistro(registro: Record<string, unknown>, ...claves: string[]) {
-  const valoresPorClave = new Map(
-    Object.entries(registro).map(([clave, valor]) => [clave.toLowerCase(), valor]),
-  );
-  for (const clave of claves) {
-    const valor = valoresPorClave.get(clave.toLowerCase());
-    if (valor != null) return valor;
-  }
-  return undefined;
 }
 
 function normalizarEstado(...valores: unknown[]): EstadoInvestigacionAnalista {
@@ -868,102 +857,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     seguros: obtenerTexto(registro.seguros, registro.Seguros),
   };
 
-  datos.balances = obtenerLista(registro.balances, registro.Balances).map((item, indice) => {
-    const balance = obtenerRegistro(item);
-    const cuentaBalance = obtenerRegistro(balance.cuentaBalance, balance.CuentaBalance);
-    const idTipoBalance = obtenerNumeroOpcional(balance.idTipoBalance, balance.IdTipoBalance, balance.tipoBalance, balance.TipoBalance);
-    const idTipoEstadoFinanciero = obtenerNumeroOpcional(
-      balance.idTipoEstadoFinanciero,
-      balance.IdTipoEstadoFinanciero,
-      balance.tipoEstadoFinanciero,
-      balance.TipoEstadoFinanciero,
-    );
-    const idMoneda = obtenerNumeroOpcional(balance.idMoneda, balance.IdMoneda);
-    const tipoEstadoFinanciero = obtenerTexto(balance.tipoEstadoFinanciero, balance.TipoEstadoFinanciero)
-      || ({ 1: "Desagregado", 2: "Totalizado", 3: "Bancos", 4: "Seguros", 5: "Turquia" }[
-        idTipoEstadoFinanciero ?? 0
-      ] ?? "");
-    const claveEstadoFinanciero = obtenerClaveEstadoFinanciero(tipoEstadoFinanciero);
-    const registrosEstadoFinanciero = adaptarCuentaBalanceDesdeApi(
-      cuentaBalance,
-      tipoEstadoFinanciero,
-    );
-    const valorCuenta = (...claves: string[]) => obtenerValorRegistro(cuentaBalance, ...claves);
-
-    return {
-      idInformeBalance: obtenerNumeroOpcional(balance.idInformeBalance, balance.IdInformeBalance, balance.idIformeBalance, balance.IdIformeBalance),
-      codigo: obtenerTexto(balance.codigo, balance.Codigo) || `${indice + 1}`,
-      periodo: obtenerTexto(balance.periodo, balance.Periodo),
-      fecha: obtenerTexto(balance.fechaTexto, balance.FechaTexto)
-        || formatearFechaEntrada(obtenerTexto(balance.fechaBalance, balance.FechaBalance)),
-      fechaInicio: formatearFechaEntrada(obtenerTexto(balance.fechaBalance, balance.FechaBalance)) || undefined,
-      tipo: obtenerTexto(balance.tipo, balance.Tipo),
-      idTipoEstadoFinanciero,
-      tipoEstadoFinanciero,
-      tipoCambio: obtenerTextoNumerico(balance.tipoCambio),
-      idMoneda,
-      operacionCambio: obtenerTexto(balance.moneda, balance.Moneda),
-      idTipoBalance,
-      tipoBalance: obtenerTexto(balance.tipoBalanceDescripcion, balance.TipoBalanceDescripcion)
-        || (idTipoBalance ? String(idTipoBalance) : ""),
-      balanceGeneral: true,
-      perdidaGanancia: true,
-      cuentas: Object.keys(cuentaBalance).length > 0,
-      detalleCuentas: Object.keys(cuentaBalance).length > 0
-        ? {
-            balanceGeneral: {
-              totalCorrientes: obtenerTextoNumerico(valorCuenta("totalCorriente", "totalActivoCorriente")),
-              totalNoCorrientes: obtenerTextoNumerico(valorCuenta("totalNoCorriente", "totalActivoNoCorriente")),
-              otrosActivos: obtenerTextoNumerico(valorCuenta("otrosActivos")),
-              totalActivos: obtenerTextoNumerico(valorCuenta("totalActivos", "totalActivo")),
-              totalPasivosCorrientes: obtenerTextoNumerico(valorCuenta("totalPasivosCorrientes", "totalPasivoCorriente")),
-              totalPasivosNoCorrientes: obtenerTextoNumerico(valorCuenta("totalPasivosNoCorrientes", "totalPasivoNoCorriente")),
-              otrosPasivos: obtenerTextoNumerico(valorCuenta("otrosPasivos")),
-              totalPasivos: obtenerTextoNumerico(valorCuenta("totalPasivos", "totalPasivo")),
-              patrimonio: obtenerTextoNumerico(valorCuenta("patrimonio", "totalPatrimonio")),
-              totalPasivoPatrimonio: obtenerTextoNumerico(valorCuenta("totalPasivoPatrimonio", "totalPasivosPatrimonio")),
-            },
-            estadoGananciasPerdidas: {
-              ventasNetas: obtenerTextoNumerico(valorCuenta("ventasNetas", "ingresosOrdinarios", "ingresosIntereses", "primasGanadasNetas")),
-              utilidadGanancia: obtenerTextoNumerico(valorCuenta("utilidadPerdida", "gananciaNeta", "utilidadEjercicio", "utilidadNeta")),
-            },
-            ratios: {
-              liquidez: obtenerTextoNumerico(valorCuenta("indiceLiquidez")),
-              capitalTrabajo: obtenerTextoNumerico(valorCuenta("capitalTrabajo")),
-              endeudamiento: obtenerTextoNumerico(valorCuenta("ratioEndeudamiento")),
-              rentabilidad: obtenerTextoNumerico(valorCuenta("ratioRentabilidad")),
-            },
-            tipoBalanceTurquia: claveEstadoFinanciero === "turquia"
-              ? (
-                  obtenerTexto(
-                    cuentaBalance.tipoBalanceTurquia,
-                    cuentaBalance.TipoBalanceTurquia,
-                    balance.tipoBalanceTurquia,
-                    balance.TipoBalanceTurquia,
-                  ).toUpperCase() === "C"
-                    ? "C"
-                    : "I"
-                )
-              : undefined,
-            registrosHabilitados: true,
-            registrosEstadoFinanciero: Object.fromEntries(
-              Object.entries(registrosEstadoFinanciero).map(([clave, valor]) => {
-                if (["balance-date", "balance-date-p", "currency", "currency-p", "currency-iso", "reliability-level"].includes(clave)) {
-                  return [clave, valor];
-                }
-                if (esCampoEnteroEstadoFinanciero(clave, tipoEstadoFinanciero)) {
-                  return [clave, valor];
-                }
-                if (/(indebtedness|profitability)/.test(clave)) {
-                  return [clave, obtenerTextoNumerico(valor)];
-                }
-                return [clave, obtenerTextoNumerico(valor)];
-              }),
-            ),
-          }
-        : undefined,
-    };
-  });
+  datos.balances = obtenerLista(registro.balances, registro.Balances).map(convertirBalanceApiARegistroInvestigacion);
 
   datos.referencias = {
     comentariosProveedores: obtenerTexto(registro.comentarioProveedor, registro.ComentarioProveedor),
@@ -1122,6 +1016,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       registro.IdEstado,
     ),
     idFormatoFecha: obtenerNumeroOpcional(registro.idFormatoFecha, registro.IdFormatoFecha),
+    idIdioma: obtenerNumeroOpcional(registro.idIdioma, registro.IdIdioma),
     idTipoPersona: obtenerNumeroOpcional(registro.idTipoPersona, registro.IdTipoPersona),
     idPais: obtenerNumeroOpcional(registro.idPais, registro.IdPais),
     taxIdType: obtenerNumeroOpcional(registro.taxIdType, registro.TaxIdType),

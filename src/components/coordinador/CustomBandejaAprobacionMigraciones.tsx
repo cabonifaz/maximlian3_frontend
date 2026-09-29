@@ -1,9 +1,9 @@
-import { CheckCheck } from "lucide-react";
 import { useNavigate } from "react-router";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
-import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
+import { CustomAccionesBandejaAprobacionMigraciones } from "@maximilian/components/coordinador/CustomAccionesBandejaAprobacionMigraciones";
+import { CustomModalesAprobacionMigraciones } from "@maximilian/components/coordinador/CustomModalesAprobacionMigraciones";
 import { CustomFiltroColumnaFactura } from "@maximilian/components/coordinador/CustomFiltroColumnaFactura";
 import { useBandejaAprobacionMigraciones } from "@maximilian/hooks/useBandejaAprobacionMigraciones";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
@@ -12,7 +12,7 @@ import { formatearFechaUtcALocal } from "@maximilian/shared/utils/fecha.util";
 export function CustomBandejaAprobacionMigraciones() {
   const navigate = useNavigate();
   const bandeja = useBandejaAprobacionMigraciones();
-  const { cantidadSeleccionados, data, rangoFechas, reiniciarPagina } = bandeja;
+  const { data, rangoFechas, reiniciarPagina } = bandeja;
 
   const columnas = [
     { label: "Investigado", width: "22%" },
@@ -81,17 +81,12 @@ export function CustomBandejaAprobacionMigraciones() {
             <p className="mt-2 text-sm text-gray-500">Informes pendientes de aprobación.</p>
           </div>
 
-          <CustomButton
-            variant="wine"
-            size="md"
-            disabled={cantidadSeleccionados === 0}
-            onClick={() => bandeja.setEstaAbiertoModalAprobacion(true)}
-            className="h-12"
-          >
-            <CheckCheck size={17} />
-            Aprobar seleccionados
-            {cantidadSeleccionados > 0 ? ` (${cantidadSeleccionados})` : ""}
-          </CustomButton>
+          <CustomAccionesBandejaAprobacionMigraciones
+            acciones={bandeja.acciones}
+            soloMuestra={bandeja.soloMuestra}
+            totalMuestra={data?.totalMuestra}
+            onAlternarSoloMuestra={bandeja.alternarSoloMuestra}
+          />
         </div>
 
         <CustomTabla
@@ -107,13 +102,24 @@ export function CustomBandejaAprobacionMigraciones() {
           totalRecords={data?.totalRegistros ?? 0}
           entityLabel="informes"
           onPageChange={bandeja.setPaginaActual}
-          emptyMessage="No hay informes pendientes de aprobación."
+          emptyMessage={bandeja.soloMuestra
+            ? "No hay informes de la muestra pendientes de aprobación."
+            : "No hay informes pendientes de aprobación."}
           selectable
           selectedIds={bandeja.idsSeleccionados}
           onSelectionChange={bandeja.setIdsSeleccionados}
           renderRow={(registro) => (
             <>
-              <td className="px-6 py-4 text-sm font-semibold text-slate-700">{registro.investigado}</td>
+              <td className="px-6 py-4 text-sm font-semibold text-slate-700">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span>{registro.investigado}</span>
+                  {registro.esMuestra ? (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                      Muestra
+                    </span>
+                  ) : null}
+                </div>
+              </td>
               <td className="px-6 py-4 text-sm text-slate-500">{registro.pais}</td>
               <td className="px-6 py-4 text-sm text-slate-500">{registro.plantilla}</td>
               <td className="px-6 py-4 text-sm text-slate-500">{registro.idioma}</td>
@@ -138,21 +144,11 @@ export function CustomBandejaAprobacionMigraciones() {
         />
       </section>
 
-      <CustomModalConfirmacionAccion
-        isOpen={bandeja.estaAbiertoModalAprobacion}
-        onClose={bandeja.cerrarModalAprobacion}
-        onConfirm={bandeja.aprobarSeleccionados}
-        title="Aprobar informes"
-        descripcion={`Se aprobarán ${cantidadSeleccionados} informe${cantidadSeleccionados === 1 ? "" : "s"} seleccionado${cantidadSeleccionados === 1 ? "" : "s"}.`}
-        textoConfirmar="Aprobar informes"
-        textoCargandoConfirmar="Aprobando..."
-        varianteConfirmar="primary"
-        isSubmitting={bandeja.estaAprobando}
-      >
-        <p>
-          Los informes seleccionados pasarán al estado <span className="font-semibold">Aprobado</span>.
-        </p>
-      </CustomModalConfirmacionAccion>
+      <CustomModalesAprobacionMigraciones
+        acciones={bandeja.acciones}
+        totalRegistros={data?.totalRegistros ?? 0}
+        tieneFiltrosActivos={bandeja.tieneFiltrosActivos}
+      />
     </div>
   );
 }

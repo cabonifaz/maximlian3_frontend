@@ -1,15 +1,22 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { FileText, RotateCcw } from "lucide-react";
 import type { DatosInvestigacionAnalista, IdSeccionInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 import type { InformeMetadatosDocumento } from "@maximilian/shared/types/informe.type";
 import { seccionesInvestigacionAnalista } from "@maximilian/shared/utils/investigacion.util";
-import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
+import type { OpcionesTablaMaestraPorId } from "@maximilian/services/tabla-maestra.service";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { CustomVisorDocumentoInforme } from "@maximilian/components/common/CustomVisorDocumentoInforme";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import { useDocumentoVistaPreviaInforme } from "@maximilian/hooks/useDocumentoVistaPreviaInforme";
+import { useOpcionesMaestrosVistaPreviaInforme } from "@maximilian/hooks/useOpcionesMaestrosVistaPreviaInforme";
+import { obtenerTextoObligacionBolsa } from "@maximilian/shared/utils/investigacion/investigacion-formato.util";
+import {
+  agregarSufijoVistaPrevia,
+  obtenerEtiquetaMaestroVistaPrevia,
+  obtenerIsoMonedaVistaPrevia,
+  obtenerRangoMesesVistaPrevia,
+} from "@maximilian/shared/utils/investigacion/vista-previa-maestros.util";
 
 interface FilaVistaPreviaInforme {
   etiqueta: string;
@@ -68,6 +75,7 @@ interface PropsTarjetaVistaPreviaInforme {
 
 interface PropsVistaPreviaInformeComparado {
   datosInvestigacion?: DatosInvestigacionAnalista;
+  idIdiomaMaestros?: number;
   encabezado: EncabezadoVistaPreviaInforme;
   idInforme?: number;
   idPedido?: number;
@@ -411,13 +419,28 @@ function crearBloqueOperacionPrincipal(
 
   agregarSimple(filas, op, "numeroEmpleados", "Número de empleados");
   agregarSimple(filas, op, "numeroEmpleadosDetalle", "Detalle empleados");
+  agregarSimple(filas, op, "clientes", "Clientes");
+  agregarSimple(filas, op, "competidores", "Competidores");
   agregarSimple(filas, op, "comentariosOperaciones", "Comentarios de operaciones");
 
   return { id: "operacion-principal", titulo: "Operación principal", filas };
 }
 
-export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInvestigacionAnalista, opcionesTiempoCredito?: OpcionTiempo[]): SeccionVistaPreviaInforme[] {
+export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInvestigacionAnalista, opcionesMaestros?: OpcionesTablaMaestraPorId): SeccionVistaPreviaInforme[] {
   const seccionesPorId = new Map<IdSeccionInvestigacionAnalista, SeccionVistaPreviaInforme>();
+  const opcionesMoneda = opcionesMaestros?.[TablaMaestraId.MONEDA];
+  const opcionesMes = opcionesMaestros?.[TablaMaestraId.MES];
+  const opcionesCalificacionProveedor = opcionesMaestros?.[TablaMaestraId.CALIFICACION_PROVEEDOR];
+  const opcionesTiempoCredito = opcionesMaestros?.[TablaMaestraId.TIEMPO_CREDITO_VENTAS];
+  const { identificacion, aspectosLegales } = datosInvestigacion;
+  const idMonedaAspectosLegales = aspectosLegales.operacionesCambioDivisas === "0"
+    ? ""
+    : aspectosLegales.operacionesCambioDivisas;
+  const isoMonedaAspectosLegales = obtenerIsoMonedaVistaPrevia(opcionesMoneda, idMonedaAspectosLegales);
+  const mapearImportacionExportacion = (registro: DatosInvestigacionAnalista["importaciones"][number]) => ({
+    ...registro,
+    mes: obtenerRangoMesesVistaPrevia(opcionesMes, registro.idMesInicio, registro.idMesFin, registro.mes),
+  });
 
   seccionesPorId.set("identificacion", {
     id: "identificacion",
@@ -426,7 +449,34 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
       crearBloqueDesdeRegistro(
         "identificacion-principal",
         "Datos de identificación",
-        datosInvestigacion.identificacion as unknown as Record<string, unknown>,
+        {
+          tipoPersona: identificacion.tipoPersona,
+          pais: identificacion.pais,
+          nombreEmpresa: identificacion.nombreEmpresa,
+          nombreComercial: identificacion.nombreComercial,
+          operacionesCambio: identificacion.operacionesCambio,
+          tipoIdentificacionFiscal: obtenerEtiquetaMaestroVistaPrevia(
+            opcionesMaestros?.[TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION],
+            identificacion.tipoIdentificacionFiscal,
+          ),
+          numeroIdentificacionFiscal: identificacion.numeroIdentificacionFiscal,
+          direccionPrincipal: identificacion.direccionPrincipal,
+          ciudadEstadoProvincia: identificacion.ciudadEstadoProvincia,
+          codigoPostal: identificacion.codigoPostal,
+          numeroTelefono: identificacion.numeroTelefono,
+          numeroFax: identificacion.numeroFax,
+          correoElectronico: identificacion.correoElectronico,
+          paginaWeb: identificacion.paginaWeb,
+          estadoActual: identificacion.estadoActual,
+          calificacion: obtenerEtiquetaMaestroVistaPrevia(
+            opcionesMaestros?.[TablaMaestraId.CALIFICACION],
+            identificacion.idCalificacion,
+          ),
+          recordPagos: obtenerEtiquetaMaestroVistaPrevia(
+            opcionesMaestros?.[TablaMaestraId.RECORD_PAGOS],
+            identificacion.idRecordPagos,
+          ),
+        },
         {
           tipoPersona: "Tipo de persona",
           nombreEmpresa: "Nombre de empresa",
@@ -441,12 +491,14 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           numeroFax: "Fax",
           correoElectronico: "Correo electrónico",
           paginaWeb: "Página web",
+          codigoPostal: "Código postal",
           estadoActual: "Estado actual",
+          calificacion: "Calificación",
+          recordPagos: "Record de pagos",
         },
-        ["datosAdicionales"],
       ),
     ],
-    observaciones: datosInvestigacion.identificacion.datosAdicionales,
+    observaciones: identificacion.datosAdicionales,
   });
 
   seccionesPorId.set("aspectos-legales", {
@@ -456,17 +508,39 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
       crearBloqueDesdeRegistro(
         "aspectos-legales-principal",
         "Aspectos legales",
-        datosInvestigacion.aspectosLegales as unknown as Record<string, unknown>,
+        {
+          tipoEmpresa: aspectosLegales.tipoEmpresa,
+          fechaConstitucion: aspectosLegales.fechaConstitucion,
+          ciudadRegistro: aspectosLegales.ciudadRegistro,
+          notaria: aspectosLegales.notaria,
+          notario: aspectosLegales.notario,
+          registro: aspectosLegales.registro,
+          condiciones: aspectosLegales.condiciones,
+          operacionesCambioDivisas: obtenerEtiquetaMaestroVistaPrevia(opcionesMoneda, idMonedaAspectosLegales),
+          capitalInicial: agregarSufijoVistaPrevia(aspectosLegales.capitalInicial, isoMonedaAspectosLegales),
+          capitalDesembolsado: agregarSufijoVistaPrevia(aspectosLegales.capitalDesembolsado, isoMonedaAspectosLegales),
+          ultimaAmpliacion: aspectosLegales.ultimaAmpliacion,
+          patrimonioNeto: agregarSufijoVistaPrevia(aspectosLegales.patrimonioNeto, isoMonedaAspectosLegales),
+          tipoAcciones: aspectosLegales.tipoAcciones,
+          valorAcciones: agregarSufijoVistaPrevia(aspectosLegales.valorAcciones, isoMonedaAspectosLegales),
+          obligacionBolsa: obtenerTextoObligacionBolsa(
+            opcionesMaestros?.[TablaMaestraId.OBLIGACION_BOLSA],
+            aspectosLegales.obligacionBolsa,
+          ) || aspectosLegales.obligacionBolsa,
+          tipoCambio: aspectosLegales.tipoCambio ? "1 USD = " + aspectosLegales.tipoCambio : "",
+          antecedentes: aspectosLegales.antecedentes,
+          aspectosLegales: aspectosLegales.aspectosLegales,
+          comentariosEmpresasRelacionadas: aspectosLegales.comentariosEmpresasRelacionadas,
+        },
         {
           tipoEmpresa: "Tipo de empresa",
           fechaConstitucion: "Fecha de constitución",
           ciudadRegistro: "Ciudad de registro",
-          notaria: "Notaría",
+          notaria: "Oficina de notaría",
           notario: "Notario",
           registro: "Registro",
           condiciones: "Condiciones",
           operacionesCambioDivisas: "Operaciones de cambio de divisas",
-          monedaTipoCambio: "Moneda tipo de cambio",
           capitalInicial: "Capital inicial",
           capitalDesembolsado: "Capital desembolsado",
           ultimaAmpliacion: "Última ampliación",
@@ -502,10 +576,10 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
       ...crearBloquesDesdeLista(
         "importaciones",
         "Importacion",
-        datosInvestigacion.importaciones as unknown as Record<string, unknown>[],
+        datosInvestigacion.importaciones.map(mapearImportacionExportacion) as unknown as Record<string, unknown>[],
         {
           anio: "Año",
-          mes: "Mes",
+          mes: "Período",
           moneda: "Moneda",
           paises: "Países",
           productos: "Productos",
@@ -517,10 +591,10 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
       ...crearBloquesDesdeLista(
         "exportaciones",
         "Exportacion",
-        datosInvestigacion.exportaciones as unknown as Record<string, unknown>[],
+        datosInvestigacion.exportaciones.map(mapearImportacionExportacion) as unknown as Record<string, unknown>[],
         {
           anio: "Año",
-          mes: "Mes",
+          mes: "Período",
           moneda: "Moneda",
           paises: "Países",
           productos: "Productos",
@@ -696,7 +770,10 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
       ...crearBloquesDesdeLista(
         "proveedores",
         "Proveedor",
-        datosInvestigacion.proveedores as unknown as Record<string, unknown>[],
+        datosInvestigacion.proveedores.map((proveedor) => ({
+          ...proveedor,
+          calificacion: obtenerEtiquetaMaestroVistaPrevia(opcionesCalificacionProveedor, proveedor.idCalificacion),
+        })) as unknown as Record<string, unknown>[],
         {
           nombreEmpresa: "Nombre de empresa",
           contacto: "Contacto",
@@ -711,9 +788,13 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           operacionCambioMoneda: "Moneda",
           tipoCambio: "Tipo de cambio",
           limiteCredito: "Límite de crédito",
+          plazoCredito: "Plazo de crédito",
           promedioMensual: "Promedio mensual",
+          productos: "Productos",
+          calificacion: "Calificación",
+          comentarios: "Comentarios",
         },
-        ["idInformeProveedor", "idTipoProveedor", "idPais", "idTipoDocumento", "idMoneda", "idLimiteCredito", "idPlazoCredito", "esTieneReferenciaComercial"],
+        ["idInformeProveedor", "idTipoProveedor", "idPais", "idTipoDocumento", "idMoneda", "idLimiteCredito", "idPlazoCredito", "idTiempoCredito", "idCalificacion", "esTieneReferenciaComercial"],
       ),
       ...crearBloquesDesdeLista(
         "bancos",
@@ -1053,6 +1134,7 @@ export function CustomVistaPreviaInformeComparado({
   className = "space-y-6",
   contenidoEntreTabsYTarjetas,
   onMetadatosDocumento,
+  idIdiomaMaestros,
 }: PropsVistaPreviaInformeComparado) {
   const [idTabActiva, setIdTabActiva] = useState<IdTabVistaPreviaInforme>("vista-general");
   const idInformeDocumento = Number(idInforme);
@@ -1060,12 +1142,10 @@ export function CustomVistaPreviaInformeComparado({
   const puedeMostrarDocumento = Number.isFinite(idInformeDocumento) && idInformeDocumento > 0
     && Number.isFinite(idPedidoDocumento) && idPedidoDocumento > 0;
 
-  const { data: opcionesTiempoCredito } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIEMPO_CREDITO_VENTAS],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIEMPO_CREDITO_VENTAS),
-    enabled: !puedeMostrarDocumento && Boolean(datosInvestigacion),
-    staleTime: Infinity,
-  });
+  const opcionesMaestros = useOpcionesMaestrosVistaPreviaInforme(
+    !puedeMostrarDocumento && Boolean(datosInvestigacion),
+    idIdiomaMaestros,
+  );
 
   const {
     documentoGenerado,
@@ -1083,9 +1163,9 @@ export function CustomVistaPreviaInformeComparado({
 
   const seccionesVistaPrevia = useMemo(
     () => datosInvestigacion
-      ? obtenerSeccionesVistaPreviaInforme(datosInvestigacion, opcionesTiempoCredito)
+      ? obtenerSeccionesVistaPreviaInforme(datosInvestigacion, opcionesMaestros)
       : [],
-    [datosInvestigacion, opcionesTiempoCredito],
+    [datosInvestigacion, opcionesMaestros],
   );
 
   const seccionesVisibles = useMemo(

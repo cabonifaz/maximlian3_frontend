@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useAccionesAprobacionMigraciones } from "@maximilian/hooks/useAccionesAprobacionMigraciones";
 import { useFiltroRangoFechas } from "@maximilian/hooks/useFiltroRangoFechas";
 import { servicioInformeAprobacion } from "@maximilian/services/informe-aprobacion.service";
 import { CLAVE_CONSULTA_INFORMES_PENDIENTES_APROBACION } from "@maximilian/shared/constants/pages/Coordinador/aprobacion-migraciones.constants";
@@ -7,13 +8,12 @@ import type { ParametrosListaInformesPendientesAprobacion } from "@maximilian/sh
 import { convertirDiaLocalAUtcIso } from "@maximilian/shared/utils/fecha.util";
 
 export function useBandejaAprobacionMigraciones() {
-  const queryClient = useQueryClient();
   const [paginaActual, setPaginaActual] = useState(1);
   const [filtroPaises, setFiltroPaises] = useState<number[]>([]);
   const [filtroPlantillas, setFiltroPlantillas] = useState<number[]>([]);
   const [filtroIdiomas, setFiltroIdiomas] = useState<number[]>([]);
+  const [soloMuestra, setSoloMuestra] = useState(false);
   const [idsSeleccionados, setIdsSeleccionados] = useState<Set<number>>(new Set());
-  const [estaAbiertoModalAprobacion, setEstaAbiertoModalAprobacion] = useState(false);
   const reiniciarPagina = () => setPaginaActual(1);
   const rangoFechas = useFiltroRangoFechas({ onCambio: reiniciarPagina });
 
@@ -23,8 +23,17 @@ export function useBandejaAprobacionMigraciones() {
     idIdioma: filtroIdiomas[0],
     fchInicio: rangoFechas.fechasInvalidas ? undefined : convertirDiaLocalAUtcIso(rangoFechas.fechaInicioFiltro, "inicio"),
     fchFin: rangoFechas.fechasInvalidas ? undefined : convertirDiaLocalAUtcIso(rangoFechas.fechaFinFiltro, "fin"),
+    soloMuestra,
     numPag: paginaActual,
   };
+
+  const tieneFiltrosActivos = [
+    parametros.idPais,
+    parametros.idPlantilla,
+    parametros.idIdioma,
+    parametros.fchInicio,
+    parametros.fchFin,
+  ].some((valor) => valor !== undefined);
 
   const consulta = useQuery({
     queryKey: [CLAVE_CONSULTA_INFORMES_PENDIENTES_APROBACION, parametros],
@@ -32,31 +41,24 @@ export function useBandejaAprobacionMigraciones() {
     retry: false,
   });
 
-  const idsVisiblesSeleccionados = (consulta.data?.lstInformes ?? [])
-    .map((registro) => registro.idInforme)
-    .filter((id) => idsSeleccionados.has(id));
-
-  const mutacionAprobar = useMutation({
-    mutationFn: (idInformes: number[]) => servicioInformeAprobacion.aprobar({ idInformes }),
-    onSuccess: async () => {
-      setIdsSeleccionados(new Set());
-      setEstaAbiertoModalAprobacion(false);
-      await queryClient.invalidateQueries({ queryKey: [CLAVE_CONSULTA_INFORMES_PENDIENTES_APROBACION] });
-    },
+  const acciones = useAccionesAprobacionMigraciones({
+    parametros,
+    totalRegistros: consulta.data?.totalRegistros ?? 0,
+    registrosSeleccionados: (consulta.data?.lstInformes ?? [])
+      .filter((registro) => idsSeleccionados.has(registro.idInforme)),
+    onAccionCompletada: () => setIdsSeleccionados(new Set()),
   });
 
-  const cerrarModalAprobacion = () => {
-    if (mutacionAprobar.isPending) return;
-    setEstaAbiertoModalAprobacion(false);
+  const alternarSoloMuestra = () => {
+    setSoloMuestra((anterior) => !anterior);
+    setIdsSeleccionados(new Set());
+    reiniciarPagina();
   };
 
   return {
     ...consulta,
-    aprobarSeleccionados: () => mutacionAprobar.mutate(idsVisiblesSeleccionados),
-    cantidadSeleccionados: idsVisiblesSeleccionados.length,
-    cerrarModalAprobacion,
-    estaAbiertoModalAprobacion,
-    estaAprobando: mutacionAprobar.isPending,
+    acciones,
+    alternarSoloMuestra,
     filtroIdiomas,
     filtroPaises,
     filtroPlantillas,
@@ -64,11 +66,12 @@ export function useBandejaAprobacionMigraciones() {
     paginaActual,
     rangoFechas,
     reiniciarPagina,
-    setEstaAbiertoModalAprobacion,
     setFiltroIdiomas,
     setFiltroPaises,
     setFiltroPlantillas,
     setIdsSeleccionados,
     setPaginaActual,
+    soloMuestra,
+    tieneFiltrosActivos,
   };
 }

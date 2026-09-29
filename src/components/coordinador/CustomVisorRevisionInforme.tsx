@@ -12,6 +12,7 @@ import type { DatosInvestigacionAnalista } from "@maximilian/shared/types/invest
 
 interface PropsCustomVisorRevisionInforme {
   datosInvestigacion?: DatosInvestigacionAnalista;
+  idIdiomaMaestros?: number;
   documentoGenerado?: DocumentoInformeGenerado;
   accionesEncabezado?: ReactNode;
   encabezado: EncabezadoVistaPreviaInforme;
@@ -44,6 +45,7 @@ interface PropsCustomVisorRevisionInforme {
 
 export function CustomVisorRevisionInforme({
   datosInvestigacion,
+  idIdiomaMaestros,
   documentoGenerado,
   accionesEncabezado,
   encabezado,
@@ -196,8 +198,11 @@ export function CustomVisorRevisionInforme({
             ocuparAltoDisponibleDocumento={ocuparAltoDisponible}
             tituloBarraDocumento={tituloInforme}
             subtituloBarraDocumento={idiomaInforme}
-            className="mx-auto flex h-full max-w-6xl flex-col space-y-3"
+            className={tieneDocumento
+              ? "mx-auto flex h-full max-w-6xl flex-col space-y-3"
+              : "mx-auto h-full max-w-6xl space-y-3 overflow-y-auto pb-4"}
             onMetadatosDocumento={onMetadatosDocumento}
+            idIdiomaMaestros={idIdiomaMaestros}
           />
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-500">
