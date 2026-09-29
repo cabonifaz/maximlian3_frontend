@@ -13,6 +13,8 @@ interface PropsCustomModalRegistroPersonaDirectorioAnalista {
   estaAbierto: boolean;
   registroInicial?: RegistroPersonaDirectorioAnalista | null;
   nombreInicial?: string;
+  datosIniciales?: Partial<RegistroPersonaDirectorioAnalista>;
+  mensajeConfirmacion?: string;
   idIdioma?: number;
   onCerrar: () => void;
   onGuardar: (registro: RegistroPersonaDirectorioAnalista) => void;
@@ -22,6 +24,8 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
   estaAbierto,
   registroInicial,
   nombreInicial,
+  datosIniciales,
+  mensajeConfirmacion,
   idIdioma,
   onCerrar,
   onGuardar,
@@ -41,12 +45,14 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
     estaAbierto,
     idIdioma,
     registroInicial,
+    datosIniciales,
     onGuardar,
   });
 
   if (!estaAbierto) return null;
 
   const tituloModal = registroInicial ? "Editar Empresa o Persona" : "Agregar Empresa o Persona";
+  const valoresIniciales = registroInicial ?? datosIniciales;
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" onFocusCapture={seleccionarTextoEditableEnContenedor}>
@@ -59,6 +65,11 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
               <p className="mt-2 max-w-2xl text-sm text-slate-500">
                 Registre los datos base de la persona o empresa para reutilizarlos en el directorio ejecutivo.
               </p>
+              {mensajeConfirmacion && !registroInicial ? (
+                <p className="mt-3 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs leading-5 text-amber-700">
+                  {mensajeConfirmacion}
+                </p>
+              ) : null}
             </div>
             <CustomButton variant="ghost" size="icon" onClick={onCerrar} disabled={crearRegistroMutation.isPending}>
               <X size={20} className="text-[#8ea0c0]" />
@@ -74,8 +85,8 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <EncabezadoSeccion icono={<UserRound size={18} />} titulo="Identificación" subtitulo="Datos principales del registro" />
               <div className="grid gap-4 md:grid-cols-[0.9fr_2fr_1fr]">
-                <CampoSelector nombre="tipoPersona" nombreId="idTipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersona} valorDefecto={registroInicial?.tipoPersona} valorDefectoId={registroInicial?.idTipoPersona} marcadorVacio="Seleccione tipo persona" />
-                <CampoInput nombre="nombres" etiqueta="Nombre Completo / Razón Social" marcador="Ingrese nombres completos" valorInicial={registroInicial?.nombres ?? nombreInicial} />
+                <CampoSelector nombre="tipoPersona" nombreId="idTipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersona} valorDefecto={valoresIniciales?.tipoPersona} valorDefectoId={valoresIniciales?.idTipoPersona} marcadorVacio="Seleccione tipo persona" />
+                <CampoInput nombre="nombres" etiqueta="Nombre Completo / Razón Social" marcador="Ingrese nombres completos" valorInicial={valoresIniciales?.nombres || nombreInicial} />
                 <CustomCampoFechaInvestigacion
                   nombre="fechaNacimiento"
                   etiqueta="Fecha de Nacimiento"
@@ -90,38 +101,38 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <EncabezadoSeccion icono={<FileText size={18} />} titulo="Documentos" subtitulo="Identificación personal y fiscal" />
               <div className="grid gap-4 md:grid-cols-[0.9fr_1fr_1fr_1fr]">
-                <CampoSelector nombre="tipoDocumentoIdentidad" nombreId="idTipoDocumento" etiqueta="Tipo Doc. Identidad" opciones={opcionesTipoDocumento} valorDefecto={registroInicial?.tipoDocumentoIdentidad} valorDefectoId={registroInicial?.idTipoDocumento} marcadorVacio="Seleccione tipo documento" />
-                <CampoInput nombre="numeroDocumentoIdentidad" etiqueta="Nro. Doc. Identidad" marcador="Ingrese nro. documento" valorInicial={registroInicial?.numeroDocumentoIdentidad} />
-                <CampoSelector nombre="tipoIdFiscal" nombreId="taxIdType" etiqueta="Tipo de ID Fiscal" opciones={opcionesTipoIdFiscal} valorDefecto={registroInicial?.tipoIdFiscal} valorDefectoId={registroInicial?.taxIdType} marcadorVacio="Seleccione tipo fiscal" />
-                <CampoInput nombre="numeroIdFiscal" etiqueta="Nro ID Fiscal" marcador="Ingrese id fiscal" valorInicial={registroInicial?.numeroIdFiscal} />
+                <CampoSelector nombre="tipoDocumentoIdentidad" nombreId="idTipoDocumento" etiqueta="Tipo Doc. Identidad" opciones={opcionesTipoDocumento} valorDefecto={valoresIniciales?.tipoDocumentoIdentidad} valorDefectoId={valoresIniciales?.idTipoDocumento} marcadorVacio="Seleccione tipo documento" />
+                <CampoInput nombre="numeroDocumentoIdentidad" etiqueta="Nro. Doc. Identidad" marcador="Ingrese nro. documento" valorInicial={valoresIniciales?.numeroDocumentoIdentidad} />
+                <CampoSelector nombre="tipoIdFiscal" nombreId="taxIdType" etiqueta="Tipo de ID Fiscal" opciones={opcionesTipoIdFiscal} valorDefecto={valoresIniciales?.tipoIdFiscal} valorDefectoId={valoresIniciales?.taxIdType} marcadorVacio="Seleccione tipo fiscal" />
+                <CampoInput nombre="numeroIdFiscal" etiqueta="Nro ID Fiscal" marcador="Ingrese id fiscal" valorInicial={valoresIniciales?.numeroIdFiscal} />
               </div>
             </section>
 
   <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <EncabezadoSeccion icono={<MapPin size={18} />} titulo="Ubicación" subtitulo="País, nacionalidad y dirección" />
               <div className="grid gap-4 md:grid-cols-2">
-                <CampoSelector nombre="pais" nombreId="idPais" etiqueta="País" opciones={opcionesPais} valorDefecto={registroInicial?.pais} valorDefectoId={registroInicial?.idPais} marcadorVacio="Seleccione un país" />
-                <CampoSelector nombre="nacionalidad" nombreId="idNacionalidad" etiqueta="Nacionalidad" opciones={opcionesNacionalidad} valorDefecto={registroInicial?.nacionalidad} valorDefectoId={registroInicial?.idNacionalidad} marcadorVacio="Seleccione nacionalidad" />
+                <CampoSelector nombre="pais" nombreId="idPais" etiqueta="País" opciones={opcionesPais} valorDefecto={valoresIniciales?.pais} valorDefectoId={valoresIniciales?.idPais} marcadorVacio="Seleccione un país" />
+                <CampoSelector nombre="nacionalidad" nombreId="idNacionalidad" etiqueta="Nacionalidad" opciones={opcionesNacionalidad} valorDefecto={valoresIniciales?.nacionalidad} valorDefectoId={valoresIniciales?.idNacionalidad} marcadorVacio="Seleccione nacionalidad" />
               </div>
               <div className="mt-4 grid gap-4 md:grid-cols-[1.4fr_1fr_0.75fr]">
-                <CampoInput nombre="direccionPrincipal" etiqueta="Dirección Principal" marcador="Ingrese dirección" valorInicial={registroInicial?.direccionPrincipal} />
-                <CampoInput nombre="ciudadProvinciaEstado" etiqueta="Ciudad / Provincia / Estado" marcador="Ingrese ciudad" valorInicial={registroInicial?.ciudadProvinciaEstado} />
-                <CampoInput nombre="codigoPostal" etiqueta="Código Postal" marcador="Ingrese código postal" valorInicial={registroInicial?.codigoPostal} />
+                <CampoInput nombre="direccionPrincipal" etiqueta="Dirección Principal" marcador="Ingrese dirección" valorInicial={valoresIniciales?.direccionPrincipal} />
+                <CampoInput nombre="ciudadProvinciaEstado" etiqueta="Ciudad / Provincia / Estado" marcador="Ingrese ciudad" valorInicial={valoresIniciales?.ciudadProvinciaEstado} />
+                <CampoInput nombre="codigoPostal" etiqueta="Código Postal" marcador="Ingrese código postal" valorInicial={valoresIniciales?.codigoPostal} />
               </div>
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <EncabezadoSeccion icono={<BadgeCheck size={18} />} titulo="Perfil" subtitulo="Información complementaria" />
               <div className="grid gap-4 md:grid-cols-2">
-                <CampoSelector nombre="estadoCivil" nombreId="idEstadoCivil" etiqueta="Estado Civil" opciones={opcionesEstadoCivil} valorDefecto={registroInicial?.estadoCivil} valorDefectoId={registroInicial?.idEstadoCivil} marcadorVacio="Seleccione estado civil" />
-                <div><CampoInput nombre="profesion" etiqueta="Profesión" marcador="Ingrese profesión" valorInicial={registroInicial?.profesion} /><input type="hidden" name="idProfesion" value="0" /></div>
+                <CampoSelector nombre="estadoCivil" nombreId="idEstadoCivil" etiqueta="Estado Civil" opciones={opcionesEstadoCivil} valorDefecto={valoresIniciales?.estadoCivil} valorDefectoId={valoresIniciales?.idEstadoCivil} marcadorVacio="Seleccione estado civil" />
+                <div><CampoInput nombre="profesion" etiqueta="Profesión" marcador="Ingrese profesión" valorInicial={valoresIniciales?.profesion} /><input type="hidden" name="idProfesion" value="0" /></div>
               </div>
               <div className="mt-4">
                 <CampoArea
                   nombre="referenciaAdicional"
                   etiqueta="Referencia Adicional"
                   marcador="Ingrese notas o referencias adicionales pertinentes para este registro..."
-                  valorInicial={registroInicial?.referenciaAdicional}
+                  valorInicial={valoresIniciales?.referenciaAdicional}
                 />
               </div>
             </section>
@@ -132,7 +143,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
               Cancelar
             </CustomButton>
             <CustomButton type="submit" size="sm" loading={crearRegistroMutation.isPending} loadingText="Guardando...">
-              Guardar
+              {mensajeConfirmacion && !registroInicial ? "Confirmar creación" : "Guardar"}
             </CustomButton>
           </div>
         </form>

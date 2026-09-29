@@ -65,6 +65,7 @@ import { servicioInformeMigracion } from "@maximilian/services/informe-migracion
 import { servicioInformeObservacion } from "@maximilian/services/informe-observacion.service";
 import { servicioInformeLocalImagen } from "@maximilian/services/informe-local-imagen.service";
 import { servicioBanco } from "@maximilian/services/banco.service";
+import { servicioDirectorioEjecutivo } from "@maximilian/services/directorio-ejecutivo.service";
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
@@ -81,6 +82,7 @@ import {
   prepararDatosParaNuevoInforme,
 } from "@maximilian/shared/utils/investigacion/investigacion-payload.util";
 import { convertirBalanceApiARegistroInvestigacion } from "@maximilian/shared/utils/investigacion/balance-informe.util";
+import { construirPersonaExtraidaDirectorio } from "@maximilian/shared/utils/investigacion/directorio-extraccion.util";
 import { obtenerLista } from "@maximilian/shared/utils/normalizacion-respuesta.util";
 import {
   actualizarValorEnRuta,
@@ -107,6 +109,7 @@ import type {
   ArchivoInvestigacionAnalista,
   DatosPedidoNavegacionInvestigacion,
   DatosInvestigacionAnalista,
+  EjecutivoExtraccionPendienteAnalista,
   EmpresaRelacionadaAnalista,
   IdSeccionInvestigacionAnalista,
   ModoInvestigacionAnalista,
@@ -325,7 +328,7 @@ function PantallaInvestigacionAnalista({
   const [companiasExtraccionPendientes, setCompaniasExtraccionPendientes] = useState<CompaniaRelacionadaExtraccionNueva[]>([]);
   const [indiceCompaniaExtraccionEdicion, setIndiceCompaniaExtraccionEdicion] = useState<number | null>(null);
   const [estaAbiertoModalRevisionCompaniasExtraccion, setEstaAbiertoModalRevisionCompaniasExtraccion] = useState(false);
-  const [ejecutivosExtraccionPendientes, setEjecutivosExtraccionPendientes] = useState<RegistroDirectorioEjecutivoAnalista[]>([]);
+  const [ejecutivosExtraccionPendientes, setEjecutivosExtraccionPendientes] = useState<EjecutivoExtraccionPendienteAnalista[]>([]);
   const [indiceEjecutivoExtraccionEdicion, setIndiceEjecutivoExtraccionEdicion] = useState<number | null>(null);
   const [indiceEjecutivoExtraccionAprobacion, setIndiceEjecutivoExtraccionAprobacion] = useState<number | null>(null);
   const [indiceEjecutivoExtraccionBusqueda, setIndiceEjecutivoExtraccionBusqueda] = useState<number | null>(null);
@@ -2162,18 +2165,19 @@ function PantallaInvestigacionAnalista({
           (e) => e.ejecutivo.toLowerCase() === nombre || (e.nombreCompleto ?? "").toLowerCase() === nombre,
         );
       })
-      .map((item, indice): RegistroDirectorioEjecutivoAnalista => {
+      .map((item, indice): EjecutivoExtraccionPendienteAnalista => {
         const valorCargo = item.cargoEjecutivo ?? item.idCargo;
         const valorParticipacion = item.participacion ?? item.porcentaje;
         const idCargo = valorCargo == null ? Number.NaN : Number(valorCargo);
         const participacion = valorParticipacion == null ? Number.NaN : Number(valorParticipacion);
+        const personaExtraida = construirPersonaExtraidaDirectorio(item, { opcionesTipoPersona, opcionesPais });
 
         return {
           id: Date.now() + Math.random(),
           ejecutivo: String(item.ejecutivo ?? item.nombreCompleto ?? "").trim(),
           nombreCompleto: String(item.nombreCompleto ?? item.ejecutivo ?? "").trim(),
           idCargo: Number.isFinite(idCargo) && idCargo > 0 ? idCargo : undefined,
-          cargo: obtenerTextoPorId(opcionesCargoDirectorio, idCargo) || String(item.cargo ?? "").trim(),
+          cargo: String(item.cargo ?? "").trim() || obtenerTextoPorId(opcionesCargoDirectorio, idCargo),
           porcentaje: Number.isFinite(participacion) ? formatearPorcentajeOchoDecimales(participacion) : "",
           lista: Boolean(item.figuraListadoEjecutivos ?? item.lista),
           detalleEjecutivo: Boolean(item.existenDetallesEjecutivo ?? item.detalleEjecutivo),
@@ -2181,9 +2185,10 @@ function PantallaInvestigacionAnalista({
           vinculadoDesde: String(item.vinculadoDesde ?? "").trim(),
           companiaAnterior: String(item.companiaAnterior ?? "").trim(),
           esParteDirectorio: Boolean(item.formaParteDirectorioEjecutivo ?? item.esParteDirectorio),
-          pais: String(item.pais ?? "").trim(),
-          tipoPersona: String(item.tipoPersona ?? "Natural").trim(),
+          pais: personaExtraida.pais ?? "",
+          tipoPersona: personaExtraida.tipoPersona || "Natural",
           descripcionBusqueda: String(item.ejecutivo ?? item.nombreCompleto ?? "").trim(),
+          personaExtraida,
         };
       });
 
@@ -2263,7 +2268,8 @@ function PantallaInvestigacionAnalista({
   };
 
   const aprobarEjecutivoExtraccion = (indice: number) => {
-    if (!ejecutivosExtraccionPendientes[indice]) return;
+    const ejecutivoPendiente = ejecutivosExtraccionPendientes[indice];
+    if (!ejecutivoPendiente) return;
     const ordenSugerido = String(datosInvestigacion.directorioEjecutivo.length + 1);
     setEjecutivosExtraccionPendientes((anteriores) => anteriores.map((ejecutivo, i) => (
       i === indice ? { ...ejecutivo, orden: ordenSugerido } : ejecutivo
@@ -2271,6 +2277,33 @@ function PantallaInvestigacionAnalista({
     setEstaAbiertoModalRevisionEjecutivosExtraccion(false);
     setIndiceEjecutivoExtraccionAprobacion(indice);
     setIndiceEjecutivoExtraccionEdicion(indice);
+
+    if (!ejecutivoPendiente.idDirectorioEjecutivo) {
+      void buscarEjecutivoExtraidoEnDirectorio(indice, ejecutivoPendiente);
+    }
+  };
+
+  const buscarEjecutivoExtraidoEnDirectorio = async (
+    indice: number,
+    ejecutivo: EjecutivoExtraccionPendienteAnalista,
+  ) => {
+    const busqueda = ejecutivo.nombreCompleto || ejecutivo.ejecutivo;
+    setIndiceEjecutivoExtraccionBusqueda(indice);
+
+    try {
+      const resultado = await queryClient.fetchQuery({
+        queryKey: ["directorio-ejecutivo", "buscar", busqueda, 1],
+        queryFn: () => servicioDirectorioEjecutivo.listar({ busqueda: busqueda.trim() || undefined, numPag: 1 }),
+      });
+      if (resultado.registros.length === 0) {
+        setEstaAbiertoModalRegistroPersona(true);
+        return;
+      }
+    } catch {
+      // El interceptor ya mostró el error; se deja la búsqueda manual disponible.
+    }
+
+    setEstaAbiertoModalBuscarEjecutivo(true);
   };
 
   const rechazarEjecutivoExtraccion = (indice: number) => {
@@ -5093,7 +5126,20 @@ function PantallaInvestigacionAnalista({
             : ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]?.nombreCompleto
               ?? ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]?.ejecutivo
         }
-        onCerrar={() => setEstaAbiertoModalRegistroPersona(false)}
+        datosIniciales={
+          indiceEjecutivoExtraccionBusqueda == null
+            ? undefined
+            : ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]?.personaExtraida
+        }
+        mensajeConfirmacion={
+          indiceEjecutivoExtraccionBusqueda == null
+            ? undefined
+            : "Estos datos se detectaron en el documento. Revíselos y confirme la creación. Si la empresa o persona ya existe en el directorio, cancele y use Buscar para vincularla."
+        }
+        onCerrar={() => {
+          setEstaAbiertoModalRegistroPersona(false);
+          if (!estaAbiertoModalBuscarEjecutivo) setIndiceEjecutivoExtraccionBusqueda(null);
+        }}
         onGuardar={guardarPersonaDirectorio}
       />
 
