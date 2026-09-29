@@ -65,6 +65,8 @@ export function CustomModalProveedorAnalista({
     setIdCalificacion,
     comentarios,
     setComentarios,
+    productos,
+    setProductos,
     opcionesTipoProveedor,
     opcionesPais,
     opcionesTaxId,
@@ -151,6 +153,11 @@ export function CustomModalProveedorAnalista({
           <div className="space-y-2">
             <CustomLabel>Teléfono</CustomLabel>
             <input value={telefono} onChange={(event) => setTelefono(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese el teléfono" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+          </div>
+
+          <div className="space-y-2">
+            <CustomLabel optional>Productos / Servicios</CustomLabel>
+            <input value={productos} onChange={(event) => setProductos(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese los productos o servicios" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
           </div>
 
           <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-600 md:col-span-2">

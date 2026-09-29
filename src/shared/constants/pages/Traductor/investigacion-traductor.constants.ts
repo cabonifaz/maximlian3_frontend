@@ -74,7 +74,6 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<
       "nombreEmpresa",
       "nombreComercial",
       "pais",
-      "operacionesCambio",
       "tipoIdentificacionFiscal",
       "numeroIdentificacionFiscal",
       "direccionPrincipal",
@@ -83,8 +82,11 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<
       "numeroFax",
       "correoElectronico",
       "paginaWeb",
+      "codigoPostal",
       "estadoActual",
-      "datosAdicionales",
+      "idCalificacion",
+      "idRecordPagos",
+      "observacionesIdentificacion",
     ],
   },
   "aspectos-legales": {
@@ -146,6 +148,8 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<
       "ventasNacionalesPorcentaje",
       "ventasExtranjeroDetalle",
       "ventasExtranjeroPorcentaje",
+      "clientes",
+      "competidores",
     ],
   },
   "informacion-financiera": {
@@ -195,12 +199,14 @@ export const SECCIONES_LISTA_EXTRACCION = new Set([
 ]);
 
 export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
+  idCalificacion: "Calificación",
+  idRecordPagos: "Record de Pagos",
   porcentaje: "Porcentaje de participación",
   esParteDirectorio: "Forma parte del directorio Ejecutivo",
   lista: "Figura en el listado de ejecutivos",
   detalleEjecutivo: "Se tiene los detalles del Ejecutivo",
   actividad: "Actividad",
-  datosAdicionales: "Datos Adicionales",
+  observacionesIdentificacion: "Observaciones de Identificación",
   tipoAcciones: "Tipo de Acciones",
   comentariosEmpresasRelacionadas: "Comentarios sobre Empresas Relacionadas",
   ventasContadoDetalle: "Detalle Ventas al Contado",
@@ -227,7 +233,7 @@ export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
 };
 
 export const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
-  identificacion: ["datosAdicionales"],
+  identificacion: ["observacionesIdentificacion"],
   aspectosLegales: [
     "condiciones",
     "tipoAcciones",
@@ -250,6 +256,8 @@ export const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
     "comprasCreditoInternacionalesDetalle",
     "numeroEmpleadosDetalle",
     "comentariosOperaciones",
+    "clientes",
+    "competidores",
     "importaciones",
     "exportaciones",
   ],
@@ -292,6 +300,8 @@ export const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
     "ventasCreditoDetalle",
     "territorioVentasDetalle",
     "ventasExtranjeroDetalle",
+    "clientes",
+    "competidores",
   ],
   bancosProveedores: [
     "comentariosProveedores",

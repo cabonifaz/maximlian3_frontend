@@ -180,6 +180,10 @@ export interface RegistroDirectorioEjecutivoAnalista {
   nombreCompleto: string;
 }
 
+export interface EjecutivoExtraccionPendienteAnalista extends RegistroDirectorioEjecutivoAnalista {
+  personaExtraida?: Partial<RegistroPersonaDirectorioAnalista>;
+}
+
 export interface RegistroPersonaDirectorioAnalista {
   id: number;
   idDirectorioEjecutivo?: number;
@@ -232,7 +236,7 @@ export interface DatosIdentificacionAnalista {
   paginaWeb: string;
   codigoPostal: string;
   estadoActual: string;
-  datosAdicionales: string;
+  observacionesIdentificacion: string;
   idCalificacion: string;
   idRecordPagos: string;
 }

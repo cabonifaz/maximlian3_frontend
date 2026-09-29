@@ -32,7 +32,7 @@ export const esquemaIdentificacionInvestigacion = z.object({
   paginaWeb: textoFormulario,
   codigoPostal: textoFormulario,
   estadoActual: textoFormulario,
-  datosAdicionales: textoFormulario,
+  observacionesIdentificacion: textoFormulario,
   idCalificacion: textoFormulario,
   idRecordPagos: textoFormulario,
 });

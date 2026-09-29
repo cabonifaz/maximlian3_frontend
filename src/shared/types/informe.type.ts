@@ -398,7 +398,6 @@ export interface InformeCrearRequest {
   idClasificacion: number;
   idExperienciaPago: number;
   idEstadoInforme: number;
-  datosAdicionales: string;
   observacionesIdentificacion: string;
   idTipoEmpresa: number;
   fechaConstitucion: string | null;
@@ -532,6 +531,7 @@ export interface InformeObtenerResponse {
   estadoInforme?: string;
   estado?: EstadoInvestigacionAnalista;
   idFormatoFecha?: number;
+  idIdioma?: number;
   idPlantilla?: number;
   idTipoPersona?: number;
   idPais?: number;

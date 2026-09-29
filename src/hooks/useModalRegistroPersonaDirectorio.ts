@@ -13,12 +13,17 @@ import {
 import type { DirectorioEjecutivoGuardarRequest } from "@maximilian/shared/types/directorio-ejecutivo.type";
 import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
-import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
+import { convertirFechaIso } from "@maximilian/shared/utils/investigacion/investigacion-formato.util";
+import {
+  obtenerGentilicioPais,
+  traducirOpcionesTablaMaestra,
+} from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 
 interface ParametrosUseModalRegistroPersonaDirectorio {
   estaAbierto: boolean;
   idIdioma?: number;
   registroInicial?: RegistroPersonaDirectorioAnalista | null;
+  datosIniciales?: Partial<RegistroPersonaDirectorioAnalista>;
   onGuardar: (registro: RegistroPersonaDirectorioAnalista) => void;
 }
 
@@ -26,19 +31,19 @@ export function useModalRegistroPersonaDirectorio({
   estaAbierto,
   idIdioma,
   registroInicial,
+  datosIniciales,
   onGuardar,
 }: ParametrosUseModalRegistroPersonaDirectorio) {
-  const [fechaNacimiento, setFechaNacimiento] = useState(
-    registroInicial?.fechaNacimiento ?? "",
-  );
+  const fechaNacimientoInicial = registroInicial?.fechaNacimiento ?? datosIniciales?.fechaNacimiento ?? "";
+  const [fechaNacimiento, setFechaNacimiento] = useState(fechaNacimientoInicial);
 
   useEffect(() => {
     if (!estaAbierto) return;
     const idTemporizador = window.setTimeout(() => {
-      setFechaNacimiento(registroInicial?.fechaNacimiento ?? "");
+      setFechaNacimiento(fechaNacimientoInicial);
     }, 0);
     return () => window.clearTimeout(idTemporizador);
-  }, [estaAbierto, registroInicial?.fechaNacimiento]);
+  }, [estaAbierto, fechaNacimientoInicial]);
 
   const { data: opcionesTipoPersonaBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
@@ -97,11 +102,11 @@ export function useModalRegistroPersonaDirectorio({
   );
   const opcionesNacionalidad = useMemo(
     () =>
-      opcionesPais?.map((opcion) => ({
+      opcionesPaisBase?.map((opcion) => ({
         ...opcion,
-        string1: opcion.string3 || opcion.string1,
+        string1: obtenerGentilicioPais(opcion, idIdioma),
       })),
-    [opcionesPais],
+    [idIdioma, opcionesPaisBase],
   );
 
   const crearRegistroMutation = useMutation({
@@ -126,7 +131,7 @@ export function useModalRegistroPersonaDirectorio({
         taxIdType: registro.taxIdType ?? 0,
         taxNum: registro.numeroIdFiscal,
         idNacionalidad: registro.idNacionalidad ?? 0,
-        fechaNacimiento: registro.fechaNacimiento || null,
+        fechaNacimiento: convertirFechaIso(registro.fechaNacimiento),
         idEstadoCivil: registro.idEstadoCivil ?? 0,
         idProfesion: registro.idProfesion ?? 0,
         referencias: registro.referenciaAdicional,

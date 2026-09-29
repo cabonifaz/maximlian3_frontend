@@ -1,10 +1,22 @@
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
+export function tieneTraduccionTablaMaestra(idIdioma?: number) {
+  return idIdioma === 2 || idIdioma === 3;
+}
+
+export function obtenerGentilicioPais(
+  opcion: { string1?: string | null; string3?: string | null; string5?: string | null; string7?: string | null },
+  idIdioma?: number,
+) {
+  const gentilicioIdioma = idIdioma === 2 ? opcion.string5 : idIdioma === 3 ? opcion.string7 : opcion.string3;
+  return gentilicioIdioma?.trim() || opcion.string3?.trim() || opcion.string1?.trim() || "";
+}
+
 export function traducirOpcionesTablaMaestra(
   opciones: EntradaTablaMaestra[] | undefined,
   idIdioma?: number,
 ) {
-  if (idIdioma !== 2 && idIdioma !== 3) return opciones;
+  if (!tieneTraduccionTablaMaestra(idIdioma)) return opciones;
 
   const claveString1 = idIdioma === 2 ? "string4" : "string6";
   const claveString2 = idIdioma === 2 ? "string5" : "string7";

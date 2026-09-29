@@ -6,3 +6,4 @@ export * from "./pedido.schema";
 export * from "./investigacion.schema";
 export * from "./banco-informacion.schema";
 export * from "./facturacion.schema";
+export * from "./paginacion.schema";
