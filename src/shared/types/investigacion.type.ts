@@ -232,7 +232,7 @@ export interface DatosIdentificacionAnalista {
   paginaWeb: string;
   codigoPostal: string;
   estadoActual: string;
-  datosAdicionales: string;
+  observacionesIdentificacion: string;
   idCalificacion: string;
   idRecordPagos: string;
 }

@@ -3139,7 +3139,7 @@ function PantallaInvestigacionAnalista({
         onClear={() => actualizarIdentificacion("idRecordPagos", "")}
         disabled={esSoloLectura}
       />
-      <AreaInvestigacionAnalista etiqueta="Observaciones de Identificación" valor={datosInvestigacion.identificacion.datosAdicionales} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.datosAdicionales")} className="md:col-span-2" onChange={(valor) => actualizarIdentificacion("datosAdicionales", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Observaciones de Identificación" valor={datosInvestigacion.identificacion.observacionesIdentificacion} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.observacionesIdentificacion")} className="md:col-span-2" onChange={(valor) => actualizarIdentificacion("observacionesIdentificacion", valor)} />
     </div>
   );
 

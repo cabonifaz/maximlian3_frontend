@@ -86,7 +86,7 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<
       "estadoActual",
       "idCalificacion",
       "idRecordPagos",
-      "datosAdicionales",
+      "observacionesIdentificacion",
     ],
   },
   "aspectos-legales": {
@@ -206,7 +206,7 @@ export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
   lista: "Figura en el listado de ejecutivos",
   detalleEjecutivo: "Se tiene los detalles del Ejecutivo",
   actividad: "Actividad",
-  datosAdicionales: "Datos Adicionales",
+  observacionesIdentificacion: "Observaciones de Identificación",
   tipoAcciones: "Tipo de Acciones",
   comentariosEmpresasRelacionadas: "Comentarios sobre Empresas Relacionadas",
   ventasContadoDetalle: "Detalle Ventas al Contado",
@@ -233,7 +233,7 @@ export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
 };
 
 export const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
-  identificacion: ["datosAdicionales"],
+  identificacion: ["observacionesIdentificacion"],
   aspectosLegales: [
     "condiciones",
     "tipoAcciones",

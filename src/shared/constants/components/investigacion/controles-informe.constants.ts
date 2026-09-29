@@ -14,7 +14,7 @@ export const marcadoresPorEtiqueta: Record<string, string> = {
   "Correo Electrónico": "Ej. contacto@empresa.com",
   "Página Web": "Ej. www.empresa.com",
   "Estado Actual": "Describa el estado actual",
-  "Datos Adicionales": "Ingrese datos adicionales relevantes",
+  "Observaciones de Identificación": "Ingrese las observaciones de identificación",
   "Tipo de Empresa": "Ingrese el tipo de empresa",
   "Fecha de Constitución": "Ej. 31/12/2020",
   "Ciudad de Registro": "Ingrese la ciudad de registro",

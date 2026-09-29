@@ -498,7 +498,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
         },
       ),
     ],
-    observaciones: identificacion.datosAdicionales,
+    observaciones: identificacion.observacionesIdentificacion,
   });
 
   seccionesPorId.set("aspectos-legales", {

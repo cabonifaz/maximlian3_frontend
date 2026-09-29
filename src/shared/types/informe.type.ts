@@ -398,7 +398,6 @@ export interface InformeCrearRequest {
   idClasificacion: number;
   idExperienciaPago: number;
   idEstadoInforme: number;
-  datosAdicionales: string;
   observacionesIdentificacion: string;
   idTipoEmpresa: number;
   fechaConstitucion: string | null;

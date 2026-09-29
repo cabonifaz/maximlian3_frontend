@@ -496,7 +496,7 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       paginaWeb: "",
       codigoPostal: "",
       estadoActual: "",
-      datosAdicionales: "",
+      observacionesIdentificacion: "",
       idCalificacion: "",
       idRecordPagos: "",
     },
@@ -651,7 +651,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     paginaWeb: obtenerTexto(registro.paginaWeb, registro.PaginaWeb),
     codigoPostal: obtenerTexto(registro.codigoPostal, registro.CodigoPostal),
     estadoActual: obtenerTexto(registro.estadoActual, registro.EstadoActual, registro.descripcionEstado, registro.DescripcionEstado),
-    datosAdicionales: obtenerTexto(registro.observacionesIdentificacion, registro.ObservacionesIdentificacion),
+    observacionesIdentificacion: obtenerTexto(registro.observacionesIdentificacion, registro.ObservacionesIdentificacion),
     idCalificacion: obtenerTexto(registro.idClasificacion, registro.IdClasificacion),
     idRecordPagos: obtenerTexto(registro.idExperienciaPago, registro.IdExperienciaPago),
   };  const idTipoCambio = obtenerNumeroOpcional(registro.idTipoCambio, registro.IdTipoCambio);

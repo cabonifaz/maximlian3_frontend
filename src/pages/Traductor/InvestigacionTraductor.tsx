@@ -5146,14 +5146,14 @@ function PantallaInvestigacionAnalista({
       />
       <AreaInvestigacionAnalista
         etiqueta="Observaciones de Identificación"
-        valor={datosInvestigacion.identificacion.datosAdicionales}
+        valor={datosInvestigacion.identificacion.observacionesIdentificacion}
         soloLectura={esSoloLectura}
         adicionalEtiqueta={obtenerAyudaTraduccion(
-          "identificacion.datosAdicionales",
+          "identificacion.observacionesIdentificacion",
         )}
         className="md:col-span-2"
         onChange={(valor) =>
-          actualizarIdentificacion("datosAdicionales", valor)
+          actualizarIdentificacion("observacionesIdentificacion", valor)
         }
       />
     </div>
