@@ -8,21 +8,14 @@ export function useBandejaMigracionesInforme(rol: RolMigracionInforme) {
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
   const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
-  const esCoordinador = rol === "coordinador";
 
   const consulta = useQuery({
-    queryKey: [
-      esCoordinador ? "migraciones-aprobacion" : "migraciones-informe",
-      rol,
-      paginaActual,
-      terminoBusquedaConRetardo,
-    ],
+    queryKey: ["migraciones-informe", rol, paginaActual, terminoBusquedaConRetardo],
     queryFn: ({ signal }) =>
       servicioInformeMigracion.listar(
         {
           busqueda: terminoBusquedaConRetardo.trim() || undefined,
           numPag: paginaActual,
-          soloPendientesAprobacion: esCoordinador || undefined,
         },
         signal,
       ),
@@ -32,24 +25,17 @@ export function useBandejaMigracionesInforme(rol: RolMigracionInforme) {
 
   const tarjetasResumen = useMemo(() => {
     const respuesta = consulta.data;
-    return esCoordinador
-      ? [
-          { id: "pendiente", titulo: "Pendiente aprobación", valor: respuesta?.pendienteAprobacion ?? 0 },
-          { id: "aprobado", titulo: "Aprobados", valor: respuesta?.aprobado ?? 0 },
-          { id: "rechazado", titulo: "Rechazados", valor: respuesta?.rechazado ?? 0 },
-        ]
-      : [
-          { id: "borrador", titulo: "Borradores", valor: respuesta?.borrador ?? 0 },
-          { id: "proceso", titulo: "En proceso", valor: respuesta?.enProceso ?? 0 },
-          { id: "pendiente", titulo: "Pendiente aprobación", valor: respuesta?.pendienteAprobacion ?? 0 },
-          { id: "aprobado", titulo: "Aprobados", valor: respuesta?.aprobado ?? 0 },
-          { id: "rechazado", titulo: "Rechazados", valor: respuesta?.rechazado ?? 0 },
-        ];
-  }, [consulta.data, esCoordinador]);
+    return [
+      { id: "borrador", titulo: "Borradores", valor: respuesta?.borrador ?? 0 },
+      { id: "proceso", titulo: "En proceso", valor: respuesta?.enProceso ?? 0 },
+      { id: "pendiente", titulo: "Pendiente aprobación", valor: respuesta?.pendienteAprobacion ?? 0 },
+      { id: "aprobado", titulo: "Aprobados", valor: respuesta?.aprobado ?? 0 },
+      { id: "rechazado", titulo: "Rechazados", valor: respuesta?.rechazado ?? 0 },
+    ];
+  }, [consulta.data]);
 
   return {
     ...consulta,
-    esCoordinador,
     paginaActual,
     setPaginaActual,
     setTerminoBusqueda,

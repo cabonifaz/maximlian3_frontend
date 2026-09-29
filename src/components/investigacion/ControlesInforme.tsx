@@ -454,6 +454,10 @@ interface PropsResumenPedidoInvestigacionAnalista {
   onAbrirArchivos?: () => void;
   onVistaPrevia?: () => void;
   onFormatoFechaInformeChange?: (idFormato: number) => void;
+  idPlantilla?: number;
+  opcionesPlantilla?: EntradaTablaMaestra[];
+  onPlantillaChange?: (idPlantilla: number) => void;
+  plantillaSoloLectura?: boolean;
   accionesSecundarias?: ReactNode;
   textoBotonArchivos?: string;
   textoBotonAccionIa?: string;
@@ -732,6 +736,10 @@ export function ResumenPedidoInvestigacionAnalista({
   onAbrirArchivos,
   onVistaPrevia,
   onFormatoFechaInformeChange,
+  idPlantilla,
+  opcionesPlantilla,
+  onPlantillaChange,
+  plantillaSoloLectura = false,
   accionesSecundarias,
   textoBotonArchivos = "Adjuntar archivos",
   formatoFechaInformeSoloLectura = false,
@@ -812,17 +820,32 @@ export function ResumenPedidoInvestigacionAnalista({
             {accionesSecundarias}
           </div>
 
-          <div className="w-full lg:w-auto lg:min-w-[220px]">
-            <CustomSelectorBuscable
-              label="Formato de fecha"
-              idMaster={TablaMaestraId.FORMATO_FECHA_INFORME}
-              value={idFormatoFechaInforme}
-              displayValue={formatoFechaInformeDisplay}
-              onChange={(valor) => onFormatoFechaInformeChange?.(valor)}
-              obtenerEtiquetaOpcion={(opcion) => opcion.string2?.trim() || opcion.string1?.trim() || ""}
-              placeholder="Seleccione formato"
-              disabled={estaBloqueadoFormatoFecha}
-            />
+          <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+            {onPlantillaChange ? (
+              <div className="w-full lg:w-auto lg:min-w-[220px]">
+                <CustomSelectorBuscable
+                  label="Plantilla"
+                  idMaster={TablaMaestraId.PLANTILLA_INFORME}
+                  options={opcionesPlantilla}
+                  value={idPlantilla}
+                  onChange={onPlantillaChange}
+                  placeholder="Seleccione plantilla"
+                  disabled={plantillaSoloLectura}
+                />
+              </div>
+            ) : null}
+            <div className="w-full lg:w-auto lg:min-w-[220px]">
+              <CustomSelectorBuscable
+                label="Formato de fecha"
+                idMaster={TablaMaestraId.FORMATO_FECHA_INFORME}
+                value={idFormatoFechaInforme}
+                displayValue={formatoFechaInformeDisplay}
+                onChange={(valor) => onFormatoFechaInformeChange?.(valor)}
+                obtenerEtiquetaOpcion={(opcion) => opcion.string2?.trim() || opcion.string1?.trim() || ""}
+                placeholder="Seleccione formato"
+                disabled={estaBloqueadoFormatoFecha}
+              />
+            </div>
           </div>
         </div>
       </div>

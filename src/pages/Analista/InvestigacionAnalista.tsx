@@ -145,6 +145,7 @@ interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInves
   esPendienteAprobacionInformacion?: boolean;
   archivosIniciales?: ArchivoInvestigacionAnalista[];
   idFormatoFechaInicial?: number;
+  idPlantillaInicial?: number;
   idTipoPersonaInicial?: number;
   idPaisInicial?: number;
   idTipoRegTributarioInicial?: number;
@@ -235,6 +236,7 @@ function PantallaInvestigacionAnalista({
   esPendienteAprobacionInformacion = false,
   archivosIniciales = [],
   idFormatoFechaInicial,
+  idPlantillaInicial,
   idTipoPersonaInicial,
   idPaisInicial,
   idTipoRegTributarioInicial,
@@ -381,6 +383,7 @@ function PantallaInvestigacionAnalista({
   const [estaAbiertoModalFinalizarInvestigacion, setEstaAbiertoModalFinalizarInvestigacion] = useState(false);
   const [estaAbiertoVistaPreviaFinalizar, setEstaAbiertoVistaPreviaFinalizar] = useState(false);
   const [idFormatoFechaInforme, setIdFormatoFechaInforme] = useState(idFormatoFechaInicial ?? 2);
+  const [idPlantillaMigracion, setIdPlantillaMigracion] = useState(idPlantillaInicial);
   const [estaAbiertoModalConfirmacionPrimerBorrador, setEstaAbiertoModalConfirmacionPrimerBorrador] = useState(false);
   const [estaAbiertoModalEjecutivo, setEstaAbiertoModalEjecutivo] = useState(false);
   const [estaAbiertoModalBuscarEjecutivo, setEstaAbiertoModalBuscarEjecutivo] = useState(false);
@@ -825,9 +828,9 @@ function PantallaInvestigacionAnalista({
 
       if (esMigracionInforme) {
         if (idInformeActual && idInformeActual > 0) {
-          return servicioInformeMigracion.editar(idInformeActual, payload);
+          return servicioInformeMigracion.editar(idInformeActual, payload, idPlantillaMigracion);
         }
-        return servicioInformeMigracion.crear(payload);
+        return servicioInformeMigracion.crear(payload, idPlantillaMigracion);
       }
 
       if (debeCrearInformePorRechazo) {
@@ -4626,6 +4629,10 @@ function PantallaInvestigacionAnalista({
         onAbrirArchivos={() => setEstaAbiertoModalArchivosInvestigacion(true)}
         onFormatoFechaInformeChange={setIdFormatoFechaInforme}
         formatoFechaInformeSoloLectura={esSoloLectura}
+        idPlantilla={idPlantillaMigracion}
+        opcionesPlantilla={opcionesPlantillaInforme}
+        onPlantillaChange={esMigracionInforme ? setIdPlantillaMigracion : undefined}
+        plantillaSoloLectura={esSoloLectura}
       />
 
       <div className="grid min-w-0 gap-6 xl:grid-cols-[240px_minmax(0,1fr)]">
@@ -5276,6 +5283,7 @@ export default function InvestigacionAnalista() {
       })}
       archivosIniciales={informeObtenido?.archivosInvestigacion}
       idFormatoFechaInicial={informeObtenido?.idFormatoFecha}
+      idPlantillaInicial={informeObtenido?.idPlantilla}
       idTipoPersonaInicial={informeObtenido?.idTipoPersona}
       idPaisInicial={informeObtenido?.idPais}
       idTipoRegTributarioInicial={informeObtenido?.taxIdType}

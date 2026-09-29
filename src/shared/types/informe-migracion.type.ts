@@ -1,4 +1,4 @@
-export type RolMigracionInforme = "analista" | "traductor" | "coordinador";
+export type RolMigracionInforme = "analista" | "traductor";
 
 export type EstadoMigracionInforme =
   | "borrador"
@@ -12,7 +12,6 @@ export interface ParametrosListaMigracionesInforme {
   idEstado?: string;
   idPlantilla?: string;
   numPag?: number;
-  soloPendientesAprobacion?: boolean;
 }
 
 export interface RegistroMigracionInforme {
@@ -22,9 +21,13 @@ export interface RegistroMigracionInforme {
   estado: EstadoMigracionInforme;
   estadoDescripcion: string;
   investigado: string;
+  idPais: number | null;
   pais: string;
+  idPlantilla: number | null;
   plantilla: string;
+  idIdiomaOrigen: number | null;
   idiomaOrigen: string;
+  idIdiomaDestino: number | null;
   idiomaDestino: string;
   creador: string;
   rolCreador: string;

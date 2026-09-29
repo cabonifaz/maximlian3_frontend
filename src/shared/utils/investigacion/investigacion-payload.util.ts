@@ -527,7 +527,7 @@ export function construirPayloadCrearInforme({
       ...(esEdicion ? { idInformeDirectorioEjecutivo: esPayloadTraductor ? 0 : ejecutivo.idInformeDirectorioEjecutivo ?? 0 } : {}),
       idDirectorioEjecutivo: ejecutivo.idDirectorioEjecutivo ?? ejecutivo.id,
       cargo: ejecutivo.cargo,
-      vinculadoDesde: convertirFechaIso(ejecutivo.vinculadoDesde),
+      vinculadoDesde: ejecutivo.vinculadoDesde,
       companiaAnterior: ejecutivo.companiaAnterior,
       participacion: obtenerNumeroDesdeTexto(ejecutivo.porcentaje),
       orden: obtenerEnteroDesdeTexto(ejecutivo.orden),
