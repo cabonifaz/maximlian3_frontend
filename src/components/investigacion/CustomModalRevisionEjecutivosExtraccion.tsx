@@ -1,7 +1,6 @@
 import { Check, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import type { RegistroDirectorioEjecutivoAnalista } from "@maximilian/shared/types/investigacion.type";
-import { formatearFechaIsoADdMmYyyy } from "@maximilian/shared/utils/fecha.util";
 import { formatearPorcentajeDecimales, obtenerPorcentajeNumericoOpcional } from "@maximilian/shared/utils/formato-monto.util";
 
 interface PropsCustomModalRevisionEjecutivosExtraccion {
@@ -59,7 +58,7 @@ export function CustomModalRevisionEjecutivosExtraccion({
                     <td className="px-4 py-4 text-sm text-slate-500">
                       {formatearParticipacion(ejecutivo.porcentaje)}
                     </td>
-                    <td className="px-4 py-4 text-sm text-slate-500">{formatearFecha(ejecutivo.vinculadoDesde)}</td>
+                    <td className="px-4 py-4 text-sm text-slate-500">{ejecutivo.vinculadoDesde?.trim() || "-"}</td>
                     <td className="px-4 py-4">
                       <div className="flex justify-end gap-2">
                         <CustomButton variant="secondary" size="sm" onClick={() => onRechazar(indice)}>
@@ -97,8 +96,4 @@ function formatearParticipacion(valor?: string) {
   const porcentaje = obtenerPorcentajeNumericoOpcional(valor);
   if (porcentaje == null) return "-";
   return formatearPorcentajeDecimales(porcentaje, 8, true);
-}
-
-function formatearFecha(valor?: string) {
-  return formatearFechaIsoADdMmYyyy(valor);
 }

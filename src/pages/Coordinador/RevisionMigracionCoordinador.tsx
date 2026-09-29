@@ -1,5 +1,7 @@
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
+import PantallaCarga from "@maximilian/components/common/PantallaCarga";
+import { CustomSelectorModoVistaRevision } from "@maximilian/components/coordinador/CustomSelectorModoVistaRevision";
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
 import { useRevisionMigracionCoordinador } from "@maximilian/hooks/useRevisionMigracionCoordinador";
 
@@ -18,12 +20,26 @@ export default function RevisionMigracionCoordinador() {
     );
   }
 
+  if (revision.modoVista === "formulario" && revision.estaCargandoInforme) {
+    return <PantallaCarga message="Cargando información del informe..." />;
+  }
+
+  const esVistaDocumento = revision.modoVista === "documento";
+
   return (
     <>
       <CustomVisorRevisionInforme
+        datosInvestigacion={revision.datosInvestigacion}
+        idIdiomaMaestros={revision.idIdiomaInforme}
+        accionesEncabezado={(
+          <CustomSelectorModoVistaRevision
+            modoVista={revision.modoVista}
+            onModoVistaChange={revision.setModoVista}
+          />
+        )}
         encabezado={revision.encabezado}
-        idInforme={revision.idInforme}
-        idPedido={revision.idPedido}
+        idInforme={esVistaDocumento ? revision.idInforme : undefined}
+        idPedido={esVistaDocumento ? revision.idPedido : undefined}
         puedeDescargar={false}
         puedeEditar={!revision.estaAprobando}
         tituloInforme="Informe migrado"

@@ -59,6 +59,17 @@ export function obtenerTextoONumero(...valores: unknown[]): string {
   return "";
 }
 
+export function obtenerValorRegistro(registro: RegistroRespuesta, ...claves: string[]) {
+  const valoresPorClave = new Map(
+    Object.entries(registro).map(([clave, valor]) => [clave.toLowerCase(), valor]),
+  );
+  for (const clave of claves) {
+    const valor = valoresPorClave.get(clave.toLowerCase());
+    if (valor != null) return valor;
+  }
+  return undefined;
+}
+
 export function obtenerLista(...valores: unknown[]): unknown[] {
   return valores.find(Array.isArray) ?? [];
 }

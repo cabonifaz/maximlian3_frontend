@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
@@ -16,7 +16,6 @@ import {
   obtenerClaveRegistroParametro,
   obtenerColumnasVisiblesParametro,
   obtenerConfiguracionCamposParametro,
-  obtenerPaginasParametros,
 } from "@maximilian/shared/utils/configuracion-parametros.util";
 import {
   crearPayloadEdicionParametro,
@@ -279,11 +278,6 @@ export function useConfiguracionParametros() {
     setPaginaActual(pagina);
   };
 
-  const paginas = useMemo(
-    () => obtenerPaginasParametros(paginaActual, totalPaginas),
-    [paginaActual, totalPaginas],
-  );
-
   return {
     idMaestroSeleccionado,
     filtro,
@@ -302,7 +296,6 @@ export function useConfiguracionParametros() {
     totalPaginas,
     totalRegistros,
     siguienteNumeroCreacion,
-    paginas,
     estaGuardando,
     estaEliminando: mutacionEliminar.isPending,
     isLoading,

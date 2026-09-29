@@ -49,6 +49,7 @@ export function useModalProveedorInforme({
   );
   const [idCalificacion, setIdCalificacion] = useState<number | undefined>(registroInicial?.idCalificacion);
   const [comentarios, setComentarios] = useState(registroInicial?.comentarios ?? "");
+  const [productos, setProductos] = useState(registroInicial?.productos ?? "");
 
   const { data: opcionesTipoProveedorBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_PROVEEDOR],
@@ -147,7 +148,7 @@ export function useModalProveedorInforme({
       promedioMensual: tieneReferenciaComercial && idLimiteCredito === 1 ? promedioMensual.trim() : "",
       idCalificacion: tieneReferenciaComercial ? idCalificacion : undefined,
       comentarios: tieneReferenciaComercial ? comentarios.trim() : "",
-      productos: registroInicial?.productos ?? "",
+      productos: productos.trim(),
     });
     if (!resultado.success) return;
 
@@ -188,6 +189,8 @@ export function useModalProveedorInforme({
     setIdCalificacion,
     comentarios,
     setComentarios,
+    productos,
+    setProductos,
     opcionesTipoProveedor,
     opcionesPais,
     opcionesTaxId,

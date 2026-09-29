@@ -219,30 +219,3 @@ export function paginarParametros<T>(registros: T[], paginaActual: number) {
     paginaActual * REGISTROS_POR_PAGINA,
   );
 }
-
-export function obtenerPaginasParametros(paginaActual: number, totalPaginas: number) {
-  const paginasVisibles = new Set([
-    1,
-    totalPaginas,
-    paginaActual - 1,
-    paginaActual,
-    paginaActual + 1,
-  ]);
-  const paginasOrdenadas = Array.from(paginasVisibles)
-    .filter((pagina) => pagina >= 1 && pagina <= totalPaginas)
-    .sort((paginaA, paginaB) => paginaA - paginaB);
-
-  return paginasOrdenadas.reduce<Array<number | "puntos">>(
-    (acumulado, pagina, indice) => {
-      const paginaAnterior = paginasOrdenadas[indice - 1];
-
-      if (paginaAnterior && pagina - paginaAnterior > 1) {
-        acumulado.push("puntos");
-      }
-
-      acumulado.push(pagina);
-      return acumulado;
-    },
-    [],
-  );
-}

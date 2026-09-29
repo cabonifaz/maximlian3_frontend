@@ -1,4 +1,4 @@
-import { FILAS_POR_PAGINA_INVESTIGACION, ID_ESTADO_PEDIDO_BORRADOR, ID_ESTADO_PEDIDO_FINALIZADO, CAMPOS_MONETARIOS_EXTRACCION, CAMPOS_PORCENTAJE_EXTRACCION, CAMPOS_PORCENTAJE_COMPLEMENTARIO, ETIQUETAS_SECCIONES_EXTRACCION } from "@maximilian/shared/constants/pages/Analista/investigacion-analista.constants";
+import { FILAS_POR_PAGINA_INVESTIGACION, ID_ESTADO_PEDIDO_BORRADOR, ID_ESTADO_PEDIDO_FINALIZADO, CAMPOS_MONETARIOS_EXTRACCION, CAMPOS_PORCENTAJE_EXTRACCION, CAMPOS_PORCENTAJE_COMPLEMENTARIO, ETIQUETAS_SECCIONES_EXTRACCION, ETIQUETAS_CAMPOS_EXTRACCION } from "@maximilian/shared/constants/pages/Analista/investigacion-analista.constants";
 import type { CampoPorcentajeOperacion } from "@maximilian/shared/constants/pages/Analista/investigacion-analista.constants";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -65,6 +65,7 @@ import { servicioInformeMigracion } from "@maximilian/services/informe-migracion
 import { servicioInformeObservacion } from "@maximilian/services/informe-observacion.service";
 import { servicioInformeLocalImagen } from "@maximilian/services/informe-local-imagen.service";
 import { servicioBanco } from "@maximilian/services/banco.service";
+import { servicioDirectorioEjecutivo } from "@maximilian/services/directorio-ejecutivo.service";
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
@@ -80,6 +81,9 @@ import {
   construirPayloadCrearInforme,
   prepararDatosParaNuevoInforme,
 } from "@maximilian/shared/utils/investigacion/investigacion-payload.util";
+import { convertirBalanceApiARegistroInvestigacion } from "@maximilian/shared/utils/investigacion/balance-informe.util";
+import { construirPersonaExtraidaDirectorio } from "@maximilian/shared/utils/investigacion/directorio-extraccion.util";
+import { obtenerLista } from "@maximilian/shared/utils/normalizacion-respuesta.util";
 import {
   actualizarValorEnRuta,
   construirSeccionesDisponiblesExtraccion,
@@ -105,6 +109,7 @@ import type {
   ArchivoInvestigacionAnalista,
   DatosPedidoNavegacionInvestigacion,
   DatosInvestigacionAnalista,
+  EjecutivoExtraccionPendienteAnalista,
   EmpresaRelacionadaAnalista,
   IdSeccionInvestigacionAnalista,
   ModoInvestigacionAnalista,
@@ -167,12 +172,6 @@ interface CambioExtraccionPendiente {
   valorOriginal: string;
   valorNuevo: string;
   alAplicar?: () => void;
-}
-
-interface CiudadExtraccionPendiente {
-  valor: string;
-  idPais: number;
-  pais: string;
 }
 
 interface ValorExtraidoNormalizado {
@@ -252,9 +251,7 @@ function PantallaInvestigacionAnalista({
   const queryClient = useQueryClient();
   const esSoloLectura = modo === "detalle" || esPendienteAprobacionInformacion;
   const contenedorPantallaRef = useRef<HTMLDivElement>(null);
-  const paisExtraccionRef = useRef<{ idPais?: number; pais?: string; aplicado: boolean }>({ aplicado: false });
   const bancoExtraccionCreadoRef = useRef(false);
-  const ciudadExtraccionPendienteRef = useRef<CiudadExtraccionPendiente | null>(null);
 
   const [datosInvestigacion, setDatosInvestigacion] = useState<DatosInvestigacionAnalista>(() =>
     esInformeRechazado ? prepararDatosParaNuevoInforme(datosIniciales) : datosIniciales,
@@ -331,7 +328,7 @@ function PantallaInvestigacionAnalista({
   const [companiasExtraccionPendientes, setCompaniasExtraccionPendientes] = useState<CompaniaRelacionadaExtraccionNueva[]>([]);
   const [indiceCompaniaExtraccionEdicion, setIndiceCompaniaExtraccionEdicion] = useState<number | null>(null);
   const [estaAbiertoModalRevisionCompaniasExtraccion, setEstaAbiertoModalRevisionCompaniasExtraccion] = useState(false);
-  const [ejecutivosExtraccionPendientes, setEjecutivosExtraccionPendientes] = useState<RegistroDirectorioEjecutivoAnalista[]>([]);
+  const [ejecutivosExtraccionPendientes, setEjecutivosExtraccionPendientes] = useState<EjecutivoExtraccionPendienteAnalista[]>([]);
   const [indiceEjecutivoExtraccionEdicion, setIndiceEjecutivoExtraccionEdicion] = useState<number | null>(null);
   const [indiceEjecutivoExtraccionAprobacion, setIndiceEjecutivoExtraccionAprobacion] = useState<number | null>(null);
   const [indiceEjecutivoExtraccionBusqueda, setIndiceEjecutivoExtraccionBusqueda] = useState<number | null>(null);
@@ -394,7 +391,6 @@ function PantallaInvestigacionAnalista({
   const [tituloSeccionExtraccion, setTituloSeccionExtraccion] = useState("");
   const [cambiosExtraccionPendientes, setCambiosExtraccionPendientes] = useState<Record<string, CambioExtraccionPendiente>>({});
   const [idCambioExtraccionActivo, setIdCambioExtraccionActivo] = useState<string | null>(null);
-  const [ciudadExtraccionPendiente, setCiudadExtraccionPendiente] = useState<CiudadExtraccionPendiente | null>(null);
   const [archivosInvestigacion, setArchivosInvestigacion] = useState<ArchivoInvestigacionAnalista[]>(archivosIniciales);
   const [indiceEjecutivoSeleccionado, setIndiceEjecutivoSeleccionado] = useState<number | null>(null);
   const [indiceEjecutivoAEliminar, setIndiceEjecutivoAEliminar] = useState<number | null>(null);
@@ -587,6 +583,12 @@ function PantallaInvestigacionAnalista({
     staleTime: Infinity,
   });
 
+  const { data: opcionesLimiteCreditoProveedor } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.LIMITE_CREDITO_PROVEEDOR],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.LIMITE_CREDITO_PROVEEDOR),
+    staleTime: Infinity,
+  });
+
   const { data: opcionesPlantillaInforme } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.PLANTILLA_INFORME],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLANTILLA_INFORME),
@@ -668,38 +670,6 @@ function PantallaInvestigacionAnalista({
       && registroPedidoSeleccionado?.idCliente,
     ),
     staleTime: Infinity,
-  });
-
-  const crearCiudadExtraccionMutation = useMutation({
-    mutationFn: async (ciudad: CiudadExtraccionPendiente) => {
-      const opcionesActuales = await queryClient.fetchQuery({
-        queryKey: ["masterTable", TablaMaestraId.CIUDAD],
-        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CIUDAD),
-        staleTime: 0,
-      });
-
-      await servicioTablaMaestra.crear({
-        idMaestro: TablaMaestraId.CIUDAD,
-        descripcion: obtenerDescripcionTablaMaestra(TablaMaestraId.CIUDAD),
-        string1: ciudad.valor,
-        num1: opcionesActuales.reduce((maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0), 0) + 1,
-        num2: ciudad.idPais,
-        num3: null,
-        string2: null,
-        string3: null,
-        date1: null,
-        date2: null,
-        date3: null,
-      });
-
-      await queryClient.invalidateQueries({ queryKey: ["masterTable", TablaMaestraId.CIUDAD] });
-      return ciudad.valor;
-    },
-    onSuccess: (valor) => {
-      actualizarCampoInvestigacion(["identificacion", "ciudadEstadoProvincia"], valor);
-      ciudadExtraccionPendienteRef.current = null;
-      setCiudadExtraccionPendiente(null);
-    },
   });
 
   const crearTiempoCreditoExtraccionMutation = useMutation({
@@ -1362,92 +1332,6 @@ function PantallaInvestigacionAnalista({
     setDatosInvestigacion((anterior) => actualizarValorEnRuta(anterior, ruta, valor));
   };
 
-  const asignarCiudadExtraccionPendiente = (
-    ciudad: CiudadExtraccionPendiente | null,
-    debeMostrar: boolean,
-  ) => {
-    ciudadExtraccionPendienteRef.current = ciudad;
-    setCiudadExtraccionPendiente(debeMostrar ? ciudad : null);
-  };
-
-  const obtenerCiudadExistenteParaPais = (valor: string, idPais: number) => {
-    const textoNormalizado = normalizarTextoExtraccion(valor);
-    return opcionesCiudad?.find((opcion) =>
-      normalizarTextoExtraccion(opcion.string1 ?? "") === textoNormalizado
-      && opcion.num2 === idPais
-    );
-  };
-
-  const procesarCiudadExtraida = (
-    valor: unknown,
-    paisForzado?: CiudadExtraccionPendiente,
-  ) => {
-    const valorTexto = valor == null ? "" : String(valor).trim();
-    if (!valorTexto) return;
-
-    const opcionPaisActual = opcionesPais?.find((opcion) => opcion.num1 === idPaisSeleccionado)
-      ?? obtenerOpcionTablaMaestraPorTexto(opcionesPais, datosInvestigacion.identificacion.pais);
-    const paisActual = paisForzado
-      ?? (
-        paisExtraccionRef.current.idPais
-          ? {
-              valor: valorTexto,
-              idPais: paisExtraccionRef.current.idPais,
-              pais: paisExtraccionRef.current.pais ?? "",
-            }
-          : opcionPaisActual?.num1
-            ? {
-                valor: valorTexto,
-                idPais: opcionPaisActual.num1,
-                pais: opcionPaisActual.string1 ?? datosInvestigacion.identificacion.pais,
-              }
-            : null
-      );
-
-    if (!paisActual?.idPais) {
-      return;
-    }
-
-    const paisEstaAplicado = Boolean(paisForzado || paisExtraccionRef.current.aplicado || (!paisExtraccionRef.current.idPais && opcionPaisActual?.num1));
-
-    if (!paisEstaAplicado) {
-      asignarCiudadExtraccionPendiente(
-        {
-          valor: valorTexto,
-          idPais: paisActual.idPais,
-          pais: paisActual.pais,
-        },
-        false,
-      );
-      return;
-    }
-
-    const opcionCiudad = obtenerCiudadExistenteParaPais(valorTexto, paisActual.idPais);
-    const valorExtraido = opcionCiudad?.string1 ?? valorTexto;
-    const valorActual = datosInvestigacion.identificacion.ciudadEstadoProvincia.trim();
-
-    if (opcionCiudad?.string1) {
-      registrarCambioExtraccion({
-        id: "identificacion.ciudadEstadoProvincia",
-        ruta: ["identificacion", "ciudadEstadoProvincia"],
-        etiqueta: "Identificación - Ciudad Estado Provincia",
-        valorActual,
-        valorExtraido,
-        onAplicar: () => actualizarCampoInvestigacion(["identificacion", "ciudadEstadoProvincia"], valorExtraido),
-      });
-      return;
-    }
-
-    asignarCiudadExtraccionPendiente(
-      {
-        valor: valorTexto,
-        idPais: paisActual.idPais,
-        pais: paisActual.pais,
-      },
-      true,
-    );
-  };
-
   const normalizarValorExtraido = (ruta: string[], valor: unknown): ValorExtraidoNormalizado => {
     const rutaTexto = ruta.join(".");
     const valorTexto = valor == null ? "" : String(valor).trim();
@@ -1574,10 +1458,6 @@ function PantallaInvestigacionAnalista({
       return { valor: normalizarPorTablaMaestra(opcionesTipoEmpresa) };
     }
 
-    if (rutaTexto === "aspectosLegales.ciudadRegistro") {
-      return { valor: normalizarPorTablaMaestra(opcionesCiudad) };
-    }
-
     if (rutaTexto === "aspectosLegales.operacionesCambioDivisas") {
       return { valor: normalizarPorTablaMaestra(opcionesMoneda) };
     }
@@ -1673,6 +1553,15 @@ function PantallaInvestigacionAnalista({
       }
     }
 
+    if (rutaTexto === "identificacion.idCalificacion" || rutaTexto === "identificacion.idRecordPagos") {
+      const campo = rutaTexto === "identificacion.idCalificacion" ? "idCalificacion" : "idRecordPagos";
+      const opciones = campo === "idCalificacion" ? opcionesCalificacion : opcionesRecordPagos;
+      const opcion = obtenerOpcionTablaMaestraPorId(opciones, valor);
+      if (opcion?.num1 == null || !opcion.string1) return { valor: "" };
+      if (String(opcion.num1) === datosInvestigacion.identificacion[campo]) return { valor: "" };
+      return { valor: opcion.string1, valorFormulario: String(opcion.num1) };
+    }
+
     if (rutaTexto === "identificacion.tipoIdentificacionFiscal") {
       const opcionPorId = obtenerOpcionTablaMaestraPorId(opcionesTipoRegTributario, valor);
       if (opcionPorId?.string1) {
@@ -1759,16 +1648,7 @@ function PantallaInvestigacionAnalista({
     }
 
     if (esRegistroPlano(seccionActual) && esRegistroPlano(seccionExtraida)) {
-      const entradas = Object.entries(seccionExtraida).sort(([claveA], [claveB]) => {
-        if (rutaBase.join(".") !== "identificacion") return 0;
-        if (claveA === "pais") return -1;
-        if (claveB === "pais") return 1;
-        if (claveA === "ciudadEstadoProvincia") return 1;
-        if (claveB === "ciudadEstadoProvincia") return -1;
-        return 0;
-      });
-
-      entradas.forEach(([clave, valor]) => {
+      Object.entries(seccionExtraida).forEach(([clave, valor]) => {
         if (!(clave in seccionActual)) return;
         aplicarResultadosExtraccion(
           (seccionActual as Record<string, unknown>)[clave],
@@ -1776,11 +1656,6 @@ function PantallaInvestigacionAnalista({
           [...rutaBase, clave],
         );
       });
-      return;
-    }
-
-    if (rutaBase.join(".") === "identificacion.ciudadEstadoProvincia") {
-      procesarCiudadExtraida(seccionExtraida);
       return;
     }
 
@@ -1799,7 +1674,8 @@ function PantallaInvestigacionAnalista({
     if (!valorExtraido) return;
 
     const etiquetaSeccion = ETIQUETAS_SECCIONES_EXTRACCION[rutaBase[0] ?? ""] ?? humanizarClaveExtraccion(rutaBase[0] ?? "");
-    const etiquetaCampo = humanizarClaveExtraccion(rutaBase[rutaBase.length - 1] ?? "");
+    const claveCampo = rutaBase[rutaBase.length - 1] ?? "";
+    const etiquetaCampo = ETIQUETAS_CAMPOS_EXTRACCION[claveCampo] ?? humanizarClaveExtraccion(claveCampo);
     const etiquetaCompleta = rutaBase.length > 1 ? `${etiquetaSeccion} - ${etiquetaCampo}` : etiquetaCampo;
     const idCambio = rutaBase.join(".");
 
@@ -1995,7 +1871,8 @@ function PantallaInvestigacionAnalista({
         const idPais = obtenerIdExtraccion(proveedor.idPais);
         const idTipoDocumento = obtenerIdExtraccion(proveedor.idTipoDocumento);
         const idMoneda = obtenerIdExtraccion(proveedor.operacionesCambioMoneda ?? proveedor.idMoneda);
-        const idLimiteCredito = obtenerIdExtraccion(proveedor.limiteCredito ?? proveedor.idLimiteCredito ?? proveedor.idPlazoCredito);
+        const idLimiteCredito = obtenerIdExtraccion(proveedor.limiteCredito ?? proveedor.idLimiteCredito);
+        const idTiempoCredito = obtenerIdExtraccion(proveedor.idTiempoCredito ?? proveedor.idPlazoCredito);
         const tieneReferenciaComercial = obtenerBooleanoExtraccion(proveedor.referenciaComercial ?? proveedor.esTieneReferenciaComercial ?? proveedor.tieneReferenciaComercial);
 
         return {
@@ -2017,9 +1894,14 @@ function PantallaInvestigacionAnalista({
           operacionCambioMoneda: obtenerTextoTablaMaestraExtraccion(opcionesMoneda, idMoneda ?? proveedor.operacionesCambioMoneda ?? proveedor.operacionCambioMoneda),
           tipoCambio: proveedor.tipoCambio == null ? "" : normalizarMontoDecimales(obtenerTextoExtraccionSeguro(proveedor.tipoCambio), 6),
           idLimiteCredito,
-          idPlazoCredito: idLimiteCredito,
-          limiteCredito: obtenerTextoTablaMaestraExtraccion(undefined, idLimiteCredito ?? proveedor.limiteCredito),
+          idPlazoCredito: idTiempoCredito,
+          idTiempoCredito,
+          limiteCredito: obtenerTextoTablaMaestraExtraccion(opcionesLimiteCreditoProveedor, idLimiteCredito ?? proveedor.limiteCredito),
+          plazoCredito: idTiempoCredito ? obtenerTextoTablaMaestraExtraccion(opcionesTiempoCreditoVentas, idTiempoCredito) : "",
           promedioMensual: proveedor.promedioMensual == null ? "" : normalizarMontoDosDecimales(obtenerTextoExtraccionSeguro(proveedor.promedioMensual)),
+          productos: obtenerTextoExtraccionSeguro(proveedor.productos),
+          idCalificacion: obtenerIdExtraccion(proveedor.idCalificacion),
+          comentarios: obtenerTextoExtraccionSeguro(proveedor.comentarios),
         };
       });
   };
@@ -2176,6 +2058,11 @@ function PantallaInvestigacionAnalista({
       return opcionTiempoCredito?.string1?.trim() || cambio.valorOriginal || "-";
     }
 
+    if (idCambio === "identificacion.idCalificacion" || idCambio === "identificacion.idRecordPagos") {
+      const opciones = idCambio === "identificacion.idCalificacion" ? opcionesCalificacion : opcionesRecordPagos;
+      return obtenerOpcionTablaMaestraPorId(opciones, cambio.valorOriginal)?.string1?.trim() || cambio.valorOriginal || "-";
+    }
+
     const opcionesCiiu = idCambio === "operacionPrincipal.categoriaCiiu"
       ? opcionesActividadEconomica
       : idCambio === "operacionPrincipal.claseCiiu"
@@ -2278,34 +2165,62 @@ function PantallaInvestigacionAnalista({
           (e) => e.ejecutivo.toLowerCase() === nombre || (e.nombreCompleto ?? "").toLowerCase() === nombre,
         );
       })
-      .map((item): RegistroDirectorioEjecutivoAnalista => {
+      .map((item, indice): EjecutivoExtraccionPendienteAnalista => {
         const valorCargo = item.cargoEjecutivo ?? item.idCargo;
         const valorParticipacion = item.participacion ?? item.porcentaje;
         const idCargo = valorCargo == null ? Number.NaN : Number(valorCargo);
         const participacion = valorParticipacion == null ? Number.NaN : Number(valorParticipacion);
+        const personaExtraida = construirPersonaExtraidaDirectorio(item, { opcionesTipoPersona, opcionesPais });
 
         return {
           id: Date.now() + Math.random(),
           ejecutivo: String(item.ejecutivo ?? item.nombreCompleto ?? "").trim(),
           nombreCompleto: String(item.nombreCompleto ?? item.ejecutivo ?? "").trim(),
           idCargo: Number.isFinite(idCargo) && idCargo > 0 ? idCargo : undefined,
-          cargo: obtenerTextoPorId(opcionesCargoDirectorio, idCargo) || String(item.cargo ?? "").trim(),
+          cargo: String(item.cargo ?? "").trim() || obtenerTextoPorId(opcionesCargoDirectorio, idCargo),
           porcentaje: Number.isFinite(participacion) ? formatearPorcentajeOchoDecimales(participacion) : "",
           lista: Boolean(item.figuraListadoEjecutivos ?? item.lista),
           detalleEjecutivo: Boolean(item.existenDetallesEjecutivo ?? item.detalleEjecutivo),
-          orden: "1",
+          orden: String(existentes.length + indice + 1),
           vinculadoDesde: String(item.vinculadoDesde ?? "").trim(),
           companiaAnterior: String(item.companiaAnterior ?? "").trim(),
           esParteDirectorio: Boolean(item.formaParteDirectorioEjecutivo ?? item.esParteDirectorio),
-          pais: String(item.pais ?? "").trim(),
-          tipoPersona: String(item.tipoPersona ?? "Natural").trim(),
+          pais: personaExtraida.pais ?? "",
+          tipoPersona: personaExtraida.tipoPersona || "Natural",
           descripcionBusqueda: String(item.ejecutivo ?? item.nombreCompleto ?? "").trim(),
+          personaExtraida,
         };
       });
 
     if (nuevos.length > 0) {
       setEjecutivosExtraccionPendientes((anteriores) => [...anteriores, ...nuevos]);
     }
+  };
+
+  const aplicarBalancesExtraccion = (valor: unknown) => {
+    const balancesExtraidos = obtenerLista(valor).map(convertirBalanceApiARegistroInvestigacion);
+    if (balancesExtraidos.length === 0) return;
+
+    setDatosInvestigacion((anterior) => {
+      const balances = [...anterior.balances];
+      balancesExtraidos.forEach((balance) => {
+        const yaExiste = balances.some((actual) => (
+          actual.fechaInicio === balance.fechaInicio
+          && actual.idTipoEstadoFinanciero === balance.idTipoEstadoFinanciero
+        ));
+        if (yaExiste) return;
+
+        balances.unshift({
+          ...balance,
+          codigo: generarCodigoBalance(balances),
+          periodo: balance.periodo || balance.fechaInicio?.split("/")[2] || "",
+          tipo: balance.tipo || balance.tipoEstadoFinanciero || "",
+          operacionCambio: balance.operacionCambio || obtenerTextoPorId(opcionesMoneda, balance.idMoneda),
+        });
+      });
+
+      return { ...anterior, balances };
+    });
   };
 
   const aplicarBancosExtraccion = (valor: unknown) => {
@@ -2353,10 +2268,42 @@ function PantallaInvestigacionAnalista({
   };
 
   const aprobarEjecutivoExtraccion = (indice: number) => {
-    if (!ejecutivosExtraccionPendientes[indice]) return;
+    const ejecutivoPendiente = ejecutivosExtraccionPendientes[indice];
+    if (!ejecutivoPendiente) return;
+    const ordenSugerido = String(datosInvestigacion.directorioEjecutivo.length + 1);
+    setEjecutivosExtraccionPendientes((anteriores) => anteriores.map((ejecutivo, i) => (
+      i === indice ? { ...ejecutivo, orden: ordenSugerido } : ejecutivo
+    )));
     setEstaAbiertoModalRevisionEjecutivosExtraccion(false);
     setIndiceEjecutivoExtraccionAprobacion(indice);
     setIndiceEjecutivoExtraccionEdicion(indice);
+
+    if (!ejecutivoPendiente.idDirectorioEjecutivo) {
+      void buscarEjecutivoExtraidoEnDirectorio(indice, ejecutivoPendiente);
+    }
+  };
+
+  const buscarEjecutivoExtraidoEnDirectorio = async (
+    indice: number,
+    ejecutivo: EjecutivoExtraccionPendienteAnalista,
+  ) => {
+    const busqueda = ejecutivo.nombreCompleto || ejecutivo.ejecutivo;
+    setIndiceEjecutivoExtraccionBusqueda(indice);
+
+    try {
+      const resultado = await queryClient.fetchQuery({
+        queryKey: ["directorio-ejecutivo", "buscar", busqueda, 1],
+        queryFn: () => servicioDirectorioEjecutivo.listar({ busqueda: busqueda.trim() || undefined, numPag: 1 }),
+      });
+      if (resultado.registros.length === 0) {
+        setEstaAbiertoModalRegistroPersona(true);
+        return;
+      }
+    } catch {
+      // El interceptor ya mostró el error; se deja la búsqueda manual disponible.
+    }
+
+    setEstaAbiertoModalBuscarEjecutivo(true);
   };
 
   const rechazarEjecutivoExtraccion = (indice: number) => {
@@ -2925,8 +2872,8 @@ function PantallaInvestigacionAnalista({
     0,
   );
   const seccionesDisponiblesExtraccion = useMemo(
-    () => construirSeccionesDisponiblesExtraccion(alcanceExtraccionInformacion),
-    [alcanceExtraccionInformacion],
+    () => construirSeccionesDisponiblesExtraccion(alcanceExtraccionInformacion, esMigracionInforme),
+    [alcanceExtraccionInformacion, esMigracionInforme],
   );
   const abrirModalExtraccionInformacion = (
     alcance: AlcanceExtraccionInforme,
@@ -2983,8 +2930,6 @@ function PantallaInvestigacionAnalista({
     );
 
     try {
-      paisExtraccionRef.current = { aplicado: false };
-      asignarCiudadExtraccionPendiente(null, false);
       reiniciarPendientesExtraccion(configuracionSecciones);
       const totalArchivos = archivos.length;
 
@@ -3047,6 +2992,11 @@ function PantallaInvestigacionAnalista({
             return;
           }
 
+          if (claveSeccion === "balances") {
+            aplicarBalancesExtraccion((camposExtraidos as Record<string, unknown>)[claveSeccion]);
+            return;
+          }
+
           const seccionActualDatos = (datosInvestigacion as unknown as Record<string, unknown>)[claveSeccion];
           const seccionExtraida = (camposExtraidos as Record<string, unknown>)[claveSeccion];
           if (seccionActualDatos === undefined || seccionExtraida === undefined) return;
@@ -3088,6 +3038,8 @@ function PantallaInvestigacionAnalista({
   };
 
   const cantidadPendientesSeccionActiva = pendientesRevisionPorSeccion[idSeccionActiva] ?? 0;
+  const permiteExtraccionSeccionActiva = permiteExtraccionSeccion
+    && (idSeccionActiva !== "balances" || esMigracionInforme);
 
   const botonExtraSeccion = !esSoloLectura ? (
     <div className="flex flex-wrap items-center justify-end gap-2">
@@ -3101,7 +3053,7 @@ function PantallaInvestigacionAnalista({
           {cantidadPendientesSeccionActiva} resultado{cantidadPendientesSeccionActiva === 1 ? "" : "s"} por revisar
         </CustomButton>
       ) : null}
-      {permiteExtraccionSeccion ? (
+      {permiteExtraccionSeccionActiva ? (
         <CustomButton
           variant="secondary"
           size="sm"
@@ -3205,7 +3157,7 @@ function PantallaInvestigacionAnalista({
         onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}
       />
       <CustomSelectorBuscable
-        label="Calificación"
+        label={<span className="inline-flex items-center gap-2">Calificación{obtenerIndicadorCambioExtraccion("identificacion.idCalificacion")}</span>}
         options={opcionesCalificacion}
         value={Number(datosInvestigacion.identificacion.idCalificacion) || undefined}
         onChange={(valor) => actualizarIdentificacion("idCalificacion", String(valor))}
@@ -3213,14 +3165,14 @@ function PantallaInvestigacionAnalista({
         disabled={esSoloLectura}
       />
       <CustomSelectorBuscable
-        label="Record de Pagos"
+        label={<span className="inline-flex items-center gap-2">Record de Pagos{obtenerIndicadorCambioExtraccion("identificacion.idRecordPagos")}</span>}
         options={opcionesRecordPagos}
         value={Number(datosInvestigacion.identificacion.idRecordPagos) || undefined}
         onChange={(valor) => actualizarIdentificacion("idRecordPagos", String(valor))}
         onClear={() => actualizarIdentificacion("idRecordPagos", "")}
         disabled={esSoloLectura}
       />
-      <AreaInvestigacionAnalista etiqueta="Observaciones de Identificación" valor={datosInvestigacion.identificacion.datosAdicionales} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.datosAdicionales")} className="md:col-span-2" onChange={(valor) => actualizarIdentificacion("datosAdicionales", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Observaciones de Identificación" valor={datosInvestigacion.identificacion.observacionesIdentificacion} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("identificacion.observacionesIdentificacion")} className="md:col-span-2" onChange={(valor) => actualizarIdentificacion("observacionesIdentificacion", valor)} />
     </div>
   );
 
@@ -5035,24 +4987,6 @@ function PantallaInvestigacionAnalista({
       </CustomModalConfirmacionAccion>
 
       <CustomModalConfirmacionAccion
-        isOpen={ciudadExtraccionPendiente != null}
-        onClose={() => asignarCiudadExtraccionPendiente(null, false)}
-        onConfirm={() => {
-          if (!ciudadExtraccionPendiente) return;
-          crearCiudadExtraccionMutation.mutate(ciudadExtraccionPendiente);
-        }}
-        title="Agregar ciudad/estado/provincia"
-        descripcion={`Está seguro de querer añadir esta ciudad/estado/provincia al país ${ciudadExtraccionPendiente?.pais ?? ""}?`}
-        isSubmitting={crearCiudadExtraccionMutation.isPending}
-        textoConfirmar="Añadir"
-        textoCargandoConfirmar="Añadiendo..."
-        varianteConfirmar="primary"
-      >
-        <p><span className="font-bold">País:</span> {ciudadExtraccionPendiente?.pais ?? "-"}</p>
-        <p><span className="font-bold">Ciudad/Estado/Provincia:</span> {ciudadExtraccionPendiente?.valor ?? "-"}</p>
-      </CustomModalConfirmacionAccion>
-
-      <CustomModalConfirmacionAccion
         isOpen={idCambioExtraccionActivo != null}
         onClose={() => setIdCambioExtraccionActivo(null)}
         onConfirm={() => {
@@ -5192,7 +5126,20 @@ function PantallaInvestigacionAnalista({
             : ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]?.nombreCompleto
               ?? ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]?.ejecutivo
         }
-        onCerrar={() => setEstaAbiertoModalRegistroPersona(false)}
+        datosIniciales={
+          indiceEjecutivoExtraccionBusqueda == null
+            ? undefined
+            : ejecutivosExtraccionPendientes[indiceEjecutivoExtraccionBusqueda]?.personaExtraida
+        }
+        mensajeConfirmacion={
+          indiceEjecutivoExtraccionBusqueda == null
+            ? undefined
+            : "Estos datos se detectaron en el documento. Revíselos y confirme la creación. Si la empresa o persona ya existe en el directorio, cancele y use Buscar para vincularla."
+        }
+        onCerrar={() => {
+          setEstaAbiertoModalRegistroPersona(false);
+          if (!estaAbiertoModalBuscarEjecutivo) setIndiceEjecutivoExtraccionBusqueda(null);
+        }}
         onGuardar={guardarPersonaDirectorio}
       />
 

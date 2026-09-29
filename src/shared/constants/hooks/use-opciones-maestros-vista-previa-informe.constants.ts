@@ -1,0 +1,25 @@
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
+
+export const IDS_TABLA_MAESTRA_VISTA_PREVIA_INFORME = [
+  TablaMaestraId.ACTIVIDAD_ECONOMICA,
+  TablaMaestraId.CALIFICACION,
+  TablaMaestraId.CALIFICACION_PROVEEDOR,
+  TablaMaestraId.CLASE_CIIU,
+  TablaMaestraId.ESTADO_CLIENTE,
+  TablaMaestraId.ESTADO_FINANCIERO,
+  TablaMaestraId.LIMITE_CREDITO_PROVEEDOR,
+  TablaMaestraId.MES,
+  TablaMaestraId.MONEDA,
+  TablaMaestraId.OBLIGACION_BOLSA,
+  TablaMaestraId.PAIS,
+  TablaMaestraId.PLAZO_CREDITO_PROVEEDOR,
+  TablaMaestraId.RECORD_PAGOS,
+  TablaMaestraId.SECTOR_ECONOMICO,
+  TablaMaestraId.TIEMPO_CREDITO_VENTAS,
+  TablaMaestraId.TIPO_BALANCE,
+  TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION,
+  TablaMaestraId.TIPO_EMPRESA,
+  TablaMaestraId.TIPO_LOCAL,
+  TablaMaestraId.TIPO_PERSONA,
+  TablaMaestraId.TIPO_PROVEEDOR,
+];

@@ -1,11 +1,7 @@
-import {
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  RefreshCw,
-} from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { type ReactNode, useEffect, useRef } from "react";
 import { CustomButton } from "./CustomButton";
+import { CustomPaginacionTabla } from "./CustomPaginacionTabla";
 
 export interface TableColumn {
   label: ReactNode;
@@ -32,22 +28,6 @@ interface CustomTablaProps<T> {
   selectedIds?: Set<number>;
   onSelectionChange?: (ids: Set<number>) => void;
   cantidadFilasVisibles?: number;
-}
-
-function getPaginationPages(current: number, total: number): (number | "...")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages: (number | "...")[] = [1];
-  if (current > 3) pages.push("...");
-  for (
-    let i = Math.max(2, current - 1);
-    i <= Math.min(total - 1, current + 1);
-    i++
-  ) {
-    pages.push(i);
-  }
-  if (current < total - 2) pages.push("...");
-  pages.push(total);
-  return pages;
 }
 
 export function CustomTabla<T>({
@@ -108,7 +88,6 @@ export function CustomTabla<T>({
   };
 
   const colCount = columns.length + (selectable ? 1 : 0);
-  const pages = getPaginationPages(paginaActual, totalPages);
   const navDisabled = !!(isLoading || isError);
   const anchoColumnaDefecto = `${100 / Math.max(columns.length, 1)}%`;
 
@@ -257,56 +236,15 @@ export function CustomTabla<T>({
         </table>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-gray-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <p className="text-xs text-gray-400 font-medium">
-          Mostrando {data?.length ?? 0} de {totalRecords} {entityLabel}
-        </p>
-        <div className="flex max-w-full items-center gap-3 overflow-x-auto pb-1 sm:pb-0">
-          <button
-            type="button"
-            onClick={() => onPageChange(paginaActual - 1)}
-            disabled={navDisabled || paginaActual === 1}
-            className="flex items-center gap-1 text-xs text-gray-500 hover:text-brand-black disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-not-allowed"
-          >
-            <ChevronLeft size={16} />
-            <span>Anterior</span>
-          </button>
-          <div className="flex items-center gap-1">
-            {pages.map((page, i) =>
-              page === "..." ? (
-                <span
-                  key={`ellipsis-${i}`}
-                  className="w-8 h-8 flex items-center justify-center text-xs text-gray-400 select-none"
-                >
-                  …
-                </span>
-              ) : (
-                <button
-                  key={page}
-                  type="button"
-                  onClick={() => onPageChange(page)}
-                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    page === paginaActual
-                      ? "bg-brand-black text-brand-white shadow shadow-black/10"
-                      : "text-gray-400 hover:bg-gray-100 hover:text-brand-black"
-                  }`}
-                >
-                  {page}
-                </button>
-              ),
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => onPageChange(paginaActual + 1)}
-            disabled={navDisabled || paginaActual === totalPages}
-            className="flex items-center gap-1 text-xs text-gray-500 hover:text-brand-black disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-not-allowed"
-          >
-            <span>Siguiente</span>
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      </div>
+      <CustomPaginacionTabla
+        paginaActual={paginaActual}
+        totalPaginas={totalPages}
+        totalRegistros={totalRecords}
+        cantidadPagina={data?.length ?? 0}
+        onPaginaChange={onPageChange}
+        etiquetaRegistros={entityLabel}
+        deshabilitado={navDisabled}
+      />
     </div>
   );
 }

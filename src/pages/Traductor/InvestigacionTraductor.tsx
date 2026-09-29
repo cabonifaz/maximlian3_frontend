@@ -202,12 +202,6 @@ interface CambioExtraccionPendiente {
   alAplicar?: () => void;
 }
 
-interface CiudadExtraccionPendiente {
-  valor: string;
-  idPais: number;
-  pais: string;
-}
-
 interface ReferenciaTraduccionActiva {
   ruta: string[];
   etiqueta: string;
@@ -568,14 +562,6 @@ function PantallaInvestigacionAnalista({
   const queryClient = useQueryClient();
   const esSoloLectura = modo === "detalle" || esPendienteAprobacionInformacion;
   const contenedorPantallaRef = useRef<HTMLDivElement>(null);
-  const paisExtraccionRef = useRef<{
-    idPais?: number;
-    pais?: string;
-    aplicado: boolean;
-  }>({ aplicado: false });
-  const ciudadExtraccionPendienteRef = useRef<CiudadExtraccionPendiente | null>(
-    null,
-  );
   const debeAplicarTraduccionDirectaRef = useRef(false);
   const selectoresTraducidosInicializadosRef = useRef(false);
   const debeCrearInformeInicial = modo === "iniciar" || esInformeRechazado;
@@ -822,8 +808,6 @@ function PantallaInvestigacionAnalista({
     useState<ReferenciaTraduccionActiva | null>(null);
   const [valorReferenciaTraduccion, setValorReferenciaTraduccion] =
     useState("");
-  const [ciudadExtraccionPendiente, setCiudadExtraccionPendiente] =
-    useState<CiudadExtraccionPendiente | null>(null);
   const [archivosInvestigacion, setArchivosInvestigacion] =
     useState<ArchivoInvestigacionAnalista[]>(archivosIniciales);
   const [indiceEjecutivoSeleccionado, setIndiceEjecutivoSeleccionado] =
@@ -1035,6 +1019,13 @@ function PantallaInvestigacionAnalista({
     staleTime: Infinity,
   });
 
+  const { data: opcionesLimiteCreditoProveedorBase } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.LIMITE_CREDITO_PROVEEDOR],
+    queryFn: () =>
+      servicioTablaMaestra.list(TablaMaestraId.LIMITE_CREDITO_PROVEEDOR),
+    staleTime: Infinity,
+  });
+
   const { data: opcionesPlantillaInformeBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.PLANTILLA_INFORME],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLANTILLA_INFORME),
@@ -1177,6 +1168,14 @@ function PantallaInvestigacionAnalista({
       ),
     [idIdiomaTraduccion, opcionesTiempoCreditoVentasBase],
   );
+  const opcionesLimiteCreditoProveedor = useMemo(
+    () =>
+      traducirOpcionesTablaMaestra(
+        opcionesLimiteCreditoProveedorBase,
+        idIdiomaTraduccion,
+      ),
+    [idIdiomaTraduccion, opcionesLimiteCreditoProveedorBase],
+  );
   const opcionesPlantillaInforme = useMemo(
     () =>
       traducirOpcionesTablaMaestra(
@@ -1249,47 +1248,6 @@ function PantallaInvestigacionAnalista({
       registroPedidoSeleccionado?.idCliente,
     ),
     staleTime: Infinity,
-  });
-
-  const crearCiudadExtraccionMutation = useMutation({
-    mutationFn: async (ciudad: CiudadExtraccionPendiente) => {
-      const opcionesActuales = await queryClient.fetchQuery({
-        queryKey: ["masterTable", TablaMaestraId.CIUDAD],
-        queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CIUDAD),
-        staleTime: 0,
-      });
-
-      await servicioTablaMaestra.crear({
-        idMaestro: TablaMaestraId.CIUDAD,
-        descripcion: obtenerDescripcionTablaMaestra(TablaMaestraId.CIUDAD),
-        string1: ciudad.valor,
-        num1:
-          opcionesActuales.reduce(
-            (maximo, opcion) => Math.max(maximo, opcion.num1 ?? 0),
-            0,
-          ) + 1,
-        num2: ciudad.idPais,
-        num3: null,
-        string2: null,
-        string3: null,
-        date1: null,
-        date2: null,
-        date3: null,
-      });
-
-      await queryClient.invalidateQueries({
-        queryKey: ["masterTable", TablaMaestraId.CIUDAD],
-      });
-      return ciudad.valor;
-    },
-    onSuccess: (valor) => {
-      actualizarCampoInvestigacion(
-        ["identificacion", "ciudadEstadoProvincia"],
-        valor,
-      );
-      ciudadExtraccionPendienteRef.current = null;
-      setCiudadExtraccionPendiente(null);
-    },
   });
 
   const marcarSeccionActivaComoBorrador = () => {
@@ -2413,110 +2371,6 @@ function PantallaInvestigacionAnalista({
       return "";
     }, origen as unknown);
 
-  const asignarCiudadExtraccionPendiente = (
-    ciudad: CiudadExtraccionPendiente | null,
-    debeMostrar: boolean,
-  ) => {
-    ciudadExtraccionPendienteRef.current = ciudad;
-    setCiudadExtraccionPendiente(debeMostrar ? ciudad : null);
-  };
-
-  const obtenerCiudadExistenteParaPais = (valor: string, idPais: number) => {
-    const textoNormalizado = normalizarTextoExtraccion(valor);
-    return opcionesCiudad?.find(
-      (opcion) =>
-        normalizarTextoExtraccion(opcion.string1 ?? "") === textoNormalizado &&
-        opcion.num2 === idPais,
-    );
-  };
-
-  const procesarCiudadExtraida = (
-    valor: unknown,
-    paisForzado?: CiudadExtraccionPendiente,
-  ) => {
-    const valorTexto = valor == null ? "" : String(valor).trim();
-    if (!valorTexto) return;
-
-    const opcionPaisActual =
-      opcionesPais?.find((opcion) => opcion.num1 === idPaisSeleccionado) ??
-      obtenerOpcionTablaMaestraPorTexto(
-        opcionesPais,
-        datosInvestigacion.identificacion.pais,
-      );
-    const paisActual =
-      paisForzado ??
-      (paisExtraccionRef.current.idPais
-        ? {
-            valor: valorTexto,
-            idPais: paisExtraccionRef.current.idPais,
-            pais: paisExtraccionRef.current.pais ?? "",
-          }
-        : opcionPaisActual?.num1
-          ? {
-              valor: valorTexto,
-              idPais: opcionPaisActual.num1,
-              pais:
-                opcionPaisActual.string1 ??
-                datosInvestigacion.identificacion.pais,
-            }
-          : null);
-
-    if (!paisActual?.idPais) {
-      return;
-    }
-
-    const paisEstaAplicado = Boolean(
-      paisForzado ||
-      paisExtraccionRef.current.aplicado ||
-      (!paisExtraccionRef.current.idPais && opcionPaisActual?.num1),
-    );
-
-    if (!paisEstaAplicado) {
-      asignarCiudadExtraccionPendiente(
-        {
-          valor: valorTexto,
-          idPais: paisActual.idPais,
-          pais: paisActual.pais,
-        },
-        false,
-      );
-      return;
-    }
-
-    const opcionCiudad = obtenerCiudadExistenteParaPais(
-      valorTexto,
-      paisActual.idPais,
-    );
-    const valorExtraido = opcionCiudad?.string1 ?? valorTexto;
-    const valorActual =
-      datosInvestigacion.identificacion.ciudadEstadoProvincia.trim();
-
-    if (opcionCiudad?.string1) {
-      registrarCambioExtraccion({
-        id: "identificacion.ciudadEstadoProvincia",
-        ruta: ["identificacion", "ciudadEstadoProvincia"],
-        etiqueta: "Identificación - Ciudad Estado Provincia",
-        valorActual,
-        valorExtraido,
-        onAplicar: () =>
-          actualizarCampoInvestigacion(
-            ["identificacion", "ciudadEstadoProvincia"],
-            valorExtraido,
-          ),
-      });
-      return;
-    }
-
-    asignarCiudadExtraccionPendiente(
-      {
-        valor: valorTexto,
-        idPais: paisActual.idPais,
-        pais: paisActual.pais,
-      },
-      true,
-    );
-  };
-
   const normalizarValorExtraido = (ruta: string[], valor: unknown) => {
     const rutaTexto = ruta.join(".");
     const valorTexto = valor == null ? "" : String(valor).trim();
@@ -2731,10 +2585,6 @@ function PantallaInvestigacionAnalista({
       return { valor: normalizarPorTablaMaestra(opcionesTipoEmpresa) };
     }
 
-    if (rutaTexto === "aspectosLegales.ciudadRegistro") {
-      return { valor: normalizarPorTablaMaestra(opcionesCiudad) };
-    }
-
     if (rutaTexto === "aspectosLegales.operacionesCambioDivisas") {
       return { valor: normalizarPorTablaMaestra(opcionesMoneda) };
     }
@@ -2855,6 +2705,24 @@ function PantallaInvestigacionAnalista({
       }
     }
 
+    if (
+      rutaTexto === "identificacion.idCalificacion" ||
+      rutaTexto === "identificacion.idRecordPagos"
+    ) {
+      const campo =
+        rutaTexto === "identificacion.idCalificacion"
+          ? "idCalificacion"
+          : "idRecordPagos";
+      const opciones =
+        campo === "idCalificacion" ? opcionesCalificacion : opcionesRecordPagos;
+      const opcion = obtenerOpcionTablaMaestraPorId(opciones, valor);
+      if (opcion?.num1 == null || !opcion.string1) return { valor: "" };
+      if (String(opcion.num1) === datosInvestigacion.identificacion[campo]) {
+        return { valor: "" };
+      }
+      return { valor: opcion.string1, valorFormulario: String(opcion.num1) };
+    }
+
     if (rutaTexto === "identificacion.tipoIdentificacionFiscal") {
       const opcionPorId = obtenerOpcionTablaMaestraPorId(
         opcionesTipoRegTributario,
@@ -2959,18 +2827,7 @@ function PantallaInvestigacionAnalista({
     }
 
     if (esRegistroPlano(seccionActual) && esRegistroPlano(seccionExtraida)) {
-      const entradas = Object.entries(seccionExtraida).sort(
-        ([claveA], [claveB]) => {
-          if (rutaBase.join(".") !== "identificacion") return 0;
-          if (claveA === "pais") return -1;
-          if (claveB === "pais") return 1;
-          if (claveA === "ciudadEstadoProvincia") return 1;
-          if (claveB === "ciudadEstadoProvincia") return -1;
-          return 0;
-        },
-      );
-
-      entradas.forEach(([clave, valor]) => {
+      Object.entries(seccionExtraida).forEach(([clave, valor]) => {
         if (!(clave in seccionActual)) return;
         aplicarResultadosExtraccion(
           (seccionActual as Record<string, unknown>)[clave],
@@ -2978,11 +2835,6 @@ function PantallaInvestigacionAnalista({
           [...rutaBase, clave],
         );
       });
-      return;
-    }
-
-    if (rutaBase.join(".") === "identificacion.ciudadEstadoProvincia") {
-      procesarCiudadExtraida(seccionExtraida);
       return;
     }
 
@@ -3003,9 +2855,10 @@ function PantallaInvestigacionAnalista({
     const etiquetaSeccion =
       ETIQUETAS_SECCIONES_EXTRACCION[rutaBase[0] ?? ""] ??
       humanizarClaveExtraccion(rutaBase[0] ?? "");
-    const etiquetaCampo = humanizarClaveExtraccion(
-      rutaBase[rutaBase.length - 1] ?? "",
-    );
+    const claveCampo = rutaBase[rutaBase.length - 1] ?? "";
+    const etiquetaCampo =
+      ETIQUETAS_CAMPOS_EXTRACCION[claveCampo] ??
+      humanizarClaveExtraccion(claveCampo);
     const etiquetaCompleta =
       rutaBase.length > 1
         ? `${etiquetaSeccion} - ${etiquetaCampo}`
@@ -3286,9 +3139,10 @@ function PantallaInvestigacionAnalista({
           proveedor.operacionesCambioMoneda ?? proveedor.idMoneda,
         );
         const idLimiteCredito = obtenerIdExtraccion(
-          proveedor.limiteCredito ??
-            proveedor.idLimiteCredito ??
-            proveedor.idPlazoCredito,
+          proveedor.limiteCredito ?? proveedor.idLimiteCredito,
+        );
+        const idTiempoCredito = obtenerIdExtraccion(
+          proveedor.idTiempoCredito ?? proveedor.idPlazoCredito,
         );
         const tieneReferenciaComercial = obtenerBooleanoExtraccion(
           proveedor.referenciaComercial ??
@@ -3345,11 +3199,21 @@ function PantallaInvestigacionAnalista({
                   6,
                 ),
           idLimiteCredito,
-          idPlazoCredito: idLimiteCredito,
+          idPlazoCredito: idTiempoCredito,
+          idTiempoCredito,
           limiteCredito: obtenerTextoTablaMaestraExtraccion(
-            undefined,
+            opcionesLimiteCreditoProveedor,
             idLimiteCredito ?? proveedor.limiteCredito,
           ),
+          plazoCredito: idTiempoCredito
+            ? obtenerTextoTablaMaestraExtraccion(
+                opcionesTiempoCreditoVentas,
+                idTiempoCredito,
+              )
+            : "",
+          productos: obtenerTextoExtraccionSeguro(proveedor.productos),
+          idCalificacion: obtenerIdExtraccion(proveedor.idCalificacion),
+          comentarios: obtenerTextoExtraccionSeguro(proveedor.comentarios),
           promedioMensual:
             proveedor.promedioMensual == null
               ? ""
@@ -3612,6 +3476,24 @@ function PantallaInvestigacionAnalista({
       );
     }
 
+    if (
+      idCambio === "identificacion.idCalificacion" ||
+      idCambio === "identificacion.idRecordPagos"
+    ) {
+      const opciones =
+        idCambio === "identificacion.idCalificacion"
+          ? opcionesCalificacion
+          : opcionesRecordPagos;
+      return (
+        obtenerOpcionTablaMaestraPorId(
+          opciones,
+          cambio.valorOriginal,
+        )?.string1?.trim() ||
+        cambio.valorOriginal ||
+        "-"
+      );
+    }
+
     const opcionesCiiu =
       idCambio === "operacionPrincipal.categoriaCiiu"
         ? opcionesActividadEconomica
@@ -3743,7 +3625,7 @@ function PantallaInvestigacionAnalista({
           )
         );
       })
-      .map((item): RegistroDirectorioEjecutivoAnalista => {
+      .map((item, indice): RegistroDirectorioEjecutivoAnalista => {
         const valorCargo = item.cargoEjecutivo ?? item.idCargo;
         const valorParticipacion = item.participacion ?? item.porcentaje;
         const idCargo = valorCargo == null ? Number.NaN : Number(valorCargo);
@@ -3768,7 +3650,7 @@ function PantallaInvestigacionAnalista({
           detalleEjecutivo: Boolean(
             item.existenDetallesEjecutivo ?? item.detalleEjecutivo,
           ),
-          orden: "1",
+          orden: String(existentes.length + indice + 1),
           vinculadoDesde: String(item.vinculadoDesde ?? "").trim(),
           companiaAnterior: String(item.companiaAnterior ?? "").trim(),
           esParteDirectorio: Boolean(
@@ -3861,6 +3743,14 @@ function PantallaInvestigacionAnalista({
 
   const aprobarEjecutivoExtraccion = (indice: number) => {
     if (!ejecutivosExtraccionPendientes[indice]) return;
+    const ordenSugerido = String(
+      datosInvestigacion.directorioEjecutivo.length + 1,
+    );
+    setEjecutivosExtraccionPendientes((anteriores) =>
+      anteriores.map((ejecutivo, i) =>
+        i === indice ? { ...ejecutivo, orden: ordenSugerido } : ejecutivo,
+      ),
+    );
     setEstaAbiertoModalRevisionEjecutivosExtraccion(false);
     setIndiceEjecutivoExtraccionAprobacion(indice);
     setIndiceEjecutivoExtraccionEdicion(indice);
@@ -4874,8 +4764,6 @@ function PantallaInvestigacionAnalista({
     );
 
     try {
-      paisExtraccionRef.current = { aplicado: false };
-      asignarCiudadExtraccionPendiente(null, false);
       reiniciarPendientesExtraccion(configuracionSecciones);
       const totalArchivos = archivos.length;
 
@@ -5223,7 +5111,12 @@ function PantallaInvestigacionAnalista({
         onChange={(valor) => actualizarIdentificacion("estadoActual", valor)}
       />
       <CustomSelectorBuscable
-        label="Calificación"
+        label={
+          <span className="inline-flex items-center gap-2">
+            Calificación
+            {obtenerIndicadorCambioExtraccion("identificacion.idCalificacion")}
+          </span>
+        }
         options={opcionesCalificacion}
         value={
           Number(datosInvestigacion.identificacion.idCalificacion) || undefined
@@ -5235,7 +5128,12 @@ function PantallaInvestigacionAnalista({
         disabled={esSoloLectura}
       />
       <CustomSelectorBuscable
-        label="Record de Pagos"
+        label={
+          <span className="inline-flex items-center gap-2">
+            Record de Pagos
+            {obtenerIndicadorCambioExtraccion("identificacion.idRecordPagos")}
+          </span>
+        }
         options={opcionesRecordPagos}
         value={
           Number(datosInvestigacion.identificacion.idRecordPagos) || undefined
@@ -5248,14 +5146,14 @@ function PantallaInvestigacionAnalista({
       />
       <AreaInvestigacionAnalista
         etiqueta="Observaciones de Identificación"
-        valor={datosInvestigacion.identificacion.datosAdicionales}
+        valor={datosInvestigacion.identificacion.observacionesIdentificacion}
         soloLectura={esSoloLectura}
         adicionalEtiqueta={obtenerAyudaTraduccion(
-          "identificacion.datosAdicionales",
+          "identificacion.observacionesIdentificacion",
         )}
         className="md:col-span-2"
         onChange={(valor) =>
-          actualizarIdentificacion("datosAdicionales", valor)
+          actualizarIdentificacion("observacionesIdentificacion", valor)
         }
       />
     </div>
@@ -8523,30 +8421,6 @@ function PantallaInvestigacionAnalista({
           <p>
             <span className="font-bold">Destino:</span> Serás redirigido a Mi
             Bandeja.
-          </p>
-        </CustomModalConfirmacionAccion>
-
-        <CustomModalConfirmacionAccion
-          isOpen={ciudadExtraccionPendiente != null}
-          onClose={() => asignarCiudadExtraccionPendiente(null, false)}
-          onConfirm={() => {
-            if (!ciudadExtraccionPendiente) return;
-            crearCiudadExtraccionMutation.mutate(ciudadExtraccionPendiente);
-          }}
-          title="Agregar ciudad/estado/provincia"
-          descripcion={`Está seguro de querer añadir esta ciudad/estado/provincia al país ${ciudadExtraccionPendiente?.pais ?? ""}?`}
-          isSubmitting={crearCiudadExtraccionMutation.isPending}
-          textoConfirmar="Añadir"
-          textoCargandoConfirmar="Añadiendo..."
-          varianteConfirmar="primary"
-        >
-          <p>
-            <span className="font-bold">País:</span>{" "}
-            {ciudadExtraccionPendiente?.pais ?? "-"}
-          </p>
-          <p>
-            <span className="font-bold">Ciudad/Estado/Provincia:</span>{" "}
-            {ciudadExtraccionPendiente?.valor ?? "-"}
           </p>
         </CustomModalConfirmacionAccion>
 
