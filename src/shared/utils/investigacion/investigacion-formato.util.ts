@@ -235,13 +235,15 @@ export function humanizarClaveExtraccion(valor: string) {
 
 export function construirSeccionesDisponiblesExtraccion(
   alcance: AlcanceExtraccionInforme,
+  incluirBalances: boolean,
 ): InformeSeccionExtraccionDisponible[] {
-  const entradasConfiguracion = alcance === "general"
+  const entradasConfiguracion = (alcance === "general"
     ? Object.entries(CONFIGURACION_EXTRACCION_POR_SECCION)
     : [[alcance, CONFIGURACION_EXTRACCION_POR_SECCION[alcance]]] as [
         IdSeccionInvestigacionAnalista,
         Record<string, string[]>,
-      ][];
+      ][]
+  ).filter(([claveGrupo]) => incluirBalances || claveGrupo !== "balances");
 
   return entradasConfiguracion.map(([claveGrupo, configuracion]) => {
     const campos = Object.entries(configuracion).flatMap(([claveSeccion, camposSeccion]) => {

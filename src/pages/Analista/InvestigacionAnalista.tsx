@@ -2984,8 +2984,8 @@ function PantallaInvestigacionAnalista({
     0,
   );
   const seccionesDisponiblesExtraccion = useMemo(
-    () => construirSeccionesDisponiblesExtraccion(alcanceExtraccionInformacion),
-    [alcanceExtraccionInformacion],
+    () => construirSeccionesDisponiblesExtraccion(alcanceExtraccionInformacion, esMigracionInforme),
+    [alcanceExtraccionInformacion, esMigracionInforme],
   );
   const abrirModalExtraccionInformacion = (
     alcance: AlcanceExtraccionInforme,
@@ -3152,6 +3152,8 @@ function PantallaInvestigacionAnalista({
   };
 
   const cantidadPendientesSeccionActiva = pendientesRevisionPorSeccion[idSeccionActiva] ?? 0;
+  const permiteExtraccionSeccionActiva = permiteExtraccionSeccion
+    && (idSeccionActiva !== "balances" || esMigracionInforme);
 
   const botonExtraSeccion = !esSoloLectura ? (
     <div className="flex flex-wrap items-center justify-end gap-2">
@@ -3165,7 +3167,7 @@ function PantallaInvestigacionAnalista({
           {cantidadPendientesSeccionActiva} resultado{cantidadPendientesSeccionActiva === 1 ? "" : "s"} por revisar
         </CustomButton>
       ) : null}
-      {permiteExtraccionSeccion ? (
+      {permiteExtraccionSeccionActiva ? (
         <CustomButton
           variant="secondary"
           size="sm"
