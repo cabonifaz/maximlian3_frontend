@@ -73,6 +73,12 @@ export default function RevisionInformeCoordinador() {
   const puedeDescargarXml = pedido?.idPlantilla === 5;
   const idPlantillaPedido = pedido?.idPlantilla;
   const idIdiomaPedido = pedido?.idIdioma || idIdioma;
+  // Hasta que cargan los metadatos se asume que falta la traduccion, para no ofrecer el envio antes de saberlo.
+  const requiereTraduccionInforme = metadatosDocumento?.requiereTraduccion ?? true;
+  // El backend solo informa idInformeOriginal cuando se revisa el traducido con su original ya aprobado,
+  // por lo que aprobarlo deja lista la version final aunque el indicador aun marque traduccion pendiente.
+  const puedeEnviarCorreoAlAprobar =
+    metadatosDocumento !== null && (!requiereTraduccionInforme || tieneInformeOriginal);
 
   const { data: opcionesPlantillaInforme } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.PLANTILLA_INFORME],
@@ -132,7 +138,7 @@ export default function RevisionInformeCoordinador() {
       setEstaAbiertoModalRechazo(false);
       setEstaAbiertoModalAprobar(false);
       setObservacionesRechazo([]);
-      if (enviarCorreoAlAprobar) {
+      if (enviarCorreoAlAprobar && puedeEnviarCorreoAlAprobar) {
         mutationEnviarNotificacion.mutate(idInformeSeguro);
       }
       setEnviarCorreoAlAprobar(false);
@@ -231,10 +237,14 @@ export default function RevisionInformeCoordinador() {
     setEstaAbiertoModalRechazo(true);
   };
 
+  const abrirModalAprobar = () => {
+    setEnviarCorreoAlAprobar(true);
+    setEstaAbiertoModalAprobar(true);
+  };
+
   const cerrarModalAprobar = () => {
     if (mutationRevision.isPending) return;
     setEstaAbiertoModalAprobar(false);
-    setEnviarCorreoAlAprobar(false);
   };
 
   const confirmarAprobacion = () => {
@@ -293,11 +303,10 @@ export default function RevisionInformeCoordinador() {
     }
   };
 
-  const requiereTraduccionInforme = metadatosDocumento?.requiereTraduccion ?? false;
   const formatosClienteInforme = metadatosDocumento?.formatosCliente ?? [];
   const cantidadEnviosInforme = metadatosDocumento?.cantidadEnvios ?? 0;
 
-  const contenidoAdicionalAprobar = requiereTraduccionInforme ? undefined : (
+  const contenidoAdicionalAprobar = !puedeEnviarCorreoAlAprobar ? undefined : (
     <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
       <input
         type="checkbox"
@@ -431,7 +440,7 @@ export default function RevisionInformeCoordinador() {
                   onDescargar={(formato) => {
                     void descargarDocumento(formato);
                   }}
-                  onAprobar={() => setEstaAbiertoModalAprobar(true)}
+                  onAprobar={abrirModalAprobar}
                   onRechazar={abrirModalRechazo}
                   onEnviarInforme={() => setEstaAbiertoModalEnviarInforme(true)}
                   onMetadatosDocumento={setMetadatosDocumento}
@@ -509,7 +518,7 @@ export default function RevisionInformeCoordinador() {
         onDescargar={(formato) => {
           void descargarDocumento(formato);
         }}
-        onAprobar={() => setEstaAbiertoModalAprobar(true)}
+        onAprobar={abrirModalAprobar}
         onRechazar={abrirModalRechazo}
         onEnviarInforme={() => setEstaAbiertoModalEnviarInforme(true)}
         onMetadatosDocumento={setMetadatosDocumento}

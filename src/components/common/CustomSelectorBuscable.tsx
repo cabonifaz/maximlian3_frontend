@@ -2,7 +2,12 @@ import { useCallback, useEffect, useState, useMemo, useRef, type ReactNode } fro
 import { Search, Loader2, Plus } from "lucide-react";
 import { useOpcionesTablaMaestraPaginadas } from "@maximilian/hooks/useOpcionesTablaMaestraPaginadas";
 import { useSeleccionAutomaticaOpcionUnica } from "@maximilian/hooks/useSeleccionAutomaticaOpcionUnica";
+import { useIdiomaTablaMaestra } from "@maximilian/shared/contexts/idioma-tabla-maestra.context";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
+import {
+  tieneTraduccionTablaMaestra,
+  traducirOpcionesTablaMaestra,
+} from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 
 import { CustomLabel } from "./CustomLabel";
 
@@ -78,7 +83,9 @@ export function CustomSelectorBuscable({
   const ALTURA_DROPDOWN = 260;
   const MARGEN_VENTANA = 16;
 
-  const idMaestroPredeterminado = usarPaginacion
+  const idIdiomaTablaMaestra = useIdiomaTablaMaestra();
+  const usaOpcionesTraducidas = tieneTraduccionTablaMaestra(idIdiomaTablaMaestra) && Boolean(options?.length);
+  const idMaestroPredeterminado = usarPaginacion && !usaOpcionesTraducidas
     ? idMaster ?? options?.find((opcion) => opcion.idMaestro > 0)?.idMaestro
     : undefined;
   const {
@@ -97,11 +104,12 @@ export function CustomSelectorBuscable({
   const resolvedOptions = useMemo(() => {
     if (!idMaestroPredeterminado) return options;
 
-    const opcionesPorId = new Map(opcionesConsultadas.map((opcion) => [opcion.num1, opcion]));
+    const opcionesConsultadasTraducidas = traducirOpcionesTablaMaestra(opcionesConsultadas, idIdiomaTablaMaestra) ?? [];
+    const opcionesPorId = new Map(opcionesConsultadasTraducidas.map((opcion) => [opcion.num1, opcion]));
     const opcionSeleccionada = options?.find((opcion) => opcion.num1 === value);
     if (opcionSeleccionada) opcionesPorId.set(opcionSeleccionada.num1, opcionSeleccionada);
     return Array.from(opcionesPorId.values());
-  }, [idMaestroPredeterminado, opcionesConsultadas, options, value]);
+  }, [idIdiomaTablaMaestra, idMaestroPredeterminado, opcionesConsultadas, options, value]);
 
   const filteredOptions = useMemo(() => {
     if (!resolvedOptions) return [];
