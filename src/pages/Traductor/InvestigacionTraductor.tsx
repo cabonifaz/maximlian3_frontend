@@ -168,6 +168,7 @@ import {
 import { enmascararNumeroCuenta } from "@maximilian/shared/utils/texto.util";
 import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 import { ProveedorFormatoFechaInforme } from "@maximilian/shared/contexts/formato-fecha-informe.context";
+import { ProveedorIdiomaTablaMaestra } from "@maximilian/shared/contexts/idioma-tabla-maestra.context";
 
 interface PropsPantallaInvestigacionAnalista {
   idPedido?: string;
@@ -939,13 +940,13 @@ function PantallaInvestigacionAnalista({
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.ESTADO_ACTUAL),
     staleTime: Infinity,
   });
-  const { data: opcionesCalificacion } = useQuery({
+  const { data: opcionesCalificacionBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.CALIFICACION],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CALIFICACION),
     staleTime: Infinity,
   });
 
-  const { data: opcionesRecordPagos } = useQuery({
+  const { data: opcionesRecordPagosBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.RECORD_PAGOS],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.RECORD_PAGOS),
     staleTime: Infinity,
@@ -1100,6 +1101,16 @@ function PantallaInvestigacionAnalista({
         idIdiomaTraduccion,
       ),
     [idIdiomaTraduccion, opcionesEstadoClienteBase],
+  );
+  const opcionesCalificacion = useMemo(
+    () =>
+      traducirOpcionesTablaMaestra(opcionesCalificacionBase, idIdiomaTraduccion),
+    [idIdiomaTraduccion, opcionesCalificacionBase],
+  );
+  const opcionesRecordPagos = useMemo(
+    () =>
+      traducirOpcionesTablaMaestra(opcionesRecordPagosBase, idIdiomaTraduccion),
+    [idIdiomaTraduccion, opcionesRecordPagosBase],
   );
   const opcionesCiudad = useMemo(
     () => traducirOpcionesTablaMaestra(opcionesCiudadBase, idIdiomaTraduccion),
@@ -2655,6 +2666,7 @@ function PantallaInvestigacionAnalista({
           valorFormulario: String(opcionPorTexto.num1),
         };
       }
+      return { valor: "" };
     }
 
     if (rutaTexto === "operacionPrincipal.categoriaCiiu") {
@@ -7818,6 +7830,7 @@ function PantallaInvestigacionAnalista({
       formato={formatoFechaInformeVisual}
       idIdioma={idIdiomaTraduccion}
     >
+      <ProveedorIdiomaTablaMaestra idIdioma={idIdiomaTraduccion}>
       <div ref={contenedorPantallaRef} className="min-w-0 space-y-6">
       <ResumenPedidoInvestigacionAnalista
         mostrarDatosPedido={!esMigracionInforme}
@@ -8718,6 +8731,7 @@ function PantallaInvestigacionAnalista({
           </p>
         </CustomModalConfirmacionEliminacion>
       </div>
+      </ProveedorIdiomaTablaMaestra>
     </ProveedorFormatoFechaInforme>
   );
 }

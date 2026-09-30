@@ -284,12 +284,14 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   ]);
 
   const valorSeleccionado = useMemo(
-    () => opcionesDisponibles.find((opcion) =>
-      obtenerValorSeleccion(opcion) === valorTextoActual
-      || opcion.string1 === valorTextoActual
-      || opcion.string2 === valorTextoActual
-      || obtenerEtiquetaOpcion?.(opcion) === valorTextoActual
-      || (permitirCoincidenciaPorId && String(opcion.num1 ?? "") === valorTextoActual)
+    () => (
+      opcionesDisponibles.find((opcion) => obtenerValorSeleccion(opcion) === valorTextoActual)
+      ?? opcionesDisponibles.find((opcion) =>
+        opcion.string1 === valorTextoActual
+        || opcion.string2 === valorTextoActual
+        || obtenerEtiquetaOpcion?.(opcion) === valorTextoActual
+        || (permitirCoincidenciaPorId && String(opcion.num1 ?? "") === valorTextoActual)
+      )
     )?.num1 ?? undefined,
     [obtenerEtiquetaOpcion, obtenerValorSeleccion, opcionesDisponibles, permitirCoincidenciaPorId, valorTextoActual],
   );

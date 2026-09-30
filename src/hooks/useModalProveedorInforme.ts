@@ -82,7 +82,7 @@ export function useModalProveedorInforme({
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PLAZO_CREDITO_PROVEEDOR),
     staleTime: Infinity,
   });
-  const { data: opcionesCalificacion } = useQuery({
+  const { data: opcionesCalificacionBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.CALIFICACION_PROVEEDOR],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.CALIFICACION_PROVEEDOR),
     staleTime: Infinity,
@@ -98,6 +98,11 @@ export function useModalProveedorInforme({
   const opcionesLimiteCredito = useMemo(
     () => traducirOpcionesTablaMaestra(opcionesLimiteCreditoBase, idIdioma),
     [idIdioma, opcionesLimiteCreditoBase],
+  );
+
+  const opcionesCalificacion = useMemo(
+    () => traducirOpcionesTablaMaestra(opcionesCalificacionBase, idIdioma),
+    [idIdioma, opcionesCalificacionBase],
   );
 
   const opcionesPlazoCredito = useMemo(
