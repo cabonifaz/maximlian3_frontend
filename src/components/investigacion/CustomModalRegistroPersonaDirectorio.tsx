@@ -112,7 +112,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
               <EncabezadoSeccion icono={<MapPin size={18} />} titulo="Ubicación" subtitulo="País, nacionalidad y dirección" />
               <div className="grid gap-4 md:grid-cols-2">
                 <CampoSelector nombre="pais" nombreId="idPais" etiqueta="País" opciones={opcionesPais} valorDefecto={valoresIniciales?.pais} valorDefectoId={valoresIniciales?.idPais} marcadorVacio="Seleccione un país" />
-                <CampoSelector nombre="nacionalidad" nombreId="idNacionalidad" etiqueta="Nacionalidad" opciones={opcionesNacionalidad} valorDefecto={valoresIniciales?.nacionalidad} valorDefectoId={valoresIniciales?.idNacionalidad} marcadorVacio="Seleccione nacionalidad" />
+                <CampoSelector nombre="nacionalidad" nombreId="idNacionalidad" etiqueta="Nacionalidad" opciones={opcionesNacionalidad} valorDefecto={valoresIniciales?.nacionalidad} valorDefectoId={valoresIniciales?.idNacionalidad} marcadorVacio="Seleccione nacionalidad" usarPaginacion={false} />
               </div>
               <div className="mt-4 grid gap-4 md:grid-cols-[1.4fr_1fr_0.75fr]">
                 <CampoInput nombre="direccionPrincipal" etiqueta="Dirección Principal" marcador="Ingrese dirección" valorInicial={valoresIniciales?.direccionPrincipal} />
@@ -209,6 +209,7 @@ function CampoSelector({
   valorDefecto,
   valorDefectoId,
   marcadorVacio = "Seleccione",
+  usarPaginacion,
 }: {
   nombre: string;
   nombreId: string;
@@ -217,6 +218,7 @@ function CampoSelector({
   valorDefecto?: string;
   valorDefectoId?: number;
   marcadorVacio?: string;
+  usarPaginacion?: boolean;
 }) {
   const [idSeleccionado, setIdSeleccionado] = useState<number | undefined>(valorDefectoId);
 
@@ -237,6 +239,7 @@ function CampoSelector({
       <CustomLabel className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8ea0c0]">{etiqueta}</CustomLabel>
       <CustomSelectorBuscable
         options={opciones}
+        usarPaginacion={usarPaginacion}
         value={idSeleccionado}
         displayValue={textoSeleccionado}
         onChange={setIdSeleccionado}

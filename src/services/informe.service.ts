@@ -730,12 +730,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     ventasContadoDetalle: obtenerTexto(registro.ventasContadoText, registro.VentasContadoText),
     ventasCreditoPorcentaje: formatearTextoNumericoDecimales(registro.ventasCredito, 2),
     ventasCreditoDetalle: obtenerTexto(registro.ventasCreditoText, registro.VentasCreditoText),
-    ventasCreditoTiempo: (idVentasCreditoTiempo && idVentasCreditoTiempo > 0 ? String(idVentasCreditoTiempo) : "") || obtenerTexto(
-      registro.ventasCreditoTiempo,
-      registro.VentasCreditoTiempo,
-      registro.ventasCreditoSeleccion,
-      registro.VentasCreditoSeleccion,
-    ),
+    ventasCreditoTiempo: idVentasCreditoTiempo && idVentasCreditoTiempo > 0
+      ? String(idVentasCreditoTiempo)
+      : "",
     territorioVentasPorcentaje: formatearTextoNumericoDecimales(
       registro.ventasNacionales
         ?? registro.VentasNacionales
@@ -1051,7 +1048,6 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
     TablaMaestraId.TIPO_EMPRESA,
     TablaMaestraId.ACTIVIDAD_ECONOMICA,
     TablaMaestraId.CLASE_CIIU,
-    TablaMaestraId.TIEMPO_CREDITO_VENTAS,
     TablaMaestraId.PLAZO_CREDITO_PROVEEDOR,
   ];
   const opcionesTablaMaestra = await servicioTablaMaestra
@@ -1072,7 +1068,6 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
   const tiposEmpresa = opcionesTablaMaestra[TablaMaestraId.TIPO_EMPRESA] ?? [];
   const actividadesEconomicas = opcionesTablaMaestra[TablaMaestraId.ACTIVIDAD_ECONOMICA] ?? [];
   const clasesCiiu = opcionesTablaMaestra[TablaMaestraId.CLASE_CIIU] ?? [];
-  const tiemposCreditoVentas = opcionesTablaMaestra[TablaMaestraId.TIEMPO_CREDITO_VENTAS] ?? [];
 
   const companias: RegistroCompaniaInvestigacion[] = await Promise.all(
     respuesta.datosInvestigacion.companiasRelacionadas.map(async (compania): Promise<RegistroCompaniaInvestigacion> => {
@@ -1217,9 +1212,6 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
         ? `${opcionClase.string2} - ${opcionClase.string1}`
         : (opcionClase.string1 ?? operacionPrincipal.claseCiiu);
     }
-  }
-  if (respuesta.idVentasCreditoTiempo) {
-    operacionPrincipal.ventasCreditoTiempo = tiemposCreditoVentas.find((t) => t.num1 === respuesta.idVentasCreditoTiempo)?.string1 ?? operacionPrincipal.ventasCreditoTiempo;
   }
 
   const enriquecerImportExport = (item: typeof respuesta.datosInvestigacion.importaciones[number]) => {
