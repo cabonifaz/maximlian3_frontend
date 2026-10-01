@@ -104,6 +104,8 @@ import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { usePrecargaTablaMaestra } from "@maximilian/hooks/usePrecargaTablaMaestra";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
+import { useOpcionesTipoDocumentoPorTipoPersona } from "@maximilian/hooks/useOpcionesTipoDocumentoPorTipoPersona";
+import { esTipoDocumentoCompatibleConTipoPersona } from "@maximilian/shared/utils/tabla-maestra.util";
 import {
   crearDatosInvestigacionVacios,
   seccionesInvestigacionAnalista,
@@ -1093,6 +1095,10 @@ function PantallaInvestigacionAnalista({
         idIdiomaTraduccion,
       ),
     [idIdiomaTraduccion, opcionesTipoRegTributarioBase],
+  );
+  const opcionesTipoIdentificacionFiscal = useOpcionesTipoDocumentoPorTipoPersona(
+    opcionesTipoRegTributario,
+    idTipoPersonaSeleccionado,
   );
   const opcionesEstadoCliente = useMemo(
     () =>
@@ -4947,7 +4953,20 @@ function PantallaInvestigacionAnalista({
           const etiqueta =
             opcionesTipoPersona?.find((opcion) => opcion.num1 === valor)
               ?.string1 ?? "";
-          actualizarIdentificacion("tipoPersona", etiqueta);
+          setDatosInvestigacion((anterior) => ({
+            ...anterior,
+            identificacion: {
+              ...anterior.identificacion,
+              tipoPersona: etiqueta,
+              tipoIdentificacionFiscal: esTipoDocumentoCompatibleConTipoPersona(
+                opcionesTipoRegTributario,
+                valor,
+                anterior.identificacion.tipoIdentificacionFiscal,
+              )
+                ? anterior.identificacion.tipoIdentificacionFiscal
+                : "",
+            },
+          }));
         }}
         onClear={() => {
           setIdTipoPersonaSeleccionado(undefined);
@@ -5022,8 +5041,9 @@ function PantallaInvestigacionAnalista({
         etiqueta="Tipo de Identificación Fiscal"
         valor={datosInvestigacion.identificacion.tipoIdentificacionFiscal}
         soloLectura={esSoloLectura}
-        opcionesTablaMaestra={opcionesTipoRegTributario}
+        opcionesTablaMaestra={opcionesTipoIdentificacionFiscal}
         idMaestro={TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION}
+        usarPaginacion={false}
         marcador="Seleccione tipo de identificación fiscal"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion(
           "identificacion.tipoIdentificacionFiscal",

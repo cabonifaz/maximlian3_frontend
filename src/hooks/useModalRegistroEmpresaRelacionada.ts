@@ -9,6 +9,7 @@ import type {
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
+import { filtrarTiposDocumentoPorTipoPersona } from "@maximilian/shared/utils/tabla-maestra.util";
 import type { RegistroPersonaAnalista } from "@maximilian/components/investigacion/CustomModalRegistroEmpresaRelacionada";
 
 interface ParametrosUseModalRegistroEmpresaRelacionada {
@@ -63,16 +64,35 @@ export function useModalRegistroEmpresaRelacionada({
   );
 
   const { data: opcionesTipoDocumentoBase } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_DOCUMENTO_IDENTIDAD],
+    queryKey: ["masterTable", TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION],
     queryFn: () =>
-      servicioTablaMaestra.list(TablaMaestraId.TIPO_DOCUMENTO_IDENTIDAD),
+      servicioTablaMaestra.list(TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION),
     enabled: estaAbierto,
     staleTime: Infinity,
   });
-  const opcionesTipoDocumento = traducirOpcionesTablaMaestra(
+  const opcionesTipoDocumentoTraducidas = traducirOpcionesTablaMaestra(
     opcionesTipoDocumentoBase,
     idIdioma,
   );
+  const opcionesTipoDocumento = filtrarTiposDocumentoPorTipoPersona(
+    opcionesTipoDocumentoTraducidas,
+    idTipoPersona,
+  );
+
+  const cambiarTipoPersona = (nuevoIdTipoPersona: number | undefined) => {
+    setIdTipoPersona(nuevoIdTipoPersona);
+    const opcionesCompatibles = filtrarTiposDocumentoPorTipoPersona(
+      opcionesTipoDocumentoTraducidas,
+      nuevoIdTipoPersona,
+    );
+    if (
+      idTipoDocumento != null &&
+      opcionesCompatibles &&
+      !opcionesCompatibles.some((opcion) => opcion.num1 === idTipoDocumento)
+    ) {
+      setIdTipoDocumento(undefined);
+    }
+  };
 
   useEffect(() => {
     if (!estaAbierto) return;
@@ -126,7 +146,7 @@ export function useModalRegistroEmpresaRelacionada({
             obtenerTextoPorId(opcionesTipoPersona, payloadBase.idTipoPersona) ||
             undefined,
           tipoDocumento:
-            obtenerTextoPorId(opcionesTipoDocumento, payloadBase.idTipoDocumento) ||
+            obtenerTextoPorId(opcionesTipoDocumentoTraducidas, payloadBase.idTipoDocumento) ||
             undefined,
         } satisfies CompaniaListaItem;
       }
@@ -190,7 +210,7 @@ export function useModalRegistroEmpresaRelacionada({
           obtenerTextoPorId(opcionesTipoPersona, payloadBase.idTipoPersona) ||
           undefined,
         tipoDocumento:
-          obtenerTextoPorId(opcionesTipoDocumento, payloadBase.idTipoDocumento) ||
+          obtenerTextoPorId(opcionesTipoDocumentoTraducidas, payloadBase.idTipoDocumento) ||
           undefined,
       } satisfies CompaniaListaItem;
     },
@@ -220,6 +240,7 @@ export function useModalRegistroEmpresaRelacionada({
   });
 
   return {
+    cambiarTipoPersona,
     ciudadProvinciaEstado,
     codigoPostal,
     direccion,
@@ -237,7 +258,6 @@ export function useModalRegistroEmpresaRelacionada({
     setExisteInformacion,
     setIdPais,
     setIdTipoDocumento,
-    setIdTipoPersona,
     setNombreCompleto,
     setNumeroDocumento,
     setTelefono,
