@@ -25,12 +25,6 @@ export function useAccionesAprobacionMigraciones({
   const [modalAbierto, setModalAbierto] = useState<ModalBandejaAprobacionMigraciones | null>(null);
 
   const idsSeleccionados = registrosSeleccionados.map((registro) => registro.idInforme);
-  const idsParaAgregarMuestra = registrosSeleccionados
-    .filter((registro) => !registro.esMuestra)
-    .map((registro) => registro.idInforme);
-  const idsParaQuitarMuestra = registrosSeleccionados
-    .filter((registro) => registro.esMuestra)
-    .map((registro) => registro.idInforme);
 
   const recargarBandeja = () =>
     queryClient.invalidateQueries({ queryKey: [CLAVE_CONSULTA_INFORMES_PENDIENTES_APROBACION] });
@@ -60,16 +54,6 @@ export function useAccionesAprobacionMigraciones({
     onError: recargarBandeja,
   });
 
-  const mutacionAgregarMuestra = useMutation({
-    mutationFn: () => servicioInformeAprobacion.agregarMuestra({ idInformes: idsParaAgregarMuestra }),
-    onSuccess: finalizarAccion,
-  });
-
-  const mutacionQuitarMuestra = useMutation({
-    mutationFn: () => servicioInformeAprobacion.quitarMuestra({ idInformes: idsParaQuitarMuestra }),
-    onSuccess: finalizarAccion,
-  });
-
   const estaAprobando = mutacionAprobarSeleccionados.isPending || mutacionAprobarTodos.isPending;
 
   const cerrarModal = () => {
@@ -79,19 +63,13 @@ export function useAccionesAprobacionMigraciones({
 
   return {
     abrirModal: setModalAbierto,
-    agregarMuestra: () => mutacionAgregarMuestra.mutate(),
     aprobarSeleccionados: () => mutacionAprobarSeleccionados.mutate(),
     aprobarTodos: () => mutacionAprobarTodos.mutate(),
-    cantidadParaAgregarMuestra: idsParaAgregarMuestra.length,
-    cantidadParaQuitarMuestra: idsParaQuitarMuestra.length,
     cantidadSeleccionados: idsSeleccionados.length,
     cerrarModal,
-    estaAgregandoMuestra: mutacionAgregarMuestra.isPending,
     estaAprobandoSeleccionados: mutacionAprobarSeleccionados.isPending,
     estaAprobandoTodos: mutacionAprobarTodos.isPending,
-    estaQuitandoMuestra: mutacionQuitarMuestra.isPending,
     modalAbierto,
-    puedeAprobarTodos: !parametros.soloMuestra && totalRegistros > 0,
-    quitarMuestra: () => mutacionQuitarMuestra.mutate(),
+    puedeAprobarTodos: totalRegistros > 0,
   };
 }

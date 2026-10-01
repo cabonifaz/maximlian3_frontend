@@ -83,10 +83,7 @@ export function CustomBandejaAprobacionMigraciones() {
 
           <CustomAccionesBandejaAprobacionMigraciones
             acciones={bandeja.acciones}
-            soloMuestra={bandeja.soloMuestra}
             terminoBusqueda={bandeja.terminoBusqueda}
-            totalMuestra={data?.totalMuestra}
-            onAlternarSoloMuestra={bandeja.alternarSoloMuestra}
             onTerminoBusquedaChange={bandeja.cambiarTerminoBusqueda}
           />
         </div>
@@ -104,24 +101,13 @@ export function CustomBandejaAprobacionMigraciones() {
           totalRecords={data?.totalRegistros ?? 0}
           entityLabel="informes"
           onPageChange={bandeja.setPaginaActual}
-          emptyMessage={bandeja.soloMuestra
-            ? "No hay informes de la muestra pendientes de aprobación."
-            : "No hay informes pendientes de aprobación."}
+          emptyMessage="No hay informes pendientes de aprobación."
           selectable
           selectedIds={bandeja.idsSeleccionados}
           onSelectionChange={bandeja.setIdsSeleccionados}
           renderRow={(registro) => (
             <>
-              <td className="px-6 py-4 text-sm font-semibold text-slate-700">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span>{registro.investigado}</span>
-                  {registro.esMuestra ? (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
-                      Muestra
-                    </span>
-                  ) : null}
-                </div>
-              </td>
+              <td className="px-6 py-4 text-sm font-semibold text-slate-700">{registro.investigado}</td>
               <td className="px-6 py-4 text-sm text-slate-500">{registro.pais}</td>
               <td className="px-6 py-4 text-sm text-slate-500">{registro.plantilla}</td>
               <td className="px-6 py-4 text-sm text-slate-500">{registro.idioma}</td>
