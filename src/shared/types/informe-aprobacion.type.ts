@@ -7,7 +7,6 @@ export interface RegistroInformePendienteAprobacion {
   idioma: string;
   usuario: string;
   fecha: string;
-  esMuestra: boolean;
 }
 
 export interface ParametrosListaInformesPendientesAprobacion {
@@ -17,7 +16,6 @@ export interface ParametrosListaInformesPendientesAprobacion {
   busqueda?: string;
   fchInicio?: string;
   fchFin?: string;
-  soloMuestra?: boolean;
   numPag: number;
 }
 
@@ -25,14 +23,9 @@ export interface RespuestaListaInformesPendientesAprobacion {
   lstInformes: RegistroInformePendienteAprobacion[];
   totalRegistros: number;
   totalPaginas: number;
-  totalMuestra?: number;
 }
 
 export interface AprobarInformesRequest {
-  idInformes: number[];
-}
-
-export interface MuestraInformesRequest {
   idInformes: number[];
 }
 

@@ -13,7 +13,6 @@ export function useBandejaAprobacionMigraciones() {
   const [filtroPaises, setFiltroPaises] = useState<number[]>([]);
   const [filtroPlantillas, setFiltroPlantillas] = useState<number[]>([]);
   const [filtroIdiomas, setFiltroIdiomas] = useState<number[]>([]);
-  const [soloMuestra, setSoloMuestra] = useState(false);
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
   const [idsSeleccionados, setIdsSeleccionados] = useState<Set<number>>(new Set());
@@ -27,7 +26,6 @@ export function useBandejaAprobacionMigraciones() {
     busqueda: terminoBusquedaConRetardo || undefined,
     fchInicio: rangoFechas.fechasInvalidas ? undefined : convertirDiaLocalAUtcIso(rangoFechas.fechaInicioFiltro, "inicio"),
     fchFin: rangoFechas.fechasInvalidas ? undefined : convertirDiaLocalAUtcIso(rangoFechas.fechaFinFiltro, "fin"),
-    soloMuestra,
     numPag: paginaActual,
   };
 
@@ -60,16 +58,9 @@ export function useBandejaAprobacionMigraciones() {
     reiniciarPagina();
   };
 
-  const alternarSoloMuestra = () => {
-    setSoloMuestra((anterior) => !anterior);
-    setIdsSeleccionados(new Set());
-    reiniciarPagina();
-  };
-
   return {
     ...consulta,
     acciones,
-    alternarSoloMuestra,
     cambiarTerminoBusqueda,
     filtroIdiomas,
     filtroPaises,
@@ -83,7 +74,6 @@ export function useBandejaAprobacionMigraciones() {
     setFiltroPlantillas,
     setIdsSeleccionados,
     setPaginaActual,
-    soloMuestra,
     terminoBusqueda,
     tieneFiltrosActivos,
   };

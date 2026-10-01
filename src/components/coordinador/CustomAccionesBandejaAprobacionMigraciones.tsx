@@ -1,27 +1,21 @@
-import { CheckCheck, ListChecks, ListFilter, ListMinus, ListPlus, Search } from "lucide-react";
+import { CheckCheck, ListChecks, Search } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { FUNCIONALIDADES_HABILITADAS } from "@maximilian/shared/constants/funcionalidades.constants";
 import type { useAccionesAprobacionMigraciones } from "@maximilian/hooks/useAccionesAprobacionMigraciones";
 
 interface PropsCustomAccionesBandejaAprobacionMigraciones {
   acciones: ReturnType<typeof useAccionesAprobacionMigraciones>;
-  soloMuestra: boolean;
   terminoBusqueda: string;
-  totalMuestra?: number;
-  onAlternarSoloMuestra: () => void;
   onTerminoBusquedaChange: (valor: string) => void;
 }
 
 export function CustomAccionesBandejaAprobacionMigraciones({
   acciones,
-  soloMuestra,
   terminoBusqueda,
-  totalMuestra,
-  onAlternarSoloMuestra,
   onTerminoBusquedaChange,
 }: PropsCustomAccionesBandejaAprobacionMigraciones) {
   const { cantidadSeleccionados } = acciones;
-  const muestraHabilitada = FUNCIONALIDADES_HABILITADAS.muestraAprobacionMigraciones;
+  const aprobarTodosHabilitado = FUNCIONALIDADES_HABILITADAS.aprobarTodosMigraciones;
 
   return (
     <div className="flex flex-wrap items-center gap-2 lg:justify-end">
@@ -35,48 +29,6 @@ export function CustomAccionesBandejaAprobacionMigraciones({
         />
       </label>
 
-      {muestraHabilitada ? (
-        <>
-          <CustomButton
-            variant="secondary"
-            size="sm"
-            aria-pressed={soloMuestra}
-            onClick={onAlternarSoloMuestra}
-            className={soloMuestra ? "border-brand-black bg-brand-black text-brand-white hover:bg-brand-black" : undefined}
-          >
-            <ListFilter size={16} />
-            Solo muestra
-            {totalMuestra !== undefined ? ` (${totalMuestra})` : ""}
-          </CustomButton>
-
-          {acciones.cantidadParaQuitarMuestra > 0 ? (
-            <CustomButton
-              variant="secondary"
-              size="sm"
-              loading={acciones.estaQuitandoMuestra}
-              loadingText="Quitando..."
-              onClick={acciones.quitarMuestra}
-            >
-              <ListMinus size={16} />
-              Quitar de la muestra ({acciones.cantidadParaQuitarMuestra})
-            </CustomButton>
-          ) : null}
-
-          <CustomButton
-            variant="secondary"
-            size="sm"
-            disabled={acciones.cantidadParaAgregarMuestra === 0}
-            loading={acciones.estaAgregandoMuestra}
-            loadingText="Agregando..."
-            onClick={acciones.agregarMuestra}
-          >
-            <ListPlus size={16} />
-            Agregar a la muestra
-            {acciones.cantidadParaAgregarMuestra > 0 ? ` (${acciones.cantidadParaAgregarMuestra})` : ""}
-          </CustomButton>
-        </>
-      ) : null}
-
       <CustomButton
         variant="wine"
         size="sm"
@@ -88,12 +40,11 @@ export function CustomAccionesBandejaAprobacionMigraciones({
         {cantidadSeleccionados > 0 ? ` (${cantidadSeleccionados})` : ""}
       </CustomButton>
 
-      {muestraHabilitada ? (
+      {aprobarTodosHabilitado ? (
         <CustomButton
           variant="primary"
           size="sm"
           disabled={!acciones.puedeAprobarTodos}
-          title={soloMuestra ? "Desactiva el filtro Solo muestra para aprobar todo." : undefined}
           onClick={() => acciones.abrirModal("aprobar-todos")}
         >
           <CheckCheck size={16} />
