@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAccionesAprobacionMigraciones } from "@maximilian/hooks/useAccionesAprobacionMigraciones";
 import { useFiltroRangoFechas } from "@maximilian/hooks/useFiltroRangoFechas";
+import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { servicioInformeAprobacion } from "@maximilian/services/informe-aprobacion.service";
 import { CLAVE_CONSULTA_INFORMES_PENDIENTES_APROBACION } from "@maximilian/shared/constants/pages/Coordinador/aprobacion-migraciones.constants";
 import type { ParametrosListaInformesPendientesAprobacion } from "@maximilian/shared/types/informe-aprobacion.type";
@@ -13,6 +14,8 @@ export function useBandejaAprobacionMigraciones() {
   const [filtroPlantillas, setFiltroPlantillas] = useState<number[]>([]);
   const [filtroIdiomas, setFiltroIdiomas] = useState<number[]>([]);
   const [soloMuestra, setSoloMuestra] = useState(false);
+  const [terminoBusqueda, setTerminoBusqueda] = useState("");
+  const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
   const [idsSeleccionados, setIdsSeleccionados] = useState<Set<number>>(new Set());
   const reiniciarPagina = () => setPaginaActual(1);
   const rangoFechas = useFiltroRangoFechas({ onCambio: reiniciarPagina });
@@ -21,6 +24,7 @@ export function useBandejaAprobacionMigraciones() {
     idPais: filtroPaises[0],
     idPlantilla: filtroPlantillas[0],
     idIdioma: filtroIdiomas[0],
+    busqueda: terminoBusquedaConRetardo || undefined,
     fchInicio: rangoFechas.fechasInvalidas ? undefined : convertirDiaLocalAUtcIso(rangoFechas.fechaInicioFiltro, "inicio"),
     fchFin: rangoFechas.fechasInvalidas ? undefined : convertirDiaLocalAUtcIso(rangoFechas.fechaFinFiltro, "fin"),
     soloMuestra,
@@ -31,6 +35,7 @@ export function useBandejaAprobacionMigraciones() {
     parametros.idPais,
     parametros.idPlantilla,
     parametros.idIdioma,
+    parametros.busqueda,
     parametros.fchInicio,
     parametros.fchFin,
   ].some((valor) => valor !== undefined);
@@ -49,6 +54,12 @@ export function useBandejaAprobacionMigraciones() {
     onAccionCompletada: () => setIdsSeleccionados(new Set()),
   });
 
+  const cambiarTerminoBusqueda = (valor: string) => {
+    setTerminoBusqueda(valor);
+    setIdsSeleccionados(new Set());
+    reiniciarPagina();
+  };
+
   const alternarSoloMuestra = () => {
     setSoloMuestra((anterior) => !anterior);
     setIdsSeleccionados(new Set());
@@ -59,6 +70,7 @@ export function useBandejaAprobacionMigraciones() {
     ...consulta,
     acciones,
     alternarSoloMuestra,
+    cambiarTerminoBusqueda,
     filtroIdiomas,
     filtroPaises,
     filtroPlantillas,
@@ -72,6 +84,7 @@ export function useBandejaAprobacionMigraciones() {
     setIdsSeleccionados,
     setPaginaActual,
     soloMuestra,
+    terminoBusqueda,
     tieneFiltrosActivos,
   };
 }

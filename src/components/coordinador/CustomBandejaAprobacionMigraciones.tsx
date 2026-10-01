@@ -77,15 +77,17 @@ export function CustomBandejaAprobacionMigraciones() {
       <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-brand-black">Aprobación de migraciones</h1>
+            <h1 className="text-2xl font-bold text-brand-black">Migración</h1>
             <p className="mt-2 text-sm text-gray-500">Informes pendientes de aprobación.</p>
           </div>
 
           <CustomAccionesBandejaAprobacionMigraciones
             acciones={bandeja.acciones}
             soloMuestra={bandeja.soloMuestra}
+            terminoBusqueda={bandeja.terminoBusqueda}
             totalMuestra={data?.totalMuestra}
             onAlternarSoloMuestra={bandeja.alternarSoloMuestra}
+            onTerminoBusquedaChange={bandeja.cambiarTerminoBusqueda}
           />
         </div>
 
@@ -96,7 +98,7 @@ export function CustomBandejaAprobacionMigraciones() {
           isLoading={bandeja.isLoading}
           isError={bandeja.isError}
           onRetry={() => void bandeja.refetch()}
-          errorMessage="No se pudo cargar la bandeja de aprobación."
+          errorMessage="No se pudo cargar la bandeja de migración."
           paginaActual={bandeja.paginaActual}
           totalPages={data?.totalPaginas ?? 1}
           totalRecords={data?.totalRegistros ?? 0}

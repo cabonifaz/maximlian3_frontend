@@ -77,6 +77,7 @@ export function CustomSelectorBuscable({
   onClear,
 }: CustomSelectorBuscableProps) {
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
+  const [opcionElegida, setOpcionElegida] = useState<EntradaTablaMaestra | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -106,10 +107,11 @@ export function CustomSelectorBuscable({
 
     const opcionesConsultadasTraducidas = traducirOpcionesTablaMaestra(opcionesConsultadas, idIdiomaTablaMaestra) ?? [];
     const opcionesPorId = new Map(opcionesConsultadasTraducidas.map((opcion) => [opcion.num1, opcion]));
-    const opcionSeleccionada = options?.find((opcion) => opcion.num1 === value);
+    const opcionSeleccionada = options?.find((opcion) => opcion.num1 === value)
+      ?? (opcionElegida?.num1 === value ? opcionElegida : undefined);
     if (opcionSeleccionada) opcionesPorId.set(opcionSeleccionada.num1, opcionSeleccionada);
     return Array.from(opcionesPorId.values());
-  }, [idIdiomaTablaMaestra, idMaestroPredeterminado, opcionesConsultadas, options, value]);
+  }, [idIdiomaTablaMaestra, idMaestroPredeterminado, opcionElegida, opcionesConsultadas, options, value]);
 
   const filteredOptions = useMemo(() => {
     if (!resolvedOptions) return [];
@@ -273,6 +275,7 @@ export function CustomSelectorBuscable({
                         key={opt.num1}
                         className={`px-4 py-2 text-sm cursor-pointer hover:bg-brand-wine/5 transition-colors ${value === opt.num1 ? "bg-brand-wine/10 text-brand-wine font-bold" : "text-gray-600"}`}
                         onClick={() => {
+                          setOpcionElegida(opt);
                           onChange(opt.num1!);
                           setIsOpen(false);
                           cambiarTerminoBusqueda("");
