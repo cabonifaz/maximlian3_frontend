@@ -77,15 +77,14 @@ export function CustomBandejaAprobacionMigraciones() {
       <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-brand-black">Aprobación de migraciones</h1>
+            <h1 className="text-2xl font-bold text-brand-black">Migración</h1>
             <p className="mt-2 text-sm text-gray-500">Informes pendientes de aprobación.</p>
           </div>
 
           <CustomAccionesBandejaAprobacionMigraciones
             acciones={bandeja.acciones}
-            soloMuestra={bandeja.soloMuestra}
-            totalMuestra={data?.totalMuestra}
-            onAlternarSoloMuestra={bandeja.alternarSoloMuestra}
+            terminoBusqueda={bandeja.terminoBusqueda}
+            onTerminoBusquedaChange={bandeja.cambiarTerminoBusqueda}
           />
         </div>
 
@@ -96,30 +95,19 @@ export function CustomBandejaAprobacionMigraciones() {
           isLoading={bandeja.isLoading}
           isError={bandeja.isError}
           onRetry={() => void bandeja.refetch()}
-          errorMessage="No se pudo cargar la bandeja de aprobación."
+          errorMessage="No se pudo cargar la bandeja de migración."
           paginaActual={bandeja.paginaActual}
           totalPages={data?.totalPaginas ?? 1}
           totalRecords={data?.totalRegistros ?? 0}
           entityLabel="informes"
           onPageChange={bandeja.setPaginaActual}
-          emptyMessage={bandeja.soloMuestra
-            ? "No hay informes de la muestra pendientes de aprobación."
-            : "No hay informes pendientes de aprobación."}
+          emptyMessage="No hay informes pendientes de aprobación."
           selectable
           selectedIds={bandeja.idsSeleccionados}
           onSelectionChange={bandeja.setIdsSeleccionados}
           renderRow={(registro) => (
             <>
-              <td className="px-6 py-4 text-sm font-semibold text-slate-700">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span>{registro.investigado}</span>
-                  {registro.esMuestra ? (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
-                      Muestra
-                    </span>
-                  ) : null}
-                </div>
-              </td>
+              <td className="px-6 py-4 text-sm font-semibold text-slate-700">{registro.investigado}</td>
               <td className="px-6 py-4 text-sm text-slate-500">{registro.pais}</td>
               <td className="px-6 py-4 text-sm text-slate-500">{registro.plantilla}</td>
               <td className="px-6 py-4 text-sm text-slate-500">{registro.idioma}</td>

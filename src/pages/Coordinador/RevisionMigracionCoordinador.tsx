@@ -13,7 +13,7 @@ export default function RevisionMigracionCoordinador() {
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-slate-50 p-8">
         <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
           <h1 className="text-xl font-bold text-slate-900">Informe no encontrado</h1>
-          <p className="mt-2 text-sm text-slate-500">Abre el informe desde la bandeja de aprobación.</p>
+          <p className="mt-2 text-sm text-slate-500">Abre el informe desde la bandeja de migración.</p>
           <CustomButton className="mt-6" onClick={revision.volverBandeja}>Volver a la bandeja</CustomButton>
         </div>
       </div>

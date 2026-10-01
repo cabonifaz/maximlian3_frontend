@@ -4,7 +4,6 @@ import { ErrorRespuestaApi, MessageType, type ApiResponse } from "@maximilian/sh
 import type {
   AprobarInformesRequest,
   AprobarTodosInformesRequest,
-  MuestraInformesRequest,
   ParametrosListaInformesPendientesAprobacion,
   RespuestaListaInformesPendientesAprobacion,
 } from "@maximilian/shared/types/informe-aprobacion.type";
@@ -26,9 +25,9 @@ export const servicioInformeAprobacion = {
           IdPais: parametros.idPais,
           IdPlantilla: parametros.idPlantilla,
           IdIdioma: parametros.idIdioma,
+          Busqueda: parametros.busqueda,
           FchInicio: parametros.fchInicio,
           FchFin: parametros.fchFin,
-          SoloMuestra: parametros.soloMuestra || undefined,
           NumPag: parametros.numPag,
         },
         signal: senal,
@@ -42,8 +41,4 @@ export const servicioInformeAprobacion = {
     enviarAccionAprobacion(ENDPOINTS_INFORME_APROBACION.aprobar, payload),
   aprobarTodos: (payload: AprobarTodosInformesRequest) =>
     enviarAccionAprobacion(ENDPOINTS_INFORME_APROBACION.aprobarTodos, payload),
-  agregarMuestra: (payload: MuestraInformesRequest) =>
-    enviarAccionAprobacion(ENDPOINTS_INFORME_APROBACION.agregarMuestra, payload),
-  quitarMuestra: (payload: MuestraInformesRequest) =>
-    enviarAccionAprobacion(ENDPOINTS_INFORME_APROBACION.quitarMuestra, payload),
 };
