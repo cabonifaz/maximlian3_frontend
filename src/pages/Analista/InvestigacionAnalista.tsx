@@ -875,6 +875,17 @@ function PantallaInvestigacionAnalista({
       if (idInformeResultado && idInformeResultado > 0) {
         setIdInformeActual(idInformeResultado);
         setDebeCrearInformePorRechazo(false);
+
+        // La respuesta no trae los ids de los hijos creados (locales, imagenes, etc.); sin ellos el siguiente guardado
+        // los enviaria en 0 y SP_Informe_Actualizar los borraria y recrearia, dejando las imagenes en locales borrados.
+        try {
+          const informeGuardado = esMigracionInforme
+            ? await servicioInformeMigracion.obtener(idInformeResultado)
+            : await informeService.obtener({ idPedido: Number(idPedido), idInforme: idInformeResultado });
+          if (informeGuardado?.datosInvestigacion) setDatosInvestigacion(informeGuardado.datosInvestigacion);
+        } catch {
+          // si la recarga falla se conserva el estado local
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ["informes"] });
