@@ -44,6 +44,7 @@ export function MultiCustomSelectorBuscable({
   mostrarAccionSeleccionarTodos = false,
 }: MultiCustomSelectorBuscableProps) {
   const [terminoBusqueda, setSearchTerm] = useState("");
+  const [opcionesElegidas, setOpcionesElegidas] = useState<EntradaTablaMaestra[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -67,11 +68,14 @@ export function MultiCustomSelectorBuscable({
     if (!idMaestroPredeterminado) return options;
 
     const opcionesPorId = new Map(opcionesConsultadas.map((opcion) => [opcion.num1, opcion]));
+    opcionesElegidas
+      .filter((opcion) => opcion.num1 != null && value.includes(opcion.num1) && !opcionesPorId.has(opcion.num1))
+      .forEach((opcion) => opcionesPorId.set(opcion.num1, opcion));
     options?.filter((opcion) => opcion.num1 != null && value.includes(opcion.num1)).forEach((opcion) => {
       opcionesPorId.set(opcion.num1, opcion);
     });
     return Array.from(opcionesPorId.values());
-  }, [idMaestroPredeterminado, opcionesConsultadas, options, value]);
+  }, [idMaestroPredeterminado, opcionesConsultadas, opcionesElegidas, options, value]);
 
   const filteredOptions = useMemo(() => {
     if (!resolvedOptions) return [];
@@ -161,11 +165,20 @@ export function MultiCustomSelectorBuscable({
     void cargarSiguientePagina();
   };
 
+  const recordarOpcionesElegidas = (opciones: EntradaTablaMaestra[]) => {
+    setOpcionesElegidas((anteriores) => [
+      ...anteriores.filter((anterior) => !opciones.some((opcion) => opcion.num1 === anterior.num1)),
+      ...opciones,
+    ]);
+  };
+
   const handleSelect = (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
     if (value.includes(id)) {
       onChange(value.filter((v) => v !== id));
     } else {
+      const opcion = resolvedOptions?.find((item) => item.num1 === id);
+      if (opcion) recordarOpcionesElegidas([opcion]);
       onChange([...value, id]);
     }
   };
@@ -260,6 +273,7 @@ export function MultiCustomSelectorBuscable({
                           return;
                         }
 
+                        recordarOpcionesElegidas(filteredOptions);
                         onChange(Array.from(new Set([...value, ...idsOpcionesFiltradas])));
                       }}
                     >

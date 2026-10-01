@@ -1,16 +1,16 @@
 import { z } from "zod";
 
 export const esquemaInicioSesion = z.object({
-  username: z.string().min(1, "El nombre de usuario es requerido"),
-  password: z.string().min(1, "La contraseña es requerida"),
+  username: z.string().trim().min(1, "El nombre de usuario es requerido"),
+  password: z.string().trim().min(1, "La contraseña es requerida"),
   recordarme: z.boolean(),
 });
 
 export type DatosFormularioInicioSesion = z.infer<typeof esquemaInicioSesion>;
 
 export const esquemaNuevaContrasena = z.object({
-  newPassword: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
-  confirmPassword: z.string()
+  newPassword: z.string().trim().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  confirmPassword: z.string().trim()
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
   path: ["confirmPassword"],
@@ -19,15 +19,15 @@ export const esquemaNuevaContrasena = z.object({
 export type DatosFormularioNuevaContrasena = z.infer<typeof esquemaNuevaContrasena>;
 
 export const esquemaOlvideContrasena = z.object({
-  username: z.string().min(1, "El nombre de usuario es requerido"),
+  username: z.string().trim().min(1, "El nombre de usuario es requerido"),
 });
 
 export type DatosFormularioOlvideContrasena = z.infer<typeof esquemaOlvideContrasena>;
 
 export const esquemaRestablecerContrasena = z.object({
-  code: z.string().min(1, "El código de confirmación es requerido"),
-  newPassword: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
-  confirmPassword: z.string()
+  code: z.string().trim().min(1, "El código de confirmación es requerido"),
+  newPassword: z.string().trim().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  confirmPassword: z.string().trim()
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
   path: ["confirmPassword"],

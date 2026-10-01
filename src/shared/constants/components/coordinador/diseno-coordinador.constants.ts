@@ -7,5 +7,5 @@ export const coordinatorMenuItems = [
   { name: "Asignaciones", icon: UserPlus, path: "/coordinador/asignaciones" },
   { name: "Revisión y Aprobación", icon: CheckSquare, path: "/coordinador/revision" },
   { name: "Facturación", icon: FileText, path: "/coordinador/facturacion" },
-  { name: "Aprobación de Migraciones", icon: FileCheck2, path: "/coordinador/migraciones" },
+  { name: "Migración", icon: FileCheck2, path: "/coordinador/migraciones" },
 ];

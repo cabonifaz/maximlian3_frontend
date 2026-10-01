@@ -14,6 +14,7 @@ export interface ParametrosListaInformesPendientesAprobacion {
   idPais?: number;
   idPlantilla?: number;
   idIdioma?: number;
+  busqueda?: string;
   fchInicio?: string;
   fchFin?: string;
   soloMuestra?: boolean;
@@ -39,6 +40,7 @@ export interface AprobarTodosInformesRequest {
   idPais: number | null;
   idPlantilla: number | null;
   idIdioma: number | null;
+  busqueda: string | null;
   fchInicio: string | null;
   fchFin: string | null;
   totalEsperado: number;

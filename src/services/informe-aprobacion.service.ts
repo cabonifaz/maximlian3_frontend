@@ -26,6 +26,7 @@ export const servicioInformeAprobacion = {
           IdPais: parametros.idPais,
           IdPlantilla: parametros.idPlantilla,
           IdIdioma: parametros.idIdioma,
+          Busqueda: parametros.busqueda,
           FchInicio: parametros.fchInicio,
           FchFin: parametros.fchFin,
           SoloMuestra: parametros.soloMuestra || undefined,
