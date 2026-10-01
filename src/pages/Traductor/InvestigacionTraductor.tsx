@@ -1426,7 +1426,13 @@ function PantallaInvestigacionAnalista({
               if (!imagen.archivo) return imagen;
               const idAsignado = idsPorNombre.get(imagen.nombre);
               if (!idAsignado) return imagen;
-              return { ...imagen, idInformeLocalImagen: idAsignado };
+              // Subida ok: la foto ya está en S3, se descartan el blob temporal y el archivo para que un guardado
+              // posterior no los reenvíe como si fueran la ruta persistida. Si la subida falló se conserva el archivo.
+              return {
+                ...imagen,
+                idInformeLocalImagen: idAsignado,
+                ...(idsSubidosOk.includes(idAsignado) ? { url: undefined, archivo: undefined, esNueva: false } : {}),
+              };
             }),
           })),
         }));

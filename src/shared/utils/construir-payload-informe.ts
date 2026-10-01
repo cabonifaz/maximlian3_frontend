@@ -584,7 +584,9 @@ export function construirPayloadInforme({
         idInformeLocalImagen: imagen.idInformeLocalImagen ?? 0,
         nombre: imagen.nombre,
         descripcion: imagen.descripcion ?? "",
-        imagenURL: imagen.url ?? "",
+        // Una foto ya persistida (con id) no manda URL: lo que hay en memoria es un blob temporal o una URL firmada, y
+        // SP_Informe_Actualizar guardaría ese valor encima de la clave de S3. Vacío = conservar la clave existente.
+        imagenURL: (imagen.idInformeLocalImagen ?? 0) > 0 ? "" : (imagen.url ?? ""),
         idTipoArchivo: obtenerIdTipoArchivo(imagen.tipo ?? local.imagenTipo),
       })),
     })),
