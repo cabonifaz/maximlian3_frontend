@@ -526,6 +526,7 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
     operacionPrincipal: {
       sector: "",
       actividad: "",
+      codigoNace: "",
       categoriaCiiu: "",
       claseCiiu: "",
       actividadPrincipal: "",
@@ -566,6 +567,7 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       comentariosFinancieros: "",
       activosFijos: "",
       seguros: "",
+      contacto: "",
     },
     balances: [],
     referencias: {
@@ -580,6 +582,9 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
     datosGenerales: {
       informacionGeneral: "",
       opinionCredito: "",
+      lineaCreditoRecomendada: "",
+      lineaCreditoMaxima: "",
+      terminos: "",
     },
     directorioEjecutivo: [],
   };
@@ -721,6 +726,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   datos.operacionPrincipal = {
     sector: obtenerTexto(registro.sector, registro.Sector),
     actividad: obtenerTexto(registro.actividad, registro.Actividad),
+    codigoNace: obtenerTexto(registro.codigoNace, registro.CodigoNace),
     categoriaCiiu: valorCategoriaCiiu
       || obtenerTexto(registro.isicCategoria, registro.IsicCategoria, registro.categoriaCiiu, registro.CategoriaCiiu),
     claseCiiu: valorClaseCiiu
@@ -852,6 +858,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     comentariosFinancieros: obtenerTexto(registro.comentarioInformacionFinanciera, registro.ComentarioInformacionFinanciera),
     activosFijos: obtenerTexto(registro.activosFijos, registro.ActivosFijos),
     seguros: obtenerTexto(registro.seguros, registro.Seguros),
+    contacto: obtenerTexto(registro.contacto, registro.Contacto),
   };
 
   datos.balances = obtenerLista(registro.balances, registro.Balances).map(convertirBalanceApiARegistroInvestigacion);
@@ -938,6 +945,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   datos.datosGenerales = {
     informacionGeneral: obtenerTexto(registro.informacionGeneral, registro.InformacionGeneral),
     opinionCredito: obtenerTexto(registro.opinionCredito, registro.OpinionCredito),
+    lineaCreditoRecomendada: obtenerTexto(registro.recomendedCreditLine, registro.RecomendedCreditLine),
+    lineaCreditoMaxima: obtenerTexto(registro.maximumCreditLine, registro.MaximumCreditLine),
+    terminos: obtenerTexto(registro.terms, registro.Terms),
   };
 
   datos.directorioEjecutivo = obtenerLista(

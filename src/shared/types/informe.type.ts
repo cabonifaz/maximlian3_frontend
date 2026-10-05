@@ -422,6 +422,7 @@ export interface InformeCrearRequest {
   idSector: number;
   idActividad?: number;
   actividad: string;
+  codigoNace: string;
   idIsicCategoria?: number;
   idIsicClase?: number;
   actividadPrincipal: string;
@@ -457,6 +458,7 @@ export interface InformeCrearRequest {
   comentarioInformacionFinanciera: string;
   activosFijos: string;
   seguros: string;
+  contacto: string;
   comentarioProveedor: string;
   referenciaBanco: string;
   litigios: string;
@@ -464,6 +466,9 @@ export interface InformeCrearRequest {
   superintendecia: string;
   informacionGeneral: string;
   opinionCredito: string;
+  recomendedCreditLine: string;
+  maximumCreditLine: string;
+  terms: string;
   flgTieneInformacion: boolean;
   lstBalances: InformeBalanceRequest[];
   lstBalancesDesagregado: InformeBalanceDesagregadoRequest[];

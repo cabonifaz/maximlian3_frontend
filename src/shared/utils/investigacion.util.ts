@@ -104,6 +104,7 @@ export function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
     operacionPrincipal: {
       sector: "",
       actividad: "",
+      codigoNace: "",
       categoriaCiiu: "",
       claseCiiu: "",
       actividadPrincipal: "",
@@ -144,6 +145,7 @@ export function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       comentariosFinancieros: "",
       activosFijos: "",
       seguros: "",
+      contacto: "",
     },
     balances: [],
     referencias: {
@@ -158,6 +160,9 @@ export function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
     datosGenerales: {
       informacionGeneral: "",
       opinionCredito: "",
+      lineaCreditoRecomendada: "",
+      lineaCreditoMaxima: "",
+      terminos: "",
     },
     directorioEjecutivo: [],
   };

@@ -1001,6 +1001,10 @@ function PantallaInvestigacionAnalista({
       (opcion) => opcion.num1 === idPlantilla,
     )?.string1 ?? "";
   }, [datosPedidoNavegacion?.idPlantilla, opcionesPlantillaInforme, registroPedidoSeleccionado?.idPlantilla]);
+  const idPlantillaActual = esMigracionInforme
+    ? idPlantillaMigracion
+    : datosPedidoNavegacion?.idPlantilla ?? registroPedidoSeleccionado?.idPlantilla;
+  const esPlantillaEcMexico = idPlantillaActual === 3;
   const nombreIdioma = useMemo(() => {
     const idIdioma = registroPedidoSeleccionado?.idIdioma;
     if (!idIdioma) return "";
@@ -3899,6 +3903,13 @@ function PantallaInvestigacionAnalista({
             }),
           })}
         </div>
+        <CampoInvestigacionAnalista
+          etiqueta="Código NACE"
+          valor={datosInvestigacion.operacionPrincipal.codigoNace}
+          soloLectura={esSoloLectura}
+          adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.codigoNace")}
+          onChange={(valor) => actualizarOperacionPrincipal("codigoNace", valor)}
+        />
         <AreaInvestigacionAnalista etiqueta="Actividad Principal" valor={datosInvestigacion.operacionPrincipal.actividadPrincipal} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.actividadPrincipal")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("actividadPrincipal", valor)} />
         <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="mb-4 border-b border-slate-100 pb-3 text-xs font-bold uppercase tracking-widest text-slate-700">Ventas</p>
@@ -4024,6 +4035,9 @@ function PantallaInvestigacionAnalista({
       <AreaInvestigacionAnalista etiqueta="Comentarios Financieros" valor={datosInvestigacion.informacionFinanciera.comentariosFinancieros} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("informacionFinanciera.comentariosFinancieros")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("comentariosFinancieros", valor)} />
       <AreaInvestigacionAnalista etiqueta="Activos" valor={datosInvestigacion.informacionFinanciera.activosFijos} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("informacionFinanciera.activosFijos")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("activosFijos", valor)} />
       <AreaInvestigacionAnalista etiqueta="Seguros" valor={datosInvestigacion.informacionFinanciera.seguros} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("informacionFinanciera.seguros")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("seguros", valor)} />
+      {esPlantillaEcMexico && (
+        <AreaInvestigacionAnalista etiqueta="Contacto" valor={datosInvestigacion.informacionFinanciera.contacto} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("informacionFinanciera.contacto")} filas={5} onChange={(valor) => actualizarInformacionFinanciera("contacto", valor)} />
+      )}
     </div>
   );
 
@@ -4416,6 +4430,13 @@ function PantallaInvestigacionAnalista({
     <div className="space-y-5">
       <AreaInvestigacionAnalista etiqueta="Información General" valor={datosInvestigacion.datosGenerales.informacionGeneral} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("datosGenerales.informacionGeneral")} filas={8} onChange={(valor) => actualizarDatosGenerales("informacionGeneral", valor)} />
       <AreaInvestigacionAnalista etiqueta="Opinión de Crédito" valor={datosInvestigacion.datosGenerales.opinionCredito} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("datosGenerales.opinionCredito")} filas={8} onChange={(valor) => actualizarDatosGenerales("opinionCredito", valor)} />
+      {esPlantillaEcMexico && (
+        <>
+          <AreaInvestigacionAnalista etiqueta="Línea de Crédito Recomendada" valor={datosInvestigacion.datosGenerales.lineaCreditoRecomendada} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("datosGenerales.lineaCreditoRecomendada")} filas={4} onChange={(valor) => actualizarDatosGenerales("lineaCreditoRecomendada", valor)} />
+          <AreaInvestigacionAnalista etiqueta="Línea de Crédito Máxima" valor={datosInvestigacion.datosGenerales.lineaCreditoMaxima} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("datosGenerales.lineaCreditoMaxima")} filas={4} onChange={(valor) => actualizarDatosGenerales("lineaCreditoMaxima", valor)} />
+          <AreaInvestigacionAnalista etiqueta="Términos" valor={datosInvestigacion.datosGenerales.terminos} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("datosGenerales.terminos")} filas={4} onChange={(valor) => actualizarDatosGenerales("terminos", valor)} />
+        </>
+      )}
     </div>
   );
 
