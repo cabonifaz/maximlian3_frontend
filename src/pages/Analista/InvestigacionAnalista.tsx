@@ -28,6 +28,7 @@ import { CustomModalVistaPreviaInforme } from "@maximilian/components/common/Cus
 import { CustomModalObservacionesRechazoAnalista } from "@maximilian/components/analista/CustomModalObservacionesRechazoAnalista";
 import { CustomModalExtraccionInformacionAnalista } from "@maximilian/components/investigacion/CustomModalProcesamientoInforme";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomErrorCargaMigracion } from "@maximilian/components/common/CustomErrorCargaMigracion";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
@@ -74,6 +75,7 @@ import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service
 import { usePrecargaTablaMaestra } from "@maximilian/hooks/usePrecargaTablaMaestra";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { useOpcionesTipoDocumentoPorTipoPersona } from "@maximilian/hooks/useOpcionesTipoDocumentoPorTipoPersona";
+import { useProteccionCambiosSinGuardar } from "@maximilian/hooks/useProteccionCambiosSinGuardar";
 import { esTipoDocumentoCompatibleConTipoPersona } from "@maximilian/shared/utils/tabla-maestra.util";
 import {
   crearDatosInvestigacionVacios,
@@ -153,6 +155,8 @@ interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInves
   archivosIniciales?: ArchivoInvestigacionAnalista[];
   idFormatoFechaInicial?: number;
   idPlantillaInicial?: number;
+  idIdiomaInicial?: number;
+  puedeEnviarMigracion?: boolean;
   idTipoPersonaInicial?: number;
   idPaisInicial?: number;
   idTipoRegTributarioInicial?: number;
@@ -238,6 +242,8 @@ function PantallaInvestigacionAnalista({
   archivosIniciales = [],
   idFormatoFechaInicial,
   idPlantillaInicial,
+  idIdiomaInicial,
+  puedeEnviarMigracion = true,
   idTipoPersonaInicial,
   idPaisInicial,
   idTipoRegTributarioInicial,
@@ -257,6 +263,10 @@ function PantallaInvestigacionAnalista({
 
   const [datosInvestigacion, setDatosInvestigacion] = useState<DatosInvestigacionAnalista>(() =>
     esInformeRechazado ? prepararDatosParaNuevoInforme(datosIniciales) : datosIniciales,
+  );
+  const { marcarComoGuardado } = useProteccionCambiosSinGuardar(
+    JSON.stringify(datosInvestigacion),
+    !esSoloLectura,
   );
   const [idInformeActual, setIdInformeActual] = useState<number | undefined>(idInforme);
   const [debeCrearInformePorRechazo, setDebeCrearInformePorRechazo] = useState(esInformeRechazado);
@@ -736,6 +746,7 @@ function PantallaInvestigacionAnalista({
 
   const guardarAntesDeFinalizar = () => {
     if (guardarInformeMutation.isPending) return;
+    if (esMigracionInforme && !puedeEnviarMigracion) return;
     if (debeBloquearFinalizacionPorObservaciones) {
       setEstaCerradoModalObservacionesRechazo(false);
       toast.error("Debes completar todas las observaciones antes de finalizar el reporte.");
@@ -805,9 +816,9 @@ function PantallaInvestigacionAnalista({
 
       if (esMigracionInforme) {
         if (idInformeActual && idInformeActual > 0) {
-          return servicioInformeMigracion.editar(idInformeActual, payload, idPlantillaMigracion);
+          return servicioInformeMigracion.editar(idInformeActual, payload, idPlantillaMigracion, idIdiomaInicial);
         }
-        return servicioInformeMigracion.crear(payload, idPlantillaMigracion);
+        return servicioInformeMigracion.crear(payload, idPlantillaMigracion, idIdiomaInicial);
       }
 
       if (debeCrearInformePorRechazo) {
@@ -821,6 +832,7 @@ function PantallaInvestigacionAnalista({
       return informeService.create(payload);
     },
     onSuccess: async (respuesta, { idEstadoInforme, abrirConfirmacionFinalizacion }) => {
+      marcarComoGuardado();
       const idsExistentes = datosInvestigacion.locales.flatMap((local) =>
         (local.imagenes ?? [])
           .filter((img) => (img.idInformeLocalImagen ?? 0) > 0)
@@ -1006,13 +1018,13 @@ function PantallaInvestigacionAnalista({
     : datosPedidoNavegacion?.idPlantilla ?? registroPedidoSeleccionado?.idPlantilla;
   const esPlantillaEcMexico = idPlantillaActual === 3;
   const nombreIdioma = useMemo(() => {
-    const idIdioma = registroPedidoSeleccionado?.idIdioma;
+    const idIdioma = esMigracionInforme ? idIdiomaInicial : registroPedidoSeleccionado?.idIdioma;
     if (!idIdioma) return "";
 
     return opcionesIdioma?.find(
       (opcion) => opcion.num1 === idIdioma,
     )?.string1 ?? "";
-  }, [opcionesIdioma, registroPedidoSeleccionado?.idIdioma]);
+  }, [esMigracionInforme, idIdiomaInicial, opcionesIdioma, registroPedidoSeleccionado?.idIdioma]);
   const formatoFechaInformeVisual = useMemo(
     () =>
       opcionesFormatoFechaInforme?.find((opcion) => opcion.num1 === idFormatoFechaInforme)?.string2?.trim()
@@ -4623,7 +4635,7 @@ function PantallaInvestigacionAnalista({
         formatoFechaInformeDisplay={formatoFechaInformeVisual}
         resumen={resumenEncabezado}
         esSoloLectura={esSoloLectura}
-        mostrarBotonFinalizar={idSeccionActiva === "datos-generales" && !esSoloLectura}
+        mostrarBotonFinalizar={idSeccionActiva === "datos-generales" && !esSoloLectura && puedeEnviarMigracion}
         onFinalizarInvestigacion={guardarAntesDeFinalizar}
         onExtraerInformacion={permiteExtraccionSeccion ? () => abrirModalExtraccionInformacion("general") : undefined}
         onAbrirArchivos={() => setEstaAbiertoModalArchivosInvestigacion(true)}
@@ -4673,7 +4685,7 @@ function PantallaInvestigacionAnalista({
               {indiceSeccionActiva === seccionesInvestigacionAnalista.length - 1 ? (
                 <CustomButton
                   size="sm"
-                  disabled={esSoloLectura || debeBloquearFinalizacionPorObservaciones}
+                  disabled={esSoloLectura || !puedeEnviarMigracion || debeBloquearFinalizacionPorObservaciones}
                   title={
                     tieneObservacionesRechazoPendientes
                       ? "Completa todas las observaciones antes de finalizar"
@@ -5215,10 +5227,14 @@ export default function InvestigacionAnalista() {
   const { idPedido, idInformeMigracion } = useParams();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const modo = (searchParams.get("modo") as ModoInvestigacionAnalista | null) ?? "iniciar";
+  const modoParametro = searchParams.get("modo");
+  const modo: ModoInvestigacionAnalista = modoParametro === "continuar" || modoParametro === "detalle" ? modoParametro : "iniciar";
   const idInforme = searchParams.get("idInforme");
   const esInformeRechazado = searchParams.get("estado") === "rechazado";
   const idCarga = searchParams.get("carga") ?? "sin-carga";
+  const idPlantillaConfigurada = Number(searchParams.get("idPlantilla"));
+  const idIdiomaOrigenConfigurado = Number(searchParams.get("idIdiomaOrigen"));
+  const idFormatoFechaConfigurado = Number(searchParams.get("idFormatoFecha"));
   const datosPedidoNavegacion = (location.state as { datosPedidoInvestigacion?: DatosPedidoNavegacionInvestigacion } | null)?.datosPedidoInvestigacion;
   const idPedidoNumerico = Number(idPedido);
   const esMigracionInforme = location.pathname.includes("/migraciones/");
@@ -5232,7 +5248,7 @@ export default function InvestigacionAnalista() {
     : modo !== "iniciar" && Number.isFinite(idPedidoNumerico) && idPedidoNumerico > 0 && tieneIdInforme;
   const datosBaseInvestigacion = useMemo(() => crearDatosInvestigacionVacios(), []);
 
-  const { data: informeObtenido, isLoading: estaCargandoInforme } = useQuery({
+  const { data: informeObtenido, isError: ocurrioErrorInforme, isLoading: estaCargandoInforme, refetch: reintentarInforme } = useQuery({
     queryKey: esMigracionInforme
       ? ["migracion-informe-obtener-analista", idInformeMigracionNumerico, idCarga]
       : ["informe-obtener-analista", idPedidoNumerico, idCarga],
@@ -5257,6 +5273,18 @@ export default function InvestigacionAnalista() {
     return <PantallaCarga message="Cargando información del informe..." />;
   }
 
+  if (esMigracionInforme && !tieneIdInformeMigracion && (
+    !Number.isFinite(idPlantillaConfigurada) || idPlantillaConfigurada <= 0
+    || !Number.isFinite(idIdiomaOrigenConfigurado) || idIdiomaOrigenConfigurado <= 0
+    || !Number.isFinite(idFormatoFechaConfigurado) || idFormatoFechaConfigurado <= 0
+  )) {
+    return <CustomErrorCargaMigracion mensaje="La configuración de plantilla e idioma es inválida o está incompleta." onVolver={() => window.history.back()} />;
+  }
+
+  if (usaDatosBackend && (ocurrioErrorInforme || informeObtenido?.permisosMigracion?.puedeVer === false)) {
+    return <CustomErrorCargaMigracion mensaje="El informe no existe, no está disponible o no tiene permisos para consultarlo." onVolver={() => window.history.back()} onReintentar={() => void reintentarInforme()} />;
+  }
+
   return (
     <PantallaInvestigacionAnalista
       key={`${idPedido ?? idInformeMigracion ?? "sin-id"}-${modo}-${idInformeClave}-${idCarga}-${claveDatos}`}
@@ -5269,7 +5297,7 @@ export default function InvestigacionAnalista() {
           : informeObtenido?.idInforme
       }
       esInformeRechazado={esInformeRechazado}
-      modo={modo}
+      modo={esMigracionInforme && informeObtenido?.permisosMigracion?.puedeEditar === false ? "detalle" : modo}
       datosPedidoNavegacion={datosPedidoNavegacion}
       datosIniciales={datosIniciales}
       esPendienteAprobacionInformacion={esEstadoPendienteAprobacionInformacion({
@@ -5277,8 +5305,10 @@ export default function InvestigacionAnalista() {
         estadoInforme: informeObtenido?.estadoInforme,
       })}
       archivosIniciales={informeObtenido?.archivosInvestigacion}
-      idFormatoFechaInicial={informeObtenido?.idFormatoFecha}
-      idPlantillaInicial={informeObtenido?.idPlantilla}
+      idFormatoFechaInicial={informeObtenido?.idFormatoFecha ?? (idFormatoFechaConfigurado > 0 ? idFormatoFechaConfigurado : undefined)}
+      idPlantillaInicial={informeObtenido?.idPlantilla ?? (idPlantillaConfigurada > 0 ? idPlantillaConfigurada : undefined)}
+      idIdiomaInicial={idIdiomaOrigenConfigurado > 0 ? idIdiomaOrigenConfigurado : undefined}
+      puedeEnviarMigracion={informeObtenido?.permisosMigracion?.puedeEnviar ?? true}
       idTipoPersonaInicial={informeObtenido?.idTipoPersona}
       idPaisInicial={informeObtenido?.idPais}
       idTipoRegTributarioInicial={informeObtenido?.taxIdType}

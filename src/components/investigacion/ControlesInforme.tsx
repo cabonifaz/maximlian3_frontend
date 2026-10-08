@@ -11,6 +11,7 @@ import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigac
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
+import { obtenerEtiquetaFormatoFechaInforme } from "@maximilian/shared/utils/formato-fecha-informe.util";
 import {
   normalizarMontoDecimales,
   normalizarMontoDosDecimales,
@@ -843,7 +844,7 @@ export function ResumenPedidoInvestigacionAnalista({
                 value={idFormatoFechaInforme}
                 displayValue={formatoFechaInformeDisplay}
                 onChange={(valor) => onFormatoFechaInformeChange?.(valor)}
-                obtenerEtiquetaOpcion={(opcion) => opcion.string2?.trim() || opcion.string1?.trim() || ""}
+                obtenerEtiquetaOpcion={obtenerEtiquetaFormatoFechaInforme}
                 placeholder="Seleccione formato"
                 disabled={estaBloqueadoFormatoFecha}
               />

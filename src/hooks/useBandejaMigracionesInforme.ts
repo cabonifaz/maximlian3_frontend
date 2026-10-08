@@ -7,14 +7,18 @@ import type { RolMigracionInforme } from "@maximilian/shared/types/informe-migra
 export function useBandejaMigracionesInforme(rol: RolMigracionInforme) {
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
+  const [idEstado, setIdEstado] = useState<number>();
+  const [idPlantilla, setIdPlantilla] = useState<number>();
   const terminoBusquedaConRetardo = useRetardo(terminoBusqueda);
 
   const consulta = useQuery({
-    queryKey: ["migraciones-informe", rol, paginaActual, terminoBusquedaConRetardo],
+    queryKey: ["migraciones-informe", rol, paginaActual, terminoBusquedaConRetardo, idEstado, idPlantilla],
     queryFn: ({ signal }) =>
       servicioInformeMigracion.listar(
         {
           busqueda: terminoBusquedaConRetardo.trim() || undefined,
+          idEstado,
+          idPlantilla,
           numPag: paginaActual,
         },
         signal,
@@ -36,9 +40,19 @@ export function useBandejaMigracionesInforme(rol: RolMigracionInforme) {
 
   return {
     ...consulta,
+    idEstado,
+    idPlantilla,
     paginaActual,
     setPaginaActual,
     setTerminoBusqueda,
+    setIdEstado: (valor?: number) => {
+      setIdEstado(valor);
+      setPaginaActual(1);
+    },
+    setIdPlantilla: (valor?: number) => {
+      setIdPlantilla(valor);
+      setPaginaActual(1);
+    },
     tarjetasResumen,
     terminoBusqueda,
   };

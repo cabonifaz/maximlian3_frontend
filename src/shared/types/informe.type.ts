@@ -553,6 +553,11 @@ export interface InformeObtenerResponse {
   idIsicClase?: number;
   datosInvestigacion: DatosInvestigacionAnalista;
   archivosInvestigacion?: ArchivoInvestigacionAnalista[];
+  permisosMigracion?: {
+    puedeVer: boolean;
+    puedeEditar: boolean;
+    puedeEnviar: boolean;
+  };
 }
 
 export interface InformeObtenerParams {

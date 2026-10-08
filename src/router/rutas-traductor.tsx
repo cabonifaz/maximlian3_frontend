@@ -46,6 +46,13 @@ export const rutasTraductor: RouteObject[] = [
           {
             path: "migraciones/nueva",
             lazy: () =>
+              import("@maximilian/pages/Traductor/NuevaMigracionInformeTraductor").then((m) => ({
+                Component: m.default,
+              })),
+          },
+          {
+            path: "migraciones/nueva/informe",
+            lazy: () =>
               import("@maximilian/pages/Traductor/InvestigacionTraductor").then((m) => ({
                 Component: m.default,
               })),

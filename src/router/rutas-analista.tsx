@@ -53,6 +53,13 @@ export const rutasAnalista: RouteObject[] = [
           {
             path: "migraciones/nueva",
             lazy: () =>
+              import("@maximilian/pages/Analista/NuevaMigracionInformeAnalista").then((m) => ({
+                Component: m.default,
+              })),
+          },
+          {
+            path: "migraciones/nueva/informe",
+            lazy: () =>
               import("@maximilian/pages/Analista/InvestigacionAnalista").then((m) => ({
                 Component: m.default,
               })),
