@@ -63,6 +63,7 @@ import {
   obtenerNumeroOpcional,
   obtenerRegistro,
   obtenerTexto,
+  obtenerTextoONumero,
 } from "@maximilian/shared/utils/normalizacion-respuesta.util";
 import { convertirBalanceApiARegistroInvestigacion } from "@maximilian/shared/utils/investigacion/balance-informe.util";
 
@@ -583,7 +584,9 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       informacionGeneral: "",
       opinionCredito: "",
       lineaCreditoRecomendada: "",
+      monedaLineaCreditoRecomendada: "",
       lineaCreditoMaxima: "",
+      monedaLineaCreditoMaxima: "",
       terminos: "",
     },
     directorioEjecutivo: [],
@@ -945,9 +948,21 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   datos.datosGenerales = {
     informacionGeneral: obtenerTexto(registro.informacionGeneral, registro.InformacionGeneral),
     opinionCredito: obtenerTexto(registro.opinionCredito, registro.OpinionCredito),
-    lineaCreditoRecomendada: obtenerTexto(registro.recomendedCreditLine, registro.RecomendedCreditLine),
-    lineaCreditoMaxima: obtenerTexto(registro.maximumCreditLine, registro.MaximumCreditLine),
-    terminos: obtenerTexto(registro.terms, registro.Terms),
+    lineaCreditoRecomendada: normalizarMontoDosDecimales(
+      obtenerTextoNumerico(registro.montoLineaRecomendada ?? registro.MontoLineaRecomendada),
+    ),
+    monedaLineaCreditoRecomendada: obtenerTextoONumero(
+      registro.idMonedaLineaRecomendada,
+      registro.IdMonedaLineaRecomendada,
+    ),
+    lineaCreditoMaxima: normalizarMontoDosDecimales(
+      obtenerTextoNumerico(registro.montoLineaMaxima ?? registro.MontoLineaMaxima),
+    ),
+    monedaLineaCreditoMaxima: obtenerTextoONumero(
+      registro.idMonedaLineaMaxima,
+      registro.IdMonedaLineaMaxima,
+    ),
+    terminos: obtenerTexto(registro.terminos, registro.Terminos),
   };
 
   datos.directorioEjecutivo = obtenerLista(

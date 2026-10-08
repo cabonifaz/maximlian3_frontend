@@ -413,6 +413,7 @@ interface PropsCampoInvestigacionAnalista {
   error?: string;
   onBlur?: () => void;
   adornoFinal?: string;
+  ocultarEtiqueta?: boolean;
 }
 
 interface PropsAreaInvestigacionAnalista extends PropsCampoInvestigacionAnalista {
@@ -482,6 +483,7 @@ export function CampoInvestigacionAnalista({
   error,
   onBlur,
   adornoFinal,
+  ocultarEtiqueta = false,
 }: PropsCampoInvestigacionAnalista) {
   const marcadorFinal = marcador ?? obtenerMarcadorInvestigacion(etiqueta);
   const esCampoPorcentaje = etiqueta.includes("%");
@@ -505,12 +507,14 @@ export function CampoInvestigacionAnalista({
 
   return (
     <label className={`block space-y-2 ${className ?? ""}`}>
-      <CustomLabel as="p" className={clasesEtiquetaCampoInvestigacion}>
-        <span className="inline-flex items-center gap-2">
-          <span>{etiqueta}</span>
-          {adicionalEtiqueta}
-        </span>
-      </CustomLabel>
+      {!ocultarEtiqueta && (
+        <CustomLabel as="p" className={clasesEtiquetaCampoInvestigacion}>
+          <span className="inline-flex items-center gap-2">
+            <span>{etiqueta}</span>
+            {adicionalEtiqueta}
+          </span>
+        </CustomLabel>
+      )}
       <div className="relative">
         <input
           type={tipoEntrada === "email" ? "email" : "text"}

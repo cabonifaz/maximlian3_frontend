@@ -7636,7 +7636,15 @@ function PantallaInvestigacionAnalista({
     </div>
   );
 
-  const renderizarDatosGenerales = () => (
+  const renderizarDatosGenerales = () => {
+    const isoLineaCreditoRecomendada = opcionesMoneda?.find(
+      (opcion) => String(opcion.num1 ?? "") === datosInvestigacion.datosGenerales.monedaLineaCreditoRecomendada,
+    )?.string2 ?? "";
+    const isoLineaCreditoMaxima = opcionesMoneda?.find(
+      (opcion) => String(opcion.num1 ?? "") === datosInvestigacion.datosGenerales.monedaLineaCreditoMaxima,
+    )?.string2 ?? "";
+
+    return (
     <div className="space-y-5">
       <AreaInvestigacionAnalista
         etiqueta="Información General"
@@ -7662,13 +7670,26 @@ function PantallaInvestigacionAnalista({
       />
       {esPlantillaEcMexico && (
         <>
-          <AreaInvestigacionAnalista etiqueta="Línea de Crédito Recomendada" valor={datosInvestigacion.datosGenerales.lineaCreditoRecomendada} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("datosGenerales.lineaCreditoRecomendada")} filas={4} onChange={(valor) => actualizarDatosGenerales("lineaCreditoRecomendada", valor)} />
-          <AreaInvestigacionAnalista etiqueta="Línea de Crédito Máxima" valor={datosInvestigacion.datosGenerales.lineaCreditoMaxima} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("datosGenerales.lineaCreditoMaxima")} filas={4} onChange={(valor) => actualizarDatosGenerales("lineaCreditoMaxima", valor)} />
+          <div className="space-y-2">
+            <CustomLabel as="p" className="text-sm font-bold text-gray-700"><span className="inline-flex items-center gap-2">Línea de Crédito Recomendada {obtenerAyudaTraduccion("datosGenerales.lineaCreditoRecomendada")}</span></CustomLabel>
+            <div className="grid gap-2 md:grid-cols-[minmax(10rem,0.3fr)_minmax(0,1fr)]">
+              <SelectorMaestroConAltaInvestigacionAnalista etiqueta="Moneda de línea de crédito recomendada" valor={datosInvestigacion.datosGenerales.monedaLineaCreditoRecomendada} soloLectura={esSoloLectura} opcionesTablaMaestra={opcionesMoneda} marcador="Moneda" obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")} ocultarEtiqueta onChange={(valor) => actualizarDatosGenerales("monedaLineaCreditoRecomendada", valor)} />
+              <CampoInvestigacionAnalista etiqueta="Línea de Crédito Recomendada" valor={datosInvestigacion.datosGenerales.lineaCreditoRecomendada} soloLectura={esSoloLectura} tipoEntrada="decimal" adornoFinal={isoLineaCreditoRecomendada} ocultarEtiqueta onChange={(valor) => actualizarDatosGenerales("lineaCreditoRecomendada", valor)} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <CustomLabel as="p" className="text-sm font-bold text-gray-700"><span className="inline-flex items-center gap-2">Línea de Crédito Máxima {obtenerAyudaTraduccion("datosGenerales.lineaCreditoMaxima")}</span></CustomLabel>
+            <div className="grid gap-2 md:grid-cols-[minmax(10rem,0.3fr)_minmax(0,1fr)]">
+              <SelectorMaestroConAltaInvestigacionAnalista etiqueta="Moneda de línea de crédito máxima" valor={datosInvestigacion.datosGenerales.monedaLineaCreditoMaxima} soloLectura={esSoloLectura} opcionesTablaMaestra={opcionesMoneda} marcador="Moneda" obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")} ocultarEtiqueta onChange={(valor) => actualizarDatosGenerales("monedaLineaCreditoMaxima", valor)} />
+              <CampoInvestigacionAnalista etiqueta="Línea de Crédito Máxima" valor={datosInvestigacion.datosGenerales.lineaCreditoMaxima} soloLectura={esSoloLectura} tipoEntrada="decimal" adornoFinal={isoLineaCreditoMaxima} ocultarEtiqueta onChange={(valor) => actualizarDatosGenerales("lineaCreditoMaxima", valor)} />
+            </div>
+          </div>
           <AreaInvestigacionAnalista etiqueta="Términos" valor={datosInvestigacion.datosGenerales.terminos} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("datosGenerales.terminos")} filas={4} onChange={(valor) => actualizarDatosGenerales("terminos", valor)} />
         </>
       )}
     </div>
-  );
+    );
+  };
 
   const renderizarDirectorioEjecutivo = () => (
     <div className="space-y-5">

@@ -466,9 +466,11 @@ export interface InformeCrearRequest {
   superintendecia: string;
   informacionGeneral: string;
   opinionCredito: string;
-  recomendedCreditLine: string;
-  maximumCreditLine: string;
-  terms: string;
+  idMonedaLineaRecomendada?: number;
+  montoLineaRecomendada?: number;
+  idMonedaLineaMaxima?: number;
+  montoLineaMaxima?: number;
+  terminos: string;
   flgTieneInformacion: boolean;
   lstBalances: InformeBalanceRequest[];
   lstBalancesDesagregado: InformeBalanceDesagregadoRequest[];

@@ -117,7 +117,9 @@ export const esquemaDatosGeneralesInvestigacion = z.object({
   informacionGeneral: textoFormulario,
   opinionCredito: textoFormulario,
   lineaCreditoRecomendada: textoFormulario,
+  monedaLineaCreditoRecomendada: textoFormulario,
   lineaCreditoMaxima: textoFormulario,
+  monedaLineaCreditoMaxima: textoFormulario,
   terminos: textoFormulario,
 });
 

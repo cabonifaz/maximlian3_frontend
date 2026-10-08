@@ -387,7 +387,9 @@ export interface DatosGeneralesAnalista {
   informacionGeneral: string;
   opinionCredito: string;
   lineaCreditoRecomendada: string;
+  monedaLineaCreditoRecomendada: string;
   lineaCreditoMaxima: string;
+  monedaLineaCreditoMaxima: string;
   terminos: string;
 }
 

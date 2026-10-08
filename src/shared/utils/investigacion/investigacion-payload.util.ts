@@ -452,9 +452,21 @@ export function construirPayloadCrearInforme({
     superintendecia: referencias.superintendencia,
     informacionGeneral: datosGenerales.informacionGeneral,
     opinionCredito: datosGenerales.opinionCredito,
-    recomendedCreditLine: datosGenerales.lineaCreditoRecomendada,
-    maximumCreditLine: datosGenerales.lineaCreditoMaxima,
-    terms: datosGenerales.terminos,
+    idMonedaLineaRecomendada: obtenerIdPorTextoONumero(
+      opcionesMoneda,
+      datosGenerales.monedaLineaCreditoRecomendada,
+    ),
+    montoLineaRecomendada: obtenerNumeroOpcionalDesdeTexto(
+      datosGenerales.lineaCreditoRecomendada,
+    ),
+    idMonedaLineaMaxima: obtenerIdPorTextoONumero(
+      opcionesMoneda,
+      datosGenerales.monedaLineaCreditoMaxima,
+    ),
+    montoLineaMaxima: obtenerNumeroOpcionalDesdeTexto(
+      datosGenerales.lineaCreditoMaxima,
+    ),
+    terminos: datosGenerales.terminos,
     flgTieneInformacion: true,
     lstBalances: datosInvestigacion.balances.map((balance) => ({
       ...(esEdicion ? { idInformeBalance: balance.idInformeBalance ?? 0 } : {}),
