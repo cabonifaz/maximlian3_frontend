@@ -56,18 +56,22 @@ export function useModalCrearBancoInforme({
 
   const guardarBancoMutation = useMutation({
     mutationFn: async () => {
+      const telefonoLimpio = telefono.trim();
       const payloadBase = {
         idPais: idPais ?? 0,
         nombre: nombre.trim(),
-        telefono: telefono.trim(),
       };
 
       const respuesta = bancoInicial?.idBanco
         ? await servicioBanco.editar({
             idBanco: bancoInicial.idBanco,
             ...payloadBase,
+            telefono: telefonoLimpio,
           } satisfies BancoEditarRequest)
-        : await servicioBanco.crear(payloadBase satisfies BancoCrearRequest);
+        : await servicioBanco.crear({
+            ...payloadBase,
+            ...(telefonoLimpio ? { telefono: telefonoLimpio } : {}),
+          } satisfies BancoCrearRequest);
 
       await queryClient.invalidateQueries({ queryKey: ["bancos-busqueda-modal"] });
 
@@ -86,7 +90,7 @@ export function useModalCrearBancoInforme({
         idBanco: respuesta.idBanco ?? bancoInicial?.idBanco ?? 0,
         idPais: payloadBase.idPais,
         nombre: payloadBase.nombre,
-        telefono: payloadBase.telefono,
+        telefono: telefonoLimpio,
         pais,
       } satisfies BancoListaItem;
     },
@@ -96,7 +100,8 @@ export function useModalCrearBancoInforme({
     },
   });
 
-  const formularioInvalido = !nombre.trim() || !telefono.trim();
+  const formularioInvalido =
+    !nombre.trim() || Boolean(bancoInicial?.idBanco && !telefono.trim());
 
   return {
     formularioInvalido,

@@ -3304,6 +3304,16 @@ function PantallaInvestigacionAnalista({
 
     return (
       <div className="grid gap-5 md:grid-cols-2">
+        {esPlantillaEcMexico && (
+          <CampoInvestigacionAnalista
+            etiqueta="Domicilio Fiscal"
+            valor={datosInvestigacion.aspectosLegales.domicilioFiscal}
+            soloLectura={esSoloLectura}
+            adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.domicilioFiscal")}
+            className="md:col-span-2"
+            onChange={(valor) => actualizarAspectosLegales("domicilioFiscal", valor)}
+          />
+        )}
         <SelectorMaestroConAltaInvestigacionAnalista
           etiqueta="Tipo de Empresa"
           valor={datosInvestigacion.aspectosLegales.tipoEmpresa}
@@ -4046,8 +4056,8 @@ function PantallaInvestigacionAnalista({
           </div>
         </div>
         <AreaInvestigacionAnalista etiqueta="Comentarios sobre las Operaciones" valor={datosInvestigacion.operacionPrincipal.comentariosOperaciones} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comentariosOperaciones")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("comentariosOperaciones", valor)} />
-      <AreaInvestigacionAnalista etiqueta="Clientes" valor={datosInvestigacion.operacionPrincipal.clientes} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.clientes")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("clientes", valor)} />
-      <AreaInvestigacionAnalista etiqueta="Competidores" valor={datosInvestigacion.operacionPrincipal.competidores} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.competidores")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("competidores", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Clientes" valor={datosInvestigacion.operacionPrincipal.clientes} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.clientes")} className="md:col-span-2" permitirVinetas onChange={(valor) => actualizarOperacionPrincipal("clientes", valor)} />
+      <AreaInvestigacionAnalista etiqueta="Competidores" valor={datosInvestigacion.operacionPrincipal.competidores} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.competidores")} className="md:col-span-2" permitirVinetas onChange={(valor) => actualizarOperacionPrincipal("competidores", valor)} />
       </div>
     );
   };

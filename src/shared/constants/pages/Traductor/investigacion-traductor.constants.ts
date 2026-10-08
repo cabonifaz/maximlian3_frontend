@@ -98,6 +98,7 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<
       "ciudadRegistro",
       "comentariosEmpresasRelacionadas",
       "condiciones",
+      "domicilioFiscal",
       "fechaConstitucion",
       "monedaTipoCambio",
       "notaria",
@@ -199,6 +200,7 @@ export const SECCIONES_LISTA_EXTRACCION = new Set([
 ]);
 
 export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
+  domicilioFiscal: "Domicilio Fiscal",
   idCalificacion: "Calificación",
   idRecordPagos: "Record de Pagos",
   porcentaje: "Porcentaje de participación",
@@ -283,6 +285,7 @@ export const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
     "aspectosLegales",
     "comentariosEmpresasRelacionadas",
     "condiciones",
+    "domicilioFiscal",
     "tipoAcciones",
     "fechaConstitucion",
     "ultimaAmpliacion",

@@ -38,6 +38,7 @@ export const esquemaIdentificacionInvestigacion = z.object({
 });
 
 export const esquemaAspectosLegalesInvestigacion = z.object({
+  domicilioFiscal: textoFormulario,
   tipoEmpresa: textoFormulario,
   fechaConstitucion: textoFormulario,
   ciudadRegistro: textoFormulario,

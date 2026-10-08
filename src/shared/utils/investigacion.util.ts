@@ -79,6 +79,7 @@ export function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       idRecordPagos: "",
     },
     aspectosLegales: {
+      domicilioFiscal: "",
       tipoEmpresa: "",
       fechaConstitucion: "",
       ciudadRegistro: "",

@@ -399,6 +399,7 @@ export interface InformeCrearRequest {
   idExperienciaPago: number;
   idEstadoInforme: number;
   observacionesIdentificacion: string;
+  domicilioFiscal: string;
   idTipoEmpresa: number;
   fechaConstitucion: string | null;
   ciudadRegistro: string;
@@ -458,7 +459,7 @@ export interface InformeCrearRequest {
   comentarioInformacionFinanciera: string;
   activosFijos: string;
   seguros: string;
-  contacto: string;
+  contactoInformacion: string;
   comentarioProveedor: string;
   referenciaBanco: string;
   litigios: string;

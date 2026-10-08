@@ -242,6 +242,7 @@ export interface DatosIdentificacionAnalista {
 }
 
 export interface DatosAspectosLegalesAnalista {
+  domicilioFiscal: string;
   tipoEmpresa: string;
   fechaConstitucion: string;
   ciudadRegistro: string;

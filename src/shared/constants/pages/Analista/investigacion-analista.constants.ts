@@ -85,6 +85,7 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacion
     legales: [
       "antecedentes",
       "aspectosLegales",
+      "domicilioFiscal",
       "capitalDesembolsado",
       "capitalInicial",
       "ciudadRegistro",

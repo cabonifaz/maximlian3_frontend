@@ -502,6 +502,7 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       idRecordPagos: "",
     },
     aspectosLegales: {
+      domicilioFiscal: "",
       tipoEmpresa: "",
       fechaConstitucion: "",
       ciudadRegistro: "",
@@ -665,6 +666,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   };  const idTipoCambio = obtenerNumeroOpcional(registro.idTipoCambio, registro.IdTipoCambio);
 
   datos.aspectosLegales = {
+    domicilioFiscal: obtenerTexto(registro.domicilioFiscal, registro.DomicilioFiscal),
     tipoEmpresa: obtenerTexto(registro.tipoEmpresa, registro.TipoEmpresa),
     fechaConstitucion: formatearFechaEntrada(obtenerTexto(registro.fechaConstitucion, registro.FechaConstitucion)),
     ciudadRegistro: obtenerTexto(registro.ciudadRegistro, registro.CiudadRegistro),
@@ -861,7 +863,12 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     comentariosFinancieros: obtenerTexto(registro.comentarioInformacionFinanciera, registro.ComentarioInformacionFinanciera),
     activosFijos: obtenerTexto(registro.activosFijos, registro.ActivosFijos),
     seguros: obtenerTexto(registro.seguros, registro.Seguros),
-    contacto: obtenerTexto(registro.contacto, registro.Contacto),
+    contacto: obtenerTexto(
+      registro.contactoInformacion,
+      registro.ContactoInformacion,
+      registro.contacto,
+      registro.Contacto,
+    ),
   };
 
   datos.balances = obtenerLista(registro.balances, registro.Balances).map(convertirBalanceApiARegistroInvestigacion);

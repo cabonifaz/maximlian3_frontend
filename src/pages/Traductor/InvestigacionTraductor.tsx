@@ -5336,6 +5336,20 @@ function PantallaInvestigacionAnalista({
 
     return (
       <div className="grid gap-5 md:grid-cols-2">
+        {esPlantillaEcMexico && (
+          <CampoInvestigacionAnalista
+            etiqueta="Domicilio Fiscal"
+            valor={datosInvestigacion.aspectosLegales.domicilioFiscal}
+            soloLectura={esSoloLectura}
+            adicionalEtiqueta={obtenerAyudaTraduccion(
+              "aspectosLegales.domicilioFiscal",
+            )}
+            className="md:col-span-2"
+            onChange={(valor) =>
+              actualizarAspectosLegales("domicilioFiscal", valor)
+            }
+          />
+        )}
         <SelectorMaestroConAltaInvestigacionAnalista
           etiqueta="Tipo de Empresa"
           valor={datosInvestigacion.aspectosLegales.tipoEmpresa}
@@ -6927,6 +6941,7 @@ function PantallaInvestigacionAnalista({
             "operacionPrincipal.clientes",
           )}
           className="md:col-span-2"
+          permitirVinetas
           onChange={(valor) => actualizarOperacionPrincipal("clientes", valor)}
         />
         <AreaInvestigacionAnalista
@@ -6937,6 +6952,7 @@ function PantallaInvestigacionAnalista({
             "operacionPrincipal.competidores",
           )}
           className="md:col-span-2"
+          permitirVinetas
           onChange={(valor) =>
             actualizarOperacionPrincipal("competidores", valor)
           }

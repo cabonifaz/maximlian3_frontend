@@ -5,7 +5,7 @@ import {
 import { ID_IDIOMA_ESPANOL_TABLA_MAESTRA } from "@maximilian/shared/constants/tabla-maestra.constants";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Briefcase, Building2, FileText, Landmark, LibraryBig, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
+import { Briefcase, Building2, FileText, Landmark, LibraryBig, List, Lock, Paperclip, Sparkles, User, Users } from "lucide-react";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomCampoFechaInvestigacion } from "@maximilian/components/investigacion/CustomCampoFechaInvestigacion";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -30,6 +30,7 @@ import {
   type TablaMaestraGuardarResponse,
 } from "@maximilian/shared/types/tabla-maestra.type";
 import type { IdSeccionInvestigacionAnalista, ResumenInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
+import { useAreaTextoConVinetas } from "@maximilian/hooks/useAreaTextoConVinetas";
 
 function obtenerMarcadorInvestigacion(etiqueta: string) {
   const marcador = marcadoresPorEtiqueta[etiqueta];
@@ -418,6 +419,7 @@ interface PropsCampoInvestigacionAnalista {
 
 interface PropsAreaInvestigacionAnalista extends PropsCampoInvestigacionAnalista {
   filas?: number;
+  permitirVinetas?: boolean;
 }
 
 interface PropsPestanasInvestigacionAnalista {
@@ -581,27 +583,54 @@ export function AreaInvestigacionAnalista({
   className,
   onChange,
   adicionalEtiqueta,
+  permitirVinetas = false,
 }: PropsAreaInvestigacionAnalista) {
   const marcadorFinal = marcador ?? obtenerMarcadorInvestigacion(etiqueta);
+  const {
+    alternarVinetas,
+    estaActivaLista,
+    manejarTecla,
+    referenciaArea,
+  } = useAreaTextoConVinetas({ valor, soloLectura, onChange });
 
   return (
-    <label className={`space-y-2 ${className ?? ""}`}>
-      <CustomLabel as="p" className={clasesEtiquetaCampoInvestigacion}>
-        <span className="inline-flex items-center gap-2">
-          <span>{etiqueta}</span>
-          {adicionalEtiqueta}
-        </span>
-      </CustomLabel>
+    <div className={`space-y-2 ${className ?? ""}`}>
+      <div className="flex items-center justify-between gap-3">
+        <CustomLabel as="p" className={clasesEtiquetaCampoInvestigacion}>
+          <span className="inline-flex items-center gap-2">
+            <span>{etiqueta}</span>
+            {adicionalEtiqueta}
+          </span>
+        </CustomLabel>
+        {permitirVinetas && !soloLectura ? (
+          <button
+            type="button"
+            onClick={alternarVinetas}
+            aria-label={estaActivaLista ? "Quitar lista con viñetas" : "Crear lista con viñetas"}
+            aria-pressed={estaActivaLista}
+            title={estaActivaLista ? "Quitar lista con viñetas" : "Crear lista con viñetas"}
+            className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+              estaActivaLista
+                ? "border-brand-wine bg-brand-wine text-white"
+                : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <List size={16} />
+          </button>
+        ) : null}
+      </div>
       <textarea
+        ref={referenciaArea}
         value={valor}
         readOnly={soloLectura}
         onChange={(event) => onChange?.(event.target.value)}
+        onKeyDown={permitirVinetas ? manejarTecla : undefined}
         onFocus={seleccionarTextoCampoEditable}
         placeholder={marcadorFinal}
         rows={filas}
         className="w-full resize-none rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400"
       />
-    </label>
+    </div>
   );
 }
 

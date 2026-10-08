@@ -116,7 +116,9 @@ export function CustomModalCrearBancoAnalista({
               </div>
 
               <div className="space-y-2">
-                <CustomLabel required>Teléfono</CustomLabel>
+                <CustomLabel required={Boolean(bancoInicial)} optional={!bancoInicial}>
+                  Teléfono
+                </CustomLabel>
                 <input
                   value={telefono}
                   onChange={(event) => setTelefono(event.target.value)}
