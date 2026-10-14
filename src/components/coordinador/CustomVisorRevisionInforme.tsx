@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { ArrowLeft, CheckCircle2, CircleX, Mail, ShieldCheck } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomVisorDocumentoInforme } from "@maximilian/components/common/CustomVisorDocumentoInforme";
-import { CustomDescargaInforme } from "@maximilian/components/coordinador/CustomDescargaInforme";
+import { CustomDescargaInforme } from "@maximilian/components/common/CustomDescargaInforme";
 import {
   CustomVistaPreviaInformeComparado,
   type EncabezadoVistaPreviaInforme,

@@ -7,6 +7,7 @@ import {
   obtenerSesionUsuarioGuardada,
 } from "@maximilian/shared/utils/autenticacion-navegacion.util";
 import { invalidarConsultasAntesDeCambiarRol } from "@maximilian/shared/utils/consultas-rol.util";
+import { confirmarSalidaConCambios } from "@maximilian/shared/utils/proteccion-cambios.util";
 import { useCerrarSesion } from "./useCerrarSesion";
 
 export function useEncabezado(rolInicial?: string) {
@@ -35,6 +36,8 @@ export function useEncabezado(rolInicial?: string) {
       );
 
       if (!rol) return;
+
+      if (!(await confirmarSalidaConCambios())) return;
 
       await invalidarConsultasAntesDeCambiarRol(clienteConsultas);
 

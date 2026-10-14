@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { servicioInformeLocalImagen } from "@maximilian/services/informe-local-imagen.service";
+import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
+import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import type {
   RegistroImagenLocalAnalista,
   RegistroLocalAnalista,
@@ -13,6 +16,12 @@ interface ParametrosUseModalLocalInforme {
 
 function obtenerTextoLocal(valor: unknown) {
   return valor == null ? "" : String(valor);
+}
+
+function obtenerIdTipoLocalInicial(registro?: RegistroLocalAnalista | null) {
+  if (registro?.idTipoLocal) return registro.idTipoLocal;
+  const idDesdeTexto = Number(registro?.tipoLocal);
+  return Number.isFinite(idDesdeTexto) && idDesdeTexto > 0 ? idDesdeTexto : undefined;
 }
 
 function obtenerImagenesIniciales(registroInicial?: RegistroLocalAnalista | null) {
@@ -34,9 +43,15 @@ export function useModalLocalInforme({
   onGuardar,
   registroInicial,
 }: ParametrosUseModalLocalInforme) {
-  const [tipoLocal, setTipoLocal] = useState(() =>
-    obtenerTextoLocal(registroInicial?.tipoLocal),
+  const [idTipoLocal, setIdTipoLocal] = useState<number | undefined>(() =>
+    obtenerIdTipoLocalInicial(registroInicial),
   );
+  const { data: opcionesTipoLocal } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_LOCAL],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_LOCAL),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
   const [comentario, setComentario] = useState(() =>
     obtenerTextoLocal(registroInicial?.comentario),
   );
@@ -54,7 +69,7 @@ export function useModalLocalInforme({
 
   useEffect(() => {
     if (!estaAbierto) return;
-    setTipoLocal(obtenerTextoLocal(registroInicial?.tipoLocal));
+    setIdTipoLocal(obtenerIdTipoLocalInicial(registroInicial));
     setComentario(obtenerTextoLocal(registroInicial?.comentario));
     setIndiceImagenAEliminar(null);
     setIndiceImagenVisualizando(null);
@@ -103,11 +118,12 @@ export function useModalLocalInforme({
   }, []);
 
   const manejarGuardar = () => {
-    const tipoLocalNormalizado = obtenerTextoLocal(tipoLocal).trim();
-
+    const tipoLocalNormalizado = opcionesTipoLocal
+      ?.find((opcion) => opcion.num1 === idTipoLocal)?.string1?.trim()
+      ?? obtenerTextoLocal(registroInicial?.tipoLocal).trim();
 
     onGuardar({
-      idTipoLocal: registroInicial?.idTipoLocal,
+      idTipoLocal,
       tipoLocal: tipoLocalNormalizado,
       comentario: obtenerTextoLocal(comentario).trim(),
       imagen:
@@ -203,7 +219,8 @@ export function useModalLocalInforme({
     setComentario,
     setIndiceImagenAEliminar,
     setIndiceImagenVisualizando,
-    setTipoLocal,
-    tipoLocal,
+    setIdTipoLocal,
+    idTipoLocal,
+    opcionesTipoLocal,
   };
 }

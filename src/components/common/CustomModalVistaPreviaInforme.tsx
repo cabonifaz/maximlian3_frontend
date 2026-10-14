@@ -4,6 +4,8 @@ import {
   type EncabezadoVistaPreviaInforme,
 } from "@maximilian/components/common/CustomVistaPreviaInforme";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomDescargaInforme } from "@maximilian/components/common/CustomDescargaInforme";
+import type { FormatoDescargaInforme } from "@maximilian/shared/types/informe.type";
 import type { DatosInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 
 interface PropsCustomModalVistaPreviaInforme {
@@ -13,6 +15,7 @@ interface PropsCustomModalVistaPreviaInforme {
   idInforme?: number;
   idPedido?: number;
   mostrarInformeTraducido?: boolean;
+  onDescargar?: (formato: FormatoDescargaInforme) => void;
   onCerrar: () => void;
 }
 
@@ -23,6 +26,7 @@ export function CustomModalVistaPreviaInforme({
   idInforme,
   idPedido,
   mostrarInformeTraducido = false,
+  onDescargar,
   onCerrar,
 }: PropsCustomModalVistaPreviaInforme) {
   if (!estaAbierto) return null;
@@ -41,9 +45,12 @@ export function CustomModalVistaPreviaInforme({
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Vista previa</p>
             <h2 className="mt-0.5 text-lg font-bold text-slate-800">Reporte de Investigación</h2>
           </div>
-          <CustomButton variant="ghost" size="icon" onClick={onCerrar} aria-label="Cerrar vista previa">
-            <X size={20} className="text-slate-500" />
-          </CustomButton>
+          <div className="flex items-center gap-2">
+            {onDescargar ? <CustomDescargaInforme onDescargar={onDescargar} /> : null}
+            <CustomButton variant="ghost" size="icon" onClick={onCerrar} aria-label="Cerrar vista previa">
+              <X size={20} className="text-slate-500" />
+            </CustomButton>
+          </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-2 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-6">
