@@ -905,6 +905,7 @@ export interface InformeContenidoTraduccion {
   informacionFinanciera?: InformeContenidoTraduccionPlano;
   bancosProveedores?: InformeContenidoTraduccionPlano;
   datosGenerales?: InformeContenidoTraduccionPlano;
+  directorioEjecutivo?: InformeContenidoTraduccionPlano;
 }
 
 export interface InformeTraducirRequest {

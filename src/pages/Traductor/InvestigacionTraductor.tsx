@@ -107,6 +107,8 @@ import { usePrecargaTablaMaestra } from "@maximilian/hooks/usePrecargaTablaMaest
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { useOpcionesTipoDocumentoPorTipoPersona } from "@maximilian/hooks/useOpcionesTipoDocumentoPorTipoPersona";
 import { useProteccionCambiosSinGuardar } from "@maximilian/hooks/useProteccionCambiosSinGuardar";
+import { CustomModalCambiosSinGuardar } from "@maximilian/components/common/CustomModalCambiosSinGuardar";
+import { registrarGuardadoCambios } from "@maximilian/shared/utils/proteccion-cambios.util";
 import { esTipoDocumentoCompatibleConTipoPersona } from "@maximilian/shared/utils/tabla-maestra.util";
 import {
   crearDatosInvestigacionVacios,
@@ -3608,6 +3610,18 @@ function PantallaInvestigacionAnalista({
     });
   };
 
+  useEffect(() => {
+    registrarGuardadoCambios(async () => {
+      try {
+        await guardarInformeMutation.mutateAsync({ idEstadoInforme: ID_ESTADO_PEDIDO_BORRADOR });
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    return () => registrarGuardadoCambios(null);
+  });
+
   const crearCompaniaExtraccionMutation = useMutation({
     mutationFn: async ({
       compania,
@@ -4660,6 +4674,22 @@ function PantallaInvestigacionAnalista({
         );
         if (Object.keys(camposSeccion).length > 0)
           contenido.datosGenerales = camposSeccion;
+        return;
+      }
+
+      if (claveSeccion === "directorioEjecutivo") {
+        const camposSeccion = construirCamposListaTraduccion(
+          datosInvestigacionOriginales.directorioEjecutivo as unknown as Array<
+            Record<string, unknown>
+          >,
+          campos.filter((campo) =>
+            (CAMPOS_TRADUCIBLES_POR_SECCION.directorioEjecutivo ?? []).includes(
+              campo,
+            ),
+          ),
+        );
+        if (Object.keys(camposSeccion).length > 0)
+          contenido.directorioEjecutivo = camposSeccion;
       }
     });
 
@@ -4667,12 +4697,14 @@ function PantallaInvestigacionAnalista({
   };
 
   const aplicarListaTraducida = (
-    claveLista: "importaciones" | "exportaciones",
+    claveLista: "importaciones" | "exportaciones" | "directorioEjecutivo",
     valorTraducido: unknown,
   ) => {
     if (!esRegistroPlano(valorTraducido)) return;
 
-    const listaTraducida = [...datosInvestigacion[claveLista]];
+    const listaTraducida: Array<Record<string, unknown>> = [
+      ...datosInvestigacion[claveLista],
+    ] as unknown as Array<Record<string, unknown>>;
     Object.entries(valorTraducido).forEach(([clave, valor]) => {
       const coincidencia = clave.match(/^(\d+)\.(.+)$/);
       if (!coincidencia || typeof valor !== "string") return;
@@ -4737,6 +4769,12 @@ function PantallaInvestigacionAnalista({
         datosInvestigacion.datosGenerales,
         contenidoTraducido.datosGenerales,
         ["datosGenerales"],
+      );
+    }
+    if (contenidoTraducido.directorioEjecutivo !== undefined) {
+      aplicarListaTraducida(
+        "directorioEjecutivo",
+        contenidoTraducido.directorioEjecutivo,
       );
     }
   };
@@ -7947,6 +7985,7 @@ function PantallaInvestigacionAnalista({
       idIdioma={idIdiomaTraduccion}
     >
       <ProveedorIdiomaTablaMaestra idIdioma={idIdiomaTraduccion}>
+      <CustomModalCambiosSinGuardar />
       <div ref={contenedorPantallaRef} className="min-w-0 space-y-6">
       <ResumenPedidoInvestigacionAnalista
         mostrarDatosPedido={!esMigracionInforme}

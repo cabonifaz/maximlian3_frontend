@@ -12,6 +12,7 @@ import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomModalRechazoInforme } from "@maximilian/components/coordinador/CustomModalRechazoInforme";
 import { CustomVisorRevisionInforme } from "@maximilian/components/coordinador/CustomVisorRevisionInforme";
+import { useDescargaInforme } from "@maximilian/hooks/useDescargaInforme";
 import { informeService } from "@maximilian/services/informe.service";
 import { pedidoService } from "@maximilian/services/pedido.service";
 import { servicioInformeObservacion } from "@maximilian/services/informe-observacion.service";
@@ -32,6 +33,7 @@ function obtenerClaseChipFormato(formato: string): string {
 
 export default function RevisionInformeCoordinador() {
   const navigate = useNavigate();
+  const descargarInforme = useDescargaInforme();
   const queryClient = useQueryClient();
   const { idPedido } = useParams();
   const [parametrosBusqueda] = useSearchParams();
@@ -283,24 +285,7 @@ export default function RevisionInformeCoordinador() {
       return;
     }
 
-    const etiquetaFormato = formato.slice(1).toUpperCase();
-    const idToast = toast.loading(`Descargando documento ${etiquetaFormato}...`);
-    try {
-      const documentoDescarga = await informeService.obtenerDocumento(
-        idInformeDescarga,
-        idPedidoNumerico,
-        formato,
-      );
-      const enlace = document.createElement("a");
-      enlace.href = documentoDescarga.url;
-      enlace.rel = "noopener noreferrer";
-      document.body.appendChild(enlace);
-      enlace.click();
-      enlace.remove();
-      toast.dismiss(idToast);
-    } catch {
-      toast.error(`No se pudo descargar el documento ${etiquetaFormato}.`, { id: idToast });
-    }
+    await descargarInforme(idInformeDescarga, idPedidoNumerico, formato);
   };
 
   const formatosClienteInforme = metadatosDocumento?.formatosCliente ?? [];

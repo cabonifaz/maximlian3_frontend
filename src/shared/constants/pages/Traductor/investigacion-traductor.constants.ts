@@ -180,6 +180,7 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<
     directorioEjecutivo: [
       "ejecutivo",
       "cargoEjecutivo",
+      "cargo",
       "vinculadoDesde",
       "companiaAnterior",
       "participacion",
@@ -197,6 +198,7 @@ export const SECCIONES_LISTA_EXTRACCION = new Set([
   "locales",
   "proveedores",
   "bancos",
+  "directorioEjecutivo",
 ]);
 
 export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
@@ -318,6 +320,7 @@ export const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
     "superintendencia",
   ],
   datosGenerales: ["informacionGeneral", "opinionCredito"],
+  directorioEjecutivo: ["cargo", "vinculadoDesde"],
 };
 
 export const RUTAS_SELECTORES_CON_REFERENCIA_ORIGINAL = new Set([

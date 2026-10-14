@@ -9,6 +9,7 @@ import {
   ArrowRight,
   Check,
   Eye,
+  History,
   Pencil,
   Plus,
   RotateCcw,
@@ -31,7 +32,9 @@ import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomErrorCargaMigracion } from "@maximilian/components/common/CustomErrorCargaMigracion";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
+import { CustomModalHistorialInvestigado } from "@maximilian/components/analista/CustomModalHistorialInvestigado";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
+import { useRellenarDesdeInformeAnterior } from "@maximilian/hooks/useRellenarDesdeInformeAnterior";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { CustomModalListaPersonasAnalista } from "@maximilian/components/investigacion/CustomModalListaPersonas";
 import {
@@ -76,6 +79,8 @@ import { usePrecargaTablaMaestra } from "@maximilian/hooks/usePrecargaTablaMaest
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { useOpcionesTipoDocumentoPorTipoPersona } from "@maximilian/hooks/useOpcionesTipoDocumentoPorTipoPersona";
 import { useProteccionCambiosSinGuardar } from "@maximilian/hooks/useProteccionCambiosSinGuardar";
+import { CustomModalCambiosSinGuardar } from "@maximilian/components/common/CustomModalCambiosSinGuardar";
+import { registrarGuardadoCambios } from "@maximilian/shared/utils/proteccion-cambios.util";
 import { esTipoDocumentoCompatibleConTipoPersona } from "@maximilian/shared/utils/tabla-maestra.util";
 import {
   crearDatosInvestigacionVacios,
@@ -268,6 +273,17 @@ function PantallaInvestigacionAnalista({
     JSON.stringify(datosInvestigacion),
     !esSoloLectura,
   );
+  const [estaAbiertoModalHistorialInvestigado, setEstaAbiertoModalHistorialInvestigado] = useState(false);
+  const {
+    informePendiente: informePendienteRellenar,
+    estaRellenando,
+    solicitarRellenar,
+    cancelarRellenar,
+    confirmarRellenar,
+  } = useRellenarDesdeInformeAnterior((datosAnteriores) => {
+    setDatosInvestigacion((datosActuales) => ({ ...datosAnteriores, resumen: datosActuales.resumen }));
+    setEstaAbiertoModalHistorialInvestigado(false);
+  });
   const [idInformeActual, setIdInformeActual] = useState<number | undefined>(idInforme);
   const [debeCrearInformePorRechazo, setDebeCrearInformePorRechazo] = useState(esInformeRechazado);
   const [estaCerradoModalObservacionesRechazo, setEstaCerradoModalObservacionesRechazo] = useState(false);
@@ -2152,6 +2168,18 @@ function PantallaInvestigacionAnalista({
       };
     });
   };
+
+  useEffect(() => {
+    registrarGuardadoCambios(async () => {
+      try {
+        await guardarInformeMutation.mutateAsync({ idEstadoInforme: ID_ESTADO_PEDIDO_BORRADOR });
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    return () => registrarGuardadoCambios(null);
+  });
 
   const crearCompaniaExtraccionMutation = useMutation({
     mutationFn: async ({ compania }: { indice: number; compania: CompaniaRelacionadaExtraccionNueva }) => {
@@ -4663,6 +4691,29 @@ function PantallaInvestigacionAnalista({
   return (
     <ProveedorFormatoFechaInforme formato={formatoFechaInformeVisual}>
     <div ref={contenedorPantallaRef} className="min-w-0 space-y-6">
+      <CustomModalCambiosSinGuardar />
+      <CustomModalHistorialInvestigado
+        estaAbierto={estaAbiertoModalHistorialInvestigado}
+        nombreInvestigado={resumenEncabezado.nombreSolicitado}
+        onCerrar={() => setEstaAbiertoModalHistorialInvestigado(false)}
+        onRellenar={solicitarRellenar}
+      />
+      <CustomModalConfirmacionAccion
+        isOpen={Boolean(informePendienteRellenar)}
+        onClose={cancelarRellenar}
+        onConfirm={confirmarRellenar}
+        title="Rellenar investigación"
+        descripcion="Se reemplazarán los datos actuales de la investigación por los del informe seleccionado."
+        textoConfirmar="Rellenar"
+        textoCargandoConfirmar="Rellenando..."
+        varianteConfirmar="primary"
+        isSubmitting={estaRellenando}
+        zIndexClassName="z-[110]"
+      >
+        <p>
+          Informe <span className="font-semibold">{informePendienteRellenar?.nombre}</span> (ID {informePendienteRellenar?.idInforme}).
+        </p>
+      </CustomModalConfirmacionAccion>
       <ResumenPedidoInvestigacionAnalista
         mostrarDatosPedido={!esMigracionInforme}
         codigoPedido={
@@ -4681,6 +4732,16 @@ function PantallaInvestigacionAnalista({
         onFinalizarInvestigacion={guardarAntesDeFinalizar}
         onExtraerInformacion={permiteExtraccionSeccion ? () => abrirModalExtraccionInformacion("general") : undefined}
         onAbrirArchivos={() => setEstaAbiertoModalArchivosInvestigacion(true)}
+        accionesSecundarias={!esSoloLectura && !esMigracionInforme ? (
+          <CustomButton
+            variant="secondary"
+            size="sm"
+            onClick={() => setEstaAbiertoModalHistorialInvestigado(true)}
+          >
+            <History size={14} />
+            Historial del investigado
+          </CustomButton>
+        ) : undefined}
         onFormatoFechaInformeChange={setIdFormatoFechaInforme}
         formatoFechaInformeSoloLectura={esSoloLectura}
         idPlantilla={idPlantillaMigracion}

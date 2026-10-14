@@ -1,21 +1,26 @@
-import { AlertCircle, Eye, X } from "lucide-react";
+import { AlertCircle, ClipboardPaste, Eye, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomModalVistaPreviaInforme } from "@maximilian/components/common/CustomModalVistaPreviaInforme";
 import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
+import { useDescargaInforme } from "@maximilian/hooks/useDescargaInforme";
 import { useHistorialInformesCompania } from "@maximilian/hooks/useHistorialInformesCompania";
 import type { CompaniaNoticiaDetalleListaItem } from "@maximilian/shared/types/compania-noticia-detalle.type";
+import type { InformeHistorialCompania } from "@maximilian/shared/types/informe.type";
 
 interface PropsCustomModalHistorialInformesCompania {
   empresa: CompaniaNoticiaDetalleListaItem | null;
   onCerrar: () => void;
+  onRellenar?: (informe: InformeHistorialCompania) => void;
 }
 
 export function CustomModalHistorialInformesCompania({
   empresa,
   onCerrar,
+  onRellenar,
 }: PropsCustomModalHistorialInformesCompania) {
+  const descargarInforme = useDescargaInforme();
   const {
     paginaActual,
     setPaginaActual,
@@ -39,6 +44,12 @@ export function CustomModalHistorialInformesCompania({
     limpiarFechaFinFiltro,
   } = useHistorialInformesCompania(empresa);
 
+  const ultimoInforme = informes.reduce<InformeHistorialCompania | null>(
+    (ultimo, informe) =>
+      !ultimo || informe.idInforme > ultimo.idInforme ? informe : ultimo,
+    null,
+  );
+
   if (!empresa) return null;
 
   return (
@@ -53,9 +64,21 @@ export function CustomModalHistorialInformesCompania({
               {empresa.razonSocial}
             </p>
           </div>
-          <CustomButton variant="ghost" size="icon" onClick={onCerrar}>
-            <X size={20} className="text-gray-400" />
-          </CustomButton>
+          <div className="flex items-center gap-2">
+            {onRellenar ? (
+              <CustomButton
+                size="sm"
+                disabled={!ultimoInforme}
+                onClick={() => ultimoInforme && onRellenar(ultimoInforme)}
+              >
+                <ClipboardPaste size={14} />
+                Cargar último informe
+              </CustomButton>
+            ) : null}
+            <CustomButton variant="ghost" size="icon" onClick={onCerrar}>
+              <X size={20} className="text-gray-400" />
+            </CustomButton>
+          </div>
         </div>
 
         <div className="min-h-0 overflow-y-auto px-8 py-6">
@@ -110,7 +133,9 @@ export function CustomModalHistorialInformesCompania({
               {fechasInvalidas ? (
                 <div className="flex min-h-8 items-center gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 sm:ml-auto">
                   <AlertCircle size={14} className="shrink-0" />
-                  <span>La fecha inicio no puede ser mayor que la fecha fin.</span>
+                  <span>
+                    La fecha inicio no puede ser mayor que la fecha fin.
+                  </span>
                 </div>
               ) : null}
             </div>
@@ -132,7 +157,11 @@ export function CustomModalHistorialInformesCompania({
                 ),
                 width: "18%",
               },
-              { label: "Ver informe", className: "text-center", width: "18%" },
+              {
+                label: onRellenar ? "Acciones" : "Ver informe",
+                className: "text-center",
+                width: "18%",
+              },
             ]}
             data={informes}
             getId={(informe) => informe.idInforme}
@@ -167,7 +196,7 @@ export function CustomModalHistorialInformesCompania({
                     {informe.idioma}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-center">
+                <td className="flex items-center justify-center gap-2 px-6 py-4">
                   <CustomButton
                     type="button"
                     variant="secondary"
@@ -177,6 +206,16 @@ export function CustomModalHistorialInformesCompania({
                     <Eye size={14} />
                     Ver
                   </CustomButton>
+                  {onRellenar ? (
+                    <CustomButton
+                      type="button"
+                      size="sm"
+                      onClick={() => onRellenar(informe)}
+                    >
+                      <ClipboardPaste size={14} />
+                      Cargar
+                    </CustomButton>
+                  ) : null}
                 </td>
               </>
             )}
@@ -196,6 +235,14 @@ export function CustomModalHistorialInformesCompania({
         idInforme={informeVistaPrevia?.idInforme}
         idPedido={informeVistaPrevia?.idPedido}
         mostrarInformeTraducido
+        onDescargar={(formato) => {
+          if (!informeVistaPrevia) return;
+          void descargarInforme(
+            informeVistaPrevia.idInforme,
+            informeVistaPrevia.idPedido,
+            formato,
+          );
+        }}
         onCerrar={() => setInformeVistaPrevia(null)}
       />
     </div>
