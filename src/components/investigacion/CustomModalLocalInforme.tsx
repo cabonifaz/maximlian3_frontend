@@ -11,8 +11,6 @@ import {
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
-import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
-import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { useModalLocalInforme } from "@maximilian/hooks/useModalLocalInforme";
 import type { RegistroLocalAnalista } from "@maximilian/shared/types/investigacion.type";
 import {
@@ -52,9 +50,8 @@ export function CustomModalLocalAnalista({
     setComentario,
     setIndiceImagenAEliminar,
     setIndiceImagenVisualizando,
-    setIdTipoLocal,
-    idTipoLocal,
-    opcionesTipoLocal,
+    setTipoLocal,
+    tipoLocal,
   } = useModalLocalInforme({
     estaAbierto,
       onGuardar,
@@ -267,17 +264,18 @@ export function CustomModalLocalAnalista({
           </div>
 
           <div className="space-y-5 overflow-y-auto px-6 py-5">
-            <CustomSelectorBuscable
-              label="Tipo de Local"
-              idMaster={TablaMaestraId.TIPO_LOCAL}
-              options={opcionesTipoLocal}
-              value={idTipoLocal}
-              onChange={setIdTipoLocal}
-              placeholder="Seleccione el tipo de local"
-              disabled={soloLectura}
-              dropdownZIndexClassName="z-[141]"
-              overlayZIndexClassName="z-[140]"
-            />
+            <div className="space-y-2">
+              <CustomLabel>Tipo de Local</CustomLabel>
+              <input
+                value={tipoLocal}
+                onChange={(event) => setTipoLocal(event.target.value)}
+                onFocus={seleccionarTextoCampoEditable}
+                disabled={soloLectura}
+                placeholder="Ingrese el tipo de local"
+                className="h-12 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-default disabled:bg-slate-50"
+              />
+            </div>
+
 
             <div className="space-y-2">
               <CustomLabel>Comentario</CustomLabel>

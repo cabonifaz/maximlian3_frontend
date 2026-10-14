@@ -846,14 +846,9 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       };
     });
 
-    const tipoLocalRespuesta = obtenerTexto(local.tipoLocal, local.TipoLocal);
-    const idTipoLocalDesdeTexto = Number(tipoLocalRespuesta);
-
     return {
       idInformeLocal: obtenerNumeroOpcional(local.idInformeLocal, local.IdInformeLocal),
-      idTipoLocal: obtenerNumeroOpcional(local.idTipoLocal, local.IdTipoLocal)
-        ?? (Number.isInteger(idTipoLocalDesdeTexto) && idTipoLocalDesdeTexto > 0 ? idTipoLocalDesdeTexto : undefined),
-      tipoLocal: tipoLocalRespuesta,
+      tipoLocal: obtenerTexto(local.tipoLocal, local.TipoLocal),
       direccion: obtenerTexto(local.direccion, local.Direccion) || undefined,
       comentario: obtenerTexto(local.comentario, local.Comentario),
       imagen: imagenes[0]?.nombre ?? "",
@@ -1172,7 +1167,7 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
   const locales: RegistroLocalInvestigacion[] = respuesta.datosInvestigacion.locales.map((local) => ({
     ...local,
     tipoLocal: tiposLocal.find((tipoLocal) => tipoLocal.num1 === local.idTipoLocal)?.string1
-      || (local.idTipoLocal ? "" : local.tipoLocal),
+      || local.tipoLocal,
   }));
 
   const resolverIdMoneda = (val: string, campo: "string1" | "string2") => {

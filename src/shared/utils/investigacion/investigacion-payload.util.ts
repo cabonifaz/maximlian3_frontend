@@ -554,7 +554,7 @@ export function construirPayloadCrearInforme({
     })),
     lstLocales: datosInvestigacion.locales.map((local) => ({
       idInformeLocal: esPayloadTraductor ? local.idInformeLocal ?? 0 : esEdicion ? local.idInformeLocal ?? 0 : 0,
-      tipoLocal: local.idTipoLocal ? String(local.idTipoLocal) : local.tipoLocal,
+      tipoLocal: local.tipoLocal,
       comentario: local.comentario,
       imagenes: (local.imagenes ?? []).map((imagen) => ({
         idInformeLocalImagen: imagen.idInformeLocalImagen ?? 0,
