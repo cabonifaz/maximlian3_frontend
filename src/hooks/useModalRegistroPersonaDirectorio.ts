@@ -82,6 +82,13 @@ export function useModalRegistroPersonaDirectorio({
     staleTime: Infinity,
   });
 
+  const { data: opcionesProfesionBase } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.PROFESION],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PROFESION),
+    enabled: estaAbierto,
+    staleTime: Infinity,
+  });
+
   const opcionesTipoPersona = useMemo(
     () => traducirOpcionesTablaMaestra(opcionesTipoPersonaBase, idIdioma),
     [idIdioma, opcionesTipoPersonaBase],
@@ -104,6 +111,10 @@ export function useModalRegistroPersonaDirectorio({
   const opcionesEstadoCivil = useMemo(
     () => traducirOpcionesTablaMaestra(opcionesEstadoCivilBase, idIdioma),
     [idIdioma, opcionesEstadoCivilBase],
+  );
+  const opcionesProfesion = useMemo(
+    () => traducirOpcionesTablaMaestra(opcionesProfesionBase, idIdioma),
+    [idIdioma, opcionesProfesionBase],
   );
   const opcionesNacionalidad = useMemo(
     () =>
@@ -193,6 +204,7 @@ export function useModalRegistroPersonaDirectorio({
     opcionesEstadoCivil,
     opcionesNacionalidad,
     opcionesPais,
+    opcionesProfesion,
     opcionesTipoDocumento,
     opcionesTipoIdFiscal,
     opcionesTipoPersona,

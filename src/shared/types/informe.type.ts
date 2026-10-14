@@ -892,10 +892,30 @@ export type InformeConfiguracionExtraccion = Record<string, string[]>;
 
 export type InformeContenidoTraduccionPlano = Record<string, string>;
 
+export interface InformeContenidoTraduccionImagenLocal {
+  idInformeLocalImagen: number;
+  descripcion: string;
+}
+
+export interface InformeContenidoTraduccionLocal {
+  idInformeLocal: number;
+  tipoLocal: string;
+  comentario: string;
+  imagenes: InformeContenidoTraduccionImagenLocal[];
+}
+
 export interface InformeContenidoTraduccionRamoOperaciones {
   campos?: InformeContenidoTraduccionPlano;
   importaciones?: InformeContenidoTraduccionPlano;
   exportaciones?: InformeContenidoTraduccionPlano;
+  locales?: InformeContenidoTraduccionLocal[];
+}
+
+export interface InformeContenidoTraduccionDirectorioEjecutivo {
+  idInformeDirectorioEjecutivo: number;
+  cargo: string;
+  vinculadoDesde: string;
+  referencias: string;
 }
 
 export interface InformeContenidoTraduccion {
@@ -905,7 +925,7 @@ export interface InformeContenidoTraduccion {
   informacionFinanciera?: InformeContenidoTraduccionPlano;
   bancosProveedores?: InformeContenidoTraduccionPlano;
   datosGenerales?: InformeContenidoTraduccionPlano;
-  directorioEjecutivo?: InformeContenidoTraduccionPlano;
+  directoriosEjecutivos?: InformeContenidoTraduccionDirectorioEjecutivo[];
 }
 
 export interface InformeTraducirRequest {
