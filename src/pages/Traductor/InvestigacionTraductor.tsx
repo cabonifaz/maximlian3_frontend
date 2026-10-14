@@ -10,6 +10,7 @@ import {
   SECCIONES_LISTA_EXTRACCION,
   ETIQUETAS_CAMPOS_EXTRACCION,
   CAMPOS_TRADUCIBLES_POR_SECCION,
+  PREFIJO_TRADUCCION_PROVEEDORES,
   RUTAS_SELECTORES_CON_REFERENCIA_ORIGINAL,
 } from "@maximilian/shared/constants/pages/Traductor/investigacion-traductor.constants";
 import type { CampoPorcentajeOperacion } from "@maximilian/shared/constants/pages/Traductor/investigacion-traductor.constants";
@@ -137,6 +138,7 @@ import type {
   InformeConfiguracionExtraccion,
   InformeContenidoTraduccion,
   InformeContenidoTraduccionPlano,
+  InformeContenidoTraduccionLocal,
   InformeObservacion,
   InformeSeccionExtraccionDisponible,
 } from "@maximilian/shared/types/informe.type";
@@ -4564,6 +4566,48 @@ function PantallaInvestigacionAnalista({
       {},
     );
 
+  const construirContenidoLocalesTraduccion = (
+    locales: DatosInvestigacionAnalista["locales"],
+  ): InformeContenidoTraduccionLocal[] => {
+    const contenidoLocales = locales.map((local) => ({
+      idInformeLocal: local.idInformeLocal ?? 0,
+      tipoLocal: local.idTipoLocal
+        ? ""
+        : obtenerTextoCampoTraduccion(local.tipoLocal),
+      comentario: obtenerTextoCampoTraduccion(local.comentario),
+      imagenes: (local.imagenes ?? []).map((imagen) => ({
+        idInformeLocalImagen: imagen.idInformeLocalImagen ?? 0,
+        descripcion: obtenerTextoCampoTraduccion(imagen.descripcion),
+      })),
+    }));
+
+    return contenidoLocales.some(
+      (local) =>
+        local.tipoLocal ||
+        local.comentario ||
+        local.imagenes.some((imagen) => imagen.descripcion),
+    )
+      ? contenidoLocales
+      : [];
+  };
+
+  const agregarClavesPrefijadasTraduccion = (
+    contenido: InformeContenidoTraduccion,
+    prefijo: string,
+    claves: InformeContenidoTraduccionPlano,
+  ) => {
+    if (Object.keys(claves).length === 0) return;
+    contenido.bancosProveedores = {
+      ...(contenido.bancosProveedores ?? {}),
+      ...Object.fromEntries(
+        Object.entries(claves).map(([clave, valor]) => [
+          `${prefijo}${clave}`,
+          valor,
+        ]),
+      ),
+    };
+  };
+
   const construirContenidoTraduccion = (
     configuracion: InformeConfiguracionExtraccion,
   ): InformeContenidoTraduccion => {
@@ -4598,7 +4642,10 @@ function PantallaInvestigacionAnalista({
 
       if (claveSeccion === "ramoOperaciones") {
         const camposRamo = campos.filter(
-          (campo) => campo !== "importaciones" && campo !== "exportaciones",
+          (campo) =>
+            campo !== "importaciones" &&
+            campo !== "exportaciones" &&
+            campo !== "locales",
         );
         const camposSeccion = construirCamposTraduccion(
           datosInvestigacionOriginales.operacionPrincipal as unknown as Record<
@@ -4633,6 +4680,12 @@ function PantallaInvestigacionAnalista({
           ramoOperaciones.importaciones = importaciones;
         if (Object.keys(exportaciones).length > 0)
           ramoOperaciones.exportaciones = exportaciones;
+        if (campos.includes("locales")) {
+          const locales = construirContenidoLocalesTraduccion(
+            datosInvestigacionOriginales.locales,
+          );
+          if (locales.length > 0) ramoOperaciones.locales = locales;
+        }
         if (Object.keys(ramoOperaciones).length > 0)
           contenido.ramoOperaciones = ramoOperaciones;
         return;
@@ -4657,10 +4710,26 @@ function PantallaInvestigacionAnalista({
             string,
             unknown
           >,
-          campos,
+          campos.filter((campo) => campo !== "proveedores" && campo !== "bancos"),
         );
         if (Object.keys(camposSeccion).length > 0)
-          contenido.bancosProveedores = camposSeccion;
+          contenido.bancosProveedores = {
+            ...(contenido.bancosProveedores ?? {}),
+            ...camposSeccion,
+          };
+        if (campos.includes("proveedores")) {
+          const proveedores = construirCamposListaTraduccion(
+            datosInvestigacionOriginales.proveedores as unknown as Array<
+              Record<string, unknown>
+            >,
+            CAMPOS_TRADUCIBLES_POR_SECCION.proveedores ?? [],
+          );
+          agregarClavesPrefijadasTraduccion(
+            contenido,
+            PREFIJO_TRADUCCION_PROVEEDORES,
+            proveedores,
+          );
+        }
         return;
       }
 
@@ -4678,18 +4747,30 @@ function PantallaInvestigacionAnalista({
       }
 
       if (claveSeccion === "directorioEjecutivo") {
-        const camposSeccion = construirCamposListaTraduccion(
-          datosInvestigacionOriginales.directorioEjecutivo as unknown as Array<
-            Record<string, unknown>
-          >,
-          campos.filter((campo) =>
-            (CAMPOS_TRADUCIBLES_POR_SECCION.directorioEjecutivo ?? []).includes(
-              campo,
-            ),
-          ),
+        const directorios = datosInvestigacionOriginales.directorioEjecutivo.map(
+          (ejecutivo) => ({
+            idInformeDirectorioEjecutivo:
+              ejecutivo.idInformeDirectorioEjecutivo ?? 0,
+            cargo: campos.includes("cargo")
+              ? obtenerTextoCampoTraduccion(ejecutivo.cargo)
+              : "",
+            vinculadoDesde: campos.includes("vinculadoDesde")
+              ? obtenerTextoCampoTraduccion(ejecutivo.vinculadoDesde)
+              : "",
+            referencias: campos.includes("descripcionBusqueda")
+              ? obtenerTextoCampoTraduccion(ejecutivo.descripcionBusqueda)
+              : "",
+          }),
         );
-        if (Object.keys(camposSeccion).length > 0)
-          contenido.directorioEjecutivo = camposSeccion;
+        if (
+          directorios.some(
+            (directorio) =>
+              directorio.cargo ||
+              directorio.vinculadoDesde ||
+              directorio.referencias,
+          )
+        )
+          contenido.directoriosEjecutivos = directorios;
       }
     });
 
@@ -4697,7 +4778,10 @@ function PantallaInvestigacionAnalista({
   };
 
   const aplicarListaTraducida = (
-    claveLista: "importaciones" | "exportaciones" | "directorioEjecutivo",
+    claveLista:
+      | "importaciones"
+      | "exportaciones"
+      | "proveedores",
     valorTraducido: unknown,
   ) => {
     if (!esRegistroPlano(valorTraducido)) return;
@@ -4727,6 +4811,88 @@ function PantallaInvestigacionAnalista({
     actualizarCampoInvestigacion([claveLista], listaTraducida);
   };
 
+  const aplicarDirectoriosTraducidos = (valorTraducido: unknown[]) => {
+    const directoriosTraducidos = datosInvestigacion.directorioEjecutivo.map(
+      (ejecutivo, indice) => {
+        const traducido = valorTraducido[indice];
+        if (!esRegistroPlano(traducido)) return ejecutivo;
+        const texto = (valor: unknown) =>
+          typeof valor === "string" ? valor.trim() : "";
+        return {
+          ...ejecutivo,
+          cargo: texto(traducido.cargo) || ejecutivo.cargo,
+          vinculadoDesde:
+            texto(traducido.vinculadoDesde) || ejecutivo.vinculadoDesde,
+          descripcionBusqueda:
+            texto(traducido.referencias) || ejecutivo.descripcionBusqueda,
+        };
+      },
+    );
+
+    actualizarCampoInvestigacion(["directorioEjecutivo"], directoriosTraducidos);
+  };
+
+  const aplicarLocalesTraducidos = (valorTraducido: unknown[]) => {
+    const texto = (valor: unknown) =>
+      typeof valor === "string" ? valor.trim() : "";
+
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      locales: anterior.locales.map((local, indice) => {
+        const traducido = valorTraducido.find(
+          (candidato, posicion) =>
+            esRegistroPlano(candidato) &&
+            (local.idInformeLocal
+              ? Number(candidato.idInformeLocal) === local.idInformeLocal
+              : posicion === indice),
+        );
+        if (!esRegistroPlano(traducido)) return local;
+
+        const imagenesTraducidas = Array.isArray(traducido.imagenes)
+          ? traducido.imagenes
+          : [];
+
+        return {
+          ...local,
+          tipoLocal: local.idTipoLocal
+            ? local.tipoLocal
+            : texto(traducido.tipoLocal) || local.tipoLocal,
+          comentario: texto(traducido.comentario) || local.comentario,
+          imagenes: local.imagenes?.map((imagen, indiceImagen) => {
+            const imagenTraducida = imagenesTraducidas.find(
+              (candidata, posicion) =>
+                esRegistroPlano(candidata) &&
+                (imagen.idInformeLocalImagen
+                  ? Number(candidata.idInformeLocalImagen) ===
+                    imagen.idInformeLocalImagen
+                  : posicion === indiceImagen),
+            );
+            if (!esRegistroPlano(imagenTraducida)) return imagen;
+            return {
+              ...imagen,
+              descripcion:
+                texto(imagenTraducida.descripcion) || imagen.descripcion,
+            };
+          }),
+        };
+      }),
+    }));
+  };
+
+  const aplicarTiposLocalTraducidosPorMaestro = () => {
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      locales: anterior.locales.map((local) => {
+        if (!local.idTipoLocal) return local;
+        const tipoLocal = obtenerOpcionTablaMaestraPorId(
+          opcionesTipoLocal,
+          local.idTipoLocal,
+        )?.string1;
+        return tipoLocal ? { ...local, tipoLocal } : local;
+      }),
+    }));
+  };
+
   const aplicarContenidoTraduccion = (contenidoTraducido: unknown) => {
     if (!esRegistroPlano(contenidoTraducido)) return;
 
@@ -4751,6 +4917,9 @@ function PantallaInvestigacionAnalista({
       if (ramoOperaciones.exportaciones !== undefined) {
         aplicarListaTraducida("exportaciones", ramoOperaciones.exportaciones);
       }
+      if (Array.isArray(ramoOperaciones.locales)) {
+        aplicarLocalesTraducidos(ramoOperaciones.locales);
+      }
     }
     if (contenidoTraducido.informacionFinanciera !== undefined) {
       aplicarResultadosExtraccion(
@@ -4759,10 +4928,21 @@ function PantallaInvestigacionAnalista({
         ["informacionFinanciera"],
       );
     }
-    if (contenidoTraducido.bancosProveedores !== undefined) {
-      aplicarResultadosBancosProveedoresExtraccion(
-        contenidoTraducido.bancosProveedores,
+    if (esRegistroPlano(contenidoTraducido.bancosProveedores)) {
+      const proveedores: Record<string, unknown> = {};
+      const referencias: Record<string, unknown> = {};
+      Object.entries(contenidoTraducido.bancosProveedores).forEach(
+        ([clave, valor]) => {
+          if (clave.startsWith(PREFIJO_TRADUCCION_PROVEEDORES))
+            proveedores[clave.slice(PREFIJO_TRADUCCION_PROVEEDORES.length)] =
+              valor;
+          else referencias[clave] = valor;
+        },
       );
+      if (Object.keys(referencias).length > 0)
+        aplicarResultadosBancosProveedoresExtraccion(referencias);
+      if (Object.keys(proveedores).length > 0)
+        aplicarListaTraducida("proveedores", proveedores);
     }
     if (contenidoTraducido.datosGenerales !== undefined) {
       aplicarResultadosExtraccion(
@@ -4771,11 +4951,8 @@ function PantallaInvestigacionAnalista({
         ["datosGenerales"],
       );
     }
-    if (contenidoTraducido.directorioEjecutivo !== undefined) {
-      aplicarListaTraducida(
-        "directorioEjecutivo",
-        contenidoTraducido.directorioEjecutivo,
-      );
+    if (Array.isArray(contenidoTraducido.directoriosEjecutivos)) {
+      aplicarDirectoriosTraducidos(contenidoTraducido.directoriosEjecutivos);
     }
   };
 
@@ -4801,6 +4978,8 @@ function PantallaInvestigacionAnalista({
 
     try {
       reiniciarPendientesExtraccion(configuracionSecciones);
+      if (configuracionSecciones.ramoOperaciones?.includes("locales"))
+        aplicarTiposLocalTraducidosPorMaestro();
       const respuestaTraduccion = await informeService.traducir({
         idioma: obtenerIdiomaDestinoTraduccion(),
         contenido,
