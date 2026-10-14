@@ -4571,9 +4571,7 @@ function PantallaInvestigacionAnalista({
   ): InformeContenidoTraduccionLocal[] => {
     const contenidoLocales = locales.map((local) => ({
       idInformeLocal: local.idInformeLocal ?? 0,
-      tipoLocal: local.idTipoLocal
-        ? ""
-        : obtenerTextoCampoTraduccion(local.tipoLocal),
+      tipoLocal: obtenerTextoCampoTraduccion(local.tipoLocal),
       comentario: obtenerTextoCampoTraduccion(local.comentario),
       imagenes: (local.imagenes ?? []).map((imagen) => ({
         idInformeLocalImagen: imagen.idInformeLocalImagen ?? 0,
@@ -4854,9 +4852,7 @@ function PantallaInvestigacionAnalista({
 
         return {
           ...local,
-          tipoLocal: local.idTipoLocal
-            ? local.tipoLocal
-            : texto(traducido.tipoLocal) || local.tipoLocal,
+          tipoLocal: texto(traducido.tipoLocal) || local.tipoLocal,
           comentario: texto(traducido.comentario) || local.comentario,
           imagenes: local.imagenes?.map((imagen, indiceImagen) => {
             const imagenTraducida = imagenesTraducidas.find(
@@ -4875,20 +4871,6 @@ function PantallaInvestigacionAnalista({
             };
           }),
         };
-      }),
-    }));
-  };
-
-  const aplicarTiposLocalTraducidosPorMaestro = () => {
-    setDatosInvestigacion((anterior) => ({
-      ...anterior,
-      locales: anterior.locales.map((local) => {
-        if (!local.idTipoLocal) return local;
-        const tipoLocal = obtenerOpcionTablaMaestraPorId(
-          opcionesTipoLocal,
-          local.idTipoLocal,
-        )?.string1;
-        return tipoLocal ? { ...local, tipoLocal } : local;
       }),
     }));
   };
@@ -4978,8 +4960,6 @@ function PantallaInvestigacionAnalista({
 
     try {
       reiniciarPendientesExtraccion(configuracionSecciones);
-      if (configuracionSecciones.ramoOperaciones?.includes("locales"))
-        aplicarTiposLocalTraducidosPorMaestro();
       const respuestaTraduccion = await informeService.traducir({
         idioma: obtenerIdiomaDestinoTraduccion(),
         contenido,
