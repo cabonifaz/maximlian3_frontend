@@ -60,6 +60,7 @@ import {
   type ModoProcesamientoInforme,
 } from "@maximilian/components/investigacion/CustomModalProcesamientoInforme";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
+import { CustomErrorCargaMigracion } from "@maximilian/components/common/CustomErrorCargaMigracion";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
@@ -104,6 +105,11 @@ import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { usePrecargaTablaMaestra } from "@maximilian/hooks/usePrecargaTablaMaestra";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
+import { useOpcionesTipoDocumentoPorTipoPersona } from "@maximilian/hooks/useOpcionesTipoDocumentoPorTipoPersona";
+import { useProteccionCambiosSinGuardar } from "@maximilian/hooks/useProteccionCambiosSinGuardar";
+import { CustomModalCambiosSinGuardar } from "@maximilian/components/common/CustomModalCambiosSinGuardar";
+import { registrarGuardadoCambios } from "@maximilian/shared/utils/proteccion-cambios.util";
+import { esTipoDocumentoCompatibleConTipoPersona } from "@maximilian/shared/utils/tabla-maestra.util";
 import {
   crearDatosInvestigacionVacios,
   seccionesInvestigacionAnalista,
@@ -185,6 +191,9 @@ interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInves
   archivosIniciales?: ArchivoInvestigacionAnalista[];
   idFormatoFechaInicial?: number;
   idPlantillaInicial?: number;
+  idIdiomaOrigenInicial?: number;
+  idIdiomaInicial?: number;
+  puedeEnviarMigracion?: boolean;
   idTipoPersonaInicial?: number;
   idPaisInicial?: number;
   idTipoRegTributarioInicial?: number;
@@ -548,6 +557,9 @@ function PantallaInvestigacionAnalista({
   archivosIniciales = [],
   idFormatoFechaInicial,
   idPlantillaInicial,
+  idIdiomaOrigenInicial,
+  idIdiomaInicial,
+  puedeEnviarMigracion = true,
   idTipoPersonaInicial,
   idPaisInicial,
   idTipoRegTributarioInicial,
@@ -573,6 +585,10 @@ function PantallaInvestigacionAnalista({
         ? prepararDatosParaNuevoInforme(datosIniciales)
         : datosIniciales,
     );
+  const { marcarComoGuardado } = useProteccionCambiosSinGuardar(
+    JSON.stringify(datosInvestigacion),
+    !esSoloLectura,
+  );
   const [datosInvestigacionOriginales] = useState<DatosInvestigacionAnalista>(
     datosOriginalesIniciales ?? datosIniciales,
   );
@@ -1076,7 +1092,7 @@ function PantallaInvestigacionAnalista({
     enabled: Boolean(idPedido),
   });
 
-  const idIdiomaTraduccion = registroPedidoSeleccionado?.idIdioma;
+  const idIdiomaTraduccion = esMigracionInforme ? idIdiomaInicial : registroPedidoSeleccionado?.idIdioma;
   const opcionesTipoPersona = useMemo(
     () =>
       traducirOpcionesTablaMaestra(opcionesTipoPersonaBase, idIdiomaTraduccion),
@@ -1093,6 +1109,10 @@ function PantallaInvestigacionAnalista({
         idIdiomaTraduccion,
       ),
     [idIdiomaTraduccion, opcionesTipoRegTributarioBase],
+  );
+  const opcionesTipoIdentificacionFiscal = useOpcionesTipoDocumentoPorTipoPersona(
+    opcionesTipoRegTributario,
+    idTipoPersonaSeleccionado,
   );
   const opcionesEstadoCliente = useMemo(
     () =>
@@ -1278,6 +1298,7 @@ function PantallaInvestigacionAnalista({
 
   const guardarAntesDeFinalizar = () => {
     if (guardarInformeMutation.isPending) return;
+    if (esMigracionInforme && !puedeEnviarMigracion) return;
     if (debeBloquearFinalizacionPorObservaciones) {
       setEstaCerradoModalObservacionesRechazo(false);
       toast.error(
@@ -1358,9 +1379,9 @@ function PantallaInvestigacionAnalista({
 
       if (esMigracionInforme) {
         if (idInformeActual && idInformeActual > 0) {
-          return servicioInformeMigracion.editar(idInformeActual, payload, idPlantillaMigracion);
+          return servicioInformeMigracion.editar(idInformeActual, payload, idPlantillaMigracion, idIdiomaOrigenInicial, idIdiomaInicial);
         }
-        return servicioInformeMigracion.crear(payload, idPlantillaMigracion);
+        return servicioInformeMigracion.crear(payload, idPlantillaMigracion, idIdiomaOrigenInicial, idIdiomaInicial);
       }
 
       if (debeCrearInformeTraduccion) {
@@ -1377,6 +1398,7 @@ function PantallaInvestigacionAnalista({
       respuesta,
       { idEstadoInforme, abrirConfirmacionFinalizacion },
     ) => {
+      marcarComoGuardado();
       const idsExistentes = datosInvestigacion.locales.flatMap((local) =>
         (local.imagenes ?? [])
           .filter((img) => (img.idInformeLocalImagen ?? 0) > 0)
@@ -1638,14 +1660,18 @@ function PantallaInvestigacionAnalista({
     opcionesPlantillaInforme,
     registroPedidoSeleccionado?.idPlantilla,
   ]);
+  const idPlantillaActual = esMigracionInforme
+    ? idPlantillaMigracion
+    : datosPedidoNavegacion?.idPlantilla ?? registroPedidoSeleccionado?.idPlantilla;
+  const esPlantillaEcMexico = idPlantillaActual === 3;
   const nombreIdioma = useMemo(() => {
-    const idIdioma = registroPedidoSeleccionado?.idIdioma;
+    const idIdioma = esMigracionInforme ? idIdiomaInicial : registroPedidoSeleccionado?.idIdioma;
     if (!idIdioma) return "";
 
     return (
       opcionesIdioma?.find((opcion) => opcion.num1 === idIdioma)?.string1 ?? ""
     );
-  }, [opcionesIdioma, registroPedidoSeleccionado?.idIdioma]);
+  }, [esMigracionInforme, idIdiomaInicial, opcionesIdioma, registroPedidoSeleccionado?.idIdioma]);
   const formatoFechaInformeVisual = useMemo(
     () =>
       opcionesFormatoFechaInforme
@@ -3584,6 +3610,18 @@ function PantallaInvestigacionAnalista({
     });
   };
 
+  useEffect(() => {
+    registrarGuardadoCambios(async () => {
+      try {
+        await guardarInformeMutation.mutateAsync({ idEstadoInforme: ID_ESTADO_PEDIDO_BORRADOR });
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    return () => registrarGuardadoCambios(null);
+  });
+
   const crearCompaniaExtraccionMutation = useMutation({
     mutationFn: async ({
       compania,
@@ -4636,6 +4674,22 @@ function PantallaInvestigacionAnalista({
         );
         if (Object.keys(camposSeccion).length > 0)
           contenido.datosGenerales = camposSeccion;
+        return;
+      }
+
+      if (claveSeccion === "directorioEjecutivo") {
+        const camposSeccion = construirCamposListaTraduccion(
+          datosInvestigacionOriginales.directorioEjecutivo as unknown as Array<
+            Record<string, unknown>
+          >,
+          campos.filter((campo) =>
+            (CAMPOS_TRADUCIBLES_POR_SECCION.directorioEjecutivo ?? []).includes(
+              campo,
+            ),
+          ),
+        );
+        if (Object.keys(camposSeccion).length > 0)
+          contenido.directorioEjecutivo = camposSeccion;
       }
     });
 
@@ -4643,12 +4697,14 @@ function PantallaInvestigacionAnalista({
   };
 
   const aplicarListaTraducida = (
-    claveLista: "importaciones" | "exportaciones",
+    claveLista: "importaciones" | "exportaciones" | "directorioEjecutivo",
     valorTraducido: unknown,
   ) => {
     if (!esRegistroPlano(valorTraducido)) return;
 
-    const listaTraducida = [...datosInvestigacion[claveLista]];
+    const listaTraducida: Array<Record<string, unknown>> = [
+      ...datosInvestigacion[claveLista],
+    ] as unknown as Array<Record<string, unknown>>;
     Object.entries(valorTraducido).forEach(([clave, valor]) => {
       const coincidencia = clave.match(/^(\d+)\.(.+)$/);
       if (!coincidencia || typeof valor !== "string") return;
@@ -4713,6 +4769,12 @@ function PantallaInvestigacionAnalista({
         datosInvestigacion.datosGenerales,
         contenidoTraducido.datosGenerales,
         ["datosGenerales"],
+      );
+    }
+    if (contenidoTraducido.directorioEjecutivo !== undefined) {
+      aplicarListaTraducida(
+        "directorioEjecutivo",
+        contenidoTraducido.directorioEjecutivo,
       );
     }
   };
@@ -4958,7 +5020,20 @@ function PantallaInvestigacionAnalista({
           const etiqueta =
             opcionesTipoPersona?.find((opcion) => opcion.num1 === valor)
               ?.string1 ?? "";
-          actualizarIdentificacion("tipoPersona", etiqueta);
+          setDatosInvestigacion((anterior) => ({
+            ...anterior,
+            identificacion: {
+              ...anterior.identificacion,
+              tipoPersona: etiqueta,
+              tipoIdentificacionFiscal: esTipoDocumentoCompatibleConTipoPersona(
+                opcionesTipoRegTributario,
+                valor,
+                anterior.identificacion.tipoIdentificacionFiscal,
+              )
+                ? anterior.identificacion.tipoIdentificacionFiscal
+                : "",
+            },
+          }));
         }}
         onClear={() => {
           setIdTipoPersonaSeleccionado(undefined);
@@ -5033,8 +5108,9 @@ function PantallaInvestigacionAnalista({
         etiqueta="Tipo de Identificación Fiscal"
         valor={datosInvestigacion.identificacion.tipoIdentificacionFiscal}
         soloLectura={esSoloLectura}
-        opcionesTablaMaestra={opcionesTipoRegTributario}
+        opcionesTablaMaestra={opcionesTipoIdentificacionFiscal}
         idMaestro={TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION}
+        usarPaginacion={false}
         marcador="Seleccione tipo de identificación fiscal"
         adicionalEtiqueta={obtenerIndicadorCambioExtraccion(
           "identificacion.tipoIdentificacionFiscal",
@@ -5298,6 +5374,20 @@ function PantallaInvestigacionAnalista({
 
     return (
       <div className="grid gap-5 md:grid-cols-2">
+        {esPlantillaEcMexico && (
+          <CampoInvestigacionAnalista
+            etiqueta="Domicilio Fiscal"
+            valor={datosInvestigacion.aspectosLegales.domicilioFiscal}
+            soloLectura={esSoloLectura}
+            adicionalEtiqueta={obtenerAyudaTraduccion(
+              "aspectosLegales.domicilioFiscal",
+            )}
+            className="md:col-span-2"
+            onChange={(valor) =>
+              actualizarAspectosLegales("domicilioFiscal", valor)
+            }
+          />
+        )}
         <SelectorMaestroConAltaInvestigacionAnalista
           etiqueta="Tipo de Empresa"
           valor={datosInvestigacion.aspectosLegales.tipoEmpresa}
@@ -6326,6 +6416,13 @@ function PantallaInvestigacionAnalista({
                 }),
             })}
         </div>
+        <CampoInvestigacionAnalista
+          etiqueta="Código NACE"
+          valor={datosInvestigacion.operacionPrincipal.codigoNace}
+          soloLectura={esSoloLectura}
+          adicionalEtiqueta={obtenerAyudaTraduccion("operacionPrincipal.codigoNace")}
+          onChange={(valor) => actualizarOperacionPrincipal("codigoNace", valor)}
+        />
         <AreaInvestigacionAnalista
           etiqueta="Actividad Principal"
           valor={datosInvestigacion.operacionPrincipal.actividadPrincipal}
@@ -6882,6 +6979,7 @@ function PantallaInvestigacionAnalista({
             "operacionPrincipal.clientes",
           )}
           className="md:col-span-2"
+          permitirVinetas
           onChange={(valor) => actualizarOperacionPrincipal("clientes", valor)}
         />
         <AreaInvestigacionAnalista
@@ -6892,6 +6990,7 @@ function PantallaInvestigacionAnalista({
             "operacionPrincipal.competidores",
           )}
           className="md:col-span-2"
+          permitirVinetas
           onChange={(valor) =>
             actualizarOperacionPrincipal("competidores", valor)
           }
@@ -6948,6 +7047,16 @@ function PantallaInvestigacionAnalista({
         filas={5}
         onChange={(valor) => actualizarInformacionFinanciera("seguros", valor)}
       />
+      {esPlantillaEcMexico && (
+        <AreaInvestigacionAnalista
+          etiqueta="Contacto"
+          valor={datosInvestigacion.informacionFinanciera.contacto}
+          soloLectura={esSoloLectura}
+          adicionalEtiqueta={obtenerAyudaTraduccion("informacionFinanciera.contacto")}
+          filas={5}
+          onChange={(valor) => actualizarInformacionFinanciera("contacto", valor)}
+        />
+      )}
     </div>
   );
 
@@ -7592,7 +7701,15 @@ function PantallaInvestigacionAnalista({
     </div>
   );
 
-  const renderizarDatosGenerales = () => (
+  const renderizarDatosGenerales = () => {
+    const isoLineaCreditoRecomendada = opcionesMoneda?.find(
+      (opcion) => String(opcion.num1 ?? "") === datosInvestigacion.datosGenerales.monedaLineaCreditoRecomendada,
+    )?.string2 ?? "";
+    const isoLineaCreditoMaxima = opcionesMoneda?.find(
+      (opcion) => String(opcion.num1 ?? "") === datosInvestigacion.datosGenerales.monedaLineaCreditoMaxima,
+    )?.string2 ?? "";
+
+    return (
     <div className="space-y-5">
       <AreaInvestigacionAnalista
         etiqueta="Información General"
@@ -7616,8 +7733,28 @@ function PantallaInvestigacionAnalista({
         filas={8}
         onChange={(valor) => actualizarDatosGenerales("opinionCredito", valor)}
       />
+      {esPlantillaEcMexico && (
+        <>
+          <div className="space-y-2">
+            <CustomLabel as="p" className="text-sm font-bold text-gray-700"><span className="inline-flex items-center gap-2">Línea de Crédito Recomendada {obtenerAyudaTraduccion("datosGenerales.lineaCreditoRecomendada")}</span></CustomLabel>
+            <div className="grid gap-2 md:grid-cols-[minmax(10rem,0.3fr)_minmax(0,1fr)]">
+              <SelectorMaestroConAltaInvestigacionAnalista etiqueta="Moneda de línea de crédito recomendada" valor={datosInvestigacion.datosGenerales.monedaLineaCreditoRecomendada} soloLectura={esSoloLectura} opcionesTablaMaestra={opcionesMoneda} marcador="Moneda" obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")} ocultarEtiqueta onChange={(valor) => actualizarDatosGenerales("monedaLineaCreditoRecomendada", valor)} />
+              <CampoInvestigacionAnalista etiqueta="Línea de Crédito Recomendada" valor={datosInvestigacion.datosGenerales.lineaCreditoRecomendada} soloLectura={esSoloLectura} tipoEntrada="decimal" adornoFinal={isoLineaCreditoRecomendada} ocultarEtiqueta onChange={(valor) => actualizarDatosGenerales("lineaCreditoRecomendada", valor)} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <CustomLabel as="p" className="text-sm font-bold text-gray-700"><span className="inline-flex items-center gap-2">Línea de Crédito Máxima {obtenerAyudaTraduccion("datosGenerales.lineaCreditoMaxima")}</span></CustomLabel>
+            <div className="grid gap-2 md:grid-cols-[minmax(10rem,0.3fr)_minmax(0,1fr)]">
+              <SelectorMaestroConAltaInvestigacionAnalista etiqueta="Moneda de línea de crédito máxima" valor={datosInvestigacion.datosGenerales.monedaLineaCreditoMaxima} soloLectura={esSoloLectura} opcionesTablaMaestra={opcionesMoneda} marcador="Moneda" obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")} ocultarEtiqueta onChange={(valor) => actualizarDatosGenerales("monedaLineaCreditoMaxima", valor)} />
+              <CampoInvestigacionAnalista etiqueta="Línea de Crédito Máxima" valor={datosInvestigacion.datosGenerales.lineaCreditoMaxima} soloLectura={esSoloLectura} tipoEntrada="decimal" adornoFinal={isoLineaCreditoMaxima} ocultarEtiqueta onChange={(valor) => actualizarDatosGenerales("lineaCreditoMaxima", valor)} />
+            </div>
+          </div>
+          <AreaInvestigacionAnalista etiqueta="Términos" valor={datosInvestigacion.datosGenerales.terminos} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerAyudaTraduccion("datosGenerales.terminos")} filas={4} onChange={(valor) => actualizarDatosGenerales("terminos", valor)} />
+        </>
+      )}
     </div>
-  );
+    );
+  };
 
   const renderizarDirectorioEjecutivo = () => (
     <div className="space-y-5">
@@ -7848,6 +7985,7 @@ function PantallaInvestigacionAnalista({
       idIdioma={idIdiomaTraduccion}
     >
       <ProveedorIdiomaTablaMaestra idIdioma={idIdiomaTraduccion}>
+      <CustomModalCambiosSinGuardar />
       <div ref={contenedorPantallaRef} className="min-w-0 space-y-6">
       <ResumenPedidoInvestigacionAnalista
         mostrarDatosPedido={!esMigracionInforme}
@@ -7864,7 +8002,7 @@ function PantallaInvestigacionAnalista({
           resumen={resumenEncabezado}
           esSoloLectura={esSoloLectura}
           mostrarBotonFinalizar={
-            idSeccionActiva === "datos-generales" && !esSoloLectura
+            idSeccionActiva === "datos-generales" && !esSoloLectura && puedeEnviarMigracion
           }
           onFinalizarInvestigacion={guardarAntesDeFinalizar}
           onExtraerInformacion={
@@ -7929,7 +8067,7 @@ function PantallaInvestigacionAnalista({
                   <CustomButton
                     size="sm"
                     disabled={
-                      esSoloLectura || debeBloquearFinalizacionPorObservaciones
+                      esSoloLectura || !puedeEnviarMigracion || debeBloquearFinalizacionPorObservaciones
                     }
                     title={
                       tieneObservacionesRechazoPendientes
@@ -8757,12 +8895,16 @@ export default function InvestigacionTraductor() {
   const { idPedido, idInformeMigracion } = useParams();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const modo =
-    (searchParams.get("modo") as ModoInvestigacionAnalista | null) ?? "iniciar";
+  const modoParametro = searchParams.get("modo");
+  const modo: ModoInvestigacionAnalista = modoParametro === "continuar" || modoParametro === "detalle" ? modoParametro : "iniciar";
   const idInforme = searchParams.get("idInforme");
   const idInformeOriginal = searchParams.get("idInformeOriginal");
   const esInformeRechazado = searchParams.get("estado") === "rechazado";
   const idCarga = searchParams.get("carga") ?? "sin-carga";
+  const idPlantillaConfigurada = Number(searchParams.get("idPlantilla"));
+  const idIdiomaOrigenConfigurado = Number(searchParams.get("idIdiomaOrigen"));
+  const idIdiomaDestinoConfigurado = Number(searchParams.get("idIdiomaDestino"));
+  const idFormatoFechaConfigurado = Number(searchParams.get("idFormatoFecha"));
   const datosPedidoNavegacion = (
     location.state as {
       datosPedidoInvestigacion?: DatosPedidoNavegacionInvestigacion;
@@ -8789,7 +8931,7 @@ export default function InvestigacionTraductor() {
     [],
   );
 
-  const { data: informeObtenido, isLoading: estaCargandoInforme } = useQuery({
+  const { data: informeObtenido, isError: ocurrioErrorInforme, isLoading: estaCargandoInforme, refetch: reintentarInforme } = useQuery({
     queryKey: esMigracionInforme
       ? ["migracion-informe-obtener-traductor", idInformeMigracionNumerico, idCarga]
       : ["informe-obtener-traductor", idPedidoNumerico, idInformeNumerico, idCarga],
@@ -8835,6 +8977,20 @@ export default function InvestigacionTraductor() {
     return <PantallaCarga message="Cargando información del informe..." />;
   }
 
+  if (esMigracionInforme && !tieneIdInformeMigracion && (
+    !Number.isFinite(idPlantillaConfigurada) || idPlantillaConfigurada <= 0
+    || !Number.isFinite(idIdiomaOrigenConfigurado) || idIdiomaOrigenConfigurado <= 0
+    || !Number.isFinite(idIdiomaDestinoConfigurado) || idIdiomaDestinoConfigurado <= 0
+    || idIdiomaOrigenConfigurado === idIdiomaDestinoConfigurado
+    || !Number.isFinite(idFormatoFechaConfigurado) || idFormatoFechaConfigurado <= 0
+  )) {
+    return <CustomErrorCargaMigracion mensaje="La configuración de plantilla e idiomas es inválida o está incompleta." onVolver={() => window.history.back()} />;
+  }
+
+  if (usaDatosBackend && (ocurrioErrorInforme || informeObtenido?.permisosMigracion?.puedeVer === false)) {
+    return <CustomErrorCargaMigracion mensaje="El informe no existe, no está disponible o no tiene permisos para consultarlo." onVolver={() => window.history.back()} onReintentar={() => void reintentarInforme()} />;
+  }
+
   return (
     <PantallaInvestigacionAnalista
       key={`${idPedido ?? idInformeMigracion ?? "sin-id"}-${modo}-${idInformeClave}-${idCarga}-${claveDatos}`}
@@ -8845,7 +9001,7 @@ export default function InvestigacionTraductor() {
           : tieneIdInforme ? idInformeNumerico : informeObtenido?.idInforme
       }
       esInformeRechazado={esInformeRechazado}
-      modo={modo}
+      modo={esMigracionInforme && informeObtenido?.permisosMigracion?.puedeEditar === false ? "detalle" : modo}
       datosPedidoNavegacion={datosPedidoNavegacion}
       datosIniciales={datosIniciales}
       datosOriginalesIniciales={informeOriginalObtenido?.datosInvestigacion}
@@ -8854,8 +9010,11 @@ export default function InvestigacionTraductor() {
         estadoInforme: informeObtenido?.estadoInforme,
       })}
       archivosIniciales={informeObtenido?.archivosInvestigacion}
-      idFormatoFechaInicial={informeObtenido?.idFormatoFecha}
-      idPlantillaInicial={informeObtenido?.idPlantilla}
+      idFormatoFechaInicial={informeObtenido?.idFormatoFecha ?? (idFormatoFechaConfigurado > 0 ? idFormatoFechaConfigurado : undefined)}
+      idPlantillaInicial={informeObtenido?.idPlantilla ?? (idPlantillaConfigurada > 0 ? idPlantillaConfigurada : undefined)}
+      idIdiomaInicial={idIdiomaDestinoConfigurado > 0 ? idIdiomaDestinoConfigurado : undefined}
+      idIdiomaOrigenInicial={idIdiomaOrigenConfigurado > 0 ? idIdiomaOrigenConfigurado : undefined}
+      puedeEnviarMigracion={informeObtenido?.permisosMigracion?.puedeEnviar ?? true}
       idTipoPersonaInicial={informeObtenido?.idTipoPersona}
       idPaisInicial={informeObtenido?.idPais}
       idTipoRegTributarioInicial={informeObtenido?.taxIdType}

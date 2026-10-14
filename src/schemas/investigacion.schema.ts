@@ -38,6 +38,7 @@ export const esquemaIdentificacionInvestigacion = z.object({
 });
 
 export const esquemaAspectosLegalesInvestigacion = z.object({
+  domicilioFiscal: textoFormulario,
   tipoEmpresa: textoFormulario,
   fechaConstitucion: textoFormulario,
   ciudadRegistro: textoFormulario,
@@ -63,6 +64,7 @@ export const esquemaAspectosLegalesInvestigacion = z.object({
 export const esquemaOperacionPrincipalInvestigacion = z.object({
   sector: textoFormulario,
   actividad: textoFormulario,
+  codigoNace: textoFormulario,
   categoriaCiiu: textoFormulario,
   claseCiiu: textoFormulario,
   actividadPrincipal: textoFormulario,
@@ -101,6 +103,7 @@ export const esquemaInformacionFinancieraInvestigacion = z.object({
   comentariosFinancieros: textoFormulario,
   activosFijos: textoFormulario,
   seguros: textoFormulario,
+  contacto: textoFormulario,
 });
 
 export const esquemaReferenciasInvestigacion = z.object({
@@ -114,6 +117,11 @@ export const esquemaReferenciasInvestigacion = z.object({
 export const esquemaDatosGeneralesInvestigacion = z.object({
   informacionGeneral: textoFormulario,
   opinionCredito: textoFormulario,
+  lineaCreditoRecomendada: textoFormulario,
+  monedaLineaCreditoRecomendada: textoFormulario,
+  lineaCreditoMaxima: textoFormulario,
+  monedaLineaCreditoMaxima: textoFormulario,
+  terminos: textoFormulario,
 });
 
 export const esquemaEmpresaRelacionadaInvestigacion = z.object({

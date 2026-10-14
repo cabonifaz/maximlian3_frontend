@@ -27,11 +27,14 @@ export interface BancoListResponse {
 export interface BancoCrearRequest {
   idPais: number;
   nombre: string;
-  telefono: string;
+  telefono?: string;
 }
 
-export interface BancoEditarRequest extends BancoCrearRequest {
+export interface BancoEditarRequest {
   idBanco: number;
+  idPais: number;
+  nombre: string;
+  telefono: string;
 }
 
 export interface BancoEliminarRequest {

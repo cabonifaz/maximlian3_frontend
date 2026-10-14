@@ -63,6 +63,7 @@ import {
   obtenerNumeroOpcional,
   obtenerRegistro,
   obtenerTexto,
+  obtenerTextoONumero,
 } from "@maximilian/shared/utils/normalizacion-respuesta.util";
 import { convertirBalanceApiARegistroInvestigacion } from "@maximilian/shared/utils/investigacion/balance-informe.util";
 
@@ -501,6 +502,7 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       idRecordPagos: "",
     },
     aspectosLegales: {
+      domicilioFiscal: "",
       tipoEmpresa: "",
       fechaConstitucion: "",
       ciudadRegistro: "",
@@ -526,6 +528,7 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
     operacionPrincipal: {
       sector: "",
       actividad: "",
+      codigoNace: "",
       categoriaCiiu: "",
       claseCiiu: "",
       actividadPrincipal: "",
@@ -566,6 +569,7 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       comentariosFinancieros: "",
       activosFijos: "",
       seguros: "",
+      contacto: "",
     },
     balances: [],
     referencias: {
@@ -580,6 +584,11 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
     datosGenerales: {
       informacionGeneral: "",
       opinionCredito: "",
+      lineaCreditoRecomendada: "",
+      monedaLineaCreditoRecomendada: "",
+      lineaCreditoMaxima: "",
+      monedaLineaCreditoMaxima: "",
+      terminos: "",
     },
     directorioEjecutivo: [],
   };
@@ -657,6 +666,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   };  const idTipoCambio = obtenerNumeroOpcional(registro.idTipoCambio, registro.IdTipoCambio);
 
   datos.aspectosLegales = {
+    domicilioFiscal: obtenerTexto(registro.domicilioFiscal, registro.DomicilioFiscal),
     tipoEmpresa: obtenerTexto(registro.tipoEmpresa, registro.TipoEmpresa),
     fechaConstitucion: formatearFechaEntrada(obtenerTexto(registro.fechaConstitucion, registro.FechaConstitucion)),
     ciudadRegistro: obtenerTexto(registro.ciudadRegistro, registro.CiudadRegistro),
@@ -721,6 +731,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   datos.operacionPrincipal = {
     sector: obtenerTexto(registro.sector, registro.Sector),
     actividad: obtenerTexto(registro.actividad, registro.Actividad),
+    codigoNace: obtenerTexto(registro.codigoNace, registro.CodigoNace),
     categoriaCiiu: valorCategoriaCiiu
       || obtenerTexto(registro.isicCategoria, registro.IsicCategoria, registro.categoriaCiiu, registro.CategoriaCiiu),
     claseCiiu: valorClaseCiiu
@@ -835,9 +846,14 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       };
     });
 
+    const tipoLocalRespuesta = obtenerTexto(local.tipoLocal, local.TipoLocal);
+    const idTipoLocalDesdeTexto = Number(tipoLocalRespuesta);
+
     return {
       idInformeLocal: obtenerNumeroOpcional(local.idInformeLocal, local.IdInformeLocal),
-      tipoLocal: obtenerTexto(local.tipoLocal, local.TipoLocal),
+      idTipoLocal: obtenerNumeroOpcional(local.idTipoLocal, local.IdTipoLocal)
+        ?? (Number.isInteger(idTipoLocalDesdeTexto) && idTipoLocalDesdeTexto > 0 ? idTipoLocalDesdeTexto : undefined),
+      tipoLocal: tipoLocalRespuesta,
       direccion: obtenerTexto(local.direccion, local.Direccion) || undefined,
       comentario: obtenerTexto(local.comentario, local.Comentario),
       imagen: imagenes[0]?.nombre ?? "",
@@ -852,6 +868,12 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     comentariosFinancieros: obtenerTexto(registro.comentarioInformacionFinanciera, registro.ComentarioInformacionFinanciera),
     activosFijos: obtenerTexto(registro.activosFijos, registro.ActivosFijos),
     seguros: obtenerTexto(registro.seguros, registro.Seguros),
+    contacto: obtenerTexto(
+      registro.contactoInformacion,
+      registro.ContactoInformacion,
+      registro.contacto,
+      registro.Contacto,
+    ),
   };
 
   datos.balances = obtenerLista(registro.balances, registro.Balances).map(convertirBalanceApiARegistroInvestigacion);
@@ -938,6 +960,21 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   datos.datosGenerales = {
     informacionGeneral: obtenerTexto(registro.informacionGeneral, registro.InformacionGeneral),
     opinionCredito: obtenerTexto(registro.opinionCredito, registro.OpinionCredito),
+    lineaCreditoRecomendada: normalizarMontoDosDecimales(
+      obtenerTextoNumerico(registro.montoLineaRecomendada ?? registro.MontoLineaRecomendada),
+    ),
+    monedaLineaCreditoRecomendada: obtenerTextoONumero(
+      registro.idMonedaLineaRecomendada,
+      registro.IdMonedaLineaRecomendada,
+    ),
+    lineaCreditoMaxima: normalizarMontoDosDecimales(
+      obtenerTextoNumerico(registro.montoLineaMaxima ?? registro.MontoLineaMaxima),
+    ),
+    monedaLineaCreditoMaxima: obtenerTextoONumero(
+      registro.idMonedaLineaMaxima,
+      registro.IdMonedaLineaMaxima,
+    ),
+    terminos: obtenerTexto(registro.terminos, registro.Terminos),
   };
 
   datos.directorioEjecutivo = obtenerLista(
@@ -1135,7 +1172,7 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
   const locales: RegistroLocalInvestigacion[] = respuesta.datosInvestigacion.locales.map((local) => ({
     ...local,
     tipoLocal: tiposLocal.find((tipoLocal) => tipoLocal.num1 === local.idTipoLocal)?.string1
-      || local.tipoLocal,
+      || (local.idTipoLocal ? "" : local.tipoLocal),
   }));
 
   const resolverIdMoneda = (val: string, campo: "string1" | "string2") => {

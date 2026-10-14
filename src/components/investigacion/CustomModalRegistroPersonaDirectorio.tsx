@@ -41,6 +41,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
     opcionesTipoIdFiscal,
     opcionesTipoPersona,
     setFechaNacimiento,
+    setIdTipoPersona,
   } = useModalRegistroPersonaDirectorio({
     estaAbierto,
     idIdioma,
@@ -85,7 +86,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <EncabezadoSeccion icono={<UserRound size={18} />} titulo="Identificación" subtitulo="Datos principales del registro" />
               <div className="grid gap-4 md:grid-cols-[0.9fr_2fr_1fr]">
-                <CampoSelector nombre="tipoPersona" nombreId="idTipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersona} valorDefecto={valoresIniciales?.tipoPersona} valorDefectoId={valoresIniciales?.idTipoPersona} marcadorVacio="Seleccione tipo persona" />
+                <CampoSelector nombre="tipoPersona" nombreId="idTipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersona} valorDefecto={valoresIniciales?.tipoPersona} valorDefectoId={valoresIniciales?.idTipoPersona} marcadorVacio="Seleccione tipo persona" onCambioId={setIdTipoPersona} />
                 <CampoInput nombre="nombres" etiqueta="Nombre Completo / Razón Social" marcador="Ingrese nombres completos" valorInicial={valoresIniciales?.nombres || nombreInicial} />
                 <CustomCampoFechaInvestigacion
                   nombre="fechaNacimiento"
@@ -103,7 +104,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
               <div className="grid gap-4 md:grid-cols-[0.9fr_1fr_1fr_1fr]">
                 <CampoSelector nombre="tipoDocumentoIdentidad" nombreId="idTipoDocumento" etiqueta="Tipo Doc. Identidad" opciones={opcionesTipoDocumento} valorDefecto={valoresIniciales?.tipoDocumentoIdentidad} valorDefectoId={valoresIniciales?.idTipoDocumento} marcadorVacio="Seleccione tipo documento" />
                 <CampoInput nombre="numeroDocumentoIdentidad" etiqueta="Nro. Doc. Identidad" marcador="Ingrese nro. documento" valorInicial={valoresIniciales?.numeroDocumentoIdentidad} />
-                <CampoSelector nombre="tipoIdFiscal" nombreId="taxIdType" etiqueta="Tipo de ID Fiscal" opciones={opcionesTipoIdFiscal} valorDefecto={valoresIniciales?.tipoIdFiscal} valorDefectoId={valoresIniciales?.taxIdType} marcadorVacio="Seleccione tipo fiscal" />
+                <CampoSelector nombre="tipoIdFiscal" nombreId="taxIdType" etiqueta="Tipo de ID Fiscal" opciones={opcionesTipoIdFiscal} valorDefecto={valoresIniciales?.tipoIdFiscal} valorDefectoId={valoresIniciales?.taxIdType} marcadorVacio="Seleccione tipo fiscal" usarPaginacion={false} limpiarSiNoDisponible />
                 <CampoInput nombre="numeroIdFiscal" etiqueta="Nro ID Fiscal" marcador="Ingrese id fiscal" valorInicial={valoresIniciales?.numeroIdFiscal} />
               </div>
             </section>
@@ -210,6 +211,8 @@ function CampoSelector({
   valorDefectoId,
   marcadorVacio = "Seleccione",
   usarPaginacion,
+  onCambioId,
+  limpiarSiNoDisponible = false,
 }: {
   nombre: string;
   nombreId: string;
@@ -219,20 +222,35 @@ function CampoSelector({
   valorDefectoId?: number;
   marcadorVacio?: string;
   usarPaginacion?: boolean;
+  onCambioId?: (id: number | undefined) => void;
+  limpiarSiNoDisponible?: boolean;
 }) {
   const [idSeleccionado, setIdSeleccionado] = useState<number | undefined>(valorDefectoId);
+  const [valorDefectoDescartado, setValorDefectoDescartado] = useState(false);
 
   useEffect(() => {
     setIdSeleccionado(valorDefectoId);
   }, [valorDefectoId]);
 
   useEffect(() => {
-    if (idSeleccionado != null || !valorDefecto || !opciones?.length) return;
+    if (idSeleccionado != null || !valorDefecto || valorDefectoDescartado || !opciones?.length) return;
     const opcionPorTexto = opciones.find((opcion) => opcion.string1 === valorDefecto);
     setIdSeleccionado(opcionPorTexto?.num1 ?? undefined);
-  }, [idSeleccionado, opciones, valorDefecto]);
+  }, [idSeleccionado, opciones, valorDefecto, valorDefectoDescartado]);
 
-  const textoSeleccionado = opciones?.find((opcion) => opcion.num1 === idSeleccionado)?.string1 ?? valorDefecto ?? "";
+  useEffect(() => {
+    onCambioId?.(idSeleccionado);
+  }, [idSeleccionado, onCambioId]);
+
+  useEffect(() => {
+    if (!limpiarSiNoDisponible || !idSeleccionado || !opciones) return;
+    if (opciones.some((opcion) => opcion.num1 === idSeleccionado)) return;
+    setIdSeleccionado(undefined);
+    setValorDefectoDescartado(true);
+  }, [idSeleccionado, limpiarSiNoDisponible, opciones]);
+
+  const textoSeleccionado = opciones?.find((opcion) => opcion.num1 === idSeleccionado)?.string1
+    ?? (valorDefectoDescartado ? "" : valorDefecto ?? "");
 
   return (
     <div className="space-y-2">

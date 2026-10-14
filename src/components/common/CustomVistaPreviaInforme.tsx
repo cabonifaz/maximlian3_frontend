@@ -509,6 +509,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
         "aspectos-legales-principal",
         "Aspectos legales",
         {
+          domicilioFiscal: aspectosLegales.domicilioFiscal,
           tipoEmpresa: aspectosLegales.tipoEmpresa,
           fechaConstitucion: aspectosLegales.fechaConstitucion,
           ciudadRegistro: aspectosLegales.ciudadRegistro,
@@ -533,6 +534,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           comentariosEmpresasRelacionadas: aspectosLegales.comentariosEmpresasRelacionadas,
         },
         {
+          domicilioFiscal: "Domicilio fiscal",
           tipoEmpresa: "Tipo de empresa",
           fechaConstitucion: "Fecha de constitución",
           ciudadRegistro: "Ciudad de registro",

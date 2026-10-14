@@ -34,6 +34,7 @@ export const marcadoresPorEtiqueta: Record<string, string> = {
   Antecedentes: "Ingrese los antecedentes relevantes",
   "Aspectos Legales": "Describa los aspectos legales relevantes",
   "Comentarios sobre Empresas Relacionadas": "Ingrese comentarios sobre las empresas relacionadas",
+  "Domicilio Fiscal": "Ingrese el domicilio fiscal",
   Sector: "Ingrese el sector económico",
   Actividad: "Ingrese la actividad económica",
   "Categoría CIIU": "Ej. Categoría C",

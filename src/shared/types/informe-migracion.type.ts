@@ -9,9 +9,15 @@ export type EstadoMigracionInforme =
 
 export interface ParametrosListaMigracionesInforme {
   busqueda?: string;
-  idEstado?: string;
-  idPlantilla?: string;
+  idEstado?: number;
+  idPlantilla?: number;
   numPag?: number;
+}
+
+export interface PermisosMigracionInforme {
+  puedeVer: boolean;
+  puedeEditar: boolean;
+  puedeEnviar: boolean;
 }
 
 export interface RegistroMigracionInforme {
@@ -33,6 +39,7 @@ export interface RegistroMigracionInforme {
   rolCreador: string;
   fechaModificacion: string;
   requiereTraduccion: boolean;
+  permisos: PermisosMigracionInforme;
 }
 
 export interface RespuestaListaMigracionesInforme {
@@ -44,4 +51,60 @@ export interface RespuestaListaMigracionesInforme {
   rechazado: number;
   totalRegistros: number;
   totalPaginas: number;
+  puedeCrear: boolean;
+  puedeCrearLote: boolean;
+}
+
+export interface ConfiguracionAltaMigracionInforme {
+  idPlantilla: number;
+  idIdiomaOrigen: number;
+  idIdiomaDestino?: number;
+  idFormatoFecha: number;
+}
+
+export type EstadoLoteMigracion =
+  | "encolado"
+  | "extrayendo"
+  | "listo-para-ia"
+  | "procesando-ia"
+  | "completado"
+  | "fallido"
+  | "parcial";
+
+export interface ArchivoLoteMigracionSolicitud {
+  nombre: string;
+  tipoArchivo: string;
+  tamano: number;
+}
+
+export interface CrearLoteMigracionSolicitud extends ConfiguracionAltaMigracionInforme {
+  nombre: string;
+  rol: RolMigracionInforme;
+  archivos: ArchivoLoteMigracionSolicitud[];
+}
+
+export interface ArchivoCargaLoteMigracion {
+  nombre: string;
+  urlCarga: string;
+}
+
+export interface CrearLoteMigracionRespuesta {
+  idLote: string;
+  archivos: ArchivoCargaLoteMigracion[];
+}
+
+export interface RegistroLoteMigracion {
+  idLote: string;
+  nombre: string;
+  estado: EstadoLoteMigracion;
+  estadoDescripcion: string;
+  total: number;
+  completados: number;
+  fallidos: number;
+  fechaCreacion: string;
+  puedeReintentar: boolean;
+}
+
+export interface RespuestaListaLotesMigracion {
+  lotes: RegistroLoteMigracion[];
 }

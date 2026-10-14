@@ -242,6 +242,7 @@ export interface DatosIdentificacionAnalista {
 }
 
 export interface DatosAspectosLegalesAnalista {
+  domicilioFiscal: string;
   tipoEmpresa: string;
   fechaConstitucion: string;
   ciudadRegistro: string;
@@ -267,6 +268,7 @@ export interface DatosAspectosLegalesAnalista {
 export interface DatosOperacionPrincipalAnalista {
   sector: string;
   actividad: string;
+  codigoNace: string;
   categoriaCiiu: string;
   claseCiiu: string;
   actividadPrincipal: string;
@@ -305,6 +307,7 @@ export interface DatosInformacionFinancieraAnalista {
   comentariosFinancieros: string;
   activosFijos: string;
   seguros: string;
+  contacto: string;
 }
 
 export interface DatosReferenciasAnalista {
@@ -384,6 +387,11 @@ export interface ResultadoBusquedaBancoAnalista {
 export interface DatosGeneralesAnalista {
   informacionGeneral: string;
   opinionCredito: string;
+  lineaCreditoRecomendada: string;
+  monedaLineaCreditoRecomendada: string;
+  lineaCreditoMaxima: string;
+  monedaLineaCreditoMaxima: string;
+  terminos: string;
 }
 
 export interface DatosInvestigacionAnalista {

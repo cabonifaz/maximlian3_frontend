@@ -64,7 +64,7 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
     setExisteInformacion,
     setIdPais,
     setIdTipoDocumento,
-    setIdTipoPersona,
+    cambiarTipoPersona,
     setNombreCompleto,
     setNumeroDocumento,
     setTelefono,
@@ -135,15 +135,21 @@ export function CustomModalRegistroEmpresaRelacionadaAnalista({
                 label="Tipo de Persona"
                 options={opcionesTipoPersona}
                 value={idTipoPersona}
-                onChange={setIdTipoPersona}
-                onClear={() => setIdTipoPersona(undefined)}
+                onChange={cambiarTipoPersona}
+                onClear={() => cambiarTipoPersona(undefined)}
                 placeholder="Seleccione tipo persona"
               />
               <CustomSelectorBuscable
                 label="Tipo de Documento"
                 options={opcionesTipoDocumento}
+                usarPaginacion={false}
                 value={idTipoDocumento}
-                displayValue={registroInicial?.tipoDocumento.split(" - ")[0]}
+                displayValue={
+                  idTipoDocumento != null &&
+                  idTipoDocumento === registroInicial?.idTipoDocumento
+                    ? registroInicial.tipoDocumento.split(" - ")[0]
+                    : undefined
+                }
                 onChange={setIdTipoDocumento}
                 onClear={() => setIdTipoDocumento(undefined)}
                 placeholder="Seleccione tipo documento"

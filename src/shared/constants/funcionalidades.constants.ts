@@ -1,4 +1,4 @@
 export const FUNCIONALIDADES_HABILITADAS = {
-  migracionInformesCreador: false,
+  migracionInformesCreador: true,
   aprobarTodosMigraciones: false,
 } as const;

@@ -56,3 +56,22 @@ export function esTipoRegistroTributarioSeleccionado(
   const idTipoRegistro = Number(valor);
   return Number.isFinite(idTipoRegistro) && idTipoRegistro >= 0;
 }
+export function filtrarTiposDocumentoPorTipoPersona(
+  opciones: EntradaTablaMaestra[] | undefined,
+  idTipoPersona: number | undefined,
+) {
+  if (!opciones || idTipoPersona == null) return opciones;
+  return opciones.filter((opcion) => opcion.num2 === idTipoPersona);
+}
+
+export function esTipoDocumentoCompatibleConTipoPersona(
+  opciones: EntradaTablaMaestra[] | undefined,
+  idTipoPersona: number | undefined,
+  tipoDocumento: string,
+) {
+  const tipoDocumentoNormalizado = tipoDocumento.trim().toLowerCase();
+  if (!tipoDocumentoNormalizado || idTipoPersona == null || !opciones) return true;
+  return (filtrarTiposDocumentoPorTipoPersona(opciones, idTipoPersona) ?? []).some(
+    (opcion) => opcion.string1?.trim().toLowerCase() === tipoDocumentoNormalizado,
+  );
+}

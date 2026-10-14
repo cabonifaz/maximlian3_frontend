@@ -12,13 +12,21 @@ interface ModalAgregarTarifaProps {
   onClose: () => void;
   onConfirm: (data: DatosFormularioTarifa) => boolean | void;
   defaultValues?: Partial<DatosFormularioTarifa>;
+  titulo?: string;
+  camposBloqueados?: readonly CampoSelectorTarifa[];
+  cargando?: boolean;
 }
+
+type CampoSelectorTarifa = "producto" | "pais" | "moneda" | "tramite";
 
 export function ModalAgregarTarifa({
   isOpen,
   onClose,
   onConfirm,
   defaultValues,
+  titulo,
+  camposBloqueados = [],
+  cargando = false,
 }: ModalAgregarTarifaProps) {
   const {
     confirmarSubmit,
@@ -41,7 +49,7 @@ export function ModalAgregarTarifa({
       <div className="bg-brand-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-xl font-bold text-brand-black">
-            {defaultValues ? "Editar Tarifa" : "Nueva Tarifa"}
+            {titulo ?? (defaultValues ? "Editar Tarifa" : "Nueva Tarifa")}
           </h2>
           <CustomButton variant="ghost" size="icon" onClick={onClose}>
             <X size={20} className="text-gray-400" />
@@ -59,6 +67,7 @@ export function ModalAgregarTarifa({
                 setValue("producto", valor, { shouldValidate: true })
               }
               onBlur={() => trigger("producto")}
+              disabled={camposBloqueados.includes("producto")}
               autoSeleccionarOpcionUnica
               error={errors.producto?.message}
               placeholder="Selecciona un producto"
@@ -73,6 +82,7 @@ export function ModalAgregarTarifa({
                 setValue("pais", valor, { shouldValidate: true })
               }
               onBlur={() => trigger("pais")}
+              disabled={camposBloqueados.includes("pais")}
               autoSeleccionarOpcionUnica
               error={errors.pais?.message}
               placeholder="Selecciona un país"
@@ -88,6 +98,7 @@ export function ModalAgregarTarifa({
                 setValue("moneda", valor, { shouldValidate: true })
               }
               onBlur={() => trigger("moneda")}
+              disabled={camposBloqueados.includes("moneda")}
               autoSeleccionarOpcionUnica
               error={errors.moneda?.message}
               placeholder="Selecciona moneda"
@@ -102,6 +113,7 @@ export function ModalAgregarTarifa({
                 setValue("tramite", valor, { shouldValidate: true })
               }
               onBlur={() => trigger("tramite")}
+              disabled={camposBloqueados.includes("tramite")}
               autoSeleccionarOpcionUnica
               error={errors.tramite?.message}
               placeholder="Selecciona trámite"
@@ -179,7 +191,7 @@ export function ModalAgregarTarifa({
           </div>
 
           <div className="flex justify-end pt-4">
-            <CustomButton type="submit">
+            <CustomButton type="submit" loading={cargando} loadingText="Guardando...">
               <div className="w-2 h-2 rounded-full bg-brand-white" />
               <span>Confirmar</span>
             </CustomButton>

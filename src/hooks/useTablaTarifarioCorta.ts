@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { servicioCliente } from "@maximilian/services/cliente.service";
 import type { TarifarioCortaEntry } from "@maximilian/shared/types/cliente.type";
+import { obtenerClaveTarifarioCorta } from "@maximilian/shared/utils/tarifario.util";
 
 interface ParametrosUseTablaTarifarioCorta {
   idCliente: number | undefined;
@@ -23,11 +24,12 @@ export function useTablaTarifarioCorta({
   soloLectura,
 }: ParametrosUseTablaTarifarioCorta) {
   const { data, isLoading } = useQuery({
-    queryKey: [
-      "tarifario",
-      "listaCorta",
-      { idCliente, idTipoProducto, idTipoTramite, idPais },
-    ],
+    queryKey: obtenerClaveTarifarioCorta({
+      idCliente,
+      idTipoProducto,
+      idTipoTramite,
+      idPais,
+    }),
     queryFn: () =>
       servicioCliente.listTarifarioCorta({
         idCliente: idCliente!,

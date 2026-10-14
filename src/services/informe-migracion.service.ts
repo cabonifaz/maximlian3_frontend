@@ -4,9 +4,14 @@ import type { ApiResponse } from "@maximilian/shared/types/api.type";
 import { ErrorRespuestaApi, MessageType } from "@maximilian/shared/types/api.type";
 import type {
   EstadoMigracionInforme,
+  CrearLoteMigracionRespuesta,
+  CrearLoteMigracionSolicitud,
   ParametrosListaMigracionesInforme,
+  RegistroLoteMigracion,
   RegistroMigracionInforme,
+  RespuestaListaLotesMigracion,
   RespuestaListaMigracionesInforme,
+  RolMigracionInforme,
 } from "@maximilian/shared/types/informe-migracion.type";
 import type {
   InformeCrearRequest,
@@ -43,6 +48,11 @@ function normalizarEstadoMigracion(...valores: unknown[]): EstadoMigracionInform
   }
 
   return "borrador";
+}
+
+function obtenerPermisoMigracion(...valores: unknown[]): boolean {
+  const valorInformado = valores.find((valor) => valor !== undefined && valor !== null);
+  return valorInformado == null ? true : obtenerBooleanoFlexible(valorInformado);
 }
 
 function normalizarRegistroMigracion(valor: unknown): RegistroMigracionInforme {
@@ -85,6 +95,26 @@ function normalizarRegistroMigracion(valor: unknown): RegistroMigracionInforme {
       registro.requiereTraduccion,
       registro.RequiereTraduccion,
     ),
+    permisos: {
+      puedeVer: obtenerPermisoMigracion(registro.puedeVer, registro.PuedeVer),
+      puedeEditar: obtenerPermisoMigracion(registro.puedeEditar, registro.PuedeEditar),
+      puedeEnviar: obtenerPermisoMigracion(registro.puedeEnviar, registro.PuedeEnviar),
+    },
+  };
+}
+
+function normalizarLoteMigracion(valor: unknown): RegistroLoteMigracion {
+  const registro = obtenerRegistro(valor);
+  return {
+    idLote: obtenerTexto(registro.idLote, registro.IdLote),
+    nombre: obtenerTexto(registro.nombre, registro.Nombre),
+    estado: obtenerTexto(registro.estado, registro.Estado).toLowerCase().replaceAll("_", "-") as RegistroLoteMigracion["estado"],
+    estadoDescripcion: obtenerTexto(registro.estadoDescripcion, registro.EstadoDescripcion),
+    total: obtenerNumero(registro.total, registro.Total),
+    completados: obtenerNumero(registro.completados, registro.Completados),
+    fallidos: obtenerNumero(registro.fallidos, registro.Fallidos),
+    fechaCreacion: obtenerTexto(registro.fechaCreacion, registro.FechaCreacion),
+    puedeReintentar: obtenerBooleanoFlexible(registro.puedeReintentar, registro.PuedeReintentar),
   };
 }
 
@@ -107,6 +137,8 @@ function normalizarRespuestaLista(resultado: unknown): RespuestaListaMigraciones
     rechazado: obtenerNumero(registro.rechazado, registro.Rechazado),
     totalRegistros: obtenerNumero(registro.totalRegistros, registro.TotalRegistros, lista.length),
     totalPaginas: obtenerNumero(registro.totalPaginas, registro.TotalPaginas, 1),
+    puedeCrear: obtenerPermisoMigracion(registro.puedeCrear, registro.PuedeCrear),
+    puedeCrearLote: obtenerPermisoMigracion(registro.puedeCrearLote, registro.PuedeCrearLote),
   };
 }
 
@@ -114,16 +146,22 @@ function construirPayloadMigracion(
   payload: InformeCrearRequest,
   idPlantilla?: number,
   idInformeMigracion?: number,
+  idIdiomaOrigen?: number,
+  idIdiomaDestino?: number,
 ) {
   const contenido = { ...payload, idPlantilla } as Partial<InformeCrearRequest> & {
     idPlantilla?: number;
     idInformeMigracion?: number;
+    idIdiomaOrigen?: number;
+    idIdiomaDestino?: number;
   };
   delete contenido.idPedido;
   delete contenido.idInforme;
   if (idInformeMigracion && idInformeMigracion > 0) {
     contenido.idInformeMigracion = idInformeMigracion;
   }
+  if (idIdiomaOrigen && idIdiomaOrigen > 0) contenido.idIdiomaOrigen = idIdiomaOrigen;
+  if (idIdiomaDestino && idIdiomaDestino > 0) contenido.idIdiomaDestino = idIdiomaDestino;
   return contenido;
 }
 
@@ -168,10 +206,10 @@ export const servicioInformeMigracion = {
 
     return normalizarRespuestaLista(data.result);
   },
-  crear: async (payload: InformeCrearRequest, idPlantilla?: number): Promise<InformeCrearResponse> => {
+  crear: async (payload: InformeCrearRequest, idPlantilla?: number, idIdiomaOrigen?: number, idIdiomaDestino?: number): Promise<InformeCrearResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
       ENDPOINTS_INFORME_MIGRACION.crear,
-      construirPayloadMigracion(payload, idPlantilla),
+      construirPayloadMigracion(payload, idPlantilla, undefined, idIdiomaOrigen, idIdiomaDestino),
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return normalizarRespuestaGuardado(data.result);
@@ -180,10 +218,12 @@ export const servicioInformeMigracion = {
     idInformeMigracion: number,
     payload: InformeCrearRequest,
     idPlantilla?: number,
+    idIdiomaOrigen?: number,
+    idIdiomaDestino?: number,
   ): Promise<InformeCrearResponse> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
       ENDPOINTS_INFORME_MIGRACION.editar,
-      construirPayloadMigracion(payload, idPlantilla, idInformeMigracion),
+      construirPayloadMigracion(payload, idPlantilla, idInformeMigracion, idIdiomaOrigen, idIdiomaDestino),
     );
     if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
     return normalizarRespuestaGuardado(data.result);
@@ -199,6 +239,61 @@ export const servicioInformeMigracion = {
       ...data.result,
       idInforme: idInformeMigracion,
       idPlantilla: obtenerNumeroOpcional(registro.idPlantilla, registro.IdPlantilla),
+      permisosMigracion: {
+        puedeVer: obtenerPermisoMigracion(registro.puedeVer, registro.PuedeVer),
+        puedeEditar: obtenerPermisoMigracion(registro.puedeEditar, registro.PuedeEditar),
+        puedeEnviar: obtenerPermisoMigracion(registro.puedeEnviar, registro.PuedeEnviar),
+      },
     };
+  },
+  crearLote: async (solicitud: CrearLoteMigracionSolicitud): Promise<CrearLoteMigracionRespuesta> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      ENDPOINTS_INFORME_MIGRACION.crearLote,
+      solicitud,
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
+    const registro = obtenerRegistro(data.result);
+    return {
+      idLote: obtenerTexto(registro.idLote, registro.IdLote),
+      archivos: obtenerLista(registro.archivos, registro.Archivos).map((archivo) => {
+        const registroArchivo = obtenerRegistro(archivo);
+        return {
+          nombre: obtenerTexto(registroArchivo.nombre, registroArchivo.Nombre),
+          urlCarga: obtenerTexto(registroArchivo.urlCarga, registroArchivo.UrlCarga),
+        };
+      }),
+    };
+  },
+  subirArchivoLote: async (urlCarga: string, archivo: File): Promise<void> => {
+    await fetch(urlCarga, {
+      method: "PUT",
+      headers: { "Content-Type": archivo.type },
+      body: archivo,
+    }).then((respuesta) => {
+      if (!respuesta.ok) throw new Error("No se pudo cargar el documento");
+    });
+  },
+  iniciarLote: async (idLote: string): Promise<void> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      ENDPOINTS_INFORME_MIGRACION.iniciarLote,
+      { idLote },
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
+  },
+  listarLotes: async (rol: RolMigracionInforme, senal?: AbortSignal): Promise<RespuestaListaLotesMigracion> => {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(
+      ENDPOINTS_INFORME_MIGRACION.listarLotes,
+      { params: { rol }, signal: senal },
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
+    const registro = obtenerRegistro(data.result);
+    return { lotes: obtenerLista(registro.lotes, registro.Lotes).map(normalizarLoteMigracion) };
+  },
+  reintentarLote: async (idLote: string): Promise<void> => {
+    const { data } = await maximilianService.post<ApiResponse<unknown>>(
+      ENDPOINTS_INFORME_MIGRACION.reintentarLote,
+      { idLote },
+    );
+    if (data.idTipoMensaje !== MessageType.SUCCESS) throw new ErrorRespuestaApi(data);
   },
 };

@@ -14,6 +14,7 @@ import type { DirectorioEjecutivoGuardarRequest } from "@maximilian/shared/types
 import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { convertirFechaIso } from "@maximilian/shared/utils/investigacion/investigacion-formato.util";
+import { filtrarTiposDocumentoPorTipoPersona } from "@maximilian/shared/utils/tabla-maestra.util";
 import {
   obtenerGentilicioPais,
   traducirOpcionesTablaMaestra,
@@ -36,6 +37,7 @@ export function useModalRegistroPersonaDirectorio({
 }: ParametrosUseModalRegistroPersonaDirectorio) {
   const fechaNacimientoInicial = registroInicial?.fechaNacimiento ?? datosIniciales?.fechaNacimiento ?? "";
   const [fechaNacimiento, setFechaNacimiento] = useState(fechaNacimientoInicial);
+  const [idTipoPersona, setIdTipoPersona] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (!estaAbierto) return;
@@ -93,8 +95,11 @@ export function useModalRegistroPersonaDirectorio({
     [idIdioma, opcionesTipoDocumentoBase],
   );
   const opcionesTipoIdFiscal = useMemo(
-    () => traducirOpcionesTablaMaestra(opcionesTipoIdFiscalBase, idIdioma),
-    [idIdioma, opcionesTipoIdFiscalBase],
+    () => filtrarTiposDocumentoPorTipoPersona(
+      traducirOpcionesTablaMaestra(opcionesTipoIdFiscalBase, idIdioma),
+      idTipoPersona,
+    ),
+    [idIdioma, idTipoPersona, opcionesTipoIdFiscalBase],
   );
   const opcionesEstadoCivil = useMemo(
     () => traducirOpcionesTablaMaestra(opcionesEstadoCivilBase, idIdioma),
@@ -192,5 +197,6 @@ export function useModalRegistroPersonaDirectorio({
     opcionesTipoIdFiscal,
     opcionesTipoPersona,
     setFechaNacimiento,
+    setIdTipoPersona,
   };
 }

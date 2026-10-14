@@ -399,6 +399,7 @@ export interface InformeCrearRequest {
   idExperienciaPago: number;
   idEstadoInforme: number;
   observacionesIdentificacion: string;
+  domicilioFiscal: string;
   idTipoEmpresa: number;
   fechaConstitucion: string | null;
   ciudadRegistro: string;
@@ -422,6 +423,7 @@ export interface InformeCrearRequest {
   idSector: number;
   idActividad?: number;
   actividad: string;
+  codigoNace: string;
   idIsicCategoria?: number;
   idIsicClase?: number;
   actividadPrincipal: string;
@@ -457,6 +459,7 @@ export interface InformeCrearRequest {
   comentarioInformacionFinanciera: string;
   activosFijos: string;
   seguros: string;
+  contactoInformacion: string;
   comentarioProveedor: string;
   referenciaBanco: string;
   litigios: string;
@@ -464,6 +467,11 @@ export interface InformeCrearRequest {
   superintendecia: string;
   informacionGeneral: string;
   opinionCredito: string;
+  idMonedaLineaRecomendada?: number;
+  montoLineaRecomendada?: number;
+  idMonedaLineaMaxima?: number;
+  montoLineaMaxima?: number;
+  terminos: string;
   flgTieneInformacion: boolean;
   lstBalances: InformeBalanceRequest[];
   lstBalancesDesagregado: InformeBalanceDesagregadoRequest[];
@@ -548,6 +556,11 @@ export interface InformeObtenerResponse {
   idIsicClase?: number;
   datosInvestigacion: DatosInvestigacionAnalista;
   archivosInvestigacion?: ArchivoInvestigacionAnalista[];
+  permisosMigracion?: {
+    puedeVer: boolean;
+    puedeEditar: boolean;
+    puedeEnviar: boolean;
+  };
 }
 
 export interface InformeObtenerParams {
@@ -892,6 +905,7 @@ export interface InformeContenidoTraduccion {
   informacionFinanciera?: InformeContenidoTraduccionPlano;
   bancosProveedores?: InformeContenidoTraduccionPlano;
   datosGenerales?: InformeContenidoTraduccionPlano;
+  directorioEjecutivo?: InformeContenidoTraduccionPlano;
 }
 
 export interface InformeTraducirRequest {

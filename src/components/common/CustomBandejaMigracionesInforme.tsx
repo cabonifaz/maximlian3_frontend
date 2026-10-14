@@ -1,12 +1,18 @@
-import { Plus, Search } from "lucide-react";
+import { Files, Plus, Search } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomTarjetaResumenMigracion } from "@maximilian/components/common/CustomTarjetaResumenMigracion";
 import { CustomTarjetaResumenSkeleton } from "@maximilian/components/common/CustomTarjetaResumenSkeleton";
+import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
+import { CustomModalLoteMigracion } from "@maximilian/components/common/CustomModalLoteMigracion";
+import { CustomPanelLotesMigracion } from "@maximilian/components/common/CustomPanelLotesMigracion";
 import { useBandejaMigracionesInforme } from "@maximilian/hooks/useBandejaMigracionesInforme";
+import { useLotesMigracionInforme } from "@maximilian/hooks/useLotesMigracionInforme";
 import { COLUMNAS_BANDEJA_MIGRACIONES_INFORME } from "@maximilian/shared/constants/components/common/custom-bandeja-migraciones-informe.constants";
+import { MAESTROS_CONFIGURACION_MIGRACION } from "@maximilian/shared/constants/components/common/migracion-informe.constants";
 import type { EstadoMigracionInforme, RolMigracionInforme } from "@maximilian/shared/types/informe-migracion.type";
 
 interface PropsCustomBandejaMigracionesInforme {
@@ -27,17 +33,23 @@ function esEstadoEditable(estado: EstadoMigracionInforme) {
 
 export function CustomBandejaMigracionesInforme({ rol }: PropsCustomBandejaMigracionesInforme) {
   const navigate = useNavigate();
+  const [estaAbiertoLote, setEstaAbiertoLote] = useState(false);
   const {
     data,
     isError,
     isLoading,
+    idEstado,
+    idPlantilla,
     paginaActual,
     refetch,
     setPaginaActual,
+    setIdEstado,
+    setIdPlantilla,
     setTerminoBusqueda,
     tarjetasResumen,
     terminoBusqueda,
   } = useBandejaMigracionesInforme(rol);
+  const lotes = useLotesMigracionInforme(rol);
 
   return (
     <div className="space-y-8">
@@ -69,13 +81,23 @@ export function CustomBandejaMigracionesInforme({ rol }: PropsCustomBandejaMigra
             </label>
             <button
               type="button"
+              disabled={data?.puedeCrear === false}
               onClick={() => navigate(`/${rol}/migraciones/nueva`)}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-brand-wine px-5 text-sm font-bold text-white shadow-sm transition hover:opacity-90"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-brand-wine px-5 text-sm font-bold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus size={17} />
               Añadir informe
             </button>
+            <CustomButton variant="secondary" className="h-12 whitespace-nowrap" disabled={data?.puedeCrearLote === false} onClick={() => setEstaAbiertoLote(true)}>
+              <Files size={17} />
+              Migrar lote
+            </CustomButton>
           </div>
+        </div>
+
+        <div className="mb-6 grid gap-3 md:grid-cols-2">
+          <CustomSelectorBuscable label="Estado" optional idMaster={MAESTROS_CONFIGURACION_MIGRACION.estado} value={idEstado} onChange={setIdEstado} onClear={() => setIdEstado(undefined)} etiquetaOpcionVacia="Todos los estados" />
+          <CustomSelectorBuscable label="Plantilla" optional idMaster={MAESTROS_CONFIGURACION_MIGRACION.plantilla} value={idPlantilla} onChange={setIdPlantilla} onClear={() => setIdPlantilla(undefined)} etiquetaOpcionVacia="Todas las plantillas" />
         </div>
 
         <CustomTabla
@@ -113,11 +135,12 @@ export function CustomBandejaMigracionesInforme({ rol }: PropsCustomBandejaMigra
                   <CustomButton
                     size="sm"
                     className="h-10 w-36 justify-center px-3 text-[11px] uppercase tracking-[0.12em]"
+                    disabled={!registro.permisos.puedeVer}
                     onClick={() => navigate(
-                      `/${rol}/migraciones/${registro.idInformeMigracion}?modo=${esEstadoEditable(registro.estado) ? "continuar" : "detalle"}`,
+                      `/${rol}/migraciones/${registro.idInformeMigracion}?modo=${registro.permisos.puedeEditar && esEstadoEditable(registro.estado) ? "continuar" : "detalle"}`,
                     )}
                   >
-                    {esEstadoEditable(registro.estado) ? "Continuar" : "Ver informe"}
+                    {registro.permisos.puedeEditar && esEstadoEditable(registro.estado) ? "Continuar" : "Ver informe"}
                   </CustomButton>
                 </div>
               </td>
@@ -125,6 +148,8 @@ export function CustomBandejaMigracionesInforme({ rol }: PropsCustomBandejaMigra
           )}
         />
       </section>
+      <CustomPanelLotesMigracion lotes={lotes.data?.lotes ?? []} reintentando={lotes.reintentar.isPending} onReintentar={(idLote) => lotes.reintentar.mutate(idLote)} />
+      <CustomModalLoteMigracion abierto={estaAbiertoLote} cargando={lotes.crear.isPending} rol={rol} onCerrar={() => setEstaAbiertoLote(false)} onCrear={(datos) => lotes.crear.mutateAsync(datos)} />
     </div>
   );
 }

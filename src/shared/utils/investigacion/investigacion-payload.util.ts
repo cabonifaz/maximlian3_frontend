@@ -386,6 +386,7 @@ export function construirPayloadCrearInforme({
     idExperienciaPago: Number(identificacion.idRecordPagos) || 0,
     idEstadoInforme,
     observacionesIdentificacion: identificacion.observacionesIdentificacion,
+    domicilioFiscal: aspectosLegales.domicilioFiscal,
     idTipoEmpresa: obtenerIdPorTexto(opcionesTipoEmpresa, aspectosLegales.tipoEmpresa),
     fechaConstitucion: aspectosLegales.fechaConstitucion || null,
     ciudadRegistro: aspectosLegales.ciudadRegistro,
@@ -408,6 +409,7 @@ export function construirPayloadCrearInforme({
     comentariosAspectoLegal: aspectosLegales.comentariosEmpresasRelacionadas,
     idSector: obtenerIdPorTexto(opcionesSectorEconomico, operacionPrincipal.sector),
     actividad: operacionPrincipal.actividad,
+    codigoNace: operacionPrincipal.codigoNace,
     idIsicCategoria: obtenerIdCiiuPorValor(opcionesActividadEconomica, operacionPrincipal.categoriaCiiu) || undefined,
     idIsicClase: obtenerIdCiiuPorValor(opcionesClaseCiiu, operacionPrincipal.claseCiiu) || undefined,
     actividadPrincipal: operacionPrincipal.actividadPrincipal,
@@ -443,6 +445,7 @@ export function construirPayloadCrearInforme({
     comentarioInformacionFinanciera: informacionFinanciera.comentariosFinancieros,
     activosFijos: informacionFinanciera.activosFijos,
     seguros: informacionFinanciera.seguros,
+    contactoInformacion: informacionFinanciera.contacto,
     comentarioProveedor: referencias.comentariosProveedores,
     referenciaBanco: referencias.referenciasBancos,
     litigios: referencias.litigios,
@@ -450,6 +453,21 @@ export function construirPayloadCrearInforme({
     superintendecia: referencias.superintendencia,
     informacionGeneral: datosGenerales.informacionGeneral,
     opinionCredito: datosGenerales.opinionCredito,
+    idMonedaLineaRecomendada: obtenerIdPorTextoONumero(
+      opcionesMoneda,
+      datosGenerales.monedaLineaCreditoRecomendada,
+    ),
+    montoLineaRecomendada: obtenerNumeroOpcionalDesdeTexto(
+      datosGenerales.lineaCreditoRecomendada,
+    ),
+    idMonedaLineaMaxima: obtenerIdPorTextoONumero(
+      opcionesMoneda,
+      datosGenerales.monedaLineaCreditoMaxima,
+    ),
+    montoLineaMaxima: obtenerNumeroOpcionalDesdeTexto(
+      datosGenerales.lineaCreditoMaxima,
+    ),
+    terminos: datosGenerales.terminos,
     flgTieneInformacion: true,
     lstBalances: datosInvestigacion.balances.map((balance) => ({
       ...(esEdicion ? { idInformeBalance: balance.idInformeBalance ?? 0 } : {}),
@@ -536,7 +554,7 @@ export function construirPayloadCrearInforme({
     })),
     lstLocales: datosInvestigacion.locales.map((local) => ({
       idInformeLocal: esPayloadTraductor ? local.idInformeLocal ?? 0 : esEdicion ? local.idInformeLocal ?? 0 : 0,
-      tipoLocal: local.tipoLocal,
+      tipoLocal: local.idTipoLocal ? String(local.idTipoLocal) : local.tipoLocal,
       comentario: local.comentario,
       imagenes: (local.imagenes ?? []).map((imagen) => ({
         idInformeLocalImagen: imagen.idInformeLocalImagen ?? 0,

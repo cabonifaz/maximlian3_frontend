@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
-import { Upload, Trash2, FileText, Filter, AlertCircle, RotateCcw, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Upload, Trash2, FileText, Filter, AlertCircle, RotateCcw, ChevronLeft, ChevronRight, Download, Plus } from "lucide-react";
 import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
 import { CustomModalPestanas } from "@maximilian/components/common/CustomModalPestanas";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
@@ -27,6 +28,13 @@ import {
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { TablaTarifarioCorta } from "@maximilian/components/coordinador/TablaTarifarioCorta";
+import { ModalAgregarTarifa } from "@maximilian/components/coordinador/ModalAgregarTarifa";
+import { useCrearTarifaPedido } from "@maximilian/hooks/useCrearTarifaPedido";
+import {
+  CAMPOS_BLOQUEADOS_NUEVA_TARIFA_PEDIDO,
+  MENSAJE_REQUISITOS_NUEVA_TARIFA_PEDIDO,
+  TITULO_MODAL_NUEVA_TARIFA_PEDIDO,
+} from "@maximilian/shared/constants/components/coordinador/crear-tarifa-pedido.constants";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { useSelectorInvestigadoPedido } from "@maximilian/hooks/useSelectorInvestigadoPedido";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -130,6 +138,14 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, idTarif
   const logoImprimible = watch("logoImprimible");
   const idTipoTramite = watch("idTipoTramite");
   const idPlantillaInforme = watch("idPlantillaInforme");
+
+  const crearTarifa = useCrearTarifaPedido({
+    idCliente,
+    idPais,
+    idTipoProducto: idClaseInforme,
+    idTipoTramite,
+    alCrearTarifa: onTarifarioSelect,
+  });
 
   const clienteOptions = useMemo(
     () =>
@@ -283,7 +299,20 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, idTarif
           error={errors.idTipoTramite?.message}
         />
         <div className="flex flex-col gap-1">
-          <CustomLabel required>Tarifa</CustomLabel>
+          <div className="flex items-center justify-between">
+            <CustomLabel required>Tarifa</CustomLabel>
+            <CustomButton
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={crearTarifa.abrir}
+              disabled={!crearTarifa.puedeCrear}
+              title={crearTarifa.puedeCrear ? undefined : MENSAJE_REQUISITOS_NUEVA_TARIFA_PEDIDO}
+            >
+              <Plus size={14} />
+              Nueva tarifa
+            </CustomButton>
+          </div>
           <TablaTarifarioCorta
             idCliente={idCliente}
             idTipoProducto={idClaseInforme}
@@ -302,6 +331,18 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, idTarif
           />
         </div>
       </div>
+      {createPortal(
+        <ModalAgregarTarifa
+          isOpen={crearTarifa.estaAbierto}
+          onClose={crearTarifa.cerrar}
+          onConfirm={crearTarifa.confirmar}
+          defaultValues={crearTarifa.valoresIniciales}
+          titulo={TITULO_MODAL_NUEVA_TARIFA_PEDIDO}
+          camposBloqueados={CAMPOS_BLOQUEADOS_NUEVA_TARIFA_PEDIDO}
+          cargando={crearTarifa.estaCreando}
+        />,
+        document.body,
+      )}
     </div>
   );
 }
