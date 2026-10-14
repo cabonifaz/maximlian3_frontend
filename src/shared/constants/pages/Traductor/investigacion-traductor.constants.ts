@@ -174,7 +174,7 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<
     ],
   },
   "datos-generales": {
-    datosGenerales: ["informacionGeneral", "opinionCredito"],
+    datosGenerales: ["informacionGeneral", "opinionCredito", "terminos"],
   },
   "directorio-ejecutivo": {
     directorioEjecutivo: [
@@ -182,6 +182,7 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<
       "cargoEjecutivo",
       "cargo",
       "vinculadoDesde",
+      "descripcionBusqueda",
       "companiaAnterior",
       "participacion",
       "formaParteDirectorioEjecutivo",
@@ -190,6 +191,8 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<
     ],
   },
 };
+
+export const PREFIJO_TRADUCCION_PROVEEDORES = "proveedores.";
 
 export const SECCIONES_LISTA_EXTRACCION = new Set([
   "companiasRelacionadas",
@@ -203,6 +206,7 @@ export const SECCIONES_LISTA_EXTRACCION = new Set([
 
 export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
   domicilioFiscal: "Domicilio Fiscal",
+  descripcionBusqueda: "Referencias del ejecutivo",
   idCalificacion: "Calificación",
   idRecordPagos: "Record de Pagos",
   porcentaje: "Porcentaje de participación",
@@ -287,7 +291,6 @@ export const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
     "aspectosLegales",
     "comentariosEmpresasRelacionadas",
     "condiciones",
-    "domicilioFiscal",
     "tipoAcciones",
     "fechaConstitucion",
     "ultimaAmpliacion",
@@ -304,6 +307,7 @@ export const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
     "comprasNacionalesDetalle",
     "exportaciones",
     "importaciones",
+    "locales",
     "numeroEmpleadosDetalle",
     "ventasContadoDetalle",
     "ventasCreditoDetalle",
@@ -318,9 +322,12 @@ export const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
     "litigios",
     "riesgoPrincipal",
     "superintendencia",
+    "proveedores",
   ],
-  datosGenerales: ["informacionGeneral", "opinionCredito"],
-  directorioEjecutivo: ["cargo", "vinculadoDesde"],
+  datosGenerales: ["informacionGeneral", "opinionCredito", "terminos"],
+  locales: ["comentario"],
+  proveedores: ["productos", "comentarios"],
+  directorioEjecutivo: ["cargo", "vinculadoDesde", "descripcionBusqueda"],
 };
 
 export const RUTAS_SELECTORES_CON_REFERENCIA_ORIGINAL = new Set([
