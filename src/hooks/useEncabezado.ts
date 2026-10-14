@@ -27,18 +27,19 @@ export function useEncabezado(rolInicial?: string) {
       return;
     }
 
-    setEstaCambiandoRol(true);
     setEstaAbiertoMenuRol(false);
 
+    const rol = sesionUsuario?.roles.find(
+      (rolUsuario) => rolUsuario.rol === nombreRol,
+    );
+
+    if (!rol) return;
+
+    if (!(await confirmarSalidaConCambios())) return;
+
+    setEstaCambiandoRol(true);
+
     try {
-      const rol = sesionUsuario?.roles.find(
-        (rolUsuario) => rolUsuario.rol === nombreRol,
-      );
-
-      if (!rol) return;
-
-      if (!(await confirmarSalidaConCambios())) return;
-
       await invalidarConsultasAntesDeCambiarRol(clienteConsultas);
 
       sessionStorage.setItem("selected_role", rol.rol);
