@@ -137,6 +137,7 @@ export function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       comentariosOperaciones: "",
       clientes: "",
       competidores: "",
+      horasOficina: "",
     },
     importaciones: [],
     exportaciones: [],

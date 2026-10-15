@@ -330,6 +330,7 @@ export interface InformeProveedorRequest {
   idMoneda: number;
   idLimiteCredito: number;
   idTiempoCredito: number;
+  cantidadLineaCredito?: number;
   promedioMensual: number;
   tipoCambio?: number;
   productos: string;
@@ -455,6 +456,7 @@ export interface InformeCrearRequest {
   comentariosOperaciones: string;
   clientes: string;
   competidores: string;
+  horasOficina: string;
   contenidoInformacionFinanciera: string;
   comentarioInformacionFinanciera: string;
   activosFijos: string;

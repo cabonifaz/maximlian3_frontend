@@ -1522,6 +1522,16 @@ function PantallaInvestigacionAnalista({
       return { valor: normalizarPorTablaMaestra(opcionesMoneda) };
     }
 
+    if (
+      rutaTexto === "datosGenerales.monedaLineaCreditoRecomendada"
+      || rutaTexto === "datosGenerales.monedaLineaCreditoMaxima"
+    ) {
+      const opcion = obtenerOpcionTablaMaestraPorId(opcionesMoneda, valor)
+        ?? obtenerOpcionTablaMaestraPorTexto(opcionesMoneda, valor);
+      if (opcion?.num1 == null) return { valor: "" };
+      return { valor: opcion.string1 ?? valorTexto, valorFormulario: String(opcion.num1) };
+    }
+
     if (rutaTexto === "aspectosLegales.obligacionBolsa") {
       const texto = valorTexto.toLowerCase();
       if (texto === "no" || texto === "false" || texto === "0" || texto === "2") {
@@ -1954,6 +1964,7 @@ function PantallaInvestigacionAnalista({
           idTiempoCredito,
           limiteCredito: obtenerTextoTablaMaestraExtraccion(opcionesLimiteCreditoProveedor, idLimiteCredito ?? proveedor.limiteCredito),
           plazoCredito: idTiempoCredito ? obtenerTextoTablaMaestraExtraccion(opcionesTiempoCreditoVentas, idTiempoCredito) : "",
+          cantidadLineaCredito: proveedor.cantidadLineaCredito == null ? "" : normalizarMontoDosDecimales(obtenerTextoExtraccionSeguro(proveedor.cantidadLineaCredito)),
           promedioMensual: proveedor.promedioMensual == null ? "" : normalizarMontoDosDecimales(obtenerTextoExtraccionSeguro(proveedor.promedioMensual)),
           productos: obtenerTextoExtraccionSeguro(proveedor.productos),
           idCalificacion: obtenerIdExtraccion(proveedor.idCalificacion),
@@ -4086,6 +4097,9 @@ function PantallaInvestigacionAnalista({
         <AreaInvestigacionAnalista etiqueta="Comentarios sobre las Operaciones" valor={datosInvestigacion.operacionPrincipal.comentariosOperaciones} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.comentariosOperaciones")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("comentariosOperaciones", valor)} />
       <AreaInvestigacionAnalista etiqueta="Clientes" valor={datosInvestigacion.operacionPrincipal.clientes} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.clientes")} className="md:col-span-2" permitirVinetas onChange={(valor) => actualizarOperacionPrincipal("clientes", valor)} />
       <AreaInvestigacionAnalista etiqueta="Competidores" valor={datosInvestigacion.operacionPrincipal.competidores} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.competidores")} className="md:col-span-2" permitirVinetas onChange={(valor) => actualizarOperacionPrincipal("competidores", valor)} />
+      {esPlantillaEcMexico && (
+        <AreaInvestigacionAnalista etiqueta="Horas de oficina" valor={datosInvestigacion.operacionPrincipal.horasOficina} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("operacionPrincipal.horasOficina")} className="md:col-span-2" onChange={(valor) => actualizarOperacionPrincipal("horasOficina", valor)} />
+      )}
       </div>
     );
   };

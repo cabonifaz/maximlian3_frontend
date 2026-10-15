@@ -151,6 +151,7 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<
       "ventasExtranjeroPorcentaje",
       "clientes",
       "competidores",
+      "horasOficina",
     ],
   },
   "informacion-financiera": {
@@ -207,6 +208,7 @@ export const SECCIONES_LISTA_EXTRACCION = new Set([
 export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
   domicilioFiscal: "Domicilio Fiscal",
   descripcionBusqueda: "Referencias del ejecutivo",
+  horasOficina: "Horas de oficina",
   idCalificacion: "Calificación",
   idRecordPagos: "Record de Pagos",
   porcentaje: "Porcentaje de participación",
@@ -315,6 +317,7 @@ export const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
     "ventasExtranjeroDetalle",
     "clientes",
     "competidores",
+    "horasOficina",
   ],
   bancosProveedores: [
     "comentariosProveedores",

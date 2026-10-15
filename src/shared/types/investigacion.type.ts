@@ -300,6 +300,7 @@ export interface DatosOperacionPrincipalAnalista {
   comentariosOperaciones: string;
   clientes: string;
   competidores: string;
+  horasOficina: string;
 }
 
 export interface DatosInformacionFinancieraAnalista {
@@ -343,6 +344,7 @@ export interface RegistroProveedorAnalista {
   limiteCredito?: string;
   productos?: string;
   plazoCredito?: string;
+  cantidadLineaCredito?: string;
   promedioMensual?: string;
   idCalificacion?: number;
   comentarios?: string;

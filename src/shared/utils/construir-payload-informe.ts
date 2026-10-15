@@ -554,6 +554,7 @@ export function construirPayloadInforme({
       idMoneda: proveedor.idMoneda ?? obtenerIdMoneda(proveedor.operacionCambioMoneda ?? ""),
       idLimiteCredito: proveedor.idLimiteCredito ?? 0,
       idTiempoCredito: proveedor.idTiempoCredito ?? 0,
+      cantidadLineaCredito: obtenerNumeroOpcionalDesdeTexto(proveedor.cantidadLineaCredito) ?? undefined,
       promedioMensual: obtenerNumeroDesdeTexto(proveedor.promedioMensual),
       tipoCambio: obtenerNumeroDesdeTexto(proveedor.tipoCambio),
       productos: proveedor.productos ?? "",

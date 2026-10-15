@@ -3271,6 +3271,12 @@ function PantallaInvestigacionAnalista({
           productos: obtenerTextoExtraccionSeguro(proveedor.productos),
           idCalificacion: obtenerIdExtraccion(proveedor.idCalificacion),
           comentarios: obtenerTextoExtraccionSeguro(proveedor.comentarios),
+          cantidadLineaCredito:
+            proveedor.cantidadLineaCredito == null
+              ? ""
+              : normalizarMontoDosDecimales(
+                  obtenerTextoExtraccionSeguro(proveedor.cantidadLineaCredito),
+                ),
           promedioMensual:
             proveedor.promedioMensual == null
               ? ""
@@ -7154,6 +7160,20 @@ function PantallaInvestigacionAnalista({
             actualizarOperacionPrincipal("competidores", valor)
           }
         />
+        {esPlantillaEcMexico && (
+          <AreaInvestigacionAnalista
+            etiqueta="Horas de oficina"
+            valor={datosInvestigacion.operacionPrincipal.horasOficina}
+            soloLectura={esSoloLectura}
+            adicionalEtiqueta={obtenerAyudaTraduccion(
+              "operacionPrincipal.horasOficina",
+            )}
+            className="md:col-span-2"
+            onChange={(valor) =>
+              actualizarOperacionPrincipal("horasOficina", valor)
+            }
+          />
+        )}
       </div>
     );
   };
