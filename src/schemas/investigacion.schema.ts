@@ -96,6 +96,7 @@ export const esquemaOperacionPrincipalInvestigacion = z.object({
   comentariosOperaciones: textoFormulario,
   clientes: textoFormulario,
   competidores: textoFormulario,
+  horasOficina: textoFormulario,
 });
 
 export const esquemaInformacionFinancieraInvestigacion = z.object({
@@ -243,6 +244,7 @@ export const esquemaModalProveedorInvestigacion = z.object({
   limiteCredito: textoFormulario.optional(),
   productos: textoFormulario.optional(),
   plazoCredito: textoFormulario.optional(),
+  cantidadLineaCredito: textoFormulario.optional(),
   promedioMensual: textoFormulario.optional(),
   idCalificacion: idOpcionalFormulario,
   comentarios: textoFormulario.optional(),

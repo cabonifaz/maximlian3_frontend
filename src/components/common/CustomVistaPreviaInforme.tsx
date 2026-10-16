@@ -421,6 +421,7 @@ function crearBloqueOperacionPrincipal(
   agregarSimple(filas, op, "numeroEmpleadosDetalle", "Detalle empleados");
   agregarSimple(filas, op, "clientes", "Clientes");
   agregarSimple(filas, op, "competidores", "Competidores");
+  agregarSimple(filas, op, "horasOficina", "Horas de oficina");
   agregarSimple(filas, op, "comentariosOperaciones", "Comentarios de operaciones");
 
   return { id: "operacion-principal", titulo: "Operación principal", filas };
@@ -541,7 +542,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           notaria: "Oficina de notaría",
           notario: "Notario",
           registro: "Registro",
-          condiciones: "Condiciones",
+          condiciones: "Duración",
           operacionesCambioDivisas: "Operaciones de cambio de divisas",
           capitalInicial: "Capital inicial",
           capitalDesembolsado: "Capital desembolsado",
