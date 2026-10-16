@@ -207,6 +207,7 @@ export const SECCIONES_LISTA_EXTRACCION = new Set([
 
 export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
   domicilioFiscal: "Domicilio Fiscal",
+  condiciones: "Duración",
   descripcionBusqueda: "Referencias del ejecutivo",
   horasOficina: "Horas de oficina",
   idCalificacion: "Calificación",

@@ -542,7 +542,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           notaria: "Oficina de notaría",
           notario: "Notario",
           registro: "Registro",
-          condiciones: "Condiciones",
+          condiciones: "Duración",
           operacionesCambioDivisas: "Operaciones de cambio de divisas",
           capitalInicial: "Capital inicial",
           capitalDesembolsado: "Capital desembolsado",

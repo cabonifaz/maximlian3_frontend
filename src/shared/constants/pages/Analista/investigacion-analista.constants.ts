@@ -146,6 +146,7 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacion
       "ventasExtranjeroPorcentaje",
       "clientes",
       "competidores",
+      "horasOficina",
     ],
   },
   "informacion-financiera": {
@@ -214,6 +215,8 @@ export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
   lineaCreditoMaxima: "Línea de Crédito Máxima",
   monedaLineaCreditoMaxima: "Moneda de Línea de Crédito Máxima",
   terminos: "Términos",
+  condiciones: "Duración",
+  horasOficina: "Horas de oficina",
   porcentaje: "Porcentaje de participación",
   esParteDirectorio: "¿Forma parte del directorio Ejecutivo?",
   lista: "¿Figura en el listado de ejecutivos?",

@@ -3384,7 +3384,7 @@ function PantallaInvestigacionAnalista({
         <CampoInvestigacionAnalista etiqueta="Oficina de Notaría" valor={datosInvestigacion.aspectosLegales.notaria} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.notaria")} onChange={(valor) => actualizarAspectosLegales("notaria", valor)} />
         <CampoInvestigacionAnalista etiqueta="Notario" valor={datosInvestigacion.aspectosLegales.notario} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.notario")} onChange={(valor) => actualizarAspectosLegales("notario", valor)} />
         <CampoInvestigacionAnalista etiqueta="Registro" valor={datosInvestigacion.aspectosLegales.registro} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.registro")} onChange={(valor) => actualizarAspectosLegales("registro", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Condiciones" valor={datosInvestigacion.aspectosLegales.condiciones} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.condiciones")} onChange={(valor) => actualizarAspectosLegales("condiciones", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Duración" valor={datosInvestigacion.aspectosLegales.condiciones} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.condiciones")} onChange={(valor) => actualizarAspectosLegales("condiciones", valor)} />
         <SelectorMaestroConAltaInvestigacionAnalista
           etiqueta="Operaciones de Cambio Divisas"
           valor={datosInvestigacion.aspectosLegales.operacionesCambioDivisas === "0" ? "" : datosInvestigacion.aspectosLegales.operacionesCambioDivisas}

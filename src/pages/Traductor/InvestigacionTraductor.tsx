@@ -5631,7 +5631,7 @@ function PantallaInvestigacionAnalista({
           onChange={(valor) => actualizarAspectosLegales("registro", valor)}
         />
         <CampoInvestigacionAnalista
-          etiqueta="Condiciones"
+          etiqueta="Duración"
           valor={datosInvestigacion.aspectosLegales.condiciones}
           soloLectura={esSoloLectura}
           adicionalEtiqueta={obtenerAyudaTraduccion(
