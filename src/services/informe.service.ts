@@ -560,6 +560,7 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       comentariosOperaciones: "",
       clientes: "",
       competidores: "",
+      horasOficina: "",
     },
     importaciones: [],
     exportaciones: [],
@@ -793,6 +794,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     comentariosOperaciones: obtenerTexto(registro.comentariosOperaciones, registro.ComentariosOperaciones),
     clientes: obtenerTexto(registro.clientes, registro.Clientes),
     competidores: obtenerTexto(registro.competidores, registro.Competidores),
+    horasOficina: obtenerTexto(registro.horasOficina, registro.HorasOficina),
   };
 
   const operaciones = obtenerLista(
@@ -883,7 +885,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
 
   datos.proveedores = obtenerLista(registro.lstProveedores, registro.LstProveedores, registro.proveedores, registro.Proveedores).map((item) => {
     const proveedor = obtenerRegistro(item);
-    const idTipoProveedor = obtenerNumeroOpcional(proveedor.idTipoPersona, proveedor.IdTipoPersona, proveedor.idTipoProveedor, proveedor.IdTipoProveedor);
+    const idTipoProveedor = obtenerNumeroOpcional(proveedor.idTipoProveedor, proveedor.IdTipoProveedor);
     const idLimiteCredito = obtenerNumeroOpcional(proveedor.idLimiteCredito, proveedor.IdLimiteCredito);
     const idTiempoCredito = obtenerNumeroOpcional(proveedor.idTiempoCredito, proveedor.IdTiempoCredito, proveedor.idPlazoCredito, proveedor.IdPlazoCredito);
     return {
@@ -927,6 +929,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       idPlazoCredito: idTiempoCredito,
       plazoCredito: obtenerTexto(proveedor.tiempoCredito, proveedor.TiempoCredito, proveedor.plazoCredito, proveedor.PlazoCredito)
         || (idTiempoCredito ? String(idTiempoCredito) : ""),
+      cantidadLineaCredito: obtenerTextoNumerico(proveedor.cantidadLineaCredito ?? proveedor.CantidadLineaCredito) || undefined,
       promedioMensual: obtenerTextoNumerico(proveedor.promedioMensual) || undefined,
       idCalificacion: obtenerNumeroOpcional(proveedor.idCalificacion, proveedor.IdCalificacion),
       comentarios: obtenerTexto(proveedor.comentarios, proveedor.Comentarios) || undefined,

@@ -546,7 +546,7 @@ export function construirPayloadInforme({
     ],
     lstProveedores: datosInvestigacion.proveedores.map((proveedor) => ({
       idInformeProveedor: proveedor.idInformeProveedor ?? 0,
-      idTipoPersona: proveedor.idTipoProveedor ?? obtenerIdPorTextoONumero(undefined, proveedor.tipoProveedor),
+      idTipoProveedor: proveedor.idTipoProveedor ?? obtenerIdPorTextoONumero(undefined, proveedor.tipoProveedor),
       nombre: proveedor.nombreEmpresa,
       idPais: proveedor.idPais ?? obtenerIdPorTexto(opcionesPais, proveedor.pais) ?? 0,
       idTipoDocumento: proveedor.idTipoDocumento ?? 0,
@@ -554,6 +554,7 @@ export function construirPayloadInforme({
       idMoneda: proveedor.idMoneda ?? obtenerIdMoneda(proveedor.operacionCambioMoneda ?? ""),
       idLimiteCredito: proveedor.idLimiteCredito ?? 0,
       idTiempoCredito: proveedor.idTiempoCredito ?? 0,
+      cantidadLineaCredito: obtenerNumeroOpcionalDesdeTexto(proveedor.cantidadLineaCredito) ?? undefined,
       promedioMensual: obtenerNumeroDesdeTexto(proveedor.promedioMensual),
       tipoCambio: obtenerNumeroDesdeTexto(proveedor.tipoCambio),
       productos: proveedor.productos ?? "",

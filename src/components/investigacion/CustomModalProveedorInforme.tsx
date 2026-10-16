@@ -56,6 +56,8 @@ export function CustomModalProveedorAnalista({
     setTipoCambio,
     limiteCredito,
     setLimiteCredito,
+    cantidadLineaCredito,
+    setCantidadLineaCredito,
     promedioMensual,
     setPromedioMensual,
     plazoCredito,
@@ -220,6 +222,11 @@ export function CustomModalProveedorAnalista({
                 marcador="Seleccione o agregue límite de crédito"
                 onChange={setLimiteCredito}
               />
+
+              <div className="space-y-2">
+                <CustomLabel optional>Monto de Línea de Crédito</CustomLabel>
+                <input value={cantidadLineaCredito} onChange={(event) => setCantidadLineaCredito(sanitizarMontoDosDecimales(event.target.value))} onBlur={(event) => setCantidadLineaCredito(normalizarMontoDosDecimales(event.target.value))} onFocus={seleccionarTextoCampoEditable} placeholder="0.00" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
+              </div>
 
               <div className="space-y-2">
                 <CustomLabel>Promedio Mensual</CustomLabel>

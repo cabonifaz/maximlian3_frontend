@@ -12,6 +12,8 @@ export const CAMPOS_MONETARIOS_EXTRACCION = new Set([
   "aspectosLegales.patrimonioNeto",
   "aspectosLegales.valorAcciones",
   "aspectosLegales.tipoCambio",
+  "datosGenerales.lineaCreditoRecomendada",
+  "datosGenerales.lineaCreditoMaxima",
 ]);
 
 export const CAMPOS_PORCENTAJE_EXTRACCION = new Set<CampoPorcentajeOperacion>([
@@ -113,6 +115,7 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacion
       "actividadPrincipal",
       "categoriaCiiu",
       "claseCiiu",
+      "codigoNace",
       "comentariosOperaciones",
       "comprasContadoInternacionalesDetalle",
       "comprasContadoInternacionalesPorcentaje",
@@ -143,10 +146,11 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacion
       "ventasExtranjeroPorcentaje",
       "clientes",
       "competidores",
+      "horasOficina",
     ],
   },
   "informacion-financiera": {
-    informacionFinanciera: ["contenido", "comentariosFinancieros", "activosFijos", "seguros"],
+    informacionFinanciera: ["contenido", "comentariosFinancieros", "activosFijos", "seguros", "contacto"],
   },
   balances: {
     balances: ["balances"],
@@ -163,7 +167,15 @@ export const CONFIGURACION_EXTRACCION_POR_SECCION: Record<IdSeccionInvestigacion
     ],
   },
   "datos-generales": {
-    datosGenerales: ["informacionGeneral", "opinionCredito"],
+    datosGenerales: [
+      "informacionGeneral",
+      "opinionCredito",
+      "lineaCreditoRecomendada",
+      "monedaLineaCreditoRecomendada",
+      "lineaCreditoMaxima",
+      "monedaLineaCreditoMaxima",
+      "terminos",
+    ],
   },
   "directorio-ejecutivo": {
     directorioEjecutivo: [
@@ -196,6 +208,15 @@ export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
   idRecordPagos: "Record de Pagos",
   observacionesIdentificacion: "Observaciones de Identificación",
   datosPersona: "Datos de la empresa o persona",
+  codigoNace: "Código NACE",
+  contacto: "Contacto",
+  lineaCreditoRecomendada: "Línea de Crédito Recomendada",
+  monedaLineaCreditoRecomendada: "Moneda de Línea de Crédito Recomendada",
+  lineaCreditoMaxima: "Línea de Crédito Máxima",
+  monedaLineaCreditoMaxima: "Moneda de Línea de Crédito Máxima",
+  terminos: "Términos",
+  condiciones: "Duración",
+  horasOficina: "Horas de oficina",
   porcentaje: "Porcentaje de participación",
   esParteDirectorio: "¿Forma parte del directorio Ejecutivo?",
   lista: "¿Figura en el listado de ejecutivos?",

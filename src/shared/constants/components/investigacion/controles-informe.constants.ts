@@ -21,7 +21,7 @@ export const marcadoresPorEtiqueta: Record<string, string> = {
   Notaría: "Ingrese la notaría correspondiente",
   Notario: "Ingrese el nombre del notario",
   Registro: "Ingrese el número o detalle de registro",
-  Condiciones: "Describa las condiciones registrales o legales",
+  Duración: "Describa la duración de la sociedad",
   "Operaciones de Cambio Divisas": "Describa las operaciones de cambio de divisas",
   "Capital Inicial": "Ej. 100000",
   "Capital Desembolsado": "Ej. 75000",

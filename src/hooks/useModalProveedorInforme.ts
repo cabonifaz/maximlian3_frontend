@@ -42,6 +42,7 @@ export function useModalProveedorInforme({
   const [operacionCambioMoneda, setOperacionCambioMoneda] = useState(registroInicial?.operacionCambioMoneda ?? "");
   const [tipoCambio, setTipoCambio] = useState(registroInicial?.tipoCambio ?? "");
   const [limiteCredito, setLimiteCredito] = useState(registroInicial?.limiteCredito ?? "");
+  const [cantidadLineaCredito, setCantidadLineaCredito] = useState(registroInicial?.cantidadLineaCredito ?? "");
   const [promedioMensual, setPromedioMensual] = useState(registroInicial?.promedioMensual ?? "");
   const [plazoCredito, setPlazoCredito] = useState(registroInicial?.plazoCredito ?? "");
   const [idTiempoCreditoSeleccionado, setIdTiempoCreditoSeleccionado] = useState<number | undefined>(
@@ -150,6 +151,7 @@ export function useModalProveedorInforme({
       idPlazoCredito: tieneReferenciaComercial ? idTiempoCredito ?? undefined : undefined,
       idTiempoCredito: tieneReferenciaComercial ? idTiempoCredito ?? undefined : undefined,
       plazoCredito: tieneReferenciaComercial ? plazoCredito : "",
+      cantidadLineaCredito: tieneReferenciaComercial ? cantidadLineaCredito.trim() : "",
       promedioMensual: tieneReferenciaComercial && idLimiteCredito === 1 ? promedioMensual.trim() : "",
       idCalificacion: tieneReferenciaComercial ? idCalificacion : undefined,
       comentarios: tieneReferenciaComercial ? comentarios.trim() : "",
@@ -185,6 +187,8 @@ export function useModalProveedorInforme({
     setTipoCambio,
     limiteCredito,
     setLimiteCredito,
+    cantidadLineaCredito,
+    setCantidadLineaCredito,
     promedioMensual,
     setPromedioMensual,
     plazoCredito,
