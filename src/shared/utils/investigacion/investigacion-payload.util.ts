@@ -523,7 +523,7 @@ export function construirPayloadCrearInforme({
     ],
     lstProveedores: datosInvestigacion.proveedores.map((proveedor) => ({
       idInformeProveedor: proveedor.idInformeProveedor ?? 0,
-      idTipoPersona: proveedor.idTipoProveedor ?? obtenerIdPorTextoONumero(opcionesTipoProveedor, proveedor.tipoProveedor),
+      idTipoProveedor: proveedor.idTipoProveedor ?? obtenerIdPorTextoONumero(opcionesTipoProveedor, proveedor.tipoProveedor),
       nombre: proveedor.nombreEmpresa,
       idPais: proveedor.idPais ?? obtenerIdPorTexto(opcionesPais, proveedor.pais) ?? 0,
       idTipoDocumento: proveedor.idTipoDocumento ?? obtenerIdPorTextoONumero(opcionesTipoRegTributario, proveedor.taxIdType),

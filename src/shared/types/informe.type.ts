@@ -322,7 +322,7 @@ export interface InformeOperacionExteriorRequest {
 
 export interface InformeProveedorRequest {
   idInformeProveedor?: number;
-  idTipoPersona: number;
+  idTipoProveedor: number;
   nombre: string;
   idPais: number;
   idTipoDocumento: number;

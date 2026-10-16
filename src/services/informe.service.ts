@@ -885,7 +885,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
 
   datos.proveedores = obtenerLista(registro.lstProveedores, registro.LstProveedores, registro.proveedores, registro.Proveedores).map((item) => {
     const proveedor = obtenerRegistro(item);
-    const idTipoProveedor = obtenerNumeroOpcional(proveedor.idTipoPersona, proveedor.IdTipoPersona, proveedor.idTipoProveedor, proveedor.IdTipoProveedor);
+    const idTipoProveedor = obtenerNumeroOpcional(proveedor.idTipoProveedor, proveedor.IdTipoProveedor);
     const idLimiteCredito = obtenerNumeroOpcional(proveedor.idLimiteCredito, proveedor.IdLimiteCredito);
     const idTiempoCredito = obtenerNumeroOpcional(proveedor.idTiempoCredito, proveedor.IdTiempoCredito, proveedor.idPlazoCredito, proveedor.IdPlazoCredito);
     return {
