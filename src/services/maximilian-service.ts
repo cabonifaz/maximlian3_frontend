@@ -17,6 +17,7 @@ import { ENDPOINTS_COMPANIA_NOTICIA_BALANCE } from "@maximilian/shared/constants
 import { ENDPOINTS_COMPANIA_NOTICIA_DETALLE } from "@maximilian/shared/constants/endpoints/compania-noticia-detalle.endpoint";
 import { ENDPOINTS_DIRECTORIO_EJECUTIVO } from "@maximilian/shared/constants/endpoints/directorio-ejecutivo.endpoint";
 import { ENDPOINTS_INFORME } from "@maximilian/shared/constants/endpoints/informe.endpoint";
+import { TIMEOUT_PETICION_MS } from "@maximilian/shared/constants/services/maximilian-service.constants";
 
 type ConfiguracionAutenticada = InternalAxiosRequestConfig & {
   fuenteCancelacionCambioRol?: CancelTokenSource;
@@ -30,7 +31,7 @@ const maximilianService = axios.create({
   baseURL:
     import.meta.env.VITE_API_URL ||
     "https://maximilianbackendpreprod-f9haawdbdna5h9gx.canadacentral-01.azurewebsites.net",
-  timeout: 10000,
+  timeout: TIMEOUT_PETICION_MS,
   headers: {
     "Content-Type": "application/json",
   },
