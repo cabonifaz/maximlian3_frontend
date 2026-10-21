@@ -43,6 +43,7 @@ import {
 } from "@maximilian/components/investigacion/CustomModalRegistroEmpresaRelacionada";
 import { CustomModalLocalAnalista } from "@maximilian/components/investigacion/CustomModalLocalInforme";
 import { CustomModalOperacionAnalista } from "@maximilian/components/investigacion/CustomModalOperacionInforme";
+import { useEdicionCompaniaRelacionada } from "@maximilian/hooks/useEdicionCompaniaRelacionada";
 import { CustomModalProveedorAnalista } from "@maximilian/components/investigacion/CustomModalProveedorInforme";
 import { CustomModalRegistroEjecutivoAnalista } from "@maximilian/components/investigacion/CustomModalRegistroEjecutivo";
 import { CustomPaginacionInvestigacion } from "@maximilian/components/investigacion/CustomPaginacionInvestigacion";
@@ -175,6 +176,7 @@ interface PropsContenidoPantallaInvestigacionAnalista extends PropsPantallaInves
 interface ParametrosGuardadoInforme {
   idEstadoInforme: number;
   abrirConfirmacionFinalizacion?: boolean;
+  abrirVistaPrevia?: boolean;
 }
 
 interface CambioExtraccionPendiente {
@@ -777,6 +779,21 @@ function PantallaInvestigacionAnalista({
     });
   };
 
+  const guardarAntesDeVistaPrevia = () => {
+    if (guardarInformeMutation.isPending) return;
+    if (esSoloLectura) {
+      setEstaAbiertoVistaPreviaFinalizar(true);
+      return;
+    }
+
+    marcarSeccionActivaComoBorrador();
+    setDebeVolverABandejaTrasGuardarBorrador(false);
+    guardarInformeMutation.mutate({
+      idEstadoInforme: ID_ESTADO_PEDIDO_BORRADOR,
+      abrirVistaPrevia: true,
+    });
+  };
+
   const archivosImagenesNuevosRef = useRef<Map<string, File>>(new Map());
 
   const guardarInformeMutation = useMutation({
@@ -847,7 +864,7 @@ function PantallaInvestigacionAnalista({
 
       return informeService.create(payload);
     },
-    onSuccess: async (respuesta, { idEstadoInforme, abrirConfirmacionFinalizacion }) => {
+    onSuccess: async (respuesta, { idEstadoInforme, abrirConfirmacionFinalizacion, abrirVistaPrevia }) => {
       marcarComoGuardado();
       const idsExistentes = datosInvestigacion.locales.flatMap((local) =>
         (local.imagenes ?? [])
@@ -929,6 +946,7 @@ function PantallaInvestigacionAnalista({
         queryKey: ["informe-documento-generado", Number(idInformeResultado), Number(idPedido)],
       });
       setEstaAbiertoModalConfirmacionPrimerBorrador(false);
+      if (abrirVistaPrevia) setEstaAbiertoVistaPreviaFinalizar(true);
 
       if (esMigracionInforme) {
         queryClient.invalidateQueries({ queryKey: ["migraciones-informe", "analista"] });
@@ -2155,6 +2173,25 @@ function PantallaInvestigacionAnalista({
     return [opcion.string2?.trim(), opcion.string1.trim()].filter(Boolean).join(" - ");
   };
 
+  const actualizarCompaniaRelacionada = (indice: number, empresaActualizada: EmpresaRelacionadaAnalista) => {
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      companiasRelacionadas: anterior.companiasRelacionadas.map((empresa, indiceActual) => (
+        indiceActual === indice
+          ? { ...empresa, ...empresaActualizada }
+          : empresa
+      )),
+    }));
+  };
+
+  const {
+    abrirEdicion: abrirEdicionCompania,
+    cerrarEdicion: cerrarEdicionCompania,
+    estaCargandoEdicion: estaCargandoEdicionCompania,
+    guardarEdicion: guardarEdicionCompania,
+    registroEdicion: registroEdicionCompania,
+  } = useEdicionCompaniaRelacionada({ onActualizar: actualizarCompaniaRelacionada });
+
   const agregarCompaniaRelacionada = (empresaNueva: DatosInvestigacionAnalista["companiasRelacionadas"][number]) => {
     setDatosInvestigacion((anterior) => {
       const indiceExistente = anterior.companiasRelacionadas.findIndex(
@@ -3309,13 +3346,23 @@ function PantallaInvestigacionAnalista({
                     <td className="px-4 py-4 text-sm text-slate-500">{empresa.pais}</td>
                     <td className="px-4 py-4 text-right text-slate-400">
                       {!esSoloLectura ? (
-                        <button
-                          type="button"
-                          onClick={() => setIndiceCompaniaAEliminar(indiceReal)}
-                          className="ml-auto inline-flex text-red-600 transition-colors hover:text-red-700"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        <div className="flex justify-end gap-3">
+                          <button
+                            type="button"
+                            disabled={estaCargandoEdicionCompania}
+                            onClick={() => abrirEdicionCompania(indiceReal, empresa)}
+                            className="inline-flex cursor-pointer transition-colors hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIndiceCompaniaAEliminar(indiceReal)}
+                            className="inline-flex text-red-600 transition-colors hover:text-red-700"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       ) : <span className="text-sm text-slate-300">-</span>}
                     </td>
                   </tr>
@@ -4348,6 +4395,7 @@ function PantallaInvestigacionAnalista({
                   <th className="px-4 py-3">Contacto</th>
                   <th className="px-4 py-3 text-center">Tipo</th>
                   <th className="px-4 py-3">Teléfono</th>
+                  <th className="px-4 py-3 text-center">Ref. comercial</th>
                   <th className="px-4 py-3 text-right">Acciones</th>
                 </tr>
               </thead>
@@ -4364,6 +4412,13 @@ function PantallaInvestigacionAnalista({
                         </span>
                       </td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500">{proveedor.telefono || "-"}</td>
+                      <td className="px-4 py-4 text-center">
+                        {proveedor.tieneReferenciaComercial ? (
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-50 text-green-600" title="Tiene referencia comercial">
+                            <Check size={14} />
+                          </span>
+                        ) : <span className="text-sm text-slate-300">-</span>}
+                      </td>
                       <td className="px-4 py-4 text-right text-slate-400">
                         <div className="flex justify-end gap-3">
                           {!esSoloLectura ? (
@@ -4746,6 +4801,8 @@ function PantallaInvestigacionAnalista({
         onFinalizarInvestigacion={guardarAntesDeFinalizar}
         onExtraerInformacion={permiteExtraccionSeccion ? () => abrirModalExtraccionInformacion("general") : undefined}
         onAbrirArchivos={() => setEstaAbiertoModalArchivosInvestigacion(true)}
+        onVistaPrevia={guardarAntesDeVistaPrevia}
+        vistaPreviaCargando={guardarInformeMutation.isPending && guardarInformeMutation.variables?.abrirVistaPrevia === true}
         accionesSecundarias={!esSoloLectura && !esMigracionInforme ? (
           <CustomButton
             variant="secondary"
@@ -5059,6 +5116,17 @@ function PantallaInvestigacionAnalista({
         soloEdicionLocal
         onCerrar={() => setIndiceCompaniaExtraccionEdicion(null)}
         onGuardar={guardarEdicionCompaniaExtraccion}
+      />
+
+      <CustomModalRegistroEmpresaRelacionadaAnalista
+        key={`compania-edicion-${registroEdicionCompania?.idCompania ?? "cerrado"}-${registroEdicionCompania ? "abierto" : "cerrado"}`}
+        estaAbierto={registroEdicionCompania !== null}
+        opcionesTipoPersona={opcionesTipoPersona}
+        opcionesPais={opcionesPais}
+        registroInicial={registroEdicionCompania}
+        soloEdicionLocal={!registroEdicionCompania?.idCompania}
+        onCerrar={cerrarEdicionCompania}
+        onGuardar={guardarEdicionCompania}
       />
 
       {estaAbiertoModalRevisionEjecutivosExtraccion ? (

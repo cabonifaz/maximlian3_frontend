@@ -459,6 +459,7 @@ interface PropsResumenPedidoInvestigacionAnalista {
   onExtraerInformacion?: () => void;
   onAbrirArchivos?: () => void;
   onVistaPrevia?: () => void;
+  vistaPreviaCargando?: boolean;
   onFormatoFechaInformeChange?: (idFormato: number) => void;
   idPlantilla?: number;
   opcionesPlantilla?: EntradaTablaMaestra[];
@@ -771,6 +772,7 @@ export function ResumenPedidoInvestigacionAnalista({
   onExtraerInformacion,
   onAbrirArchivos,
   onVistaPrevia,
+  vistaPreviaCargando = false,
   onFormatoFechaInformeChange,
   idPlantilla,
   opcionesPlantilla,
@@ -837,6 +839,8 @@ export function ResumenPedidoInvestigacionAnalista({
                 variant="secondary"
                 size="sm"
                 onClick={onVistaPrevia}
+                loading={vistaPreviaCargando}
+                loadingText="Guardando..."
               >
                 <FileText size={14} />
                 Vista previa

@@ -155,7 +155,7 @@ export function useModalProveedorInforme({
       promedioMensual: tieneReferenciaComercial && idLimiteCredito === 1 ? promedioMensual.trim() : "",
       idCalificacion: tieneReferenciaComercial ? idCalificacion : undefined,
       comentarios: tieneReferenciaComercial ? comentarios.trim() : "",
-      productos: productos.trim(),
+      productos: tieneReferenciaComercial ? productos.trim() : "",
     });
     if (!resultado.success) return;
 
