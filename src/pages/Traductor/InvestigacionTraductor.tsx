@@ -73,6 +73,7 @@ import {
 } from "@maximilian/components/investigacion/CustomModalRegistroEmpresaRelacionada";
 import { CustomModalLocalAnalista } from "@maximilian/components/investigacion/CustomModalLocalInforme";
 import { CustomModalOperacionAnalista } from "@maximilian/components/investigacion/CustomModalOperacionInforme";
+import { useEdicionCompaniaRelacionada } from "@maximilian/hooks/useEdicionCompaniaRelacionada";
 import { CustomModalProveedorAnalista } from "@maximilian/components/investigacion/CustomModalProveedorInforme";
 import { CustomModalRegistroEjecutivoAnalista } from "@maximilian/components/investigacion/CustomModalRegistroEjecutivo";
 import { CustomPaginacionInvestigacion } from "@maximilian/components/investigacion/CustomPaginacionInvestigacion";
@@ -224,6 +225,7 @@ interface ReferenciaTraduccionActiva {
 interface ParametrosGuardadoInforme {
   idEstadoInforme: number;
   abrirConfirmacionFinalizacion?: boolean;
+  abrirVistaPrevia?: boolean;
 }
 
 function ReferenciaTraduccion({
@@ -1317,6 +1319,21 @@ function PantallaInvestigacionAnalista({
     });
   };
 
+  const guardarAntesDeVistaPrevia = () => {
+    if (guardarInformeMutation.isPending) return;
+    if (esSoloLectura) {
+      setEstaAbiertoModalVistaPrevia(true);
+      return;
+    }
+
+    marcarSeccionActivaComoBorrador();
+    setDebeVolverABandejaTrasGuardarBorrador(false);
+    guardarInformeMutation.mutate({
+      idEstadoInforme: ID_ESTADO_PEDIDO_BORRADOR,
+      abrirVistaPrevia: true,
+    });
+  };
+
   const archivosImagenesNuevosRef = useRef<Map<string, File>>(new Map());
 
   const guardarInformeMutation = useMutation({
@@ -1398,7 +1415,7 @@ function PantallaInvestigacionAnalista({
     },
     onSuccess: async (
       respuesta,
-      { idEstadoInforme, abrirConfirmacionFinalizacion },
+      { idEstadoInforme, abrirConfirmacionFinalizacion, abrirVistaPrevia },
     ) => {
       marcarComoGuardado();
       const idsExistentes = datosInvestigacion.locales.flatMap((local) =>
@@ -1499,6 +1516,7 @@ function PantallaInvestigacionAnalista({
         ],
       });
       setEstaAbiertoModalConfirmacionPrimerBorrador(false);
+      if (abrirVistaPrevia) setEstaAbiertoModalVistaPrevia(true);
 
       if (esMigracionInforme) {
         queryClient.invalidateQueries({ queryKey: ["migraciones-informe", "traductor"] });
@@ -3587,6 +3605,31 @@ function PantallaInvestigacionAnalista({
       .join(" - ");
   };
 
+  const actualizarCompaniaRelacionada = (
+    indice: number,
+    empresaActualizada: EmpresaRelacionadaAnalista,
+  ) => {
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      companiasRelacionadas: anterior.companiasRelacionadas.map(
+        (empresa, indiceActual) =>
+          indiceActual === indice
+            ? { ...empresa, ...empresaActualizada }
+            : empresa,
+      ),
+    }));
+  };
+
+  const {
+    abrirEdicion: abrirEdicionCompania,
+    cerrarEdicion: cerrarEdicionCompania,
+    estaCargandoEdicion: estaCargandoEdicionCompania,
+    guardarEdicion: guardarEdicionCompania,
+    registroEdicion: registroEdicionCompania,
+  } = useEdicionCompaniaRelacionada({
+    onActualizar: actualizarCompaniaRelacionada,
+  });
+
   const agregarCompaniaRelacionada = (
     empresaNueva: DatosInvestigacionAnalista["companiasRelacionadas"][number],
   ) => {
@@ -5497,15 +5540,27 @@ function PantallaInvestigacionAnalista({
                       </td>
                       <td className="px-4 py-4 text-right text-slate-400">
                         {!esSoloLectura ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setIndiceCompaniaAEliminar(indiceReal)
-                            }
-                            className="ml-auto inline-flex text-red-600 transition-colors hover:text-red-700"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <div className="flex justify-end gap-3">
+                            <button
+                              type="button"
+                              disabled={estaCargandoEdicionCompania}
+                              onClick={() =>
+                                abrirEdicionCompania(indiceReal, empresa)
+                              }
+                              className="inline-flex cursor-pointer transition-colors hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setIndiceCompaniaAEliminar(indiceReal)
+                              }
+                              className="inline-flex text-red-600 transition-colors hover:text-red-700"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-sm text-slate-300">-</span>
                         )}
@@ -7606,6 +7661,7 @@ function PantallaInvestigacionAnalista({
                   <th className="px-4 py-3">Contacto</th>
                   <th className="px-4 py-3 text-center">Tipo</th>
                   <th className="px-4 py-3">Teléfono</th>
+                  <th className="px-4 py-3 text-center">Ref. comercial</th>
                   <th className="px-4 py-3 text-right">Acciones</th>
                 </tr>
               </thead>
@@ -7635,6 +7691,13 @@ function PantallaInvestigacionAnalista({
                       </td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500">
                         {proveedor.telefono || "-"}
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        {proveedor.tieneReferenciaComercial ? (
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-50 text-green-600" title="Tiene referencia comercial">
+                            <Check size={14} />
+                          </span>
+                        ) : <span className="text-sm text-slate-300">-</span>}
                       </td>
                       <td className="px-4 py-4 text-right text-slate-400">
                         <div className="flex justify-end gap-3">
@@ -8190,7 +8253,11 @@ function PantallaInvestigacionAnalista({
               : undefined
           }
           onAbrirArchivos={() => setEstaAbiertoModalArchivosInvestigacion(true)}
-          onVistaPrevia={() => setEstaAbiertoModalVistaPrevia(true)}
+          onVistaPrevia={guardarAntesDeVistaPrevia}
+          vistaPreviaCargando={
+            guardarInformeMutation.isPending &&
+            guardarInformeMutation.variables?.abrirVistaPrevia === true
+          }
           textoBotonArchivos={`Archivos (${archivosInvestigacion.length})`}
           textoBotonAccionIa="Traducir con IA"
           formatoFechaInformeSoloLectura
@@ -8637,6 +8704,18 @@ function PantallaInvestigacionAnalista({
           soloEdicionLocal
           onCerrar={() => setIndiceCompaniaExtraccionEdicion(null)}
           onGuardar={guardarEdicionCompaniaExtraccion}
+        />
+
+        <CustomModalRegistroEmpresaRelacionadaAnalista
+          key={`compania-edicion-${registroEdicionCompania?.idCompania ?? "cerrado"}-${registroEdicionCompania ? "abierto" : "cerrado"}`}
+          estaAbierto={registroEdicionCompania !== null}
+          opcionesTipoPersona={opcionesTipoPersona}
+          opcionesPais={opcionesPais}
+          idIdioma={idIdiomaTraduccion}
+          registroInicial={registroEdicionCompania}
+          soloEdicionLocal={!registroEdicionCompania?.idCompania}
+          onCerrar={cerrarEdicionCompania}
+          onGuardar={guardarEdicionCompania}
         />
 
         {estaAbiertoModalRevisionEjecutivosExtraccion ? (

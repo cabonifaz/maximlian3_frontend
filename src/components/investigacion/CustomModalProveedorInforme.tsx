@@ -157,11 +157,6 @@ export function CustomModalProveedorAnalista({
             <input value={telefono} onChange={(event) => setTelefono(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese el teléfono" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
           </div>
 
-          <div className="space-y-2">
-            <CustomLabel optional>Productos / Servicios</CustomLabel>
-            <input value={productos} onChange={(event) => setProductos(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese los productos o servicios" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
-          </div>
-
           <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-600 md:col-span-2">
             <span>Tiene referencia comercial</span>
             <button
@@ -255,6 +250,11 @@ export function CustomModalProveedorAnalista({
                   mostrarTextoOpcionalEnLabel={false}
                   placeholder="Seleccionar calificación..."
                 />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <CustomLabel>Productos / Servicios</CustomLabel>
+                <input value={productos} onChange={(event) => setProductos(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ingrese los productos o servicios" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
               </div>
 
               <div className="space-y-2 md:col-span-2">
