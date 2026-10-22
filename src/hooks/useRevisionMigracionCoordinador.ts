@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router";
+import { useDatosInvestigacionConDetalle } from "@maximilian/hooks/useDatosInvestigacionConDetalle";
 import { useOpcionesMaestrosVistaPreviaInforme } from "@maximilian/hooks/useOpcionesMaestrosVistaPreviaInforme";
 import { informeService } from "@maximilian/services/informe.service";
 import { servicioInformeAprobacion } from "@maximilian/services/informe-aprobacion.service";
@@ -41,11 +42,15 @@ export function useRevisionMigracionCoordinador() {
   const idIdiomaInforme = informeObtenido?.idIdioma;
   const debeTraducirMaestros = tieneTraduccionTablaMaestra(idIdiomaInforme);
   const opcionesMaestros = useOpcionesMaestrosVistaPreviaInforme(debeTraducirMaestros, idIdiomaInforme);
+  const datosConDetalle = useDatosInvestigacionConDetalle(informeObtenido?.datosInvestigacion);
   const datosInvestigacion = useMemo(() => {
-    if (!informeObtenido) return undefined;
-    if (!debeTraducirMaestros || !opcionesMaestros) return informeObtenido.datosInvestigacion;
-    return traducirMaestrosDatosInvestigacion(informeObtenido, opcionesMaestros);
-  }, [debeTraducirMaestros, informeObtenido, opcionesMaestros]);
+    if (!informeObtenido || !datosConDetalle) return undefined;
+    if (!debeTraducirMaestros || !opcionesMaestros) return datosConDetalle;
+    return traducirMaestrosDatosInvestigacion(
+      { ...informeObtenido, datosInvestigacion: datosConDetalle },
+      opcionesMaestros,
+    );
+  }, [datosConDetalle, debeTraducirMaestros, informeObtenido, opcionesMaestros]);
 
   const volverBandeja = () => navigate("/coordinador/migraciones");
 

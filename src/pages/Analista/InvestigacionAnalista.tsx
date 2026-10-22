@@ -11,6 +11,7 @@ import {
   Eye,
   History,
   Pencil,
+  UserCog,
   Plus,
   RotateCcw,
   Search,
@@ -43,6 +44,7 @@ import {
 } from "@maximilian/components/investigacion/CustomModalRegistroEmpresaRelacionada";
 import { CustomModalLocalAnalista } from "@maximilian/components/investigacion/CustomModalLocalInforme";
 import { CustomModalOperacionAnalista } from "@maximilian/components/investigacion/CustomModalOperacionInforme";
+import { useEdicionPersonaEjecutivo } from "@maximilian/hooks/useEdicionPersonaEjecutivo";
 import { useEdicionCompaniaRelacionada } from "@maximilian/hooks/useEdicionCompaniaRelacionada";
 import { CustomModalProveedorAnalista } from "@maximilian/components/investigacion/CustomModalProveedorInforme";
 import { CustomModalRegistroEjecutivoAnalista } from "@maximilian/components/investigacion/CustomModalRegistroEjecutivo";
@@ -141,7 +143,7 @@ import {
   normalizarMontoDosDecimales,
   normalizarMontoDecimales,
   obtenerPorcentajeNumerico,
-  sanitizarMontoDecimales,
+  sanitizarMontoDosDecimales,
   seleccionarTextoCampoEditable,
 } from "@maximilian/shared/utils/formato-monto.util";
 import { enmascararNumeroCuenta } from "@maximilian/shared/utils/texto.util";
@@ -2901,6 +2903,35 @@ function PantallaInvestigacionAnalista({
     setEstaAbiertoModalEjecutivo(false);
   };
 
+  const actualizarEjecutivosDePersona = (registro: RegistroPersonaDirectorioAnalista) => {
+    setRegistrosPersonaDirectorio((anterior) => anterior.map((persona) => (
+      persona.idDirectorioEjecutivo === registro.idDirectorioEjecutivo ? { ...persona, ...registro } : persona
+    )));
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      directorioEjecutivo: anterior.directorioEjecutivo.map((ejecutivo) => (
+        ejecutivo.idDirectorioEjecutivo === registro.idDirectorioEjecutivo
+          ? {
+              ...ejecutivo,
+              ejecutivo: registro.nombres,
+              nombreCompleto: registro.nombres,
+              descripcionBusqueda: registro.nombres,
+              pais: registro.pais,
+              tipoPersona: registro.tipoPersona,
+            }
+          : ejecutivo
+      )),
+    }));
+  };
+
+  const {
+    abrirEdicion: abrirEdicionPersona,
+    cerrarEdicion: cerrarEdicionPersona,
+    estaCargandoEdicion: estaCargandoEdicionPersona,
+    guardarEdicion: guardarEdicionPersona,
+    registroEdicion: registroEdicionPersona,
+  } = useEdicionPersonaEjecutivo({ onActualizar: actualizarEjecutivosDePersona });
+
   const guardarPersonaDirectorio = (registro: RegistroPersonaDirectorioAnalista) => {
     const nuevoRegistro = {
       ...registro,
@@ -3472,10 +3503,10 @@ function PantallaInvestigacionAnalista({
             <input
               value={datosInvestigacion.aspectosLegales.tipoCambio}
               readOnly={esSoloLectura}
-              onChange={(event) => actualizarAspectosLegales("tipoCambio", sanitizarMontoDecimales(event.target.value, 6))}
-              onBlur={(event) => actualizarAspectosLegales("tipoCambio", normalizarMontoDecimales(event.target.value, 6))}
+              onChange={(event) => actualizarAspectosLegales("tipoCambio", sanitizarMontoDosDecimales(event.target.value))}
+              onBlur={(event) => actualizarAspectosLegales("tipoCambio", normalizarMontoDosDecimales(event.target.value))}
               onFocus={seleccionarTextoCampoEditable}
-              placeholder="0.000000"
+              placeholder="0.00"
               className={`min-w-0 flex-1 bg-transparent px-4 text-sm text-slate-600 outline-none read-only:text-slate-400 ${isoOperacionesCambioDivisas ? "pr-20" : ""}`}
             />
             {isoOperacionesCambioDivisas ? (
@@ -4672,6 +4703,17 @@ function PantallaInvestigacionAnalista({
                           >
                             <Pencil size={14} />
                           </button>
+                          {ejecutivo.idDirectorioEjecutivo ? (
+                            <button
+                              type="button"
+                              title="Editar datos del ejecutivo"
+                              disabled={estaCargandoEdicionPersona}
+                              className="cursor-pointer transition-colors hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+                              onClick={() => abrirEdicionPersona(ejecutivo)}
+                            >
+                              <UserCog size={14} />
+                            </button>
+                          ) : null}
                           <button type="button" className="cursor-pointer transition-colors hover:text-slate-600" onClick={() => setIndiceEjecutivoAEliminar(indiceReal)}>
                             <Trash2 size={14} />
                           </button>
@@ -5317,6 +5359,14 @@ function PantallaInvestigacionAnalista({
         }}
         onBuscarEjecutivo={() => setEstaAbiertoModalBuscarEjecutivo(true)}
         onGuardar={guardarEjecutivo}
+      />
+
+      <CustomModalRegistroPersonaDirectorioAnalista
+        key={`edicion-persona-${registroEdicionPersona?.idDirectorioEjecutivo ?? "cerrado"}`}
+        estaAbierto={registroEdicionPersona !== null}
+        registroInicial={registroEdicionPersona}
+        onCerrar={cerrarEdicionPersona}
+        onGuardar={guardarEdicionPersona}
       />
 
       <CustomModalBuscarEjecutivoAnalista
