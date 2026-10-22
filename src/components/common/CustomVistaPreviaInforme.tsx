@@ -400,6 +400,7 @@ function crearBloqueOperacionPrincipal(
 
   agregarSimple(filas, op, "sector", "Sector");
   agregarSimple(filas, op, "actividad", "Actividad");
+  agregarSimple(filas, op, "codigoNace", "Código NACE");
   agregarSimple(filas, op, "categoriaCiiu", "Categoría CIIU");
   agregarSimple(filas, op, "claseCiiu", "Clase CIIU");
   agregarSimple(filas, op, "actividadPrincipal", "Actividad principal");
@@ -530,6 +531,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
             aspectosLegales.obligacionBolsa,
           ) || aspectosLegales.obligacionBolsa,
           tipoCambio: aspectosLegales.tipoCambio ? "1 USD = " + aspectosLegales.tipoCambio : "",
+          monedaTipoCambio: aspectosLegales.monedaTipoCambio,
           antecedentes: aspectosLegales.antecedentes,
           aspectosLegales: aspectosLegales.aspectosLegales,
           comentariosEmpresasRelacionadas: aspectosLegales.comentariosEmpresasRelacionadas,
@@ -552,6 +554,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           valorAcciones: "Valor de acciones",
           obligacionBolsa: "Obligación en bolsa",
           tipoCambio: "Tipo de cambio",
+          monedaTipoCambio: "Moneda del tipo de cambio",
           antecedentes: "Antecedentes",
           aspectosLegales: "Comentarios legales",
           comentariosEmpresasRelacionadas: "Comentarios empresas relacionadas",
@@ -563,8 +566,15 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
         datosInvestigacion.companiasRelacionadas as unknown as Record<string, unknown>[],
         {
           empresa: "Empresa",
+          tipoPersona: "Tipo de persona",
+          tipoDocumento: "Tipo de documento",
           idFiscal: "Id fiscal",
           pais: "País",
+          direccion: "Dirección",
+          ciudadProvinciaEstado: "Ciudad / Provincia / Estado",
+          codigoPostal: "Código postal",
+          telefono: "Teléfono",
+          existeInformacion: "Existe información",
         },
         ["idInformeCompaniaRelacionada", "idCompania"],
       ),
@@ -851,6 +861,17 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
         lista: "Aparece en lista",
         detalleEjecutivo: "Imprime detalle",
         descripcionBusqueda: "Referencias",
+        direccionPrincipal: "Dirección",
+        ciudadProvinciaEstado: "Ciudad / Provincia / Estado",
+        codigoPostal: "Código postal",
+        nacionalidad: "Nacionalidad",
+        tipoDocumentoIdentidad: "Tipo de documento",
+        numeroDocumentoIdentidad: "Número de documento",
+        tipoIdFiscal: "Tipo de ID fiscal",
+        numeroIdFiscal: "Número de ID fiscal",
+        fechaNacimiento: "Fecha de nacimiento",
+        estadoCivil: "Estado civil",
+        profesion: "Profesión",
       },
       ["idInformeDirectorioEjecutivo", "id", "idDirectorioEjecutivo", "idCargo", "ejecutivo", "orden"],
     ),

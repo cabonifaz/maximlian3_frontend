@@ -43,7 +43,6 @@ import type {
   ParametrosEvolucionInformesColaboradoresDashboard,
 } from "@maximilian/shared/types/dashboard.type";
 import {
-  normalizarMontoDecimales,
   normalizarMontoDosDecimales,
   obtenerNumeroDesdeMonto,
   obtenerTextoNumerico,
@@ -687,7 +686,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     tipoAcciones: obtenerTexto(registro.tipoAcciones, registro.TipoAcciones),
     valorAcciones: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.valorAcciones)),
     obligacionBolsa: obtenerBooleano(registro.cotizaBolsa, registro.CotizaBolsa) ? "Si" : "No",
-    tipoCambio: normalizarMontoDecimales(obtenerTextoNumerico(registro.tipoCambio), 6),
+    tipoCambio: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.tipoCambio)),
     antecedentes: obtenerTexto(registro.antecedentes, registro.Antecedentes),
     aspectosLegales: obtenerTexto(registro.aspectosLegales, registro.AspectosLegales),
     comentariosEmpresasRelacionadas: obtenerTexto(
