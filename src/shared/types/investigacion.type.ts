@@ -64,6 +64,13 @@ export interface EmpresaRelacionadaAnalista {
   empresa: string;
   idFiscal: string;
   pais: string;
+  tipoPersona?: string;
+  tipoDocumento?: string;
+  direccion?: string;
+  ciudadProvinciaEstado?: string;
+  codigoPostal?: string;
+  telefono?: string;
+  existeInformacion?: string;
 }
 
 export interface RegistroImportacionExportacionAnalista {
@@ -178,6 +185,17 @@ export interface RegistroDirectorioEjecutivoAnalista {
   tipoPersona: string;
   descripcionBusqueda: string;
   nombreCompleto: string;
+  direccionPrincipal?: string;
+  ciudadProvinciaEstado?: string;
+  codigoPostal?: string;
+  nacionalidad?: string;
+  tipoDocumentoIdentidad?: string;
+  numeroDocumentoIdentidad?: string;
+  tipoIdFiscal?: string;
+  numeroIdFiscal?: string;
+  fechaNacimiento?: string;
+  estadoCivil?: string;
+  profesion?: string;
 }
 
 export interface EjecutivoExtraccionPendienteAnalista extends RegistroDirectorioEjecutivoAnalista {

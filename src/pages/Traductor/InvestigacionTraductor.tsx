@@ -37,6 +37,7 @@ import {
   Eye,
   Info,
   Pencil,
+  UserCog,
   Plus,
   RotateCcw,
   Search,
@@ -73,6 +74,7 @@ import {
 } from "@maximilian/components/investigacion/CustomModalRegistroEmpresaRelacionada";
 import { CustomModalLocalAnalista } from "@maximilian/components/investigacion/CustomModalLocalInforme";
 import { CustomModalOperacionAnalista } from "@maximilian/components/investigacion/CustomModalOperacionInforme";
+import { useEdicionPersonaEjecutivo } from "@maximilian/hooks/useEdicionPersonaEjecutivo";
 import { useEdicionCompaniaRelacionada } from "@maximilian/hooks/useEdicionCompaniaRelacionada";
 import { CustomModalProveedorAnalista } from "@maximilian/components/investigacion/CustomModalProveedorInforme";
 import { CustomModalRegistroEjecutivoAnalista } from "@maximilian/components/investigacion/CustomModalRegistroEjecutivo";
@@ -171,11 +173,14 @@ import {
   normalizarMontoDosDecimales,
   normalizarMontoDecimales,
   obtenerPorcentajeNumerico,
-  sanitizarMontoDecimales,
+  sanitizarMontoDosDecimales,
   seleccionarTextoCampoEditable,
 } from "@maximilian/shared/utils/formato-monto.util";
 import { enmascararNumeroCuenta } from "@maximilian/shared/utils/texto.util";
-import { traducirOpcionesTablaMaestra } from "@maximilian/shared/utils/tabla-maestra-idioma.util";
+import {
+  combinarOpcionesTablaMaestra,
+  traducirOpcionesTablaMaestra,
+} from "@maximilian/shared/utils/tabla-maestra-idioma.util";
 import { ProveedorFormatoFechaInforme } from "@maximilian/shared/contexts/formato-fecha-informe.context";
 import { ProveedorIdiomaTablaMaestra } from "@maximilian/shared/contexts/idioma-tabla-maestra.context";
 
@@ -1383,12 +1388,24 @@ function PantallaInvestigacionAnalista({
         },
         opcionesTipoPersona,
         opcionesPais,
-        opcionesEstadoCliente,
+        opcionesEstadoCliente: combinarOpcionesTablaMaestra(
+          opcionesEstadoCliente,
+          opcionesEstadoClienteBase,
+        ),
         opcionesTipoRegTributario,
-        opcionesCiudad,
-        opcionesTipoEmpresa,
+        opcionesCiudad: combinarOpcionesTablaMaestra(
+          opcionesCiudad,
+          opcionesCiudadBase,
+        ),
+        opcionesTipoEmpresa: combinarOpcionesTablaMaestra(
+          opcionesTipoEmpresa,
+          opcionesTipoEmpresaBase,
+        ),
         opcionesMoneda,
-        opcionesSectorEconomico,
+        opcionesSectorEconomico: combinarOpcionesTablaMaestra(
+          opcionesSectorEconomico,
+          opcionesSectorEconomicoBase,
+        ),
         opcionesActividadEconomica,
         opcionesClaseCiiu,
         opcionesTipoLocal,
@@ -1823,13 +1840,41 @@ function PantallaInvestigacionAnalista({
       opcionesTipoRegTributario,
       idTipoRegTributarioInicial,
     );
-    const estadoActual = textoPorId(
+    const textoPorIdOValor = (
+      opcionesTraducidas: EntradaTablaMaestra[] | undefined,
+      opcionesBase: EntradaTablaMaestra[] | undefined,
+      idInicial: number | undefined,
+      valorActual: string,
+    ) => {
+      if (idInicial) return textoPorId(opcionesTraducidas, idInicial);
+      const valorSinCodigo = valorActual.split(" - ").slice(1).join(" - ");
+      return textoPorValor(opcionesTraducidas, opcionesBase, valorActual) ||
+        textoPorValor(opcionesTraducidas, opcionesBase, valorSinCodigo);
+    };
+    const estadoActual = textoPorIdOValor(
       opcionesEstadoCliente,
+      opcionesEstadoClienteBase,
       idEstadoActualInicial,
+      datosInvestigacion.identificacion.estadoActual,
     );
-    const tipoEmpresa = textoPorId(opcionesTipoEmpresa, idTipoEmpresaInicial);
-    const ciudadRegistro = textoPorId(opcionesCiudad, idCiudadRegistroInicial);
-    const sector = textoPorId(opcionesSectorEconomico, idSectorInicial);
+    const tipoEmpresa = textoPorIdOValor(
+      opcionesTipoEmpresa,
+      opcionesTipoEmpresaBase,
+      idTipoEmpresaInicial,
+      datosInvestigacion.aspectosLegales.tipoEmpresa,
+    );
+    const ciudadRegistro = textoPorIdOValor(
+      opcionesCiudad,
+      opcionesCiudadBase,
+      idCiudadRegistroInicial,
+      datosInvestigacion.aspectosLegales.ciudadRegistro,
+    );
+    const sector = textoPorIdOValor(
+      opcionesSectorEconomico,
+      opcionesSectorEconomicoBase,
+      idSectorInicial,
+      datosInvestigacion.operacionPrincipal.sector,
+    );
     const actividad = textoPorId(
       opcionesActividadEconomica,
       idActividadInicial,
@@ -1946,7 +1991,11 @@ function PantallaInvestigacionAnalista({
     opcionesClaseCiiu,
     opcionesClaseCiiuBase,
     opcionesCiudad,
+    opcionesCiudadBase,
     opcionesEstadoCliente,
+    opcionesEstadoClienteBase,
+    opcionesSectorEconomicoBase,
+    opcionesTipoEmpresaBase,
     opcionesMoneda,
     opcionesMonedaBase,
     opcionesPais,
@@ -4006,16 +4055,19 @@ function PantallaInvestigacionAnalista({
     setIndiceCompaniaExtraccionEdicion(null);
   };
 
-  const pestanaRamoOperacionesVisible =
-    pestanaRamoOperaciones === "exportaciones" &&
-    !esPorcentajeMayorACero(
+  const exportacionesHabilitadas =
+    esPorcentajeMayorACero(
       datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje,
-    )
+    ) || datosInvestigacion.exportaciones.length > 0;
+  const importacionesHabilitadas =
+    esPorcentajeMayorACero(
+      datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje,
+    ) || datosInvestigacion.importaciones.length > 0;
+
+  const pestanaRamoOperacionesVisible =
+    pestanaRamoOperaciones === "exportaciones" && !exportacionesHabilitadas
       ? "operaciones"
-      : pestanaRamoOperaciones === "importaciones" &&
-          !esPorcentajeMayorACero(
-            datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje,
-          )
+      : pestanaRamoOperaciones === "importaciones" && !importacionesHabilitadas
         ? "operaciones"
         : pestanaRamoOperaciones;
 
@@ -4309,13 +4361,6 @@ function PantallaInvestigacionAnalista({
     );
   });
 
-  const exportacionesHabilitadas = esPorcentajeMayorACero(
-    datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje,
-  );
-  const importacionesHabilitadas = esPorcentajeMayorACero(
-    datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje,
-  );
-
   const irASeccion = (direccion: "anterior" | "siguiente") => {
     const nuevoIndice =
       direccion === "anterior"
@@ -4435,6 +4480,43 @@ function PantallaInvestigacionAnalista({
     setPersonaDirectorioSeleccionada(null);
     setEstaAbiertoModalEjecutivo(false);
   };
+
+  const actualizarEjecutivosDePersona = (
+    registro: RegistroPersonaDirectorioAnalista,
+  ) => {
+    setRegistrosPersonaDirectorio((anterior) =>
+      anterior.map((persona) =>
+        persona.idDirectorioEjecutivo === registro.idDirectorioEjecutivo
+          ? { ...persona, ...registro }
+          : persona,
+      ),
+    );
+    setDatosInvestigacion((anterior) => ({
+      ...anterior,
+      directorioEjecutivo: anterior.directorioEjecutivo.map((ejecutivo) =>
+        ejecutivo.idDirectorioEjecutivo === registro.idDirectorioEjecutivo
+          ? {
+              ...ejecutivo,
+              ejecutivo: registro.nombres,
+              nombreCompleto: registro.nombres,
+              descripcionBusqueda: registro.nombres,
+              pais: registro.pais,
+              tipoPersona: registro.tipoPersona,
+            }
+          : ejecutivo,
+      ),
+    }));
+  };
+
+  const {
+    abrirEdicion: abrirEdicionPersona,
+    cerrarEdicion: cerrarEdicionPersona,
+    estaCargandoEdicion: estaCargandoEdicionPersona,
+    guardarEdicion: guardarEdicionPersona,
+    registroEdicion: registroEdicionPersona,
+  } = useEdicionPersonaEjecutivo({
+    onActualizar: actualizarEjecutivosDePersona,
+  });
 
   const guardarPersonaDirectorio = (
     registro: RegistroPersonaDirectorioAnalista,
@@ -5825,17 +5907,17 @@ function PantallaInvestigacionAnalista({
               onChange={(event) =>
                 actualizarAspectosLegales(
                   "tipoCambio",
-                  sanitizarMontoDecimales(event.target.value, 6),
+                  sanitizarMontoDosDecimales(event.target.value),
                 )
               }
               onBlur={(event) =>
                 actualizarAspectosLegales(
                   "tipoCambio",
-                  normalizarMontoDecimales(event.target.value, 6),
+                  normalizarMontoDosDecimales(event.target.value),
                 )
               }
               onFocus={seleccionarTextoCampoEditable}
-              placeholder="0.000000"
+              placeholder="0.00"
               className={`min-w-0 flex-1 bg-transparent px-4 text-sm text-slate-600 outline-none read-only:text-slate-400 ${isoOperacionesCambioDivisas ? "pr-20" : ""}`}
             />
             {isoOperacionesCambioDivisas ? (
@@ -8123,6 +8205,17 @@ function PantallaInvestigacionAnalista({
                             >
                               <Pencil size={14} />
                             </button>
+                            {ejecutivo.idDirectorioEjecutivo ? (
+                              <button
+                                type="button"
+                                title="Editar datos del ejecutivo"
+                                disabled={estaCargandoEdicionPersona}
+                                className="cursor-pointer transition-colors hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+                                onClick={() => abrirEdicionPersona(ejecutivo)}
+                              >
+                                <UserCog size={14} />
+                              </button>
+                            ) : null}
                             <button
                               type="button"
                               className="cursor-pointer transition-colors hover:text-slate-600"
@@ -9099,6 +9192,15 @@ function PantallaInvestigacionAnalista({
           onAgregarEmpresaPersona={() =>
             setEstaAbiertoModalRegistroPersona(true)
           }
+        />
+
+        <CustomModalRegistroPersonaDirectorioAnalista
+          key={`edicion-persona-${registroEdicionPersona?.idDirectorioEjecutivo ?? "cerrado"}`}
+          estaAbierto={registroEdicionPersona !== null}
+          idIdioma={idIdiomaTraduccion}
+          registroInicial={registroEdicionPersona}
+          onCerrar={cerrarEdicionPersona}
+          onGuardar={guardarEdicionPersona}
         />
 
         <CustomModalRegistroPersonaDirectorioAnalista

@@ -33,3 +33,13 @@ export function traducirOpcionesTablaMaestra(
     };
   });
 }
+
+export function combinarOpcionesTablaMaestra(
+  opcionesTraducidas: EntradaTablaMaestra[] | undefined,
+  opcionesBase: EntradaTablaMaestra[] | undefined,
+) {
+  if (!opcionesTraducidas) return opcionesBase;
+  if (!opcionesBase || opcionesBase === opcionesTraducidas) return opcionesTraducidas;
+
+  return [...opcionesTraducidas, ...opcionesBase];
+}
