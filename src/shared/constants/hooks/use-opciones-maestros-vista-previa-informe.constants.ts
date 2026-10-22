@@ -5,7 +5,7 @@ export const IDS_TABLA_MAESTRA_VISTA_PREVIA_INFORME = [
   TablaMaestraId.CALIFICACION,
   TablaMaestraId.CALIFICACION_PROVEEDOR,
   TablaMaestraId.CLASE_CIIU,
-  TablaMaestraId.ESTADO_CLIENTE,
+  TablaMaestraId.ESTADO_ACTUAL,
   TablaMaestraId.ESTADO_FINANCIERO,
   TablaMaestraId.LIMITE_CREDITO_PROVEEDOR,
   TablaMaestraId.MES,

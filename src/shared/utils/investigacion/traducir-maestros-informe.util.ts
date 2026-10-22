@@ -36,7 +36,7 @@ export function traducirMaestrosDatosInvestigacion(
         informe.taxIdType,
         datos.identificacion.tipoIdentificacionFiscal,
       ),
-      estadoActual: obtenerTexto(opciones, TablaMaestraId.ESTADO_CLIENTE, informe.idEstadoManual, datos.identificacion.estadoActual),
+      estadoActual: obtenerTexto(opciones, TablaMaestraId.ESTADO_ACTUAL, informe.idEstadoManual, datos.identificacion.estadoActual),
     },
     aspectosLegales: {
       ...datos.aspectosLegales,

@@ -1078,7 +1078,7 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
     TablaMaestraId.PAIS,
     TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION,
     TablaMaestraId.TIPO_PERSONA,
-    TablaMaestraId.ESTADO_CLIENTE,
+    TablaMaestraId.ESTADO_ACTUAL,
     TablaMaestraId.TIPO_EMPRESA,
     TablaMaestraId.ACTIVIDAD_ECONOMICA,
     TablaMaestraId.CLASE_CIIU,
@@ -1098,7 +1098,7 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
   const paises = opcionesTablaMaestra[TablaMaestraId.PAIS] ?? [];
   const tiposDocumento = opcionesTablaMaestra[TablaMaestraId.TIPO_DOCUMENTO_INVESTIGACION] ?? [];
   const tiposPersona = opcionesTablaMaestra[TablaMaestraId.TIPO_PERSONA] ?? [];
-  const estadosCliente = opcionesTablaMaestra[TablaMaestraId.ESTADO_CLIENTE] ?? [];
+  const estadosCliente = opcionesTablaMaestra[TablaMaestraId.ESTADO_ACTUAL] ?? [];
   const tiposEmpresa = opcionesTablaMaestra[TablaMaestraId.TIPO_EMPRESA] ?? [];
   const actividadesEconomicas = opcionesTablaMaestra[TablaMaestraId.ACTIVIDAD_ECONOMICA] ?? [];
   const clasesCiiu = opcionesTablaMaestra[TablaMaestraId.CLASE_CIIU] ?? [];
