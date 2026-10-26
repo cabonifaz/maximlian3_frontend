@@ -93,6 +93,7 @@ export function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       capitalDesembolsado: "",
       ultimaAmpliacion: "",
       patrimonioNeto: "",
+      comentarioPatrimonioNeto: "",
       tipoAcciones: "",
       valorAcciones: "",
       obligacionBolsa: "",

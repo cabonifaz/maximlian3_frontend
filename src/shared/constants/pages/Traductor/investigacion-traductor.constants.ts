@@ -219,6 +219,7 @@ export const ETIQUETAS_CAMPOS_EXTRACCION: Record<string, string> = {
   actividad: "Actividad",
   observacionesIdentificacion: "Observaciones de Identificación",
   tipoAcciones: "Tipo de Acciones",
+  comentarioPatrimonioNeto: "Comentario Patrimonio Neto",
   comentariosEmpresasRelacionadas: "Comentarios sobre Empresas Relacionadas",
   ventasContadoDetalle: "Detalle Ventas al Contado",
   ventasCreditoDetalle: "Detalle ventas a crédito",
@@ -248,6 +249,7 @@ export const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
   aspectosLegales: [
     "condiciones",
     "tipoAcciones",
+    "comentarioPatrimonioNeto",
     "antecedentes",
     "aspectosLegales",
     "comentariosEmpresasRelacionadas",
@@ -295,6 +297,7 @@ export const CAMPOS_TRADUCIBLES_POR_SECCION: Record<string, string[]> = {
     "comentariosEmpresasRelacionadas",
     "condiciones",
     "tipoAcciones",
+    "comentarioPatrimonioNeto",
     "fechaConstitucion",
     "ultimaAmpliacion",
   ],

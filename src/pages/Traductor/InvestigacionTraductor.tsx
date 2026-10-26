@@ -5844,6 +5844,18 @@ function PantallaInvestigacionAnalista({
             actualizarAspectosLegales("patrimonioNeto", valor)
           }
         />
+        <AreaInvestigacionAnalista
+          etiqueta="Comentario Patrimonio Neto"
+          valor={datosInvestigacion.aspectosLegales.comentarioPatrimonioNeto}
+          soloLectura={esSoloLectura}
+          adicionalEtiqueta={obtenerAyudaTraduccion(
+            "aspectosLegales.comentarioPatrimonioNeto",
+          )}
+          className="md:col-span-2"
+          onChange={(valor) =>
+            actualizarAspectosLegales("comentarioPatrimonioNeto", valor)
+          }
+        />
         <CampoInvestigacionAnalista
           etiqueta="Tipo de Acciones"
           valor={datosInvestigacion.aspectosLegales.tipoAcciones}

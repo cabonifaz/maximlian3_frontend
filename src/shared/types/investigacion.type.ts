@@ -274,6 +274,7 @@ export interface DatosAspectosLegalesAnalista {
   capitalDesembolsado: string;
   ultimaAmpliacion: string;
   patrimonioNeto: string;
+  comentarioPatrimonioNeto: string;
   tipoAcciones: string;
   valorAcciones: string;
   obligacionBolsa: string;

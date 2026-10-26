@@ -52,6 +52,7 @@ export const esquemaAspectosLegalesInvestigacion = z.object({
   capitalDesembolsado: textoFormulario,
   ultimaAmpliacion: textoFormulario,
   patrimonioNeto: textoFormulario,
+  comentarioPatrimonioNeto: textoFormulario,
   tipoAcciones: textoFormulario,
   valorAcciones: textoFormulario,
   obligacionBolsa: textoFormulario,
