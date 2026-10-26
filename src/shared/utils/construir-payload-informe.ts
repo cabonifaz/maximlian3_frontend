@@ -442,6 +442,7 @@ export function construirPayloadInforme({
     fechaUltimoIncremento: aspectosLegales.ultimaAmpliacion || null,
     idTipoIncremento: 0,
     patrimonioNeto: obtenerNumeroOpcionalDesdeTexto(aspectosLegales.patrimonioNeto) ?? undefined,
+    comentarioPatrimonioNeto: aspectosLegales.comentarioPatrimonioNeto,
     tipoAcciones: aspectosLegales.tipoAcciones,
     valorAcciones: obtenerNumeroOpcionalDesdeTexto(aspectosLegales.valorAcciones) ?? undefined,
     cotizaBolsa: esTextoAfirmativo(aspectosLegales.obligacionBolsa),
