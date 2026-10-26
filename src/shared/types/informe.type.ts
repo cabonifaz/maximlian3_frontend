@@ -413,6 +413,7 @@ export interface InformeCrearRequest {
   fechaUltimoIncremento: string | null;
   idTipoIncremento: number;
   patrimonioNeto?: number;
+  comentarioPatrimonioNeto: string;
   tipoAcciones: string;
   valorAcciones?: number;
   cotizaBolsa: boolean;
