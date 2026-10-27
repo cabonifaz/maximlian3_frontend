@@ -12,6 +12,7 @@ import {
   CAMPOS_TRADUCIBLES_POR_SECCION,
   PREFIJO_TRADUCCION_PROVEEDORES,
   RUTAS_SELECTORES_CON_REFERENCIA_ORIGINAL,
+  MENSAJE_INFO_OPERACIONES_EXTERIOR,
 } from "@maximilian/shared/constants/pages/Traductor/investigacion-traductor.constants";
 import type { CampoPorcentajeOperacion } from "@maximilian/shared/constants/pages/Traductor/investigacion-traductor.constants";
 import {
@@ -61,6 +62,7 @@ import {
   CustomModalExtraccionInformacionAnalista,
   type ModoProcesamientoInforme,
 } from "@maximilian/components/investigacion/CustomModalProcesamientoInforme";
+import { CustomTooltipInformativo } from "@maximilian/components/investigacion/CustomTooltipInformativo";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomErrorCargaMigracion } from "@maximilian/components/common/CustomErrorCargaMigracion";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
@@ -447,7 +449,7 @@ function renderizarTipoEmpresaTraductor(
   if (!textoEspanol || textoEspanol === textoTraducido) return textoTraducido;
 
   return (
-    <span className="inline-flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5 whitespace-normal break-words leading-snug">
+    <span className="inline-flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5 whitespace-normal wrap-break-word leading-snug">
       <span>{textoTraducido}</span>
       <span className="shrink-0 text-slate-300">-</span>
       <span className="text-slate-400">{textoEspanol}</span>
@@ -2341,11 +2343,6 @@ function PantallaInvestigacionAnalista({
 
   const formatearPorcentajeComplementario = (valor: number) => valor.toFixed(2);
 
-  const esPorcentajeMayorACero = (valor?: string) => {
-    const numero = Number.parseFloat((valor ?? "").trim().replace(",", "."));
-    return !Number.isNaN(numero) && numero > 0;
-  };
-
   const actualizarPorcentajesComplementarios = (
     campoOrigen: CampoPorcentajeOperacion,
     campoComplementario: CampoPorcentajeOperacion,
@@ -3558,9 +3555,9 @@ function PantallaInvestigacionAnalista({
     ).trim();
     if (!textoOriginal) return;
 
-    const textoTraducido = String(
-      obtenerValorInvestigacionPorRuta(datosInvestigacion, ruta) ?? "",
-    );
+    const textoTraducido =
+      cambiosExtraccionPendientes[rutaTexto]?.valorNuevo ??
+      String(obtenerValorInvestigacionPorRuta(datosInvestigacion, ruta) ?? "");
     setReferenciaTraduccionActiva({
       ruta,
       etiqueta: humanizarClaveExtraccion(ruta[ruta.length - 1] ?? rutaTexto),
@@ -4055,21 +4052,7 @@ function PantallaInvestigacionAnalista({
     setIndiceCompaniaExtraccionEdicion(null);
   };
 
-  const exportacionesHabilitadas =
-    esPorcentajeMayorACero(
-      datosInvestigacion.operacionPrincipal.ventasExtranjeroPorcentaje,
-    ) || datosInvestigacion.exportaciones.length > 0;
-  const importacionesHabilitadas =
-    esPorcentajeMayorACero(
-      datosInvestigacion.operacionPrincipal.comprasExtranjeroPorcentaje,
-    ) || datosInvestigacion.importaciones.length > 0;
-
-  const pestanaRamoOperacionesVisible =
-    pestanaRamoOperaciones === "exportaciones" && !exportacionesHabilitadas
-      ? "operaciones"
-      : pestanaRamoOperaciones === "importaciones" && !importacionesHabilitadas
-        ? "operaciones"
-        : pestanaRamoOperaciones;
+  const pestanaRamoOperacionesVisible = pestanaRamoOperaciones;
 
   const registrosOperacionActivos =
     pestanaRamoOperacionesVisible === "importaciones"
@@ -5592,7 +5575,7 @@ function PantallaInvestigacionAnalista({
             </div>
           </div>
           <div className="overflow-x-auto rounded-2xl border border-gray-100">
-            <table className="min-w-[720px] w-full text-left">
+            <table className="min-w-180 w-full text-left">
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
                 <tr>
                   <th className="px-4 py-3">Empresa</th>
@@ -6040,6 +6023,9 @@ function PantallaInvestigacionAnalista({
               <Trash2 size={14} />
               Eliminar
             </CustomButton>
+            {pestanaRamoOperacionesVisible !== "locales" && (
+              <CustomTooltipInformativo mensaje={MENSAJE_INFO_OPERACIONES_EXTERIOR} />
+            )}
             <label className="ml-auto flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-300">
               Buscar
               <input className="h-10 rounded-xl border border-gray-200 px-3 text-sm normal-case tracking-normal text-slate-500 outline-none" />
@@ -6049,7 +6035,7 @@ function PantallaInvestigacionAnalista({
           <div className="overflow-x-auto rounded-2xl border border-gray-100">
             <table
               key={`tabla-operaciones-${pestanaRamoOperacionesVisible}`}
-              className={`${pestanaRamoOperacionesVisible === "locales" ? "min-w-[720px]" : "min-w-[980px]"} w-full text-left`}
+              className={`${pestanaRamoOperacionesVisible === "locales" ? "min-w-180" : "min-w-245"} w-full text-left`}
             >
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
                 {pestanaRamoOperacionesVisible === "locales" ? (
@@ -6110,7 +6096,7 @@ function PantallaInvestigacionAnalista({
                       >
                         <td className="relative px-4 py-4">
                           <span
-                            className={`pointer-events-none absolute inset-y-0 left-0 w-[3px] rounded-r-full transition-colors ${estaSeleccionado ? "bg-brand-wine" : ""}`}
+                            className={`pointer-events-none absolute inset-y-0 left-0 w-0.75 rounded-r-full transition-colors ${estaSeleccionado ? "bg-brand-wine" : ""}`}
                           />
                           <span
                             className={`text-sm font-semibold ${estaSeleccionado ? "text-brand-wine" : "text-slate-700"}`}
@@ -6177,7 +6163,7 @@ function PantallaInvestigacionAnalista({
                       >
                         <td className="relative px-4 py-4 text-sm">
                           <span
-                            className={`pointer-events-none absolute inset-y-0 left-0 w-[3px] rounded-r-full transition-colors ${indiceOperacionSeleccionada === indiceRegistro ? "bg-brand-wine" : ""}`}
+                            className={`pointer-events-none absolute inset-y-0 left-0 w-0.75 rounded-r-full transition-colors ${indiceOperacionSeleccionada === indiceRegistro ? "bg-brand-wine" : ""}`}
                           />
                           <span
                             className={
@@ -7419,7 +7405,7 @@ function PantallaInvestigacionAnalista({
         </CustomButton>
       </div>
       <div className="overflow-x-auto rounded-2xl border border-gray-100">
-        <table className="min-w-[960px] w-full text-left">
+        <table className="min-w-240 w-full text-left">
           <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
             <tr>
               <th className="px-4 py-3">Código</th>
@@ -7748,7 +7734,7 @@ function PantallaInvestigacionAnalista({
           </div>
 
           <div className="overflow-x-auto rounded-3xl border border-gray-100 bg-white shadow-sm">
-            <table className="min-w-[860px] w-full text-left">
+            <table className="min-w-215 w-full text-left">
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
                 <tr>
                   <th className="px-4 py-3">Nombre Proveedor</th>
@@ -7954,16 +7940,16 @@ function PantallaInvestigacionAnalista({
           </div>
 
           <div className="overflow-x-auto rounded-3xl border border-gray-100 bg-white shadow-sm">
-            <table className="min-w-[810px] w-full table-fixed text-left">
+            <table className="min-w-202.5 w-full table-fixed text-left">
               <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
                 <tr>
-                  <th className="w-[220px] px-4 py-3">Banco</th>
-                  <th className="w-[180px] px-4 py-3">Número de Cuenta</th>
-                  <th className="w-[220px] px-4 py-3">
+                  <th className="w-55 px-4 py-3">Banco</th>
+                  <th className="w-45 px-4 py-3">Número de Cuenta</th>
+                  <th className="w-55 px-4 py-3">
                     Sectorista / Jefe de Cuenta
                   </th>
-                  <th className="w-[130px] px-4 py-3">Teléfono</th>
-                  <th className="w-[120px] px-4 py-3 text-right">Acciones</th>
+                  <th className="w-32.5 px-4 py-3">Teléfono</th>
+                  <th className="w-30 px-4 py-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
@@ -8135,7 +8121,7 @@ function PantallaInvestigacionAnalista({
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-gray-100">
-        <table className="min-w-[860px] w-full text-left">
+        <table className="min-w-215 w-full text-left">
           <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300">
             <tr>
               <th className="px-4 py-3">Ejecutivo</th>
@@ -8286,20 +8272,8 @@ function PantallaInvestigacionAnalista({
             <PestanasInvestigacionAnalista
               opciones={[
                 { id: "operaciones", etiqueta: "Operaciones" },
-                {
-                  id: "importaciones",
-                  etiqueta: "Importaciones",
-                  disabled: !importacionesHabilitadas,
-                  tooltip:
-                    "Se habilitará cuando completes el porcentaje de compras en el extranjero.",
-                },
-                {
-                  id: "exportaciones",
-                  etiqueta: "Exportaciones",
-                  disabled: !exportacionesHabilitadas,
-                  tooltip:
-                    "Se habilitará cuando completes el porcentaje de ventas en el extranjero.",
-                },
+                { id: "importaciones", etiqueta: "Importaciones" },
+                { id: "exportaciones", etiqueta: "Exportaciones" },
                 { id: "locales", etiqueta: "Locales" },
               ]}
               valorActivo={pestanaRamoOperacionesVisible}
@@ -9028,9 +9002,11 @@ function PantallaInvestigacionAnalista({
           onClose={() => setReferenciaTraduccionActiva(null)}
           onConfirm={() => {
             if (!referenciaTraduccionActiva) return;
-            actualizarCampoInvestigacion(
-              referenciaTraduccionActiva.ruta,
-              valorReferenciaTraduccion,
+            aplicarCambioExtraccion(referenciaTraduccionActiva.ruta.join("."), () =>
+              actualizarCampoInvestigacion(
+                referenciaTraduccionActiva.ruta,
+                valorReferenciaTraduccion,
+              ),
             );
             setReferenciaTraduccionActiva(null);
           }}

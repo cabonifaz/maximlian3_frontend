@@ -18,7 +18,7 @@ export function usePanZoomInforme(anchoPaginaPx: number) {
   const [anchoDisponibleInforme, setAnchoDisponibleInforme] = useState(0);
   const [zoomModificadoPorUsuario, setZoomModificadoPorUsuario] = useState(false);
   const [estaArrastrandoInforme, setEstaArrastrandoInforme] = useState(false);
-  const [modoInteraccionInforme, setModoInteraccionInforme] = useState<ModoInteraccionInforme>("arrastrar");
+  const [modoInteraccionInforme, setModoInteraccionInforme] = useState<ModoInteraccionInforme>("seleccionar");
 
   const zoomAjustadoInforme = useMemo(() => {
     if (anchoDisponibleInforme <= 0) return 1;
