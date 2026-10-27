@@ -365,3 +365,6 @@ export type CampoPorcentajeOperacion =
   | "comprasCreditoNacionalesPorcentaje"
   | "comprasContadoInternacionalesPorcentaje"
   | "comprasCreditoInternacionalesPorcentaje";
+
+export const MENSAJE_INFO_OPERACIONES_EXTERIOR =
+  "Los registros de importaciones y exportaciones deben concordar con las validaciones anteriores: el porcentaje de compras y ventas en el extranjero de la operacion principal.";
