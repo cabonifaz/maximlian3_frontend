@@ -1,11 +1,13 @@
 export const ASSIGNMENT_COLUMNS = [
-  { label: "Cliente", width: "21%" },
-  { label: "Investigado", width: "20%" },
-  { label: "Analista", width: "15%" },
-  { label: "Traductor", width: "15%" },
-  { label: "Estado", className: "text-center", width: "14%" },
-  { label: "Vencimiento", width: "9%" },
-  { label: "Acciones", className: "text-right", width: "6%" },
+  { label: "Cliente", width: "16%" },
+  { label: "Investigado", width: "16%" },
+  { label: "País", width: "9%" },
+  { label: "Fecha del Pedido", width: "9%" },
+  { label: "Analista", width: "12%" },
+  { label: "Traductor", width: "12%" },
+  { label: "Estado", className: "text-center", width: "13%" },
+  { label: "Vencimiento", width: "8%" },
+  { label: "Acciones", className: "text-right", width: "5%" },
 ];
 
 export const ID_ROL_TRADUCTOR = 4;

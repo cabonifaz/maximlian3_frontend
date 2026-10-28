@@ -10,6 +10,7 @@ export interface AssignmentOrderEntry {
   codigoPedido?: string;
   pais?: string;
   fechaAsignacion?: string;
+  fechaPedido?: string;
   idIdioma?: number;
   idPlantilla?: number;
   cliente: string;
@@ -39,6 +40,7 @@ export interface AssignmentListResponse {
   lstPedido: AssignmentOrderEntry[];
   totalRegistros: number;
   totalPaginas: number;
+  sinAsignacion: number;
   resumen?: {
     total: number;
     enProceso: number;

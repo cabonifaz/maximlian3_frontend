@@ -137,6 +137,7 @@ function normalizarPedido(registro: unknown): AssignmentOrderEntry {
     idPedido: obtenerNumero(fila.idPedido, fila.IdPedido)!,
     codigoPedido: obtenerTexto(fila.codigoPedido, fila.CodigoPedido, fila.codigo, fila.Codigo),
     pais: obtenerTexto(fila.pais, fila.Pais, fila.nombrePais, fila.NombrePais) || "-",
+    fechaPedido: obtenerTexto(fila.fchCre, fila.FchCre, fila.fechaPedido),
     fechaAsignacion: obtenerTexto(fila.fechaAsignacion, fila.FechaAsignacion, fila.fecha, fila.Fecha),
     idIdioma: obtenerNumero(fila.idIdioma, fila.IdIdioma),
     idPlantilla: obtenerNumero(fila.idPlantilla, fila.IdPlantilla),
@@ -250,6 +251,7 @@ function normalizarListaAsignaciones(resultado: unknown): AssignmentListResponse
       lstPedido: resultado.map(normalizarPedido),
       totalRegistros: resultado.length,
       totalPaginas: 1,
+      sinAsignacion: 0,
     };
   }
 
@@ -260,6 +262,7 @@ function normalizarListaAsignaciones(resultado: unknown): AssignmentListResponse
     lstPedido: lista.map(normalizarPedido),
     totalRegistros: obtenerNumero(registro.totalRegistros, registro.TotalRegistros, lista.length) ?? 0,
     totalPaginas: obtenerNumero(registro.totalPaginas, registro.TotalPaginas, 1) ?? 1,
+    sinAsignacion: obtenerNumero(registro.sinAsignacion, registro.SinAsignacion) ?? 0,
     resumen: obtenerRegistro(registro.resumen, registro.Resumen)
       ? {
           total: obtenerNumero(registro.resumen && esRegistroGenerico(registro.resumen) ? registro.resumen.total : undefined, registro.Resumen && esRegistroGenerico(registro.Resumen) ? registro.Resumen.total : undefined, lista.length) ?? 0,

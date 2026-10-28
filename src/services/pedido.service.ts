@@ -76,6 +76,7 @@ function normalizarFilaPedido(fila: unknown): PedidoListEntry {
       registro.nombreInvestigado,
       registro.Investigado,
     ) || "-",
+    pais: obtenerTexto(registro.pais, registro.Pais, registro.nombrePais, registro.NombrePais) || "-",
     idIdioma: obtenerNumeroOpcional(registro.idIdioma, registro.IdIdioma),
     idioma: obtenerTexto(registro.idioma, registro.idiomaInforme, registro.Idioma) || "-",
     tipoTramite: obtenerTexto(registro.tipoTramite, registro.TipoTramite) || "-",

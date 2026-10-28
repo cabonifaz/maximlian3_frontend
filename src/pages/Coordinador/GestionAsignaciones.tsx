@@ -1,5 +1,6 @@
 import { ASSIGNMENT_COLUMNS } from "@maximilian/shared/constants/pages/Coordinador/gestion-asignaciones.constants";
-import { Search, MoreHorizontal, Edit, X, Plus } from "lucide-react";
+import { Search, MoreHorizontal, Edit, X, Plus, UserX } from "lucide-react";
+import { CustomTarjetaResumenSkeleton } from "@maximilian/components/common/CustomTarjetaResumenSkeleton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import { CustomChipEstado } from "@maximilian/components/common/CustomChipEstado";
 import { CustomChipVigencia } from "@maximilian/components/common/CustomChipVigencia";
@@ -190,7 +191,7 @@ export default function GestionAsignaciones() {
   const { idMenuActivo, estiloMenu, alternarMenu, cerrarMenu } = useMenuFlotanteTabla();
 
   const columnas = ASSIGNMENT_COLUMNS.map((columna, indice) => {
-    if (indice !== 4) return columna;
+    if (indice !== 6) return columna;
 
     return {
       ...columna,
@@ -221,6 +222,8 @@ export default function GestionAsignaciones() {
             {asignacion.investigado}
           </span>
         </td>
+        <td className="px-6 py-4 text-sm text-slate-600">{asignacion.pais || "-"}</td>
+        <td className="px-6 py-4 text-sm text-slate-600">{asignacion.fechaPedido || "-"}</td>
         <td className="px-6 py-4 text-sm text-slate-600">{asignacion.analista || "-"}</td>
         <td className="px-6 py-4 text-sm text-slate-600">{asignacion.traductor || "-"}</td>
         <td className="px-6 py-4 text-center">
@@ -284,6 +287,24 @@ export default function GestionAsignaciones() {
 
   return (
     <div className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-3">
+        {isLoading ? (
+          <CustomTarjetaResumenSkeleton />
+        ) : (
+          <article className="rounded-2xl border border-gray-100 bg-white px-6 py-5 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50">
+                <UserX size={18} className="text-orange-500" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                Sin asignar
+              </span>
+            </div>
+            <p className="text-3xl font-bold text-brand-black">{data?.sinAsignacion ?? 0}</p>
+          </article>
+        )}
+      </div>
+
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-bold text-brand-black">Asignaciones</h1>
 

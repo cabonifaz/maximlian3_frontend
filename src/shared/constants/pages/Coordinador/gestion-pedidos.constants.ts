@@ -1,14 +1,15 @@
 import { CheckCircle2, CircleX, Clock3 } from "lucide-react";
 
 export const PEDIDO_COLUMNS = [
-  { label: "Cliente", width: "22%" },
-  { label: "Investigado", width: "21%" },
-  { label: "Idioma del Informe", className: "text-center", width: "13%" },
-  { label: "Logo Imprimible", className: "text-center", width: "12%" },
-  { label: "Estado", className: "text-center", width: "13%" },
+  { label: "Cliente", width: "19%" },
+  { label: "Investigado", width: "18%" },
+  { label: "País", width: "10%" },
+  { label: "Idioma del Informe", className: "text-center", width: "12%" },
+  { label: "Logo Imprimible", className: "text-center", width: "11%" },
+  { label: "Estado", className: "text-center", width: "12%" },
   { label: "Fase", className: "text-center", width: "8%" },
   { label: "", className: "text-center w-14", width: "4%" },
-  { label: "Acciones", className: "text-right", width: "7%" },
+  { label: "Acciones", className: "text-right", width: "6%" },
 ];
 
 export const TARJETAS_ESTADO_PEDIDO = [
