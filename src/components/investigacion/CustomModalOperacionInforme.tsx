@@ -45,8 +45,6 @@ export function CustomModalOperacionAnalista({
     setMonto,
     paises,
     setPaises,
-    productos,
-    setProductos,
     operaciones,
     setOperaciones,
     opcionesMesesOrdenadas,
@@ -141,17 +139,6 @@ export function CustomModalOperacionAnalista({
               onChange={(event) => setPaises(event.target.value)}
               onFocus={seleccionarTextoCampoEditable}
               placeholder="Ingrese los países de exportación"
-              className="h-11 w-full rounded-xl border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
-            />
-          </div>
-
-          <div className="space-y-2 md:col-span-2">
-            <CustomLabel>Productos</CustomLabel>
-            <input
-              value={productos}
-              onChange={(event) => setProductos(event.target.value)}
-              onFocus={seleccionarTextoCampoEditable}
-              placeholder="Especifique los productos"
               className="h-11 w-full rounded-xl border border-[#dbe4f0] px-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5"
             />
           </div>

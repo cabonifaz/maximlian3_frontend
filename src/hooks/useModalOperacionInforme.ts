@@ -32,7 +32,6 @@ export function useModalOperacionInforme({
   const [idMoneda, setIdMoneda] = useState<number | undefined>(registroInicial?.idMoneda);
   const [monto, setMonto] = useState(registroInicial?.monto ?? "");
   const [paises, setPaises] = useState(registroInicial?.paises ?? "");
-  const [productos, setProductos] = useState(registroInicial?.productos ?? "");
   const [operaciones, setOperaciones] = useState(registroInicial?.operaciones ?? "");
 
   const { data: opcionesMesesBase } = useQuery<EntradaTablaMaestra[]>({
@@ -80,7 +79,7 @@ export function useModalOperacionInforme({
       mes: mesInicioActual.trim(),
       moneda: monedaActual.trim(),
       paises: paises.trim(),
-      productos: productos.trim(),
+      productos: registroInicial?.productos ?? "",
       monto: normalizarMontoDosDecimales(monto),
       operaciones: sanitizarEntero(operaciones),
     });
@@ -104,8 +103,6 @@ export function useModalOperacionInforme({
     setMonto,
     paises,
     setPaises,
-    productos,
-    setProductos,
     operaciones,
     setOperaciones,
     opcionesMesesOrdenadas,
