@@ -13,6 +13,7 @@ export interface PedidoListEntry {
   idCliente: number;
   cliente: string;
   investigado: string;
+  pais?: string;
   idIdioma?: number;
   idioma: string;
   tipoTramite?: string;
