@@ -336,6 +336,11 @@ export default function PedidoManagement() {
           {pedido.investigado}
         </span>
       </td>
+      <td className="px-6 py-4">
+        <span className="block truncate text-sm text-gray-600" title={pedido.pais}>
+          {pedido.pais || "-"}
+        </span>
+      </td>
       <td className="px-6 py-4 text-center">
         <span className="text-sm text-gray-600">{pedido.idioma}</span>
       </td>

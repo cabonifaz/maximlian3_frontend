@@ -122,9 +122,10 @@ export default function GestionRevisionAprobacion() {
   } = useGestionRevisionAprobacion();
 
   const columnas = [
-    { label: "Código Pedido", width: "10%" },
-    { label: "Cliente", width: "15%" },
-    { label: "Investigado", width: "17%" },
+    { label: "Código Pedido", width: "9%" },
+    { label: "Cliente", width: "12%" },
+    { label: "Investigado", width: "14%" },
+    { label: "País", width: "8%" },
     { label: "Vigencia", width: "9%" },
     {
       label: (
@@ -136,7 +137,7 @@ export default function GestionRevisionAprobacion() {
           onFiltroCambiado={reiniciarPagina}
         />
       ),
-      width: "8%",
+      width: "7%",
     },
     {
       label: (
@@ -162,7 +163,7 @@ export default function GestionRevisionAprobacion() {
         />
       ),
       className: "text-center",
-      width: "12%",
+      width: "11%",
     },
     {
       label: (
@@ -180,7 +181,7 @@ export default function GestionRevisionAprobacion() {
       className: "text-center",
       width: "8%",
     },
-    { label: "Acción", className: "text-right", width: "12%" },
+    { label: "Acción", className: "text-right", width: "11%" },
   ];
 
   return (
@@ -266,6 +267,9 @@ export default function GestionRevisionAprobacion() {
                 <span className="block truncate" title={registro.investigado}>
                   {registro.investigado}
                 </span>
+              </td>
+              <td className="px-6 py-4 text-sm text-slate-500">
+                {registro.pais || "-"}
               </td>
               <td className="px-6 py-4">
                 <CustomChipVigencia
