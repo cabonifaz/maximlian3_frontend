@@ -3463,8 +3463,8 @@ function PantallaInvestigacionAnalista({
           onChange={(valor) => actualizarAspectosLegales("operacionesCambioDivisas", valor)}
         />
         <CampoInvestigacionAnalista etiqueta="Capital Inicial" valor={datosInvestigacion.aspectosLegales.capitalInicial} soloLectura={esSoloLectura} tipoEntrada="decimal" adornoFinal={isoOperacionesCambioDivisas} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.capitalInicial")} onChange={(valor) => actualizarAspectosLegales("capitalInicial", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Capital Desembolsado" valor={datosInvestigacion.aspectosLegales.capitalDesembolsado} soloLectura={esSoloLectura} tipoEntrada="decimal" adornoFinal={isoOperacionesCambioDivisas} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.capitalDesembolsado")} onChange={(valor) => actualizarAspectosLegales("capitalDesembolsado", valor)} />
-        <CampoInvestigacionAnalista etiqueta="Última Ampliación" valor={datosInvestigacion.aspectosLegales.ultimaAmpliacion} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.ultimaAmpliacion")} onChange={(valor) => actualizarAspectosLegales("ultimaAmpliacion", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Capital Actual" valor={datosInvestigacion.aspectosLegales.capitalDesembolsado} soloLectura={esSoloLectura} tipoEntrada="decimal" adornoFinal={isoOperacionesCambioDivisas} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.capitalDesembolsado")} onChange={(valor) => actualizarAspectosLegales("capitalDesembolsado", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Aumento de Capital" valor={datosInvestigacion.aspectosLegales.ultimaAmpliacion} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.ultimaAmpliacion")} onChange={(valor) => actualizarAspectosLegales("ultimaAmpliacion", valor)} />
         <CampoInvestigacionAnalista etiqueta="Patrimonio Neto" valor={datosInvestigacion.aspectosLegales.patrimonioNeto} soloLectura={esSoloLectura} tipoEntrada="decimal" adornoFinal={isoOperacionesCambioDivisas} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.patrimonioNeto")} onChange={(valor) => actualizarAspectosLegales("patrimonioNeto", valor)} />
         <AreaInvestigacionAnalista etiqueta="Comentario Patrimonio Neto" valor={datosInvestigacion.aspectosLegales.comentarioPatrimonioNeto} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.comentarioPatrimonioNeto")} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("comentarioPatrimonioNeto", valor)} />
         <CampoInvestigacionAnalista etiqueta="Tipo de Acciones" valor={datosInvestigacion.aspectosLegales.tipoAcciones} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.tipoAcciones")} onChange={(valor) => actualizarAspectosLegales("tipoAcciones", valor)} />
@@ -3506,7 +3506,7 @@ function PantallaInvestigacionAnalista({
             ) : null}
           </div>
         </div>
-        <AreaInvestigacionAnalista etiqueta="Antecedentes" valor={datosInvestigacion.aspectosLegales.antecedentes} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.antecedentes")} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("antecedentes", valor)} />
+        <AreaInvestigacionAnalista etiqueta="Historia" valor={datosInvestigacion.aspectosLegales.antecedentes} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.antecedentes")} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("antecedentes", valor)} />
         <AreaInvestigacionAnalista etiqueta="Aspectos Legales" valor={datosInvestigacion.aspectosLegales.aspectosLegales} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.aspectosLegales")} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("aspectosLegales", valor)} />
         <AreaInvestigacionAnalista etiqueta="Comentarios sobre Empresas Relacionadas" valor={datosInvestigacion.aspectosLegales.comentariosEmpresasRelacionadas} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.comentariosEmpresasRelacionadas")} className="md:col-span-2" onChange={(valor) => actualizarAspectosLegales("comentariosEmpresasRelacionadas", valor)} />
       </div>
@@ -3594,7 +3594,6 @@ function PantallaInvestigacionAnalista({
                     <th className="px-4 py-3">Mes final</th>
                     <th className="px-4 py-3">Moneda</th>
                     <th className="px-4 py-3">Países</th>
-                    <th className="px-4 py-3">Productos</th>
                     <th className="px-4 py-3">Monto</th>
                     <th className="px-4 py-3">Operaciones</th>
                   </tr>
@@ -3676,7 +3675,6 @@ function PantallaInvestigacionAnalista({
                         <td className="px-4 py-4 text-sm text-slate-500">{mesFinRegistro || "-"}</td>
                         <td className="px-4 py-4 text-sm text-slate-500">{monedaRegistro || "-"}</td>
                         <td className="px-4 py-4 text-sm text-slate-500">{registro.paises}</td>
-                        <td className="px-4 py-4 text-sm italic text-slate-300">{registro.productos}</td>
                         <td className="px-4 py-4 text-sm text-slate-500">{registro.monto}</td>
                         <td className="px-4 py-4 text-sm text-slate-500">{registro.operaciones}</td>
                       </tr>

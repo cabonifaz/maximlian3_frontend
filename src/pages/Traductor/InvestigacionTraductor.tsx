@@ -5791,7 +5791,7 @@ function PantallaInvestigacionAnalista({
           }
         />
         <CampoInvestigacionAnalista
-          etiqueta="Capital Desembolsado"
+          etiqueta="Capital Actual"
           valor={datosInvestigacion.aspectosLegales.capitalDesembolsado}
           soloLectura={esSoloLectura}
           tipoEntrada="decimal"
@@ -5804,7 +5804,7 @@ function PantallaInvestigacionAnalista({
           }
         />
         <CampoInvestigacionAnalista
-          etiqueta="Última Ampliación"
+          etiqueta="Aumento de Capital"
           valor={datosInvestigacion.aspectosLegales.ultimaAmpliacion}
           soloLectura={esSoloLectura}
           adicionalEtiqueta={obtenerAyudaTraduccion(
@@ -5923,7 +5923,7 @@ function PantallaInvestigacionAnalista({
           </div>
         </div>{" "}
         <AreaInvestigacionAnalista
-          etiqueta="Antecedentes"
+          etiqueta="Historia"
           valor={datosInvestigacion.aspectosLegales.antecedentes}
           soloLectura={esSoloLectura}
           adicionalEtiqueta={obtenerAyudaTraduccion(
@@ -6051,7 +6051,6 @@ function PantallaInvestigacionAnalista({
                     <th className="px-4 py-3">Mes final</th>
                     <th className="px-4 py-3">Moneda</th>
                     <th className="px-4 py-3">Países</th>
-                    <th className="px-4 py-3">Productos</th>
                     <th className="px-4 py-3">Monto</th>
                     <th className="px-4 py-3">Operaciones</th>
                   </tr>
@@ -6186,9 +6185,6 @@ function PantallaInvestigacionAnalista({
                         </td>
                         <td className="px-4 py-4 text-sm text-slate-500">
                           {registro.paises}
-                        </td>
-                        <td className="px-4 py-4 text-sm italic text-slate-300">
-                          {registro.productos}
                         </td>
                         <td className="px-4 py-4 text-sm text-slate-500">
                           {registro.monto}
