@@ -45,6 +45,16 @@ export interface CompaniaNoticiaObtenerParams {
   idCompania?: number;
 }
 
+export interface CompaniaNoticiaTraducirParams {
+  idCompaniaNoticia: number;
+  idIdiomaDestino: number;
+}
+
+export interface CompaniaNoticiaTraduccion {
+  titulo: string;
+  descripcion: string;
+}
+
 export interface CompaniaNoticiaArchivoObtenerParams {
   idCompaniaNoticiaArchivo: number;
 }
