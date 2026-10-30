@@ -14,6 +14,8 @@ import type {
   CompaniaNoticiaListParams,
   CompaniaNoticiaListResponse,
   CompaniaNoticiaObtenerParams,
+  CompaniaNoticiaTraducirParams,
+  CompaniaNoticiaTraduccion,
 } from "@maximilian/shared/types/compania-noticia.type";
 import {
   obtenerLista,
@@ -170,6 +172,26 @@ export const servicioCompaniaNoticia = {
     if (Object.keys(registro).length > 0) return normalizarNoticia(registro);
 
     return null;
+  },
+
+  traducir: async (params: CompaniaNoticiaTraducirParams): Promise<CompaniaNoticiaTraduccion> => {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA.traducir, {
+      params: {
+        IdCompaniaNoticia: params.idCompaniaNoticia,
+        IdIdiomaDestino: params.idIdiomaDestino,
+      },
+    });
+
+    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_COMPANIA_NOTICIA.traducir)) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    const registro = obtenerRegistro(data.result);
+
+    return {
+      titulo: obtenerTexto(registro.titulo, registro.Titulo),
+      descripcion: obtenerTexto(registro.descripcion, registro.Descripcion),
+    };
   },
 
   obtenerArchivo: async (
