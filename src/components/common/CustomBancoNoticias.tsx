@@ -25,10 +25,15 @@ import {
   type DatosFormularioNoticiaBancoInformacion,
   type DatosFormularioNoticiaBancoInformacionEntrada,
 } from "@maximilian/schemas/banco-informacion.schema";
+import { useTraduccionNoticia } from "@maximilian/hooks/useTraduccionNoticia";
 import { servicioCompania } from "@maximilian/services/compania.service";
 import { servicioCompaniaNoticia } from "@maximilian/services/compania-noticia.service";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
-import { valoresIniciales } from "@maximilian/shared/constants/components/common/custom-banco-noticias.constants";
+import {
+  MAX_CARACTERES_DESCRIPCION_NOTICIA,
+  MAX_CARACTERES_TITULO_NOTICIA,
+  valoresIniciales,
+} from "@maximilian/shared/constants/components/common/custom-banco-noticias.constants";
 import { formatearTamanoArchivo } from "@maximilian/shared/utils/archivo.util";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
 import type {
@@ -44,6 +49,7 @@ import { CustomFiltroRangoFechas } from "./CustomFiltroRangoFechas";
 import { CustomLabel } from "./CustomLabel";
 import { CustomModalConfirmacionAccion } from "./CustomModalConfirmacionAccion";
 import { CustomSelectorFecha } from "./CustomSelectorFecha";
+import { CustomTraductorNoticia } from "./CustomTraductorNoticia";
 
 interface PropsCustomBancoNoticias {
   busqueda: string;
@@ -225,6 +231,8 @@ export function CustomBancoNoticias({
   const totalPaginas = Math.max(respuestaNoticias?.totalPaginas ?? 1, 1);
   const idCompaniaSeleccionada = watch("idCompania");
   const fechaNoticiaSeleccionada = watch("fechaNoticia");
+  const tituloActual = watch("titulo");
+  const descripcionActual = watch("descripcion");
 
   const cerrarModalNoticia = () => {
     setEstaAbiertoModalNoticia(false);
@@ -496,6 +504,10 @@ export function CustomBancoNoticias({
                   placeholder="Ej. Actualización de protocolos de seguridad"
                   {...register("titulo")}
                 />
+                <ContadorCaracteres
+                  cantidad={String(tituloActual ?? "").length}
+                  maximo={MAX_CARACTERES_TITULO_NOTICIA}
+                />
               </CampoFormulario>
               <CampoFormulario
                 etiqueta="Descripción"
@@ -506,6 +518,10 @@ export function CustomBancoNoticias({
                   className="min-h-36 w-full resize-none rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-300"
                   placeholder="Detalle la información de la noticia o reporte aquí..."
                   {...register("descripcion")}
+                />
+                <ContadorCaracteres
+                  cantidad={String(descripcionActual ?? "").length}
+                  maximo={MAX_CARACTERES_DESCRIPCION_NOTICIA}
                 />
               </CampoFormulario>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -618,6 +634,7 @@ function CustomModalDetalleNoticia({
   const [idArchivoAbriendo, setIdArchivoAbriendo] = useState<number | null>(
     null,
   );
+  const traduccionNoticia = useTraduccionNoticia(noticia?.idCompaniaNoticia ?? 0);
 
   const abrirArchivo = async (archivo: CompaniaNoticiaArchivo) => {
     if (!archivo.idCompaniaNoticiaArchivo) {
@@ -693,8 +710,14 @@ function CustomModalDetalleNoticia({
                 </span>
               </div>
               <h3 className="text-2xl font-bold leading-tight text-slate-950 md:text-3xl">
-                {noticia.titulo}
+                {traduccionNoticia.traduccion?.titulo ?? noticia.titulo}
               </h3>
+              <CustomTraductorNoticia
+                idIdiomaSeleccionado={traduccionNoticia.idIdiomaSeleccionado}
+                estaTraduciendo={traduccionNoticia.estaTraduciendo}
+                onTraducir={traduccionNoticia.traducir}
+                onVerOriginal={traduccionNoticia.verOriginal}
+              />
             </div>
 
             <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
@@ -702,7 +725,7 @@ function CustomModalDetalleNoticia({
                 Descripción
               </p>
               <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">
-                {noticia.descripcion}
+                {traduccionNoticia.traduccion?.descripcion ?? noticia.descripcion}
               </p>
             </section>
 
@@ -851,6 +874,24 @@ function CampoFormulario({
         <p className="text-xs font-semibold text-red-500">{error}</p>
       ) : null}
     </div>
+  );
+}
+
+function ContadorCaracteres({
+  cantidad,
+  maximo,
+}: {
+  cantidad: number;
+  maximo: number;
+}) {
+  return (
+    <p
+      className={`text-right text-[11px] font-semibold ${
+        cantidad > maximo ? "text-red-500" : "text-slate-400"
+      }`}
+    >
+      {cantidad}/{maximo}
+    </p>
   );
 }
 
