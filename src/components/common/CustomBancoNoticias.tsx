@@ -34,7 +34,11 @@ import {
   MAX_CARACTERES_TITULO_NOTICIA,
   valoresIniciales,
 } from "@maximilian/shared/constants/components/common/custom-banco-noticias.constants";
-import { OPCIONES_IDIOMA_NOTICIA } from "@maximilian/shared/constants/components/common/custom-traductor-noticia.constants";
+import {
+  ID_IDIOMA_OTROS_NOTICIA,
+  OPCIONES_IDIOMA_CREACION_NOTICIA,
+  OPCIONES_IDIOMA_NOTICIA,
+} from "@maximilian/shared/constants/components/common/custom-traductor-noticia.constants";
 import { formatearTamanoArchivo } from "@maximilian/shared/utils/archivo.util";
 import { convertirFechaApiATextoFecha } from "@maximilian/shared/utils/fecha-noticia.util";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
@@ -432,8 +436,7 @@ export function CustomBancoNoticias({
                           <User size={14} className="text-slate-300" />
                           {noticia.categoria}
                         </span>
-                      ) : null}
-                    </div>
+                      ) : null}                    </div>
                   </div>
                   <CustomButton
                     size="sm"
@@ -507,7 +510,11 @@ export function CustomBancoNoticias({
                 label="Idioma"
                 required
                 usarPaginacion={false}
-                options={OPCIONES_IDIOMA_NOTICIA}
+                options={
+                  noticiaEditando
+                    ? OPCIONES_IDIOMA_NOTICIA
+                    : OPCIONES_IDIOMA_CREACION_NOTICIA
+                }
                 value={Number(idIdiomaSeleccionado)}
                 disabled={Boolean(noticiaEditando)}
                 error={errors.idIdioma?.message}
@@ -521,6 +528,11 @@ export function CustomBancoNoticias({
                   });
                 }}
               />
+              {Number(idIdiomaSeleccionado) === ID_IDIOMA_OTROS_NOTICIA ? (
+                <p className="-mt-3 text-xs font-semibold text-slate-400">
+                  Se detectará el idioma y la noticia se guardará traducida al español.
+                </p>
+              ) : null}
               <CampoFormulario
                 etiqueta="Título"
                 error={errors.titulo?.message}
