@@ -58,6 +58,8 @@ function normalizarNoticia(item: unknown): CompaniaNoticiaListaItem {
 
   return {
     idCompaniaNoticia: obtenerNumero(registro.idCompaniaNoticia, registro.IdCompaniaNoticia) ?? 0,
+    idNoticia: obtenerNumero(registro.idNoticia, registro.IdNoticia) ?? 0,
+    idIdioma: obtenerNumero(registro.idIdioma, registro.IdIdioma) ?? 0,
     idCompania,
     compania: obtenerTexto(
       registro.compania,
@@ -112,7 +114,8 @@ function normalizarGuardado(resultado: unknown): CompaniaNoticiaGuardarResponse 
   const registro = obtenerRegistro(resultado);
 
   return {
-    idCompaniaNoticia: obtenerNumero(registro.idCompaniaNoticia, registro.IdCompaniaNoticia),
+    idNoticia: obtenerNumero(registro.idNoticia, registro.IdNoticia),
+    idIdioma: obtenerNumero(registro.idIdioma, registro.IdIdioma),
     archivos: obtenerLista(registro.archivos, registro.Archivos, registro.lstArchivos, registro.LstArchivos).map(normalizarArchivo),
   };
 }
@@ -154,10 +157,17 @@ export const servicioCompaniaNoticia = {
   },
 
   obtener: async (params: CompaniaNoticiaObtenerParams): Promise<CompaniaNoticiaListaItem | null> => {
+    const versiones = await servicioCompaniaNoticia.listarVersiones(params);
+
+    return versiones[0] ?? null;
+  },
+
+  listarVersiones: async (params: CompaniaNoticiaObtenerParams): Promise<CompaniaNoticiaListaItem[]> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA.obtener, {
       params: {
-        IdCompaniaNoticia: params.idCompaniaNoticia,
         IdCompania: params.idCompania,
+        IdNoticia: params.idNoticia,
+        IdIdioma: params.idIdioma,
       },
     });
 
@@ -166,18 +176,19 @@ export const servicioCompaniaNoticia = {
     }
 
     const lista = normalizarLista(data.result).lstCompaniaNoticia;
-    if (lista.length > 0) return lista[0];
+    if (lista.length > 0) return lista;
 
     const registro = obtenerRegistro(data.result);
-    if (Object.keys(registro).length > 0) return normalizarNoticia(registro);
+    if (Object.keys(registro).length > 0) return [normalizarNoticia(registro)];
 
-    return null;
+    return [];
   },
 
   traducir: async (params: CompaniaNoticiaTraducirParams): Promise<CompaniaNoticiaTraduccion> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA.traducir, {
       params: {
-        IdCompaniaNoticia: params.idCompaniaNoticia,
+        IdNoticia: params.idNoticia,
+        IdIdiomaOrigen: params.idIdiomaOrigen,
         IdIdiomaDestino: params.idIdiomaDestino,
       },
     });

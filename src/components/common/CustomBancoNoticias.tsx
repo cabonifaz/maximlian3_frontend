@@ -34,7 +34,13 @@ import {
   MAX_CARACTERES_TITULO_NOTICIA,
   valoresIniciales,
 } from "@maximilian/shared/constants/components/common/custom-banco-noticias.constants";
+import {
+  ID_IDIOMA_OTROS_NOTICIA,
+  OPCIONES_IDIOMA_CREACION_NOTICIA,
+  OPCIONES_IDIOMA_NOTICIA,
+} from "@maximilian/shared/constants/components/common/custom-traductor-noticia.constants";
 import { formatearTamanoArchivo } from "@maximilian/shared/utils/archivo.util";
+import { convertirFechaApiATextoFecha } from "@maximilian/shared/utils/fecha-noticia.util";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
 import type {
   CompaniaNoticiaArchivo,
@@ -48,6 +54,7 @@ import { CustomButton } from "./CustomButton";
 import { CustomFiltroRangoFechas } from "./CustomFiltroRangoFechas";
 import { CustomLabel } from "./CustomLabel";
 import { CustomModalConfirmacionAccion } from "./CustomModalConfirmacionAccion";
+import { CustomSelectorBuscable } from "./CustomSelectorBuscable";
 import { CustomSelectorFecha } from "./CustomSelectorFecha";
 import { CustomTraductorNoticia } from "./CustomTraductorNoticia";
 
@@ -176,7 +183,8 @@ export function CustomBancoNoticias({
   const eliminarNoticiaMutation = useMutation({
     mutationFn: (noticia: CompaniaNoticiaListaItem) =>
       servicioCompaniaNoticia.eliminar({
-        idCompaniaNoticia: noticia.idCompaniaNoticia,
+        idNoticia: noticia.idNoticia,
+        idIdioma: noticia.idIdioma,
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["companiaNoticia"] });
@@ -230,6 +238,7 @@ export function CustomBancoNoticias({
   const totalRegistros = respuestaNoticias?.totalRegistros ?? noticias.length;
   const totalPaginas = Math.max(respuestaNoticias?.totalPaginas ?? 1, 1);
   const idCompaniaSeleccionada = watch("idCompania");
+  const idIdiomaSeleccionado = watch("idIdioma");
   const fechaNoticiaSeleccionada = watch("fechaNoticia");
   const tituloActual = watch("titulo");
   const descripcionActual = watch("descripcion");
@@ -258,6 +267,7 @@ export function CustomBancoNoticias({
     setClaveInputArchivo((valor) => valor + 1);
     reset({
       idCompania: noticia.idCompania,
+      idIdioma: noticia.idIdioma,
       titulo: noticia.titulo,
       descripcion: noticia.descripcion,
       fechaNoticia: convertirFechaApiATextoFecha(noticia.fechaNoticia),
@@ -274,6 +284,7 @@ export function CustomBancoNoticias({
     );
     const payloadBase: CompaniaNoticiaCrearRequest = {
         idCompania: datos.idCompania,
+        idIdioma: datos.idIdioma,
         titulo: datos.titulo.trim(),
         descripcion: datos.descripcion.trim(),
         fechaNoticia: new Date(`${datos.fechaNoticia}T00:00:00`).toISOString(),
@@ -288,7 +299,8 @@ export function CustomBancoNoticias({
       payload: noticiaEditando
         ? {
             ...payloadBase,
-            idCompaniaNoticia: noticiaEditando.idCompaniaNoticia,
+            idNoticia: noticiaEditando.idNoticia,
+            idIdioma: noticiaEditando.idIdioma,
           }
         : payloadBase,
       archivos: archivosSeleccionados,
@@ -299,7 +311,8 @@ export function CustomBancoNoticias({
   const cargarDetalleNoticia = async (noticia: CompaniaNoticiaListaItem) => {
     const [detalleNoticia, compania] = await Promise.all([
       servicioCompaniaNoticia.obtener({
-        idCompaniaNoticia: noticia.idCompaniaNoticia,
+        idNoticia: noticia.idNoticia,
+        idIdioma: noticia.idIdioma,
         idCompania: noticia.idCompania,
       }),
       servicioCompania.obtener({
@@ -423,8 +436,7 @@ export function CustomBancoNoticias({
                           <User size={14} className="text-slate-300" />
                           {noticia.categoria}
                         </span>
-                      ) : null}
-                    </div>
+                      ) : null}                    </div>
                   </div>
                   <CustomButton
                     size="sm"
@@ -494,6 +506,33 @@ export function CustomBancoNoticias({
                   });
                 }}
               />
+              <CustomSelectorBuscable
+                label="Idioma"
+                required
+                usarPaginacion={false}
+                options={
+                  noticiaEditando
+                    ? OPCIONES_IDIOMA_NOTICIA
+                    : OPCIONES_IDIOMA_CREACION_NOTICIA
+                }
+                value={Number(idIdiomaSeleccionado)}
+                disabled={Boolean(noticiaEditando)}
+                error={errors.idIdioma?.message}
+                dropdownZIndexClassName="z-[130]"
+                overlayZIndexClassName="z-[125]"
+                onChange={(idIdioma) => {
+                  setValue("idIdioma", idIdioma, {
+                    shouldDirty: true,
+                    shouldTouch: true,
+                    shouldValidate: true,
+                  });
+                }}
+              />
+              {Number(idIdiomaSeleccionado) === ID_IDIOMA_OTROS_NOTICIA ? (
+                <p className="-mt-3 text-xs font-semibold text-slate-400">
+                  Se detectará el idioma y la noticia se guardará traducida al español.
+                </p>
+              ) : null}
               <CampoFormulario
                 etiqueta="Título"
                 error={errors.titulo?.message}
@@ -634,7 +673,7 @@ function CustomModalDetalleNoticia({
   const [idArchivoAbriendo, setIdArchivoAbriendo] = useState<number | null>(
     null,
   );
-  const traduccionNoticia = useTraduccionNoticia(noticia?.idCompaniaNoticia ?? 0);
+  const traduccionNoticia = useTraduccionNoticia(noticia);
 
   const abrirArchivo = async (archivo: CompaniaNoticiaArchivo) => {
     if (!archivo.idCompaniaNoticiaArchivo) {
@@ -713,10 +752,9 @@ function CustomModalDetalleNoticia({
                 {traduccionNoticia.traduccion?.titulo ?? noticia.titulo}
               </h3>
               <CustomTraductorNoticia
-                idIdiomaSeleccionado={traduccionNoticia.idIdiomaSeleccionado}
+                idIdiomaActivo={traduccionNoticia.idIdiomaActivo}
                 estaTraduciendo={traduccionNoticia.estaTraduciendo}
-                onTraducir={traduccionNoticia.traducir}
-                onVerOriginal={traduccionNoticia.verOriginal}
+                onSeleccionar={traduccionNoticia.seleccionar}
               />
             </div>
 
@@ -1461,21 +1499,6 @@ function convertirTextoFechaADate(fecha: string) {
   if (Number.isNaN(fechaParseada.getTime())) return undefined;
 
   return fechaParseada;
-}
-
-function convertirFechaApiATextoFecha(fecha: string) {
-  if (!fecha) return new Date().toISOString().slice(0, 10);
-
-  const fechaParseada = new Date(fecha);
-  if (Number.isNaN(fechaParseada.getTime())) {
-    return fecha.slice(0, 10);
-  }
-
-  const ano = fechaParseada.getFullYear();
-  const mes = String(fechaParseada.getMonth() + 1).padStart(2, "0");
-  const dia = String(fechaParseada.getDate()).padStart(2, "0");
-
-  return `${ano}-${mes}-${dia}`;
 }
 
 function convertirDateATextoFecha(fecha: Date | undefined) {

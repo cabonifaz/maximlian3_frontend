@@ -1,33 +1,89 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { servicioCompaniaNoticia } from "@maximilian/services/compania-noticia.service";
-import type { CompaniaNoticiaTraduccion } from "@maximilian/shared/types/compania-noticia.type";
+import { convertirFechaApiATextoFecha } from "@maximilian/shared/utils/fecha-noticia.util";
+import type { CompaniaNoticiaListaItem } from "@maximilian/shared/types/compania-noticia.type";
 
 interface TraduccionSeleccionada {
-  idCompaniaNoticia: number;
+  idNoticia: number;
+  idIdiomaOrigen: number;
   idIdioma: number;
-  traduccion: CompaniaNoticiaTraduccion;
 }
 
-export function useTraduccionNoticia(idCompaniaNoticia: number) {
+export function useTraduccionNoticia(noticia: CompaniaNoticiaListaItem | null) {
+  const queryClient = useQueryClient();
+  const idNoticia = noticia?.idNoticia ?? 0;
+  const idIdiomaOrigen = noticia?.idIdioma ?? 0;
   const [seleccion, setSeleccion] = useState<TraduccionSeleccionada | null>(null);
 
-  const traducirMutation = useMutation({
-    mutationFn: (idIdiomaDestino: number) =>
-      servicioCompaniaNoticia.traducir({ idCompaniaNoticia, idIdiomaDestino }),
-    onSuccess: (traduccion, idIdioma) => {
-      setSeleccion({ idCompaniaNoticia, idIdioma, traduccion });
-    },
+  const idIdiomaDestino =
+    seleccion?.idNoticia === idNoticia && seleccion.idIdiomaOrigen === idIdiomaOrigen
+      ? seleccion.idIdioma
+      : null;
+
+  const versionesQuery = useQuery({
+    queryKey: ["companiaNoticia", "versiones", idNoticia],
+    queryFn: () => servicioCompaniaNoticia.listarVersiones({ idNoticia }),
+    enabled: idNoticia > 0,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 
-  const seleccionVigente =
-    seleccion?.idCompaniaNoticia === idCompaniaNoticia ? seleccion : null;
+  const versionGuardada =
+    idIdiomaDestino !== null
+      ? versionesQuery.data?.find((version) => version.idIdioma === idIdiomaDestino)
+      : undefined;
+
+  const traduccionQuery = useQuery({
+    queryKey: ["companiaNoticiaTraduccion", idNoticia, idIdiomaOrigen, idIdiomaDestino],
+    queryFn: async () => {
+      const traduccion = await servicioCompaniaNoticia.traducir({
+        idNoticia,
+        idIdiomaOrigen,
+        idIdiomaDestino: idIdiomaDestino as number,
+      });
+
+      if (noticia) {
+        try {
+          await servicioCompaniaNoticia.crear({
+            idNoticia: noticia.idNoticia,
+            idIdioma: idIdiomaDestino as number,
+            idCompania: noticia.idCompania,
+            titulo: traduccion.titulo,
+            descripcion: traduccion.descripcion,
+            fechaNoticia: new Date(
+              `${convertirFechaApiATextoFecha(noticia.fechaNoticia)}T00:00:00`,
+            ).toISOString(),
+            categoria: noticia.categoria,
+            archivos: [],
+          });
+          await queryClient.invalidateQueries({ queryKey: ["companiaNoticia"] });
+        } catch {
+          // El interceptor ya notifica el error; la traducción se muestra igualmente.
+        }
+      }
+
+      return traduccion;
+    },
+    enabled: idIdiomaDestino !== null && !versionesQuery.isPending && !versionGuardada,
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  const traduccion = versionGuardada
+    ? { titulo: versionGuardada.titulo, descripcion: versionGuardada.descripcion }
+    : idIdiomaDestino !== null
+      ? traduccionQuery.data ?? null
+      : null;
 
   return {
-    traduccion: seleccionVigente?.traduccion ?? null,
-    idIdiomaSeleccionado: seleccionVigente?.idIdioma ?? null,
-    estaTraduciendo: traducirMutation.isPending,
-    traducir: (idIdiomaDestino: number) => traducirMutation.mutate(idIdiomaDestino),
-    verOriginal: () => setSeleccion(null),
+    traduccion,
+    idIdiomaActivo:
+      traduccionQuery.isError || idIdiomaDestino === null ? idIdiomaOrigen : idIdiomaDestino,
+    estaTraduciendo: versionesQuery.isFetching || traduccionQuery.isFetching,
+    seleccionar: (idIdioma: number) =>
+      setSeleccion(
+        idIdioma === idIdiomaOrigen ? null : { idNoticia, idIdiomaOrigen, idIdioma },
+      ),
   };
 }
