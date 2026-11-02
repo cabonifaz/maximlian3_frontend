@@ -23,6 +23,8 @@ export interface CompaniaNoticiaArchivoRequest {
 
 export interface CompaniaNoticiaListaItem {
   idCompaniaNoticia: number;
+  idNoticia: number;
+  idIdioma: number;
   idCompania: number;
   compania: string;
   titulo: string;
@@ -43,6 +45,8 @@ export interface CompaniaNoticiaListParams {
 export interface CompaniaNoticiaObtenerParams {
   idCompaniaNoticia?: number;
   idCompania?: number;
+  idNoticia?: number;
+  idIdioma?: number;
 }
 
 export interface CompaniaNoticiaTraducirParams {
@@ -75,6 +79,8 @@ export interface CompaniaNoticiaListResponse {
 
 export interface CompaniaNoticiaCrearRequest {
   idCompania: number;
+  idIdioma?: number;
+  idNoticia?: number;
   titulo: string;
   descripcion: string;
   fechaNoticia: string;
@@ -92,5 +98,6 @@ export interface CompaniaNoticiaEliminarRequest {
 
 export interface CompaniaNoticiaGuardarResponse {
   idCompaniaNoticia?: number;
+  idNoticia?: number;
   archivos: CompaniaNoticiaArchivo[];
 }
