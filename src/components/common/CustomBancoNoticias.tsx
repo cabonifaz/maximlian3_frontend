@@ -34,7 +34,9 @@ import {
   MAX_CARACTERES_TITULO_NOTICIA,
   valoresIniciales,
 } from "@maximilian/shared/constants/components/common/custom-banco-noticias.constants";
+import { IDIOMAS_TRADUCCION_NOTICIA } from "@maximilian/shared/constants/components/common/custom-traductor-noticia.constants";
 import { formatearTamanoArchivo } from "@maximilian/shared/utils/archivo.util";
+import { convertirFechaApiATextoFecha } from "@maximilian/shared/utils/fecha-noticia.util";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
 import type {
   CompaniaNoticiaArchivo,
@@ -259,6 +261,7 @@ export function CustomBancoNoticias({
     setClaveInputArchivo((valor) => valor + 1);
     reset({
       idCompania: noticia.idCompania,
+      idIdioma: noticia.idIdioma,
       titulo: noticia.titulo,
       descripcion: noticia.descripcion,
       fechaNoticia: convertirFechaApiATextoFecha(noticia.fechaNoticia),
@@ -275,6 +278,7 @@ export function CustomBancoNoticias({
     );
     const payloadBase: CompaniaNoticiaCrearRequest = {
         idCompania: datos.idCompania,
+        idIdioma: datos.idIdioma,
         titulo: datos.titulo.trim(),
         descripcion: datos.descripcion.trim(),
         fechaNoticia: new Date(`${datos.fechaNoticia}T00:00:00`).toISOString(),
@@ -498,6 +502,36 @@ export function CustomBancoNoticias({
                 }}
               />
               <CampoFormulario
+                etiqueta="Idioma"
+                error={errors.idIdioma?.message}
+                requerido
+              >
+                {noticiaEditando ? (
+                  <select
+                    disabled
+                    value={noticiaEditando.idIdioma}
+                    className="h-11 w-full rounded-lg border border-slate-100 bg-slate-100 px-3 text-sm text-slate-500 outline-none"
+                  >
+                    {IDIOMAS_TRADUCCION_NOTICIA.map((idioma) => (
+                      <option key={idioma.id} value={idioma.id}>
+                        {idioma.etiqueta}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <select
+                    className="h-11 w-full rounded-lg border border-slate-100 bg-slate-50 px-3 text-sm text-slate-600 outline-none focus:border-slate-300"
+                    {...register("idIdioma")}
+                  >
+                    {IDIOMAS_TRADUCCION_NOTICIA.map((idioma) => (
+                      <option key={idioma.id} value={idioma.id}>
+                        {idioma.etiqueta}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </CampoFormulario>
+              <CampoFormulario
                 etiqueta="Título"
                 error={errors.titulo?.message}
                 requerido
@@ -637,7 +671,7 @@ function CustomModalDetalleNoticia({
   const [idArchivoAbriendo, setIdArchivoAbriendo] = useState<number | null>(
     null,
   );
-  const traduccionNoticia = useTraduccionNoticia(noticia?.idNoticia ?? 0, noticia?.idIdioma ?? 0);
+  const traduccionNoticia = useTraduccionNoticia(noticia);
 
   const abrirArchivo = async (archivo: CompaniaNoticiaArchivo) => {
     if (!archivo.idCompaniaNoticiaArchivo) {
@@ -716,10 +750,13 @@ function CustomModalDetalleNoticia({
                 {traduccionNoticia.traduccion?.titulo ?? noticia.titulo}
               </h3>
               <CustomTraductorNoticia
+                idIdiomaOriginal={noticia.idIdioma}
                 idIdiomaSeleccionado={traduccionNoticia.idIdiomaSeleccionado}
                 estaTraduciendo={traduccionNoticia.estaTraduciendo}
+                estaGuardando={traduccionNoticia.estaGuardando}
                 onTraducir={traduccionNoticia.traducir}
                 onVerOriginal={traduccionNoticia.verOriginal}
+                onGuardarTraduccion={traduccionNoticia.guardarTraduccion}
               />
             </div>
 
@@ -1464,21 +1501,6 @@ function convertirTextoFechaADate(fecha: string) {
   if (Number.isNaN(fechaParseada.getTime())) return undefined;
 
   return fechaParseada;
-}
-
-function convertirFechaApiATextoFecha(fecha: string) {
-  if (!fecha) return new Date().toISOString().slice(0, 10);
-
-  const fechaParseada = new Date(fecha);
-  if (Number.isNaN(fechaParseada.getTime())) {
-    return fecha.slice(0, 10);
-  }
-
-  const ano = fechaParseada.getFullYear();
-  const mes = String(fechaParseada.getMonth() + 1).padStart(2, "0");
-  const dia = String(fechaParseada.getDate()).padStart(2, "0");
-
-  return `${ano}-${mes}-${dia}`;
 }
 
 function convertirDateATextoFecha(fecha: Date | undefined) {
