@@ -9,6 +9,11 @@ export const esquemaNoticiaBancoInformacion = z.object({
     .number()
     .int("Ingrese un ID válido")
     .min(1, "Seleccione una compañía"),
+  idIdioma: z.coerce
+    .number()
+    .int("Seleccione el idioma")
+    .min(1, "Seleccione el idioma")
+    .max(3, "Seleccione el idioma"),
   titulo: z
     .string()
     .trim()
