@@ -58,6 +58,8 @@ function normalizarNoticia(item: unknown): CompaniaNoticiaListaItem {
 
   return {
     idCompaniaNoticia: obtenerNumero(registro.idCompaniaNoticia, registro.IdCompaniaNoticia) ?? 0,
+    idNoticia: obtenerNumero(registro.idNoticia, registro.IdNoticia) ?? 0,
+    idIdioma: obtenerNumero(registro.idIdioma, registro.IdIdioma) ?? 0,
     idCompania,
     compania: obtenerTexto(
       registro.compania,
@@ -113,6 +115,7 @@ function normalizarGuardado(resultado: unknown): CompaniaNoticiaGuardarResponse 
 
   return {
     idCompaniaNoticia: obtenerNumero(registro.idCompaniaNoticia, registro.IdCompaniaNoticia),
+    idNoticia: obtenerNumero(registro.idNoticia, registro.IdNoticia),
     archivos: obtenerLista(registro.archivos, registro.Archivos, registro.lstArchivos, registro.LstArchivos).map(normalizarArchivo),
   };
 }
@@ -158,6 +161,8 @@ export const servicioCompaniaNoticia = {
       params: {
         IdCompaniaNoticia: params.idCompaniaNoticia,
         IdCompania: params.idCompania,
+        IdNoticia: params.idNoticia,
+        IdIdioma: params.idIdioma,
       },
     });
 
