@@ -1,10 +1,12 @@
-import { Languages, Loader2 } from "lucide-react";
+import { Check, Languages, Loader2 } from "lucide-react";
 import { IDIOMAS_TRADUCCION_NOTICIA } from "@maximilian/shared/constants/components/common/custom-traductor-noticia.constants";
 import { CustomButton } from "./CustomButton";
 
 interface PropsCustomTraductorNoticia {
   idIdiomaOriginal: number;
   idIdiomaSeleccionado: number | null;
+  idsIdiomasGuardados: number[];
+  traduccionGuardada: boolean;
   estaTraduciendo: boolean;
   estaGuardando: boolean;
   onTraducir: (idIdiomaDestino: number) => void;
@@ -15,6 +17,8 @@ interface PropsCustomTraductorNoticia {
 export function CustomTraductorNoticia({
   idIdiomaOriginal,
   idIdiomaSeleccionado,
+  idsIdiomasGuardados,
+  traduccionGuardada,
   estaTraduciendo,
   estaGuardando,
   onTraducir,
@@ -36,13 +40,14 @@ export function CustomTraductorNoticia({
             type="button"
             disabled={estaTraduciendo || estaGuardando}
             onClick={() => onTraducir(idioma.id)}
-            className={`rounded-md px-2.5 py-1 transition disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 transition disabled:cursor-not-allowed disabled:opacity-50 ${
               idIdiomaSeleccionado === idioma.id
                 ? "bg-brand-wine text-white"
                 : "bg-slate-50 text-slate-600 ring-1 ring-slate-100 hover:bg-slate-100"
             }`}
           >
             {idioma.etiqueta}
+            {idsIdiomasGuardados.includes(idioma.id) ? <Check size={12} /> : null}
           </button>
         ),
       )}
@@ -56,16 +61,18 @@ export function CustomTraductorNoticia({
           >
             Ver original
           </button>
-          <CustomButton
-            type="button"
-            size="sm"
-            disabled={estaTraduciendo}
-            loading={estaGuardando}
-            loadingText="Guardando..."
-            onClick={onGuardarTraduccion}
-          >
-            Guardar traducción
-          </CustomButton>
+          {traduccionGuardada ? null : (
+            <CustomButton
+              type="button"
+              size="sm"
+              disabled={estaTraduciendo}
+              loading={estaGuardando}
+              loadingText="Guardando..."
+              onClick={onGuardarTraduccion}
+            >
+              Guardar traducción
+            </CustomButton>
+          )}
         </>
       ) : null}
     </div>

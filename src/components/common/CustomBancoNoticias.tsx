@@ -752,6 +752,8 @@ function CustomModalDetalleNoticia({
               <CustomTraductorNoticia
                 idIdiomaOriginal={noticia.idIdioma}
                 idIdiomaSeleccionado={traduccionNoticia.idIdiomaSeleccionado}
+                idsIdiomasGuardados={traduccionNoticia.idsIdiomasGuardados}
+                traduccionGuardada={traduccionNoticia.traduccionGuardada}
                 estaTraduciendo={traduccionNoticia.estaTraduciendo}
                 estaGuardando={traduccionNoticia.estaGuardando}
                 onTraducir={traduccionNoticia.traducir}

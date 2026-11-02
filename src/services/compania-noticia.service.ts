@@ -157,6 +157,12 @@ export const servicioCompaniaNoticia = {
   },
 
   obtener: async (params: CompaniaNoticiaObtenerParams): Promise<CompaniaNoticiaListaItem | null> => {
+    const versiones = await servicioCompaniaNoticia.listarVersiones(params);
+
+    return versiones[0] ?? null;
+  },
+
+  listarVersiones: async (params: CompaniaNoticiaObtenerParams): Promise<CompaniaNoticiaListaItem[]> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA.obtener, {
       params: {
         IdCompania: params.idCompania,
@@ -170,12 +176,12 @@ export const servicioCompaniaNoticia = {
     }
 
     const lista = normalizarLista(data.result).lstCompaniaNoticia;
-    if (lista.length > 0) return lista[0];
+    if (lista.length > 0) return lista;
 
     const registro = obtenerRegistro(data.result);
-    if (Object.keys(registro).length > 0) return normalizarNoticia(registro);
+    if (Object.keys(registro).length > 0) return [normalizarNoticia(registro)];
 
-    return null;
+    return [];
   },
 
   traducir: async (params: CompaniaNoticiaTraducirParams): Promise<CompaniaNoticiaTraduccion> => {
