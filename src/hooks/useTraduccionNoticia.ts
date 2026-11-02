@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { servicioCompaniaNoticia } from "@maximilian/services/compania-noticia.service";
 import { convertirFechaApiATextoFecha } from "@maximilian/shared/utils/fecha-noticia.util";
 import type { CompaniaNoticiaListaItem } from "@maximilian/shared/types/compania-noticia.type";
@@ -29,21 +29,42 @@ export function useTraduccionNoticia(noticia: CompaniaNoticiaListaItem | null) {
     refetchOnWindowFocus: false,
   });
 
-  const versiones = versionesQuery.data ?? [];
-  const idsIdiomasGuardados = versiones.map((version) => version.idIdioma);
   const versionGuardada =
     idIdiomaDestino !== null
-      ? versiones.find((version) => version.idIdioma === idIdiomaDestino)
+      ? versionesQuery.data?.find((version) => version.idIdioma === idIdiomaDestino)
       : undefined;
 
   const traduccionQuery = useQuery({
     queryKey: ["companiaNoticiaTraduccion", idNoticia, idIdiomaOrigen, idIdiomaDestino],
-    queryFn: () =>
-      servicioCompaniaNoticia.traducir({
+    queryFn: async () => {
+      const traduccion = await servicioCompaniaNoticia.traducir({
         idNoticia,
         idIdiomaOrigen,
         idIdiomaDestino: idIdiomaDestino as number,
-      }),
+      });
+
+      if (noticia) {
+        try {
+          await servicioCompaniaNoticia.crear({
+            idNoticia: noticia.idNoticia,
+            idIdioma: idIdiomaDestino as number,
+            idCompania: noticia.idCompania,
+            titulo: traduccion.titulo,
+            descripcion: traduccion.descripcion,
+            fechaNoticia: new Date(
+              `${convertirFechaApiATextoFecha(noticia.fechaNoticia)}T00:00:00`,
+            ).toISOString(),
+            categoria: noticia.categoria,
+            archivos: [],
+          });
+          await queryClient.invalidateQueries({ queryKey: ["companiaNoticia"] });
+        } catch {
+          // El interceptor ya notifica el error; la traducción se muestra igualmente.
+        }
+      }
+
+      return traduccion;
+    },
     enabled: idIdiomaDestino !== null && !versionesQuery.isPending && !versionGuardada,
     staleTime: Infinity,
     retry: false,
@@ -55,40 +76,14 @@ export function useTraduccionNoticia(noticia: CompaniaNoticiaListaItem | null) {
       ? traduccionQuery.data ?? null
       : null;
 
-  const guardarTraduccionMutation = useMutation({
-    mutationFn: () => {
-      if (!noticia || idIdiomaDestino === null || !traduccion || versionGuardada) {
-        throw new Error("No hay una traducción para guardar.");
-      }
-
-      return servicioCompaniaNoticia.crear({
-        idNoticia: noticia.idNoticia,
-        idIdioma: idIdiomaDestino,
-        idCompania: noticia.idCompania,
-        titulo: traduccion.titulo,
-        descripcion: traduccion.descripcion,
-        fechaNoticia: new Date(
-          `${convertirFechaApiATextoFecha(noticia.fechaNoticia)}T00:00:00`,
-        ).toISOString(),
-        categoria: noticia.categoria,
-        archivos: [],
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["companiaNoticia"] });
-    },
-  });
-
   return {
     traduccion,
-    idIdiomaSeleccionado: traduccionQuery.isError ? null : idIdiomaDestino,
-    idsIdiomasGuardados,
-    traduccionGuardada: Boolean(versionGuardada),
+    idIdiomaActivo:
+      traduccionQuery.isError || idIdiomaDestino === null ? idIdiomaOrigen : idIdiomaDestino,
     estaTraduciendo: versionesQuery.isFetching || traduccionQuery.isFetching,
-    estaGuardando: guardarTraduccionMutation.isPending,
-    traducir: (idIdioma: number) =>
-      setSeleccion({ idNoticia, idIdiomaOrigen, idIdioma }),
-    verOriginal: () => setSeleccion(null),
-    guardarTraduccion: () => guardarTraduccionMutation.mutate(),
+    seleccionar: (idIdioma: number) =>
+      setSeleccion(
+        idIdioma === idIdiomaOrigen ? null : { idNoticia, idIdiomaOrigen, idIdioma },
+      ),
   };
 }
