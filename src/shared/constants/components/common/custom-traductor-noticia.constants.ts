@@ -15,7 +15,7 @@ export const OPCIONES_IDIOMA_NOTICIA: EntradaTablaMaestra[] = IDIOMAS_TRADUCCION
     num1: idioma.id,
     num2: null,
     num3: null,
-    string1: null,
+    string1: idioma.etiqueta,
     string2: null,
     string3: null,
     date1: null,
