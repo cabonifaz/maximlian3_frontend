@@ -114,8 +114,8 @@ function normalizarGuardado(resultado: unknown): CompaniaNoticiaGuardarResponse 
   const registro = obtenerRegistro(resultado);
 
   return {
-    idCompaniaNoticia: obtenerNumero(registro.idCompaniaNoticia, registro.IdCompaniaNoticia),
     idNoticia: obtenerNumero(registro.idNoticia, registro.IdNoticia),
+    idIdioma: obtenerNumero(registro.idIdioma, registro.IdIdioma),
     archivos: obtenerLista(registro.archivos, registro.Archivos, registro.lstArchivos, registro.LstArchivos).map(normalizarArchivo),
   };
 }
@@ -159,7 +159,6 @@ export const servicioCompaniaNoticia = {
   obtener: async (params: CompaniaNoticiaObtenerParams): Promise<CompaniaNoticiaListaItem | null> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA.obtener, {
       params: {
-        IdCompaniaNoticia: params.idCompaniaNoticia,
         IdCompania: params.idCompania,
         IdNoticia: params.idNoticia,
         IdIdioma: params.idIdioma,
@@ -182,7 +181,8 @@ export const servicioCompaniaNoticia = {
   traducir: async (params: CompaniaNoticiaTraducirParams): Promise<CompaniaNoticiaTraduccion> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_COMPANIA_NOTICIA.traducir, {
       params: {
-        IdCompaniaNoticia: params.idCompaniaNoticia,
+        IdNoticia: params.idNoticia,
+        IdIdiomaOrigen: params.idIdiomaOrigen,
         IdIdiomaDestino: params.idIdiomaDestino,
       },
     });

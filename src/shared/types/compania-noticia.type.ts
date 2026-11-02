@@ -43,14 +43,14 @@ export interface CompaniaNoticiaListParams {
 }
 
 export interface CompaniaNoticiaObtenerParams {
-  idCompaniaNoticia?: number;
   idCompania?: number;
   idNoticia?: number;
   idIdioma?: number;
 }
 
 export interface CompaniaNoticiaTraducirParams {
-  idCompaniaNoticia: number;
+  idNoticia: number;
+  idIdiomaOrigen: number;
   idIdiomaDestino: number;
 }
 
@@ -89,15 +89,17 @@ export interface CompaniaNoticiaCrearRequest {
 }
 
 export interface CompaniaNoticiaEditarRequest extends CompaniaNoticiaCrearRequest {
-  idCompaniaNoticia: number;
+  idNoticia: number;
+  idIdioma: number;
 }
 
 export interface CompaniaNoticiaEliminarRequest {
-  idCompaniaNoticia: number;
+  idNoticia: number;
+  idIdioma: number;
 }
 
 export interface CompaniaNoticiaGuardarResponse {
-  idCompaniaNoticia?: number;
   idNoticia?: number;
+  idIdioma?: number;
   archivos: CompaniaNoticiaArchivo[];
 }
