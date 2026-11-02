@@ -21,6 +21,21 @@ export function useTraduccionNoticia(noticia: CompaniaNoticiaListaItem | null) {
       ? seleccion.idIdioma
       : null;
 
+  const versionesQuery = useQuery({
+    queryKey: ["companiaNoticia", "versiones", idNoticia],
+    queryFn: () => servicioCompaniaNoticia.listarVersiones({ idNoticia }),
+    enabled: idNoticia > 0,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+
+  const versiones = versionesQuery.data ?? [];
+  const idsIdiomasGuardados = versiones.map((version) => version.idIdioma);
+  const versionGuardada =
+    idIdiomaDestino !== null
+      ? versiones.find((version) => version.idIdioma === idIdiomaDestino)
+      : undefined;
+
   const traduccionQuery = useQuery({
     queryKey: ["companiaNoticiaTraduccion", idNoticia, idIdiomaOrigen, idIdiomaDestino],
     queryFn: () =>
@@ -29,14 +44,20 @@ export function useTraduccionNoticia(noticia: CompaniaNoticiaListaItem | null) {
         idIdiomaOrigen,
         idIdiomaDestino: idIdiomaDestino as number,
       }),
-    enabled: idIdiomaDestino !== null,
+    enabled: idIdiomaDestino !== null && !versionesQuery.isPending && !versionGuardada,
     staleTime: Infinity,
     retry: false,
   });
 
+  const traduccion = versionGuardada
+    ? { titulo: versionGuardada.titulo, descripcion: versionGuardada.descripcion }
+    : idIdiomaDestino !== null
+      ? traduccionQuery.data ?? null
+      : null;
+
   const guardarTraduccionMutation = useMutation({
     mutationFn: () => {
-      if (!noticia || idIdiomaDestino === null || !traduccionQuery.data) {
+      if (!noticia || idIdiomaDestino === null || !traduccion || versionGuardada) {
         throw new Error("No hay una traducción para guardar.");
       }
 
@@ -44,8 +65,8 @@ export function useTraduccionNoticia(noticia: CompaniaNoticiaListaItem | null) {
         idNoticia: noticia.idNoticia,
         idIdioma: idIdiomaDestino,
         idCompania: noticia.idCompania,
-        titulo: traduccionQuery.data.titulo,
-        descripcion: traduccionQuery.data.descripcion,
+        titulo: traduccion.titulo,
+        descripcion: traduccion.descripcion,
         fechaNoticia: new Date(
           `${convertirFechaApiATextoFecha(noticia.fechaNoticia)}T00:00:00`,
         ).toISOString(),
@@ -55,16 +76,15 @@ export function useTraduccionNoticia(noticia: CompaniaNoticiaListaItem | null) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["companiaNoticia"] });
-      setSeleccion(null);
     },
   });
 
-  const hayTraduccion = idIdiomaDestino !== null && Boolean(traduccionQuery.data);
-
   return {
-    traduccion: hayTraduccion ? traduccionQuery.data ?? null : null,
+    traduccion,
     idIdiomaSeleccionado: traduccionQuery.isError ? null : idIdiomaDestino,
-    estaTraduciendo: traduccionQuery.isFetching,
+    idsIdiomasGuardados,
+    traduccionGuardada: Boolean(versionGuardada),
+    estaTraduciendo: versionesQuery.isFetching || traduccionQuery.isFetching,
     estaGuardando: guardarTraduccionMutation.isPending,
     traducir: (idIdioma: number) =>
       setSeleccion({ idNoticia, idIdiomaOrigen, idIdioma }),
