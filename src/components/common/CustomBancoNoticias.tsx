@@ -34,7 +34,7 @@ import {
   MAX_CARACTERES_TITULO_NOTICIA,
   valoresIniciales,
 } from "@maximilian/shared/constants/components/common/custom-banco-noticias.constants";
-import { IDIOMAS_TRADUCCION_NOTICIA } from "@maximilian/shared/constants/components/common/custom-traductor-noticia.constants";
+import { OPCIONES_IDIOMA_NOTICIA } from "@maximilian/shared/constants/components/common/custom-traductor-noticia.constants";
 import { formatearTamanoArchivo } from "@maximilian/shared/utils/archivo.util";
 import { convertirFechaApiATextoFecha } from "@maximilian/shared/utils/fecha-noticia.util";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
@@ -50,6 +50,7 @@ import { CustomButton } from "./CustomButton";
 import { CustomFiltroRangoFechas } from "./CustomFiltroRangoFechas";
 import { CustomLabel } from "./CustomLabel";
 import { CustomModalConfirmacionAccion } from "./CustomModalConfirmacionAccion";
+import { CustomSelectorBuscable } from "./CustomSelectorBuscable";
 import { CustomSelectorFecha } from "./CustomSelectorFecha";
 import { CustomTraductorNoticia } from "./CustomTraductorNoticia";
 
@@ -233,6 +234,7 @@ export function CustomBancoNoticias({
   const totalRegistros = respuestaNoticias?.totalRegistros ?? noticias.length;
   const totalPaginas = Math.max(respuestaNoticias?.totalPaginas ?? 1, 1);
   const idCompaniaSeleccionada = watch("idCompania");
+  const idIdiomaSeleccionado = watch("idIdioma");
   const fechaNoticiaSeleccionada = watch("fechaNoticia");
   const tituloActual = watch("titulo");
   const descripcionActual = watch("descripcion");
@@ -501,36 +503,24 @@ export function CustomBancoNoticias({
                   });
                 }}
               />
-              <CampoFormulario
-                etiqueta="Idioma"
+              <CustomSelectorBuscable
+                label="Idioma"
+                required
+                usarPaginacion={false}
+                options={OPCIONES_IDIOMA_NOTICIA}
+                value={Number(idIdiomaSeleccionado)}
+                disabled={Boolean(noticiaEditando)}
                 error={errors.idIdioma?.message}
-                requerido
-              >
-                {noticiaEditando ? (
-                  <select
-                    disabled
-                    value={noticiaEditando.idIdioma}
-                    className="h-11 w-full rounded-lg border border-slate-100 bg-slate-100 px-3 text-sm text-slate-500 outline-none"
-                  >
-                    {IDIOMAS_TRADUCCION_NOTICIA.map((idioma) => (
-                      <option key={idioma.id} value={idioma.id}>
-                        {idioma.etiqueta}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <select
-                    className="h-11 w-full rounded-lg border border-slate-100 bg-slate-50 px-3 text-sm text-slate-600 outline-none focus:border-slate-300"
-                    {...register("idIdioma")}
-                  >
-                    {IDIOMAS_TRADUCCION_NOTICIA.map((idioma) => (
-                      <option key={idioma.id} value={idioma.id}>
-                        {idioma.etiqueta}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </CampoFormulario>
+                dropdownZIndexClassName="z-[130]"
+                overlayZIndexClassName="z-[125]"
+                onChange={(idIdioma) => {
+                  setValue("idIdioma", idIdioma, {
+                    shouldDirty: true,
+                    shouldTouch: true,
+                    shouldValidate: true,
+                  });
+                }}
+              />
               <CampoFormulario
                 etiqueta="Título"
                 error={errors.titulo?.message}
@@ -750,15 +740,9 @@ function CustomModalDetalleNoticia({
                 {traduccionNoticia.traduccion?.titulo ?? noticia.titulo}
               </h3>
               <CustomTraductorNoticia
-                idIdiomaOriginal={noticia.idIdioma}
-                idIdiomaSeleccionado={traduccionNoticia.idIdiomaSeleccionado}
-                idsIdiomasGuardados={traduccionNoticia.idsIdiomasGuardados}
-                traduccionGuardada={traduccionNoticia.traduccionGuardada}
+                idIdiomaActivo={traduccionNoticia.idIdiomaActivo}
                 estaTraduciendo={traduccionNoticia.estaTraduciendo}
-                estaGuardando={traduccionNoticia.estaGuardando}
-                onTraducir={traduccionNoticia.traducir}
-                onVerOriginal={traduccionNoticia.verOriginal}
-                onGuardarTraduccion={traduccionNoticia.guardarTraduccion}
+                onSeleccionar={traduccionNoticia.seleccionar}
               />
             </div>
 
