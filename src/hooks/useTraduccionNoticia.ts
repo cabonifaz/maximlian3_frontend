@@ -4,24 +4,27 @@ import { servicioCompaniaNoticia } from "@maximilian/services/compania-noticia.s
 import type { CompaniaNoticiaTraduccion } from "@maximilian/shared/types/compania-noticia.type";
 
 interface TraduccionSeleccionada {
-  idCompaniaNoticia: number;
+  idNoticia: number;
+  idIdiomaOrigen: number;
   idIdioma: number;
   traduccion: CompaniaNoticiaTraduccion;
 }
 
-export function useTraduccionNoticia(idCompaniaNoticia: number) {
+export function useTraduccionNoticia(idNoticia: number, idIdiomaOrigen: number) {
   const [seleccion, setSeleccion] = useState<TraduccionSeleccionada | null>(null);
 
   const traducirMutation = useMutation({
     mutationFn: (idIdiomaDestino: number) =>
-      servicioCompaniaNoticia.traducir({ idCompaniaNoticia, idIdiomaDestino }),
+      servicioCompaniaNoticia.traducir({ idNoticia, idIdiomaOrigen, idIdiomaDestino }),
     onSuccess: (traduccion, idIdioma) => {
-      setSeleccion({ idCompaniaNoticia, idIdioma, traduccion });
+      setSeleccion({ idNoticia, idIdiomaOrigen, idIdioma, traduccion });
     },
   });
 
   const seleccionVigente =
-    seleccion?.idCompaniaNoticia === idCompaniaNoticia ? seleccion : null;
+    seleccion?.idNoticia === idNoticia && seleccion.idIdiomaOrigen === idIdiomaOrigen
+      ? seleccion
+      : null;
 
   return {
     traduccion: seleccionVigente?.traduccion ?? null,

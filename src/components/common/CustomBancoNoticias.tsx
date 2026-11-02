@@ -176,7 +176,8 @@ export function CustomBancoNoticias({
   const eliminarNoticiaMutation = useMutation({
     mutationFn: (noticia: CompaniaNoticiaListaItem) =>
       servicioCompaniaNoticia.eliminar({
-        idCompaniaNoticia: noticia.idCompaniaNoticia,
+        idNoticia: noticia.idNoticia,
+        idIdioma: noticia.idIdioma,
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["companiaNoticia"] });
@@ -288,7 +289,8 @@ export function CustomBancoNoticias({
       payload: noticiaEditando
         ? {
             ...payloadBase,
-            idCompaniaNoticia: noticiaEditando.idCompaniaNoticia,
+            idNoticia: noticiaEditando.idNoticia,
+            idIdioma: noticiaEditando.idIdioma,
           }
         : payloadBase,
       archivos: archivosSeleccionados,
@@ -299,7 +301,8 @@ export function CustomBancoNoticias({
   const cargarDetalleNoticia = async (noticia: CompaniaNoticiaListaItem) => {
     const [detalleNoticia, compania] = await Promise.all([
       servicioCompaniaNoticia.obtener({
-        idCompaniaNoticia: noticia.idCompaniaNoticia,
+        idNoticia: noticia.idNoticia,
+        idIdioma: noticia.idIdioma,
         idCompania: noticia.idCompania,
       }),
       servicioCompania.obtener({
@@ -634,7 +637,7 @@ function CustomModalDetalleNoticia({
   const [idArchivoAbriendo, setIdArchivoAbriendo] = useState<number | null>(
     null,
   );
-  const traduccionNoticia = useTraduccionNoticia(noticia?.idCompaniaNoticia ?? 0);
+  const traduccionNoticia = useTraduccionNoticia(noticia?.idNoticia ?? 0, noticia?.idIdioma ?? 0);
 
   const abrirArchivo = async (archivo: CompaniaNoticiaArchivo) => {
     if (!archivo.idCompaniaNoticiaArchivo) {
