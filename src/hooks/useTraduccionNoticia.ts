@@ -76,10 +76,15 @@ export function useTraduccionNoticia(noticia: CompaniaNoticiaListaItem | null) {
       ? traduccionQuery.data ?? null
       : null;
 
+  const idIdiomaActivo =
+    traduccionQuery.isError || idIdiomaDestino === null ? idIdiomaOrigen : idIdiomaDestino;
+  const versionActiva =
+    versionesQuery.data?.find((version) => version.idIdioma === idIdiomaActivo) ?? null;
+
   return {
     traduccion,
-    idIdiomaActivo:
-      traduccionQuery.isError || idIdiomaDestino === null ? idIdiomaOrigen : idIdiomaDestino,
+    versionActiva,
+    idIdiomaActivo,
     estaTraduciendo: versionesQuery.isFetching || traduccionQuery.isFetching,
     seleccionar: (idIdioma: number) =>
       setSeleccion(

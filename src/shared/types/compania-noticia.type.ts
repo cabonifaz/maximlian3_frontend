@@ -95,7 +95,6 @@ export interface CompaniaNoticiaEditarRequest extends CompaniaNoticiaCrearReques
 
 export interface CompaniaNoticiaEliminarRequest {
   idNoticia: number;
-  idIdioma: number;
 }
 
 export interface CompaniaNoticiaGuardarResponse {

@@ -41,6 +41,7 @@ import {
 } from "@maximilian/shared/constants/components/common/custom-traductor-noticia.constants";
 import { formatearTamanoArchivo } from "@maximilian/shared/utils/archivo.util";
 import { convertirFechaApiATextoFecha } from "@maximilian/shared/utils/fecha-noticia.util";
+import { noticiaTieneCambios } from "@maximilian/shared/utils/noticia-cambios.util";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
 import type {
   CompaniaNoticiaArchivo,
@@ -172,6 +173,7 @@ export function CustomBancoNoticias({
       return respuesta;
     },
     onSuccess: async () => {
+      queryClient.removeQueries({ queryKey: ["companiaNoticiaTraduccion"] });
       await queryClient.invalidateQueries({ queryKey: ["companiaNoticia"] });
       cerrarModalNoticia();
     },
@@ -182,11 +184,9 @@ export function CustomBancoNoticias({
 
   const eliminarNoticiaMutation = useMutation({
     mutationFn: (noticia: CompaniaNoticiaListaItem) =>
-      servicioCompaniaNoticia.eliminar({
-        idNoticia: noticia.idNoticia,
-        idIdioma: noticia.idIdioma,
-      }),
+      servicioCompaniaNoticia.eliminar({ idNoticia: noticia.idNoticia }),
     onSuccess: async () => {
+      queryClient.removeQueries({ queryKey: ["companiaNoticiaTraduccion"] });
       await queryClient.invalidateQueries({ queryKey: ["companiaNoticia"] });
       setNoticiaAEliminar(null);
       setNoticiaDetalle(null);
@@ -242,6 +242,20 @@ export function CustomBancoNoticias({
   const fechaNoticiaSeleccionada = watch("fechaNoticia");
   const tituloActual = watch("titulo");
   const descripcionActual = watch("descripcion");
+  const categoriaActual = watch("categoria");
+  const hayCambios = noticiaEditando
+    ? noticiaTieneCambios(
+        noticiaEditando,
+        {
+          idCompania: Number(idCompaniaSeleccionada),
+          titulo: String(tituloActual ?? ""),
+          descripcion: String(descripcionActual ?? ""),
+          fechaNoticia: String(fechaNoticiaSeleccionada ?? ""),
+          categoria: String(categoriaActual ?? ""),
+        },
+        archivosSeleccionados.length > 0,
+      )
+    : true;
 
   const cerrarModalNoticia = () => {
     setEstaAbiertoModalNoticia(false);
@@ -279,6 +293,8 @@ export function CustomBancoNoticias({
   };
 
   const guardarNoticia = (datos: DatosFormularioNoticiaBancoInformacion) => {
+    if (!hayCambios) return;
+
     const archivosNuevos = archivosSeleccionados.map((archivo) =>
       convertirArchivo(archivo, opcionesFormatoArchivo),
     );
@@ -309,16 +325,18 @@ export function CustomBancoNoticias({
   };
 
   const cargarDetalleNoticia = async (noticia: CompaniaNoticiaListaItem) => {
-    const [detalleNoticia, compania] = await Promise.all([
-      servicioCompaniaNoticia.obtener({
-        idNoticia: noticia.idNoticia,
-        idIdioma: noticia.idIdioma,
-        idCompania: noticia.idCompania,
+    const [versiones, compania] = await Promise.all([
+      queryClient.fetchQuery({
+        queryKey: ["companiaNoticia", "versiones", noticia.idNoticia],
+        queryFn: () =>
+          servicioCompaniaNoticia.listarVersiones({ idNoticia: noticia.idNoticia }),
       }),
       servicioCompania.obtener({
         idCompania: noticia.idCompania,
       }),
     ]);
+    const detalleNoticia =
+      versiones.find((version) => version.idIdioma === noticia.idIdioma) ?? null;
     const nombreCompania =
       compania?.nombreCompleto
       || obtenerNombreCompaniaNoticia(detalleNoticia)
@@ -626,6 +644,7 @@ export function CustomBancoNoticias({
               <CustomButton
                 type="submit"
                 size="compact"
+                disabled={!hayCambios}
                 loading={guardarNoticiaMutation.isPending}
                 loadingText="Guardando..."
               >
@@ -644,7 +663,7 @@ export function CustomBancoNoticias({
           }
         }}
         title="Eliminar noticia"
-        descripcion="Esta acción eliminará la noticia seleccionada y no se puede deshacer."
+        descripcion="Esta acción eliminará la noticia, todas sus traducciones y sus archivos adjuntos, y no se puede deshacer."
         textoConfirmar="Eliminar"
         textoCargandoConfirmar="Eliminando..."
         isSubmitting={eliminarNoticiaMutation.isPending}
@@ -696,6 +715,10 @@ function CustomModalDetalleNoticia({
 
   if (!noticia) return null;
 
+  const noticiaEditable = traduccionNoticia.versionActiva
+    ? { ...traduccionNoticia.versionActiva, compania: noticia.compania }
+    : noticia;
+
   return (
     <CustomModalBase ancho="max-w-5xl" onCerrar={onCerrar}>
       <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 bg-slate-50/60 px-8 py-6">
@@ -714,7 +737,8 @@ function CustomModalDetalleNoticia({
             size="icon"
             title="Editar noticia"
             aria-label="Editar noticia"
-            onClick={() => onEditar(noticia)}
+            disabled={traduccionNoticia.estaTraduciendo}
+            onClick={() => onEditar(noticiaEditable)}
             className="text-slate-400 hover:bg-white hover:text-slate-700"
           >
             <Pencil size={17} />
