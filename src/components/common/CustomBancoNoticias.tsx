@@ -697,6 +697,10 @@ function CustomModalDetalleNoticia({
 
   if (!noticia) return null;
 
+  const noticiaEditable = traduccionNoticia.versionActiva
+    ? { ...traduccionNoticia.versionActiva, compania: noticia.compania }
+    : noticia;
+
   return (
     <CustomModalBase ancho="max-w-5xl" onCerrar={onCerrar}>
       <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 bg-slate-50/60 px-8 py-6">
@@ -715,7 +719,8 @@ function CustomModalDetalleNoticia({
             size="icon"
             title="Editar noticia"
             aria-label="Editar noticia"
-            onClick={() => onEditar(noticia)}
+            disabled={traduccionNoticia.estaTraduciendo}
+            onClick={() => onEditar(noticiaEditable)}
             className="text-slate-400 hover:bg-white hover:text-slate-700"
           >
             <Pencil size={17} />
