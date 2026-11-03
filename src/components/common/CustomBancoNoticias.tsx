@@ -172,6 +172,7 @@ export function CustomBancoNoticias({
       return respuesta;
     },
     onSuccess: async () => {
+      queryClient.removeQueries({ queryKey: ["companiaNoticiaTraduccion"] });
       await queryClient.invalidateQueries({ queryKey: ["companiaNoticia"] });
       cerrarModalNoticia();
     },
@@ -182,11 +183,9 @@ export function CustomBancoNoticias({
 
   const eliminarNoticiaMutation = useMutation({
     mutationFn: (noticia: CompaniaNoticiaListaItem) =>
-      servicioCompaniaNoticia.eliminar({
-        idNoticia: noticia.idNoticia,
-        idIdioma: noticia.idIdioma,
-      }),
+      servicioCompaniaNoticia.eliminar({ idNoticia: noticia.idNoticia }),
     onSuccess: async () => {
+      queryClient.removeQueries({ queryKey: ["companiaNoticiaTraduccion"] });
       await queryClient.invalidateQueries({ queryKey: ["companiaNoticia"] });
       setNoticiaAEliminar(null);
       setNoticiaDetalle(null);
@@ -309,16 +308,18 @@ export function CustomBancoNoticias({
   };
 
   const cargarDetalleNoticia = async (noticia: CompaniaNoticiaListaItem) => {
-    const [detalleNoticia, compania] = await Promise.all([
-      servicioCompaniaNoticia.obtener({
-        idNoticia: noticia.idNoticia,
-        idIdioma: noticia.idIdioma,
-        idCompania: noticia.idCompania,
+    const [versiones, compania] = await Promise.all([
+      queryClient.fetchQuery({
+        queryKey: ["companiaNoticia", "versiones", noticia.idNoticia],
+        queryFn: () =>
+          servicioCompaniaNoticia.listarVersiones({ idNoticia: noticia.idNoticia }),
       }),
       servicioCompania.obtener({
         idCompania: noticia.idCompania,
       }),
     ]);
+    const detalleNoticia =
+      versiones.find((version) => version.idIdioma === noticia.idIdioma) ?? null;
     const nombreCompania =
       compania?.nombreCompleto
       || obtenerNombreCompaniaNoticia(detalleNoticia)
@@ -644,7 +645,7 @@ export function CustomBancoNoticias({
           }
         }}
         title="Eliminar noticia"
-        descripcion="Esta acción eliminará la noticia seleccionada y no se puede deshacer."
+        descripcion="Esta acción eliminará la noticia, todas sus traducciones y sus archivos adjuntos, y no se puede deshacer."
         textoConfirmar="Eliminar"
         textoCargandoConfirmar="Eliminando..."
         isSubmitting={eliminarNoticiaMutation.isPending}
