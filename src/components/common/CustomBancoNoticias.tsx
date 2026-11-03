@@ -41,6 +41,7 @@ import {
 } from "@maximilian/shared/constants/components/common/custom-traductor-noticia.constants";
 import { formatearTamanoArchivo } from "@maximilian/shared/utils/archivo.util";
 import { convertirFechaApiATextoFecha } from "@maximilian/shared/utils/fecha-noticia.util";
+import { noticiaTieneCambios } from "@maximilian/shared/utils/noticia-cambios.util";
 import type { CompaniaListaItem } from "@maximilian/shared/types/compania.type";
 import type {
   CompaniaNoticiaArchivo,
@@ -241,6 +242,20 @@ export function CustomBancoNoticias({
   const fechaNoticiaSeleccionada = watch("fechaNoticia");
   const tituloActual = watch("titulo");
   const descripcionActual = watch("descripcion");
+  const categoriaActual = watch("categoria");
+  const hayCambios = noticiaEditando
+    ? noticiaTieneCambios(
+        noticiaEditando,
+        {
+          idCompania: Number(idCompaniaSeleccionada),
+          titulo: String(tituloActual ?? ""),
+          descripcion: String(descripcionActual ?? ""),
+          fechaNoticia: String(fechaNoticiaSeleccionada ?? ""),
+          categoria: String(categoriaActual ?? ""),
+        },
+        archivosSeleccionados.length > 0,
+      )
+    : true;
 
   const cerrarModalNoticia = () => {
     setEstaAbiertoModalNoticia(false);
@@ -278,6 +293,8 @@ export function CustomBancoNoticias({
   };
 
   const guardarNoticia = (datos: DatosFormularioNoticiaBancoInformacion) => {
+    if (!hayCambios) return;
+
     const archivosNuevos = archivosSeleccionados.map((archivo) =>
       convertirArchivo(archivo, opcionesFormatoArchivo),
     );
@@ -627,6 +644,7 @@ export function CustomBancoNoticias({
               <CustomButton
                 type="submit"
                 size="compact"
+                disabled={!hayCambios}
                 loading={guardarNoticiaMutation.isPending}
                 loadingText="Guardando..."
               >
