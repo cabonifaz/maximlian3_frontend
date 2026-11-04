@@ -41,10 +41,10 @@ export function obtenerRangoMesesVistaPrevia(
 
 export function agruparMilesVistaPrevia(valor: unknown): string {
   const texto = String(valor ?? "").trim();
-  const coincidencia = /^(-?)(\d+)(\.\d+)?$/.exec(texto);
+  const coincidencia = /^(-?)(\d+)(\.\d+)?(\s+\S.*)?$/.exec(texto);
   if (!coincidencia) return texto;
-  const [, signo, entero, decimales = ""] = coincidencia;
-  return `${signo}${entero.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}${decimales}`;
+  const [, signo, entero, decimales = "", resto = ""] = coincidencia;
+  return `${signo}${entero.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}${decimales}${resto}`;
 }
 
 export function agregarPorcentajeVistaPrevia(valor: unknown): string {
