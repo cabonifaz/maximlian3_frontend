@@ -38,3 +38,38 @@ export function obtenerRangoMesesVistaPrevia(
   const fin = obtenerEtiquetaMaestroVistaPrevia(opciones, idMesFin);
   return fin && fin !== inicio ? `${inicio} - ${fin}` : inicio;
 }
+
+export function agruparMilesVistaPrevia(valor: unknown): string {
+  const texto = String(valor ?? "").trim();
+  const coincidencia = /^(-?)(\d+)(\.\d+)?$/.exec(texto);
+  if (!coincidencia) return texto;
+  const [, signo, entero, decimales = ""] = coincidencia;
+  return `${signo}${entero.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}${decimales}`;
+}
+
+export function agregarPorcentajeVistaPrevia(valor: unknown): string {
+  const texto = agruparMilesVistaPrevia(valor);
+  return texto && /^-?[\d,]+(\.\d+)?$/.test(texto) ? `${texto}%` : texto;
+}
+
+export function agruparMilesRegistroVistaPrevia(registro: Record<string, unknown> | undefined): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(registro ?? {}).map(([clave, valor]) => [
+      clave,
+      typeof valor === "string" || typeof valor === "number" ? agruparMilesVistaPrevia(valor) : valor,
+    ]),
+  );
+}
+
+export function formatearMontoMonedaVistaPrevia(
+  opciones: OpcionMaestro[] | undefined,
+  idMoneda: unknown,
+  monto: string,
+): string {
+  const texto = agruparMilesVistaPrevia(monto);
+  const opcion = buscarOpcionMaestro(opciones, idMoneda);
+  if (!texto || !opcion) return texto;
+  const simbolo = (opcion as { string3?: string | null }).string3?.trim() ?? "";
+  const descripcion = opcion.string1?.trim() ?? "";
+  return [simbolo, texto, descripcion].filter(Boolean).join(" ");
+}
