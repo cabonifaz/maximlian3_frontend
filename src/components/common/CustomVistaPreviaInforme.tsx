@@ -446,7 +446,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
   const montoLegal = (monto: string) => formatearMontoMonedaVistaPrevia(opcionesMoneda, idMonedaAspectosLegales, monto);
   const mapearImportacionExportacion = (registro: DatosInvestigacionAnalista["importaciones"][number]) => ({
     ...registro,
-    mes: obtenerRangoMesesVistaPrevia(opcionesMes, registro.idMesInicio, registro.idMesFin, registro.mes),
+    mes: obtenerRangoMesesVistaPrevia(opcionesMes, registro.idMesInicio, registro.idMesFin, registro.mes === "0" ? "" : registro.mes),
     monto: agruparMilesVistaPrevia(registro.monto),
     operaciones: agruparMilesVistaPrevia(registro.operaciones),
   });
