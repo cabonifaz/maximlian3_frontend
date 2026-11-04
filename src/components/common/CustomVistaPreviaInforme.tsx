@@ -12,9 +12,11 @@ import { useDocumentoVistaPreviaInforme } from "@maximilian/hooks/useDocumentoVi
 import { useOpcionesMaestrosVistaPreviaInforme } from "@maximilian/hooks/useOpcionesMaestrosVistaPreviaInforme";
 import { obtenerTextoObligacionBolsa } from "@maximilian/shared/utils/investigacion/investigacion-formato.util";
 import {
-  agregarSufijoVistaPrevia,
+  agregarPorcentajeVistaPrevia,
+  agruparMilesRegistroVistaPrevia,
+  agruparMilesVistaPrevia,
+  formatearMontoMonedaVistaPrevia,
   obtenerEtiquetaMaestroVistaPrevia,
-  obtenerIsoMonedaVistaPrevia,
   obtenerRangoMesesVistaPrevia,
 } from "@maximilian/shared/utils/investigacion/vista-previa-maestros.util";
 
@@ -178,6 +180,9 @@ const traduccionesVistaPreviaInforme: Record<string, string> = {
   "Teléfono": "Phone",
   "Tipo": "Type",
   "Tipo de empresa": "Company type",
+  "Tipo de Personería Jurídica": "Legal entity type",
+  "Registrado en": "Registered in",
+  "Notaría": "Notary office",
   "Tipo de identificación fiscal": "Tax identification type",
   "Tipo de local": "Premises type",
   "Tipo de persona": "Person type",
@@ -438,10 +443,12 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
   const idMonedaAspectosLegales = aspectosLegales.operacionesCambioDivisas === "0"
     ? ""
     : aspectosLegales.operacionesCambioDivisas;
-  const isoMonedaAspectosLegales = obtenerIsoMonedaVistaPrevia(opcionesMoneda, idMonedaAspectosLegales);
+  const montoLegal = (monto: string) => formatearMontoMonedaVistaPrevia(opcionesMoneda, idMonedaAspectosLegales, monto);
   const mapearImportacionExportacion = (registro: DatosInvestigacionAnalista["importaciones"][number]) => ({
     ...registro,
     mes: obtenerRangoMesesVistaPrevia(opcionesMes, registro.idMesInicio, registro.idMesFin, registro.mes),
+    monto: agruparMilesVistaPrevia(registro.monto),
+    operaciones: agruparMilesVistaPrevia(registro.operaciones),
   });
 
   seccionesPorId.set("identificacion", {
@@ -520,12 +527,12 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           registro: aspectosLegales.registro,
           condiciones: aspectosLegales.condiciones,
           operacionesCambioDivisas: obtenerEtiquetaMaestroVistaPrevia(opcionesMoneda, idMonedaAspectosLegales),
-          capitalInicial: agregarSufijoVistaPrevia(aspectosLegales.capitalInicial, isoMonedaAspectosLegales),
-          capitalDesembolsado: agregarSufijoVistaPrevia(aspectosLegales.capitalDesembolsado, isoMonedaAspectosLegales),
+          capitalInicial: montoLegal(aspectosLegales.capitalInicial),
+          capitalDesembolsado: montoLegal(aspectosLegales.capitalDesembolsado),
           ultimaAmpliacion: aspectosLegales.ultimaAmpliacion,
-          patrimonioNeto: agregarSufijoVistaPrevia(aspectosLegales.patrimonioNeto, isoMonedaAspectosLegales),
+          patrimonioNeto: montoLegal(aspectosLegales.patrimonioNeto),
           tipoAcciones: aspectosLegales.tipoAcciones,
-          valorAcciones: agregarSufijoVistaPrevia(aspectosLegales.valorAcciones, isoMonedaAspectosLegales),
+          valorAcciones: montoLegal(aspectosLegales.valorAcciones),
           obligacionBolsa: obtenerTextoObligacionBolsa(
             opcionesMaestros?.[TablaMaestraId.OBLIGACION_BOLSA],
             aspectosLegales.obligacionBolsa,
@@ -538,10 +545,10 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
         },
         {
           domicilioFiscal: "Domicilio fiscal",
-          tipoEmpresa: "Tipo de empresa",
+          tipoEmpresa: "Tipo de Personería Jurídica",
           fechaConstitucion: "Fecha de constitución",
-          ciudadRegistro: "Ciudad de registro",
-          notaria: "Oficina de notaría",
+          ciudadRegistro: "Registrado en",
+          notaria: "Notaría",
           notario: "Notario",
           registro: "Registro",
           condiciones: "Duración",
@@ -697,7 +704,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
               crearBloqueDesdeRegistro(
                 `balance-general-${indice}`,
                 "Balance general",
-                balance.detalleCuentas.balanceGeneral as unknown as Record<string, unknown>,
+                agruparMilesRegistroVistaPrevia(balance.detalleCuentas.balanceGeneral as unknown as Record<string, unknown>),
                 {
                   totalCorrientes: "Total corrientes",
                   totalNoCorrientes: "Total no corrientes",
@@ -719,7 +726,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
               crearBloqueDesdeRegistro(
                 `balance-ganancias-${indice}`,
                 "Estado de ganancias y perdidas",
-                balance.detalleCuentas.estadoGananciasPerdidas as unknown as Record<string, unknown>,
+                agruparMilesRegistroVistaPrevia(balance.detalleCuentas.estadoGananciasPerdidas as unknown as Record<string, unknown>),
                 {
                   ventasNetas: "Ventas netas",
                   utilidadGanancia: "Utilidad / ganancia",
@@ -733,7 +740,11 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
                 crearBloqueDesdeRegistro(
                   `balance-ratios-${indice}`,
                   "Ratios financieros",
-                  balance.detalleCuentas.ratios as unknown as Record<string, unknown>,
+                  {
+                    ...agruparMilesRegistroVistaPrevia(balance.detalleCuentas.ratios as unknown as Record<string, unknown>),
+                    endeudamiento: agregarPorcentajeVistaPrevia(balance.detalleCuentas.ratios.endeudamiento),
+                    rentabilidad: agregarPorcentajeVistaPrevia(balance.detalleCuentas.ratios.rentabilidad),
+                  },
                   {
                     liquidez: "Liquidez",
                     capitalTrabajo: "Capital de trabajo",
@@ -750,7 +761,7 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
                 crearBloqueDesdeRegistro(
                   `balance-registros-${indice}`,
                   "Registros configurados",
-                  balance.detalleCuentas.registrosEstadoFinanciero,
+                  agruparMilesRegistroVistaPrevia(balance.detalleCuentas.registrosEstadoFinanciero),
                   esTurquia ? etiquetasTurquia : {},
                   [],
                   "dos-columnas",
@@ -998,7 +1009,7 @@ function CustomTarjetaVistaPreviaInforme({
                               return (
                                 <div key={fila.etiqueta} className={`flex items-baseline justify-between gap-2 px-2 py-1 text-xs ${indice % 2 === 0 ? "bg-white" : "bg-slate-50/60"}`}>
                                   <span className={`font-semibold ${esImportante ? "uppercase text-slate-700" : "text-slate-500"}`}>{etiqueta}</span>
-                                  <span className={`shrink-0 tabular-nums font-mono ${esImportante ? "font-bold text-slate-900" : "text-slate-700"}`}>{valor}</span>
+                                  <span className={`shrink-0 whitespace-pre-line tabular-nums font-mono ${esImportante ? "font-bold text-slate-900" : "text-slate-700"}`}>{valor}</span>
                                 </div>
                               );
                             };
@@ -1032,7 +1043,7 @@ function CustomTarjetaVistaPreviaInforme({
                               return (
                                 <div key={fila.etiqueta} className="flex items-baseline justify-between gap-2 px-2 py-1 text-xs">
                                   <span className={`font-semibold ${esImportante ? "uppercase text-slate-700" : "text-slate-500"}`}>{etiqueta}</span>
-                                  <span className={`shrink-0 tabular-nums font-mono ${esImportante ? "font-bold text-slate-900" : "text-slate-700"}`}>{valor}</span>
+                                  <span className={`shrink-0 whitespace-pre-line tabular-nums font-mono ${esImportante ? "font-bold text-slate-900" : "text-slate-700"}`}>{valor}</span>
                                 </div>
                               );
                             };
@@ -1070,7 +1081,7 @@ function CustomTarjetaVistaPreviaInforme({
                                       }`}>
                                         {etiqueta}
                                       </p>
-                                      <p className={`min-w-0 flex-1 px-3 py-1.5 leading-relaxed tabular-nums ${
+                                      <p className={`min-w-0 flex-1 whitespace-pre-line px-3 py-1.5 leading-relaxed tabular-nums ${
                                         esImportante
                                           ? `font-bold text-slate-900 ${esNumero ? "text-right font-mono" : ""}`
                                           : `text-slate-800 ${esNumero ? "text-right font-mono" : ""}`
@@ -1114,7 +1125,7 @@ function CustomTarjetaVistaPreviaInforme({
                               <p className="border-r border-slate-100 px-4 py-2.5 font-semibold text-slate-500">
                                 {etiqueta}
                               </p>
-                              <div className="px-4 py-2 leading-relaxed text-slate-800">
+                              <div className="whitespace-pre-line px-4 py-2 leading-relaxed text-slate-800">
                                 <span>{valor}</span>
                                 {subValor ? (
                                   <p className="mt-0.5 text-[11px] text-slate-500">{subValor}</p>
@@ -1134,7 +1145,7 @@ function CustomTarjetaVistaPreviaInforme({
                   <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                     {mostrarValorTraducido ? "Observations" : "Observaciones"} · {mostrarValorTraducido ? traducirTextoVistaPrevia(seccion.titulo) : seccion.titulo}
                   </p>
-                  <p className="text-xs leading-relaxed text-slate-600">{seccion.observaciones}</p>
+                  <p className="whitespace-pre-line text-xs leading-relaxed text-slate-600">{seccion.observaciones}</p>
                 </div>
               ) : null}
             </section>
