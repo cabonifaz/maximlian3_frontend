@@ -111,6 +111,7 @@ import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { usePrecargaTablaMaestra } from "@maximilian/hooks/usePrecargaTablaMaestra";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
+import { useMoverHorasOficinaAComentarios } from "@maximilian/hooks/useMoverHorasOficinaAComentarios";
 import { useOpcionesTipoDocumentoPorTipoPersona } from "@maximilian/hooks/useOpcionesTipoDocumentoPorTipoPersona";
 import { useProteccionCambiosSinGuardar } from "@maximilian/hooks/useProteccionCambiosSinGuardar";
 import { CustomModalCambiosSinGuardar } from "@maximilian/components/common/CustomModalCambiosSinGuardar";
@@ -1703,6 +1704,13 @@ function PantallaInvestigacionAnalista({
     ? idPlantillaMigracion
     : datosPedidoNavegacion?.idPlantilla ?? registroPedidoSeleccionado?.idPlantilla;
   const esPlantillaEcMexico = idPlantillaActual === 3;
+  useMoverHorasOficinaAComentarios({
+    datosInvestigacion,
+    setDatosInvestigacion,
+    idPlantillaActual,
+    esPlantillaEcMexico,
+    esSoloLectura,
+  });
   const nombreIdioma = useMemo(() => {
     const idIdioma = esMigracionInforme ? idIdiomaInicial : registroPedidoSeleccionado?.idIdioma;
     if (!idIdioma) return "";
