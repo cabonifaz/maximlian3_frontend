@@ -266,6 +266,8 @@ export type TarifarioCortaEntry = {
   pais: string;
   idProducto: number;
   idTipoTramite: number;
+  diasMin: number;
+  diasMax: number;
 };
 
 export type TarifarioCortaResponse = {
