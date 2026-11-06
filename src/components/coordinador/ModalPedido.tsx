@@ -36,6 +36,7 @@ import {
   TITULO_MODAL_NUEVA_TARIFA_PEDIDO,
 } from "@maximilian/shared/constants/components/coordinador/crear-tarifa-pedido.constants";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
+import { useFechasPedidoPorTarifa } from "@maximilian/hooks/useFechasPedidoPorTarifa";
 import { useSelectorInvestigadoPedido } from "@maximilian/hooks/useSelectorInvestigadoPedido";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { pedidoSchema, type PedidoFormData } from "@maximilian/schemas";
@@ -1039,6 +1040,11 @@ export function ModalPedido({
     defaultValues: { logoImprimible: false, autogenerarCodigo: false },
   });
 
+  const asignarFechasPorTarifa = useFechasPedidoPorTarifa({
+    setValue,
+    habilitado: !esModoEdicion,
+  });
+
   useFormReset(
     esModoEdicion ? pedido : undefined,
     esModoEdicion ? allTarifas : undefined,
@@ -1203,6 +1209,7 @@ export function ModalPedido({
         onTarifarioSelect={(entry) => {
           setSelectedTarifario(entry);
           setValue("idTarifario", entry?.idTarifario as number, { shouldValidate: true, shouldDirty: true });
+          asignarFechasPorTarifa(entry);
         }}
         tarifarioError={errors.idTarifario?.message}
       />
