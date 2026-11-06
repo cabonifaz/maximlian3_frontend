@@ -1,6 +1,7 @@
 import { ESTADO_ASIGNACION_ANALISTA, ESTADO_ASIGNACION_TRADUCTOR, ESTADO_REASIGNACION_ANALISTA, ESTADO_REASIGNACION_TRADUCTOR, IDS_ROL_POR_TIPO } from "@maximilian/shared/constants/services/asignacion.service.constants";
 import { ENDPOINTS_ASIGNACION } from "@maximilian/shared/constants/endpoints/asignacion.endpoint";
 import maximilianService from "./maximilian-service";
+import { obtenerZonaHorariaNavegador } from "@maximilian/shared/utils/fecha.util";
 import { ErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import { MessageType } from "@maximilian/shared/types/api.type";
 import type {
@@ -331,6 +332,7 @@ export const servicioAsignacion = {
   list: async (params: AssignmentListParams): Promise<AssignmentListResponse> => {
     const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_ASIGNACION.listar, {
       params: {
+        timezone: obtenerZonaHorariaNavegador(),
         busqueda: params.busqueda,
         idEstado: params.idEstado,
         numPag: params.numPag,
