@@ -18,7 +18,7 @@ export function useFechasPedidoPorTarifa({
       if (!habilitado || !tarifa) return;
       const hoy = new Date();
       setValue("fechaDesde", hoy, { shouldValidate: true, shouldDirty: true });
-      setValue("fechaHasta", sumarDias(hoy, tarifa.diasMax), {
+      setValue("fechaHasta", sumarDias(hoy, tarifa.diasMin), {
         shouldValidate: true,
         shouldDirty: true,
       });
