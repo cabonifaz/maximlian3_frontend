@@ -111,12 +111,16 @@ import { servicioAsignacion } from "@maximilian/services/asignacion.service";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import { usePrecargaTablaMaestra } from "@maximilian/hooks/usePrecargaTablaMaestra";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
+import { CustomCampoMontoConMoneda } from "@maximilian/components/investigacion/CustomCampoMontoConMoneda";
 import { useMoverHorasOficinaAComentarios } from "@maximilian/hooks/useMoverHorasOficinaAComentarios";
 import { useOpcionesTipoDocumentoPorTipoPersona } from "@maximilian/hooks/useOpcionesTipoDocumentoPorTipoPersona";
 import { useProteccionCambiosSinGuardar } from "@maximilian/hooks/useProteccionCambiosSinGuardar";
 import { CustomModalCambiosSinGuardar } from "@maximilian/components/common/CustomModalCambiosSinGuardar";
 import { registrarGuardadoCambios } from "@maximilian/shared/utils/proteccion-cambios.util";
-import { esTipoDocumentoCompatibleConTipoPersona } from "@maximilian/shared/utils/tabla-maestra.util";
+import {
+  esTipoDocumentoCompatibleConTipoPersona,
+  obtenerSimboloMonedaSeleccionada,
+} from "@maximilian/shared/utils/tabla-maestra.util";
 import {
   crearDatosInvestigacionVacios,
   seccionesInvestigacionAnalista,
@@ -5654,17 +5658,6 @@ function PantallaInvestigacionAnalista({
       );
     }
 
-    const isoOperacionesCambioDivisas =
-      opcionesMoneda
-        ?.find(
-          (opcion) =>
-            opcion.string1 ===
-              datosInvestigacion.aspectosLegales.operacionesCambioDivisas ||
-            String(opcion.num1 ?? "") ===
-              datosInvestigacion.aspectosLegales.operacionesCambioDivisas,
-        )
-        ?.string2?.trim() ?? "";
-
     return (
       <div className="grid gap-5 md:grid-cols-2">
         {esPlantillaEcMexico && (
@@ -5767,48 +5760,36 @@ function PantallaInvestigacionAnalista({
           )}
           onChange={(valor) => actualizarAspectosLegales("condiciones", valor)}
         />
-        <SelectorMaestroConAltaInvestigacionAnalista
-          etiqueta="Operaciones de Cambio Divisas"
-          valor={
-            datosInvestigacion.aspectosLegales.operacionesCambioDivisas === "0"
-              ? ""
-              : datosInvestigacion.aspectosLegales.operacionesCambioDivisas
-          }
-          soloLectura={esSoloLectura}
-          opcionesTablaMaestra={opcionesMoneda}
-          marcador="Seleccione moneda"
-          obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")}
-          adicionalEtiqueta={obtenerAyudaTraduccion(
-            "aspectosLegales.operacionesCambioDivisas",
-          )}
-          onChange={(valor) =>
-            actualizarAspectosLegales("operacionesCambioDivisas", valor)
-          }
-        />
-        <CampoInvestigacionAnalista
+        <CustomCampoMontoConMoneda
           etiqueta="Capital Inicial"
-          valor={datosInvestigacion.aspectosLegales.capitalInicial}
+          monto={datosInvestigacion.aspectosLegales.capitalInicial}
+          moneda={datosInvestigacion.aspectosLegales.monedaCapitalInicial}
+          opcionesMoneda={opcionesMoneda}
           soloLectura={esSoloLectura}
-          tipoEntrada="decimal"
-          adornoFinal={isoOperacionesCambioDivisas}
           adicionalEtiqueta={obtenerAyudaTraduccion(
             "aspectosLegales.capitalInicial",
           )}
-          onChange={(valor) =>
+          onCambioMonto={(valor) =>
             actualizarAspectosLegales("capitalInicial", valor)
           }
+          onCambioMoneda={(valor) =>
+            actualizarAspectosLegales("monedaCapitalInicial", valor)
+          }
         />
-        <CampoInvestigacionAnalista
+        <CustomCampoMontoConMoneda
           etiqueta="Capital Actual"
-          valor={datosInvestigacion.aspectosLegales.capitalDesembolsado}
+          monto={datosInvestigacion.aspectosLegales.capitalDesembolsado}
+          moneda={datosInvestigacion.aspectosLegales.monedaCapitalDesembolsado}
+          opcionesMoneda={opcionesMoneda}
           soloLectura={esSoloLectura}
-          tipoEntrada="decimal"
-          adornoFinal={isoOperacionesCambioDivisas}
           adicionalEtiqueta={obtenerAyudaTraduccion(
             "aspectosLegales.capitalDesembolsado",
           )}
-          onChange={(valor) =>
+          onCambioMonto={(valor) =>
             actualizarAspectosLegales("capitalDesembolsado", valor)
+          }
+          onCambioMoneda={(valor) =>
+            actualizarAspectosLegales("monedaCapitalDesembolsado", valor)
           }
         />
         <CampoInvestigacionAnalista
@@ -5822,27 +5803,29 @@ function PantallaInvestigacionAnalista({
             actualizarAspectosLegales("ultimaAmpliacion", valor)
           }
         />
-        <CampoInvestigacionAnalista
+        <CustomCampoMontoConMoneda
           etiqueta="Patrimonio Neto"
-          valor={datosInvestigacion.aspectosLegales.patrimonioNeto}
+          monto={datosInvestigacion.aspectosLegales.patrimonioNeto}
+          moneda={datosInvestigacion.aspectosLegales.monedaPatrimonioNeto}
+          opcionesMoneda={opcionesMoneda}
           soloLectura={esSoloLectura}
-          tipoEntrada="decimal"
-          adornoFinal={isoOperacionesCambioDivisas}
           adicionalEtiqueta={obtenerAyudaTraduccion(
             "aspectosLegales.patrimonioNeto",
           )}
-          onChange={(valor) =>
+          onCambioMonto={(valor) =>
             actualizarAspectosLegales("patrimonioNeto", valor)
           }
+          onCambioMoneda={(valor) =>
+            actualizarAspectosLegales("monedaPatrimonioNeto", valor)
+          }
         />
-        <AreaInvestigacionAnalista
+        <CampoInvestigacionAnalista
           etiqueta="Comentario Patrimonio Neto"
           valor={datosInvestigacion.aspectosLegales.comentarioPatrimonioNeto}
           soloLectura={esSoloLectura}
           adicionalEtiqueta={obtenerAyudaTraduccion(
             "aspectosLegales.comentarioPatrimonioNeto",
           )}
-          className="md:col-span-2"
           onChange={(valor) =>
             actualizarAspectosLegales("comentarioPatrimonioNeto", valor)
           }
@@ -5856,17 +5839,20 @@ function PantallaInvestigacionAnalista({
           )}
           onChange={(valor) => actualizarAspectosLegales("tipoAcciones", valor)}
         />
-        <CampoInvestigacionAnalista
+        <CustomCampoMontoConMoneda
           etiqueta="Valor de las Acciones"
-          valor={datosInvestigacion.aspectosLegales.valorAcciones}
+          monto={datosInvestigacion.aspectosLegales.valorAcciones}
+          moneda={datosInvestigacion.aspectosLegales.monedaValorAcciones}
+          opcionesMoneda={opcionesMoneda}
           soloLectura={esSoloLectura}
-          tipoEntrada="decimal"
-          adornoFinal={isoOperacionesCambioDivisas}
           adicionalEtiqueta={obtenerAyudaTraduccion(
             "aspectosLegales.valorAcciones",
           )}
-          onChange={(valor) =>
+          onCambioMonto={(valor) =>
             actualizarAspectosLegales("valorAcciones", valor)
+          }
+          onCambioMoneda={(valor) =>
+            actualizarAspectosLegales("monedaValorAcciones", valor)
           }
         />
         <CustomSelectorBuscable
@@ -5893,43 +5879,60 @@ function PantallaInvestigacionAnalista({
           placeholder="Seleccione valor"
           disabled={esSoloLectura}
         />
-        <div className="space-y-2">
+        <div className="@container space-y-2">
           <CustomLabel as="p" className="text-sm font-bold text-gray-700">
             <span className="inline-flex items-center gap-2">
               <span>Tipo de Cambio</span>
               {obtenerAyudaTraduccion("aspectosLegales.tipoCambio")}
+              {obtenerAyudaTraduccion("aspectosLegales.monedaTipoCambio")}
             </span>
           </CustomLabel>
-          <div className="relative flex h-11 overflow-hidden rounded-xl border border-gray-200 bg-white focus-within:border-brand-black focus-within:ring-2 focus-within:ring-brand-black/5">
-            <span className="flex items-center border-r border-gray-200 bg-slate-50 px-4 text-sm font-semibold text-slate-600">
-              1 USD =
-            </span>
-            <input
-              value={datosInvestigacion.aspectosLegales.tipoCambio}
-              readOnly={esSoloLectura}
-              onChange={(event) =>
-                actualizarAspectosLegales(
-                  "tipoCambio",
-                  sanitizarMontoDosDecimales(event.target.value),
-                )
-              }
-              onBlur={(event) =>
-                actualizarAspectosLegales(
-                  "tipoCambio",
-                  normalizarMontoDosDecimales(event.target.value),
-                )
-              }
-              onFocus={seleccionarTextoCampoEditable}
-              placeholder="0.00"
-              className={`min-w-0 flex-1 bg-transparent px-4 text-sm text-slate-600 outline-none read-only:text-slate-400 ${isoOperacionesCambioDivisas ? "pr-20" : ""}`}
-            />
-            {isoOperacionesCambioDivisas ? (
-              <span className="pointer-events-none absolute right-2 top-1/2 flex h-7 -translate-y-1/2 items-center rounded-md bg-slate-900 px-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
-                {isoOperacionesCambioDivisas}
+          <div className="grid grid-cols-1 gap-2 @md:grid-cols-[minmax(0,1fr)_minmax(12rem,1fr)]">
+            <div className="flex h-11 overflow-hidden rounded-xl border border-gray-200 bg-white focus-within:border-brand-black focus-within:ring-2 focus-within:ring-brand-black/5">
+              <span className="flex shrink-0 items-center border-r border-gray-200 bg-slate-50 px-4 text-sm font-semibold text-slate-600">
+                {`1 USD = ${obtenerSimboloMonedaSeleccionada(opcionesMoneda, datosInvestigacion.aspectosLegales.monedaTipoCambio)}`.trim()}
               </span>
-            ) : null}
+              <input
+                value={datosInvestigacion.aspectosLegales.tipoCambio}
+                readOnly={esSoloLectura}
+                onChange={(event) =>
+                  actualizarAspectosLegales(
+                    "tipoCambio",
+                    sanitizarMontoDosDecimales(event.target.value),
+                  )
+                }
+                onBlur={(event) =>
+                  actualizarAspectosLegales(
+                    "tipoCambio",
+                    normalizarMontoDosDecimales(event.target.value),
+                  )
+                }
+                onFocus={seleccionarTextoCampoEditable}
+                placeholder="0.00"
+                className="min-w-0 flex-1 bg-transparent px-4 text-sm text-slate-600 outline-none read-only:text-slate-400"
+              />
+            </div>
+            <SelectorMaestroConAltaInvestigacionAnalista
+              etiqueta="Moneda del tipo de cambio"
+              valor={
+                datosInvestigacion.aspectosLegales.monedaTipoCambio === "0"
+                  ? ""
+                  : datosInvestigacion.aspectosLegales.monedaTipoCambio
+              }
+              soloLectura={esSoloLectura}
+              opcionesTablaMaestra={opcionesMoneda}
+              usarPaginacion={false}
+              buscarEnEndpoint
+              idMaestro={TablaMaestraId.MONEDA}
+              marcador="Moneda"
+              obtenerValorOpcion={(opcion) => String(opcion.num1 ?? "")}
+              ocultarEtiqueta
+              onChange={(valor) =>
+                actualizarAspectosLegales("monedaTipoCambio", valor)
+              }
+            />
           </div>
-        </div>{" "}
+        </div>
         <AreaInvestigacionAnalista
           etiqueta="Historia"
           valor={datosInvestigacion.aspectosLegales.antecedentes}

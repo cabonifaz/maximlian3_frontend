@@ -85,6 +85,7 @@ interface PropsVistaPreviaInformeComparado {
   subtituloBarraDocumento?: string;
   indicadorReporteTraducido?: string;
   mostrarInformeTraducido?: boolean;
+  documentoPorReferencia?: boolean;
   ocuparAltoDisponibleDocumento?: boolean;
   className?: string;
   contenidoEntreTabsYTarjetas?: ReactNode;
@@ -443,7 +444,11 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
   const idMonedaAspectosLegales = aspectosLegales.operacionesCambioDivisas === "0"
     ? ""
     : aspectosLegales.operacionesCambioDivisas;
-  const montoLegal = (monto: string) => formatearMontoMonedaVistaPrevia(opcionesMoneda, idMonedaAspectosLegales, monto);
+  const montoLegal = (monto: string, idMoneda?: string) => formatearMontoMonedaVistaPrevia(
+    opcionesMoneda,
+    idMoneda && idMoneda !== "0" ? idMoneda : idMonedaAspectosLegales,
+    monto,
+  );
   const mapearImportacionExportacion = (registro: DatosInvestigacionAnalista["importaciones"][number]) => ({
     ...registro,
     mes: obtenerRangoMesesVistaPrevia(opcionesMes, registro.idMesInicio, registro.idMesFin, registro.mes === "0" ? "" : registro.mes),
@@ -527,12 +532,12 @@ export function obtenerSeccionesVistaPreviaInforme(datosInvestigacion: DatosInve
           registro: aspectosLegales.registro,
           condiciones: aspectosLegales.condiciones,
           operacionesCambioDivisas: obtenerEtiquetaMaestroVistaPrevia(opcionesMoneda, idMonedaAspectosLegales),
-          capitalInicial: montoLegal(aspectosLegales.capitalInicial),
-          capitalDesembolsado: montoLegal(aspectosLegales.capitalDesembolsado),
+          capitalInicial: montoLegal(aspectosLegales.capitalInicial, aspectosLegales.monedaCapitalInicial),
+          capitalDesembolsado: montoLegal(aspectosLegales.capitalDesembolsado, aspectosLegales.monedaCapitalDesembolsado),
           ultimaAmpliacion: aspectosLegales.ultimaAmpliacion,
-          patrimonioNeto: montoLegal(aspectosLegales.patrimonioNeto),
+          patrimonioNeto: montoLegal(aspectosLegales.patrimonioNeto, aspectosLegales.monedaPatrimonioNeto),
           tipoAcciones: aspectosLegales.tipoAcciones,
-          valorAcciones: montoLegal(aspectosLegales.valorAcciones),
+          valorAcciones: montoLegal(aspectosLegales.valorAcciones, aspectosLegales.monedaValorAcciones),
           obligacionBolsa: obtenerTextoObligacionBolsa(
             opcionesMaestros?.[TablaMaestraId.OBLIGACION_BOLSA],
             aspectosLegales.obligacionBolsa,
@@ -1165,6 +1170,7 @@ export function CustomVistaPreviaInformeComparado({
   subtituloBarraDocumento,
   indicadorReporteTraducido = "En traducción",
   mostrarInformeTraducido = true,
+  documentoPorReferencia = false,
   ocuparAltoDisponibleDocumento = false,
   className = "space-y-6",
   contenidoEntreTabsYTarjetas,
@@ -1190,7 +1196,12 @@ export function CustomVistaPreviaInformeComparado({
     setEstaRenderizandoDocumento,
     errorDocumento,
     reintentarCargaDocumento,
-  } = useDocumentoVistaPreviaInforme(idInformeDocumento, idPedidoDocumento, puedeMostrarDocumento);
+  } = useDocumentoVistaPreviaInforme(
+    idInformeDocumento,
+    idPedidoDocumento,
+    puedeMostrarDocumento,
+    documentoPorReferencia,
+  );
 
   useEffect(() => {
     onMetadatosDocumento?.(metadatosDocumento);

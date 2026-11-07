@@ -2,7 +2,8 @@ import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ID_MAESTRO_ESTADO_CIVIL,
-  ID_MAESTRO_TIPO_DOCUMENTO,
+  NUM2_TIPO_DOCUMENTO_IDENTIDAD,
+  NUM2_TIPO_ID_FISCAL,
 } from "@maximilian/shared/constants/components/investigacion/custom-modal-registro-persona-directorio.constants";
 import { servicioDirectorioEjecutivo } from "@maximilian/services/directorio-ejecutivo.service";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
@@ -14,7 +15,7 @@ import type { DirectorioEjecutivoGuardarRequest } from "@maximilian/shared/types
 import type { RegistroPersonaDirectorioAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
 import { convertirFechaIso } from "@maximilian/shared/utils/investigacion/investigacion-formato.util";
-import { filtrarTiposDocumentoPorTipoPersona } from "@maximilian/shared/utils/tabla-maestra.util";
+import { filtrarOpcionesPorNum2 } from "@maximilian/shared/utils/tabla-maestra.util";
 import {
   obtenerGentilicioPais,
   traducirOpcionesTablaMaestra,
@@ -37,7 +38,6 @@ export function useModalRegistroPersonaDirectorio({
 }: ParametrosUseModalRegistroPersonaDirectorio) {
   const fechaNacimientoInicial = registroInicial?.fechaNacimiento ?? datosIniciales?.fechaNacimiento ?? "";
   const [fechaNacimiento, setFechaNacimiento] = useState(fechaNacimientoInicial);
-  const [idTipoPersona, setIdTipoPersona] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (!estaAbierto) return;
@@ -57,13 +57,6 @@ export function useModalRegistroPersonaDirectorio({
   const { data: opcionesPaisBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.PAIS],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.PAIS),
-    enabled: estaAbierto,
-    staleTime: Infinity,
-  });
-
-  const { data: opcionesTipoDocumentoBase } = useQuery({
-    queryKey: ["masterTable", ID_MAESTRO_TIPO_DOCUMENTO],
-    queryFn: () => servicioTablaMaestra.list(ID_MAESTRO_TIPO_DOCUMENTO),
     enabled: estaAbierto,
     staleTime: Infinity,
   });
@@ -98,15 +91,18 @@ export function useModalRegistroPersonaDirectorio({
     [idIdioma, opcionesPaisBase],
   );
   const opcionesTipoDocumento = useMemo(
-    () => traducirOpcionesTablaMaestra(opcionesTipoDocumentoBase, idIdioma),
-    [idIdioma, opcionesTipoDocumentoBase],
+    () => filtrarOpcionesPorNum2(
+      traducirOpcionesTablaMaestra(opcionesTipoIdFiscalBase, idIdioma),
+      NUM2_TIPO_DOCUMENTO_IDENTIDAD,
+    ),
+    [idIdioma, opcionesTipoIdFiscalBase],
   );
   const opcionesTipoIdFiscal = useMemo(
-    () => filtrarTiposDocumentoPorTipoPersona(
+    () => filtrarOpcionesPorNum2(
       traducirOpcionesTablaMaestra(opcionesTipoIdFiscalBase, idIdioma),
-      idTipoPersona,
+      NUM2_TIPO_ID_FISCAL,
     ),
-    [idIdioma, idTipoPersona, opcionesTipoIdFiscalBase],
+    [idIdioma, opcionesTipoIdFiscalBase],
   );
   const opcionesEstadoCivil = useMemo(
     () => traducirOpcionesTablaMaestra(opcionesEstadoCivilBase, idIdioma),
@@ -209,6 +205,5 @@ export function useModalRegistroPersonaDirectorio({
     opcionesTipoIdFiscal,
     opcionesTipoPersona,
     setFechaNacimiento,
-    setIdTipoPersona,
   };
 }

@@ -42,7 +42,6 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
     opcionesTipoIdFiscal,
     opcionesTipoPersona,
     setFechaNacimiento,
-    setIdTipoPersona,
   } = useModalRegistroPersonaDirectorio({
     estaAbierto,
     idIdioma,
@@ -87,7 +86,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <EncabezadoSeccion icono={<UserRound size={18} />} titulo="Identificación" subtitulo="Datos principales del registro" />
               <div className="grid gap-4 md:grid-cols-[0.9fr_2fr_1fr]">
-                <CampoSelector nombre="tipoPersona" nombreId="idTipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersona} valorDefecto={valoresIniciales?.tipoPersona} valorDefectoId={valoresIniciales?.idTipoPersona} marcadorVacio="Seleccione tipo persona" onCambioId={setIdTipoPersona} />
+                <CampoSelector nombre="tipoPersona" nombreId="idTipoPersona" etiqueta="Tipo de Persona" opciones={opcionesTipoPersona} valorDefecto={valoresIniciales?.tipoPersona} valorDefectoId={valoresIniciales?.idTipoPersona} marcadorVacio="Seleccione tipo persona" />
                 <CampoInput nombre="nombres" etiqueta="Nombre Completo / Razón Social" marcador="Ingrese nombres completos" valorInicial={valoresIniciales?.nombres || nombreInicial} />
                 <CustomCampoFechaInvestigacion
                   nombre="fechaNacimiento"
@@ -103,7 +102,7 @@ export function CustomModalRegistroPersonaDirectorioAnalista({
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <EncabezadoSeccion icono={<FileText size={18} />} titulo="Documentos" subtitulo="Identificación personal y fiscal" />
               <div className="grid gap-4 md:grid-cols-[0.9fr_1fr_1fr_1fr]">
-                <CampoSelector nombre="tipoDocumentoIdentidad" nombreId="idTipoDocumento" etiqueta="Tipo Doc. Identidad" opciones={opcionesTipoDocumento} valorDefecto={valoresIniciales?.tipoDocumentoIdentidad} valorDefectoId={valoresIniciales?.idTipoDocumento} marcadorVacio="Seleccione tipo documento" />
+                <CampoSelector nombre="tipoDocumentoIdentidad" nombreId="idTipoDocumento" etiqueta="Tipo Doc. Identidad" opciones={opcionesTipoDocumento} valorDefecto={valoresIniciales?.tipoDocumentoIdentidad} valorDefectoId={valoresIniciales?.idTipoDocumento} marcadorVacio="Seleccione tipo documento" usarPaginacion={false} limpiarSiNoDisponible />
                 <CampoInput nombre="numeroDocumentoIdentidad" etiqueta="Nro. Doc. Identidad" marcador="Ingrese nro. documento" valorInicial={valoresIniciales?.numeroDocumentoIdentidad} />
                 <CampoSelector nombre="tipoIdFiscal" nombreId="taxIdType" etiqueta="Tipo de ID Fiscal" opciones={opcionesTipoIdFiscal} valorDefecto={valoresIniciales?.tipoIdFiscal} valorDefectoId={valoresIniciales?.taxIdType} marcadorVacio="Seleccione tipo fiscal" usarPaginacion={false} limpiarSiNoDisponible />
                 <CampoInput nombre="numeroIdFiscal" etiqueta="Nro ID Fiscal" marcador="Ingrese id fiscal" valorInicial={valoresIniciales?.numeroIdFiscal} />
