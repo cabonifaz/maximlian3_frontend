@@ -15,6 +15,7 @@ interface PropsCustomModalVistaPreviaInforme {
   idInforme?: number;
   idPedido?: number;
   mostrarInformeTraducido?: boolean;
+  documentoPorReferencia?: boolean;
   onDescargar?: (formato: FormatoDescargaInforme) => void;
   onCerrar: () => void;
 }
@@ -26,6 +27,7 @@ export function CustomModalVistaPreviaInforme({
   idInforme,
   idPedido,
   mostrarInformeTraducido = false,
+  documentoPorReferencia = false,
   onDescargar,
   onCerrar,
 }: PropsCustomModalVistaPreviaInforme) {
@@ -60,6 +62,7 @@ export function CustomModalVistaPreviaInforme({
             idInforme={idInforme}
             idPedido={idPedido}
             mostrarInformeTraducido={mostrarInformeTraducido}
+            documentoPorReferencia={documentoPorReferencia}
             className="space-y-3"
           />
         </div>

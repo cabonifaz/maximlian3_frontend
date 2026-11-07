@@ -92,6 +92,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   opcionesTablaMaestra,
   idMaestro,
   usarPaginacion = true,
+  buscarEnEndpoint = false,
   marcador,
   onChange,
   onSeleccionar,
@@ -117,6 +118,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
   opcionesTablaMaestra?: EntradaTablaMaestra[];
   idMaestro?: number;
   usarPaginacion?: boolean;
+  buscarEnEndpoint?: boolean;
   marcador?: string;
   onChange?: (valor: string) => void;
   onSeleccionar?: (id: number | undefined) => void;
@@ -377,6 +379,7 @@ export function SelectorMaestroConAltaInvestigacionAnalista({
       )}
       idMaster={idMaestro}
       usarPaginacion={usarPaginacion}
+      buscarEnEndpoint={buscarEnEndpoint}
       options={opcionesDisponibles}
       value={valorSeleccionado}
       displayValue={textoSeleccionado}
@@ -414,6 +417,7 @@ interface PropsCampoInvestigacionAnalista {
   error?: string;
   onBlur?: () => void;
   adornoFinal?: string;
+  adornoInicial?: string;
   ocultarEtiqueta?: boolean;
 }
 
@@ -486,6 +490,7 @@ export function CampoInvestigacionAnalista({
   error,
   onBlur,
   adornoFinal,
+  adornoInicial,
   ocultarEtiqueta = false,
 }: PropsCampoInvestigacionAnalista) {
   const marcadorFinal = marcador ?? obtenerMarcadorInvestigacion(etiqueta);
@@ -518,7 +523,12 @@ export function CampoInvestigacionAnalista({
           </span>
         </CustomLabel>
       )}
-      <div className="relative">
+      <div className={adornoInicial ? `flex h-11 overflow-hidden rounded-xl border bg-white focus-within:border-brand-black focus-within:ring-2 focus-within:ring-brand-black/5 ${error ? "border-red-500" : "border-gray-200"}` : "relative"}>
+        {adornoInicial ? (
+          <span className="flex shrink-0 items-center border-r border-gray-200 bg-slate-50 px-4 text-sm font-semibold text-slate-600">
+            {adornoInicial}
+          </span>
+        ) : null}
         <input
           type={tipoEntrada === "email" ? "email" : "text"}
           value={valor}
@@ -562,7 +572,7 @@ export function CampoInvestigacionAnalista({
           }}
           onFocus={seleccionarTextoCampoEditable}
           placeholder={marcadorFinal ?? ""}
-          className={clasesInput}
+          className={adornoInicial ? "min-w-0 flex-1 bg-transparent px-4 text-sm text-slate-600 outline-none read-only:text-slate-400" : clasesInput}
         />
         {adornoFinal ? (
           <span className="pointer-events-none absolute right-2 top-1/2 flex h-7 -translate-y-1/2 items-center rounded-md bg-slate-900 px-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm">

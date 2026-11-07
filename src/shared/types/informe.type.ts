@@ -56,7 +56,6 @@ export interface InformeListResponse {
 export interface ParametrosHistorialInformesCompania {
   idCompania: number;
   numPag?: number;
-  idIdioma?: string;
   fechaInicio?: string;
   fechaFin?: string;
 }
@@ -409,13 +408,17 @@ export interface InformeCrearRequest {
   idRegistro: string;
   idPlazo: string;
   capitalInicial?: number;
+  idMonedaCapitalInicial?: number;
   capitalPagado?: number;
+  idMonedaCapitalPagado?: number;
   fechaUltimoIncremento: string | null;
   idTipoIncremento: number;
   patrimonioNeto?: number;
+  idMonedaPatrimonioNeto?: number;
   comentarioPatrimonioNeto: string;
   tipoAcciones: string;
   valorAcciones?: number;
+  idMonedaValorAcciones?: number;
   cotizaBolsa: boolean;
   idTipoCambio: number;
   tipoCambio?: number;

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, useMemo, useRef, type ReactNode } from "react";
 import { Search, Loader2, Plus } from "lucide-react";
+import { useOpcionesTablaMaestraBusqueda } from "@maximilian/hooks/useOpcionesTablaMaestraBusqueda";
 import { useOpcionesTablaMaestraPaginadas } from "@maximilian/hooks/useOpcionesTablaMaestraPaginadas";
 import { useSeleccionAutomaticaOpcionUnica } from "@maximilian/hooks/useSeleccionAutomaticaOpcionUnica";
 import { useIdiomaTablaMaestra } from "@maximilian/shared/contexts/idioma-tabla-maestra.context";
@@ -15,6 +16,7 @@ export interface CustomSelectorBuscableProps {
   label?: ReactNode;
   idMaster?: number;
   usarPaginacion?: boolean;
+  buscarEnEndpoint?: boolean;
   options?: EntradaTablaMaestra[] | undefined;
   value: string | number | undefined;
   onChange: (val: number) => void;
@@ -48,6 +50,7 @@ export function CustomSelectorBuscable({
   label,
   idMaster,
   usarPaginacion = true,
+  buscarEnEndpoint = false,
   options,
   value,
   onChange,
@@ -101,7 +104,19 @@ export function CustomSelectorBuscable({
     activo: isOpen || autoSeleccionarOpcionUnica,
   });
 
-  const showLoading = estaCargandoOpciones || loading;
+  const usaBusquedaEndpoint = buscarEnEndpoint && !usarPaginacion && idMaster !== undefined;
+  const {
+    hayBusqueda: hayBusquedaEndpoint,
+    opciones: opcionesBusquedaEndpoint,
+    estaBuscando: estaBuscandoEndpoint,
+  } = useOpcionesTablaMaestraBusqueda({
+    idMaestro: usaBusquedaEndpoint ? idMaster : undefined,
+    terminoBusqueda,
+    activo: isOpen,
+  });
+  const mostrarResultadosEndpoint = usaBusquedaEndpoint && hayBusquedaEndpoint;
+
+  const showLoading = estaCargandoOpciones || loading || (mostrarResultadosEndpoint && estaBuscandoEndpoint);
   const resolvedOptions = useMemo(() => {
     if (!idMaestroPredeterminado) return options;
 
@@ -114,9 +129,14 @@ export function CustomSelectorBuscable({
   }, [idIdiomaTablaMaestra, idMaestroPredeterminado, opcionElegida, opcionesConsultadas, options, value]);
 
   const filteredOptions = useMemo(() => {
-    if (!resolvedOptions) return [];
+    const opcionesBase = mostrarResultadosEndpoint
+      ? traducirOpcionesTablaMaestra(opcionesBusquedaEndpoint, idIdiomaTablaMaestra)
+      : resolvedOptions;
+    if (!opcionesBase) return [];
     const terminoNormalizado = terminoBusqueda.toLowerCase();
-    const opcionesFiltradas = resolvedOptions.filter((opt) =>
+    const opcionesFiltradas = mostrarResultadosEndpoint
+      ? opcionesBase
+      : opcionesBase.filter((opt) =>
         (opt.string1?.toLowerCase().includes(terminoNormalizado) ?? false)
         || (opt.string2?.toLowerCase().includes(terminoNormalizado) ?? false)
         || (obtenerEtiquetaOpcion?.(opt).toLowerCase().includes(terminoNormalizado) ?? false),
@@ -134,7 +154,16 @@ export function CustomSelectorBuscable({
     return [...opcionesFiltradas].sort((a, b) =>
       (obtenerEtiquetaOpcion?.(a) || a.string1 || "").localeCompare(obtenerEtiquetaOpcion?.(b) || b.string1 || ""),
     );
-  }, [obtenerEtiquetaOpcion, ordenarOpciones, ordenarPorNum1, resolvedOptions, terminoBusqueda]);
+  }, [
+    idIdiomaTablaMaestra,
+    mostrarResultadosEndpoint,
+    obtenerEtiquetaOpcion,
+    opcionesBusquedaEndpoint,
+    ordenarOpciones,
+    ordenarPorNum1,
+    resolvedOptions,
+    terminoBusqueda,
+  ]);
 
   const selectedOption = resolvedOptions?.find((opt) => opt.num1 === value);
   const displayText = selectedOption

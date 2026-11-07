@@ -48,7 +48,10 @@ import {
   obtenerTextoNumerico,
   formatearTextoNumericoDecimales,
 } from "@maximilian/shared/utils/formato-monto.util";
-import { formatearFechaIsoADdMmYyyy } from "@maximilian/shared/utils/fecha.util";
+import {
+  formatearFechaIsoADdMmYyyy,
+  obtenerZonaHorariaNavegador,
+} from "@maximilian/shared/utils/fecha.util";
 import {
   adaptarCuentaBalanceDesdeApi,
   obtenerClaveEstadoFinanciero,
@@ -512,12 +515,16 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       operacionesCambioDivisas: "",
       monedaTipoCambio: "",
       capitalInicial: "",
+      monedaCapitalInicial: "",
       capitalDesembolsado: "",
+      monedaCapitalDesembolsado: "",
       ultimaAmpliacion: "",
       patrimonioNeto: "",
+      monedaPatrimonioNeto: "",
       comentarioPatrimonioNeto: "",
       tipoAcciones: "",
       valorAcciones: "",
+      monedaValorAcciones: "",
       obligacionBolsa: "",
       tipoCambio: "",
       antecedentes: "",
@@ -665,6 +672,10 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     idCalificacion: obtenerTexto(registro.idClasificacion, registro.IdClasificacion),
     idRecordPagos: obtenerTexto(registro.idExperienciaPago, registro.IdExperienciaPago),
   };  const idTipoCambio = obtenerNumeroOpcional(registro.idTipoCambio, registro.IdTipoCambio);
+  const obtenerIdMonedaTexto = (...valores: unknown[]) => {
+    const idMoneda = obtenerNumeroOpcional(...valores);
+    return idMoneda && idMoneda > 0 ? String(idMoneda) : "";
+  };
 
   datos.aspectosLegales = {
     domicilioFiscal: obtenerTexto(registro.domicilioFiscal, registro.DomicilioFiscal),
@@ -681,12 +692,16 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
       ? String(idTipoCambio)
       : obtenerTexto(registro.monedaTipoCambio, registro.MonedaTipoCambio),
     capitalInicial: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.capitalInicial)),
+    monedaCapitalInicial: obtenerIdMonedaTexto(registro.idMonedaCapitalInicial, registro.IdMonedaCapitalInicial),
     capitalDesembolsado: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.capitalPagado)),
+    monedaCapitalDesembolsado: obtenerIdMonedaTexto(registro.idMonedaCapitalPagado, registro.IdMonedaCapitalPagado),
     ultimaAmpliacion: formatearFechaEntrada(obtenerTexto(registro.fechaUltimoIncremento, registro.FechaUltimoIncremento)),
     patrimonioNeto: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.patrimonioNeto)),
+    monedaPatrimonioNeto: obtenerIdMonedaTexto(registro.idMonedaPatrimonioNeto, registro.IdMonedaPatrimonioNeto),
     comentarioPatrimonioNeto: obtenerTexto(registro.comentarioPatrimonioNeto, registro.ComentarioPatrimonioNeto),
     tipoAcciones: obtenerTexto(registro.tipoAcciones, registro.TipoAcciones),
     valorAcciones: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.valorAcciones)),
+    monedaValorAcciones: obtenerIdMonedaTexto(registro.idMonedaValorAcciones, registro.IdMonedaValorAcciones),
     obligacionBolsa: obtenerBooleano(registro.cotizaBolsa, registro.CotizaBolsa) ? "Si" : "No",
     tipoCambio: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.tipoCambio)),
     antecedentes: obtenerTexto(registro.antecedentes, registro.Antecedentes),
@@ -1317,6 +1332,56 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
   };
 }
 
+async function obtenerInformeDesdeRuta(
+  ruta: string,
+  idPedido: number,
+  idInforme?: number,
+): Promise<InformeObtenerResponse> {
+  const { data } = await maximilianService.get<ApiResponse<unknown>>(ruta, {
+    params: {
+      IdPedido: idPedido,
+      IdInforme: idInforme && idInforme > 0 ? idInforme : undefined,
+    },
+  });
+
+  if (!esRespuestaOkCompatibilidad(data, ruta)) {
+    throw new ErrorRespuestaApi(data);
+  }
+
+  return enriquecerRespuestaObtener(normalizarRespuestaObtener(data.result));
+}
+
+async function previsualizarDocumentoDesdeRuta(
+  ruta: string,
+  idInforme: number,
+  idPedido: number,
+): Promise<RespuestaDocumentoInformeGenerado> {
+  const { data } = await maximilianService.get<
+    ApiResponse<DocumentoInformeGenerado | RespuestaDocumentoInformeGenerado>
+  >(ruta, {
+    params: {
+      IdInforme: idInforme,
+      IdPedido: idPedido,
+    },
+  });
+
+  if (!esRespuestaOkCompatibilidad(data, ruta)) {
+    throw new ErrorRespuestaApi(data);
+  }
+
+  const registro = obtenerRegistro(data.result);
+  const documento = "documento" in data.result ? data.result.documento : data.result;
+
+  return {
+    documento,
+    nombreInforme: obtenerTexto(registro.nombreInforme, registro.NombreInforme),
+    cantidadEnvios: obtenerNumero(registro.cantidadEnvios, registro.CantidadEnvios),
+    formatosCliente: obtenerLista(registro.formatosCliente, registro.FormatosCliente)
+      .filter((formato): formato is string => typeof formato === "string"),
+    requiereTraduccion: obtenerBooleano(registro.requiereTraduccion, registro.RequiereTraduccion),
+  };
+}
+
 export const informeService = {
   list: async (
     params: InformeListParams,
@@ -1366,7 +1431,6 @@ export const informeService = {
   listarHistorialPorCompania: async ({
     idCompania,
     numPag = 1,
-    idIdioma,
     fechaInicio,
     fechaFin,
   }: ParametrosHistorialInformesCompania): Promise<RespuestaHistorialInformesCompania> => {
@@ -1374,9 +1438,9 @@ export const informeService = {
       ENDPOINTS_INFORME.listarIdPorCompania,
       {
         params: {
+          timezone: obtenerZonaHorariaNavegador(),
           IdCompania: idCompania,
           NumPag: numPag,
-          IdIdioma: idIdioma,
           FchInicio: fechaInicio,
           FchFin: fechaFin,
         },
@@ -1432,50 +1496,27 @@ export const informeService = {
     return normalizarRespuestaCrear(data.result);
   },
 
-  obtener: async ({ idPedido, idInforme }: InformeObtenerParams): Promise<InformeObtenerResponse> => {
-    const { data } = await maximilianService.get<ApiResponse<unknown>>(ENDPOINTS_INFORME.obtener, {
-      params: {
-        IdPedido: idPedido,
-        IdInforme: idInforme && idInforme > 0 ? idInforme : undefined,
-      },
-    });
+  obtener: ({ idPedido, idInforme }: InformeObtenerParams): Promise<InformeObtenerResponse> =>
+    obtenerInformeDesdeRuta(ENDPOINTS_INFORME.obtener, idPedido, idInforme),
 
-    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.obtener)) {
-      throw new ErrorRespuestaApi(data);
-    }
+  obtenerPorReferencia: ({ idPedido, idInforme }: InformeObtenerParams): Promise<InformeObtenerResponse> =>
+    obtenerInformeDesdeRuta(ENDPOINTS_INFORME.obtenerPorReferencia, idPedido, idInforme),
 
-    return enriquecerRespuestaObtener(normalizarRespuestaObtener(data.result));
-  },
-
-  previsualizarDocumento: async (
+  previsualizarDocumento: (
     idInforme: number,
     idPedido: number,
-  ): Promise<RespuestaDocumentoInformeGenerado> => {
-    const { data } = await maximilianService.get<
-      ApiResponse<DocumentoInformeGenerado | RespuestaDocumentoInformeGenerado>
-    >(ENDPOINTS_INFORME.previsualizarDocumento, {
-      params: {
-        IdInforme: idInforme,
-        IdPedido: idPedido,
-      },
-    });
+  ): Promise<RespuestaDocumentoInformeGenerado> =>
+    previsualizarDocumentoDesdeRuta(ENDPOINTS_INFORME.previsualizarDocumento, idInforme, idPedido),
 
-    if (!esRespuestaOkCompatibilidad(data, ENDPOINTS_INFORME.previsualizarDocumento)) {
-      throw new ErrorRespuestaApi(data);
-    }
-
-    const registro = obtenerRegistro(data.result);
-    const documento = "documento" in data.result ? data.result.documento : data.result;
-
-    return {
-      documento,
-      nombreInforme: obtenerTexto(registro.nombreInforme, registro.NombreInforme),
-      cantidadEnvios: obtenerNumero(registro.cantidadEnvios, registro.CantidadEnvios),
-      formatosCliente: obtenerLista(registro.formatosCliente, registro.FormatosCliente)
-        .filter((formato): formato is string => typeof formato === "string"),
-      requiereTraduccion: obtenerBooleano(registro.requiereTraduccion, registro.RequiereTraduccion),
-    };
-  },
+  previsualizarDocumentoPorReferencia: (
+    idInforme: number,
+    idPedido: number,
+  ): Promise<RespuestaDocumentoInformeGenerado> =>
+    previsualizarDocumentoDesdeRuta(
+      ENDPOINTS_INFORME.previsualizarDocumentoPorReferencia,
+      idInforme,
+      idPedido,
+    ),
 
   obtenerDocumento: async (
     idInforme: number,

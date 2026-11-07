@@ -281,6 +281,28 @@ export const servicioTablaMaestra = {
 
     return normalizarListadoParametros(data.result, idMaestro);
   },
+  buscarSinPaginacion: async (
+    idMaestro: number,
+    busqueda: string,
+    senal?: AbortSignal,
+  ): Promise<EntradaTablaMaestra[]> => {
+    const { data } = await maximilianService.get<ApiResponse<unknown>>(
+      ENDPOINTS_TABLA_MAESTRA.listar,
+      {
+        params: {
+          idsMaestro: String(idMaestro),
+          busqueda: busqueda.trim() || undefined,
+        },
+        signal: senal,
+      },
+    );
+
+    if (data.idTipoMensaje !== MessageType.SUCCESS) {
+      throw new ErrorRespuestaApi(data);
+    }
+
+    return normalizarListadoParametros(data.result, idMaestro).listaTablaMaestra;
+  },
   listaCorta: async (idMaestro: number): Promise<EntradaTablaMaestra[]> => {
     const { data } = await maximilianService.post<ApiResponse<unknown>>(
       ENDPOINTS_TABLA_MAESTRA.listaCorta,

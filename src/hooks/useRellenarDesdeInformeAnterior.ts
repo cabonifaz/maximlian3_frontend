@@ -12,7 +12,7 @@ export function useRellenarDesdeInformeAnterior(
 
   const mutacionRellenar = useMutation({
     mutationFn: async (informe: InformeHistorialCompania) => {
-      const informeAnterior = await informeService.obtener({
+      const informeAnterior = await informeService.obtenerPorReferencia({
         idPedido: informe.idPedido,
         idInforme: informe.idInforme,
       });
