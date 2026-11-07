@@ -271,12 +271,16 @@ export interface DatosAspectosLegalesAnalista {
   operacionesCambioDivisas: string;
   monedaTipoCambio: string;
   capitalInicial: string;
+  monedaCapitalInicial: string;
   capitalDesembolsado: string;
+  monedaCapitalDesembolsado: string;
   ultimaAmpliacion: string;
   patrimonioNeto: string;
+  monedaPatrimonioNeto: string;
   comentarioPatrimonioNeto: string;
   tipoAcciones: string;
   valorAcciones: string;
+  monedaValorAcciones: string;
   obligacionBolsa: string;
   tipoCambio: string;
   antecedentes: string;

@@ -15,6 +15,18 @@ export function obtenerSimboloTablaMaestra(
     ?.string3?.trim() ?? "";
 }
 
+export function obtenerSimboloMonedaSeleccionada(
+  opciones: EntradaTablaMaestra[] | undefined,
+  valor: string | undefined,
+) {
+  const valorLimpio = valor?.trim();
+  if (!valorLimpio || valorLimpio === "0") return "";
+
+  return opciones
+    ?.find((opcion) => String(opcion.num1 ?? "") === valorLimpio || opcion.string1 === valorLimpio)
+    ?.string3?.trim() ?? "";
+}
+
 export function obtenerEtiquetaTipoRegistroTributario(
   opcion: EntradaTablaMaestra,
   opcionesTipoPersona: EntradaTablaMaestra[] | undefined,
@@ -56,6 +68,13 @@ export function esTipoRegistroTributarioSeleccionado(
   const idTipoRegistro = Number(valor);
   return Number.isFinite(idTipoRegistro) && idTipoRegistro >= 0;
 }
+export function filtrarOpcionesPorNum2(
+  opciones: EntradaTablaMaestra[] | undefined,
+  num2: number,
+) {
+  return opciones?.filter((opcion) => opcion.num2 === num2);
+}
+
 export function filtrarTiposDocumentoPorTipoPersona(
   opciones: EntradaTablaMaestra[] | undefined,
   idTipoPersona: number | undefined,

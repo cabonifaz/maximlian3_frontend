@@ -6,6 +6,7 @@ export function useDocumentoVistaPreviaInforme(
   idInformeDocumento: number,
   idPedidoDocumento: number,
   puedeMostrarDocumento: boolean,
+  porReferencia = false,
 ) {
   const [documentoGenerado, setDocumentoGenerado] = useState<DocumentoInformeGenerado | null>(null);
   const [metadatosDocumento, setMetadatosDocumento] = useState<InformeMetadatosDocumento | null>(null);
@@ -32,8 +33,11 @@ export function useDocumentoVistaPreviaInforme(
     setEstaRenderizandoDocumento(false);
     setErrorDocumento(false);
 
-    void informeService
-      .previsualizarDocumento(idInformeDocumento, idPedidoDocumento)
+    const solicitudDocumento = porReferencia
+      ? informeService.previsualizarDocumentoPorReferencia(idInformeDocumento, idPedidoDocumento)
+      : informeService.previsualizarDocumento(idInformeDocumento, idPedidoDocumento);
+
+    void solicitudDocumento
       .then((respuesta) => {
         if (estaCancelado) return;
         setEstaRenderizandoDocumento(true);
@@ -57,7 +61,7 @@ export function useDocumentoVistaPreviaInforme(
     return () => {
       estaCancelado = true;
     };
-  }, [idInformeDocumento, idPedidoDocumento, puedeMostrarDocumento, tokenReintentoDocumento]);
+  }, [idInformeDocumento, idPedidoDocumento, puedeMostrarDocumento, porReferencia, tokenReintentoDocumento]);
 
   const reintentarCargaDocumento = useCallback(() => {
     setTokenReintentoDocumento((valor) => valor + 1);

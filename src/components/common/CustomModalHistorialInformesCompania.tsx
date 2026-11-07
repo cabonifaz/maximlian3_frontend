@@ -1,6 +1,5 @@
 import { AlertCircle, ClipboardPaste, Eye, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
-import { CustomEncabezadoFiltroTabla } from "@maximilian/components/common/CustomEncabezadoFiltroTabla";
 import { CustomModalVistaPreviaInforme } from "@maximilian/components/common/CustomModalVistaPreviaInforme";
 import { CustomSelectorFecha } from "@maximilian/components/common/CustomSelectorFecha";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
@@ -26,18 +25,15 @@ export function CustomModalHistorialInformesCompania({
     setPaginaActual,
     informeVistaPrevia,
     setInformeVistaPrevia,
-    idsIdiomaFiltro,
     fechaInicioFiltro,
     fechaFinFiltro,
     fechasInvalidas,
     datosInvestigacionVacios,
-    opcionesIdioma,
     respuestaHistorial,
     estaCargandoHistorial,
     hayErrorHistorial,
     recargarHistorial,
     informes,
-    cambiarIdiomaFiltro,
     cambiarFechaInicioFiltro,
     cambiarFechaFinFiltro,
     limpiarFechaInicioFiltro,
@@ -146,17 +142,7 @@ export function CustomModalHistorialInformesCompania({
               { label: "Pedido", width: "10%" },
               { label: "Nombre", width: "25%" },
               { label: "Fecha", width: "17%" },
-              {
-                label: (
-                  <CustomEncabezadoFiltroTabla
-                    titulo="Idioma"
-                    opciones={opcionesIdioma}
-                    valores={idsIdiomaFiltro}
-                    onChange={cambiarIdiomaFiltro}
-                  />
-                ),
-                width: "18%",
-              },
+              { label: "Idioma", width: "18%" },
               {
                 label: onRellenar ? "Acciones" : "Ver informe",
                 className: "text-center",
@@ -235,6 +221,7 @@ export function CustomModalHistorialInformesCompania({
         idInforme={informeVistaPrevia?.idInforme}
         idPedido={informeVistaPrevia?.idPedido}
         mostrarInformeTraducido
+        documentoPorReferencia
         onDescargar={(formato) => {
           if (!informeVistaPrevia) return;
           void descargarInforme(
