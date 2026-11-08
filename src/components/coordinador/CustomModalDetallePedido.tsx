@@ -177,7 +177,6 @@ export function CustomModalDetallePedido({
     setTabActiva,
     tabActiva,
     tarifarioSeleccionado,
-    tiposPersona,
     tiposPlazoCredito,
     tiposTramite,
   } = useDetallePedido({ isOpen, pedidoId });
@@ -300,15 +299,7 @@ export function CustomModalDetallePedido({
     : (
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="flex flex-1 flex-col gap-5">
-          <CampoSoloLectura etiqueta="Investigado" valor={pedido.investigarRazonSocialNombres || "-"} />
-          <CustomSelectorBuscable
-            label="Tipo de Persona"
-            options={tiposPersona}
-            value={pedido.idTipoPersona}
-            onChange={() => {}}
-            disabled
-          />
-          <CampoSoloLectura etiqueta="Nro. Documento" valor={pedido.numeroDocumentoInvestigado || "-"} />
+          <CampoSoloLectura etiqueta="Investigado" valor={pedido.investigado || "-"} />
           <CampoSoloLectura etiqueta="Nro. de Referencia" valor={pedido.numReferencia || "-"} />
           <TextAreaSoloLectura etiqueta="Comentario" valor={pedido.comentario || "-"} />
         </div>

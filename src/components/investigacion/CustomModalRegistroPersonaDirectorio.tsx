@@ -291,7 +291,7 @@ function CampoArea({
         rows={5}
         defaultValue={valorInicial}
         placeholder={marcador}
-        className="w-full rounded-lg border border-[#dbe4f0] bg-white px-4 py-3 text-sm text-slate-700 outline-none"
+        className="min-h-20 w-full resize-y rounded-lg border border-[#dbe4f0] bg-white px-4 py-3 text-sm text-slate-700 outline-none"
       />
     </label>
   );

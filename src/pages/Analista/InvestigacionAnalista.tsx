@@ -39,6 +39,8 @@ import { CustomModalConfirmacionAccion } from "@maximilian/components/common/Cus
 import { useRellenarDesdeInformeAnterior } from "@maximilian/hooks/useRellenarDesdeInformeAnterior";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { CustomModalListaPersonasAnalista } from "@maximilian/components/investigacion/CustomModalListaPersonas";
+import { CustomSelectorCompaniaInvestigada } from "@maximilian/components/investigacion/CustomSelectorCompaniaInvestigada";
+import { vincularCompaniaAIdentificacion } from "@maximilian/shared/utils/investigacion/compania-identificacion.util";
 import {
   CustomModalRegistroEmpresaRelacionadaAnalista,
   type RegistroPersonaAnalista,
@@ -1045,7 +1047,7 @@ function PantallaInvestigacionAnalista({
       ...datosInvestigacion.resumen,
       nombreSolicitado:
         datosPedidoNavegacion?.investigado
-        || registroPedidoSeleccionado?.investigarRazonSocialNombres
+        || registroPedidoSeleccionado?.investigado
         || registroAsignacionPedido?.investigado
         || datosInvestigacion.resumen.nombreSolicitado,
       pais:
@@ -3217,6 +3219,30 @@ function PantallaInvestigacionAnalista({
 
   const renderizarIdentificacion = () => (
     <div className="grid gap-5 md:grid-cols-2">
+      <CustomSelectorCompaniaInvestigada
+        idCompania={datosInvestigacion.identificacion.idCompania}
+        soloLectura={esSoloLectura}
+        opcionesTipoPersona={opcionesTipoPersona}
+        opcionesPais={opcionesPais}
+        onSeleccionar={(compania) => {
+          if (compania.idTipoPersona) setIdTipoPersonaSeleccionado(compania.idTipoPersona);
+          if (compania.idPais) setIdPaisSeleccionado(compania.idPais);
+          setDatosInvestigacion((anterior) => ({
+            ...anterior,
+            identificacion: vincularCompaniaAIdentificacion(anterior.identificacion, compania, {
+              tiposPersona: opcionesTipoPersona,
+              paises: opcionesPais,
+              tiposDocumento: opcionesTipoRegTributario,
+            }),
+          }));
+        }}
+        onQuitar={() =>
+          setDatosInvestigacion((anterior) => ({
+            ...anterior,
+            identificacion: { ...anterior.identificacion, idCompania: undefined },
+          }))
+        }
+      />
       <CustomSelectorBuscable
         label={<span className="inline-flex items-center gap-2"><span>Tipo de Persona</span>{obtenerIndicadorCambioExtraccion("identificacion.tipoPersona")}</span>}
         options={opcionesTipoPersona}
@@ -3280,7 +3306,7 @@ function PantallaInvestigacionAnalista({
         }}
         optional
         mostrarTextoOpcionalEnLabel={false}
-        disabled
+        disabled={esSoloLectura}
       />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Tipo de Identificación Fiscal"
@@ -3428,7 +3454,7 @@ function PantallaInvestigacionAnalista({
           />
         )}
         <SelectorMaestroConAltaInvestigacionAnalista
-          etiqueta="Tipo de Empresa"
+          etiqueta="Tipo de Personería Jurídica"
           valor={datosInvestigacion.aspectosLegales.tipoEmpresa}
           soloLectura={esSoloLectura}
           opcionesTablaMaestra={opcionesTipoEmpresa}
@@ -3437,7 +3463,7 @@ function PantallaInvestigacionAnalista({
           obtenerEtiquetaOpcion={(opcion) => obtenerEtiquetaTipoEmpresaAnalista(opcion, idIdiomaInforme)}
           renderizarOpcion={(opcion) => renderizarTipoEmpresaAnalista(opcion, idIdiomaInforme)}
           renderizarValorSeleccionado={(opcion) => renderizarTipoEmpresaAnalista(opcion, idIdiomaInforme)}
-          marcador="Seleccione tipo de empresa"
+          marcador="Seleccione tipo de personería jurídica"
           adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.tipoEmpresa")}
           onChange={(valor) => actualizarAspectosLegales("tipoEmpresa", valor)}
         />
@@ -3459,7 +3485,8 @@ function PantallaInvestigacionAnalista({
         <CampoInvestigacionAnalista etiqueta="Notario" valor={datosInvestigacion.aspectosLegales.notario} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.notario")} onChange={(valor) => actualizarAspectosLegales("notario", valor)} />
         <CampoInvestigacionAnalista etiqueta="Registro" valor={datosInvestigacion.aspectosLegales.registro} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.registro")} onChange={(valor) => actualizarAspectosLegales("registro", valor)} />
         <CampoInvestigacionAnalista etiqueta="Duración" valor={datosInvestigacion.aspectosLegales.condiciones} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.condiciones")} onChange={(valor) => actualizarAspectosLegales("condiciones", valor)} />
-        <CustomCampoMontoConMoneda etiqueta="Capital Inicial" monto={datosInvestigacion.aspectosLegales.capitalInicial} moneda={datosInvestigacion.aspectosLegales.monedaCapitalInicial} opcionesMoneda={opcionesMoneda} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.capitalInicial")} onCambioMonto={(valor) => actualizarAspectosLegales("capitalInicial", valor)} onCambioMoneda={(valor) => actualizarAspectosLegales("monedaCapitalInicial", valor)} />
+        <CustomCampoMontoConMoneda etiqueta="Capital Inicial" className="md:col-start-1" monto={datosInvestigacion.aspectosLegales.capitalInicial} moneda={datosInvestigacion.aspectosLegales.monedaCapitalInicial} opcionesMoneda={opcionesMoneda} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.capitalInicial")} onCambioMonto={(valor) => actualizarAspectosLegales("capitalInicial", valor)} onCambioMoneda={(valor) => actualizarAspectosLegales("monedaCapitalInicial", valor)} />
+        <CampoInvestigacionAnalista etiqueta="Comentario Capital Inicial" marcador="Ej. moneda antigua" valor={datosInvestigacion.aspectosLegales.comentarioCapitalInicial} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.comentarioCapitalInicial")} onChange={(valor) => actualizarAspectosLegales("comentarioCapitalInicial", valor)} />
         <CustomCampoMontoConMoneda etiqueta="Capital Actual" monto={datosInvestigacion.aspectosLegales.capitalDesembolsado} moneda={datosInvestigacion.aspectosLegales.monedaCapitalDesembolsado} opcionesMoneda={opcionesMoneda} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.capitalDesembolsado")} onCambioMonto={(valor) => actualizarAspectosLegales("capitalDesembolsado", valor)} onCambioMoneda={(valor) => actualizarAspectosLegales("monedaCapitalDesembolsado", valor)} />
         <CampoInvestigacionAnalista etiqueta="Aumento de Capital" valor={datosInvestigacion.aspectosLegales.ultimaAmpliacion} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.ultimaAmpliacion")} onChange={(valor) => actualizarAspectosLegales("ultimaAmpliacion", valor)} />
         <CustomCampoMontoConMoneda etiqueta="Patrimonio Neto" monto={datosInvestigacion.aspectosLegales.patrimonioNeto} moneda={datosInvestigacion.aspectosLegales.monedaPatrimonioNeto} opcionesMoneda={opcionesMoneda} soloLectura={esSoloLectura} adicionalEtiqueta={obtenerIndicadorCambioExtraccion("aspectosLegales.patrimonioNeto")} onCambioMonto={(valor) => actualizarAspectosLegales("patrimonioNeto", valor)} onCambioMoneda={(valor) => actualizarAspectosLegales("monedaPatrimonioNeto", valor)} />
@@ -4434,7 +4461,14 @@ function PantallaInvestigacionAnalista({
                   const indiceReal = datosInvestigacion.proveedores.findIndex((item) => item.nombreEmpresa === proveedor.nombreEmpresa && item.telefono === proveedor.telefono);
                   return (
                     <tr key={`${proveedor.nombreEmpresa}-${proveedor.telefono}`}>
-                      <td className="px-4 py-4 text-sm font-semibold leading-4 text-slate-700">{proveedor.nombreEmpresa}</td>
+                      <td className="px-4 py-4 text-sm font-semibold leading-4 text-slate-700">
+                        {proveedor.nombreEmpresa}
+                        {!proveedor.idCompania ? (
+                          <span className="ml-2 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-600" title="Edite el proveedor y selecciónelo desde la búsqueda">
+                            Sin vincular
+                          </span>
+                        ) : null}
+                      </td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500">{proveedor.contacto || "-"}</td>
                       <td className="px-4 py-4 text-center text-sm">
                         <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-1 text-[10px] font-bold uppercase ${proveedor.tipoProveedor === "Nacional" ? "bg-green-50 text-green-600" : "bg-purple-50 text-purple-600"}`}>

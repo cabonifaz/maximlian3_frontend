@@ -66,11 +66,8 @@ export interface CreatePedidoRequest {
   idCliente: number;
   numeroDocumento: string;
   nombreCliente: string;
-  idTipoPersona: number;
   idEmpresaAtencion: number;
-  numeroDocumentoInvestigado: string;
-  investigarRazonSocialNombres: string;
-  idCompania: number;
+  investigado: string;
   idTarifario: number;
   idPlantilla: number;
   idIdioma: number;
@@ -105,11 +102,8 @@ export interface GetPedidoResponse {
   idCliente: number;
   numeroDocumento: string;
   nombreCliente: string;
-  idTipoPersona: number;
-  idCompania: number;
   idEmpresaAtencion: number;
-  numeroDocumentoInvestigado: string;
-  investigarRazonSocialNombres: string;
+  investigado: string | null;
   idTarifario: number;
   idPlantilla: number;
   idIdioma: number;
@@ -132,11 +126,8 @@ export interface UpdatePedidoRequest {
   idCliente: number;
   numeroDocumento: string;
   nombreCliente: string;
-  idTipoPersona: number;
   idEmpresaAtencion: number;
-  numeroDocumentoInvestigado: string;
-  investigarRazonSocialNombres: string;
-  idCompania: number;
+  investigado: string;
   idTarifario: number;
   idPlantilla: number;
   idIdioma: number;

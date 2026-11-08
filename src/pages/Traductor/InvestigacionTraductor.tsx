@@ -70,6 +70,8 @@ import PantallaCarga from "@maximilian/components/common/PantallaCarga";
 import { CustomModalConfirmacionAccion } from "@maximilian/components/common/CustomModalConfirmacionAccion";
 import { CustomModalConfirmacionEliminacion } from "@maximilian/components/common/CustomModalConfirmacionEliminacion";
 import { CustomModalListaPersonasAnalista } from "@maximilian/components/investigacion/CustomModalListaPersonas";
+import { CustomSelectorCompaniaInvestigada } from "@maximilian/components/investigacion/CustomSelectorCompaniaInvestigada";
+import { vincularCompaniaAIdentificacion } from "@maximilian/shared/utils/investigacion/compania-identificacion.util";
 import {
   CustomModalRegistroEmpresaRelacionadaAnalista,
   type RegistroPersonaAnalista,
@@ -1668,7 +1670,7 @@ function PantallaInvestigacionAnalista({
       ...datosInvestigacion.resumen,
       nombreSolicitado:
         datosPedidoNavegacion?.investigado ||
-        registroPedidoSeleccionado?.investigarRazonSocialNombres ||
+        registroPedidoSeleccionado?.investigado ||
         registroAsignacionPedido?.investigado ||
         datosInvestigacion.resumen.nombreSolicitado,
       pais:
@@ -5286,6 +5288,31 @@ function PantallaInvestigacionAnalista({
 
   const renderizarIdentificacion = () => (
     <div className="grid gap-5 md:grid-cols-2">
+      <CustomSelectorCompaniaInvestigada
+        idCompania={datosInvestigacion.identificacion.idCompania}
+        soloLectura={esSoloLectura}
+        opcionesTipoPersona={opcionesTipoPersona}
+        opcionesPais={opcionesPais}
+        idIdioma={idIdiomaTraduccion}
+        onSeleccionar={(compania) => {
+          if (compania.idTipoPersona) setIdTipoPersonaSeleccionado(compania.idTipoPersona);
+          if (compania.idPais) setIdPaisSeleccionado(compania.idPais);
+          setDatosInvestigacion((anterior) => ({
+            ...anterior,
+            identificacion: vincularCompaniaAIdentificacion(anterior.identificacion, compania, {
+              tiposPersona: opcionesTipoPersona,
+              paises: opcionesPais,
+              tiposDocumento: opcionesTipoRegTributario,
+            }),
+          }));
+        }}
+        onQuitar={() =>
+          setDatosInvestigacion((anterior) => ({
+            ...anterior,
+            identificacion: { ...anterior.identificacion, idCompania: undefined },
+          }))
+        }
+      />
       <CustomSelectorBuscable
         label={
           <span className="inline-flex items-center gap-2">
@@ -5387,7 +5414,7 @@ function PantallaInvestigacionAnalista({
         }}
         optional
         mostrarTextoOpcionalEnLabel={false}
-        disabled
+        disabled={esSoloLectura}
       />
       <SelectorMaestroConAltaInvestigacionAnalista
         etiqueta="Tipo de Identificación Fiscal"
@@ -5675,7 +5702,7 @@ function PantallaInvestigacionAnalista({
           />
         )}
         <SelectorMaestroConAltaInvestigacionAnalista
-          etiqueta="Tipo de Empresa"
+          etiqueta="Tipo de Personería Jurídica"
           valor={datosInvestigacion.aspectosLegales.tipoEmpresa}
           soloLectura={esSoloLectura}
           opcionesTablaMaestra={opcionesTipoEmpresaBase}
@@ -5702,7 +5729,7 @@ function PantallaInvestigacionAnalista({
               opcionesActuales,
             })
           }
-          marcador="Seleccione tipo de empresa"
+          marcador="Seleccione tipo de personería jurídica"
           adicionalEtiqueta={obtenerAyudaTraduccion(
             "aspectosLegales.tipoEmpresa",
           )}
@@ -5762,6 +5789,7 @@ function PantallaInvestigacionAnalista({
         />
         <CustomCampoMontoConMoneda
           etiqueta="Capital Inicial"
+          className="md:col-start-1"
           monto={datosInvestigacion.aspectosLegales.capitalInicial}
           moneda={datosInvestigacion.aspectosLegales.monedaCapitalInicial}
           opcionesMoneda={opcionesMoneda}
@@ -5774,6 +5802,18 @@ function PantallaInvestigacionAnalista({
           }
           onCambioMoneda={(valor) =>
             actualizarAspectosLegales("monedaCapitalInicial", valor)
+          }
+        />
+        <CampoInvestigacionAnalista
+          etiqueta="Comentario Capital Inicial"
+          marcador="Ej. moneda antigua"
+          valor={datosInvestigacion.aspectosLegales.comentarioCapitalInicial}
+          soloLectura={esSoloLectura}
+          adicionalEtiqueta={obtenerAyudaTraduccion(
+            "aspectosLegales.comentarioCapitalInicial",
+          )}
+          onChange={(valor) =>
+            actualizarAspectosLegales("comentarioCapitalInicial", valor)
           }
         />
         <CustomCampoMontoConMoneda
@@ -7765,6 +7805,11 @@ function PantallaInvestigacionAnalista({
                     >
                       <td className="px-4 py-4 text-sm font-semibold leading-4 text-slate-700">
                         {proveedor.nombreEmpresa}
+                        {!proveedor.idCompania ? (
+                          <span className="ml-2 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-600" title="Edite el proveedor y selecciónelo desde la búsqueda">
+                            Sin vincular
+                          </span>
+                        ) : null}
                       </td>
                       <td className="px-4 py-4 text-sm leading-4 text-slate-500">
                         {proveedor.contacto || "-"}

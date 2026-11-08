@@ -4,7 +4,6 @@ export const pedidoSchema = z
   .object({
     autogenerarCodigo: z.boolean().optional(),
     codigo: z.string().optional(),
-    idTipoPersona: z.number({ error: "El tipo de persona es requerido" }),
     idEmpresaAtencion: z.number({ error: "El atendido por es requerido" }),
     montoCredito: z.preprocess(
       (v) => {
@@ -26,9 +25,7 @@ export const pedidoSchema = z
     tipoPlazoCredito: z.string().optional(),
     idCliente: z.number({ error: "El cliente es requerido" }),
     nroDocumentoCliente: z.string().optional(),
-    nroDocumento: z.string().optional(),
-    investigado: z.string().min(1, "El investigado es requerido"),
-    idCompania: z.number().optional(),
+    investigado: z.string().trim().min(1, "El investigado es requerido"),
     idPais: z.number({ error: "El país del informe es requerido" }),
     idIdioma: z.number({ error: "El idioma del informe es requerido" }),
     idClaseInforme: z.number({ error: "La clase de informe es requerida" }),
