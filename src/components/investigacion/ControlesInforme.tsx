@@ -639,7 +639,7 @@ export function AreaInvestigacionAnalista({
         onFocus={seleccionarTextoCampoEditable}
         placeholder={marcadorFinal}
         rows={filas}
-        className="w-full resize-none rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400"
+        className="min-h-20 w-full resize-y rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-slate-600 outline-none transition-all focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 read-only:bg-slate-50 read-only:text-slate-400"
       />
     </div>
   );

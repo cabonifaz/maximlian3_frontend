@@ -239,6 +239,7 @@ export interface ResumenInvestigacionAnalista {
 }
 
 export interface DatosIdentificacionAnalista {
+  idCompania?: number;
   tipoPersona: string;
   nombreEmpresa: string;
   nombreComercial: string;
@@ -277,6 +278,7 @@ export interface DatosAspectosLegalesAnalista {
   ultimaAmpliacion: string;
   patrimonioNeto: string;
   monedaPatrimonioNeto: string;
+  comentarioCapitalInicial: string;
   comentarioPatrimonioNeto: string;
   tipoAcciones: string;
   valorAcciones: string;
@@ -345,6 +347,7 @@ export interface DatosReferenciasAnalista {
 export interface RegistroProveedorAnalista {
   idInformeProveedor?: number;
   idTipoProveedor?: number;
+  idCompania?: number;
   nombreEmpresa: string;
   contacto: string;
   tipoProveedor: string;

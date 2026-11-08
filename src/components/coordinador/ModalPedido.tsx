@@ -37,7 +37,6 @@ import {
 } from "@maximilian/shared/constants/components/coordinador/crear-tarifa-pedido.constants";
 import { useRetardo } from "@maximilian/hooks/useRetardo";
 import { useFechasPedidoPorTarifa } from "@maximilian/hooks/useFechasPedidoPorTarifa";
-import { useSelectorInvestigadoPedido } from "@maximilian/hooks/useSelectorInvestigadoPedido";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { pedidoSchema, type PedidoFormData } from "@maximilian/schemas";
 import type {
@@ -108,7 +107,6 @@ interface ClienteTarifaTabProps {
 }
 
 interface InfoPedidoTabProps {
-  abierto: boolean;
   register: UseFormRegister<PedidoFormData>;
   setValue: UseFormSetValue<PedidoFormData>;
   watch: UseFormWatch<PedidoFormData>;
@@ -349,7 +347,6 @@ function ClienteTarifaTab({ register, setValue, watch, errors, clientes, idTarif
 }
 
 function InfoPedidoTab({
-  abierto,
   register,
   setValue,
   watch,
@@ -359,53 +356,11 @@ function InfoPedidoTab({
   selectedTarifario,
   permitirAutogenerarCodigo,
 }: InfoPedidoTabProps) {
-  const idTipoPersona = watch("idTipoPersona");
   const idEmpresaAtencion = watch("idEmpresaAtencion");
   const fechaDesde = watch("fechaDesde");
   const fechaHasta = watch("fechaHasta");
   const idTipoPlazoCredito = watch("idTipoPlazoCredito");
   const autogenerarCodigo = watch("autogenerarCodigo");
-  const investigado = watch("investigado");
-  const idPais = watch("idPais");
-
-  const selectorInvestigado = useSelectorInvestigadoPedido({
-    abierto,
-    idPais,
-    investigado,
-    alCambiarInvestigado: (nombre) => {
-      setValue("investigado", nombre, {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
-    },
-    alCambiarNumeroDocumento: (numeroDocumento) => {
-      setValue("nroDocumento", numeroDocumento, {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
-    },
-    alCambiarTipoPersona: (tipoPersona) => {
-      const tipoPersonaNormalizado = tipoPersona.trim().toLocaleLowerCase();
-      const idTipoPersonaEncontrado = tiposPersona?.find(
-        (opcion) =>
-          opcion.string1?.trim().toLocaleLowerCase() === tipoPersonaNormalizado,
-      )?.num1;
-
-      setValue("idTipoPersona", idTipoPersonaEncontrado as number, {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
-    },
-    alCambiarCompania: (idCompania) => {
-      setValue("idCompania", idCompania, { shouldDirty: true });
-    },
-  });
-
-  const { data: tiposPersona } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA),
-    staleTime: Infinity,
-  });
 
   const { data: empresasAtencion } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.EMPRESA_ATENCION],
@@ -429,30 +384,16 @@ function InfoPedidoTab({
     <div className="flex flex-col gap-6 lg:flex-row">
       {/* Left column */}
       <div className="flex-1 flex flex-col gap-5">
-        <CustomSelectorBuscable
-          label="Investigado"
-          required
-          options={selectorInvestigado.opciones}
-          value={selectorInvestigado.idCompaniaSeleccionada}
-          displayValue={selectorInvestigado.valorVisible}
-          onChange={selectorInvestigado.seleccionarCompania}
-          onOpen={selectorInvestigado.habilitarBusqueda}
-          alCambiarBusqueda={selectorInvestigado.setTerminoBusqueda}
-          onAddNew={selectorInvestigado.agregarInvestigado}
-          loading={selectorInvestigado.estaCargando}
-          placeholder="Busque o agregue un investigado"
-          error={errors.investigado?.message}
-        />
-        <CustomSelectorBuscable
-          label="Tipo de Persona"
-          options={tiposPersona}
-          value={idTipoPersona}
-          onChange={(val) => setValue("idTipoPersona", val as number, { shouldValidate: true, shouldDirty: true })}
-          autoSeleccionarOpcionUnica
-          placeholder="Seleccione"
-          required
-          error={errors.idTipoPersona?.message}
-        />
+        <div className="flex flex-col gap-1.5">
+          <CustomLabel required>Investigado</CustomLabel>
+          <input
+            type="text"
+            placeholder="Nombre o razón social del investigado"
+            {...register("investigado")}
+            className={`w-full px-4 py-2.5 bg-brand-white border ${errors.investigado ? "border-red-500" : "border-gray-200"} rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all`}
+          />
+          {errors.investigado && <p className="text-xs text-red-500">{errors.investigado.message}</p>}
+        </div>
         <div className="flex flex-col gap-1.5">
           <CustomLabel required={!autogenerarCodigo}>Código</CustomLabel>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -495,15 +436,6 @@ function InfoPedidoTab({
 
       {/* Right column */}
       <div className="flex-1 flex flex-col gap-5">
-        <div className="flex flex-col gap-1.5">
-          <CustomLabel optional>Nro. Documento</CustomLabel>
-          <input
-            type="text"
-            placeholder="Nro. Documento"
-            {...register("nroDocumento")}
-            className="w-full px-4 py-2.5 bg-brand-white border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-brand-wine/10 focus:border-brand-wine outline-none transition-all"
-          />
-        </div>
         <CustomSelectorBuscable
           label="Atendido por"
           options={empresasAtencion}
@@ -963,10 +895,7 @@ function useFormReset(
       codigo: pedido.codigo ?? "",
       idCliente: pedido.idCliente,
       nroDocumentoCliente: pedido.numeroDocumento ?? "",
-      nroDocumento: pedido.numeroDocumentoInvestigado ?? "",
-      investigado: pedido.investigarRazonSocialNombres ?? "",
-      idCompania: pedido.idCompania,
-      idTipoPersona: pedido.idTipoPersona,
+      investigado: pedido.investigado ?? "",
       idEmpresaAtencion: pedido.idEmpresaAtencion,
       idIdioma: pedido.idIdioma,
       idClaseInforme: pedido.idClaseInforme,
@@ -1137,11 +1066,8 @@ export function ModalPedido({
       idCliente: data.idCliente,
       numeroDocumento: data.nroDocumentoCliente ?? "",
       nombreCliente: cliente?.nombreCliente ?? pedido?.nombreCliente ?? "",
-      idTipoPersona: data.idTipoPersona,
       idEmpresaAtencion: data.idEmpresaAtencion,
-      numeroDocumentoInvestigado: data.nroDocumento ?? "",
-      investigarRazonSocialNombres: data.investigado,
-      idCompania: data.idCompania ?? 0,
+      investigado: data.investigado.trim(),
       idTarifario: data.idTarifario,
       idPlantilla: data.idPlantillaInforme,
       idIdioma: data.idIdioma,
@@ -1222,7 +1148,6 @@ export function ModalPedido({
     : (
       <InfoPedidoTab
         key={`${isOpen}-${pedidoId ?? "nuevo"}`}
-        abierto={isOpen}
         register={register}
         setValue={setValue}
         watch={watch}
@@ -1245,7 +1170,6 @@ export function ModalPedido({
   );
   const hayErroresInfoPedido = !!(
     errors.investigado ||
-    errors.idTipoPersona ||
     errors.codigo ||
     errors.idEmpresaAtencion ||
     errors.fechaDesde ||

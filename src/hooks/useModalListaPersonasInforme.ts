@@ -11,7 +11,7 @@ import type { RegistroPersonaAnalista } from "@maximilian/components/investigaci
 interface ParametrosUseModalListaPersonasInforme {
   estaAbierto: boolean;
   onCerrar: () => void;
-  onGuardar: (empresa: EmpresaRelacionadaAnalista) => void;
+  onGuardar: (empresa: EmpresaRelacionadaAnalista, registro: RegistroPersonaAnalista) => void;
   opcionesPais?: EntradaTablaMaestra[];
   opcionesTipoPersona?: EntradaTablaMaestra[];
 }
@@ -199,7 +199,7 @@ export function useModalListaPersonasInforme({
       empresa: registroSeleccionado.nombres,
       idFiscal: registroSeleccionado.tipoDocumento,
       pais: registroSeleccionado.pais,
-    });
+    }, registroSeleccionado);
     onCerrar();
   };
 

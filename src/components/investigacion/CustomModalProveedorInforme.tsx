@@ -1,9 +1,10 @@
-import { X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { CustomSelectorBuscable } from "@maximilian/components/common/CustomSelectorBuscable";
 
 import { SelectorMaestroConAltaInvestigacionAnalista } from "@maximilian/components/investigacion/ControlesInforme";
+import { CustomModalListaPersonasAnalista } from "@maximilian/components/investigacion/CustomModalListaPersonas";
 import { useModalProveedorInforme } from "@maximilian/hooks/useModalProveedorInforme";
 import type { RegistroProveedorAnalista } from "@maximilian/shared/types/investigacion.type";
 import { TablaMaestraId } from "@maximilian/shared/types/tabla-maestra.type";
@@ -34,8 +35,12 @@ export function CustomModalProveedorAnalista({
   const {
     tipoProveedor,
     setTipoProveedor,
+    idCompania,
     nombreEmpresa,
-    setNombreEmpresa,
+    seleccionarCompania,
+    estaAbiertoModalBusquedaCompania,
+    setEstaAbiertoModalBusquedaCompania,
+    opcionesTipoPersona,
     pais,
     setPais,
     taxIdType,
@@ -96,7 +101,27 @@ export function CustomModalProveedorAnalista({
         </div>
 
         <div className="grid gap-5 overflow-y-auto px-6 py-5 md:grid-cols-2 md:px-8 md:py-7">
-          <div className="md:col-span-2 md:max-w-[calc(50%-0.625rem)]">
+          <div className="space-y-2 md:col-span-2">
+            <CustomLabel required>Nombre de la Empresa / Compañía</CustomLabel>
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px]">
+              <input
+                value={nombreEmpresa}
+                readOnly
+                onClick={() => setEstaAbiertoModalBusquedaCompania(true)}
+                placeholder="Busque la empresa en la base de datos"
+                className="h-11 w-full cursor-pointer rounded-xl border border-gray-200 bg-slate-50 px-4 text-sm text-slate-600 outline-none"
+              />
+              <CustomButton size="sm" className="bg-brand-wine hover:bg-brand-wine/90" onClick={() => setEstaAbiertoModalBusquedaCompania(true)}>
+                <Search size={14} />
+                Buscar
+              </CustomButton>
+            </div>
+            {!idCompania ? (
+              <p className="text-xs text-red-500">Seleccione la empresa desde la búsqueda para poder guardar.</p>
+            ) : null}
+          </div>
+
+          <div>
           <SelectorMaestroConAltaInvestigacionAnalista
             etiqueta="Tipo de Proveedor"
             valor={tipoProveedor}
@@ -107,11 +132,6 @@ export function CustomModalProveedorAnalista({
             marcador="Seleccione tipo de proveedor"
             onChange={setTipoProveedor}
           />
-          </div>
-
-          <div className="space-y-2">
-            <CustomLabel>Nombre de la Empresa / Compañía</CustomLabel>
-            <input value={nombreEmpresa} onChange={(event) => setNombreEmpresa(event.target.value)} onFocus={seleccionarTextoCampoEditable} placeholder="Ej. Schneider Electric SA de CV" className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-slate-600 outline-none" />
           </div>
 
           <div className="contents">
@@ -267,9 +287,22 @@ export function CustomModalProveedorAnalista({
 
         <div className="flex justify-end gap-3 border-t border-gray-100 bg-gray-50/50 px-6 py-5 md:px-8">
           <CustomButton variant="secondary" size="sm" onClick={onCerrar}>Cancelar</CustomButton>
-          <CustomButton size="sm" onClick={manejarGuardar}>Guardar</CustomButton>
+          <CustomButton size="sm" onClick={manejarGuardar} disabled={!idCompania}>Guardar</CustomButton>
         </div>
       </div>
+
+      <CustomModalListaPersonasAnalista
+        estaAbierto={estaAbiertoModalBusquedaCompania}
+        opcionesTipoPersona={opcionesTipoPersona}
+        opcionesPais={opcionesPais}
+        idIdioma={idIdioma}
+        onCerrar={() => setEstaAbiertoModalBusquedaCompania(false)}
+        onGuardar={(_empresa, registro) => void seleccionarCompania(registro)}
+        etiqueta="Proveedores"
+        titulo="Búsqueda de proveedor"
+        descripcionModal="Seleccione una empresa o persona de la base de datos o registre una nueva."
+        zIndexClassName="z-[105]"
+      />
     </div>
   );
 }

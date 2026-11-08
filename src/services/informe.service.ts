@@ -521,6 +521,7 @@ function crearDatosInvestigacionVacios(): DatosInvestigacionAnalista {
       ultimaAmpliacion: "",
       patrimonioNeto: "",
       monedaPatrimonioNeto: "",
+      comentarioCapitalInicial: "",
       comentarioPatrimonioNeto: "",
       tipoAcciones: "",
       valorAcciones: "",
@@ -653,6 +654,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
   };
 
   datos.identificacion = {
+    idCompania: obtenerNumeroOpcional(registro.idCompania, registro.IdCompania),
     tipoPersona: obtenerTexto(registro.tipoPersona, registro.TipoPersona),
     nombreEmpresa: obtenerTexto(registro.nombre, registro.Nombre, registro.razonSocial, registro.RazonSocial),
     nombreComercial: obtenerTexto(registro.nombreComercial, registro.NombreComercial),
@@ -698,6 +700,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     ultimaAmpliacion: formatearFechaEntrada(obtenerTexto(registro.fechaUltimoIncremento, registro.FechaUltimoIncremento)),
     patrimonioNeto: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.patrimonioNeto)),
     monedaPatrimonioNeto: obtenerIdMonedaTexto(registro.idMonedaPatrimonioNeto, registro.IdMonedaPatrimonioNeto),
+    comentarioCapitalInicial: obtenerTexto(registro.comentarioCapitalInicial, registro.ComentarioCapitalInicial),
     comentarioPatrimonioNeto: obtenerTexto(registro.comentarioPatrimonioNeto, registro.ComentarioPatrimonioNeto),
     tipoAcciones: obtenerTexto(registro.tipoAcciones, registro.TipoAcciones),
     valorAcciones: normalizarMontoDosDecimales(obtenerTextoNumerico(registro.valorAcciones)),
@@ -907,6 +910,7 @@ function normalizarRespuestaObtener(resultado: unknown): InformeObtenerResponse 
     return {
       idInformeProveedor: obtenerNumeroOpcional(proveedor.idInformeProveedor, proveedor.IdInformeProveedor),
       idTipoProveedor,
+      idCompania: obtenerNumeroOpcional(proveedor.idCompania, proveedor.IdCompania),
       nombreEmpresa: obtenerTexto(proveedor.nombre, proveedor.Nombre, proveedor.nombreEmpresa, proveedor.NombreEmpresa),
       contacto: obtenerTexto(proveedor.nombreContacto, proveedor.NombreContacto, proveedor.contacto, proveedor.Contacto),
       tipoProveedor: obtenerTexto(proveedor.tipoProveedor, proveedor.TipoProveedor)
@@ -1223,7 +1227,26 @@ async function enriquecerRespuestaObtener(respuesta: InformeObtenerResponse): Pr
     };
   });
 
-  const proveedores: RegistroProveedorInvestigacion[] = respuesta.datosInvestigacion.proveedores.map((proveedor) => ({
+  const proveedoresConCompania: RegistroProveedorInvestigacion[] = await Promise.all(
+    respuesta.datosInvestigacion.proveedores.map(async (proveedor): Promise<RegistroProveedorInvestigacion> => {
+      if (!proveedor.idCompania || proveedor.nombreEmpresa) return proveedor;
+
+      try {
+        const detalle = await servicioCompania.obtener({ idCompania: proveedor.idCompania });
+        if (!detalle) return proveedor;
+
+        return {
+          ...proveedor,
+          nombreEmpresa: detalle.nombreCompleto,
+          tipoPersona: proveedor.tipoPersona || detalle.tipoPersona || "",
+        };
+      } catch {
+        return proveedor;
+      }
+    }),
+  );
+
+  const proveedores: RegistroProveedorInvestigacion[] = proveedoresConCompania.map((proveedor) => ({
     ...proveedor,
     tipoProveedor: tiposProveedor.find((tipoProveedor) => tipoProveedor.num1 === proveedor.idTipoProveedor)?.string1
       || proveedor.tipoProveedor,

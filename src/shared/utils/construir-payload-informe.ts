@@ -445,6 +445,7 @@ export function construirPayloadInforme({
     idTipoIncremento: 0,
     patrimonioNeto: obtenerNumeroOpcionalDesdeTexto(aspectosLegales.patrimonioNeto) ?? undefined,
     idMonedaPatrimonioNeto: obtenerIdPorTextoONumero(opcionesMoneda, aspectosLegales.monedaPatrimonioNeto),
+    comentarioCapitalInicial: aspectosLegales.comentarioCapitalInicial,
     comentarioPatrimonioNeto: aspectosLegales.comentarioPatrimonioNeto,
     tipoAcciones: aspectosLegales.tipoAcciones,
     valorAcciones: obtenerNumeroOpcionalDesdeTexto(aspectosLegales.valorAcciones) ?? undefined,
@@ -552,7 +553,7 @@ export function construirPayloadInforme({
     lstProveedores: datosInvestigacion.proveedores.map((proveedor) => ({
       idInformeProveedor: proveedor.idInformeProveedor ?? 0,
       idTipoProveedor: proveedor.idTipoProveedor ?? obtenerIdPorTextoONumero(undefined, proveedor.tipoProveedor),
-      nombre: proveedor.nombreEmpresa,
+      idCompania: proveedor.idCompania,
       idPais: proveedor.idPais ?? obtenerIdPorTexto(opcionesPais, proveedor.pais) ?? 0,
       idTipoDocumento: proveedor.idTipoDocumento ?? 0,
       numeroDocumento: proveedor.taxIdNumber,

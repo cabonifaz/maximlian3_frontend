@@ -67,13 +67,6 @@ export function useDetallePedido({ isOpen, pedidoId }: ParametrosUseDetallePedid
     enabled: isOpen,
   });
 
-  const { data: tiposPersona } = useQuery({
-    queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
-    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA),
-    staleTime: Infinity,
-    enabled: isOpen,
-  });
-
   const { data: empresasAtencion } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.EMPRESA_ATENCION],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.EMPRESA_ATENCION),
@@ -117,7 +110,6 @@ export function useDetallePedido({ isOpen, pedidoId }: ParametrosUseDetallePedid
     setTabActiva,
     tabActiva,
     tarifarioSeleccionado,
-    tiposPersona,
     tiposPlazoCredito,
     tiposTramite,
   };
