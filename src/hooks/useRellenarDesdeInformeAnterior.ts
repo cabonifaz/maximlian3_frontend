@@ -9,6 +9,7 @@ export function useRellenarDesdeInformeAnterior(
   onRellenar: (datos: DatosInvestigacionAnalista) => void,
 ) {
   const [informePendiente, setInformePendiente] = useState<InformeHistorialCompania | null>(null);
+  const [idCompaniaPendiente, setIdCompaniaPendiente] = useState<number | undefined>(undefined);
 
   const mutacionRellenar = useMutation({
     mutationFn: async (informe: InformeHistorialCompania) => {
@@ -23,6 +24,10 @@ export function useRellenarDesdeInformeAnterior(
       const datosSinIds = prepararDatosParaNuevoInforme(datos);
       onRellenar({
         ...datosSinIds,
+        identificacion: {
+          ...datosSinIds.identificacion,
+          idCompania: datosSinIds.identificacion.idCompania ?? idCompaniaPendiente,
+        },
         locales: datosSinIds.locales.map((local) => ({ ...local, imagenes: [] })),
       });
       setInformePendiente(null);
@@ -32,7 +37,10 @@ export function useRellenarDesdeInformeAnterior(
   return {
     informePendiente,
     estaRellenando: mutacionRellenar.isPending,
-    solicitarRellenar: setInformePendiente,
+    solicitarRellenar: (informe: InformeHistorialCompania, idCompania?: number) => {
+      setInformePendiente(informe);
+      setIdCompaniaPendiente(idCompania);
+    },
     cancelarRellenar: () => {
       if (!mutacionRellenar.isPending) setInformePendiente(null);
     },

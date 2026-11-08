@@ -286,7 +286,7 @@ export function CustomModalLocalAnalista({
                 disabled={soloLectura}
                 placeholder="Describa brevemente las características del local..."
                 rows={4}
-                className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-default disabled:bg-slate-50"
+                className="min-h-20 w-full resize-y rounded-xl border border-gray-200 px-4 py-3 text-sm text-slate-600 outline-none transition-all placeholder:text-gray-300 focus:border-brand-black focus:ring-2 focus:ring-brand-black/5 disabled:cursor-default disabled:bg-slate-50"
               />
             </div>
 

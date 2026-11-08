@@ -322,7 +322,7 @@ export interface InformeOperacionExteriorRequest {
 export interface InformeProveedorRequest {
   idInformeProveedor?: number;
   idTipoProveedor: number;
-  nombre: string;
+  idCompania?: number;
   idPais: number;
   idTipoDocumento: number;
   numeroDocumento: string;
@@ -381,6 +381,7 @@ export interface InformeCrearRequest {
   idInforme?: number;
   idPedido: number;
   idFormatoFecha: number;
+  idCompania?: number;
   idTipoPersona: number;
   nombre: string;
   nombreComercial: string;
@@ -415,6 +416,7 @@ export interface InformeCrearRequest {
   idTipoIncremento: number;
   patrimonioNeto?: number;
   idMonedaPatrimonioNeto?: number;
+  comentarioCapitalInicial?: string;
   comentarioPatrimonioNeto: string;
   tipoAcciones: string;
   valorAcciones?: number;

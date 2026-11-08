@@ -15,7 +15,7 @@ export const marcadoresPorEtiqueta: Record<string, string> = {
   "Página Web": "Ej. www.empresa.com",
   "Estado Actual": "Describa el estado actual",
   "Observaciones de Identificación": "Ingrese las observaciones de identificación",
-  "Tipo de Empresa": "Ingrese el tipo de empresa",
+  "Tipo de Personería Jurídica": "Ingrese el tipo de personería jurídica",
   "Fecha de Constitución": "Ej. 31/12/2020",
   "Ciudad de Registro": "Ingrese la ciudad de registro",
   Notaría: "Ingrese la notaría correspondiente",

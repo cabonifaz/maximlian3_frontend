@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import type { RegistroPersonaAnalista } from "@maximilian/components/investigacion/CustomModalRegistroEmpresaRelacionada";
+import { useCompaniaVinculada } from "@maximilian/hooks/useCompaniaVinculada";
 import { esquemaModalProveedorInvestigacion } from "@maximilian/schemas/investigacion.schema";
 import { servicioTablaMaestra } from "@maximilian/services/tabla-maestra.service";
 import type { RegistroProveedorAnalista } from "@maximilian/shared/types/investigacion.type";
@@ -29,7 +31,10 @@ export function useModalProveedorInforme({
   onGuardar,
 }: ParametrosUseModalProveedorInforme) {
   const [tipoProveedor, setTipoProveedor] = useState(registroInicial?.tipoProveedor ?? "");
+  const [idCompania, setIdCompania] = useState<number | undefined>(registroInicial?.idCompania);
   const [nombreEmpresa, setNombreEmpresa] = useState(registroInicial?.nombreEmpresa ?? "");
+  const [tipoPersona, setTipoPersona] = useState(registroInicial?.tipoPersona ?? "");
+  const [estaAbiertoModalBusquedaCompania, setEstaAbiertoModalBusquedaCompania] = useState(false);
   const [pais, setPais] = useState(registroInicial?.pais ?? "");
   const [taxIdType, setTaxIdType] = useState(registroInicial?.taxIdType ?? "");
   const [taxIdNumber, setTaxIdNumber] = useState(registroInicial?.taxIdNumber ?? "");
@@ -55,6 +60,11 @@ export function useModalProveedorInforme({
   const { data: opcionesTipoProveedorBase } = useQuery({
     queryKey: ["masterTable", TablaMaestraId.TIPO_PROVEEDOR],
     queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PROVEEDOR),
+    staleTime: Infinity,
+  });
+  const { data: opcionesTipoPersona } = useQuery({
+    queryKey: ["masterTable", TablaMaestraId.TIPO_PERSONA],
+    queryFn: () => servicioTablaMaestra.list(TablaMaestraId.TIPO_PERSONA),
     staleTime: Infinity,
   });
   const { data: opcionesPaisBase } = useQuery({
@@ -115,6 +125,26 @@ export function useModalProveedorInforme({
     ?? registroInicial?.idLimiteCredito;
   const promedioMensualHabilitado = idLimiteCreditoActual === 1;
 
+  const { obtenerDetalleCompania } = useCompaniaVinculada();
+
+  const seleccionarCompania = async (registro: RegistroPersonaAnalista) => {
+    setEstaAbiertoModalBusquedaCompania(false);
+    const compania = await obtenerDetalleCompania(registro);
+    setIdCompania(compania.idCompania);
+    setNombreEmpresa(compania.nombreCompleto);
+    if (compania.tipoPersona) setTipoPersona(compania.tipoPersona);
+    const textoPais = opcionesPais?.find((opcion) => opcion.num1 === compania.idPais)?.string1 ?? compania.pais;
+    if (textoPais && textoPais !== "-") setPais(textoPais);
+    const textoTipoDocumento = opcionesTaxId?.find((opcion) => opcion.num1 === compania.idTipoDocumento)?.string1
+      ?? opcionesTaxId?.find(
+        (opcion) => opcion.string1?.trim().toLowerCase() === compania.tipoDocumento?.trim().toLowerCase(),
+      )?.string1;
+    if (textoTipoDocumento) setTaxIdType(textoTipoDocumento);
+    if (compania.numeroDocumento) setTaxIdNumber(compania.numeroDocumento);
+    const telefonoCompania = compania.telefono?.trim();
+    if (telefonoCompania && telefonoCompania !== "-" && !telefono.trim()) setTelefono(telefonoCompania);
+  };
+
   const manejarGuardar = () => {
     const idTipoProveedor = obtenerIdSeleccion(opcionesTipoProveedor, tipoProveedor) || registroInicial?.idTipoProveedor;
     const idPais = obtenerIdSeleccion(opcionesPais, pais) || registroInicial?.idPais;
@@ -130,11 +160,12 @@ export function useModalProveedorInforme({
     const resultado = esquemaModalProveedorInvestigacion.safeParse({
       idInformeProveedor: registroInicial?.idInformeProveedor,
       idTipoProveedor: idTipoProveedor ?? undefined,
+      idCompania,
       nombreEmpresa: nombreEmpresa.trim(),
       contacto: contacto.trim(),
       tipoProveedor,
       telefono: telefono.trim(),
-      tipoPersona: registroInicial?.tipoPersona ?? "Juridica",
+      tipoPersona: tipoPersona || "Juridica",
       idPais: idPais ?? undefined,
       pais,
       idTipoDocumento: idTipoDocumento ?? undefined,
@@ -157,7 +188,7 @@ export function useModalProveedorInforme({
       comentarios: tieneReferenciaComercial ? comentarios.trim() : "",
       productos: tieneReferenciaComercial ? productos.trim() : "",
     });
-    if (!resultado.success) return;
+    if (!resultado.success || !resultado.data.idCompania) return;
 
     onGuardar(resultado.data);
   };
@@ -165,8 +196,12 @@ export function useModalProveedorInforme({
   return {
     tipoProveedor,
     setTipoProveedor,
+    idCompania,
     nombreEmpresa,
-    setNombreEmpresa,
+    seleccionarCompania,
+    estaAbiertoModalBusquedaCompania,
+    setEstaAbiertoModalBusquedaCompania,
+    opcionesTipoPersona,
     pais,
     setPais,
     taxIdType,

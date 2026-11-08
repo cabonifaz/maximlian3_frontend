@@ -17,6 +17,7 @@ export const esquemaResumenInvestigacion = z.object({
 });
 
 export const esquemaIdentificacionInvestigacion = z.object({
+  idCompania: idOpcionalFormulario,
   tipoPersona: textoFormulario,
   nombreEmpresa: textoFormulario,
   nombreComercial: textoFormulario,
@@ -55,6 +56,7 @@ export const esquemaAspectosLegalesInvestigacion = z.object({
   ultimaAmpliacion: textoFormulario,
   patrimonioNeto: textoFormulario,
   monedaPatrimonioNeto: textoFormulario,
+  comentarioCapitalInicial: textoFormulario,
   comentarioPatrimonioNeto: textoFormulario,
   tipoAcciones: textoFormulario,
   valorAcciones: textoFormulario,
@@ -227,6 +229,7 @@ export const esquemaModalBalanceInvestigacion = z.object({
 export const esquemaModalProveedorInvestigacion = z.object({
   idInformeProveedor: idOpcionalFormulario,
   idTipoProveedor: idOpcionalFormulario,
+  idCompania: idOpcionalFormulario,
   nombreEmpresa: textoFormulario,
   contacto: textoFormulario,
   tipoProveedor: textoFormulario,
