@@ -293,6 +293,10 @@ function PantallaInvestigacionAnalista({
     cancelarRellenar,
     confirmarRellenar,
   } = useRellenarDesdeInformeAnterior((datosAnteriores) => {
+    // Los selectores de país y tipo de persona muestran su id seleccionado, no el texto: se sincronizan con el informe anterior.
+    const { pais, tipoPersona } = datosAnteriores.identificacion;
+    setIdPaisSeleccionado(obtenerOpcionTablaMaestraPorTexto(opcionesPais, pais)?.num1 ?? undefined);
+    setIdTipoPersonaSeleccionado(obtenerOpcionTablaMaestraPorTexto(opcionesTipoPersona, tipoPersona)?.num1 ?? undefined);
     setDatosInvestigacion((datosActuales) => ({ ...datosAnteriores, resumen: datosActuales.resumen }));
     setEstaAbiertoModalHistorialInvestigado(false);
   });
@@ -1517,6 +1521,16 @@ function PantallaInvestigacionAnalista({
       };
     }
 
+    if (rutaTexto === "identificacion.pais") {
+      const opcionPais = obtenerOpcionTablaMaestraPorId(opcionesPais, valor)
+        ?? obtenerOpcionTablaMaestraPorTexto(opcionesPais, valor);
+      if (!opcionPais?.string1) return { valor: "" };
+      return {
+        valor: opcionPais.string1,
+        alAplicar: () => setIdPaisSeleccionado(opcionPais.num1 ?? undefined),
+      };
+    }
+
     if (rutaTexto === "identificacion.tipoPersona") {
       const opcionPorId = obtenerOpcionTablaMaestraPorId(opcionesTipoPersona, valor);
       if (opcionPorId?.string1) {
@@ -1752,10 +1766,6 @@ function PantallaInvestigacionAnalista({
           [...rutaBase, clave],
         );
       });
-      return;
-    }
-
-    if (rutaBase.join(".") === "identificacion.pais") {
       return;
     }
 
