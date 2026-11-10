@@ -1,4 +1,4 @@
-import { PEDIDO_COLUMNS, ASIGNACIONES_INICIALES, ETIQUETAS_ROL } from "@maximilian/shared/constants/components/coordinador/modal-flujo-asignacion.constants";
+import { PEDIDO_COLUMNS, ASIGNACIONES_INICIALES, ETIQUETAS_ROL, MENSAJE_TRADUCTOR_BLOQUEADO, TEXTO_TRADUCTOR_BLOQUEADO } from "@maximilian/shared/constants/components/coordinador/modal-flujo-asignacion.constants";
 import { ArrowLeft, Eye, Loader2, Search } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomIndicadorErrorFormulario } from "@maximilian/components/common/CustomIndicadorErrorFormulario";
@@ -20,6 +20,7 @@ interface ModalFlujoAsignacionProps {
   modo?: "crear" | "editar";
   tabInicial?: TabAsignacion;
   titulo?: string;
+  permiteAsignarTraductor?: boolean;
 }
 
 function getBadgeVigencia(vigencia: string | number) {
@@ -66,6 +67,7 @@ export function ModalFlujoAsignacion({
   modo = "crear",
   tabInicial = "pedidos",
   titulo = "Nueva Asignación",
+  permiteAsignarTraductor = false,
 }: ModalFlujoAsignacionProps) {
   const {
     asignacionesBorrador,
@@ -109,6 +111,7 @@ export function ModalFlujoAsignacion({
     asignacionesIniciales,
     modo,
     tabInicial,
+    permiteAsignarTraductor,
   });
 
   const renderPedidoRow = (pedido: PedidoListEntry) => (
@@ -320,7 +323,7 @@ export function ModalFlujoAsignacion({
                   <td className="px-6 py-5">
                     {esTraductorNoRequerido ? (
                       <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-500">
-                        No requiere traducción
+                        {TEXTO_TRADUCTOR_BLOQUEADO}
                       </span>
                     ) : isAssigned ? (
                       <span className="text-sm text-slate-600">{assignment.assignee?.nombre}</span>
@@ -336,7 +339,7 @@ export function ModalFlujoAsignacion({
                         className="min-w-28"
                         onClick={() => setRolActivo(assignment.role)}
                         disabled={esTraductorNoRequerido}
-                        title={esTraductorNoRequerido ? "El idioma del informe es Español, no requiere traductor" : undefined}
+                        title={esTraductorNoRequerido ? MENSAJE_TRADUCTOR_BLOQUEADO : undefined}
                       >
                         {isAssigned ? "Reasignar" : "Asignar"}
                       </CustomButton>

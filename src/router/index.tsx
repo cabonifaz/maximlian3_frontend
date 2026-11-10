@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, Outlet } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import { rutasAdministrador } from "@maximilian/router/rutas-administrador";
 import { rutasAnalista } from "@maximilian/router/rutas-analista";
 import { rutasAutenticacion } from "@maximilian/router/rutas-autenticacion";
@@ -8,11 +8,12 @@ import { rutasGerente } from "@maximilian/router/rutas-gerente";
 import { rutasPublicas } from "@maximilian/router/rutas-publicas";
 import { CustomLimiteErrorRuta } from "@maximilian/components/common/CustomLimiteErrorRuta";
 import PantallaCarga from "@maximilian/components/common/PantallaCarga";
+import { CustomRaizRutas } from "@maximilian/components/common/CustomRaizRutas";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Outlet />,
+    element: <CustomRaizRutas />,
     errorElement: <CustomLimiteErrorRuta />,
     hydrateFallbackElement: <PantallaCarga />,
     children: [

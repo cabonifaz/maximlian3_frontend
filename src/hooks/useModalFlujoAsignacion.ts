@@ -13,7 +13,6 @@ import type { PedidoListEntry } from "@maximilian/shared/types/pedido.type";
 import type { TabAsignacion } from "@maximilian/shared/types/modal-flujo-asignacion.type";
 import {
   convertirPedidoAAsignacionesIniciales,
-  esPedidoEnEspanol,
   normalizarPedidoAsignacion,
   tieneAsignacionesEnPedido,
 } from "@maximilian/shared/utils/modal-flujo-asignacion.util";
@@ -27,6 +26,7 @@ interface ParametrosUseModalFlujoAsignacion {
   asignacionesIniciales?: AssignmentRoleSelection[];
   modo?: "crear" | "editar";
   tabInicial?: TabAsignacion;
+  permiteAsignarTraductor?: boolean;
 }
 
 export function useModalFlujoAsignacion({
@@ -37,6 +37,7 @@ export function useModalFlujoAsignacion({
   asignacionesIniciales = ASIGNACIONES_INICIALES,
   modo = "crear",
   tabInicial = "pedidos",
+  permiteAsignarTraductor = false,
 }: ParametrosUseModalFlujoAsignacion) {
   const queryClient = useQueryClient();
   const [tabActiva, setTabActiva] = useState<TabAsignacion>(tabInicial);
@@ -126,8 +127,7 @@ export function useModalFlujoAsignacion({
     [pedidosElegidos],
   );
 
-  const puedeAsignarTraductor = pedidosElegidos.length === 0
-    || pedidosElegidos.some((pedido) => !esPedidoEnEspanol(pedido));
+  const puedeAsignarTraductor = permiteAsignarTraductor;
 
   const { data: candidatos, isLoading: isLoadingCandidatos, isFetching: isFetchingCandidatos } = useQuery({
     queryKey: ["assignment-candidates-inline", rolActivo, idiomasPedido],

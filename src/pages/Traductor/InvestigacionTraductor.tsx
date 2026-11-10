@@ -1534,6 +1534,7 @@ function PantallaInvestigacionAnalista({
       queryClient.invalidateQueries({
         queryKey: ["asignaciones-bandeja-traductor"],
       });
+      queryClient.invalidateQueries({ queryKey: ["flujo-complementos"] });
       queryClient.invalidateQueries({
         queryKey: [
           "informe-documento-generado",

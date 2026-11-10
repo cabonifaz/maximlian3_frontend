@@ -16,6 +16,11 @@ export const ASIGNACIONES_INICIALES: AssignmentRoleSelection[] = [
 
 export const ID_ESTADO_ASIGNACION_SIN_ASIGNACION_PENDIENTE = 4;
 
+export const TEXTO_TRADUCTOR_BLOQUEADO = "Disponible al finalizar el análisis";
+
+export const MENSAJE_TRADUCTOR_BLOQUEADO =
+  "El traductor se asigna cuando el analista finaliza su informe (pestaña \"Listos para traducción\").";
+
 export const ETIQUETAS_ROL: Record<AssignmentRole, string> = {
   analyst: "Analista",
   translator: "Traductor(a)",

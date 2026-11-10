@@ -1,8 +1,9 @@
 import type { Query, QueryClient } from "@tanstack/react-query";
+import { CLAVE_CONSULTA_TABLA_MAESTRA } from "@maximilian/shared/constants/tabla-maestra.constants";
 import { iniciarTransicionSolicitudesPorCambioRol } from "@maximilian/services/maximilian-service";
 
 function esConsultaCompartidaEntreRoles(consulta: Query) {
-  return consulta.queryKey[0] === "masterTable";
+  return consulta.queryKey[0] === CLAVE_CONSULTA_TABLA_MAESTRA;
 }
 
 export async function invalidarConsultasAntesDeCambiarRol(
