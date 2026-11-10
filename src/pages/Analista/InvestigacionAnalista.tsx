@@ -1,4 +1,4 @@
-import { FILAS_POR_PAGINA_INVESTIGACION, ID_ESTADO_PEDIDO_BORRADOR, ID_ESTADO_PEDIDO_FINALIZADO, CAMPOS_MONETARIOS_EXTRACCION, CAMPOS_PORCENTAJE_EXTRACCION, CAMPOS_PORCENTAJE_COMPLEMENTARIO, ETIQUETAS_SECCIONES_EXTRACCION, ETIQUETAS_CAMPOS_EXTRACCION, MENSAJE_INFO_OPERACIONES_EXTERIOR } from "@maximilian/shared/constants/pages/Analista/investigacion-analista.constants";
+import { FILAS_POR_PAGINA_INVESTIGACION, ID_ESTADO_PEDIDO_BORRADOR, ID_ESTADO_PEDIDO_FINALIZADO, DESCRIPCION_FINALIZAR_INFORME_PEDIDO, CAMPOS_MONETARIOS_EXTRACCION, CAMPOS_PORCENTAJE_EXTRACCION, CAMPOS_PORCENTAJE_COMPLEMENTARIO, ETIQUETAS_SECCIONES_EXTRACCION, ETIQUETAS_CAMPOS_EXTRACCION, MENSAJE_INFO_OPERACIONES_EXTERIOR } from "@maximilian/shared/constants/pages/Analista/investigacion-analista.constants";
 import type { CampoPorcentajeOperacion } from "@maximilian/shared/constants/pages/Analista/investigacion-analista.constants";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -5332,6 +5332,7 @@ function PantallaInvestigacionAnalista({
         onCerrar={() => setEstaAbiertoModalFinalizarInvestigacion(false)}
         onConfirmar={() => guardarInformeMutation.mutate({ idEstadoInforme: ID_ESTADO_PEDIDO_FINALIZADO })}
         onVerVistaPreviaInforme={() => setEstaAbiertoVistaPreviaFinalizar(true)}
+        descripcionDestino={esMigracionInforme ? undefined : DESCRIPCION_FINALIZAR_INFORME_PEDIDO}
       />
 
       {tieneObservacionesRechazo ? (

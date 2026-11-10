@@ -6,6 +6,7 @@ import {
   FileSearch,
   Info,
   Languages,
+  PencilLine,
   Search,
   TriangleAlert,
 } from "lucide-react";
@@ -54,23 +55,14 @@ function obtenerTituloFaseRevision(rol: "Analista" | "Traductor", estado: Estado
 
 function obtenerIndicadorFase(registro: InformeListEntry) {
   const requiereTraduccion = registro.requiereTraduccion === 1;
-  const esFaseTraduccion = requiereTraduccion && registro.idFase === 2;
+  const esFaseTraduccion = registro.idFase === 2;
   const clasesAnalista = esFaseTraduccion
     ? "border-green-200 bg-green-50 text-green-600"
     : obtenerClasesFaseActiva(registro.estado);
-  const tituloAnalista = obtenerTituloFaseRevision(
-    "Analista",
-    esFaseTraduccion ? "aprobado" : registro.estado,
-  );
-  if (!requiereTraduccion) {
-    return (
-      <div className="mx-auto flex w-16 items-center justify-center" title="No requiere traducción">
-        <span className={obtenerClaseIconoFase(clasesAnalista)} title={tituloAnalista}>
-          <FileSearch size={14} />
-        </span>
-      </div>
-    );
-  }
+  // El informe del traductor solo llega a revisión con el análisis ya finalizado.
+  const tituloAnalista = esFaseTraduccion
+    ? "Analista - Finalizado"
+    : obtenerTituloFaseRevision("Analista", registro.estado);
 
   const clasesTraduccion = esFaseTraduccion
     ? obtenerClasesFaseActiva(registro.estado)
@@ -84,13 +76,16 @@ function obtenerIndicadorFase(registro: InformeListEntry) {
     : "bg-slate-200";
 
   return (
-    <div className="relative mx-auto flex w-16 items-center justify-between" title="Analista / Traducción">
+    <div
+      className="relative mx-auto flex w-16 items-center justify-between"
+      title={requiereTraduccion ? "Analista / Traducción" : "Analista / Edición"}
+    >
       <span className={`absolute left-4 right-4 top-1/2 h-1 -translate-y-1/2 rounded-full ${clasesLinea}`} />
       <span className={obtenerClaseIconoFase(clasesAnalista)} title={tituloAnalista}>
         <FileSearch size={14} />
       </span>
       <span className={obtenerClaseIconoFase(clasesTraduccion)} title={tituloTraduccion}>
-        <Languages size={14} />
+        {requiereTraduccion ? <Languages size={14} /> : <PencilLine size={14} />}
       </span>
     </div>
   );

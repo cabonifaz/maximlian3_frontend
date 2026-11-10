@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { servicioInformeAprobacion } from "@maximilian/services/informe-aprobacion.service";
-import { CLAVE_CONSULTA_INFORMES_PENDIENTES_APROBACION } from "@maximilian/shared/constants/pages/Coordinador/aprobacion-migraciones.constants";
+import { invalidarConsultasAprobacionMigracion } from "@maximilian/shared/utils/consultas-migracion.util";
 import type {
   ModalBandejaAprobacionMigraciones,
   ParametrosListaInformesPendientesAprobacion,
@@ -26,8 +26,7 @@ export function useAccionesAprobacionMigraciones({
 
   const idsSeleccionados = registrosSeleccionados.map((registro) => registro.idInforme);
 
-  const recargarBandeja = () =>
-    queryClient.invalidateQueries({ queryKey: [CLAVE_CONSULTA_INFORMES_PENDIENTES_APROBACION] });
+  const recargarBandeja = () => invalidarConsultasAprobacionMigracion(queryClient);
 
   const finalizarAccion = async () => {
     setModalAbierto(null);
