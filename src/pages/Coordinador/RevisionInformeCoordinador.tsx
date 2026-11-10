@@ -2,6 +2,10 @@ import {
   CLASE_CHIP_FORMATO_INFORME,
   CLASE_CHIP_FORMATO_INFORME_DEFECTO,
   ID_ESTADO_INFORME_APROBADO,
+  ETIQUETA_TAB_INFORME_ANALISTA,
+  ETIQUETA_TAB_INFORME_TRADUCTOR,
+  TITULO_INFORME_ANALISTA_REVISION,
+  TITULO_INFORME_TRADUCTOR_REVISION,
 } from "@maximilian/shared/constants/pages/Coordinador/revision-informe-coordinador.constants";
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
@@ -48,7 +52,7 @@ export default function RevisionInformeCoordinador() {
   const [enviarCorreoAlAprobar, setEnviarCorreoAlAprobar] = useState(true);
   const [metadatosDocumento, setMetadatosDocumento] = useState<InformeMetadatosDocumento | null>(null);
   const [observacionesRechazo, setObservacionesRechazo] = useState<InformeObservacion[]>([]);
-  const [tabInformeComparado, setTabInformeComparado] = useState<TabInformeComparado>("original");
+  const [tabInformeComparado, setTabInformeComparado] = useState<TabInformeComparado>("traducido");
   const datosInvestigacion = undefined;
   const idPedidoNumerico = Number(idPedido);
   const idInformeSeguro =
@@ -358,7 +362,7 @@ export default function RevisionInformeCoordinador() {
                     : "text-slate-500 hover:bg-slate-100"
                 }`}
               >
-                Original
+                {ETIQUETA_TAB_INFORME_ANALISTA}
               </button>
               <button
                 type="button"
@@ -369,7 +373,7 @@ export default function RevisionInformeCoordinador() {
                     : "text-slate-500 hover:bg-slate-100"
                 }`}
               >
-                Traducido
+                {ETIQUETA_TAB_INFORME_TRADUCTOR}
               </button>
             </div>
 
@@ -383,7 +387,7 @@ export default function RevisionInformeCoordinador() {
                   puedeDescargar={puedeDescargarOriginal}
                   puedeDescargarXml={puedeDescargarXml}
                   puedeEditar={false}
-                  tituloInforme="Informe original"
+                  tituloInforme={TITULO_INFORME_ANALISTA_REVISION}
                   idiomaInforme={"Español"}
                   tipoPlantilla={nombrePlantillaInforme}
                   mostrarAccionesRevision={false}
@@ -412,7 +416,7 @@ export default function RevisionInformeCoordinador() {
                   puedeDescargarXml={puedeDescargarXml}
                   puedeEditar={puedeEditarRevision}
                   informeYaAprobado={informeYaAprobado}
-                  tituloInforme="Informe traducido"
+                  tituloInforme={TITULO_INFORME_TRADUCTOR_REVISION}
                   idiomaInforme={idiomaInformeTraducido}
                   tipoPlantilla={nombrePlantillaInforme}
                   mostrarAccionesRevision

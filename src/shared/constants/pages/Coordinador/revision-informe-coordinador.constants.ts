@@ -1,5 +1,13 @@
 export const ID_ESTADO_INFORME_APROBADO = 4;
 
+export const ETIQUETA_TAB_INFORME_ANALISTA = "Analista";
+
+export const ETIQUETA_TAB_INFORME_TRADUCTOR = "Traductor";
+
+export const TITULO_INFORME_ANALISTA_REVISION = "Informe del analista (referencia)";
+
+export const TITULO_INFORME_TRADUCTOR_REVISION = "Informe del traductor";
+
 export const CLASE_CHIP_FORMATO_INFORME: Record<string, string> = {
   word: "border-blue-200 bg-blue-50 text-blue-700",
   pdf: "border-red-200 bg-red-50 text-red-700",

@@ -28,6 +28,13 @@ export const rutasTraductor: RouteObject[] = [
           })),
       },
       {
+        path: "informes",
+        lazy: () =>
+          import("@maximilian/pages/Traductor/InformesTraductor").then((m) => ({
+            Component: m.default,
+          })),
+      },
+      {
         path: "traduccion/:idPedido",
         lazy: () =>
           import("@maximilian/pages/Traductor/InvestigacionTraductor").then((m) => ({

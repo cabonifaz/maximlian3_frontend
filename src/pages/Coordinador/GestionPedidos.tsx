@@ -6,6 +6,7 @@ import {
   Info,
   Languages,
   MoreHorizontal,
+  PencilLine,
   Plus,
   Search,
   Trash2,
@@ -209,19 +210,6 @@ function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
     "Analista",
   );
 
-  if (!requiereTraduccion) {
-    return (
-      <div className="mx-auto flex w-16 items-center justify-center" title="No requiere traducción">
-        <span
-          className={obtenerClaseIconoFase(claseAnalista)}
-          title={descripcionAnalista}
-        >
-          <FileSearch size={14} />
-        </span>
-      </div>
-    );
-  }
-
   const claseTraduccionCalculada = obtenerClaseFasePorAsignacion(
     pedido,
     estadosTraduccion,
@@ -245,7 +233,10 @@ function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
   );
 
   return (
-    <div className="relative mx-auto flex w-16 items-center justify-between" title="Analista / Traducción">
+    <div
+      className="relative mx-auto flex w-16 items-center justify-between"
+      title={requiereTraduccion ? "Analista / Traducción" : "Analista / Edición"}
+    >
       <span className={`absolute left-4 right-4 top-1/2 h-1 -translate-y-1/2 rounded-full ${claseLinea}`} />
       <span
         className={obtenerClaseIconoFase(claseAnalista)}
@@ -257,7 +248,7 @@ function obtenerIndicadorFasePedido(pedido: PedidoListEntry) {
         className={obtenerClaseIconoFase(claseTraduccion)}
         title={descripcionTraduccion}
       >
-        <Languages size={14} />
+        {requiereTraduccion ? <Languages size={14} /> : <PencilLine size={14} />}
       </span>
     </div>
   );

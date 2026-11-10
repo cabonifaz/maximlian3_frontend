@@ -6,6 +6,9 @@ export const ID_ESTADO_PEDIDO_BORRADOR = 3;
 
 export const ID_ESTADO_PEDIDO_FINALIZADO = 5;
 
+export const DESCRIPCION_FINALIZAR_INFORME_PEDIDO =
+  "Al confirmar, tu informe quedará finalizado y ya no podrás editarlo. Se notificará al coordinador para que asigne un traductor que continuará con el informe.";
+
 export const CAMPOS_MONETARIOS_EXTRACCION = new Set([
   "aspectosLegales.capitalInicial",
   "aspectosLegales.capitalDesembolsado",
