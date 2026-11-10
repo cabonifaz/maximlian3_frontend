@@ -1,4 +1,5 @@
 import type { EstadoComplemento } from "@maximilian/shared/types/flujo-informe.type";
+import type { ModoInvestigacionAnalista } from "@maximilian/shared/types/investigacion.type";
 
 export const ESTADO_COMPLEMENTO_VISUAL: Record<EstadoComplemento, { etiqueta: string; clase: string }> = {
   borrador: { etiqueta: "Borrador", clase: "bg-slate-100 text-slate-600" },
@@ -9,3 +10,13 @@ export const ESTADO_COMPLEMENTO_VISUAL: Record<EstadoComplemento, { etiqueta: st
 };
 
 export const ESTADOS_COMPLEMENTO_ENVIABLES: EstadoComplemento[] = ["borrador", "en-proceso", "rechazado"];
+
+export const ACCION_EDITOR_COMPLEMENTO: Record<EstadoComplemento, { modo: ModoInvestigacionAnalista; etiqueta: string }> = {
+  borrador: { modo: "iniciar", etiqueta: "Iniciar" },
+  "en-proceso": { modo: "continuar", etiqueta: "Continuar" },
+  rechazado: { modo: "continuar", etiqueta: "Corregir" },
+  "pendiente-aprobacion": { modo: "detalle", etiqueta: "Ver" },
+  aprobado: { modo: "detalle", etiqueta: "Ver" },
+};
+
+export const RUTA_EDITOR_TRADUCTOR = "/traductor/traduccion";

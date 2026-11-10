@@ -178,20 +178,20 @@ export const COMPLEMENTOS_SIMULADOS: Complemento[] = [
     idInformeBase: 8103, tipoInformeBase: "informe", clienteBase: "Atradius Iberia",
     idClienteDestino: 305, clienteDestino: "Euler Hermes Perú", idioma: "Español",
     idUsuarioTraductor: 601, traductor: "Ana Torres Vega", estado: "en-proceso",
-    fechaCreacion: fechaRelativa(-30), fechaModificacion: fechaRelativa(-2),
+    fechaCreacion: fechaRelativa(-30), fechaModificacion: fechaRelativa(-2), idInforme: null, codigo: null, idPlantilla: null,
   },
   {
     idComplemento: 8202, idCompania: 4004, investigado: "Energía Solar Atacama SpA", pais: "Chile",
     idInformeBase: 8106, tipoInformeBase: "informe", clienteBase: "Crédito y Caución",
     idClienteDestino: 301, clienteDestino: "Coface Chile", idioma: "Inglés",
     idUsuarioTraductor: 602, traductor: "Martín Salas Cruz", estado: "pendiente-aprobacion",
-    fechaCreacion: fechaRelativa(-72), fechaModificacion: fechaRelativa(-5),
+    fechaCreacion: fechaRelativa(-72), fechaModificacion: fechaRelativa(-5), idInforme: null, codigo: null, idPlantilla: null,
   },
   {
     idComplemento: 8203, idCompania: 4001, investigado: "Viñedos del Maule S.A.", pais: "Chile",
     idInformeBase: 8102, tipoInformeBase: "complemento", clienteBase: "Allianz Trade",
     idClienteDestino: 302, clienteDestino: "Atradius Iberia", idioma: "Inglés",
     idUsuarioTraductor: 603, traductor: "Sofía Herrera Paz", estado: "rechazado",
-    fechaCreacion: fechaRelativa(-100), fechaModificacion: fechaRelativa(-8),
+    fechaCreacion: fechaRelativa(-100), fechaModificacion: fechaRelativa(-8), idInforme: null, codigo: null, idPlantilla: null,
   },
 ];

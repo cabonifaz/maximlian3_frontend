@@ -14,7 +14,7 @@ export const OPCIONES_TIPO_REPOSITORIO: { valor: TipoInformeRepositorio | undefi
 ];
 
 export const COLUMNAS_REPOSITORIO_INFORMES = [
-  { label: "Investigado", width: "24%" },
+  { label: "Investigado", width: "22%" },
   { label: "Tipo", width: "12%" },
   { label: "Cliente", width: "16%" },
   { label: "Idioma", width: "10%" },
@@ -24,12 +24,12 @@ export const COLUMNAS_REPOSITORIO_INFORMES = [
 ];
 
 export const COLUMNAS_MIS_COMPLEMENTOS = [
-  { label: "Investigado", width: "24%" },
+  { label: "Investigado", width: "22%" },
   { label: "Base", width: "18%" },
   { label: "Cliente destino", width: "18%" },
   { label: "Estado", className: "text-center", width: "14%" },
   { label: "Última modificación", width: "12%" },
-  { label: "Acciones", className: "text-right", width: "14%" },
+  { label: "Acciones", className: "text-right", width: "16%" },
 ];
 
 export const DESCRIPCION_REPOSITORIO_INFORMES =

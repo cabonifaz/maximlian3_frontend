@@ -15,3 +15,10 @@ export const OPCIONES_MODO_VISTA_REVISION_MIGRACION = [
   etiqueta: string;
   icono: typeof FileText;
 }>;
+
+// Listados que cambian cuando se aprueba un informe de migración
+export const CLAVES_CONSULTA_AFECTADAS_POR_APROBACION_MIGRACION = [
+  CLAVE_CONSULTA_INFORMES_PENDIENTES_APROBACION,
+  "migraciones-informe",
+  "lotes-migracion-informe",
+] as const;

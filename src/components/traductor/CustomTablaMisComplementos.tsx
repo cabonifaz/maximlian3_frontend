@@ -1,7 +1,8 @@
-import { Send } from "lucide-react";
+import { FileText, Send } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomTabla } from "@maximilian/components/common/CustomTabla";
 import {
+  ACCION_EDITOR_COMPLEMENTO,
   ESTADO_COMPLEMENTO_VISUAL,
   ESTADOS_COMPLEMENTO_ENVIABLES,
 } from "@maximilian/shared/constants/components/common/estado-complemento.constants";
@@ -20,6 +21,7 @@ interface PropsCustomTablaMisComplementos {
   onCambiarPagina: (pagina: number) => void;
   idComplementoEnviando?: number;
   onEnviarAprobacion: (idComplemento: number) => void;
+  onAbrir: (complemento: Complemento) => void;
 }
 
 export function CustomTablaMisComplementos({
@@ -33,9 +35,11 @@ export function CustomTablaMisComplementos({
   onCambiarPagina,
   idComplementoEnviando,
   onEnviarAprobacion,
+  onAbrir,
 }: PropsCustomTablaMisComplementos) {
   const renderizarFila = (complemento: Complemento) => {
     const estado = ESTADO_COMPLEMENTO_VISUAL[complemento.estado];
+    const accionEditor = ACCION_EDITOR_COMPLEMENTO[complemento.estado];
 
     return (
       <>
@@ -53,7 +57,11 @@ export function CustomTablaMisComplementos({
         </td>
         <td className="px-4 py-4 text-xs text-slate-500">{formatearFechaHoraCorta(complemento.fechaModificacion)}</td>
         <td className="px-4 py-4">
-          <div className="flex justify-end">
+          <div className="flex flex-wrap justify-end gap-2">
+            <CustomButton variant="wine" size="sm" onClick={() => onAbrir(complemento)}>
+              <FileText size={14} />
+              {accionEditor.etiqueta}
+            </CustomButton>
             {ESTADOS_COMPLEMENTO_ENVIABLES.includes(complemento.estado) ? (
               <CustomButton
                 variant="secondary"

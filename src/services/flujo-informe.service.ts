@@ -20,7 +20,6 @@ import {
   TRADUCTORES_SIMULADOS,
 } from "@maximilian/shared/constants/services/flujo-informe-simulado.constants";
 import { ErrorRespuestaApi, MessageType, type ApiResponse } from "@maximilian/shared/types/api.type";
-import type { ClienteListaCortaResponse } from "@maximilian/shared/types/cliente.type";
 import type {
   AsignarRolFlujoRequest,
   CandidatoFlujoAsignacion,
@@ -31,6 +30,7 @@ import type {
   FiltroComplementos,
   FiltroFlujoAsignacion,
   FiltroRepositorioInformes,
+  ListaClientesDestino,
   ListaComplementos,
   ListaFlujoAsignacion,
   ListaRepositorioInformes,
@@ -274,6 +274,9 @@ export const servicioFlujoInforme = {
       estado: "borrador",
       fechaCreacion: ahora,
       fechaModificacion: ahora,
+      idInforme: null,
+      codigo: null,
+      idPlantilla: null,
     };
     almacenSimulado.complementos.push(nuevo);
     await esperarRespuestaSimulada(null);
@@ -298,13 +301,10 @@ export const servicioFlujoInforme = {
 
   listarClientesDestino: async (): Promise<OpcionClienteDestino[]> => {
     if (!usarDatosSimulados) {
-      const { data } = await maximilianService.get<ApiResponse<ClienteListaCortaResponse>>(
+      const { data } = await maximilianService.get<ApiResponse<ListaClientesDestino>>(
         ENDPOINTS_FLUJO_INFORME.listarClientesDestino,
       );
-      return extraerResultado(data).lstCliente.map(({ idCliente, nombreCliente }) => ({
-        idCliente,
-        nombre: nombreCliente,
-      }));
+      return extraerResultado(data).lstCliente;
     }
 
     return esperarRespuestaSimulada(CLIENTES_DESTINO_SIMULADOS);

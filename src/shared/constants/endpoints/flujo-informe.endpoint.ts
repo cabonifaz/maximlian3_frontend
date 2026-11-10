@@ -7,5 +7,5 @@ export const ENDPOINTS_FLUJO_INFORME = {
   listarComplementos: "/api/InformeComplemento/listar",
   crearComplemento: "/api/InformeComplemento/crear",
   enviarAprobacionComplemento: "/api/InformeComplemento/enviarAprobacion",
-  listarClientesDestino: "/api/Cliente/listaCorta",
+  listarClientesDestino: "/api/InformeComplemento/listarClientesDestino",
 } as const;

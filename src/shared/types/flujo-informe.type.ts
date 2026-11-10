@@ -108,6 +108,9 @@ export interface Complemento {
   estado: EstadoComplemento;
   fechaCreacion: string;
   fechaModificacion: string;
+  idInforme: number | null;
+  codigo: string | null;
+  idPlantilla: number | null;
 }
 
 export interface FiltroComplementos {
@@ -132,4 +135,8 @@ export interface CrearComplementoRequest {
 export interface OpcionClienteDestino {
   idCliente: number;
   nombre: string;
+}
+
+export interface ListaClientesDestino {
+  lstCliente: OpcionClienteDestino[];
 }

@@ -12,6 +12,7 @@ import {
 
 export default function InformesTraductor() {
   const {
+    abrirComplemento,
     abrirNuevoComplemento,
     cambiarBusqueda,
     cambiarPaginaInformes,
@@ -114,6 +115,7 @@ export default function InformesTraductor() {
           onCambiarPagina={cambiarPaginaInformes}
           idComplementoEnviando={enviarAprobacionMutation.isPending ? enviarAprobacionMutation.variables : undefined}
           onEnviarAprobacion={(idComplemento) => enviarAprobacionMutation.mutate(idComplemento)}
+          onAbrir={abrirComplemento}
         />
       )}
 

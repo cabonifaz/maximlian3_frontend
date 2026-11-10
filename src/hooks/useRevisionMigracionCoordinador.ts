@@ -7,9 +7,9 @@ import { informeService } from "@maximilian/services/informe.service";
 import { servicioInformeAprobacion } from "@maximilian/services/informe-aprobacion.service";
 import {
   CLAVE_CONSULTA_INFORME_REVISION_MIGRACION,
-  CLAVE_CONSULTA_INFORMES_PENDIENTES_APROBACION,
   MODO_VISTA_REVISION_MIGRACION_POR_DEFECTO,
 } from "@maximilian/shared/constants/pages/Coordinador/aprobacion-migraciones.constants";
+import { invalidarConsultasAprobacionMigracion } from "@maximilian/shared/utils/consultas-migracion.util";
 import type {
   ModoVistaRevisionMigracion,
   RegistroInformePendienteAprobacion,
@@ -58,7 +58,7 @@ export function useRevisionMigracionCoordinador() {
     mutationFn: () => servicioInformeAprobacion.aprobar({ idInformes: [idInformeNumerico] }),
     onSuccess: async () => {
       setEstaAbiertoModalAprobar(false);
-      await queryClient.invalidateQueries({ queryKey: [CLAVE_CONSULTA_INFORMES_PENDIENTES_APROBACION] });
+      await invalidarConsultasAprobacionMigracion(queryClient);
       volverBandeja();
     },
   });
