@@ -1,4 +1,4 @@
-import type { PrioridadPedido, TabFlujoAsignacion } from "@maximilian/shared/types/flujo-informe.type";
+import type { PrioridadPedido, RolFlujoAsignacion, TabFlujoAsignacion } from "@maximilian/shared/types/flujo-informe.type";
 
 export const TABS_FLUJO_ASIGNACION: { id: TabFlujoAsignacion; etiqueta: string; descripcion: string }[] = [
   { id: "sin-asignar", etiqueta: "Sin asignar", descripcion: "Pedidos nuevos esperando analista." },
@@ -70,3 +70,12 @@ export const MENSAJE_MODO_TRADUCCION =
 
 export const AVISO_DATOS_SIMULADOS =
   "Vista con datos simulados: el backend aún no expone este flujo. Las acciones solo cambian datos en memoria.";
+
+// Tabs donde se pueden seleccionar varios pedidos y el rol que se les asigna en masa
+export const ROL_ASIGNACION_MASIVA_POR_TAB: Partial<Record<TabFlujoAsignacion, RolFlujoAsignacion>> = {
+  "sin-asignar": "analista",
+  "listo-traduccion": "traductor",
+};
+
+export const MENSAJE_MODO_MIXTO_TRADUCTOR =
+  "Según el idioma de cada pedido, el traductor traducirá el informe o solo lo editará.";

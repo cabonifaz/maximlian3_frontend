@@ -3,17 +3,21 @@ import { CustomTabsFlujoAsignacion } from "@maximilian/components/coordinador/Cu
 import { CustomTablaFlujoAsignaciones } from "@maximilian/components/coordinador/CustomTablaFlujoAsignaciones";
 import { CustomTablaComplementosCoordinador } from "@maximilian/components/coordinador/CustomTablaComplementosCoordinador";
 import { CustomModalAsignarRolFlujo } from "@maximilian/components/coordinador/CustomModalAsignarRolFlujo";
+import { CustomBarraAsignacionMasivaFlujo } from "@maximilian/components/coordinador/CustomBarraAsignacionMasivaFlujo";
 import { ModalFlujoAsignacion } from "@maximilian/components/coordinador/ModalFlujoAsignacion";
 import { useFlujoAsignaciones } from "@maximilian/hooks/useFlujoAsignaciones";
 import { AVISO_DATOS_SIMULADOS } from "@maximilian/shared/constants/pages/Coordinador/flujo-asignaciones.constants";
 
 export default function GestionAsignaciones() {
   const {
+    abrirAsignacionMasiva,
     abrirModalAsignarRol,
+    alAsignar,
     abrirNuevaAsignacion,
     abrirRevision,
     cambiarBusqueda,
     cambiarPaginaFlujo,
+    cambiarSeleccion,
     cambiarTab,
     cerrarModalAsignarRol,
     cerrarNuevaAsignacion,
@@ -22,9 +26,12 @@ export default function GestionAsignaciones() {
     conteos,
     esTabComplementos,
     estaAbiertaNuevaAsignacion,
+    idsSeleccionados,
     invalidarFlujo,
+    limpiarSeleccion,
     modalAsignarRol,
     paginaActual,
+    rolAsignacionMasiva,
     simularEnvioTraductorMutation,
     simularFinalizacionMutation,
     simularRechazoMutation,
@@ -86,6 +93,15 @@ export default function GestionAsignaciones() {
           onCambiarPagina={cambiarPaginaFlujo}
         />
       ) : (
+        <>
+          {rolAsignacionMasiva ? (
+            <CustomBarraAsignacionMasivaFlujo
+              cantidadSeleccionados={idsSeleccionados.size}
+              rol={rolAsignacionMasiva}
+              onAsignar={abrirAsignacionMasiva}
+              onLimpiar={limpiarSeleccion}
+            />
+          ) : null}
         <CustomTablaFlujoAsignaciones
           pedidos={consultaPedidos.data?.lstPedido}
           estaCargando={consultaPedidos.isLoading}
@@ -102,16 +118,20 @@ export default function GestionAsignaciones() {
           onSimularFinalizacion={(idPedido) => simularFinalizacionMutation.mutate(idPedido)}
           onSimularEnvioTraductor={(idPedido) => simularEnvioTraductorMutation.mutate(idPedido)}
           onSimularRechazo={(idPedido) => simularRechazoMutation.mutate(idPedido)}
+          esSeleccionable={rolAsignacionMasiva !== null}
+          idsSeleccionados={idsSeleccionados}
+          onCambiarSeleccion={cambiarSeleccion}
         />
+        </>
       )}
 
       {modalAsignarRol ? (
         <CustomModalAsignarRolFlujo
-          key={`${modalAsignarRol.pedido.idPedido}-${modalAsignarRol.rol}`}
-          pedido={modalAsignarRol.pedido}
+          key={`${modalAsignarRol.pedidos.map((pedido) => pedido.idPedido).join("-")}-${modalAsignarRol.rol}`}
+          pedidos={modalAsignarRol.pedidos}
           rol={modalAsignarRol.rol}
           onCerrar={cerrarModalAsignarRol}
-          onAsignado={invalidarFlujo}
+          onAsignado={alAsignar}
         />
       ) : null}
 

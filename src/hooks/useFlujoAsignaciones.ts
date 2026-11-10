@@ -3,7 +3,11 @@ import { useNavigate } from "react-router";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useListadoPaginado } from "@maximilian/hooks/useListadoPaginado";
 import { servicioFlujoInforme } from "@maximilian/services/flujo-informe.service";
-import { TAB_FLUJO_ASIGNACION_INICIAL } from "@maximilian/shared/constants/pages/Coordinador/flujo-asignaciones.constants";
+import { useSeleccionPedidosFlujo } from "@maximilian/hooks/useSeleccionPedidosFlujo";
+import {
+  ROL_ASIGNACION_MASIVA_POR_TAB,
+  TAB_FLUJO_ASIGNACION_INICIAL,
+} from "@maximilian/shared/constants/pages/Coordinador/flujo-asignaciones.constants";
 import type {
   EtapaFlujoPedido,
   FilaFlujoAsignacion,
@@ -12,7 +16,8 @@ import type {
 } from "@maximilian/shared/types/flujo-informe.type";
 
 export interface ModalAsignarRolFlujo {
-  pedido: FilaFlujoAsignacion;
+  pedidos: FilaFlujoAsignacion[];
+  esMasiva: boolean;
   rol: RolFlujoAsignacion;
 }
 
@@ -44,6 +49,9 @@ export function useFlujoAsignaciones() {
       }),
     placeholderData: keepPreviousData,
   });
+
+  const seleccion = useSeleccionPedidosFlujo(consultaPedidos.data?.lstPedido);
+  const rolAsignacionMasiva = ROL_ASIGNACION_MASIVA_POR_TAB[tabActiva] ?? null;
 
   const consultaComplementos = useQuery({
     queryKey: ["flujo-complementos", "coordinador", paginaActual, busquedaConRetardo],
@@ -77,6 +85,7 @@ export function useFlujoAsignaciones() {
   });
 
   const cambiarTab = (tab: TabFlujoAsignacion) => {
+    seleccion.limpiarSeleccion();
     setTabActiva(tab);
     if (tab !== "complementos") setUltimaEtapa(tab);
     reiniciarPagina();
@@ -88,6 +97,21 @@ export function useFlujoAsignaciones() {
 
   const cambiarPaginaFlujo = (pagina: number) => cambiarPagina(pagina, totalPaginasActual);
 
+  const cambiarBusquedaFlujo = (termino: string) => {
+    seleccion.limpiarSeleccion();
+    cambiarBusqueda(termino);
+  };
+
+  const abrirAsignacionMasiva = () => {
+    if (!rolAsignacionMasiva || seleccion.pedidosSeleccionados.length === 0) return;
+    setModalAsignarRol({ pedidos: seleccion.pedidosSeleccionados, rol: rolAsignacionMasiva, esMasiva: true });
+  };
+
+  const alAsignar = async (idsNoAsignados: number[]) => {
+    if (modalAsignarRol?.esMasiva) seleccion.conservarSolo(idsNoAsignados);
+    await invalidarFlujo();
+  };
+
   const abrirRevision = (pedido: FilaFlujoAsignacion) => {
     const parametros = new URLSearchParams({
       idInforme: String(pedido.idInformeTraductor ?? 0),
@@ -98,11 +122,15 @@ export function useFlujoAsignaciones() {
   };
 
   return {
-    abrirModalAsignarRol: (pedido: FilaFlujoAsignacion, rol: RolFlujoAsignacion) => setModalAsignarRol({ pedido, rol }),
+    abrirAsignacionMasiva,
+    abrirModalAsignarRol: (pedido: FilaFlujoAsignacion, rol: RolFlujoAsignacion) =>
+      setModalAsignarRol({ pedidos: [pedido], rol, esMasiva: false }),
+    alAsignar,
     abrirNuevaAsignacion: () => setEstaAbiertaNuevaAsignacion(true),
     abrirRevision,
-    cambiarBusqueda,
+    cambiarBusqueda: cambiarBusquedaFlujo,
     cambiarPaginaFlujo,
+    cambiarSeleccion: seleccion.cambiarSeleccion,
     cambiarTab,
     cerrarModalAsignarRol: () => setModalAsignarRol(null),
     cerrarNuevaAsignacion: () => setEstaAbiertaNuevaAsignacion(false),
@@ -111,9 +139,12 @@ export function useFlujoAsignaciones() {
     conteos: consultaPedidos.data?.conteos,
     esTabComplementos,
     estaAbiertaNuevaAsignacion,
+    idsSeleccionados: seleccion.idsSeleccionados,
     invalidarFlujo,
+    limpiarSeleccion: seleccion.limpiarSeleccion,
     modalAsignarRol,
     paginaActual,
+    rolAsignacionMasiva,
     simularEnvioTraductorMutation,
     simularFinalizacionMutation,
     simularRechazoMutation,

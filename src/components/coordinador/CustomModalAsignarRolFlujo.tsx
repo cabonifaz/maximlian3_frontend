@@ -1,23 +1,20 @@
-import { Check, Info, Search, X } from "lucide-react";
+import { Check, Search, X } from "lucide-react";
 import { CustomButton } from "@maximilian/components/common/CustomButton";
 import { CustomLabel } from "@maximilian/components/common/CustomLabel";
 import { useModalAsignarRolFlujo } from "@maximilian/hooks/useModalAsignarRolFlujo";
-import {
-  ETIQUETA_ROL_FLUJO,
-  MENSAJE_MODO_EDICION_TRADUCTOR,
-  MENSAJE_MODO_TRADUCCION,
-} from "@maximilian/shared/constants/pages/Coordinador/flujo-asignaciones.constants";
+import { CustomResumenPedidosAsignacion } from "@maximilian/components/coordinador/CustomResumenPedidosAsignacion";
+import { ETIQUETA_ROL_FLUJO } from "@maximilian/shared/constants/pages/Coordinador/flujo-asignaciones.constants";
 import type { FilaFlujoAsignacion, RolFlujoAsignacion } from "@maximilian/shared/types/flujo-informe.type";
 import { obtenerInicialesAsignado } from "@maximilian/shared/utils/modal-flujo-asignacion.util";
 
 interface PropsCustomModalAsignarRolFlujo {
-  pedido: FilaFlujoAsignacion;
+  pedidos: FilaFlujoAsignacion[];
   rol: RolFlujoAsignacion;
   onCerrar: () => void;
-  onAsignado: () => void | Promise<void>;
+  onAsignado: (idsNoAsignados: number[]) => void | Promise<void>;
 }
 
-export function CustomModalAsignarRolFlujo({ pedido, rol, onCerrar, onAsignado }: PropsCustomModalAsignarRolFlujo) {
+export function CustomModalAsignarRolFlujo({ pedidos, rol, onCerrar, onAsignado }: PropsCustomModalAsignarRolFlujo) {
   const {
     asignarMutation,
     candidatosFiltrados,
@@ -25,13 +22,14 @@ export function CustomModalAsignarRolFlujo({ pedido, rol, onCerrar, onAsignado }
     consultaCandidatos,
     enviar,
     errorSeleccion,
+    esMasiva,
     esReasignacion,
     idUsuarioSeleccionado,
     mensajeErrorNegocio,
     seleccionarCandidato,
     setTerminoBusqueda,
     terminoBusqueda,
-  } = useModalAsignarRolFlujo({ pedido, rol, onCerrar, onAsignado });
+  } = useModalAsignarRolFlujo({ pedidos, rol, onCerrar, onAsignado });
   const etiquetaRol = ETIQUETA_ROL_FLUJO[rol];
 
   return (
@@ -43,6 +41,7 @@ export function CustomModalAsignarRolFlujo({ pedido, rol, onCerrar, onAsignado }
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-5 sm:px-8 sm:py-6">
           <h2 className="text-lg font-bold text-brand-black sm:text-xl">
             {esReasignacion ? `Reasignar ${etiquetaRol}` : `Asignar ${etiquetaRol}`}
+            {esMasiva ? <span className="ml-2 text-sm font-medium text-slate-500">{`a ${pedidos.length} pedidos`}</span> : null}
           </h2>
           <CustomButton type="button" variant="ghost" size="icon" onClick={cerrar} disabled={asignarMutation.isPending}>
             <X size={20} className="text-gray-400" />
@@ -50,17 +49,7 @@ export function CustomModalAsignarRolFlujo({ pedido, rol, onCerrar, onAsignado }
         </div>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-8 sm:py-6">
-          <div className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-700">
-            <p className="font-semibold">{pedido.investigado}</p>
-            <p className="text-xs text-slate-500">{pedido.cliente} · {pedido.pais} · {pedido.idiomaInforme}</p>
-          </div>
-
-          {rol === "traductor" ? (
-            <p className="flex items-start gap-2 rounded-xl bg-blue-50 px-4 py-3 text-xs text-blue-800">
-              <Info size={14} className="mt-0.5 shrink-0" />
-              {pedido.requiereTraduccion ? MENSAJE_MODO_TRADUCCION : MENSAJE_MODO_EDICION_TRADUCTOR}
-            </p>
-          ) : null}
+          <CustomResumenPedidosAsignacion pedidos={pedidos} rol={rol} />
 
           <div className="space-y-2">
             <CustomLabel as="p" required>{`Selecciona un ${etiquetaRol}`}</CustomLabel>

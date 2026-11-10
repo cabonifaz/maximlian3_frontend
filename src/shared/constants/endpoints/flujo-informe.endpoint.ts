@@ -3,6 +3,7 @@
 export const ENDPOINTS_FLUJO_INFORME = {
   listarPorEtapa: "/api/Asignacion/listarPorEtapa",
   asignarRol: "/api/Asignacion/asignarRol",
+  asignarRolMasivo: "/api/Asignacion/asignarRolMasivo",
   listarRepositorio: "/api/Informe/listarRepositorio",
   listarComplementos: "/api/InformeComplemento/listar",
   crearComplemento: "/api/InformeComplemento/crear",

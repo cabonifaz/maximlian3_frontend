@@ -1,4 +1,9 @@
-import type { OpcionClienteDestino } from "@maximilian/shared/types/flujo-informe.type";
+import {
+  MENSAJE_MODO_EDICION_TRADUCTOR,
+  MENSAJE_MODO_MIXTO_TRADUCTOR,
+  MENSAJE_MODO_TRADUCCION,
+} from "@maximilian/shared/constants/pages/Coordinador/flujo-asignaciones.constants";
+import type { FilaFlujoAsignacion, OpcionClienteDestino } from "@maximilian/shared/types/flujo-informe.type";
 import type { EntradaTablaMaestra } from "@maximilian/shared/types/tabla-maestra.type";
 
 export function convertirClientesDestinoAOpciones(clientes: OpcionClienteDestino[]): EntradaTablaMaestra[] {
@@ -48,4 +53,11 @@ export function formatearFechaHoraCorta(fechaIso: string | null | undefined) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+export function obtenerMensajeModoTraductor(pedidos: FilaFlujoAsignacion[]) {
+  const requierenTraduccion = pedidos.filter((pedido) => pedido.requiereTraduccion).length;
+  if (requierenTraduccion === pedidos.length) return MENSAJE_MODO_TRADUCCION;
+  if (requierenTraduccion === 0) return MENSAJE_MODO_EDICION_TRADUCTOR;
+  return MENSAJE_MODO_MIXTO_TRADUCTOR;
 }

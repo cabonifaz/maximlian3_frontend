@@ -62,6 +62,22 @@ export interface AsignarRolFlujoRequest {
   idUsuarioAsignado: number;
 }
 
+export interface AsignarRolMasivoFlujoRequest {
+  idsPedido: number[];
+  rol: RolFlujoAsignacion;
+  idUsuarioAsignado: number;
+}
+
+export interface PedidoNoAsignadoFlujo {
+  idPedido: number;
+  mensaje: string;
+}
+
+export interface ResultadoAsignacionMasivaFlujo {
+  totalAsignados: number;
+  lstNoAsignado: PedidoNoAsignadoFlujo[];
+}
+
 export type TipoInformeRepositorio = "informe" | "complemento";
 
 export type EstadoComplemento = "borrador" | "en-proceso" | "pendiente-aprobacion" | "aprobado" | "rechazado";

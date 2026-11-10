@@ -19,9 +19,11 @@ import {
   TAMANO_PAGINA_FLUJO_SIMULADO,
   TRADUCTORES_SIMULADOS,
 } from "@maximilian/shared/constants/services/flujo-informe-simulado.constants";
-import { ErrorRespuestaApi, MessageType, type ApiResponse } from "@maximilian/shared/types/api.type";
+import { ErrorRespuestaApi, MessageType, esErrorRespuestaApi, type ApiResponse } from "@maximilian/shared/types/api.type";
 import type {
   AsignarRolFlujoRequest,
+  AsignarRolMasivoFlujoRequest,
+  ResultadoAsignacionMasivaFlujo,
   CandidatoFlujoAsignacion,
   Complemento,
   ConteoTabsFlujoAsignacion,
@@ -163,11 +165,11 @@ export const servicioFlujoInforme = {
     });
   },
 
-  listarCandidatos: async (rol: RolFlujoAsignacion, idIdioma?: number): Promise<CandidatoFlujoAsignacion[]> => {
+  listarCandidatos: async (rol: RolFlujoAsignacion, idiomas: number[]): Promise<CandidatoFlujoAsignacion[]> => {
     if (!usarDatosSimulados) {
       const candidatos = await servicioAsignacion.listCandidates({
         role: rol === "analista" ? "analyst" : "translator",
-        idiomasPedido: idIdioma ? [idIdioma] : [],
+        idiomasPedido: idiomas,
       });
       return candidatos.map(({ idUsuario, nombre, cantidadAsignaciones }) => ({ idUsuario, nombre, cantidadAsignaciones }));
     }
@@ -184,6 +186,28 @@ export const servicioFlujoInforme = {
 
     asignarRolSimulado(solicitud);
     await esperarRespuestaSimulada(null);
+  },
+
+  asignarRolMasivo: async (solicitud: AsignarRolMasivoFlujoRequest): Promise<ResultadoAsignacionMasivaFlujo> => {
+    if (!usarDatosSimulados) {
+      const { data } = await maximilianService.post<ApiResponse<ResultadoAsignacionMasivaFlujo>>(
+        ENDPOINTS_FLUJO_INFORME.asignarRolMasivo,
+        solicitud,
+      );
+      return extraerResultado(data);
+    }
+
+    const resultado: ResultadoAsignacionMasivaFlujo = { totalAsignados: 0, lstNoAsignado: [] };
+    solicitud.idsPedido.forEach((idPedido) => {
+      try {
+        asignarRolSimulado({ idPedido, rol: solicitud.rol, idUsuarioAsignado: solicitud.idUsuarioAsignado });
+        resultado.totalAsignados += 1;
+      } catch (error) {
+        if (!esErrorRespuestaApi(error)) throw error;
+        resultado.lstNoAsignado.push({ idPedido, mensaje: error.respuesta.mensaje });
+      }
+    });
+    return esperarRespuestaSimulada(resultado);
   },
 
   simularFinalizacionAnalista: async (idPedido: number): Promise<void> => {

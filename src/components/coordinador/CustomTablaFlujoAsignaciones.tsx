@@ -18,6 +18,9 @@ interface PropsCustomTablaFlujoAsignaciones extends PropsAcciones {
   totalPaginas: number;
   totalRegistros: number;
   onCambiarPagina: (pagina: number) => void;
+  esSeleccionable?: boolean;
+  idsSeleccionados?: Set<number>;
+  onCambiarSeleccion?: (ids: Set<number>) => void;
 }
 
 function CustomCeldaPersona({ nombre, detalle }: { nombre: string | null; detalle?: React.ReactNode }) {
@@ -42,6 +45,9 @@ export function CustomTablaFlujoAsignaciones({
   totalPaginas,
   totalRegistros,
   onCambiarPagina,
+  esSeleccionable,
+  idsSeleccionados,
+  onCambiarSeleccion,
   ...propsAcciones
 }: PropsCustomTablaFlujoAsignaciones) {
   const renderizarFila = (pedido: FilaFlujoAsignacion) => {
@@ -118,6 +124,9 @@ export function CustomTablaFlujoAsignaciones({
       totalRecords={totalRegistros}
       onPageChange={onCambiarPagina}
       entityLabel="pedidos"
+      selectable={esSeleccionable}
+      selectedIds={idsSeleccionados}
+      onSelectionChange={onCambiarSeleccion}
     />
   );
 }
