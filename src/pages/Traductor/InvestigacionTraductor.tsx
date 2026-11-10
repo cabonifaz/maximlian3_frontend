@@ -2685,6 +2685,18 @@ function PantallaInvestigacionAnalista({
       };
     }
 
+    if (rutaTexto === "identificacion.pais") {
+      // La extracción devuelve el país en español: si no coincide con la lista traducida se busca en la base.
+      const opcionPais = obtenerOpcionTablaMaestraPorId(opcionesPais, valor)
+        ?? obtenerOpcionTablaMaestraPorTexto(opcionesPais, valor)
+        ?? obtenerOpcionTablaMaestraPorId(opcionesPais, obtenerOpcionTablaMaestraPorTexto(opcionesPaisBase, valor)?.num1);
+      if (!opcionPais?.string1) return { valor: "" };
+      return {
+        valor: opcionPais.string1,
+        alAplicar: () => setIdPaisSeleccionado(opcionPais.num1 ?? undefined),
+      };
+    }
+
     if (rutaTexto === "identificacion.tipoPersona") {
       const opcionPorId = obtenerOpcionTablaMaestraPorId(
         opcionesTipoPersona,
@@ -2971,10 +2983,6 @@ function PantallaInvestigacionAnalista({
           [...rutaBase, clave],
         );
       });
-      return;
-    }
-
-    if (rutaBase.join(".") === "identificacion.pais") {
       return;
     }
 

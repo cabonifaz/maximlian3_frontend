@@ -50,7 +50,12 @@ export function useFlujoAsignaciones() {
     placeholderData: keepPreviousData,
   });
 
-  const seleccion = useSeleccionPedidosFlujo(consultaPedidos.data?.lstPedido);
+  // keepPreviousData conserva los conteos de las tabs, pero las filas mostradas serían las de la tab
+  // (o página) anterior: mientras llega la respuesta nueva la tabla muestra el loader.
+  const estaCargandoPedidos = consultaPedidos.isLoading || consultaPedidos.isPlaceholderData;
+  const seleccion = useSeleccionPedidosFlujo(
+    consultaPedidos.isPlaceholderData ? undefined : consultaPedidos.data?.lstPedido,
+  );
   const rolAsignacionMasiva = ROL_ASIGNACION_MASIVA_POR_TAB[tabActiva] ?? null;
 
   const consultaComplementos = useQuery({
@@ -139,6 +144,7 @@ export function useFlujoAsignaciones() {
     conteos: consultaPedidos.data?.conteos,
     esTabComplementos,
     estaAbiertaNuevaAsignacion,
+    estaCargandoPedidos,
     idsSeleccionados: seleccion.idsSeleccionados,
     invalidarFlujo,
     limpiarSeleccion: seleccion.limpiarSeleccion,
