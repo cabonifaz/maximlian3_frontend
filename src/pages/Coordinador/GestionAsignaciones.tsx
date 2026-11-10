@@ -26,6 +26,7 @@ export default function GestionAsignaciones() {
     conteos,
     esTabComplementos,
     estaAbiertaNuevaAsignacion,
+    estaCargandoPedidos,
     idsSeleccionados,
     invalidarFlujo,
     limpiarSeleccion,
@@ -104,7 +105,7 @@ export default function GestionAsignaciones() {
           ) : null}
         <CustomTablaFlujoAsignaciones
           pedidos={consultaPedidos.data?.lstPedido}
-          estaCargando={consultaPedidos.isLoading}
+          estaCargando={estaCargandoPedidos}
           hayError={consultaPedidos.isError}
           onReintentar={() => consultaPedidos.refetch()}
           paginaActual={paginaActual}
